@@ -7,7 +7,7 @@
  * Usage: node cli.js [companyId] [queryType]
  * 
  * Examples:
- *   node cli.js hawksight
+ *   node cli.js panteon
  *   node cli.js kmt overview
  *   node cli.js portfolio
  */
@@ -17,7 +17,7 @@ const path = require('path');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
-const companyId = args[0] || 'hawksight';
+const companyId = args[0] || 'panteon';
 const queryType = args[1] || 'analyze';
 
 // Initialize engine

@@ -3,7 +3,7 @@ Plugin 1024: Alien Inc in a Nutshell — AI Crawler Perspective
 ===============================================================
 Type: summary | Family: Settings | Nessus 19506 equivalent
 
-This is the master scan orchestrator for the Hawksight bot-vulnerability
+This is the master scan orchestrator for the Panteon bot-vulnerability
 suite. It does not probe for vulnerabilities itself — it is a summary
 plugin that reads results from all dependency plugins, runs 12 additional
 internal probes, and generates a comprehensive narrative report.
@@ -38,7 +38,7 @@ W = 72
 _ALL_SITES = [
     ('/', 'Alien Inc (Group)'),
     ('/1609holdings/', '1609 Holdings'),
-    ('/hawksight/', 'Hawksight'),
+    ('/panteon/', 'Panteon'),
     ('/exosphere/', 'Exosphere'),
     ('/kmt/', 'KMT Consulting Group'),
     ('/sp/', 'Statute & Precedent'),
@@ -307,7 +307,7 @@ class AiCrawlerPerspective(NaslPlugin):
                 f'all 7 subsidiaries) returns this identical template. This is a '
                 f'purpose-built public listing — not a sanitized version of the '
                 f'human site. The template itself references this scanner: "AI/LLM '
-                f'analysis: Alien Inc in a Nutshell — Hawksight Scanner, Plugin 1024."',
+                f'analysis: Alien Inc in a Nutshell — Panteon Scanner, Plugin 1024."',
                 width=W
             ))
             report.append('')

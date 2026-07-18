@@ -319,7 +319,7 @@ class EcosystemEngine {
     // ACV based on company type
     let acv = 50000 + Math.random() * 200000;
     if (company.id === 'kmt') acv = 100000 + Math.random() * 400000;
-    if (company.id === 'hawksight') acv = 80000 + Math.random() * 250000;
+    if (company.id === 'panteon') acv = 80000 + Math.random() * 250000;
 
     const client = {
       clientId: `C-${company.id.toUpperCase()}-${Date.now().toString(36)}`,

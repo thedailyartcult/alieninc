@@ -1,5 +1,5 @@
 """
-HAWKSIGHT Vulnerability Scanner Engine
+PANTEON Vulnerability Scanner Engine
 ========================================
 Nessus-modeled vulnerability management engine for Alien Inc.
 Multi-tenant, plugin-based, real-time WebSocket scanning.
@@ -27,9 +27,9 @@ from ws_manager import ConnectionManager
 from plugins.plugin_loader import load_all_plugins
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
-logger = logging.getLogger('hawksight')
+logger = logging.getLogger('panteon')
 
-app = FastAPI(title='Hawksight Engine', version='1.0.0')
+app = FastAPI(title='Panteon Engine', version='1.0.0')
 
 app.add_middleware(
     CORSMiddleware,
@@ -70,7 +70,7 @@ class RegisterRequest(BaseModel):
 async def startup():
     global db, engine, plugins
 
-    db = Database(DATA_DIR / 'hawksight.db')
+    db = Database(DATA_DIR / 'panteon.db')
     await db.init()
     set_db(db)
 
@@ -87,7 +87,7 @@ async def seed_defaults():
     companies = {
         'alieninc': 'Alien.Inc',
         '1609': '1609 Holdings',
-        'hawksight': 'Hawksight',
+        'panteon': 'Panteon',
         'exosphere': 'Exosphere',
         'kmt': 'KMT Consulting Group',
         'statute': 'Statute & Precedent',
@@ -98,8 +98,8 @@ async def seed_defaults():
         await db.ensure_company(cid, name)
 
     default_users = [
-        ('admin', 'hawksight2026', 'alieninc', 'System Admin'),
-        ('scan.ops', 'scanops2026', 'hawksight', 'Scan Operator'),
+        ('admin', 'panteon2026', 'alieninc', 'System Admin'),
+        ('scan.ops', 'scanops2026', 'panteon', 'Scan Operator'),
     ]
     for uname, pw, cid, dname in default_users:
         existing = await db.get_user(uname)
@@ -305,13 +305,13 @@ async def ws_scan(websocket: WebSocket):
 
 
 # ── Static Files ──
-# Serve the Hawksight frontend and parent site files
+# Serve the Panteon frontend and parent site files
 
-HAWKSIGHT_DIR = BASE_DIR.parent
-SITE_DIR = HAWKSIGHT_DIR.parent
+PANTEON_DIR = BASE_DIR.parent
+SITE_DIR = PANTEON_DIR.parent
 
-app.mount('/hawksight/engine', StaticFiles(directory=str(BASE_DIR)), name='engine_internal')
-app.mount('/hawksight', StaticFiles(directory=str(HAWKSIGHT_DIR), html=True), name='hawksight')
+app.mount('/panteon/engine', StaticFiles(directory=str(BASE_DIR)), name='engine_internal')
+app.mount('/panteon', StaticFiles(directory=str(PANTEON_DIR), html=True), name='panteon')
 app.mount('/data', StaticFiles(directory=str(SITE_DIR / 'data')), name='data')
 app.mount('/kmt', StaticFiles(directory=str(SITE_DIR / 'kmt')), name='kmt')
 
@@ -323,16 +323,16 @@ async def root():
 
 @app.get('/scan')
 async def scan_page():
-    return FileResponse(str(HAWKSIGHT_DIR / 'scan.html'))
+    return FileResponse(str(PANTEON_DIR / 'scan.html'))
 
 
 @app.get('/login')
 async def login_page():
-    return FileResponse(str(HAWKSIGHT_DIR / 'login.html'))
+    return FileResponse(str(PANTEON_DIR / 'login.html'))
 
 
 if __name__ == '__main__':
     import uvicorn
     port = int(os.environ.get('PORT', 8721))
-    logger.info(f'Starting Hawksight Engine on port {port}')
+    logger.info(f'Starting Panteon Engine on port {port}')
     uvicorn.run(app, host='0.0.0.0', port=port, log_level='info')

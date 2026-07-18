@@ -8,7 +8,7 @@
 ### Subsidiary Profiles
 Comprehensive profiles for all 7 Alien.Inc companies including:
 - **1609 Holdings** - Investment holding & capital allocation
-- **Hawksight** - Cybersecurity & defense
+- **Panteon** - Cybersecurity & defense
 - **Exosphere** - Private equity & acquisitions
 - **Statute & Precedent** - Legal services & AI-enabled law
 - **St. Alcantara Foundation** - Nonprofit & cultural preservation
@@ -37,7 +37,7 @@ Each subsidiary profile contains:
 
 ### Maturity Levels
 - **1609 Holdings**: Developing (centralized capital, decentralized operations)
-- **Hawksight**: Established (productized services, strong tech stack)
+- **Panteon**: Established (productized services, strong tech stack)
 - **Exosphere**: Developing (deal-by-deal execution)
 - **Statute & Precedent**: Developing (hybrid AI-traditional model)
 - **St. Alcantara Foundation**: Nascent (manual processes, limited tech)

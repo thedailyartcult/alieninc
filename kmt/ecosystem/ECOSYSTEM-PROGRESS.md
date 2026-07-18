@@ -15,7 +15,7 @@ A self-evolving organism where 7 companies breathe together. Each day, companies
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐       │
-│  │  1609   │  │ Hawksight│  │Exosphere│  │   KMT   │       │
+│  │  1609   │  │ Panteon│  │Exosphere│  │   KMT   │       │
 │  │Holdings │←→│         │←→│         │←→│         │       │
 │  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘       │
 │       │            │            │            │              │
@@ -93,7 +93,7 @@ node simulate.js 365 --export
 node simulate.js status
 
 # Show specific company
-node simulate.js company hawksight
+node simulate.js company panteon
 ```
 
 ### 30-Day Simulation Results
@@ -103,7 +103,7 @@ Company                    Cash       Health  Momentum
 ──────────────────────────────────────────────────────
 1609 Holdings                $981K     100       0.0
 The Daily Art Cult           $176K     100       0.0
-Hawksight                    $265K     100       0.0
+Panteon                    $265K     100       0.0
 Exosphere                    $239K     100       0.0
 KMT Consulting Group         $388K      98      -1.0
 St. Alcantara Foundation     $100K     100       0.0
@@ -151,7 +151,7 @@ cd kmt/ecosystem && node simulate.js 30
 node simulate.js 30 --export
 
 # 3. Analyze with KMT engine
-cd .. && node cli.js hawksight
+cd .. && node cli.js panteon
 ```
 
 The organism is alive. It evolves. It breathes.

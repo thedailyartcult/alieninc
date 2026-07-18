@@ -36,7 +36,7 @@ class HttpInfoDisclosure(NaslPlugin):
                 asyncio.open_connection(target, port), timeout=5
             )
 
-            req = f'GET / HTTP/1.1\r\nHost: {target}\r\nUser-Agent: Hawksight/1.0\r\nConnection: close\r\n\r\n'
+            req = f'GET / HTTP/1.1\r\nHost: {target}\r\nUser-Agent: Panteon/1.0\r\nConnection: close\r\n\r\n'
             writer.write(req.encode())
             await writer.drain()
 

@@ -28,7 +28,7 @@ Comprehensive financial tracking:
 | Client | Revenue | Share |
 |--------|---------|-------|
 | 1609 Holdings | $274,705 | 30% |
-| Hawksight | $219,492 | 25% |
+| Panteon | $219,492 | 25% |
 | Exosphere | $29,975 | 15% |
 | Statute & Precedent | $3,888 | 10% |
 | Others | $363,940 | 20% |
@@ -68,7 +68,7 @@ Comprehensive financial tracking:
 - **NPS:** 72 (Excellent)
 - **Response Rate:** 82%
 - **By Client:**
-  - Hawksight: 4.6 ↑
+  - Panteon: 4.6 ↑
   - 1609 Holdings: 4.5 →
   - Exosphere: 4.4 ↑
   - Statute & Precedent: 4.3 (new)

@@ -5,7 +5,7 @@ import sys
 import logging
 from pathlib import Path
 
-logger = logging.getLogger('hawksight.plugins')
+logger = logging.getLogger('panteon.plugins')
 
 
 def load_all_plugins(plugins_dir: Path) -> list:

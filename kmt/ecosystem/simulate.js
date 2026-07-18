@@ -10,7 +10,7 @@
  *   node simulate.js 30           # Run 30 days
  *   node simulate.js 365 --export # Run 1 year and export state
  *   node simulate.js status       # Show current state
- *   node simulate.js company hawksight  # Show company state
+ *   node simulate.js company panteon  # Show company state
  */
 
 const EcosystemEngine = require('./ecosystem-engine');
@@ -57,7 +57,7 @@ if (command === 'status') {
 }
 
 if (command === 'company') {
-  const companyId = option || 'hawksight';
+  const companyId = option || 'panteon';
   const state = engine.getCompanyState(companyId);
   
   if (!state) {

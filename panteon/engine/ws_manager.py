@@ -3,7 +3,7 @@ import json
 import logging
 from fastapi import WebSocket
 
-logger = logging.getLogger('hawksight.ws')
+logger = logging.getLogger('panteon.ws')
 
 
 class ConnectionManager:

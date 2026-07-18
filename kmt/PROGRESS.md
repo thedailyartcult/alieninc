@@ -37,7 +37,7 @@ Build KMT Consulting Group as a realistic, professional internal consulting unit
 | Company | Role | KMT Services |
 |---------|------|--------------|
 | 1609 Holdings | Capital allocation, governance | Portfolio analytics, operating reviews |
-| Hawksight | Cybersecurity defense | Cloud security strategy, vulnerability program design |
+| Panteon | Cybersecurity defense | Cloud security strategy, vulnerability program design |
 | Exosphere | Acquisition sourcing, succession | Commercial diligence, post-acquisition integration |
 | KMT Consulting | Internal strategy powerhouse | (self) |
 | St. Alcantara Foundation | Culture & art preservation | Strategic planning, digitization strategy |
@@ -47,7 +47,7 @@ Build KMT Consulting Group as a realistic, professional internal consulting unit
 ## Operating Loops KMT Participates In
 
 1. **Acquire-to-Improve** (Lead: Exosphere) - KMT executes first 180-day operating plans
-2. **Risk-to-Product** (Lead: Hawksight) - KMT builds remediation delivery capabilities
+2. **Risk-to-Product** (Lead: Panteon) - KMT builds remediation delivery capabilities
 3. **Insight-to-Capital** (Lead: 1609) - KMT provides sector and operating intelligence
 
 ## Data Source

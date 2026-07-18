@@ -1,5 +1,5 @@
 """
-HAWKSIGHT Plugin Base Class
+PANTEON Plugin Base Class
 ============================
 NASL-modeled plugin architecture for vulnerability checks.
 Each plugin defines metadata and an async execute() method.
@@ -36,7 +36,7 @@ class ScanContext:
     Mirrors Nessus's get_kb_item() / set_kb_item() system. Dependency plugins
     write their findings to named keys. Summary plugins read those keys.
     
-    KB Key Convention (Hawksight namespace):
+    KB Key Convention (Panteon namespace):
       Host/scan-start          — ISO timestamp when scan began
       Host/target              — Target host:port
       Services/www             — Service detected on port
@@ -78,7 +78,7 @@ class ScanContext:
 
 class NaslPlugin(ABC):
     """
-    Base class for all Hawksight NASL-style plugins.
+    Base class for all Panteon NASL-style plugins.
 
     Required class attributes:
         PLUGIN_ID    (int)    — Unique plugin identifier (like Nessus plugin IDs)

@@ -24,7 +24,7 @@ const CortexWidget = (() => {
       buttonRadius: '15px',
       cardRadius: '20px'
     },
-    hawksight: {
+    panteon: {
       primary: '#041E42',
       accent: '#00FFFF',
       font: '"Barlow", sans-serif',
@@ -329,7 +329,7 @@ const CortexWidget = (() => {
       placeholder: 'e.g., What are the growth opportunities in my industry?',
       ctaLabel: 'Analyze'
     },
-    hawksight: {
+    panteon: {
       title: 'Cortex Threat Intelligence',
       subtitle: 'AI-powered exposure analysis. Ask about vulnerabilities, attack surfaces, or risk prioritization.',
       quickActions: ['Vulnerability Scan', 'Attack Surface', 'Risk Priority', 'Compliance'],
@@ -450,24 +450,24 @@ const CortexWidget = (() => {
     
     // Brand-specific responses — all metrics sourced from alieninc-ecosystem.json
     var brandResponses = {
-      hawksight: {
+      panteon: {
         'vulnerability analysis': buildFromEco(function(eco) {
-          var hs = eco.companies.find(function(c){return c.id==='hawksight';});
+          var hs = eco.companies.find(function(c){return c.id==='panteon';});
           var kpis = hs.kpis2026F;
-          return 'Hawksight managed detection and response maintains a mean-time-to-contain of ' + kpis.meanTimeToContainHours + ' hours with critical exposure closure in ' + kpis.criticalExposureClosureDays + ' days. Annual logo retention at ' + ((1 - kpis.annualLogoChurnRate) * 100).toFixed(1) + '% with ' + (kpis.netRevenueRetention * 100).toFixed(0) + '% net revenue retention. MRR: $' + (kpis.mrr/1000).toFixed(0) + 'K.';
-        }, 'Hawksight delivers managed detection and response, exposure and vulnerability management, and cyber diligence for acquisitions across the Alien.Inc portfolio.'),
+          return 'Panteon managed detection and response maintains a mean-time-to-contain of ' + kpis.meanTimeToContainHours + ' hours with critical exposure closure in ' + kpis.criticalExposureClosureDays + ' days. Annual logo retention at ' + ((1 - kpis.annualLogoChurnRate) * 100).toFixed(1) + '% with ' + (kpis.netRevenueRetention * 100).toFixed(0) + '% net revenue retention. MRR: $' + (kpis.mrr/1000).toFixed(0) + 'K.';
+        }, 'Panteon delivers managed detection and response, exposure and vulnerability management, and cyber diligence for acquisitions across the Alien.Inc portfolio.'),
         'attack surface assessment': buildFromEco(function(eco) {
-          var hs = eco.companies.find(function(c){return c.id==='hawksight';});
-          return 'Hawksight manages security across 7 Alien.Inc companies. Service lines: managed detection and response (56.8% of revenue), exposure and vulnerability management (28.4%), and cyber diligence for acquisitions (14.8%). Headcount: ' + hs.headcount['2026F'] + ' across ' + hs.headcount.fullTime + ' full-time and ' + hs.headcount.contractors + ' contractors.';
-        }, 'Hawksight provides digital risk defense for the Alien.Inc group, reducing exposure across all portfolio companies.'),
+          var hs = eco.companies.find(function(c){return c.id==='panteon';});
+          return 'Panteon manages security across 7 Alien.Inc companies. Service lines: managed detection and response (56.8% of revenue), exposure and vulnerability management (28.4%), and cyber diligence for acquisitions (14.8%). Headcount: ' + hs.headcount['2026F'] + ' across ' + hs.headcount.fullTime + ' full-time and ' + hs.headcount.contractors + ' contractors.';
+        }, 'Panteon provides digital risk defense for the Alien.Inc group, reducing exposure across all portfolio companies.'),
         'risk prioritization': buildFromEco(function(eco) {
-          var hs = eco.companies.find(function(c){return c.id==='hawksight';});
+          var hs = eco.companies.find(function(c){return c.id==='panteon';});
           var rev = hs.annualFinancials.find(function(f){return f.year===2026;});
-          return 'Hawksight 2026F revenue: $' + (rev.revenue/1000000).toFixed(2) + 'M with EBITDA of $' + (rev.ebitda/1000).toFixed(0) + 'K. Operating costs: $' + (rev.operatingCosts/1000).toFixed(0) + 'K. Customer acquisition cost: $' + (kpis.avgCustomerCac/1000).toFixed(1) + 'K against lifetime value of $' + (kpis.avgCustomerLtv/1000).toFixed(0) + 'K.';
-        }, 'Hawksight prioritizes security findings by exploitability and business impact across the Alien.Inc portfolio.'),
+          return 'Panteon 2026F revenue: $' + (rev.revenue/1000000).toFixed(2) + 'M with EBITDA of $' + (rev.ebitda/1000).toFixed(0) + 'K. Operating costs: $' + (rev.operatingCosts/1000).toFixed(0) + 'K. Customer acquisition cost: $' + (kpis.avgCustomerCac/1000).toFixed(1) + 'K against lifetime value of $' + (kpis.avgCustomerLtv/1000).toFixed(0) + 'K.';
+        }, 'Panteon prioritizes security findings by exploitability and business impact across the Alien.Inc portfolio.'),
         'compliance gaps': buildFromEco(function(eco) {
-          return 'Hawksight operates three service lines: managed detection and response, exposure and vulnerability management, and cyber diligence for acquisitions. All 16 staff are focused on reducing exposure across the Alien.Inc group.';
-        }, 'Hawksight audits compliance posture across the Alien.Inc group against target security frameworks.')
+          return 'Panteon operates three service lines: managed detection and response, exposure and vulnerability management, and cyber diligence for acquisitions. All 16 staff are focused on reducing exposure across the Alien.Inc group.';
+        }, 'Panteon audits compliance posture across the Alien.Inc group against target security frameworks.')
       },
       exosphere: {
         'market valuation': buildFromEco(function(eco) {
@@ -597,9 +597,9 @@ const CortexWidget = (() => {
           var revs = eco.groupRollup.standaloneRevenue2026F;
           var totalRev = eco.groupRollup.standaloneRevenueTotal2026F;
           var kmtPct = (revs.kmt / totalRev * 100).toFixed(1);
-          var hawkPct = (revs.hawksight / totalRev * 100).toFixed(1);
+          var panteonPct = (revs.panteon / totalRev * 100).toFixed(1);
           var growth = ((eco.companies.find(function(c){return c.id==='kmt';}).annualFinancials.find(function(f){return f.year===2026;}).revenue - eco.companies.find(function(c){return c.id==='kmt';}).annualFinancials.find(function(f){return f.year===2025;}).revenue) / eco.companies.find(function(c){return c.id==='kmt';}).annualFinancials.find(function(f){return f.year===2025;}).revenue * 100).toFixed(1);
-          return 'Fund centre: ' + fc.totalAumFormatted + ' across ' + fc.totalFunds + ' funds (' + fc.totalShareClasses + ' share classes). KMT represents ' + kmtPct + '% of group revenue, Hawksight ' + hawkPct + '%. KMT YoY growth: ' + growth + '%.';
+          return 'Fund centre: ' + fc.totalAumFormatted + ' across ' + fc.totalFunds + ' funds (' + fc.totalShareClasses + ' share classes). KMT represents ' + kmtPct + '% of group revenue, Panteon ' + panteonPct + '%. KMT YoY growth: ' + growth + '%.';
         }, '1609 Holdings manages allocation across operating companies and the fund centre.')
       },
       kmt: {
@@ -633,11 +633,11 @@ const CortexWidget = (() => {
     };
     
     var brandDefault = {
-      hawksight: 'Hawksight delivers managed detection and response, exposure and vulnerability management, and cyber diligence for acquisitions. Headcount: 16 across 12 full-time and 4 contractors.',
+      panteon: 'Panteon delivers managed detection and response, exposure and vulnerability management, and cyber diligence for acquisitions. Headcount: 16 across 12 full-time and 4 contractors.',
       exosphere: 'Exosphere provides succession and sell-side advisory, buy-side search, and commercial diligence for owner-led businesses in the $3M-$30M segment.',
       statute: 'Statute & Precedent delivers M&A and transaction counsel, contract operations, and governance and compliance services. Average bill rate: $285/hour.',
       stalcantara: 'St. Alcantara Foundation preserves cultural memory through conservation, digitization, education, and public access. 18,400 artifacts digitized to date.',
-      alieninc: 'Alien.Inc operates 7 companies: KMT Consulting, Hawksight, Exosphere, Statute & Precedent, The Daily Art Cult, St. Alcantara Foundation, and 1609 Holdings.',
+      alieninc: 'Alien.Inc operates 7 companies: KMT Consulting, Panteon, Exosphere, Statute & Precedent, The Daily Art Cult, St. Alcantara Foundation, and 1609 Holdings.',
       "1609": '1609 Holdings allocates capital and governance capacity across the Alien.Inc group. Fund centre: EUR 5.77B across 6 funds.'
     };
     

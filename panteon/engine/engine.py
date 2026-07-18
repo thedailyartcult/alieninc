@@ -1,5 +1,5 @@
 """
-HAWKSIGHT Scan Engine
+PANTEON Scan Engine
 =====================
 Async scan orchestrator. Runs plugins concurrently, streams results via WebSocket,
 logs everything to the database.
@@ -13,7 +13,7 @@ from database import Database
 from ws_manager import ConnectionManager
 from plugins import NaslPlugin, PluginResult, ScanContext
 
-logger = logging.getLogger('hawksight.engine')
+logger = logging.getLogger('panteon.engine')
 
 # Default scan targets for each Alien Inc company
 COMPANY_TARGETS = {
@@ -23,8 +23,8 @@ COMPANY_TARGETS = {
     '1609': [
         {'host': 'localhost', 'name': '1609 Holdings', 'ports': [80, 443]},
     ],
-    'hawksight': [
-        {'host': 'localhost', 'name': 'Hawksight', 'ports': [80, 443, 8721]},
+    'panteon': [
+        {'host': 'localhost', 'name': 'Panteon', 'ports': [80, 443, 8721]},
     ],
     'exosphere': [
         {'host': 'localhost', 'name': 'Exosphere', 'ports': [80, 443]},

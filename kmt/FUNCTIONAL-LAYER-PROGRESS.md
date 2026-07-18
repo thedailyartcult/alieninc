@@ -60,7 +60,7 @@ Main orchestrator that:
 
 ```bash
 # Analyze a specific company
-node kmt/cli.js hawksight
+node kmt/cli.js panteon
 
 # Get company overview
 node kmt/cli.js kmt overview
@@ -72,15 +72,15 @@ node kmt/cli.js portfolio
 node kmt/cli.js statute insights
 ```
 
-## Example Output (Hawksight)
+## Example Output (Panteon)
 
 ```
 📊 EXECUTIVE SUMMARY
-Company: Hawksight
+Company: Panteon
 Health Score: 93/100 (Strong)
 
 Key Findings:
-1. [INFO] Hawksight projects $1.8M revenue in 2026F
+1. [INFO] Panteon projects $1.8M revenue in 2026F
 2. [CRITICAL] Only 2.6 months of cash runway remaining
 3. [WARNING] High client concentration: Beacon Regional Bank is 44% of ACV
 
@@ -128,7 +128,7 @@ kmt/
 ## What This Enables
 
 An AI agent can now:
-1. **Query**: `node kmt/cli.js hawksight`
+1. **Query**: `node kmt/cli.js panteon`
 2. **Receive**: Structured analysis with health scores, findings, recommendations
 3. **Act**: Use the prioritized roadmap to guide improvements
 4. **Track**: Monitor progress against success metrics

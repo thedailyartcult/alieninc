@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Hawksight Engine — Setup & Launch Script
+# Panteon Engine — Setup & Launch Script
 # =============================================================================
 set -e
 
@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENGINE_DIR="$SCRIPT_DIR"
 
 echo "╔══════════════════════════════════════════════════════╗"
-echo "║  HAWKSIGHT Engine — Setup & Launch                  ║"
+echo "║  PANTEON Engine — Setup & Launch                  ║"
 echo "║  Vulnerability Scanner for Alien Inc.               ║"
 echo "╚══════════════════════════════════════════════════════╝"
 echo ""
@@ -39,12 +39,12 @@ pip install -q -r "$ENGINE_DIR/requirements.txt" 2>/dev/null
 mkdir -p "$ENGINE_DIR/data"
 
 echo ""
-echo "[*] Starting Hawksight Engine on http://0.0.0.0:8721"
+echo "[*] Starting Panteon Engine on http://0.0.0.0:8721"
 echo "[*] Login page: http://localhost:8721/login"
 echo "[*] Scan page:  http://localhost:8721/scan"
 echo "[*] Default credentials:"
 echo "    Username: admin"
-echo "    Password: hawksight2026"
+echo "    Password: panteon2026"
 echo ""
 echo "[*] Press Ctrl+C to stop"
 echo ""

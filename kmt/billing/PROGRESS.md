@@ -24,14 +24,14 @@ Internal fee structures across the 7 companies:
 
 | From | To | Management Fee Rate |
 |------|----|---------------------|
-| KMT | Hawksight | 12% |
+| KMT | Panteon | 12% |
 | KMT | Exosphere | 10% |
 | KMT | Statute & Precedent | 8% |
 | KMT | St. Alcantara Foundation | 5% (nonprofit) |
 | KMT | The Daily Art Cult | 10% |
 | KMT | 1609 Holdings | 15% |
 | 1609 Holdings | KMT | 15% |
-| 1609 Holdings | Hawksight | 10% |
+| 1609 Holdings | Panteon | 10% |
 | 1609 Holdings | Exosphere | 10% |
 
 ### Invoice Management
@@ -67,7 +67,7 @@ Internal fee structures across the 7 companies:
 ### Revenue by Company
 | Company | Revenue |
 |---------|---------|
-| Hawksight | $219,492 |
+| Panteon | $219,492 |
 | 1609 Holdings | $274,705 |
 | Exosphere | $29,975 |
 | Statute & Precedent | $3,888 |

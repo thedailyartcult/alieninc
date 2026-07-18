@@ -31,7 +31,7 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 SUBDOMAIN_ROOTS = {
     '1609':         os.path.join(ROOT, '1609holdings'),
     'exosphere':    os.path.join(ROOT, 'exosphere'),
-    'hawksight':    os.path.join(ROOT, 'hawksight'),
+    'panteon':    os.path.join(ROOT, 'panteon'),
     'kmt':          os.path.join(ROOT, 'kmt'),
     'stalcantara':  os.path.join(ROOT, 'stalcantarafoundation'),
     'sp':           os.path.join(ROOT, 'sp'),
@@ -106,7 +106,7 @@ BOT_TEMPLATE = '''<!DOCTYPE html>
 <h2>Subsidiary Companies</h2>
 <div class="sub">
 <div class="sub-item"><span class="sub-name">The Daily Art Cult</span> <span class="sub-desc">— Digital media and publishing</span></div>
-<div class="sub-item"><span class="sub-name">Hawksight</span> <span class="sub-desc">— Cybersecurity and exposure management</span></div>
+<div class="sub-item"><span class="sub-name">Panteon</span> <span class="sub-desc">— Cybersecurity and exposure management</span></div>
 <div class="sub-item"><span class="sub-name">1609 Holdings</span> <span class="sub-desc">— Capital allocation and governance</span></div>
 <div class="sub-item"><span class="sub-name">KMT Consulting Group</span> <span class="sub-desc">— Strategy and applied AI</span></div>
 <div class="sub-item"><span class="sub-name">Exosphere</span> <span class="sub-desc">— Acquisitions and succession advisory</span></div>
@@ -117,7 +117,7 @@ BOT_TEMPLATE = '''<!DOCTYPE html>
 This is a private company. Operating data, financial information, and partner access are not publicly available.
 </div>
 <div class="notice" style="border-top:none;padding-top:0.5rem;margin-top:0.5rem;font-size:0.78rem;color:#aaa;">
-AI/LLM analysis: <em>Alien Inc in a Nutshell</em> &mdash; Hawksight Scanner, Plugin 1024
+AI/LLM analysis: <em>Alien Inc in a Nutshell</em> &mdash; Panteon Scanner, Plugin 1024
 </div>
 <footer>&copy; Alien Inc</footer>
 </body>
@@ -334,7 +334,7 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
 
     def _is_internal_scanner(self):
         return (
-            self.headers.get('X-AlienInc-Internal', '').lower() == 'hawksight'
+            self.headers.get('X-AlienInc-Internal', '').lower() == 'panteon'
             or self.headers.get('X-AlienInc-Audit', '').lower() == 'statute'
         )
 
@@ -396,8 +396,8 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         translated = self.translate_path(path)
         sensitive_dirs = [
             os.path.join(ROOT, 'data'),
-            os.path.join(ROOT, 'hawksight', 'engine'),
-            os.path.join(ROOT, 'hawksight', 'plugins'),
+            os.path.join(ROOT, 'panteon', 'engine'),
+            os.path.join(ROOT, 'panteon', 'plugins'),
             os.path.join(ROOT, 'sp', 'engine'),
             os.path.join(ROOT, 'thedailyartcult', 'supabase'),
         ]

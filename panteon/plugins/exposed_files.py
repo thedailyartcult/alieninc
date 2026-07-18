@@ -66,7 +66,7 @@ class ExposedFiles(NaslPlugin):
             )
 
             for path, name, severity in self.SENSITIVE_PATHS:
-                req = f'GET {path} HTTP/1.1\r\nHost: {target}\r\nUser-Agent: Hawksight/1.0\r\nConnection: close\r\n\r\n'
+                req = f'GET {path} HTTP/1.1\r\nHost: {target}\r\nUser-Agent: Panteon/1.0\r\nConnection: close\r\n\r\n'
                 writer.write(req.encode())
                 await writer.drain()
 

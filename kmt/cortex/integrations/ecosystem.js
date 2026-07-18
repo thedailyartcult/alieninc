@@ -5,7 +5,7 @@
  * Enables cross-sell opportunities and unified client intelligence.
  * 
  * Architecture: Event-driven with message queue
- * Companies: 1609, Hawksight, Exosphere, Statute, TDAC, Alcantara
+ * Companies: 1609, Panteon, Exosphere, Statute, TDAC, Alcantara
  */
 
 const EcosystemIntegrator = (() => {
@@ -14,7 +14,7 @@ const EcosystemIntegrator = (() => {
     codename: "Ecosystem",
     companies: {
       kmt: { name: "KMT Consulting Group", role: "strategy_ai_consulting" },
-      hawksight: { name: "Hawksight Cyber Defense", role: "cybersecurity" },
+      panteon: { name: "Panteon Cyber Defense", role: "cybersecurity" },
       exosphere: { name: "Exosphere Succession Partners", role: "acquisition_advisory" },
       statute: { name: "Statute & Precedent", role: "legal_services" },
       tdac: { name: "The Daily Art Cult", role: "media_publishing" },
@@ -22,8 +22,8 @@ const EcosystemIntegrator = (() => {
       "1609": { name: "1609 Holdings", role: "holding_company" }
     },
     intercompanyRates2026: {
-      "kmt-hawksight": 96000,
-      "exosphere-hawksight": 88000,
+      "kmt-panteon": 96000,
+      "exosphere-panteon": 88000,
       "exosphere-statute": 142000,
       "kmt-statute": 78000,
       "alcantara-tdac": 54000,
@@ -40,7 +40,7 @@ const EcosystemIntegrator = (() => {
   const ServiceDependencies = {
     // KMT requires services from other companies
     kmtRequires: {
-      hawksight: [
+      panteon: [
         { service: "cloud_security", description: "Security for client data and AI models" },
         { service: "vulnerability_scans", description: "Regular security assessments" },
         { service: "client_delivery_security", description: "Security review of client deliverables" }
@@ -62,7 +62,7 @@ const EcosystemIntegrator = (() => {
         { service: "strategy_advisory", description: "Strategic options for acquisition targets" },
         { service: "post_acquisition_integration", description: "PMI for completed deals" }
       ],
-      hawksight: [
+      panteon: [
         { service: "security_strategy", description: "Cybersecurity strategy consulting" },
         { service: "compliance_advisory", description: "Regulatory compliance consulting" }
       ],
@@ -83,9 +83,9 @@ const EcosystemIntegrator = (() => {
       
       // Map service line adjacencies
       const adjacencyMap = {
-        "kmt-strategy": ["kmt-ai", "kmt-ops", "hawksight-mdr", "statute-governance"],
-        "kmt-ai": ["kmt-strategy", "kmt-ops", "hawksight-exposure", "statute-ai_policy"],
-        "kmt-ops": ["kmt-strategy", "kmt-pmi", "hawksight-diligence", "statute-contracts"],
+        "kmt-strategy": ["kmt-ai", "kmt-ops", "panteon-mdr", "statute-governance"],
+        "kmt-ai": ["kmt-strategy", "kmt-ops", "panteon-exposure", "statute-ai_policy"],
+        "kmt-ops": ["kmt-strategy", "kmt-pmi", "panteon-diligence", "statute-contracts"],
         "kmt-pmi": ["kmt-ops", "exosphere-sellside", "statute-transactions"]
       };
 

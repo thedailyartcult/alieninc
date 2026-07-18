@@ -36,7 +36,7 @@ const COMPANIES = {
     alieninc:         { name: 'Alien.Inc',                    url: 'https://alieninc.tech/' },
     '1609holdings':   { name: '1609 Holdings',               url: 'https://1609.alieninc.tech' },
     exosphere:        { name: 'Exosphere',                    url: 'https://exosphere.alieninc.tech' },
-    hawksight:        { name: 'Hawksight',                    url: 'https://hawksight.alieninc.tech' },
+    panteon:        { name: 'Panteon',                    url: 'https://panteon.alieninc.tech' },
     kmt:              { name: 'KMT Consulting Group',         url: 'https://kmt.alieninc.tech' },
     thedailyartcult:  { name: 'The Daily Art Cult',           url: 'https://thedailyartcult.lol' },
     alcantara:        { name: 'St. Alcantara Foundation',     url: 'https://stalcantara.alieninc.tech' },

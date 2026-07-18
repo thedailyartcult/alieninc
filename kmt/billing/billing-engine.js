@@ -274,14 +274,14 @@ class BillingSystem {
 
   _loadTransferPricingRules() {
     const rules = [
-      { from: 'kmt', to: 'hawksight', managementFeeRate: 0.12, description: 'KMT to Hawksight - Standard consulting rate' },
+      { from: 'kmt', to: 'panteon', managementFeeRate: 0.12, description: 'KMT to Panteon - Standard consulting rate' },
       { from: 'kmt', to: 'exosphere', managementFeeRate: 0.10, description: 'KMT to Exosphere - PE portfolio rate' },
       { from: 'kmt', to: 'statute', managementFeeRate: 0.08, description: 'KMT to Statute - Legal services rate' },
       { from: 'kmt', to: 'stalcantara', managementFeeRate: 0.05, description: 'KMT to St. Alcantara - Nonprofit rate' },
       { from: 'kmt', to: 'thedailyartcult', managementFeeRate: 0.10, description: 'KMT to TDAC - Standard rate' },
       { from: 'kmt', to: '1609holdings', managementFeeRate: 0.15, description: 'KMT to 1609 - Holdco oversight rate' },
       { from: '1609holdings', to: 'kmt', managementFeeRate: 0.15, description: '1609 to KMT - Management fee' },
-      { from: '1609holdings', to: 'hawksight', managementFeeRate: 0.10, description: '1609 to Hawksight - Portfolio oversight' },
+      { from: '1609holdings', to: 'panteon', managementFeeRate: 0.10, description: '1609 to Panteon - Portfolio oversight' },
       { from: '1609holdings', to: 'exosphere', managementFeeRate: 0.10, description: '1609 to Exosphere - Portfolio oversight' }
     ];
 

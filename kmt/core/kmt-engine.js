@@ -45,7 +45,7 @@ class KMTEngine {
 
   /**
    * Analyze a company and provide consulting output
-   * @param {string} companyId - Company ID (hawksight, kmt, etc.)
+   * @param {string} companyId - Company ID (panteon, kmt, etc.)
    * @param {Object} options - Analysis options
    * @returns {Object} Comprehensive consulting output
    */
@@ -379,7 +379,7 @@ class KMTEngine {
       role.contributions = ['Capital allocation', 'Governance', 'Strategic oversight'];
     } else if (company.id === 'kmt') {
       role.contributions = ['Strategy consulting', 'Operational improvement', 'AI transformation'];
-    } else if (company.id === 'hawksight') {
+    } else if (company.id === 'panteon') {
       role.contributions = ['Cybersecurity', 'Risk management', 'Diligence support'];
     } else if (company.id === 'exosphere') {
       role.contributions = ['Acquisition sourcing', 'Succession advisory', 'Deal execution'];

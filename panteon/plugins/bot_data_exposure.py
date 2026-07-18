@@ -61,7 +61,7 @@ SANITIZED_INDICATOR = 'Private — login required'
 ECOSYSTEM_SITES = [
     ('/',                  'Alien Inc (Group)',            'Critical — main landing page with revenue metrics'),
     ('/1609holdings/',     '1609 Holdings',                'Capital allocator subsidiary'),
-    ('/hawksight/',        'Hawksight',                    'Cybersecurity subsidiary'),
+    ('/panteon/',        'Panteon',                    'Cybersecurity subsidiary'),
     ('/exosphere/',        'Exosphere',                    'Acquisitions subsidiary'),
     ('/kmt/',              'KMT Consulting Group',         'Consulting subsidiary'),
     ('/sp/','Statute & Precedent',          'Legal intelligence subsidiary'),
@@ -97,7 +97,7 @@ class BotDataExposure(NaslPlugin):
     )
     SOLUTION = (
         '1. Implement server-side User-Agent detection that matches the '
-        'Hawksiight BOT_PATTERNS list (synced with security-layer.js). '
+        'Panteon BOT_PATTERNS list (synced with security-layer.js). '
         '2. Serve sanitized HTML to bots — strip ecosystem-data.js / '
         'ecosystem-render.js script tags, remove inline EcosystemData.* '
         'calls, replace [data-ecosystem] text content with "Private — '

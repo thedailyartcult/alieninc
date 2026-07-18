@@ -21,7 +21,7 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 | The Daily Art Cult | `https://thedailyartcult.lol` | Digital media, publishing, membership, editorial studio, licensing |
 | 1609 Holdings | `https://1609.alieninc.tech` | Capital allocation, governance, portfolio reporting |
 | 1609 Fund Centre | `https://1609.alieninc.tech/funds.html` | Group operating model and financial access page |
-| Hawksight | `https://hawksight.alieninc.tech` | Cybersecurity defense, managed detection, exposure management, diligence |
+| Panteon | `https://panteon.alieninc.tech` | Cybersecurity defense, managed detection, exposure management, diligence |
 | Exosphere | `https://exosphere.alieninc.tech` | Acquisition sourcing, succession advisory, commercial diligence |
 | KMT Consulting Group | `https://kmt.alieninc.tech` | Strategy, applied AI, operating model, post-merger integration |
 | St. Alcantara Foundation | `https://stalcantara.alieninc.tech` | Culture and art preservation nonprofit |
@@ -34,7 +34,7 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 | `alieninc.tech` | `./` |
 | `1609.aliendinc.tech` | `1609holdings/` |
 | `exosphere.aliendinc.tech` | `exosphere/` |
-| `hawksight.aliendinc.tech` | `hawksight/` |
+| `panteon.aliendinc.tech` | `panteon/` |
 | `kmt.aliendinc.tech` | `kmt/` |
 | `stalcantara.aliendinc.tech` | `stalcantarafoundation/` |
 | `sp.aliendinc.tech` | `sp/` |
@@ -43,7 +43,7 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 
 | Subdomain | Path | Notes |
 | --- | --- | --- |
-| `hawksight.aliendinc.tech` | `/login.html` | Hawksight portal/login surface |
+| `panteon.aliendinc.tech` | `/login.html` | Panteon portal/login surface |
 | `stalcantara.aliendinc.tech` | `/login.html` | Foundation login surface |
 | `stalcantara.aliendinc.tech` | `/privacy.html` | Foundation privacy page |
 | `aliendinc.tech` | `/data/alieninc-ecosystem.json` | Operating dataset |
@@ -52,9 +52,9 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 
 | Loop | Lead | Participants |
 | --- | --- | --- |
-| Acquire-to-Improve | Exosphere | 1609 Holdings, KMT, Hawksight, Statute & Precedent |
+| Acquire-to-Improve | Exosphere | 1609 Holdings, KMT, Panteon, Statute & Precedent |
 | Culture-to-Audience | St. Alcantara Foundation | The Daily Art Cult, Statute & Precedent, 1609 Holdings |
-| Risk-to-Product | Hawksight | KMT, Statute & Precedent, Exosphere |
+| Risk-to-Product | Panteon | KMT, Statute & Precedent, Exosphere |
 | Insight-to-Capital | 1609 Holdings | KMT, The Daily Art Cult, Exosphere |
 
 ## Editing Rule

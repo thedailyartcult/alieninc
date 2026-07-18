@@ -20,7 +20,7 @@ class FinancialAnalysis {
 
   /**
    * Analyze a company's financial health
-   * @param {string} companyId - Company ID (hawksight, kmt, etc.)
+   * @param {string} companyId - Company ID (panteon, kmt, etc.)
    * @returns {Object} Financial analysis with insights and recommendations
    */
   analyze(companyId) {

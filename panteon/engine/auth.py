@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import jwt
 from passlib.context import CryptContext
 
-SECRET_KEY = os.environ.get('HS_SECRET', 'hawksight-engine-2026-alieninc-secret-key')
+SECRET_KEY = os.environ.get('HS_SECRET', 'panteon-engine-2026-alieninc-secret-key')
 ALGORITHM = 'HS256'
 TOKEN_EXPIRY_HOURS = 24
 

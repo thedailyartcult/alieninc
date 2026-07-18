@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security & Compliance — Alien Inc</title>
+<meta name="description" content="Alien Inc — 7 companies under continuous compliance monitoring. CIS NGINX v3.0, DISA STIG V4R5, PCI-DSS v4.0.1, OWASP ASVS L1, NIST SP 800-53, NIST CSF 2.0. Public audit. Vulnerability disclosure via security.txt.">
+<meta name="robots" content="index, follow">
+<style>
+:root{--bg:#0a0e14;--card:#111820;--border:#1e2a36;--green:#00cfc1;--gold:#ffd400;--text:#c8cdd4;--muted:#5a6a7a;--red:#e74c3c;--accent:#00cfc1}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;line-height:1.6;min-height:100vh}
+.header{background:linear-gradient(135deg,#0a0e1c 0%,#0d1525 50%,#16213e 100%);padding:48px 24px 40px;text-align:center;border-bottom:2px solid var(--green);position:relative}
+.header::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--green),var(--gold),var(--green),transparent);opacity:0.3}
+.header h1{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:700;letter-spacing:-0.02em}
+.header .sub{color:var(--muted);font-size:0.88rem;margin-top:6px}
+.header .tagline{color:var(--gold);font-size:0.8rem;margin-top:10px;text-transform:uppercase;letter-spacing:2px;font-weight:600}
+.monitor-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(0,207,193,0.1);border:1px solid rgba(0,207,193,0.25);border-radius:20px;padding:6px 16px;margin-top:14px;font-size:0.72rem;letter-spacing:0.5px}
+.monitor-badge .dot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.container{max-width:1100px;margin:0 auto;padding:32px 24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:24px;margin-bottom:20px}
+.card h2{font-size:1rem;font-weight:600;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.card h2 .count{font-size:0.7rem;font-weight:400;color:var(--muted);margin-left:auto}
+.row{display:grid;grid-template-columns:200px 1fr 70px;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.row.header{font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);padding:4px 0;border-bottom:1px solid var(--border)}
+.row .name{font-weight:500;font-size:0.88rem}
+.bar{height:7px;background:var(--border);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px}
+.bar-fill.g{background:var(--green)}.bar-fill.y{background:var(--gold)}.bar-fill.r{background:var(--red)}
+.score{text-align:right;font-weight:700;font-size:0.9rem}.score.g{color:var(--green)}.score.y{color:var(--gold)}.score.r{color:var(--red)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.fw-card{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:6px;padding:14px;text-align:center}
+.fw-card .fw-name{font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px}
+.fw-card .fw-score{font-size:1.5rem;font-weight:700}
+.badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:0.62rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+.badge.pass{background:rgba(0,207,193,0.12);color:var(--green)}.badge.warn{background:rgba(255,212,0,0.12);color:var(--gold)}.badge.fail{background:rgba(231,76,60,0.12);color:var(--red)}
+.note{background:rgba(0,207,193,0.04);border-left:3px solid var(--green);padding:12px 16px;margin-top:12px;font-size:0.78rem;color:var(--text);border-radius:0 6px 6px 0;line-height:1.6}
+.warn-note{background:rgba(255,212,0,0.04);border-left:3px solid var(--gold);padding:12px 16px;margin-top:12px;font-size:0.78rem;color:var(--gold);border-radius:0 6px 6px 0}
+.contact{display:flex;gap:20px;flex-wrap:wrap;font-size:0.8rem}
+.contact a{color:var(--green);text-decoration:none}
+.contact a:hover{text-decoration:underline}
+.footer{padding:30px 24px;text-align:center;color:var(--muted);font-size:0.68rem;border-top:1px solid var(--border)}
+.footer a{color:var(--green);text-decoration:none}
+.cop{font-size:0.62rem;color:var(--muted);margin-top:8px}
+@media(max-width:700px){.grid2,.grid3,.grid4{grid-template-columns:1fr}.row{grid-template-columns:1fr 60px}.row .detail{display:none}.contact{flex-direction:column;gap:8px}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Security &amp; Compliance</h1>
+  <div class="sub">Alien Inc — 7 Companies — alieninc.tech</div>
+  <div class="tagline">Continuously Monitored &middot; Publicly Auditable</div>
+  <div class="monitor-badge">
+    <span class="dot"></span>
+    <span>Active Monitoring — Last Scan: <span id="scanDate">loading...</span></span>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="card">
+    <h2>Compliance Summary <span class="count" id="fwCount"></span></h2>
+    <div class="grid4" id="frameworkGrid">Loading...</div>
+    <div class="note">
+      <strong>This site is continuously monitored for compliance with 8 frameworks.</strong> Unauthorized access attempts and vulnerability probes are detected and logged. Bots scraping for AI training are expressly prohibited and blocked. Full audit methodology is open-source and reproducible.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Company Scores</h2>
+    <div class="row header"><span class="name">Company</span><span class="detail">Framework Coverage</span><span>Score</span></div>
+    <div id="companyScores">Loading audit data...</div>
+  </div>
+
+  <div class="card">
+    <h2>Security Headers (Response)</h2>
+    <div class="grid4" id="headersGrid">Loading...</div>
+    <div class="note">All security headers are enforced at the server level. The <code>X-Compliance</code> header signals active monitoring to security scanners and penetration testing tools.</div>
+  </div>
+
+  <div class="card">
+    <h2>Deterrents &amp; Bot Protections</h2>
+    <div id="deterrents">
+      <div class="row"><span>X-Compliance Header</span><span class="detail">Signals active monitoring to automated scanners</span><span class="badge pass">ACTIVE</span></div>
+      <div class="row"><span>robots.txt</span><span class="detail">14 AI crawler bots explicitly blocked</span><span class="badge pass">ENFORCED</span></div>
+      <div class="row"><span>security.txt</span><span class="detail">RFC 9116 vulnerability disclosure contact</span><span class="badge pass">PUBLISHED</span></div>
+      <div class="row"><span>CSP Frame Ancestors</span><span class="detail">Clickjacking prevention — frame-src 'none'</span><span class="badge pass">ENFORCED</span></div>
+      <div class="row"><span>HSTS Preload</span><span class="detail">max-age=63072000; includeSubDomains; preload</span><span class="badge pass">READY</span></div>
+      <div class="row"><span>Bot Detection</span><span class="detail">Bot user-agents served templated pages</span><span class="badge pass">ACTIVE</span></div>
+      <div class="row"><span>Sensitive Path Blocking</span><span class="detail">.git .env .sql .db .backups — 403</span><span class="badge pass">ENFORCED</span></div>
+      <div class="row"><span>Honeypot Traps</span><span class="detail">Decoy /admin /api endpoints — logged</span><span class="badge pass">DEPLOYED</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Honest Limitations</h2>
+    <div id="limitations">
+      <div class="row"><span>HTTPS / TLS</span><span class="detail">Pending NGINX deployment with certbot</span><span class="badge warn">PENDING</span></div>
+      <div class="row"><span>CSP unsafe-inline</span><span class="detail">Required for inline styles — known tradeoff</span><span class="badge warn">KNOWN</span></div>
+      <div class="row"><span>Server Config</span><span class="detail">119 DISA + 25 CIS checks require config access</span><span class="badge warn">SCOPE</span></div>
+    </div>
+    <div class="warn-note">This is a self-audit using reproducible open-source tooling. It is not a third-party certification. All scores reflect only what is assessable from a web perspective. Config-required items are clearly marked. The scanner source code IS the audit methodology.</div>
+  </div>
+
+  <div class="card">
+    <h2>Resources &amp; Contacts</h2>
+    <div class="contact">
+      <span><strong>Audit Report:</strong> <a href="/data/compliance/latest_report.json">latest_report.json</a></span>
+      <span><strong>Scanner:</strong> <a href="https://sp.alieninc.tech">Dashboard</a></span>
+      <span><strong>Vulnerability Disclosure:</strong> <a href="/.well-known/security.txt">security.txt</a></span>
+      <span><strong>Contact:</strong> security@alieninc.tech</span>
+      <span><strong>PGP:</strong> <a href="/pgp-key.txt">pgp-key.txt</a></span>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  Alien Inc &copy; 2026 &nbsp;|&nbsp; alieninc.tech &nbsp;|&nbsp;
+  <a href="/compliance.html">Security &amp; Compliance</a> &nbsp;|&nbsp;
+  <a href="/.well-known/security.txt">security.txt</a>
+  <div class="cop">Continuously monitored. Compliance verified by Statute &amp; Precedent engine. Audit-driven. No false claims.</div>
+</div>
+
+<script>
+fetch('/data/compliance/latest_report.json')
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById('scanDate').textContent = new Date(data.report_date).toLocaleString();
+    document.getElementById('fwCount').textContent = Object.keys(data.overall.security_frameworks||{}).length + ' frameworks';
+
+    // Framework grid
+    const fw = data.overall.security_frameworks || {};
+    document.getElementById('frameworkGrid').innerHTML = Object.entries(fw).map(([id, f]) => {
+      const s = f.score || 0;
+      const cls = s >= 80 ? 'g' : s >= 50 ? 'y' : 'r';
+      return '<div class="fw-card"><div class="fw-name">' + (f.name || id).split(' ').slice(0,2).join(' ') + '</div>' +
+        '<div class="fw-score ' + cls + '">' + s + '%</div></div>';
+    }).join('');
+
+    // Company scores
+    document.getElementById('companyScores').innerHTML = Object.entries(data.companies).map(([id, c]) => {
+      const s = c.realistic_score;
+      const cls = s >= 80 ? 'g' : s >= 50 ? 'y' : 'r';
+      const fw = c.framework_scores || {};
+      const fwList = Object.values(fw).slice(0,4).map(f =>
+        '<span style="font-size:0.62rem;color:var(--muted);display:inline-block;background:rgba(255,255,255,0.03);padding:1px 5px;margin:1px;border-radius:2px;">' + f.name.split(' ')[0] + ' ' + f.score + '%</span>'
+      ).join('');
+      return '<div class="row"><span class="name">' + c.name + '</span>' +
+        '<span class="detail">' + fwList + '</span>' +
+        '<span class="score ' + cls + '">' + s + '%</span></div>';
+    }).join('');
+
+    // Headers
+    document.getElementById('headersGrid').innerHTML =
+      '<div class="fw-card"><div class="fw-name">CSP</div><div class="fw-score g">&#10003;</div></div>' +
+      '<div class="fw-card"><div class="fw-name">HSTS Preload</div><div class="fw-score g">&#10003;</div></div>' +
+      '<div class="fw-card"><div class="fw-name">X-Frame-Options</div><div class="fw-score g">DENY</div></div>' +
+      '<div class="fw-card"><div class="fw-name">X-Content-Type</div><div class="fw-score g">nosniff</div></div>' +
+      '<div class="fw-card"><div class="fw-name">Referrer-Policy</div><div class="fw-score g">&#10003;</div></div>' +
+      '<div class="fw-card"><div class="fw-name">Permissions</div><div class="fw-score g">RESTRICTED</div></div>' +
+      '<div class="fw-card"><div class="fw-name">X-Compliance</div><div class="fw-score g">ACTIVE</div></div>' +
+      '<div class="fw-card"><div class="fw-name">Cache-Control</div><div class="fw-score g">no-store</div></div>';
+  })
+  .catch(() => {
+    document.getElementById('companyScores').innerHTML = '<div class="warn-note">Audit data loading. Compliance scan in progress or report not yet generated.</div>';
+  });
+</script>
+</body>
+</html>

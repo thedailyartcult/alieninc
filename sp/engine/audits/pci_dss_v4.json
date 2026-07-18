@@ -1,0 +1,284 @@
+{
+  "audit_type": "web_application",
+  "name": "PCI-DSS v4.0.1",
+  "version": "4.0.1",
+  "framework": {
+    "id": "pci_dss",
+    "name": "PCI-DSS",
+    "weight": 0.2,
+    "color": "#3498db"
+  },
+  "description": "Payment Card Industry Data Security Standard v4.0.1. 12 requirements organized into 6 control objectives. This audit covers the subset applicable to any website, plus payment-specific checks prepared for planned payment integration.",
+  "severity": "critical",
+  "honest_disclosure": "This site does not currently process, store, or transmit cardholder data (CHD). PCI-DSS is not in scope. The universal web security checks below are best practice. Items marked 'not_applicable' will become assessable when payment pages are deployed. When payment integration begins, the site will fall under SAQ A (simplest scope \u2014 fully outsourced payments).",
+  "future_scoping_note": "When payments are integrated via a validated TPSP (Stripe, PayPal, Braintree), this site will be eligible for SAQ A. SAQ A covers requirements 2, 5, 6, 7, 8, 9, 11, 12 \u2014 but NOT requirements 1, 3, 4, 10 (which are covered by the TPSP's compliance).",
+  "assessability_legend": {
+    "universal": "Applies to any website, regardless of payment processing",
+    "static": "Verifiable via static file scan",
+    "http_live": "Verifiable via live HTTP response headers",
+    "config_required": "Requires server config access",
+    "not_applicable": "Not applicable \u2014 no CDE or payment processing",
+    "payment_required": "Will apply when payment pages are deployed (future)"
+  },
+  "group_policies": [
+    {
+      "name": "Req 2: Apply Secure Configurations to All System Components",
+      "description": "NIST SP 800-53 CM-6 \u2014 configuration standards, least functionality, vendor defaults",
+      "items": [
+        {
+          "id": "pci-2.2.4",
+          "type": "FILE_CHECK",
+          "requirement": "PCI DSS 2.2.4",
+          "description": "Req 2.2.4: Implement additional security features for required services/protocols deemed insecure. No sensitive files exposed (.git, .env, backups).",
+          "severity": "high",
+          "assessability": "universal",
+          "regulation": "PCI DSS v4.0.1 Req 2.2.4 \u2014 secure system configurations",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "file_paths": [
+              ".git",
+              ".env",
+              ".env.production",
+              ".htaccess",
+              "backup.sql",
+              "id_rsa",
+              ".DS_Store"
+            ],
+            "option": "MUST_NOT_EXIST",
+            "scan_subdirs": true
+          },
+          "remediation": "Remove all sensitive configuration and backup files from web-accessible directories."
+        },
+        {
+          "id": "pci-2.2.1",
+          "type": "INFO",
+          "requirement": "PCI DSS 2.2.1",
+          "description": "Req 2.2.1: Configuration standards address known security vulnerabilities and industry best practices (CIS Benchmarks, DISA STIGs).",
+          "severity": "medium",
+          "assessability": "config_required",
+          "regulation": "PCI DSS v4.0.1 Req 2.2.1 \u2014 configuration standards",
+          "check": {},
+          "remediation": "Document and implement configuration standards aligned with CIS Benchmarks for all system components."
+        }
+      ]
+    },
+    {
+      "name": "Req 4: Protect Cardholder Data with Strong Cryptography During Transmission",
+      "description": "NIST SC-8 \u2014 TLS 1.2+ for all CHD transmission. If no CHD is transmitted, this is a universal best practice.",
+      "items": [
+        {
+          "id": "pci-4.2.1",
+          "type": "HTTP_VERIFY",
+          "requirement": "PCI DSS 4.2.1",
+          "description": "Req 4.2.1: Strong cryptography and security protocols (TLS 1.2+) must be used for all transmission of cardholder data over open, public networks. Universal web security best practice regardless of CHD scope.",
+          "severity": "critical",
+          "assessability": "http_live",
+          "regulation": "PCI DSS v4.0.1 Req 4.2.1 \u2014 secure transmission; NIST SC-8",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "check_id": "cis-6.1-https"
+          },
+          "remediation": "Deploy TLS 1.2+ with valid certificate. All pages that handle or precede payment must be served over HTTPS."
+        },
+        {
+          "id": "pci-4.2.1.1",
+          "type": "INFO",
+          "requirement": "PCI DSS 4.2.1.1",
+          "description": "Req 4.2.1.1: Maintain an inventory of trusted keys and certificates. Track expiry dates, certificate authorities, and key strengths.",
+          "severity": "high",
+          "assessability": "config_required",
+          "regulation": "PCI DSS v4.0.1 Req 4.2.1.1 \u2014 certificate inventory",
+          "check": {},
+          "remediation": "Create and maintain a documented inventory of all TLS certificates with expiry dates and CA information."
+        }
+      ]
+    },
+    {
+      "name": "Req 6: Develop and Maintain Secure Systems and Software",
+      "description": "NIST SI-2 \u2014 patch management, secure development, web application protection, payment page script integrity",
+      "items": [
+        {
+          "id": "pci-6.2.4",
+          "type": "FILE_CONTENT_CHECK",
+          "requirement": "PCI DSS 6.2.4",
+          "description": "Req 6.2.4: All software components must be maintained and patched. No known-vulnerable CDN library versions (jQuery 1.x/2.x, Bootstrap <4, Font Awesome <5).",
+          "severity": "high",
+          "assessability": "universal",
+          "regulation": "PCI DSS v4.0.1 Req 6.2.4 \u2014 software maintenance; NIST SI-2",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "patterns": [],
+            "anti_patterns": [
+              "jquery[/-]1\\.[0-9]\\.",
+              "jquery[/-]2\\.[0-9]\\.",
+              "bootstrap[/-][1-3]\\.",
+              "font-?awesome[/-][1-4]\\."
+            ],
+            "mode": "any",
+            "file_pattern": "**/*.html"
+          },
+          "remediation": "Update all CDN libraries to current versions. Remove deprecated jQuery and Bootstrap versions."
+        },
+        {
+          "id": "pci-6.4.2",
+          "type": "INFO",
+          "requirement": "PCI DSS 6.4.2",
+          "description": "Req 6.4.2: Deploy an automated technical solution (WAF or similar) that continually detects and prevents web-based attacks on public-facing web applications. Must protect against OWASP Top 10 and generate audit logs/alerts.",
+          "severity": "high",
+          "assessability": "not_applicable",
+          "regulation": "PCI DSS v4.0.1 Req 6.4.2 \u2014 web application firewall; NIST SC-7",
+          "check": {},
+          "remediation": "Deploy a WAF (Cloudflare, AWS WAF, ModSecurity) in front of the web server. Configure to block OWASP Top 10 attacks and log all blocked requests."
+        }
+      ]
+    },
+    {
+      "name": "Req 7 & 8: Access Control & Authentication",
+      "description": "NIST AC-6, IA-2 \u2014 least privilege, unique IDs, MFA for CDE access",
+      "items": [
+        {
+          "id": "pci-7.2.2",
+          "type": "INFO",
+          "requirement": "PCI DSS 7.2.2",
+          "description": "Req 7.2.2: Access to system components and data is assigned to individuals based on job classification and function (least privilege).",
+          "severity": "high",
+          "assessability": "config_required",
+          "regulation": "PCI DSS v4.0.1 Req 7.2.2 \u2014 access control; NIST AC-6",
+          "check": {},
+          "remediation": "Document access roles. Restrict server/site deployment access to authorized personnel only."
+        },
+        {
+          "id": "pci-8.3.1",
+          "type": "INFO",
+          "requirement": "PCI DSS 8.3.1",
+          "description": "Req 8.3.1: Multi-factor authentication (MFA) is implemented for all access into the CDE (Cardholder Data Environment).",
+          "severity": "critical",
+          "assessability": "config_required",
+          "regulation": "PCI DSS v4.0.1 Req 8.3.1 \u2014 MFA for CDE; NIST IA-2(1)",
+          "check": {},
+          "remediation": "Implement MFA for all administrative access to systems in the CDE. Use TOTP, FIDO2, or certificate-based MFA."
+        },
+        {
+          "id": "pci-8.3.9",
+          "type": "INFO",
+          "requirement": "PCI DSS 8.3.9",
+          "description": "Req 8.3.9: If passwords are the only authentication factor, they must be changed at least every 90 days or a security posture assessment must justify alternative frequency.",
+          "severity": "medium",
+          "assessability": "config_required",
+          "regulation": "PCI DSS v4.0.1 Req 8.3.9 \u2014 password rotation",
+          "check": {},
+          "remediation": "Configure password rotation policy: 90-day maximum, or implement MFA as primary factor."
+        }
+      ]
+    },
+    {
+      "name": "Req 11: Test Security of Systems and Networks Regularly",
+      "description": "NIST RA-5 \u2014 vulnerability scanning, penetration testing, file integrity monitoring, payment page tamper detection",
+      "items": [
+        {
+          "id": "pci-11.3.1.2",
+          "type": "INFO",
+          "requirement": "PCI DSS 11.3.1.2",
+          "description": "Req 11.3.1.2: External vulnerability scans must be performed by a PCI ASV (Approved Scanning Vendor) at least quarterly. Required for SAQ A merchants with redirect/iframe.",
+          "severity": "critical",
+          "assessability": "not_applicable",
+          "regulation": "PCI DSS v4.0.1 Req 11.3.1.2 \u2014 ASV scans; NIST RA-5",
+          "check": {},
+          "remediation": "Schedule quarterly external vulnerability scans with a PCI ASV. Rescan until passing grade achieved."
+        },
+        {
+          "id": "pci-11.6.1",
+          "type": "INFO",
+          "requirement": "PCI DSS 11.6.1",
+          "description": "Req 11.6.1 [FUTURE-DATED \u2014 effective 31 Mar 2025]: Deploy change- and tamper-detection mechanism to alert on unauthorized modification to security headers and script contents of payment pages (client-side). Works with Req 6.4.3 for e-commerce skimming protection.",
+          "severity": "critical",
+          "assessability": "payment_required",
+          "regulation": "PCI DSS v4.0.1 Req 11.6.1 \u2014 payment page tamper detection",
+          "check": {},
+          "remediation": "When payment pages are deployed: implement CSP reporting, SRI integrity monitoring, and client-side script change detection."
+        },
+        {
+          "id": "pci-11.5.2",
+          "type": "INFO",
+          "requirement": "PCI DSS 11.5.2",
+          "description": "Req 11.5.2: Deploy file integrity monitoring (FIM) or change-detection mechanism on critical system files. Alert on unauthorized modifications.",
+          "severity": "medium",
+          "assessability": "config_required",
+          "regulation": "PCI DSS v4.0.1 Req 11.5.2 \u2014 file integrity monitoring; NIST SI-7",
+          "check": {},
+          "remediation": "Deploy FIM (AIDE, Tripwire, OSSEC) on critical system files. Configure alerts for unauthorized changes."
+        }
+      ]
+    },
+    {
+      "name": "Req 3 & 5: Data Protection & Malware",
+      "description": "Requirements that apply when CHD is stored or when systems are in CDE scope",
+      "items": [
+        {
+          "id": "pci-3.4.1",
+          "type": "FILE_CONTENT_CHECK",
+          "requirement": "PCI DSS 3.4.1",
+          "description": "Req 3.4.1: PAN must be masked when displayed (maximum first six and last four digits visible). No unmasked credit card numbers or SSNs in HTML source, localStorage, or JavaScript.",
+          "severity": "critical",
+          "assessability": "universal",
+          "regulation": "PCI DSS v4.0.1 Req 3.4.1 \u2014 PAN masking",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "patterns": [],
+            "anti_patterns": [
+              "\\b\\d{4}[-\\s]?\\d{4}[-\\s]?\\d{4}[-\\s]?\\d{4}\\b",
+              "\\b\\d{3}[-\\s]?\\d{2}[-\\s]?\\d{4}\\b"
+            ],
+            "mode": "any",
+            "file_pattern": "**/*.html",
+            "strip_html": true
+          },
+          "remediation": "Never include unmasked PAN (credit card numbers) in HTML source code, JavaScript, or localStorage."
+        },
+        {
+          "id": "pci-5.2.1",
+          "type": "INFO",
+          "requirement": "PCI DSS 5.2.1",
+          "description": "Req 5.2.1: Anti-malware solution(s) must be deployed on all systems commonly affected by malicious software. Required for SAQ A merchant systems.",
+          "severity": "high",
+          "assessability": "config_required",
+          "regulation": "PCI DSS v4.0.1 Req 5.2.1 \u2014 anti-malware",
+          "check": {},
+          "remediation": "Deploy anti-malware on all merchant systems. Ensure real-time scanning and automatic updates."
+        }
+      ]
+    },
+    {
+      "name": "Req 12: Information Security Policy",
+      "description": "Organizational policies, security awareness, incident response, TPSP management",
+      "items": [
+        {
+          "id": "pci-12.5.1",
+          "type": "INFO",
+          "requirement": "PCI DSS 12.5.1",
+          "description": "Req 12.5.1: PCI DSS scope must be documented and validated at least annually. Define all system components in scope, including connected-to and security-impacting systems.",
+          "severity": "medium",
+          "assessability": "config_required",
+          "regulation": "PCI DSS v4.0.1 Req 12.5.1 \u2014 scope documentation",
+          "check": {},
+          "remediation": "Document PCI DSS scope, including network diagrams, data flow diagrams, and system inventory. Review and update annually."
+        },
+        {
+          "id": "pci-12.10.1",
+          "type": "INFO",
+          "requirement": "PCI DSS 12.10.1",
+          "description": "Req 12.10.1: An incident response plan must be documented, maintained, and tested at least annually. Must include roles, responsibilities, communication procedures, and business recovery processes.",
+          "severity": "high",
+          "assessability": "config_required",
+          "regulation": "PCI DSS v4.0.1 Req 12.10.1 \u2014 incident response",
+          "check": {},
+          "remediation": "Create and maintain an incident response plan. Test annually with tabletop exercises or actual incident simulations."
+        }
+      ]
+    }
+  ]
+}

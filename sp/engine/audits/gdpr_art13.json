@@ -1,0 +1,321 @@
+{
+  "audit_type": "static_website",
+  "name": "GDPR Art. 13 \u2014 Information Obligations",
+  "version": "1.0",
+  "framework": {
+    "id": "gdpr",
+    "name": "GDPR Compliance",
+    "weight": 0.4,
+    "color": "#00cfc1"
+  },
+  "description": "General Data Protection Regulation Art. 13 \u2014 information to be provided where personal data are collected from the data subject. 12 required items scanned across all HTML, JS, and TXT files.",
+  "severity": "critical",
+  "regulation": "GDPR Art. 13(1)(a)-(f), Art. 13(2)(a)-(e), Art. 7(3), Art. 22 \u2014 financial risk up to \u20ac20M or 4% annual global turnover",
+  "group_policies": [
+    {
+      "name": "Art. 13(1) \u2014 Controller Information",
+      "description": "Data controller identity, contact details, DPO, purposes, legal basis, recipients, transfers",
+      "items": [
+        {
+          "id": "controller-identity",
+          "type": "PATTERN_CHECK",
+          "description": "Data Controller Identity (Art. 13(1)(a))",
+          "severity": "critical",
+          "regulation": "GDPR Art. 13(1)(a)",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "patterns": [
+              "data controller",
+              "controller is",
+              "we are the controller"
+            ],
+            "mode": "any",
+            "file_pattern": "**/*.html",
+            "strip_html": true
+          },
+          "remediation": "Include a 'Who We Are' section naming the data controller organization with contact details."
+        },
+        {
+          "id": "controller-contact",
+          "type": "PATTERN_CHECK",
+          "description": "Controller Contact Details (Art. 13(1)(a))",
+          "severity": "critical",
+          "regulation": "GDPR Art. 13(1)(a)",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "patterns": [
+              "@\\w+\\.\\w+",
+              "contact.*data",
+              "email.*data",
+              "phone.*data"
+            ],
+            "mode": "any",
+            "file_pattern": "**/*.html"
+          },
+          "remediation": "Include email, phone, or postal contact details for the data controller."
+        },
+        {
+          "id": "dpo-contact",
+          "type": "PATTERN_CHECK",
+          "description": "DPO Contact (Art. 13(1)(b))",
+          "severity": "high",
+          "regulation": "GDPR Art. 13(1)(b)",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "patterns": [
+              "data protection officer",
+              "DPO",
+              "dpo@"
+            ],
+            "mode": "any",
+            "file_pattern": "**/*.html"
+          },
+          "remediation": "Provide Data Protection Officer contact details in the privacy policy."
+        },
+        {
+          "id": "purposes",
+          "type": "PATTERN_CHECK",
+          "description": "Processing Purposes (Art. 13(1)(c))",
+          "severity": "critical",
+          "regulation": "GDPR Art. 13(1)(c)",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "patterns": [
+              "purpose",
+              "we process",
+              "why we",
+              "how we use",
+              "processing.*purpose"
+            ],
+            "mode": "any",
+            "file_pattern": "**/*.html",
+            "strip_html": true
+          },
+          "remediation": "Describe the purposes for which personal data is processed."
+        },
+        {
+          "id": "legal-basis",
+          "type": "PATTERN_CHECK",
+          "description": "Legal Basis (Art. 13(1)(c))",
+          "severity": "critical",
+          "regulation": "GDPR Art. 13(1)(c)",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "patterns": [
+              "legal basis",
+              "lawful basis",
+              "article 6",
+              "legitimate interest",
+              "consent",
+              "contractual necessity"
+            ],
+            "mode": "any",
+            "file_pattern": "**/*.html"
+          },
+          "remediation": "State the legal basis for processing under Article 6 GDPR (consent, contract, legitimate interest, etc.)."
+        },
+        {
+          "id": "recipients",
+          "type": "PATTERN_CHECK",
+          "description": "Data Recipients (Art. 13(1)(e))",
+          "severity": "high",
+          "regulation": "GDPR Art. 13(1)(e)",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "patterns": [
+              "recipient",
+              "third party",
+              "who.*share",
+              "share.*data",
+              "disclosure",
+              "transferred to",
+              "we may share"
+            ],
+            "mode": "any",
+            "file_pattern": "**/*.html"
+          },
+          "remediation": "List the categories of recipients or third parties who receive personal data."
+        },
+        {
+          "id": "transfers",
+          "type": "PATTERN_CHECK",
+          "description": "International Transfers (Art. 13(1)(f))",
+          "severity": "high",
+          "regulation": "GDPR Art. 13(1)(f)",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "patterns": [
+              "transfer.*outside",
+              "international transfer",
+              "third country",
+              "adequate protection",
+              "standard contractual",
+              "outside.*EEA",
+              "outside.*UK",
+              "data may be transferred"
+            ],
+            "mode": "any",
+            "file_pattern": "**/*.html"
+          },
+          "remediation": "Disclose if personal data is transferred internationally and the safeguards in place."
+        }
+      ]
+    },
+    {
+      "name": "Art. 13(2) \u2014 Additional Information",
+      "description": "Retention, data subject rights, withdrawal of consent, right to complain, statutory requirements, automated decisions",
+      "items": [
+        {
+          "id": "retention",
+          "type": "PATTERN_CHECK",
+          "description": "Retention Period (Art. 13(2)(a))",
+          "severity": "high",
+          "regulation": "GDPR Art. 13(2)(a)",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "patterns": [
+              "retention",
+              "retain.*data",
+              "how long.*keep",
+              "storage period",
+              "data.*stored.*for",
+              "keep.*data.*for",
+              "retained for",
+              "retained in accordance"
+            ],
+            "mode": "any",
+            "file_pattern": "**/*.html"
+          },
+          "remediation": "Specify how long personal data is retained or the criteria used to determine the period."
+        },
+        {
+          "id": "rights",
+          "type": "PATTERN_CHECK",
+          "description": "Data Subject Rights (Art. 13(2)(b))",
+          "severity": "critical",
+          "regulation": "GDPR Art. 13(2)(b)",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "patterns": [
+              "right to access",
+              "right to rectification",
+              "right to erasure",
+              "right to restrict",
+              "right to object",
+              "right to portability"
+            ],
+            "min_patterns": 3,
+            "mode": "count",
+            "file_pattern": "**/*.html"
+          },
+          "remediation": "Explain data subject rights: access, rectification, erasure, restriction, objection, and data portability."
+        },
+        {
+          "id": "withdraw-consent",
+          "type": "PATTERN_CHECK",
+          "description": "Right to Withdraw Consent (Art. 7(3))",
+          "severity": "high",
+          "regulation": "GDPR Art. 7(3)",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "patterns": [
+              "withdraw.*consent",
+              "withdrawal.*consent",
+              "revoke.*consent"
+            ],
+            "mode": "any",
+            "file_pattern": "**/*.html"
+          },
+          "remediation": "Inform data subjects of their right to withdraw consent at any time."
+        },
+        {
+          "id": "complaint",
+          "type": "PATTERN_CHECK",
+          "description": "Right to Complain (Art. 13(2)(d))",
+          "severity": "high",
+          "regulation": "GDPR Art. 13(2)(d)",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "patterns": [
+              "supervisory authority",
+              "lodge.*complaint",
+              "complaint.*authority",
+              "data.*protection.*authority",
+              "ICO",
+              "GDPR.*complaint"
+            ],
+            "mode": "any",
+            "file_pattern": "**/*.html"
+          },
+          "remediation": "Inform data subjects of their right to lodge a complaint with a supervisory authority."
+        },
+        {
+          "id": "statutory-data",
+          "type": "PATTERN_CHECK",
+          "description": "Statutory/Contractual Data Provision (Art. 13(2)(e))",
+          "severity": "medium",
+          "regulation": "GDPR Art. 13(2)(e)",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "patterns": [
+              "statutory.*requirement",
+              "contractual.*requirement",
+              "required.*by.*law",
+              "necessary.*to.*enter",
+              "consequences.*not.*providing"
+            ],
+            "mode": "any",
+            "file_pattern": "**/*.html"
+          },
+          "remediation": "State whether provision of data is a statutory or contractual requirement and the consequences of not providing it."
+        },
+        {
+          "id": "automated-decision",
+          "type": "PATTERN_CHECK",
+          "description": "Automated Decision-Making (Art. 22)",
+          "severity": "medium",
+          "regulation": "GDPR Art. 22",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "patterns": [
+              "automated.*decision",
+              "profiling",
+              "decision.*based.*solely",
+              "art.*22",
+              "does not.*engage.*automated"
+            ],
+            "mode": "any",
+            "file_pattern": "**/*.html"
+          },
+          "remediation": "Disclose whether automated decision-making or profiling is used, and provide meaningful information about the logic involved."
+        }
+      ]
+    }
+  ]
+}

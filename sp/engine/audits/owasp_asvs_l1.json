@@ -1,0 +1,213 @@
+{
+  "audit_type": "static_website",
+  "name": "OWASP ASVS Level 1",
+  "version": "4.0.3",
+  "framework": {
+    "id": "owasp",
+    "name": "OWASP ASVS",
+    "weight": 0.25,
+    "color": "#27ae60"
+  },
+  "description": "OWASP Application Security Verification Standard v4.0.3 Level 1 \u2014 covering architecture (security.txt), session management (cookies), access control, secrets, CSP, SRI, debug leakage, content-type options, and meta headers.",
+  "severity": "high",
+  "group_policies": [
+    {
+      "name": "Architecture & Access Control",
+      "items": [
+        {
+          "id": "security-txt",
+          "type": "FILE_CHECK",
+          "description": "security.txt must exist for vulnerability reporting (OWASP ASVS 1.14.1 \u2014 RFC 9116)",
+          "severity": "low",
+          "regulation": "OWASP ASVS 1.14.1 \u2014 security.txt per RFC 9116; ISO A.8.16",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "file_paths": [
+              "security.txt"
+            ],
+            "option": "MUST_EXIST",
+            "must_contain": "Contact:",
+            "scan_subdirs": true
+          },
+          "remediation": "Create .well-known/security.txt with Contact, Expires, and Preferred-Languages fields per RFC 9116."
+        },
+        {
+          "id": "auth-bypass-paths",
+          "type": "FILE_CHECK",
+          "description": "No unprotected sensitive paths (OWASP ASVS 4.1.1 \u2014 access control enforcement)",
+          "severity": "critical",
+          "regulation": "OWASP ASVS 4.1.1 \u2014 access controls must be enforced on all protected resources",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "file_paths": [
+              "admin",
+              "wp-admin",
+              "panel",
+              "debug",
+              "phpmyadmin",
+              "api/v1",
+              "api/v2"
+            ],
+            "option": "MUST_NOT_EXIST",
+            "scan_subdirs": false
+          },
+          "remediation": "Remove or protect all admin, debug, and API paths with proper authentication."
+        }
+      ]
+    },
+    {
+      "name": "Data & Session Protection",
+      "items": [
+        {
+          "id": "secrets-in-js",
+          "type": "FILE_CONTENT_CHECK",
+          "description": "No hardcoded secrets in JavaScript (OWASP ASVS 6.1.2 \u2014 no secrets in client-side code)",
+          "severity": "critical",
+          "regulation": "OWASP ASVS 6.1.2 \u2014 no API keys, tokens, passwords in client-side code; ISO A.5.17",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "patterns": [],
+            "anti_patterns": [
+              "(?:api[_-]?key|apikey|api[_-]?secret)\\s*[:=]\\s*[\"'][A-Za-z0-9+/=_-]{16,}[\"']",
+              "(?:token|access[_-]?token)\\s*[:=]\\s*[\"'][A-Za-z0-9._\\-]{20,}[\"']",
+              "(?:password|passwd|pwd)\\s*[:=]\\s*[\"'][^\"']{4,}[\"']",
+              "sk-[A-Za-z0-9]{32,}"
+            ],
+            "file_pattern": "**/*.js",
+            "mode": "any"
+          },
+          "remediation": "Remove all hardcoded API keys, tokens, and passwords from client-side JavaScript files."
+        },
+        {
+          "id": "cookie-attributes-js",
+          "type": "FILE_CONTENT_CHECK",
+          "description": "JS cookies must have Secure, HttpOnly, SameSite (OWASP ASVS 3.2 \u2014 session management)",
+          "severity": "high",
+          "regulation": "OWASP ASVS 3.2.1\u20133.2.3 \u2014 Secure, HttpOnly, SameSite on all cookies",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "patterns": [],
+            "anti_patterns": [
+              "document\\.cookie\\s*=\\s*[\"'][^\"']*(?:(?!secure).)*[\"']"
+            ],
+            "file_pattern": "**/*.js",
+            "mode": "any"
+          },
+          "remediation": "Add Secure, HttpOnly, and SameSite attributes to all JavaScript cookie settings."
+        },
+        {
+          "id": "debug-leakage",
+          "type": "FILE_CONTENT_CHECK",
+          "description": "No debug or error information in production (OWASP ASVS 7.1.1)",
+          "severity": "medium",
+          "regulation": "OWASP ASVS 7.1.1 \u2014 no debug information, stack traces, or error messages in production",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "patterns": [],
+            "anti_patterns": [
+              "stack\\s*trace",
+              "fatal\\s*error",
+              "syntax\\s*error",
+              "exception\\s*in"
+            ],
+            "file_pattern": "**/*.html",
+            "mode": "any"
+          },
+          "remediation": "Remove all debug output, error messages, and file paths from production HTML."
+        }
+      ]
+    },
+    {
+      "name": "Content Security",
+      "items": [
+        {
+          "id": "csp-quality",
+          "type": "META_CHECK",
+          "description": "CSP must restrict script sources (OWASP ASVS 14.4.1\u201314.4.3)",
+          "severity": "high",
+          "regulation": "OWASP ASVS 14.4.1 \u2014 CSP present; 14.4.2 \u2014 no unsafe-inline; 14.4.3 \u2014 object-src restricted",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "meta_name": "Content-Security-Policy",
+            "must_not_contain": [
+              "unsafe-inline",
+              "unsafe-eval"
+            ],
+            "wildcard_forbidden_in": [
+              "script-src",
+              "default-src"
+            ],
+            "file_pattern": "**/*.html"
+          },
+          "remediation": "Implement CSP with 'self' directives \u2014 avoid 'unsafe-inline' and 'unsafe-eval'."
+        },
+        {
+          "id": "meta-headers",
+          "type": "META_CHECK",
+          "description": "X-Frame-Options must prevent clickjacking (OWASP ASVS 14.5.2)",
+          "severity": "high",
+          "regulation": "OWASP ASVS 14.5.2 \u2014 X-Frame-Options or CSP frame-ancestors required",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "meta_name": "X-Frame-Options",
+            "expected_value": "DENY",
+            "file_pattern": "**/*.html"
+          },
+          "remediation": "Set X-Frame-Options: DENY on all pages to prevent clickjacking."
+        },
+        {
+          "id": "content-type-options",
+          "type": "META_CHECK",
+          "description": "X-Content-Type-Options must be nosniff (OWASP ASVS 14.5.2)",
+          "severity": "medium",
+          "regulation": "OWASP ASVS 14.5.2 \u2014 X-Content-Type-Options nosniff required",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "meta_name": "X-Content-Type-Options",
+            "expected_value": "nosniff",
+            "file_pattern": "**/*.html"
+          },
+          "remediation": "Add X-Content-Type-Options: nosniff to prevent MIME type sniffing."
+        },
+        {
+          "id": "cdn-audit",
+          "type": "FILE_CONTENT_CHECK",
+          "description": "No known-vulnerable CDN libraries (OWASP ASVS 14.4.5 / NIST SI-2)",
+          "severity": "high",
+          "regulation": "OWASP ASVS 14.4.5 \u2014 SRI for third-party content; NIST SP 800-53 SI-2 \u2014 flaw remediation",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "patterns": [],
+            "anti_patterns": [
+              "jquery[/-]1\\.[0-9]\\.",
+              "jquery[/-]2\\.[0-9]\\.",
+              "bootstrap[/-][1-3]\\.",
+              "font-?awesome[/-][1-4]\\."
+            ],
+            "file_pattern": "**/*.html",
+            "mode": "any"
+          },
+          "remediation": "Update all CDN libraries to current versions. Add SRI integrity hashes."
+        }
+      ]
+    }
+  ]
+}

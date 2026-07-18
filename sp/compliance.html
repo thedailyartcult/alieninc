@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legal Intelligence Dashboard | Statute & Precedent</title>
+    <link href="https://fonts.googleapis.com/css?family=Playfair+Display:400,400i,700,700i|Rubik:300,300i,400,500,700,700i&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Rubik', sans-serif;
+            color: #1a1a2e;
+            min-height: 100vh;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, #0a0e1c 0%, #16213e 100%);
+            color: #ffffff;
+            padding: 32px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dashboard-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        .dashboard-header .subtitle {
+            font-size: 0.82rem;
+            color: #888;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .scan-btn {
+            background-color: #00cfc1;
+            color: #0a0e1c;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-family: 'Rubik', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .scan-btn:hover { background-color: #00e6d6; }
+        .scan-btn:disabled { background-color: #666; cursor: not-allowed; }
+
+        .last-scan {
+            font-size: 0.75rem;
+            color: #888;
+            text-align: right;
+        }
+
+        .dashboard-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 48px;
+        }
+
+        /* Summary Cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+
+        .summary-card {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 28px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-left: 4px solid #00cfc1;
+        }
+
+        .summary-card.warning { border-left-color: #f39c12; }
+        .summary-card.danger { border-left-color: #e74c3c; }
+        .summary-card.success { border-left-color: #27ae60; }
+
+        .summary-card .label {
+            font-size: 0.72rem;
+            font-weight: 500;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .summary-card .value {
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            line-height: 1;
+        }
+
+        .summary-card .detail {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        /* Company Grid */
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            font-weight: 400;
+            margin-bottom: 24px;
+            color: #1a1a2e;
+        }
+
+        .company-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+
+        .company-card {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 28px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .company-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .company-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        .company-type {
+            font-size: 0.68rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #888;
+            background: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 3px;
+        }
+
+        .compliance-score {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .score-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .score-fill.high { background: #27ae60; }
+        .score-fill.medium { background: #f39c12; }
+        .score-fill.low { background: #e74c3c; }
+
+        .score-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .check-list {
+            list-style: none;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f5f5f5;
+            font-size: 0.82rem;
+        }
+
+        .check-item:last-child { border-bottom: none; }
+
+        .check-icon {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            flex-shrink: 0;
+        }
+
+        .check-icon.pass { background: #d4edda; color: #155724; }
+        .check-icon.fail { background: #f8d7da; color: #721c24; }
+
+        .risk-badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-left: auto;
+        }
+
+        .risk-badge.critical { background: #f8d7da; color: #721c24; }
+        .risk-badge.high { background: #fff3cd; color: #856404; }
+        .risk-badge.medium { background: #d1ecf1; color: #0c5460; }
+
+        /* Alerts Section */
+        .alerts-section {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 28px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 48px;
+        }
+
+        .alert-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 16px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .alert-item:last-child { border-bottom: none; }
+
+        .alert-severity {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-top: 6px;
+            flex-shrink: 0;
+        }
+
+        .alert-severity.critical { background: #e74c3c; }
+        .alert-severity.high { background: #f39c12; }
+
+        .alert-message {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        .alert-date {
+            font-size: 0.72rem;
+            color: #888;
+            white-space: nowrap;
+        }
+
+        /* Financial Impact */
+        .risk-section {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 28px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .risk-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .risk-item:last-child { border-bottom: none; }
+
+        .risk-company {
+            font-weight: 500;
+        }
+
+        .risk-amount {
+            font-size: 0.82rem;
+            color: #e74c3c;
+            font-weight: 600;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #888;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #eee;
+            border-top-color: #00cfc1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* No Data */
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .no-data p { margin-top: 8px; font-size: 0.8rem; }
+
+        @media (max-width: 1024px) {
+            .summary-grid { grid-template-columns: repeat(2, 1fr); }
+            .dashboard-content { padding: 24px; }
+        }
+
+        @media (max-width: 768px) {
+            .summary-grid { grid-template-columns: 1fr; }
+            .company-grid { grid-template-columns: 1fr; }
+            .dashboard-header { flex-direction: column; gap: 16px; }
+        }
+    </style>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+</head>
+<body>
+    <header class="dashboard-header">
+        <div>
+            <h1>Legal Intelligence Dashboard</h1>
+            <div class="subtitle">Statute & Precedent — Continuous Compliance Monitoring</div>
+        </div>
+        <div class="header-actions">
+            <div class="last-scan" id="lastScan">Last scan: Never</div>
+            <button class="scan-btn" id="webAuditBtn" onclick="runWebAudit()" style="background-color:#6c5ce7; color:#fff;">Run Web Audit</button>
+            <button class="scan-btn" id="scanBtn" onclick="runScan()" style="background-color:#0a0e1c; color:#00cfc1; border:1px solid #00cfc1;">Run Compliance Scan</button>
+        </div>
+    </header>
+
+    <main class="dashboard-content">
+        <!-- Summary Cards -->
+        <div class="summary-grid" id="summaryGrid">
+            <div class="summary-card">
+                <div class="label">Overall Compliance</div>
+                <div class="value" id="overallScore">—</div>
+                <div class="detail">Across all 8 companies</div>
+            </div>
+            <div class="summary-card danger">
+                <div class="label">Critical Alerts</div>
+                <div class="value" id="criticalAlerts">—</div>
+                <div class="detail">Immediate action required</div>
+            </div>
+            <div class="summary-card warning">
+                <div class="label">High Priority</div>
+                <div class="value" id="highAlerts">—</div>
+                <div class="detail">Review within 48 hours</div>
+            </div>
+            <div class="summary-card success">
+                <div class="label">Companies Compliant</div>
+                <div class="value" id="compliantCount">—</div>
+                <div class="detail">Score ≥ 80%</div>
+            </div>
+        </div>
+
+        <!-- Company Compliance Cards -->
+        <h2 class="section-title">Company Compliance Status</h2>
+        <div class="company-grid" id="companyGrid">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                Loading compliance data...
+            </div>
+        </div>
+
+        <!-- Security Baselines -->
+        <h2 class="section-title">Security Baselines <span style="font-size:0.7rem; font-weight:400; color:#888; letter-spacing:1px; text-transform:uppercase;">CIS &bull; DISA &bull; PCI-DSS &bull; OWASP &bull; Mozilla</span></h2>
+        <div class="company-grid" id="securityGrid" style="grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                Loading security baselines...
+            </div>
+        </div>
+
+        <!-- Audit Files Breakdown — Nessus-style per-audit results -->
+        <h2 class="section-title">Audit Files <span style="font-size:0.7rem; font-weight:400; color:#888; letter-spacing:1px; text-transform:uppercase;">Nessus-Style .audit.json Results</span></h2>
+        <div class="company-grid" id="auditGrid" style="grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));">
+            <div class="no-data">Audit file results populate after scan.</div>
+        </div>
+
+        <!-- Web Compliance (EDPB WAT) -->
+        <h2 class="section-title">Web Compliance <span style="font-size:0.7rem; font-weight:400; color:#888; letter-spacing:1px; text-transform:uppercase;">EDPB Website Auditing Tool</span></h2>
+        <div id="webAuditSection" style="margin-bottom:48px;">
+            <div class="no-data" id="webAuditLoading">
+                Web audit data loads from the EDPB WAT engine. Click "Run Web Audit" to scan all sites.
+            </div>
+        </div>
+
+        <!-- Active Alerts -->
+        <h2 class="section-title">Active Alerts</h2>
+        <div class="alerts-section" id="alertsSection">
+            <div class="no-data" id="noAlerts">
+                No active alerts. Run a compliance scan to check status.
+            </div>
+        </div>
+
+        <!-- Financial Risk Exposure -->
+        <h2 class="section-title">Financial Risk Exposure</h2>
+        <div class="risk-section" id="riskSection">
+            <div class="no-data">
+                Risk data populates after compliance scan.
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = '/api/compliance';
+
+        async function runScan() {
+            const btn = document.getElementById('scanBtn');
+            btn.disabled = true;
+            btn.textContent = 'Scanning...';
+
+            try {
+                const res = await fetch(API_BASE + '/scan', { method: 'POST' });
+                const data = await res.json();
+                if (data.status === 'already_running') {
+                    btn.textContent = 'Scan in progress...';
+                }
+                // Poll until scan completes
+                await pollUntilDone('file_scan', btn, 'Run Compliance Scan');
+                await loadDashboard();
+            } catch (e) {
+                console.error('Scan failed:', e);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Run Compliance Scan';
+            }
+        }
+
+        async function pollUntilDone(scanType, btn, label) {
+            const maxWait = 300000; // 5 minutes
+            const interval = 2000;
+            let waited = 0;
+            while (waited < maxWait) {
+                await new Promise(r => setTimeout(r, interval));
+                waited += interval;
+                try {
+                    const res = await fetch(API_BASE + '/status');
+                    const status = await res.json();
+                    const s = status[scanType];
+                    if (s && !s.running) {
+                        if (s.has_error) {
+                            btn.textContent = 'Scan failed';
+                            console.error('Scan error:', s.last_error);
+                        }
+                        return;
+                    }
+                    btn.textContent = `Scanning... (${Math.round(waited/1000)}s)`;
+                } catch (e) {
+                    break;
+                }
+            }
+        }
+
+        async function loadDashboard() {
+            try {
+                const res = await fetch(API_BASE + '/report');
+                if (!res.ok) throw new Error('No data');
+                const data = await res.json();
+                renderDashboard(data);
+            } catch (e) {
+                console.log('No scan data available. Running initial scan...');
+                document.getElementById('companyGrid').innerHTML = `
+                    <div class="no-data">
+                        <p>No compliance data found. Click "Run Compliance Scan" to begin monitoring.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderDashboard(report) {
+            const o = report.overall;
+
+            // Summary cards — realistic scores
+            document.getElementById('overallScore').textContent = o.realistic_rate + '%';
+            document.getElementById('criticalAlerts').textContent = o.critical_alerts;
+            document.getElementById('highAlerts').textContent = o.high_alerts;
+            document.getElementById('compliantCount').textContent = o.realistic_compliant + '/' + o.total_companies;
+
+            // Last scan
+            document.getElementById('lastScan').textContent = 'Last scan: ' + new Date(report.report_date).toLocaleString();
+
+            // Company cards
+            const grid = document.getElementById('companyGrid');
+            grid.innerHTML = '';
+
+            for (const [id, company] of Object.entries(report.companies)) {
+                const score = company.realistic_score;
+                const scoreClass = score >= 80 ? 'high' : score >= 50 ? 'medium' : 'low';
+                const card = document.createElement('div');
+                card.className = 'company-card';
+                card.innerHTML = `
+                    <div class="company-card-header">
+                        <div class="company-name">${company.name}</div>
+                        <div class="company-type">${company.type}</div>
+                    </div>
+                    <div class="compliance-score">
+                        <div class="score-bar">
+                            <div class="score-fill ${scoreClass}" style="width: ${score}%"></div>
+                        </div>
+                        <div class="score-value">${score}%</div>
+                    </div>
+                    <div style="font-size:0.75rem; color:#888; margin-bottom:12px;">
+                        ${company.passed} passed / ${company.failed} failed of ${company.total_checks} checks
+                    </div>
+                    <div style="display:flex; gap:12px; margin-bottom:12px;">
+                        <div style="flex:1; background:#f8f9fa; border-radius:4px; padding:8px 12px; text-align:center;">
+                            <div style="font-size:0.65rem; color:#888; text-transform:uppercase; letter-spacing:1px;">Art.13</div>
+                            <div style="font-size:1.1rem; font-weight:700; color:#1a1a2e;">${company.art13_score}%</div>
+                        </div>
+                        <div style="flex:1; background:#f8f9fa; border-radius:4px; padding:8px 12px; text-align:center;">
+                            <div style="font-size:0.65rem; color:#888; text-transform:uppercase; letter-spacing:1px;">Depth</div>
+                            <div style="font-size:1.1rem; font-weight:700; color:#1a1a2e;">${company.depth_score}%</div>
+                        </div>
+                        <div style="flex:1; background:#f8f9fa; border-radius:4px; padding:8px 12px; text-align:center;">
+                            <div style="font-size:0.65rem; color:#888; text-transform:uppercase; letter-spacing:1px;">Risk</div>
+                            <div style="font-size:1.1rem; font-weight:700; color:${company.risk_score > 50 ? '#e74c3c' : '#27ae60'};">${company.risk_score}</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:12px; margin-bottom:12px;">
+                        <div style="flex:1; background:${company.security_score >= 60 ? '#d4edda' : '#fff3cd'}; border-radius:4px; padding:8px 12px; text-align:center;">
+                            <div style="font-size:0.65rem; color:#888; text-transform:uppercase; letter-spacing:1px;">Security</div>
+                            <div style="font-size:1.1rem; font-weight:700; color:${company.security_score >= 60 ? '#155724' : '#856404'};">${company.security_score}%</div>
+                        </div>
+                        <div style="flex:2; font-size:0.68rem; color:#888; padding:4px 0; align-self:center;">
+                            ${Object.entries(company.framework_scores || {}).slice(0,3).map(([fid, f]) =>
+                                `<span style="display:inline-block; background:#f0f0f0; padding:2px 6px; margin:2px; border-radius:3px;">${f.name.split(' ')[0]} ${f.score}%</span>`
+                            ).join(' ')}
+                        </div>
+                    </div>
+                    ${company.active_risks.length > 0 ? `
+                        <div style="margin-top:12px;">
+                            <div style="font-size:0.7rem; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#888; margin-bottom:8px;">Active Risks</div>
+                            ${company.active_risks.map(r => `
+                                <div style="font-size:0.78rem; color:#666; padding:4px 0; border-bottom:1px solid #f5f5f5;">
+                                    <span class="risk-badge ${r.severity}">${r.severity}</span>
+                                    ${r.rule}: ${r.risk}
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                `;
+                grid.appendChild(card);
+            }
+
+            // Security Baselines
+            renderSecurityBaselines(report);
+
+            // Audit Files
+            renderAuditFiles(report);
+
+            // Alerts
+            const alertsEl = document.getElementById('alertsSection');
+            if (report.alerts.length === 0) {
+                alertsEl.innerHTML = '<div class="no-data">No active alerts. All systems compliant.</div>';
+            } else {
+                alertsEl.innerHTML = report.alerts.map(a => `
+                    <div class="alert-item">
+                        <div class="alert-severity ${a.severity}"></div>
+                        <div class="alert-message">${a.message}</div>
+                        <div class="alert-date">${new Date(a.date).toLocaleDateString()}</div>
+                    </div>
+                `).join('');
+            }
+
+            // Risk section
+            const riskEl = document.getElementById('riskSection');
+            const riskCompanies = Object.entries(report.companies).filter(([,c]) => c.active_risks.length > 0);
+            if (riskCompanies.length === 0) {
+                riskEl.innerHTML = '<div class="no-data">No financial risks identified.</div>';
+            } else {
+                riskEl.innerHTML = riskCompanies.map(([id, c]) => `
+                    <div class="risk-item">
+                        <div class="risk-company">${c.name}</div>
+                        <div class="risk-amount">${c.active_risks.length} active risk(s)</div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function renderSecurityBaselines(report) {
+            const grid = document.getElementById('securityGrid');
+            const fw = report.overall.security_frameworks || {};
+            const fwColors = {
+                cis: '#2c3e50', disa: '#e67e22', pci_dss: '#3498db',
+                owasp: '#27ae60', mozilla: '#9b59b6'
+            };
+            const fwNames = {
+                cis: 'CIS Benchmarks', cis_v3_0: 'CIS NGINX v3.0', disa: 'DISA STIGs',
+                pci_dss: 'PCI-DSS v4', owasp: 'OWASP ASVS', mozilla: 'Mozilla Observatory',
+                nist_800_53: 'NIST 800-53', nist_800_53_moderate: 'NIST SP 800-53',
+                nist_csf: 'NIST CSF 2.0', nist_csf_2_0: 'NIST CSF 2.0'
+            };
+
+            grid.innerHTML = '';
+            for (const [fid, fdata] of Object.entries(fw)) {
+                const score = fdata.score || 0;
+                const scoreClass = score >= 80 ? 'high' : score >= 50 ? 'medium' : 'low';
+                const color = fwColors[fid] || '#888';
+                const name = fwNames[fid] || fdata.name;
+                const card = document.createElement('div');
+                card.className = 'company-card';
+                card.style.borderTop = `4px solid ${color}`;
+                card.innerHTML = `
+                    <div class="company-card-header">
+                        <div class="company-name">${name}</div>
+                        <div class="company-type">Framework</div>
+                    </div>
+                    <div class="compliance-score">
+                        <div class="score-bar">
+                            <div class="score-fill ${scoreClass}" style="width:${score}%"></div>
+                        </div>
+                        <div class="score-value">${score}%</div>
+                    </div>
+                    <div style="font-size:0.72rem; color:#888; margin-top:8px;">Group average across 8 companies</div>
+                `;
+                grid.appendChild(card);
+            }
+        }
+
+        function renderAuditFiles(report) {
+            const grid = document.getElementById('auditGrid');
+            const audits = report.audits || {};
+            const allAudits = [];
+            for (const [cid, auditList] of Object.entries(audits)) {
+                for (const a of auditList) {
+                    const key = a.audit_id;
+                    const existing = allAudits.find(x => x.audit_id === key);
+                    if (existing) {
+                        existing.total_checks += a.check_count;
+                        existing.total_passed += a.passed_count;
+                        existing.total_failed += a.failed_count;
+                        existing.company_count += 1;
+                    } else {
+                        allAudits.push({
+                            audit_id: a.audit_id,
+                            audit_name: a.audit_name,
+                            framework_id: a.framework_id,
+                            total_checks: a.check_count,
+                            total_passed: a.passed_count,
+                            total_failed: a.failed_count,
+                            company_count: 1,
+                        });
+                    }
+                }
+            }
+            if (allAudits.length === 0) {
+                grid.innerHTML = '<div class="no-data">No audit file data available. Run a scan first.</div>';
+                return;
+            }
+            const colors = {cis: '#2c3e50', disa: '#e67e22', pci_dss: '#3498db', owasp: '#27ae60', mozilla: '#9b59b6', gdpr: '#00cfc1', ip: '#8e44ad'};
+            grid.innerHTML = '';
+            for (const a of allAudits) {
+                const score = a.total_checks > 0 ? Math.round((a.total_passed / a.total_checks) * 100) : 0;
+                const scoreClass = score >= 80 ? 'high' : score >= 50 ? 'medium' : 'low';
+                const color = colors[a.framework_id] || '#888';
+                const card = document.createElement('div');
+                card.className = 'company-card';
+                card.style.borderTop = `4px solid ${color}`;
+                card.innerHTML = `
+                    <div class="company-card-header">
+                        <div class="company-name">${a.audit_name}</div>
+                        <div class="company-type">.audit.json</div>
+                    </div>
+                    <div class="compliance-score">
+                        <div class="score-bar">
+                            <div class="score-fill ${scoreClass}" style="width:${score}%"></div>
+                        </div>
+                        <div class="score-value">${score}%</div>
+                    </div>
+                    <div style="font-size:0.72rem; color:#888; margin-top:8px;">
+                        ${a.total_passed}/${a.total_checks} passes across ${a.company_count} companies
+                        ${a.total_failed > 0 ? ` &middot; ${a.total_failed} failed` : ''}
+                    </div>
+                `;
+                grid.appendChild(card);
+            }
+        }
+
+        // Load on page ready
+        loadDashboard();
+        loadWebAudit();
+
+        // ── Web Audit (EDPB WAT) ──────────────────────────────────────────────
+        async function runWebAudit() {
+            const btn = document.getElementById('webAuditBtn');
+            btn.disabled = true;
+            btn.textContent = 'Auditing...';
+            try {
+                const res = await fetch(API_BASE + '/web-audit', { method: 'POST' });
+                const data = await res.json();
+                if (data.status === 'already_running') {
+                    btn.textContent = 'Audit in progress...';
+                }
+                // Poll until audit completes
+                await pollUntilDone('web_audit', btn, 'Run Web Audit');
+                await loadWebAudit();
+            } catch (e) {
+                console.error('Web audit failed:', e);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Run Web Audit';
+            }
+        }
+
+        async function loadWebAudit() {
+            try {
+                const res = await fetch(API_BASE + '/web-audit/report');
+                if (!res.ok) throw new Error('No data');
+                const data = await res.json();
+                renderWebAudit(data.web_audits || []);
+            } catch (e) {
+                document.getElementById('webAuditLoading').innerHTML =
+                    '<div class="no-data">No web audit data available. Click "Run Web Audit" to begin.</div>';
+            }
+        }
+
+        function renderWebAudit(audits) {
+            const section = document.getElementById('webAuditSection');
+            if (!audits || audits.length === 0) {
+                section.innerHTML = '<div class="no-data">No web audit data. Click "Run Web Audit" to scan.</div>';
+                return;
+            }
+
+            section.innerHTML = `
+                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:24px;">
+                    ${audits.map(a => {
+                        const score = a.web_compliance_score;
+                        const scoreClass = score >= 80 ? 'high' : score >= 50 ? 'medium' : 'low';
+                        return `
+                        <div class="company-card">
+                            <div class="company-card-header">
+                                <div class="company-name">${a.company_name}</div>
+                                <div class="company-type">EDPB WAT</div>
+                            </div>
+                            <div class="compliance-score">
+                                <div class="score-bar">
+                                    <div class="score-fill ${scoreClass}" style="width:${score}%"></div>
+                                </div>
+                                <div class="score-value">${score}%</div>
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; font-size:0.78rem;">
+                                <div style="background:#f8f9fa; border-radius:4px; padding:8px; text-align:center;">
+                                    <div style="font-size:0.6rem; color:#888; text-transform:uppercase; letter-spacing:1px;">Cookies</div>
+                                    <div style="font-weight:700; color:#1a1a2e;">${a.cookies_total} <span style="color:#888; font-weight:400;">(${a.cookies_third_party} 3P)</span></div>
+                                </div>
+                                <div style="background:#f8f9fa; border-radius:4px; padding:8px; text-align:center;">
+                                    <div style="font-size:0.6rem; color:#888; text-transform:uppercase; letter-spacing:1px;">Trackers</div>
+                                    <div style="font-weight:700; color:${a.trackers_total > 0 ? '#e74c3c' : '#27ae60'};">${a.trackers_total}</div>
+                                </div>
+                                <div style="background:#f8f9fa; border-radius:4px; padding:8px; text-align:center;">
+                                    <div style="font-size:0.6rem; color:#888; text-transform:uppercase; letter-spacing:1px;">HTTPS</div>
+                                    <div style="font-weight:700; color:${a.https_enabled ? '#27ae60' : '#e74c3c'};">${a.https_enabled ? 'Yes' : 'No'}</div>
+                                </div>
+                                <div style="background:#f8f9fa; border-radius:4px; padding:8px; text-align:center;">
+                                    <div style="font-size:0.6rem; color:#888; text-transform:uppercase; letter-spacing:1px;">Headers</div>
+                                    <div style="font-weight:700; color:#1a1a2e;">${a.security_headers_score}/6</div>
+                                </div>
+                            </div>
+                            ${a.security_headers_missing && a.security_headers_missing.length > 0 ? `
+                                <div style="margin-top:10px; font-size:0.72rem; color:#888;">
+                                    Missing: ${a.security_headers_missing.map(h => `<code style="background:#f0f0f0; padding:1px 4px; border-radius:2px;">${h}</code>`).join(', ')}
+                                </div>
+                            ` : ''}
+                        </div>`;
+                    }).join('')}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

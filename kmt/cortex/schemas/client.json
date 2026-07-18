@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "KMT Client Schema",
+  "description": "Client profile model for KMT Cortex",
+  "type": "object",
+  "required": ["clientId", "companyName", "industry", "segment"],
+  "properties": {
+    "clientId": {
+      "type": "string",
+      "pattern": "^C-KMT-\\d{3}$"
+    },
+    "companyName": {"type": "string"},
+    "industry": {"type": "string"},
+    "country": {"type": "string"},
+    "segment": {
+      "type": "string",
+      "enum": ["enterprise", "middle_market", "lower_middle_market", "growth_company", "owner_led"]
+    },
+    "annualContractValue": {"type": "number", "minimum": 0},
+    "status": {
+      "type": "string",
+      "enum": ["active", "renewal_due", "pipeline", "paused", "closed_won", "closed_lost"]
+    },
+    "relationship": {
+      "type": "object",
+      "properties": {
+        "startDate": {"type": "string", "format": "date"},
+        "renewalDate": {"type": "string", "format": "date"},
+        "lifetimeValue": {"type": "number"},
+        "acquisitionCost": {"type": "number"},
+        "nps": {"type": "number", "minimum": 0, "maximum": 10}
+      }
+    },
+    "engagements": {
+      "type": "array",
+      "items": {"type": "string", "pattern": "^ENG-KMT-\\d{4}-\\d{3}$"}
+    },
+    "needsProfile": {
+      "type": "object",
+      "properties": {
+        "primaryChallenge": {"type": "string"},
+        "aiReadiness": {
+          "type": "string",
+          "enum": ["nascent", "exploring", "implementing", "advanced"]
+        },
+        "budgetRange": {
+          "type": "object",
+          "properties": {
+            "min": {"type": "number"},
+            "max": {"type": "number"}
+          }
+        },
+        "decisionTimeline": {"type": "string"},
+        "keyStakeholders": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "role": {"type": "string"},
+              "influence": {"type": "string", "enum": ["decision_maker", "influencer", "champion", "blocker"]}
+            }
+          }
+        }
+      }
+    },
+    "ecosystemValue": {
+      "type": "object",
+      "description": "Cross-sell potential across Alien.Inc ecosystem",
+      "properties": {
+        "hawksightPotential": {"type": "number"},
+        "exospherePotential": {"type": "number"},
+        "statutePotential": {"type": "number"},
+        "totalGroupValue": {"type": "number"}
+      }
+    }
+  }
+}

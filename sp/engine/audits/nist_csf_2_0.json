@@ -1,0 +1,247 @@
+{
+  "audit_type": "reporting_layer",
+  "name": "NIST CSF 2.0",
+  "version": "2.0 (February 2024)",
+  "framework": {"id": "nist_csf", "name": "NIST CSF 2.0", "weight": 0.25, "color": "#1a5276"},
+  "description": "NIST Cybersecurity Framework 2.0 — 6 functions (GOVERN, IDENTIFY, PROTECT, DETECT, RESPOND, RECOVER), 22 categories, 106 subcategories. This is a reporting layer cross-referencing NIST SP 800-53 MODERATE baseline results. Each CSF category maps to one or more 800-53 controls. Verification comes from parent benchmarks via the 800-53 aggregation.",
+  "severity": "high",
+  "honest_disclosure": "CSF is a framework for organizing results, not a checklist. This file shows how our existing 800-53 findings map to CSF functions and categories. Scores are derived from the NIST 800-53 report, which derives from DISA/CIS/PCI-DSS/OWASP parent benchmarks.",
+  "group_policies": [
+    {
+      "name": "GOVERN (GV) — Organizational Context",
+      "description": "The organization's cybersecurity risk management strategy, expectations, and policy are established, communicated, and monitored. This function is NEW in CSF 2.0.",
+      "items": [
+        {
+          "id": "csf-gv-po", "type": "PARENT_BENCHMARK",
+          "nist_id": "GV.PO",
+          "title": "Policy (GV.PO)",
+          "description": "Organizational cybersecurity policies for managing risk are established, communicated, and enforced.",
+          "severity": "high",
+          "csf_function": "GOVERN", "csf_category": "GV.PO",
+          "assessability": "config_required",
+          "nist_controls": ["PM-1", "PL-4"],
+          "regulation": "NIST CSF 2.0 GV.PO → SP 800-53 PM-1, PL-4",
+          "covered_by": [],
+          "check": {"source": "parent_benchmarks"},
+          "remediation": "Document and publish cybersecurity policies. Review annually."
+        },
+        {
+          "id": "csf-gv-rm", "type": "PARENT_BENCHMARK",
+          "nist_id": "GV.RM",
+          "title": "Risk Management Strategy (GV.RM)",
+          "description": "Cybersecurity risks are identified, assessed, prioritized, and managed as part of the organization's enterprise risk management strategy.",
+          "severity": "high",
+          "csf_function": "GOVERN", "csf_category": "GV.RM",
+          "assessability": "config_required",
+          "nist_controls": ["RA-5", "PM-9"],
+          "regulation": "NIST CSF 2.0 GV.RM → SP 800-53 RA-5, PM-9",
+          "covered_by": [
+            {"audit": "nist_800_53_moderate", "check": "ra-5", "description": "NIST 800-53 RA-5 — vulnerability scanning"}
+          ],
+          "check": {"source": "parent_benchmarks"},
+          "remediation": "Implement risk management framework. Conduct annual risk assessments. Track findings to remediation."
+        },
+        {
+          "id": "csf-gv-sc", "type": "PARENT_BENCHMARK",
+          "nist_id": "GV.SC",
+          "title": "Supply Chain Risk Management (GV.SC)",
+          "description": "Cybersecurity supply chain risk management processes are identified, established, and managed.",
+          "severity": "medium",
+          "csf_function": "GOVERN", "csf_category": "GV.SC",
+          "assessability": "config_required",
+          "nist_controls": ["SR-2", "SR-3"],
+          "regulation": "NIST CSF 2.0 GV.SC → SP 800-53 SR-2, SR-3",
+          "covered_by": [],
+          "check": {"source": "parent_benchmarks"},
+          "remediation": "Assess third-party service providers. Include security requirements in vendor contracts."
+        }
+      ]
+    },
+    {
+      "name": "IDENTIFY (ID) — Asset & Risk Awareness",
+      "description": "Develop organizational understanding to manage cybersecurity risk to systems, assets, data, and capabilities",
+      "items": [
+        {
+          "id": "csf-id-am", "type": "PARENT_BENCHMARK",
+          "nist_id": "ID.AM",
+          "title": "Asset Management (ID.AM)",
+          "description": "Data, personnel, devices, systems, and facilities that enable the organization to achieve business purposes are identified and managed.",
+          "severity": "medium",
+          "csf_function": "IDENTIFY", "csf_category": "ID.AM",
+          "assessability": "mapped_from_parents",
+          "nist_controls": ["CM-8"],
+          "regulation": "NIST CSF 2.0 ID.AM → SP 800-53 CM-8",
+          "covered_by": [
+            {"audit": "nist_800_53_moderate", "check": "cm-8", "description": "NIST 800-53 CM-8 — component inventory"}
+          ],
+          "check": {"source": "parent_benchmarks"},
+          "remediation": "Maintain asset inventory. Publish security.txt. Document all web assets and dependencies."
+        },
+        {
+          "id": "csf-id-ra", "type": "PARENT_BENCHMARK",
+          "nist_id": "ID.RA",
+          "title": "Risk Assessment (ID.RA)",
+          "description": "The organization understands the cybersecurity risk to operations, assets, and individuals.",
+          "severity": "high",
+          "csf_function": "IDENTIFY", "csf_category": "ID.RA",
+          "assessability": "mapped_from_parents",
+          "nist_controls": ["RA-5"],
+          "regulation": "NIST CSF 2.0 ID.RA → SP 800-53 RA-5",
+          "covered_by": [
+            {"audit": "nist_800_53_moderate", "check": "ra-5", "description": "NIST 800-53 RA-5 — vulnerability scanning"}
+          ],
+          "check": {"source": "parent_benchmarks"},
+          "remediation": "Conduct regular vulnerability assessments. Track threat intelligence relevant to web applications."
+        }
+      ]
+    },
+    {
+      "name": "PROTECT (PR) — Safeguards",
+      "description": "Develop and implement safeguards to ensure delivery of critical services. The largest function — covers access control, awareness, data security, protective technology.",
+      "items": [
+        {
+          "id": "csf-pr-ac", "type": "PARENT_BENCHMARK",
+          "nist_id": "PR.AC",
+          "title": "Identity Management, Authentication and Access Control (PR.AC)",
+          "description": "Access to physical and logical assets is limited to authorized users, processes, and devices, and is managed consistent with the assessed risk.",
+          "severity": "high",
+          "csf_function": "PROTECT", "csf_category": "PR.AC",
+          "assessability": "mapped_from_parents",
+          "nist_controls": ["AC-2", "AC-3", "AC-7", "AC-11", "AC-14", "IA-5"],
+          "regulation": "NIST CSF 2.0 PR.AC → SP 800-53 AC-2, AC-3, AC-7, AC-11, AC-14, IA-5",
+          "covered_by": [
+            {"audit": "nist_800_53_moderate", "check": "ac-2", "description": "AC-2 Account Management"},
+            {"audit": "nist_800_53_moderate", "check": "ac-3", "description": "AC-3 Access Enforcement"},
+            {"audit": "nist_800_53_moderate", "check": "ac-7", "description": "AC-7 Unsuccessful Login"},
+            {"audit": "nist_800_53_moderate", "check": "ac-11", "description": "AC-11 Session Lock"},
+            {"audit": "nist_800_53_moderate", "check": "ac-14", "description": "AC-14 Permitted Actions"},
+            {"audit": "nist_800_53_moderate", "check": "ia-5", "description": "IA-5 Authenticator Management"}
+          ],
+          "check": {"source": "parent_benchmarks"},
+          "remediation": "Implement account management, access enforcement, session management, and strong authentication policies."
+        },
+        {
+          "id": "csf-pr-ds", "type": "PARENT_BENCHMARK",
+          "nist_id": "PR.DS",
+          "title": "Data Security (PR.DS)",
+          "description": "Information and records are managed consistent with the organization's risk strategy to protect the confidentiality, integrity, and availability of information.",
+          "severity": "high",
+          "csf_function": "PROTECT", "csf_category": "PR.DS",
+          "assessability": "mapped_from_parents",
+          "nist_controls": ["SC-8", "SC-13", "SC-23"],
+          "regulation": "NIST CSF 2.0 PR.DS → SP 800-53 SC-8, SC-13, SC-23",
+          "covered_by": [
+            {"audit": "nist_800_53_moderate", "check": "sc-8", "description": "SC-8 Transmission Confidentiality"},
+            {"audit": "nist_800_53_moderate", "check": "sc-13", "description": "SC-13 Cryptographic Protection"},
+            {"audit": "nist_800_53_moderate", "check": "sc-23", "description": "SC-23 Session Authenticity"}
+          ],
+          "check": {"source": "parent_benchmarks"},
+          "remediation": "Encrypt all data in transit with TLS 1.2+. Use Secure/HttpOnly/SameSite cookies. Enable HSTS."
+        },
+        {
+          "id": "csf-pr-pt", "type": "PARENT_BENCHMARK",
+          "nist_id": "PR.PT",
+          "title": "Protective Technology (PR.PT)",
+          "description": "Technical security solutions are managed to ensure the security and resilience of systems and assets.",
+          "severity": "high",
+          "csf_function": "PROTECT", "csf_category": "PR.PT",
+          "assessability": "mapped_from_parents",
+          "nist_controls": ["CM-7", "SC-7", "SI-10", "SI-11", "AC-23"],
+          "regulation": "NIST CSF 2.0 PR.PT → SP 800-53 CM-7, SC-7, SI-10, SI-11, AC-23",
+          "covered_by": [
+            {"audit": "nist_800_53_moderate", "check": "cm-7", "description": "CM-7 Least Functionality"},
+            {"audit": "nist_800_53_moderate", "check": "sc-7", "description": "SC-7 Boundary Protection"},
+            {"audit": "nist_800_53_moderate", "check": "si-10", "description": "SI-10 Input Validation"},
+            {"audit": "nist_800_53_moderate", "check": "si-11", "description": "SI-11 Error Handling"},
+            {"audit": "nist_800_53_moderate", "check": "ac-23", "description": "AC-23 Data Mining Protection"}
+          ],
+          "check": {"source": "parent_benchmarks"},
+          "remediation": "Harden web server configuration. Deploy CSP, WAF, and custom error pages. Block data mining crawlers."
+        },
+        {
+          "id": "csf-pr-ip", "type": "PARENT_BENCHMARK",
+          "nist_id": "PR.IP",
+          "title": "Information Protection Processes and Procedures (PR.IP)",
+          "description": "Security policies, processes, and procedures are maintained and used to manage protection of information systems.",
+          "severity": "medium",
+          "csf_function": "PROTECT", "csf_category": "PR.IP",
+          "assessability": "mapped_from_parents",
+          "nist_controls": ["CM-6"],
+          "regulation": "NIST CSF 2.0 PR.IP → SP 800-53 CM-6",
+          "covered_by": [
+            {"audit": "nist_800_53_moderate", "check": "cm-6", "description": "CM-6 Configuration Settings"}
+          ],
+          "check": {"source": "parent_benchmarks"},
+          "remediation": "Document secure configuration baselines. Implement change management for all web server configuration changes."
+        }
+      ]
+    },
+    {
+      "name": "DETECT (DE) — Continuous Monitoring",
+      "description": "Develop and implement activities to identify the occurrence of a cybersecurity event",
+      "items": [
+        {
+          "id": "csf-de-cm", "type": "PARENT_BENCHMARK",
+          "nist_id": "DE.CM",
+          "title": "Continuous Monitoring (DE.CM)",
+          "description": "The information system and assets are monitored to identify cybersecurity events and verify the effectiveness of protective measures.",
+          "severity": "medium",
+          "csf_function": "DETECT", "csf_category": "DE.CM",
+          "assessability": "mapped_from_parents",
+          "nist_controls": ["SI-2", "AU-2"],
+          "regulation": "NIST CSF 2.0 DE.CM → SP 800-53 SI-2, AU-2",
+          "covered_by": [
+            {"audit": "nist_800_53_moderate", "check": "si-2", "description": "SI-2 Flaw Remediation"},
+            {"audit": "nist_800_53_moderate", "check": "au-2", "description": "AU-2 Event Logging"}
+          ],
+          "check": {"source": "parent_benchmarks"},
+          "remediation": "Enable web server logging. Monitor for CVEs. Implement file integrity monitoring (FIM)."
+        }
+      ]
+    },
+    {
+      "name": "RESPOND (RS) — Incident Response",
+      "description": "Take action regarding a detected cybersecurity incident",
+      "items": [
+        {
+          "id": "csf-rs-rp", "type": "PARENT_BENCHMARK",
+          "nist_id": "RS.RP",
+          "title": "Response Planning (RS.RP)",
+          "description": "Response processes and procedures are executed and maintained to ensure timely response to detected cybersecurity incidents.",
+          "severity": "high",
+          "csf_function": "RESPOND", "csf_category": "RS.RP",
+          "assessability": "config_required",
+          "nist_controls": ["IR-4", "IR-8"],
+          "regulation": "NIST CSF 2.0 RS.RP → SP 800-53 IR-4, IR-8",
+          "covered_by": [
+            {"audit": "pci_dss_v4", "check": "pci-12.10.1", "description": "PCI-DSS — incident response plan required"}
+          ],
+          "check": {"source": "parent_benchmarks"},
+          "remediation": "Create and maintain an incident response plan. Define roles, communication procedures, and escalation paths. Test annually."
+        }
+      ]
+    },
+    {
+      "name": "RECOVER (RC) — Resilience",
+      "description": "Maintain resilience plans and restore capabilities or services impaired by an incident",
+      "items": [
+        {
+          "id": "csf-rc-rp", "type": "PARENT_BENCHMARK",
+          "nist_id": "RC.RP",
+          "title": "Recovery Planning (RC.RP)",
+          "description": "Recovery processes and procedures are executed and maintained to ensure timely restoration of systems or assets affected by cybersecurity incidents.",
+          "severity": "high",
+          "csf_function": "RECOVER", "csf_category": "RC.RP",
+          "assessability": "config_required",
+          "nist_controls": ["CP-9"],
+          "regulation": "NIST CSF 2.0 RC.RP → SP 800-53 CP-9",
+          "covered_by": [
+            {"audit": "nist_800_53_moderate", "check": "cp-9", "description": "CP-9 System Backup"}
+          ],
+          "check": {"source": "parent_benchmarks"},
+          "remediation": "Implement automated backups with offsite storage. Test restoration procedures quarterly."
+        }
+      ]
+    }
+  ]
+}

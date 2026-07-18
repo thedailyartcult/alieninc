@@ -1,0 +1,157 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "KMT Engagement Schema",
+  "description": "Core engagement model for KMT Cortex consulting platform",
+  "type": "object",
+  "required": ["engagementId", "clientId", "serviceLine", "status", "pricingModel"],
+  "properties": {
+    "engagementId": {
+      "type": "string",
+      "pattern": "^ENG-KMT-\\d{4}-\\d{3}$",
+      "description": "Unique engagement identifier"
+    },
+    "clientId": {
+      "type": "string",
+      "pattern": "^C-KMT-\\d{3}$",
+      "description": "Client identifier from ecosystem"
+    },
+    "projectName": {
+      "type": "string",
+      "description": "Human-readable project name"
+    },
+    "serviceLine": {
+      "type": "string",
+      "enum": ["kmt-strategy", "kmt-ai", "kmt-ops", "kmt-pmi"],
+      "description": "Service line identifier"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["discovery", "proposal", "contracted", "in_delivery", "at_risk", "complete"],
+      "description": "Current engagement status"
+    },
+    "pricingModel": {
+      "type": "string",
+      "enum": ["fixed_fee", "outcome_based", "subscription", "retainer", "milestone"],
+      "description": "Pricing structure for this engagement"
+    },
+    "team": {
+      "type": "object",
+      "required": ["lead", "members"],
+      "properties": {
+        "lead": {
+          "type": "object",
+          "required": ["name", "role"],
+          "properties": {
+            "name": {"type": "string"},
+            "role": {"type": "string"}
+          }
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "role", "utilization"],
+            "properties": {
+              "name": {"type": "string"},
+              "role": {"type": "string"},
+              "utilization": {"type": "number", "minimum": 0, "maximum": 1}
+            }
+          }
+        },
+        "aiAgents": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["agentId", "type", "status"],
+            "properties": {
+              "agentId": {"type": "string"},
+              "type": {
+                "type": "string",
+                "enum": ["synthesis", "framework", "deliverable", "research", "analysis"]
+              },
+              "status": {"type": "string", "enum": ["active", "idle", "deployed"]}
+            }
+          }
+        }
+      }
+    },
+    "financials": {
+      "type": "object",
+      "required": ["contractValue", "grossMarginTarget"],
+      "properties": {
+        "contractValue": {"type": "number", "minimum": 0},
+        "grossMarginTarget": {"type": "number", "minimum": 0, "maximum": 1},
+        "actualMargin": {"type": "number", "minimum": 0, "maximum": 1},
+        "hoursBilled": {"type": "number", "minimum": 0},
+        "aiHoursSaved": {"type": "number", "minimum": 0},
+        "outcomeMetrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["metric", "target", "actual"],
+            "properties": {
+              "metric": {"type": "string"},
+              "target": {"type": "number"},
+              "actual": {"type": "number"},
+              "unit": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "deliverables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["deliverableId", "type", "status"],
+        "properties": {
+          "deliverableId": {"type": "string"},
+          "type": {
+            "type": "string",
+            "enum": ["research_brief", "strategy_deck", "analysis_report", "implementation_plan", "executive_summary", "due_diligence", "integration_roadmap"]
+          },
+          "status": {"type": "string", "enum": ["draft", "review", "final", "delivered"]},
+          "generatedBy": {"type": "string", "enum": ["human", "ai_assisted", "ai_generated"]},
+          "qualityScore": {"type": "number", "minimum": 0, "maximum": 100}
+        }
+      }
+    },
+    "timeline": {
+      "type": "object",
+      "required": ["startDate", "expectedEndDate"],
+      "properties": {
+        "startDate": {"type": "string", "format": "date"},
+        "expectedEndDate": {"type": "string", "format": "date"},
+        "actualEndDate": {"type": "string", "format": "date"},
+        "milestones": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "date", "status"],
+            "properties": {
+              "name": {"type": "string"},
+              "date": {"type": "string", "format": "date"},
+              "status": {"type": "string", "enum": ["pending", "in_progress", "complete"]}
+            }
+          }
+        }
+      }
+    },
+    "intercompanyDependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["companyId", "serviceType"],
+        "properties": {
+          "companyId": {
+            "type": "string",
+            "enum": ["hawksight", "exosphere", "statute", "tdac", "alcantara", "1609"]
+          },
+          "serviceType": {"type": "string"},
+          "status": {"type": "string", "enum": ["pending", "in_progress", "complete"]},
+          "value": {"type": "number"}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "audit_type": "static_website",
+  "name": "GDPR File Existence Checks",
+  "version": "1.0",
+  "framework": {
+    "id": "gdpr",
+    "name": "GDPR Compliance",
+    "weight": 0.4,
+    "color": "#00cfc1"
+  },
+  "description": "Verifies existence of essential legal and security files \u2014 privacy policy, cookies policy, terms of service, and robots.txt.",
+  "severity": "mixed",
+  "group_policies": [
+    {
+      "name": "Required Files",
+      "items": [
+        {
+          "id": "privacy-policy-exists",
+          "type": "FILE_CHECK",
+          "description": "Privacy policy must exist (GDPR Art. 13/14 obligation)",
+          "severity": "critical",
+          "regulation": "GDPR Art. 13/14 \u2014 controller must provide information about processing",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "file_paths": [
+              "privacy.html",
+              "privacy",
+              "privacy-policy.html",
+              "privacypolicy.html"
+            ],
+            "option": "MUST_EXIST",
+            "scan_subdirs": true
+          },
+          "remediation": "Create a privacy.html page with your privacy policy, including data controller identity, purposes, legal basis, and data subject rights."
+        },
+        {
+          "id": "cookies-policy",
+          "type": "FILE_CHECK",
+          "description": "Cookies policy / cookie consent page should exist",
+          "severity": "medium",
+          "regulation": "ePrivacy Directive (2002/58/EC) Art. 5(3) \u2014 cookie consent required. Page existence alone does not verify consent mechanism.",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "file_paths": [
+              "cookies.html",
+              "cookies",
+              "cookie-policy.html",
+              "cookiepolicy.html"
+            ],
+            "option": "MUST_EXIST",
+            "scan_subdirs": true
+          },
+          "remediation": "Create a cookies.html page explaining cookie usage, types, and how users can manage preferences."
+        },
+        {
+          "id": "terms-of-service",
+          "type": "FILE_CHECK",
+          "description": "Terms of service should exist (best practice, E-Commerce Directive)",
+          "severity": "low",
+          "regulation": "Best practice \u2014 E-Commerce Directive (2000/31/EC) Art. 10 for information society services",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "file_paths": [
+              "terms.html",
+              "terms",
+              "terms-of-service.html",
+              "termsandconditions.html"
+            ],
+            "option": "MUST_EXIST",
+            "scan_subdirs": true
+          },
+          "remediation": "Create a terms.html page outlining terms of service, acceptable use, limitations of liability, and governing law."
+        },
+        {
+          "id": "robots-txt",
+          "type": "FILE_CHECK",
+          "description": "robots.txt should exist with appropriate crawl directives",
+          "severity": "info",
+          "regulation": "Web standard \u2014 not a GDPR requirement. Relevant to website operations and search engine indexing.",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "file_paths": [
+              "robots.txt"
+            ],
+            "option": "MUST_EXIST",
+            "scan_subdirs": false
+          },
+          "remediation": "Create a robots.txt file in the web root with appropriate Allow/Disallow directives."
+        }
+      ]
+    }
+  ]
+}

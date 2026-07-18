@@ -1,0 +1,78 @@
+{
+  "audit_type": "static_website",
+  "name": "Mozilla Observatory",
+  "version": "2024",
+  "framework": {
+    "id": "mozilla",
+    "name": "Mozilla Observatory",
+    "weight": 0.15,
+    "color": "#9b59b6"
+  },
+  "description": "Mozilla Observatory web security scoring \u2014 CSP quality, SRI integrity, security.txt presence, and X-Content-Type-Options. Aligned with Mozilla's HTTP Observatory grading.",
+  "severity": "high",
+  "group_policies": [
+    {
+      "name": "Observatory Checks",
+      "items": [
+        {
+          "id": "csp-quality",
+          "type": "META_CHECK",
+          "description": "CSP must be present and not permit unsafe-inline or unsafe-eval (Observatory +25 pts)",
+          "severity": "high",
+          "regulation": "Mozilla Observatory \u2014 CSP header scoring",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "meta_name": "Content-Security-Policy",
+            "must_not_contain": [
+              "unsafe-inline",
+              "unsafe-eval"
+            ],
+            "wildcard_forbidden_in": [
+              "script-src",
+              "default-src"
+            ],
+            "file_pattern": "**/*.html"
+          },
+          "remediation": "Add a restrictive Content-Security-Policy meta tag to score points on Mozilla Observatory."
+        },
+        {
+          "id": "security-txt",
+          "type": "FILE_CHECK",
+          "description": "security.txt must exist for vulnerability disclosure (Observatory / RFC 9116)",
+          "severity": "low",
+          "regulation": "Mozilla Observatory \u2014 security.txt presence; RFC 9116",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "file_paths": [
+              "security.txt"
+            ],
+            "option": "MUST_EXIST",
+            "must_contain": "Contact:",
+            "scan_subdirs": true
+          },
+          "remediation": "Create .well-known/security.txt with Contact field for vulnerability reporting."
+        },
+        {
+          "id": "content-type-options",
+          "type": "META_CHECK",
+          "description": "X-Content-Type-Options must be nosniff (Observatory +5 pts)",
+          "severity": "medium",
+          "regulation": "Mozilla Observatory \u2014 X-Content-Type-Options scoring",
+          "compliance_result": "PASSED",
+          "score_pass": 100,
+          "score_fail": 0,
+          "check": {
+            "meta_name": "X-Content-Type-Options",
+            "expected_value": "nosniff",
+            "file_pattern": "**/*.html"
+          },
+          "remediation": "Add X-Content-Type-Options: nosniff meta tag or HTTP header."
+        }
+      ]
+    }
+  ]
+}

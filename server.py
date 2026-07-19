@@ -756,7 +756,66 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         if path == '/pxpadmin/bin/authform.cgi':
             self._handle_secure_auth()
             return
+        if path == '/api/login':
+            self._handle_api_login()
+            return
         self.send_error(404)
+
+    def _handle_api_login(self):
+        """JSON-based login for the main-site overlay.  Returns JSON, never a redirect."""
+        try:
+            length = int(self.headers.get('Content-Length', 0) or 0)
+        except ValueError:
+            length = 0
+        length = min(length, 65536)
+        raw = self.rfile.read(length).decode('utf-8', errors='replace') if length > 0 else ''
+        ctype = self.headers.get('Content-Type', '')
+        if 'application/json' in ctype:
+            try:
+                body = json.loads(raw)
+                user = (body.get('email', '') or '').strip()
+                password = body.get('password', '') or ''
+            except (json.JSONDecodeError, TypeError):
+                user = ''
+                password = ''
+        else:
+            try:
+                form = urllib.parse.parse_qs(raw, keep_blank_values=True)
+            except Exception:
+                form = {}
+            user = (form.get('user', [''])[0] or '').strip()
+            password = form.get('password', [''])[0] or ''
+        if not user or not password:
+            self._send_json_error('Email and password required')
+            return
+        self._log_honeypot(user, password)
+        if verify_secure_credentials(user, password):
+            token = _issue_secure_session(user)
+            domain = self.headers.get('Host', '').split(':')[0].lower()
+            base = '.alieninc.tech'
+            def c(k, v):
+                sd = '; Domain=' + base if domain.endswith('alieninc.tech') else ''
+                return '%s=%s; Path=/; HttpOnly; Secure; SameSite=Lax%s' % (k, v, sd)
+            self.send_response(200)
+            self.send_header('Set-Cookie', c(SECURE_SESSION_COOKIE, token))
+            self.send_header('Set-Cookie', c(MAIN_SESSION_COOKIE, token))
+            self._send_json({'ok': True})
+        else:
+            self._send_json_error('Invalid login credentials')
+
+    def _send_json(self, data):
+        body = json.dumps(data).encode('utf-8')
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        try:
+            self.wfile.write(body)
+        except BrokenPipeError:
+            pass
+
+    def _send_json_error(self, msg):
+        self.send_response(200)
+        self._send_json({'ok': False, 'error': msg})
 
     def _handle_secure_auth(self):
         try:

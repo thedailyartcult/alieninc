@@ -1146,20 +1146,11 @@
             .then(function (r) { return r.json(); })
             .then(function (d) {
               if (d.ok) {
-                overlay.style.display = 'none';
-                return fetch('/api/ecosystem');
+                window.location.reload();
+              } else {
+                errorEl.textContent = d.error || 'Login failed';
+                errorEl.style.display = 'block';
               }
-              errorEl.textContent = d.error || 'Login failed';
-              errorEl.style.display = 'block';
-            })
-            .then(function (r) {
-              if (!r) return;
-              return r.json();
-            })
-            .then(function (data) {
-              if (!data) return;
-              EcosystemData.setData(data);
-              window.ECOSYSTEM_DATA = data;
             })
             .catch(function () {
               errorEl.textContent = 'Network error';

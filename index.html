@@ -1146,13 +1146,24 @@
             .then(function (r) { return r.json(); })
             .then(function (d) {
               if (d.ok) {
-                window.location.reload();
-              } else {
-                errorEl.textContent = d.error || 'Login failed';
-                errorEl.style.display = 'block';
+                overlay.style.display = 'none';
+                return fetch('/api/ecosystem');
               }
+              errorEl.textContent = d.error || 'Login failed';
+              errorEl.style.display = 'block';
+            })
+            .then(function (r) {
+              if (!r) return;
+              if (!r.ok) throw new Error('HTTP ' + r.status);
+              return r.json();
+            })
+            .then(function (data) {
+              if (!data) return;
+              EcosystemData.setData(data);
+              window.ECOSYSTEM_DATA = data;
             })
             .catch(function () {
+              overlay.style.display = 'flex';
               errorEl.textContent = 'Network error';
               errorEl.style.display = 'block';
             });

@@ -2,7 +2,7 @@
  * EcosystemData — single data layer for all Alien.Inc sites.
  *
  * The server can inject ecosystem data directly into the page HTML
- * via the /*[ECOSYSTEM_DATA]*/ placeholder.  When that global is
+ * via the ECOSYSTEM_DATA placeholder.  When that global is
  * present, this module uses it directly and skips the network fetch.
  *
  * Usage:

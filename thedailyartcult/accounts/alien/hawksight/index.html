@@ -1,0 +1,1020 @@
+--- START OF FILE index.html ---
+<!DOCTYPE html>
+<html lang="en" style="background-color:#EEEEEE;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAWKSIGHT — Exposure & Vulnerability Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Open+Sans:ital,wght@0,400;0,700;1,400&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Barlow', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background-color: #EEEEEE;
+            color: #425363;
+            line-height: 1.5;
+        }
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; padding: 0; }
+
+        .container {
+            max-width: 1180px;
+            width: 95%;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        /* ===== Header / Nav bar (Clean, Static Height to Prevent Collapse) ===== */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            background-color: #041E42;
+            box-shadow: 0 4px 12px rgba(4, 30, 66, 0.15);
+            transition: background-color 0.3s ease, border-bottom 0.3s ease, box-shadow 0.3s ease;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        header.scrolled {
+            background-color: #021430; /* Slightly deeper dark blue on scroll */
+            border-bottom: 1px solid rgba(0, 255, 255, 0.15); /* Subtle cyan neon border on scroll */
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 76px; /* Stable, consistent height */
+            transition: height 0.3s ease;
+        }
+
+        /* ===== Logo Hover & Glow Effects ===== */
+        .logo-wrap {
+            display: flex;
+            align-items: center;
+            height: 100%;
+            cursor: pointer;
+        }
+        header .logo {
+            width: 301px;
+            height: 73px;
+            display: block;
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), filter 0.3s ease;
+            filter: drop-shadow(0 2px 6px rgba(0, 255, 255, 0.1));
+            will-change: transform, filter;
+        }
+        
+        /* Subtle glow animation on header hover */
+        .logo-wrap:hover .logo {
+            transform: scale(1.02);
+            filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.45));
+        }
+
+        header .logo svg {
+            height: 100%;
+            width: auto;
+            display: block;
+        }
+
+        /* Navigation Row Wrapper (Acts as visual anchor for hover state) */
+        .nav-row-wrapper {
+            display: flex;
+            align-items: center;
+            height: 100%;
+        }
+
+        .nav-row {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            height: 100%;
+        }
+    
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            font-size: 15px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.85);
+            height: 100%;
+        }
+        .nav-links a {
+            padding: 26px 0;
+            transition: color 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .nav-links a:hover {
+            color: #00FFFF;
+        }
+        .nav-links a svg {
+            width: 8px;
+            height: 8px;
+            fill: currentColor;
+            opacity: 0.7;
+            transition: transform 0.2s;
+        }
+        .nav-row-wrapper:hover .nav-links a svg {
+            transform: rotate(180deg);
+        }
+
+        /* ===== GLASSMORPHIC MEGA MENU ===== */
+        .mega-menu {
+            position: absolute;
+            top: 76px;
+            left: 50%;
+            transform: translateX(-50%) translateY(15px);
+            width: calc(100vw - 40px);
+            max-width: 1140px;
+            background: rgba(2, 20, 48, 0.82); /* Semi-transparent base */
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            border: 1px solid rgba(0, 255, 255, 0.15);
+            border-radius: 12px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            padding: 36px 40px;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.25s;
+            z-index: 999;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        
+        /* Show Mega Menu on hover of wrapper */
+        .nav-row-wrapper:hover .mega-menu {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .mega-col h5 {
+            color: #00FFFF;
+            font-family: 'Barlow', sans-serif; /* Replaced futuristic robotic Orbitron with clean Barlow */
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 18px;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+            padding-bottom: 8px;
+        }
+
+        .mega-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .mega-item {
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s;
+        }
+        .mega-item:hover {
+            transform: translateX(4px);
+        }
+
+        .mega-item-title {
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 2px;
+            transition: color 0.2s;
+        }
+        .mega-item:hover .mega-item-title {
+            color: #00FFFF;
+        }
+
+        .mega-item-desc {
+            color: #8EC9FC;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .header-ctas {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+    
+        .btn {
+            display: inline-block;
+            padding: 8px 18px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            transition: background 0.2s, transform 0.2s;
+            line-height: 1.2;
+        }
+        .btn-cyan {
+            background: #00FFFF;
+            color: #041E42;
+        }
+        .btn-cyan:hover { 
+            background: #00E5E5; 
+            transform: translateY(-1px);
+        }
+        .btn-orange {
+            background: #F87B1E;
+            color: #fff;
+        }
+        .btn-orange:hover { 
+            background: #E06A0A; 
+            transform: translateY(-1px);
+        }
+        .btn-primary {
+            background: #007FEC;
+            color: #fff;
+        }
+        .btn-primary:hover { background: #0066C4; }
+        
+        .header-login {
+            display: flex;
+            align-items: center;
+            color: #fff;
+            gap: 6px;
+            margin-left: 12px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .header-login:hover {
+            color: #00FFFF;
+        }
+        .header-login svg {
+            height: 24px;
+            width: 22px;
+        }
+
+        /* ===== Hero Section ===== */
+        .hero {
+            color: #fff;
+            padding: 150px 0 80px; /* Aligned with standard 76px header height */
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+        }
+        .hero-video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(178deg, rgba(4,30,102,0.65) 0%, rgba(0,127,236,0.65) 100%);
+            z-index: 1;
+        }
+        .hero .container {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 2;
+        }
+        .hero-content {
+            flex: 1 1 55%;
+        }
+        .hero-content .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-bottom: 16px;
+            color: #8EC9FC;
+        }
+        .hero-content h1 {
+            font-size: 42px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin: 16px 0;
+        }
+        .hero-content h1 strong {
+            color: #00FFFF;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+        }
+        .hero-content p {
+            font-size: 20px;
+            font-weight: 400;
+            opacity: 0.9;
+            max-width: 500px;
+            margin-bottom: 24px;
+        }
+        .hero-ctas {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 20px;
+            align-items: center;
+        }
+        .hero-ctas .btn { font-size: 18px; padding: 10px 28px; }
+        .hero-ctas a.link {
+            color: #fff;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s;
+        }
+        .hero-ctas a.link:hover {
+            color: #00FFFF;
+        }
+        .hero-ctas a.link::after {
+            content: "→";
+            font-size: 18px;
+        }
+        .hero-image {
+            flex: 1 1 40%;
+            text-align: center;
+        }
+        .hero-image img {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background: #fff;
+            padding: 10px;
+        }
+
+        /* ===== Sections ===== */
+        section {
+            padding: 64px 0;
+        }
+        .section-title {
+            font-size: 40px;
+            font-weight: 600;
+            color: #2B405A;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .section-sub {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 40px;
+            font-size: 18px;
+            color: #425363;
+        }
+
+        /* Trust Bar */
+        .trust-bar {
+            background: #041E42;
+            color: #fff;
+            padding: 32px 0;
+            text-align: center;
+        }
+        .trust-bar .container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 40px;
+        }
+        .trust-item {
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .trust-item strong {
+            font-size: 24px;
+            color: #00FFFF;
+            display: block;
+        }
+
+        /* Feature Cards (3‑col) */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px,1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+        .feature-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 30px 24px;
+            box-shadow: 0 3px 12px rgba(82,100,121,0.2);
+            border-bottom: 4px solid transparent;
+            transition: border 0.2s;
+            text-align: center;
+        }
+        .feature-card:hover {
+            border-bottom-color: #007FEC;
+        }
+        .feature-card .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        .feature-card h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2B405A;
+            margin-bottom: 8px;
+        }
+        .feature-card p {
+            color: #425363;
+            font-size: 16px;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3,1fr);
+            gap: 20px;
+            max-width: 880px;
+            margin: 0 auto 40px;
+        }
+        .stat-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px 24px;
+            text-align: center;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        }
+        .stat-card .number {
+            font-size: 72px;
+            font-weight: 600;
+            background: linear-gradient(to bottom, #007FEC, #8EC9FC);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+        }
+        .stat-card .label {
+            font-size: 16px;
+            font-weight: 500;
+            color: #425363;
+        }
+
+        /* Solutions (split) */
+        .solutions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: start;
+        }
+        .solutions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .solution-item {
+            background: #fff;
+            padding: 16px 20px;
+            border-radius: 6px;
+            border-left: 4px solid #007FEC;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .solution-item:hover {
+            background: #f0f6fe;
+        }
+        .solution-item .icon {
+            font-size: 28px;
+            width: 40px;
+            text-align: center;
+        }
+        .solution-item .info h4 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2B405A;
+            margin-bottom: 2px;
+        }
+        .solution-item .info p {
+            font-size: 14px;
+            color: #6c7f8f;
+        }
+        .solution-detail {
+            background: #2B405A;
+            color: #fff;
+            padding: 40px 32px;
+            border-radius: 8px;
+        }
+        .solution-detail h3 {
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+        .solution-detail p {
+            opacity: 0.9;
+            margin-bottom: 24px;
+        }
+        .solution-detail .btn { margin-right: 16px; }
+
+        /* Team / Coverage split */
+        .coverage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
+            gap: 24px;
+        }
+        .coverage-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 24px;
+            border-left: 4px solid #00FFFF;
+            box-shadow: 0 3px 12px rgba(82,100,121,0.15);
+        }
+        .coverage-card h4 {
+            color: #2B405A;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        .coverage-card p {
+            font-size: 15px;
+            color: #425363;
+        }
+
+        /* CTA Banner */
+        .cta-banner {
+            background: linear-gradient(to bottom, #004E91, #041C3C);
+            color: #fff;
+            padding: 64px 0;
+            text-align: center;
+        }
+        .cta-banner h2 {
+            font-size: 40px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+        }
+        .cta-banner .btn {
+            font-size: 18px;
+            padding: 12px 36px;
+            background: #F87B1E;
+            color: #fff;
+        }
+        .cta-banner .btn:hover { background: #E06A0A; }
+
+        /* ===== Footer ===== */
+        footer {
+            background: #fff;
+            border-top: 1px solid #7A8CA3;
+            padding: 50px 0 20px;
+            color: #425363;
+        }
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(4,1fr);
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        .footer-grid h4 {
+            color: #2B405A;
+            font-size: 18px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .footer-grid ul li {
+            margin-bottom: 8px;
+        }
+        .footer-grid ul li a {
+            font-size: 15px;
+            color: #425363;
+        }
+        .footer-grid ul li a:hover {
+            color: #007FEC;
+        }
+        .footer-bottom {
+            border-top: 1px solid #ddd;
+            padding-top: 28px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            font-size: 14px;
+        }
+        .footer-bottom .legal a {
+            margin-right: 20px;
+            color: #425363;
+        }
+        .footer-bottom .social a {
+            margin-left: 16px;
+        }
+        .footer-bottom .social img {
+            height: 20px;
+            width: auto;
+            vertical-align: middle;
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 1100px) {
+            .nav-links {
+                display: none; /* Hide navigation links on small viewports */
+            }
+            .header-ctas {
+                gap: 8px;
+            }
+        }
+        @media (max-width: 768px) {
+            .hero {
+                padding: 130px 0 64px; /* Balanced spacer for mobile */
+            }
+            .hero .container { flex-direction: column; text-align: center; }
+            .hero-content p { max-width: 100%; }
+            .hero-ctas { justify-content: center; }
+            .solutions-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .footer-grid { grid-template-columns: 1fr 1fr; }
+            .footer-bottom { flex-direction: column; align-items: center; }
+        }
+        @media (max-width: 480px) {
+            .footer-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== FIXED HEADER (Uniform height, no collapse layout shift) ===== -->
+<header>
+    <div class="container header-inner">
+        <!-- Logo container -->
+        <div class="logo-wrap" onclick="window.scrollTo({top: 0, behavior: 'smooth'});">
+            <div class="logo">
+                <svg viewBox="0 0 360 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="HAWKSIGHT">
+                    <defs>
+                        <style>
+                            .logo-text {
+                                font-family: 'Orbitron', sans-serif;
+                                font-weight: 900;
+                            }
+                        </style>
+                    </defs>
+                    <g transform="translate(8, 6) scale(0.104)">
+                        <!-- Outer white accent path -->
+                        <path d="m 33.676246,364.82 c 0.53628,-7.2677 1.7767,-14.482 5.0286,-21.276 9.4786,-19.803 33.963,-29.34 53.026,-19.284 15.333004,8.0885 22.563004,29.331 13.578004,45.149 -6.873004,12.099 -23.072004,18.235 -35.622004,10.228 -4.4328,-2.828 -7.6343,-7.2793 -8.9938,-12.286 -1.3595,-5.0063 -0.68452,-10.798 2.9392,-15.401 2.2364,-2.8407 5.4473,-4.7654 9.1114,-5.408 3.664,-0.64263 8.1708,0.40388 10.875,3.9972 1.7829,2.3692 1.91,4.5449 1.4108,7.1127 -0.24961,1.2839 -0.78116,2.8399 -2.3513,3.9972 -1.5702,1.1573 -4.2926,1.9424 -5.5844,0.58783 -1.1069,-1.1607 0.67477,-3.153 0.73029,-4.7559 0.0388,-0.83158 0.0772,-1.7317 -0.26004,-2.4745 -0.89679,-1.1463 -1.8493,-1.342 -3.4682,-1.0581 -1.6548,0.29023 -3.6474,1.4542 -4.5851,2.6452 l 0,0.0588 c -2.0224,2.5986 -2.3717,5.5943 -1.5284,8.6999 0.81645,3.0066 2.8568,5.919 5.4668,7.7006 l 0.29391,0.23513 c 8.5452,5.4516 18.484,0.70317 23.392,-7.9366 6.716204,-11.823 1.5113,-26.282 -10.285,-32.505 -15.078,-7.9537 -35.744,1.451 -40.36,17.085 -4.566,15.464 -2.8715,30.938 -0.27385,37.511 l -10.609,0.073 c -2.5579,-12.089 -1.9287,-15.035 -1.9287,-22.696 z" fill="#FFFFFF"/>
+                        
+                        <!-- Updated shadow contours to #02122b (Deep Slate Blue) -->
+                        <path d="m 471.54625,260.66 c 17.668,-13.594 26.097,-35.697 29.523,-57.078 1.4645,-9.3951 1.9746,-19.069 0.14154,-28.452 14.1,0.29894 25.825,9.3358 36.433,17.663 18.603,15.53 35.228,33.824 47.215,54.967 3.6321,6.1751 -5.3435,4.6337 -8.8069,5.9233 -30.729,5.8422 -62.032,11.753 -93.438,8.9164 -3.7237,-0.42453 -7.428,-1.0454 -11.069,-1.9403 z" fill="#02122b"/>
+                        <path d="m 288.00625,210.87 c 10.816,-13.823 26.523,-22.816 42.335,-29.821 12.478,-5.3611 25.719,-9.195 39.307,-10.133 3.6006,-0.49169 7.2012,-0.98339 10.802,-1.4751 -5.8862,13.4 -9.3342,29.076 -3.9503,43.223 5.7766,15.238 17.145,27.376 24.994,41.49 4.6019,5.2258 -5.3217,2.7679 -8.4635,3.5354 -25.451,-0.0247 -51.385,-4.4738 -74.255,-16.006 -13.053,-6.7549 -25.175,-16.863 -30.769,-30.813 z" fill="#02122b"/>
+                        
+                        <!-- Core brand colored paths (Cyan & White) -->
+                        <path d="m 495.40625,157 a 70.231,70.231 0 0 1 14.44,42.81 70.235,70.235 0 0 1 -140.47,0 70.231,70.231 0 0 1 14.28,-42.81 l 111.75,0 z" fill="#00FFFF"/>
+                        <path d="m 513.20625,465.53 c 6.7333,0 8.7137,-5.4462 12.181,-25.899 2.4479,-14.774 7.1068,-28.463 10.502,-43.043 3.0219,-13.117 5.6425,-20.332 9.6694,-26.618 6.5526,-10.229 6.3011,-20.921 -0.71691,-30.481 -6.33,-8.6232 -6.827,-11.121 -6.5471,-32.901 0.13783,-10.725 0.56403,-21.286 0.94711,-23.468 0.88077,-5.0179 4.6148,-7.6923 13.904,-9.9586 8.4827,-2.0695 16.525,-2.2933 41.967,-1.1681 18.144,0.80245 20.457,0.72323 22.75,-0.77901 5.627,-3.687 2.9527,-8.8405 -12.261,-23.626 -15.69,-15.249 -23.876,-24.688 -38.811,-44.75 -26.839,-36.053 -30.927,-40.83 -57.501,-49.189 -19.575,-6.1582 -26.691,-9.0119 -62.031,-10.06 -24.654,-0.7309 -38.767,2.5963 -45.357,3.3466 -25.219,2.8716 -66.247,14.877 -91.933,26.083 -13.581,5.9249 -14.042,6.1723 -30.115,16.152 -11.981,7.4391 -18.733,10.459 -35.44,15.034 -34.886,9.553 -56.753,7.7583 -92,10.378 -9.2579,0.68808 -49.298,3.5149 -74.500004,4.4784 -30.689,1.1732 -35.835,-2.0376 -38.423,0.54994 -2.0315,2.0315 -0.5636,8.1815 -0.6024,14.306 -0.0237,3.7378 0.18399,7.6642 0.48569,11.602 8.1923,-1.424 8.0353,-1.3676 26.54,-2.9165 1.6808,-0.14069 16.718,-1.6695 44.500004,-4.1726 11.867,-1.0692 70.326,-2.8448 105.5,-3.9248 16.997,-0.52189 34.357,-4.7228 51,-1.2347 5.7624,1.2076 -2.387,-1.1161 16,7.4812 36.313,14.051 55.853,23.79 104.5,32.83 30.774,4.5201 33.208,4.9745 36.376,7.2909 1.7456,1.2764 1.662,1.6171 -1.6767,6.8363 -3.5642,5.5717 -14.275,15.81 -29.699,28.389 -51.619,43.564 -115.05,77.431 -162.89,98.598 -22.221,9.5122 -37.55,14.655 -50.108,16.811 -61.892,13.654 -134.260004,-9.4938 -136.110004,-56.959 -0.0489,-1.256 -0.49928,-6.001 0.1398,-12.079 0.44539,-4.2357 0.89625,-7.3216 2.2932,-11.095 3.9795,-10.75 12.413,-20.407 28.672,-21.755 11.746,0.022 20.375,6.1561 23.95,16.17 4.562204,12.78 -1.3185,27.071 -14.023,29.565 -6.6403,1.3038 -11.222,-0.5256 -14.271,-4.4679 -3.3424,-4.3221 -3.72,-12.026 -1.3559,-15.634 2.2757,-3.4732 7.2459,-5.2754 10.824,-3.9248 3.6125,1.3636 4.9933,0.36555 0.6538,-3.1839 -0.38036,-0.24867 -0.77844,-0.4586 -1.191,-0.63136 -6.6675,-2.7918 -17.127,4.1226 -17.913,14.135 -0.7119,11.495 7.7045,20.279 19.249,20.94 6.5659,0.37574 14.594,-1.9665 20.026004,-7.8035 13.425,-14.428 9.1712,-34.885 -2.958604,-45.762 -4.6131,-4.1366 -7.7535,-6.0583 -14.065,-7.4773 -19.37,-4.3554 -37.69,4.5134 -45.528,24.301 -3.5645,8.9992 -3.7675,16.201 -3.8515,23.221 -0.70438,58.895 65.742,87.202 131.950004,82.517 28.009,-2.4123 46.229,-6.8095 80.495,-20.915 36.58,-12.09 143.44,-68.32 207.96,-120.33 18.846,-15.317 30.511,-22.813 33.055,-21.24 0.61585,0.38062 0.98989,11.992 0.99221,30.802 0.004,28.758 0.1019,30.352 2.0717,33.583 3.2793,5.3791 4.935,17.725 5.9822,44.608 1.6327,41.914 2.675,60.915 3.4439,62.778 1.3963,3.383 7.0306,4.6642 13.289,4.6642 z m -221.62,-252.27 c -0.41803,-2.1707 4.6044,-8.6243 11.231,-13.08 10.396,-6.9893 22.385,-11.512 34.092,-15.96 71.934,-23.518 145.08,-20.065 174.03,-4.962 10.593,5.1512 14.126,7.777 22.813,15.582 4.1291,3.7102 9.5939,9.7305 12.144,13.379 5.133,7.3428 10.014,13.339 19.014,23.362 9.3026,10.359 14.5,16.774 14.5,17.897 0,1.5721 -7.8962,3.1488 -17.5,3.5809 -81.15,10.292 -230.44,14.198 -270.32,-39.799 z M 67.406246,143.909 c 16.558,-0.50003 42.467004,-2.0158 63.500004,-4.8954 19.525,-2.6732 39.047,-6.067 58,-11.467 17.982,-5.123 35.124,-12.85 52.5,-19.754 7.7243,-3.0694 15.32,-6.4533 23,-9.6318 8.319,-3.4429 16.53,-7.1723 25,-10.224 15.523,-5.5928 30.986,-11.946 47.239,-14.789 41.988,-7.3464 85.261,-8.7793 127.76,-5.4986 23.554,1.8182 46.695,7.7124 69.5,13.878 17.863,4.8293 35.019,11.972 52.5,18.041 5.069,1.761 10.039,6.841 15.177,5.321 5.396,-1.6 10.73,-7.749 10.317,-13.361 -0.434,-5.884 -7.835,-9.014 -12.753,-12.272 -16.823,-11.146 -36.498,-17.485 -55.661,-23.803 -19.219,-6.3349 -38.923,-12.127 -59.072,-14.001 -54.326,-5.0532 -110.09,-3.4301 -163.5,7.7269 -28.29,5.9098 -53.945,20.759 -81,30.92 -31.437,11.806 -61.76,27.444 -94.5,34.909 -33.045,7.534 -83.745004,9.6292 -101.220004,9.5911 -6.5425,-0.0143 -6.7685,0.0708 -8.3595,3.1475 -1.8515,3.5805 -3.1256,14.296 -1.7926,15.077 1.3395,0.78418 21.593,1.4453 33.376,1.0894 z" fill="#FFFFFF"/>
+                    </g>
+                    <!-- Brand Typographic Elements -->
+                    <text x="84" y="44" class="logo-text" fill="#FFFFFF" letter-spacing="1">HAWK<tspan fill="#00FFFF">SIGHT</tspan><tspan font-size="12" dy="-14" fill="#00FFFF">™</tspan></text>
+                </svg>
+            </div>
+        </div>
+        
+        <!-- Navigation row contains both links and the elegant Mega Menu wrapper -->
+        <div class="nav-row-wrapper">
+            <div class="nav-row">
+                <nav class="nav-links">
+                    <a href="login.html">Platform <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></a>
+                    <a href="login.html">Products <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></a>
+                    <a href="login.html">Solutions <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></a>
+                    <a href="login.html">Resources <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></a>
+                    <a href="login.html">Partners <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></a>
+                    <a href="login.html">Support <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></a>
+                    <a href="login.html">Company <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></a>
+                </nav>
+                <div class="header-ctas">
+                    <a href="login.html" class="btn btn-cyan">Try Free</a>
+                    <a href="login.html" class="btn btn-orange">Get a Quote</a>
+                    <div class="header-login" onclick="window.location.href='login.html';">
+                        <svg viewBox="0 0 24 24"><path d="M19,20.486v-.745a3,3,0,0,0-1.512-2.6l-3.219-1.842" fill="none" stroke="#fff" stroke-width="2"/><path d="M9.727,15.292,6.512,17.136A3,3,0,0,0,5,19.741v.745" fill="none" stroke="#fff" stroke-width="2"/><path d="M12,16h0a4,4,0,0,1-4-4V10a4,4,0,0,1,4-4h0a4,4,0,0,1,4,4v2A4,4,0,0,1,12,16Z" fill="none" stroke="#fff" stroke-width="2"/><circle cx="11" cy="11" r="11" fill="none" stroke="#fff" stroke-width="2" transform="translate(1 1)"/></svg>
+                        Login
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== GLASSMORPHIC MEGA MENU PANEL ===== -->
+            <div class="mega-menu">
+                <!-- Column 1: Platform -->
+                <div class="mega-col">
+                    <h5>Platform</h5>
+                    <div class="mega-list">
+                        <a href="login.html" class="mega-item">
+                            <span class="mega-item-title">Platform Overview</span>
+                            <span class="mega-item-desc">A unified architecture for exposure & risk mapping.</span>
+                        </a>
+                        <a href="login.html" class="mega-item">
+                            <span class="mega-item-title">Continuous Scan Engine</span>
+                            <span class="mega-item-desc">Background threat hunting designed to never sleep.</span>
+                        </a>
+                        <a href="login.html" class="mega-item">
+                            <span class="mega-item-title">Risk Analytics</span>
+                            <span class="mega-item-desc">Advanced vulnerability prioritization and rating.</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Column 2: Products -->
+                <div class="mega-col">
+                    <h5>Products</h5>
+                    <div class="mega-list">
+                        <a href="login.html" class="mega-item">
+                            <span class="mega-item-title">Cloud Posture (CPMA)</span>
+                            <span class="mega-item-desc">Continuous audit checks across AWS, Azure, & GCP.</span>
+                        </a>
+                        <a href="login.html" class="mega-item">
+                            <span class="mega-item-title">Attack Surface (EASM)</span>
+                            <span class="mega-item-desc">Discover and secure internet-facing assets instantly.</span>
+                        </a>
+                        <a href="login.html" class="mega-item">
+                            <span class="mega-item-title">Identity & Access</span>
+                            <span class="mega-item-desc">Identify risky configurations and permissions.</span>
+                        </a>
+                        <a href="login.html" class="mega-item">
+                            <span class="mega-item-title">OT Infrastructure Scan</span>
+                            <span class="mega-item-desc">Industrial controls threat and vulnerability intelligence.</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Column 3: Solutions -->
+                <div class="mega-col">
+                    <h5>Solutions</h5>
+                    <div class="mega-list">
+                        <a href="login.html" class="mega-item">
+                            <span class="mega-item-title">Small Security Teams</span>
+                            <span class="mega-item-desc">Enterprise-level oversight customized for lightweight operations.</span>
+                        </a>
+                        <a href="login.html" class="mega-item">
+                            <span class="mega-item-title">Audit & Compliance</span>
+                            <span class="mega-item-desc">Gather immediate evidence reports for standard evaluations.</span>
+                        </a>
+                        <a href="login.html" class="mega-item">
+                            <span class="mega-item-title">Enterprise Infrastructure</span>
+                            <span class="mega-item-desc">Vulnerability mapping suited for massive networks.</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Column 4: Resources & Co -->
+                <div class="mega-col">
+                    <h5>Resources & Company</h5>
+                    <div class="mega-list">
+                        <a href="login.html" class="mega-item">
+                            <span class="mega-item-title">Hawksight Documentation</span>
+                            <span class="mega-item-desc">Technical integration specifications and APIs.</span>
+                        </a>
+                        <a href="login.html" class="mega-item">
+                            <span class="mega-item-title">Threat Research Blog</span>
+                            <span class="mega-item-desc">Vulnerability updates from our dedicated global labs.</span>
+                        </a>
+                        <a href="login.html" class="mega-item">
+                            <span class="mega-item-title">About Hawksight Inc.</span>
+                            <span class="mega-item-desc">Our mission, career paths, and leadership team.</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ===== HERO (Padding adjusted for the static height navbar) ===== -->
+<section class="hero">
+    <video class="hero-video" autoplay muted loop playsinline>
+        <source src="hero-bg.mp4" type="video/mp4">
+    </video>
+    <div class="hero-video-overlay"></div>
+    <div class="container">
+        <div class="hero-content">
+            <div class="badge">A subsidiary of Alien.Inc</div>
+            <h1>
+                <span>See the exposure before it</span><br>
+                <strong>becomes the breach.</strong>
+            </h1>
+            <p>HAWKSIGHT continuously scans your infrastructure, ranks what actually matters, and tells you what to fix first — not everything at once.</p>
+            <div class="hero-ctas">
+                <a href="login.html" class="btn btn-cyan">Start a Free Scan</a>
+                <a href="login.html" class="link">See a Sample Report</a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f0f0f0'/%3E%3Ctext x='60' y='150' font-family='Arial' font-size='22' fill='%23041E42'%3EHAWKSIGHT Dashboard%3C/text%3E%3C/svg%3E" alt="HAWKSIGHT dashboard mockup">
+        </div>
+    </div>
+</section>
+
+<!-- ===== TRUST BAR ===== -->
+<div class="trust-bar">
+    <div class="container">
+        <div class="trust-item"><strong>Continuous</strong> Scan Coverage</div>
+        <div class="trust-item"><strong>Risk-Ranked</strong> Findings, Not Raw Lists</div>
+        <div class="trust-item"><strong>Plain-Language</strong> Reports Anyone Can Read</div>
+    </div>
+</div>
+
+<!-- ===== THREATS SECTION ===== -->
+<section>
+    <div class="container">
+        <h2 class="section-title">Your attack surface doesn't wait for your next audit.</h2>
+        <p class="section-sub">New assets, new dependencies, new misconfigurations appear between scans. HAWKSIGHT closes that gap with continuous, prioritized visibility.</p>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="icon">🔎</div>
+                <h3>Continuous Discovery</h3>
+                <p>Every new asset, subdomain, and service gets picked up automatically — no manual inventory required.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">📊</div>
+                <h3>Risk-Based Prioritization</h3>
+                <p>Findings are ranked by real exploitability and business impact, so your team fixes the five that matter, not the five hundred that don't.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">📄</div>
+                <h3>Reports People Actually Read</h3>
+                <p>Every scan produces a report written for the person who has to act on it, not just the person who has to file it.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== STATS ===== -->
+<section style="background:#f8fafc;">
+    <div class="container">
+        <h2 class="section-title">What HAWKSIGHT Watches</h2>
+        <p class="section-sub">A snapshot of what continuous coverage looks like once it's running.</p>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="number">24/7</div>
+                <div class="label">Asset & exposure monitoring</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">1-5</div>
+                <div class="label">Risk tiers per finding, ranked by real impact</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">1</div>
+                <div class="label">Report, written for the person fixing it</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== SOLUTIONS (SPLIT) ===== -->
+<section>
+    <div class="container">
+        <h2 class="section-title">Featured Solutions</h2>
+        <p class="section-sub">Coverage across the surfaces that actually get exploited.</p>
+        <div class="solutions-grid">
+            <div class="solutions-list">
+                <div class="solution-item" onclick="window.location.href='login.html';">
+                    <span class="icon">☁️</span>
+                    <div class="info">
+                        <h4>Cloud Posture Management</h4>
+                        <p>Find misconfigurations across your cloud accounts before an attacker does.</p>
+                    </div>
+                </div>
+                <div class="solution-item" onclick="window.location.href='login.html';">
+                    <span class="icon">🌐</span>
+                    <div class="info">
+                        <h4>External Attack Surface Management</h4>
+                        <p>See every internet-facing asset tied to your org, including the ones nobody remembers standing up.</p>
+                    </div>
+                </div>
+                <div class="solution-item" onclick="window.location.href='login.html';">
+                    <span class="icon">🔑</span>
+                    <div class="info">
+                        <h4>Identity & Access Exposure</h4>
+                        <p>Map privilege escalation paths across your directory before they're used against you.</p>
+                    </div>
+                </div>
+                <div class="solution-item" onclick="window.location.href='login.html';">
+                    <span class="icon">🏭</span>
+                    <div class="info">
+                        <h4>OT & Infrastructure Scanning</h4>
+                        <p>Purpose-built checks for operational environments that can't just be patched on a whim.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="solution-detail">
+                <h3>☁️ Cloud Posture Management</h3>
+                <p>Multi-cloud environments multiply the number of places something can be left open. HAWKSIGHT discovers every asset across your cloud accounts, checks it against known misconfiguration patterns, and ranks the results by what's actually reachable and exploitable — not just what's technically non-compliant.</p>
+                <a href="login.html" class="btn btn-primary">Request a Demo</a>
+                <a href="login.html" class="link" style="color:#8EC9FC; margin-left:16px;">Learn More →</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== COVERAGE ===== -->
+<section style="background:#f8fafc;">
+    <div class="container">
+        <h2 class="section-title">Built for Small Teams, Not Just Security Departments</h2>
+        <p class="section-sub">HAWKSIGHT is designed to be run by one person who wears the security hat part-time, not a dedicated SOC.</p>
+        <div class="coverage-grid">
+            <div class="coverage-card">
+                <h4>No Agents to Deploy</h4>
+                <p>Point HAWKSIGHT at your domains and cloud accounts — no software to install on every endpoint.</p>
+            </div>
+            <div class="coverage-card">
+                <h4>Plain-Language Fixes</h4>
+                <p>Every finding includes a concrete remediation step, not just a CVE number and a severity score.</p>
+            </div>
+            <div class="coverage-card">
+                <h4>Scheduled or On-Demand</h4>
+                <p>Run continuous background scans, or trigger one before a client audit or investor review.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== CTA BANNER ===== -->
+<div class="cta-banner">
+    <div class="container">
+        <h2>See HAWKSIGHT In Action</h2>
+        <p style="font-size:20px; max-width:600px; margin:0 auto 32px;">Watch a live scan and see exactly how findings get prioritized, start to finish.</p>
+        <a href="login.html" class="btn">Request a Demo</a>
+    </div>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+    <div class="container">
+        <div class="footer-grid">
+            <div>
+                <h4>Featured Products</h4>
+                <ul>
+                    <li><a href="login.html">HAWKSIGHT Platform</a></li>
+                    <li><a href="login.html">Cloud Posture Management</a></li>
+                    <li><a href="login.html">External Attack Surface Management</a></li>
+                    <li><a href="login.html">Identity & Access Exposure</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Solutions</h4>
+                <ul>
+                    <li><a href="login.html">Small Security Teams</a></li>
+                    <li><a href="login.html">Cloud Posture Management</a></li>
+                    <li><a href="login.html">OT & Infrastructure</a></li>
+                    <li><a href="login.html">Compliance Prep</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="login.html">Blog</a></li>
+                    <li><a href="login.html">Webinars</a></li>
+                    <li><a href="login.html">Sample Reports</a></li>
+                    <li><a href="login.html">Security Guide</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Connections</h4>
+                <ul>
+                    <li><a href="login.html">Careers</a></li>
+                    <li><a href="login.html">Contact Us</a></li>
+                    <li><a href="login.html">About ALIEN.INC</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="legal">
+                <a href="login.html">Privacy Policy</a>
+                <a href="login.html">Data Practices</a>
+                <a href="login.html">Legal</a>
+                <a href="login.html">Accessibility</a>
+            </div>
+            <div class="social">
+                <a href="login.html"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='%23041E42'%3E%3Cpath d='M22.23 0H1.77C.79 0 0 .78 0 1.77v20.46C0 23.22.79 24 1.77 24H22.23c.98 0 1.77-.78 1.77-1.77V1.77C24 .78 23.21 0 22.23 0zM7.08 20.31H3.55V8.97h3.53v11.34zM5.31 7.47c-1.13 0-2.04-.92-2.04-2.04s.91-2.04 2.04-2.04 2.04.92 2.04 2.04-.91 2.04-2.04 2.04zm15.05 12.84h-3.53v-5.63c0-1.34-.03-3.07-1.87-3.07s-2.16 1.46-2.16 2.98v5.72h-3.53V8.97h3.38v1.55h.05c.47-.89 1.62-1.83 3.33-1.83 3.56 0 4.22 2.34 4.22 5.38v6.24z'/%3E%3C/svg%3E" alt="LinkedIn"></a>
+                <a href="login.html"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='%23041E42'%3E%3Cpath d='M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.937 4.937 0 004.604 3.417 9.868 9.868 0 01-6.102 2.104c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.054 0 13.999-7.496 13.999-13.986 0-.209 0-.42-.015-.63A9.936 9.936 0 0024 4.59z'/%3E%3C/svg%3E" alt="Twitter"></a>
+                <a href="login.html"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='%23041E42'%3E%3Cpath d='M21.582 6.186a2.506 2.506 0 00-1.768-1.768C18.254 4 12 4 12 4s-6.254 0-7.814.418A2.506 2.506 0 002.418 6.186 26.27 26.27 0 002 12a26.27 26.27 0 00.418 5.814 2.506 2.506 0 001.768 1.768C5.746 20 12 20 12 20s6.254 0 7.814-.418a2.506 2.506 0 001.768-1.768A26.27 26.27 0 0022 12a26.27 26.27 0 00-.418-5.814zM9.75 15.02v-6.04L15.5 12l-5.75 3.02z'/%3E%3C/svg%3E" alt="YouTube"></a>
+            </div>
+        </div>
+        <div style="margin-top:20px; text-align:center; font-size:13px; color:#6c7f8f;">© 2026 HAWKSIGHT, a subsidiary of ALIEN.INC. All Rights Reserved.</div>
+    </div>
+</footer>
+
+<!-- ===== SCROLL SCRIPT ===== -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const header = document.querySelector('header');
+
+        function handleScroll() {
+            if (window.scrollY > 40) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        }
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll();
+    });
+</script>
+
+</body>
+</html>
+--- END OF FILE index.html ---

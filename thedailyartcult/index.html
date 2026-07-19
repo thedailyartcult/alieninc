@@ -1,0 +1,4434 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+    <meta name="description" content="The Daily Art Cult produces bespoke audiobooks, immersive listening experiences, and philosophical reflections. Features include the Listening Booth, Immortality Projects, and a membership platform. A subsidiary of Alien Inc. Compliance-verified as part of the Alien Inc group.">
+    <meta name="compliance" content="verified; report=/compliance.html; frameworks=CIS,DISA,PCI-DSS,OWASP,NIST,GDPR">
+    <meta name="security" content="monitored; CSP; HSTS-preload; X-Frame-Options-DENY; X-Content-Type-Options-nosniff; Referrer-Policy-strict; Permissions-Policy-restricted">
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "The Daily Art Cult",
+    "url": "https://thedailyartcult.lol",
+    "description": "The Daily Art Cult produces bespoke audiobooks, immersive listening experiences, and philosophical reflections. Features include the Listening Booth, Immortality Projects, and a membership platform. A subsidiary of Alien Inc.",
+    "headline": "Slow-luxury philosophical audio platform.",
+    "parentOrganization": {
+        "@type": "Organization",
+        "name": "Alien Inc",
+        "url": "https://alieninc.tech"
+    },
+    "subjectOf": {
+        "@type": "WebSite",
+        "url": "https://thedailyartcult.lol",
+        "description": "Compliance-verified as part of the Alien Inc group."
+    }
+}
+    </script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Curated philosophical audio reflections for thoughtful minds who appreciate quiet luxury.">
+  <meta property="og:title" content="The Daily Art Cult | Quiet Philosophy Audio">
+  <meta property="og:description" content="Curated philosophical audio reflections for thoughtful minds who appreciate quiet luxury.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="portrait.jpeg">
+  <meta name="twitter:card" content="summary_large_image">
+  <title>The Daily Art Cult</title>
+  
+    <!-- 1. PLACE YOUR COOKIEBOT SCRIPT HERE -->
+  <!-- Cookiebot removed — site works without it on alieninc.tech -->
+  
+  
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+  
+
+<!-- Leaflet.js Map Assets -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <!-- ADDED: to Leaflet -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Supabase JS Library -->
+  <!-- ADDED: to Supabase Loader -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- ADDED: to Supabase Init Script -->
+  <script>
+    // Initialize Supabase with your credentials
+    const SUPABASE_URL = "https://frwjaixxlgthkgjtafhz.supabase.co"; 
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyd2phaXh4bGd0aGtnanRhZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDUzNDQsImV4cCI6MjA5NDYyMTM0NH0.j2DKz__QMml4WplMYNmsQpTUw0qu-kZG7Md3qBEEdEc"; 
+    
+    // Use "supabaseClient" to match your pipeline function and avoid temporal dead-zone errors
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
+  
+  <!-- Tailwind CSS CDN -->
+  <!-- ADDED: to Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: "#070504",
+            night: "#0d0907",
+            walnut: "#1b110d",
+            leather: "#2b1913",
+            burgundy: "#4a101b",
+            emerald: "#102c26",
+            cream: "#f2eadc",
+            linen: "#d8cbb8",
+            smoke: "#9f9283",
+            antique: "#c6a766"
+          },
+          fontFamily: {
+            serif: ["Playfair Display", "Georgia", "serif"],
+            sans: ["Inter", "system-ui", "sans-serif"]
+          },
+          boxShadow: {
+            soft: "0 22px 70px rgba(0, 0, 0, 0.34)",
+            glow: "0 18px 60px rgba(198, 167, 102, 0.10)"
+          }
+        }
+      }
+    };
+  </script>
+  
+  <style>
+  
+/* Claude-Style Smooth Loader */
+.daily-art-loader {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  object-fit: cover;
+  object-position: 50% 78%;
+  filter: invert(1) contrast(1.12);
+  mix-blend-mode: screen;
+  opacity: 0.9;
+}
+
+.studio-thinking-message {
+  align-self: flex-start;
+  max-width: min(92%, 34rem);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid rgba(216, 203, 184, 0.08);
+  border-radius: 1.1rem;
+  background: rgba(13, 9, 7, 0.72);
+  padding: 0.72rem 0.9rem;
+  color: rgba(242, 234, 220, 0.9);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.2);
+}
+
+.studio-thinking-message.is-settled {
+  border-color: rgba(198, 167, 102, 0.12);
+  background: rgba(18, 10, 6, 0.62);
+}
+
+.studio-thinking-copy {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 0.98rem;
+  line-height: 1.45;
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.studio-thinking-copy.is-changing {
+  opacity: 0;
+  transform: translateY(3px);
+}
+
+/* Inner circle-slash spins with responsive, momentum-driven easing */
+.daily-art-loader-svg .center-core {
+  transform-origin: 50px 82px; /* Pivots around the center of the lower circle */
+  animation: core-spin 2.2s cubic-bezier(0.68, -0.6, 0.32, 1.6) infinite;
+}
+
+/* Slow, ambient rotation for the sunburst */
+@keyframes sunburst-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Subtle expanding and contracting "breathing" effect */
+@keyframes sunburst-pulse {
+  0% {
+    transform: scale(0.94);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+/* Quick, snappy rotation for the central symbol */
+@keyframes core-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); } /* Rotates opposite to the rays for visual balance */
+}
+
+
+  
+  /* Automatically Sliding Logos Carousel Animation */
+    @keyframes logo-scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .animate-logo-scroll {
+      animation: logo-scroll 35s linear infinite;
+    }
+    .logo-carousel-fade-left {
+      background: linear-gradient(90deg, #1a120b 0%, rgba(26, 18, 11, 0) 100%);
+    }
+    .logo-carousel-fade-right {
+      background: linear-gradient(270deg, #1a120b 0%, rgba(26, 18, 11, 0) 100%);
+    }
+  @font-face {
+        font-family: "Univers Regular";
+        src: url("fonts/base.woff2") format("woff2");
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+    }
+
+    @font-face {
+        font-family: "Univers Condensed";
+        src: url("fonts/condensed-heavy.woff2") format("woff2");
+        font-weight: bold;
+        font-style: normal;
+        font-display: swap;
+    }
+
+    @font-face {
+        font-family: "Univers Condensed";
+        src: url("fonts/condensed-regular.woff2") format("woff2");
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+    }
+    :root {
+      --ink: #070504;
+      --night: #0d0907;
+      --walnut: #1b110d;
+      --leather: #2b1913;
+      --burgundy: #4a101b;
+      --emerald: #102c26;
+      --cream: #f2eadc;
+      --linen: #d8cbb8;
+      --smoke: #9f9283;
+      --antique: #c6a766;
+    }
+
+    body {
+      background: #1a120b;
+      color: var(--cream);
+      font-family: "Inter", system-ui, sans-serif;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .library-overlay {
+      background:
+        radial-gradient(circle at 50% 18%, rgba(70, 16, 27, 0.14), transparent 34%),
+        linear-gradient(180deg, rgba(7, 5, 4, 0.50), rgba(7, 5, 4, 0.54) 52%, rgba(7, 5, 4, 0.72));
+    }
+
+    .hero-swipe {
+      opacity: 0;
+      transform: translateX(46px);
+      animation: swipeIn 1100ms cubic-bezier(0.2, 0.72, 0.2, 1) forwards;
+    }
+
+    .hero-swipe-delay {
+      animation-delay: 180ms;
+    }
+
+    @keyframes swipeIn {
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 760ms ease, transform 760ms ease;
+    }
+
+    .reveal.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #hero-headline .word {
+      opacity: 0;
+      transform: translateY(0.48em);
+      filter: blur(7px);
+      transition:
+        opacity 860ms cubic-bezier(0.16, 1, 0.3, 1),
+        transform 860ms cubic-bezier(0.16, 1, 0.3, 1),
+        filter 860ms cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform, filter;
+    }
+
+    #hero-headline .word.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+
+    .headline-countdown {
+      display: inline-block;
+      min-width: 4.55em;
+      position: relative;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      transition: opacity 320ms ease;
+      will-change: opacity;
+    }
+
+    #hero-countdown-value {
+      font-size: 1.22em;
+      line-height: 0.9;
+    }
+
+    .headline-countdown::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -0.12em;
+      width: var(--headline-underline-width, 4.35em);
+      height: 0.075em;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent, rgba(198, 167, 102, 0.2) 8%, #c6a766 48%, rgba(198, 167, 102, 0.72) 88%, transparent);
+      transform: translateX(-50%) scaleX(0);
+      transform-origin: left center;
+      opacity: 0;
+      transition:
+        opacity 520ms ease,
+        transform 920ms cubic-bezier(0.16, 1, 0.3, 1),
+        width 320ms ease;
+    }
+
+    .headline-countdown.is-underlined::after {
+      opacity: 0.95;
+      transform: translateX(-50%) scaleX(1);
+    }
+
+    .headline-countdown.is-changing {
+      opacity: 0.72;
+    }
+
+    #hero-headline-wrap {
+      max-height: 260px;
+      transition: opacity 420ms ease, transform 420ms ease, max-height 420ms ease, margin-bottom 420ms ease;
+      overflow: hidden;
+    }
+
+    #hero-headline-wrap.is-dismissed {
+      opacity: 0;
+      transform: translateY(-10px);
+      max-height: 0;
+      margin-bottom: 0;
+      pointer-events: none;
+    }
+
+    .headline-countdown-second {
+      color: #c6a766;
+    }
+
+    @keyframes studioReveal {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+        filter: blur(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+      }
+    }
+
+    @keyframes studioChoiceReveal {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.985);
+        filter: blur(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+      }
+    }
+
+    #studio-mode-switcher {
+      animation: studioReveal 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    #studio-mode-switcher button {
+      position: relative;
+      overflow: hidden;
+    }
+
+    #studio-mode-switcher button::after {
+      content: "";
+      position: absolute;
+      left: 18%;
+      right: 18%;
+      bottom: 0.46rem;
+      height: 1px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent, rgba(198, 167, 102, 0.85), transparent);
+      opacity: 0;
+      transform: scaleX(0);
+      transition: opacity 360ms ease, transform 560ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    #studio-mode-switcher button[aria-pressed="true"]::after {
+      opacity: 0.75;
+      transform: scaleX(1);
+    }
+
+    #hero-editor-frame {
+      overflow: hidden;
+      animation: studioReveal 820ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
+    }
+
+    #hero-editor-frame::before {
+      content: "";
+      position: absolute;
+      left: 1rem;
+      right: 1rem;
+      top: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(198, 167, 102, 0.58), transparent);
+      opacity: 0.26;
+      transform: scaleX(0.5);
+      transform-origin: center;
+      transition: opacity 420ms ease, transform 640ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    #hero-editor-frame:focus-within::before {
+      opacity: 0.9;
+      transform: scaleX(1);
+    }
+
+    #studio-prompt-panel:not(.hidden),
+    #studio-md-panel:not(.hidden) {
+      animation: studioReveal 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    #hero-chat-input,
+    #hero-md-input {
+      transition: color 260ms ease, background-color 260ms ease, filter 260ms ease;
+    }
+
+    #hero-chat-input:focus,
+    #hero-md-input:focus {
+      filter: brightness(1.05);
+    }
+
+    #studio-question-label {
+      animation: studioReveal 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .studio-floating-question {
+      animation: studioReveal 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    #booth-choice-frame:not(.hidden) .quiet-panel {
+      animation: studioReveal 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    #booth-choice-frame:not(.hidden) button {
+      animation: studioChoiceReveal 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    #booth-choice-frame:not(.hidden) button:nth-child(2) {
+      animation-delay: 90ms;
+    }
+
+    #choice-beginning,
+    #choice-ending,
+    #hero-chat-submit {
+      transition:
+        transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 260ms ease,
+        background-color 260ms ease,
+        color 260ms ease,
+        box-shadow 260ms ease;
+    }
+
+    #choice-beginning:hover,
+    #choice-ending:hover {
+      box-shadow: inset 0 1px 0 rgba(242, 234, 220, 0.06), 0 18px 46px rgba(0, 0, 0, 0.22);
+    }
+
+    #booth-reading-frame:not(.hidden),
+    #booth-bridge-frame:not(.hidden),
+    #booth-bespoke-frame:not(.hidden),
+    #post-playback-ui:not(.hidden) {
+      animation: studioReveal 820ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .studio-oracle-mark {
+      position: relative;
+      width: 4.5rem;
+      height: 1px;
+      margin: 0 auto;
+      background: linear-gradient(90deg, transparent, rgba(198, 167, 102, 0.95), transparent);
+      transform-origin: center;
+      animation: studioLineDraw 1200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .studio-oracle-mark::before,
+    .studio-oracle-mark::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 0.38rem;
+      height: 0.38rem;
+      border: 1px solid rgba(198, 167, 102, 0.76);
+      border-radius: 999px;
+      transform: translateY(-50%);
+      background: rgba(13, 9, 7, 0.92);
+    }
+
+    .studio-oracle-mark::before {
+      left: 0;
+    }
+
+    .studio-oracle-mark::after {
+      right: 0;
+    }
+
+    @keyframes studioLineDraw {
+      from {
+        opacity: 0;
+        transform: scaleX(0.25);
+        filter: blur(5px);
+      }
+      to {
+        opacity: 1;
+        transform: scaleX(1);
+        filter: blur(0);
+      }
+    }
+
+    .studio-bridge-line {
+      animation: studioReveal 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    #bespoke-player-interface,
+    #post-playback-ui .membership-reveal {
+      animation: studioReveal 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    #post-playback-ui .membership-reveal:nth-child(2) {
+      animation-delay: 90ms;
+    }
+
+    #post-playback-ui .membership-reveal:nth-child(3) {
+      animation-delay: 170ms;
+    }
+
+    .membership-panel {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .membership-panel::before {
+      content: "";
+      position: absolute;
+      left: 1.5rem;
+      right: 1.5rem;
+      top: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(198, 167, 102, 0.62), transparent);
+      opacity: 0.5;
+      transform: scaleX(0.72);
+      transition: opacity 360ms ease, transform 560ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .membership-panel:hover::before {
+      opacity: 0.95;
+      transform: scaleX(1);
+    }
+
+    .quiet-panel {
+      border: 1px solid rgba(242, 234, 220, 0.14);
+      background: rgba(9, 6, 5, 0.58);
+      backdrop-filter: blur(14px);
+    }
+
+    .quiet-panel-strong {
+      border: 1px solid rgba(216, 203, 184, 0.22);
+      background: rgba(16, 44, 38, 0.36);
+      backdrop-filter: blur(16px);
+    }
+
+    .premium-audio {
+      border: 1px solid rgba(198, 167, 102, 0.26);
+      background:
+        radial-gradient(circle at 18% 0%, rgba(198, 167, 102, 0.13), transparent 34%),
+        linear-gradient(135deg, rgba(7, 5, 4, 0.86), rgba(16, 44, 38, 0.52));
+      box-shadow: 0 24px 90px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(242, 234, 220, 0.08);
+      backdrop-filter: blur(18px);
+    }
+
+    .audio-progress {
+      accent-color: #c6a766;
+    }
+
+    .price-underline {
+      text-decoration-line: underline;
+      text-decoration-color: rgba(198, 167, 102, 0.78);
+      text-decoration-thickness: 2px;
+      text-underline-offset: 0.16em;
+    }
+    
+    
+    
+  
+    
+    
+
+    .scrollbar-none::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-none {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Sweep Animation */
+    .btn-sweep {
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+      transition: color 0.4s ease;
+    }
+    .btn-sweep::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #b89a6a;
+      z-index: -1;
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    .btn-sweep:hover {
+      color: #0d0b09 !important;
+    }
+    .btn-sweep:hover::before {
+      transform: scaleX(1);
+    }
+
+
+    
+    
+
+    @keyframes golden-breath {
+      0%, 100% { opacity: 0.15; transform: scaleX(0.8); }
+      50% { opacity: 0.95; transform: scaleX(1); }
+    }
+    .filament-breath {
+      animation: golden-breath 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    /* Dynamic Multi-Image Crossfade Worldview Tokens */
+    .iconic-token {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(242, 234, 220, 0.12);
+      background: rgba(9, 6, 5, 0.6);
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .iconic-token:hover {
+      border-color: var(--antique);
+      transform: scale(1.03);
+      box-shadow: 0 10px 30px rgba(198, 167, 102, 0.15);
+    }
+    .token-image-container {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 0;
+    }
+    .iconic-token:hover .token-image-container {
+      opacity: 0.65;
+    }
+    .token-img-slide {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 1.5s ease-in-out;
+    }
+    .token-img-slide.active {
+      opacity: 1;
+    }
+
+    /* Cards in Transit — Client Portrait Side Panel */
+    #map-client-panel {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 260px;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(9,6,5,0.97) 0%, rgba(27,17,13,0.98) 100%);
+      border-left: 1px solid rgba(198,167,102,0.22);
+      backdrop-filter: blur(18px);
+      z-index: 900;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 28px 22px;
+      opacity: 0;
+      transform: translateX(16px);
+      transition: opacity 0.45s cubic-bezier(0.16,1,0.3,1), transform 0.45s cubic-bezier(0.16,1,0.3,1);
+      pointer-events: none;
+      border-radius: 0 12px 12px 0;
+    }
+    #map-client-panel.panel-visible {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+    .client-photo-frame {
+      width: 100%;
+      aspect-ratio: 3/4;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid rgba(198,167,102,0.18);
+      background: rgba(27,17,13,0.8);
+      position: relative;
+    }
+    .client-photo-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: grayscale(0.15) contrast(1.05);
+      transition: opacity 0.5s ease;
+    }
+    .client-photo-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: linear-gradient(135deg, rgba(198,167,102,0.07), rgba(9,6,5,0.6));
+    }
+    .client-photo-placeholder svg {
+      opacity: 0.3;
+    }
+    .panel-gold-rule {
+      width: 32px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(198,167,102,0.7), transparent);
+      margin: 12px 0;
+    }
+
+    /* Premium Leaflet Map Adjustments */
+    #leaflet-map {
+      background: #0d0907 !important;
+    }
+    .leaflet-container {
+      background-color: #0d0907 !important;
+      font-family: inherit;
+    }
+    .leaflet-bar {
+      border: 1px solid rgba(216, 203, 184, 0.16) !important;
+      box-shadow: none !important;
+    }
+    .leaflet-bar a {
+      background-color: rgba(26, 23, 18, 0.9) !important;
+      color: #f2eadc !important;
+      border-bottom: 1px solid rgba(216, 203, 184, 0.12) !important;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    .leaflet-bar a:hover {
+      background-color: #c6a766 !important;
+      color: #0d0907 !important;
+    }
+    .leaflet-popup-content-wrapper {
+      background: rgba(9, 6, 5, 0.88) !important;
+      border: 1px solid rgba(198, 167, 102, 0.26) !important;
+      color: #f2eadc !important;
+      border-radius: 4px !important;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.6) !important;
+    }
+    .leaflet-popup-tip {
+      background: rgba(9, 6, 5, 0.88) !important;
+      border-left: 1px solid rgba(198, 167, 102, 0.26) !important;
+      border-bottom: 1px solid rgba(198, 167, 102, 0.26) !important;
+    }
+
+    /* Pulsing & Outlined Gold Leaflet Markers */
+    .map-marker-pulse {
+      display: block;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #c6a766;
+      box-shadow: 0 0 0 rgba(198, 167, 102, 0.4);
+      animation: pulse-ring 2s infinite;
+    }
+    @keyframes pulse-ring {
+      0% {
+        box-shadow: 0 0 0 0 rgba(198, 167, 102, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(198, 167, 102, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(198, 167, 102, 0);
+      }
+    }
+
+    .map-marker-hollow {
+      display: block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid #c6a766;
+      background: transparent;
+      opacity: 0.7;
+    }
+
+    .publisher-strip {
+      border: 1px solid rgba(198, 167, 102, 0.16);
+      background: rgba(9, 6, 5, 0.48);
+      box-shadow: inset 0 1px 0 rgba(242, 234, 220, 0.04);
+    }
+
+    .publisher-stage {
+      position: relative;
+      left: 50%;
+      width: min(calc(100vw - 2rem), 72rem);
+      transform: translateX(-50%);
+    }
+
+    .publisher-feature {
+      border: 1px solid rgba(216, 203, 184, 0.14);
+      background:
+        radial-gradient(circle at 16% 0%, rgba(198, 167, 102, 0.13), transparent 30%),
+        linear-gradient(135deg, rgba(13, 9, 7, 0.92), rgba(16, 44, 38, 0.28));
+      box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(242, 234, 220, 0.05);
+      backdrop-filter: blur(18px);
+    }
+
+    .publisher-video-frame {
+      position: relative;
+      overflow: hidden;
+      min-height: 20rem;
+      background: #090605;
+    }
+
+    .publisher-video-frame video,
+    .publisher-video-frame img {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      filter: saturate(0.9) contrast(1.08) brightness(0.78);
+    }
+
+    .publisher-video-frame::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(9, 6, 5, 0.42), transparent 46%),
+        linear-gradient(0deg, rgba(9, 6, 5, 0.72), transparent 58%);
+      pointer-events: none;
+    }
+
+    .publisher-access-form {
+      border: 1px solid rgba(198, 167, 102, 0.18);
+      background: rgba(9, 6, 5, 0.42);
+    }
+
+    #booth-worldview-gate .worldview-netflix-grid {
+      overflow: visible;
+    }
+
+    #booth-worldview-gate .iconic-token {
+      min-height: 8rem;
+    }
+
+    #booth-worldview-gate .iconic-token:hover,
+    #booth-worldview-gate .iconic-token.is-touch-preview {
+      transform: translateY(-4px) scale(1.02);
+      border-radius: 0.42rem;
+      overflow: hidden;
+    }
+
+    #booth-worldview-gate .iconic-token:hover .token-info,
+    #booth-worldview-gate .iconic-token.is-touch-preview .token-info {
+      top: auto;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 0.95rem;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    #booth-worldview-gate .iconic-token.is-selected {
+      border-color: rgba(242, 234, 220, 0.62);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.54), 0 0 0 1px rgba(242, 234, 220, 0.12);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+      video { display: none; }
+      .reveal, .hero-swipe { opacity: 1; transform: none; }
+      .wave-bar { animation: none !important; }
+    }
+  </style>
+  
+  <style>
+    .worldview-netflix-grid {
+      overflow: visible;
+      isolation: isolate;
+    }
+
+    .iconic-token {
+      position: relative;
+      overflow: hidden; /* Clips details by default */
+      isolation: isolate;
+      aspect-ratio: 16 / 9; /* Strictly locked to 16:9 to maintain grid row footprint */
+      min-height: 0;
+      padding: 0;
+      border: 1px solid rgba(198, 167, 102, 0.18);
+      border-radius: 0.42rem;
+      background: #12100d;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+      transform-origin: center center;
+      transition: 
+        transform 360ms cubic-bezier(0.16, 1, 0.3, 1), 
+        border-color 360ms ease, 
+        box-shadow 360ms ease;
+    }
+
+    .iconic-token:hover,
+    .iconic-token.is-touch-preview {
+      transform: translateY(-20px) scale(1.52);
+      border-color: rgba(246, 229, 188, 0.42);
+      box-shadow: 0 34px 90px rgba(0, 0, 0, 0.82), 0 0 34px rgba(198, 167, 102, 0.16);
+      z-index: 80; /* Respects standard order within the same parent grid */
+      overflow: visible; /* Allows the info panel to drop down past the card bounds */
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    .iconic-token.is-recommended {
+      border-color: rgba(198, 167, 102, 0.78);
+      box-shadow: 0 18px 55px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(198, 167, 102, 0.28), 0 0 28px rgba(198, 167, 102, 0.18);
+    }
+
+    .iconic-token.is-recommended::after {
+      content: "Recommended";
+      position: absolute;
+      left: 0.72rem;
+      top: 0.62rem;
+      z-index: 8;
+      border: 1px solid rgba(198, 167, 102, 0.45);
+      border-radius: 999px;
+      background: rgba(13, 9, 7, 0.78);
+      color: #c6a766;
+      font-family: monospace;
+      font-size: 0.5rem;
+      letter-spacing: 0.16em;
+      line-height: 1;
+      padding: 0.32rem 0.48rem;
+      text-transform: uppercase;
+    }
+
+    .iconic-token.is-recommended .token-topline {
+      opacity: 0;
+    }
+
+    .token-image-container,
+    .token-video,
+    .token-vignette {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0; /* Spans 100% of the 16:9 parent box */
+      width: 100%;
+      height: 100%;
+    }
+
+    .token-image-container {
+      z-index: 1;
+      opacity: 0.88;
+      mix-blend-mode: normal;
+      transition: opacity 280ms ease;
+    }
+
+    .token-img-slide {
+      opacity: 0 !important;
+    }
+
+    .token-img-slide.active {
+      opacity: 1 !important;
+    }
+
+    .token-video {
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0; /* Hidden initially */
+      filter: saturate(0.9) contrast(1.08) brightness(0.76);
+      transform: scale(1.03);
+      transition: opacity 280ms ease, transform 280ms ease;
+    }
+
+    /* Force image-container to fade out and video layer to fade in during previews */
+    .iconic-token.is-previewing .token-video {
+      opacity: 1 !important;
+      transform: scale(1);
+    }
+
+    .iconic-token.is-previewing .token-image-container {
+      opacity: 0 !important;
+    }
+
+    .token-vignette {
+      z-index: 3;
+      pointer-events: none;
+      background: linear-gradient(to top, rgba(10, 7, 4, 0.9), rgba(10, 7, 4, 0.08) 58%, rgba(10, 7, 4, 0.28));
+    }
+
+    .token-topline {
+      position: absolute;
+      left: 0.75rem;
+      right: 0.75rem;
+      top: 0.65rem;
+      z-index: 5;
+    }
+
+    .token-info {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 6;
+      padding: 0.95rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      background: transparent;
+      opacity: 1;
+      transform: none;
+      transition: opacity 280ms ease;
+    }
+
+    .iconic-token:hover .token-info,
+    .iconic-token.is-touch-preview .token-info {
+      position: absolute;
+      top: calc(100% - 1px); /* Sits exactly below the video, overlapping by 1px to avoid hairlines */
+      bottom: auto;
+      left: -1px;
+      right: -1px;
+      height: auto; /* Fits contents dynamically without extra blank gaps */
+      padding: 0.95rem 1rem;
+      background: #0d0907;
+      border: 1px solid rgba(246, 229, 188, 0.42);
+      border-top: none;
+      border-bottom-left-radius: 0.42rem;
+      border-bottom-right-radius: 0.42rem;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+      opacity: 1;
+      display: flex;
+      flex-direction: column;
+      transform: none;
+    }
+
+    .iconic-token:not(:hover):not(.is-touch-preview) .token-info {
+      height: auto;
+      padding: 0.95rem;
+      justify-content: flex-end;
+      background: transparent;
+      opacity: 1;
+      transform: none;
+      border-top: none;
+    }
+
+    .token-info-controls {
+      display: none; /* Hidden on primary card overview */
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.45rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .iconic-token:hover .token-info-controls,
+    .iconic-token.is-touch-preview .token-info-controls {
+      display: flex; /* Revealed on hover */
+    }
+
+    .token-control-cluster {
+      display: flex;
+      align-items: center;
+      gap: 0.36rem;
+    }
+
+    .token-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.65rem;
+      height: 1.65rem;
+      border-radius: 999px;
+      border: 1px solid rgba(246, 229, 188, 0.48);
+      color: #f6e5bc;
+      background: rgba(20, 20, 20, 0.76);
+      font-size: 0.7rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .token-circle:hover {
+      transform: scale(1.1);
+      border-color: #fff3cf;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .token-primary-control {
+      border-color: #fff3cf;
+      background: #fff3cf;
+      color: #111;
+    }
+
+    .token-primary-control:hover {
+      background: #ffffff;
+      border-color: #ffffff;
+    }
+
+    .token-mute {
+      position: absolute;
+      right: 0.68rem;
+      bottom: 0.65rem; /* Stays locked in the bottom-right of the 16:9 video container */
+      z-index: 10;
+      opacity: 0;
+      cursor: pointer;
+      transition: opacity 220ms ease;
+    }
+
+    .iconic-token:hover .token-mute,
+    .iconic-token.is-touch-preview .token-mute {
+      opacity: 1;
+    }
+
+    .token-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #f2eadc;
+      line-height: 1.2;
+      margin-top: 0.15rem;
+    }
+
+    .token-meta {
+      margin-top: 0.15rem;
+      font-size: 0.6rem;
+      color: #c6a766;
+      text-transform: uppercase;
+      font-family: monospace;
+      letter-spacing: 0.12em;
+      line-height: 1;
+    }
+
+    .token-question {
+      display: none;
+      margin-top: 0.45rem;
+      color: rgba(246, 229, 188, 0.9);
+      font-size: 0.68rem;
+      font-style: italic;
+      line-height: 1.3;
+    }
+
+    .token-character {
+      display: none;
+      margin-top: 0.35rem;
+      color: rgba(216, 203, 184, 0.7);
+      font-size: 0.62rem;
+      line-height: 1.4;
+    }
+
+    .iconic-token:hover .token-question,
+    .iconic-token:hover .token-character,
+    .iconic-token.is-touch-preview .token-question,
+    .iconic-token.is-touch-preview .token-character {
+      display: block;
+    }
+
+    .token-tags {
+      display: none;
+      margin-top: 0.45rem; /* Snug spacing directly underneath description text */
+      color: rgba(198, 167, 102, 0.85);
+      font-size: 0.58rem;
+      font-family: monospace;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .iconic-token:hover .token-tags,
+    .iconic-token.is-touch-preview .token-tags {
+      display: block;
+    }
+
+    @media (max-width: 1023px) {
+      .iconic-token:hover,
+      .iconic-token.is-touch-preview {
+        transform: translateY(-18px) scale(1.22);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .worldview-netflix-grid {
+        gap: 0.9rem;
+      }
+
+      .iconic-token:hover,
+      .iconic-token.is-touch-preview {
+        transform: translateY(-8px) scale(1.05);
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+
+      .iconic-token:hover .token-info,
+      .iconic-token.is-touch-preview .token-info {
+        padding: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen overflow-x-hidden">
+
+
+  <div class="fixed inset-0 -z-30 bg-[#1a120b]" aria-hidden="true">
+    <video id="background-video" class="h-full w-full scale-[1.02] object-cover opacity-95 saturate-[.9] contrast-105" autoplay muted loop playsinline preload="metadata" poster="foster.png">
+      <source src="background.mp4" type="video/mp4">
+    </video>
+  </div>
+  <div class="library-overlay fixed inset-0 -z-20" aria-hidden="true"></div>
+
+<header class="relative px-5 min-h-screen flex flex-col justify-between">
+
+<!-- Google Studio Style Header Navigation -->
+    <nav class="mx-auto flex w-full max-w-7xl items-center justify-between py-6 text-sm text-linen/80">
+      
+    <!-- Left side: The unified directory path, now calibrated to the visual baseline -->
+      <div class="flex flex-wrap items-baseline gap-x-5 gap-y-2">
+        
+        <!-- Original Brand Logo Style -->
+        <a href="#" class="site-logo font-serif text-xl font-semibold tracking-wide text-cream transition-colors duration-300 hover:text-antique" data-i18n="brand.name">The Daily Art Cult</a>
+        
+        <!-- Folder-style separation sequence (perfectly aligned baselines) -->
+        <span class="text-antique/20 select-none font-sans text-sm font-light">/</span>
+        <a href="/thedailyartcult/publications.thedailyartcult" class="font-sans text-xs font-medium tracking-widest uppercase text-linen/50 hover:text-antique transition-colors duration-300 py-1">Publications</a>
+        
+        <span class="text-antique/20 select-none font-sans text-sm font-light">/</span>
+        <a href="/thedailyartcult/support.thedailyartcult" class="font-sans text-xs font-medium tracking-widest uppercase text-linen/50 hover:text-antique transition-colors duration-300 py-1">Support</a>
+      </div>
+      
+    </nav>
+
+    <!-- Center Studio Workspace -->
+    <section class="mx-auto flex flex-1 w-full max-w-3xl flex-col justify-center pb-24 pt-8">
+      <!-- Animated Headline -->
+      <div id="hero-headline-wrap" class="text-center mb-10">
+        <h1 id="hero-headline" class="font-serif text-4xl font-semibold leading-[1.3] text-cream sm:text-5xl lg:text-6xl max-w-3xl mx-auto">
+          <span class="relative inline-block mr-1 sm:mr-1.5" id="underline-target">
+            <span id="hero-countdown-text" class="headline-countdown inline-block whitespace-nowrap">
+              <span id="hero-countdown-value" class="word inline-block opacity-0 transform translate-y-3 transition-all duration-[600ms] ease-out mr-1">2</span>
+              <span id="hero-countdown-unit" class="word inline-block opacity-0 transform translate-y-3 transition-all duration-[600ms] ease-out">Minutes</span>
+            </span>
+          </span>
+          <span class="word inline-block opacity-0 transform translate-y-3 transition-all duration-[600ms] ease-out mr-2 sm:mr-3">That</span>
+          <span class="word inline-block opacity-0 transform translate-y-3 transition-all duration-[600ms] ease-out mr-2 sm:mr-3">Might</span>
+          <span class="word inline-block opacity-0 transform translate-y-3 transition-all duration-[600ms] ease-out mr-2 sm:mr-3">Change</span>
+          <span class="word inline-block opacity-0 transform translate-y-3 transition-all duration-[600ms] ease-out mr-2 sm:mr-3">How</span>
+          <span class="word inline-block opacity-0 transform translate-y-3 transition-all duration-[600ms] ease-out mr-2 sm:mr-3">You</span>
+                   <span class="word inline-block opacity-0 transform translate-y-3 transition-all duration-[600ms] ease-out mr-2 sm:mr-3">Hear</span>
+                            <span class="word inline-block opacity-0 transform translate-y-3 transition-all duration-[600ms] ease-out mr-2 sm:mr-3">and</span>
+          <span class="word inline-block opacity-0 transform translate-y-3 transition-all duration-[600ms] ease-out mr-2 sm:mr-3">See</span>
+          <span class="word inline-block opacity-0 transform translate-y-3 transition-all duration-[600ms] ease-out mr-2 sm:mr-3">the</span>
+          <span class="word inline-block opacity-0 transform translate-y-3 transition-all duration-[600ms] ease-out">World</span>
+        </h1>
+      </div>
+
+      <!-- Chat History -->
+      <div id="hero-chat-history" class="flex flex-col gap-4 mb-6 max-h-[220px] overflow-y-auto scrollbar-none px-2 justify-end"></div>
+
+      <!-- Active Workspace Node containing states -->
+      <div id="studio-active-container" class="w-full relative">
+        <div id="studio-mode-switcher" class="mb-3 flex flex-wrap items-center justify-center gap-2">
+          <button type="button" id="studio-mode-prompt" class="px-4 py-2 rounded-full text-[10px] font-mono tracking-widest uppercase transition-all duration-300 bg-antique text-ink font-bold shadow-lg" aria-pressed="true">What's in it for me?</button>
+          <button type="button" id="studio-mode-md" class="px-4 py-2 rounded-full text-[10px] font-mono tracking-widest uppercase transition-all duration-300 text-linen/50 hover:text-cream" aria-pressed="false">I already have a .md file</button>
+          <button type="button" id="studio-mode-source" class="px-4 py-2 rounded-full text-[10px] font-mono tracking-widest uppercase transition-all duration-300 text-linen/50 hover:text-cream" aria-pressed="false">Paste a YT link or book</button>
+        </div>
+        <div id="studio-floating-question" class="studio-floating-question hidden mb-4 text-center">
+          <p id="studio-floating-question-text" class="font-serif text-xl sm:text-2xl text-cream leading-relaxed"></p>
+        </div>
+        
+        <!-- STATE A: Prompt/MD Editor Frame -->
+        <div id="hero-editor-frame" class="w-full relative rounded-2xl border border-linen/10 bg-[#0d0907]/75 p-3.5 shadow-2xl backdrop-blur-xl focus-within:border-[#c6a766]/40 transition duration-300">
+          <div class="flex flex-col w-full">
+            <p id="studio-question-label" class="hidden text-[10px] font-mono uppercase tracking-[0.26em] text-antique/50 px-3 pt-2 pb-1 transition-opacity duration-500">What do you need this to give you?</p>
+            
+        
+<!-- Default Prompt Input Panel -->
+<div id="studio-prompt-panel">
+  <textarea id="hero-chat-input" rows="3" placeholder="" class="w-full bg-transparent text-cream px-3 py-2 text-base outline-none resize-none font-sans leading-relaxed placeholder:text-linen/25 min-h-[76px] max-h-[180px] scrollbar-none"></textarea>
+</div>
+
+
+            
+            <!-- Redesigned .md Drop and Prompt Panel -->
+            <div id="studio-md-panel" class="hidden space-y-4">
+              <!-- Copier Card for LLM Prompt Generation -->
+              <div class="border border-linen/10 bg-[#120a06]/80 p-4 rounded-xl text-xs space-y-3 text-left">
+                <p class="text-linen/70 leading-relaxed font-sans">
+                  Generate your permanent context profile: click below to copy the synthesis prompt, paste it to Claude or ChatGPT, and drag the resulting <code class="text-antique font-mono">.md</code> file below.
+                </p>
+                <button type="button" id="copy-profile-prompt-btn" class="w-full py-2.5 px-4 bg-antique/5 hover:bg-antique/15 border border-antique/30 hover:border-antique text-antique font-mono text-[10px] uppercase tracking-widest transition duration-300 rounded flex items-center justify-center gap-2">
+                  <span>Get Profile Generator Prompt</span>
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002-2" />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Visual Drag and Drop Target Area -->
+              <div id="md-drop-zone" class="relative group border border-dashed border-linen/20 hover:border-[#c6a766]/50 bg-black/40 hover:bg-[#120c09]/60 rounded-xl transition-all duration-300 flex flex-col items-center justify-center p-6 text-center cursor-pointer min-h-[140px]">
+                <input type="file" id="md-file-input" accept=".md,text/markdown" class="hidden">
+                
+                <div id="drop-zone-idle" class="flex flex-col items-center gap-3">
+                  <div class="relative w-10 h-10 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-linen/40 group-hover:text-antique group-hover:-translate-y-1 transition duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                  </div>
+                  <p class="text-[10px] font-mono uppercase tracking-widest text-linen/50 group-hover:text-linen/75 transition duration-300">
+                    Drag & Drop your <span class="text-antique font-bold">.md</span> file here
+                  </p>
+                  <span class="text-[9px] text-linen/25 font-sans">
+                    — or <button type="button" id="reveal-paste-btn" class="underline hover:text-antique transition duration-200">paste raw text instead</button> —
+                  </span>
+                </div>
+
+                <textarea id="hero-md-input" rows="5" placeholder="Paste your raw markdown code here..." class="hidden w-full bg-transparent text-cream px-3 py-3 text-sm outline-none resize-none font-mono leading-relaxed placeholder:text-linen/25 min-h-[110px] max-h-[220px] scrollbar-none"></textarea>
+              </div>
+            </div>
+
+            <!-- YouTube / Book Source Panel -->
+            <div id="studio-source-panel" class="hidden space-y-4">
+              <div class="border border-linen/10 bg-[#120a06]/80 p-4 rounded-xl text-xs space-y-3 text-left">
+                <p class="text-linen/70 leading-relaxed font-sans">
+                  Paste a YouTube link or type the title of a book you want to understand. If the video has a public transcript, the archive will read it before composing your personal audio.
+                </p>
+              </div>
+              <textarea id="hero-source-input" rows="4" placeholder="https://youtube.com/watch?v=... or The Myth of Sisyphus by Albert Camus" class="w-full bg-transparent text-cream px-3 py-3 text-sm outline-none resize-none font-sans leading-relaxed placeholder:text-linen/25 min-h-[110px] max-h-[220px] scrollbar-none"></textarea>
+            </div>
+            
+            <div class="flex items-center justify-between border-t border-white/[0.05] pt-3 mt-3 px-3">
+              <div class="flex items-center gap-5 text-[9px] font-mono tracking-[0.2em] text-linen/35 uppercase">
+                <span id="studio-stage-label">Step 1 of 3</span>
+                <span id="studio-char-count">0 / 150</span>
+              </div>
+              
+              <button type="button" id="hero-chat-submit" class="shrink-0 rounded-xl bg-cream hover:bg-[#c6a766] w-9 h-9 flex items-center justify-center text-ink transition duration-300 hover:scale-[1.03] active:scale-[0.97] focus:outline-none" aria-label="Submit prompt">
+                <svg class="w-4 h-4 transform rotate-45 -translate-x-0.5 translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+<!-- STATE A2: BINARY CHOICE (Q2) -->
+        <div id="booth-choice-frame" class="hidden w-full">
+          <p id="booth-validation-text" class="studio-floating-question font-serif text-xl sm:text-2xl text-cream text-center leading-relaxed mb-6 italic opacity-0 transition-opacity duration-700">Do you want your response to be</p>
+          <div class="quiet-panel rounded-2xl p-6 sm:p-8 shadow-soft">
+            <div class="grid grid-cols-2 gap-4">
+              <button type="button" id="choice-beginning" class="group flex flex-col items-center gap-3 rounded-xl border border-linen/10 bg-white/[0.03] hover:border-antique/50 hover:bg-antique/5 px-4 py-7 transition-all duration-300 active:scale-[0.97]">
+                <span class="text-2xl text-antique/50 group-hover:text-antique transition duration-300">✦</span>
+                <span class="text-sm font-semibold text-cream tracking-wide">Secular</span>
+                <span class="text-[10px] font-mono uppercase tracking-widest text-linen/25 group-hover:text-antique/40 transition duration-300">earthly ↗</span>
+              </button>
+              <button type="button" id="choice-ending" class="group flex flex-col items-center gap-3 rounded-xl border border-linen/10 bg-white/[0.03] hover:border-antique/50 hover:bg-antique/5 px-4 py-7 transition-all duration-300 active:scale-[0.97]">
+                <span class="text-2xl text-linen/25 group-hover:text-linen/50 transition duration-300">◦</span>
+                <span class="text-sm font-semibold text-cream tracking-wide">Spiritual</span>
+                <span class="text-[10px] font-mono uppercase tracking-widest text-linen/25 group-hover:text-antique/40 transition duration-300">sacred ↘</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+<!-- STATE A3: PATRON REGISTRATION -->
+        <div id="booth-patron-frame" class="hidden w-full relative rounded-2xl border border-linen/10 bg-[#0d0907]/75 p-6 shadow-2xl backdrop-blur-xl">
+          <div class="text-center mb-6">
+            <span class="inline-block text-antique/70 text-[9px] uppercase tracking-[0.25em] font-mono">Registry</span>
+            <h3 class="font-serif text-2xl text-cream mt-2">How shall the ledger record you?</h3>
+            <p class="text-linen/50 text-xs mt-1">To personalize your daily triptych and library access, please provide your title and name.</p>
+          </div>
+
+          <div class="space-y-4 max-w-md mx-auto">
+            <div class="grid grid-cols-3 gap-3">
+              <div class="col-span-1">
+                <label for="patron-honorary" class="block text-[9px] font-mono uppercase tracking-widest text-linen/40 mb-1.5">Title</label>
+                <div class="relative">
+                  <select id="patron-honorary" class="w-full bg-[#14100e]/80 border border-linen/10 rounded-xl px-3 py-2.5 text-xs text-cream focus:border-antique/50 focus:outline-none appearance-none cursor-pointer">
+                    <option value="Master" selected>Master</option>
+                    <option value="Monsieur">Monsieur</option>
+                    <option value="Madame">Madame</option>
+                    <option value="Dr.">Dr.</option>
+                    <option value="Professor">Prof.</option>
+                    <option value="Lady">Lady</option>
+                    <option value="Sir">Sir</option>
+                    <option value="Patron">Patron</option>
+                  </select>
+                  <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-linen/35">
+                    <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <div class="col-span-2">
+                <label for="patron-first-name" class="block text-[9px] font-mono uppercase tracking-widest text-linen/40 mb-1.5">First Name</label>
+                <input type="text" id="patron-first-name" placeholder="Evelyn" class="w-full bg-[#14100e]/80 border border-linen/10 rounded-xl px-4 py-2.5 text-xs text-cream placeholder:text-linen/25 focus:border-antique/50 focus:outline-none">
+              </div>
+            </div>
+
+            <div class="pt-2">
+              <button type="button" id="patron-submit-btn" class="w-full py-3 bg-cream hover:bg-antique text-ink font-mono text-[10px] font-bold uppercase tracking-widest transition duration-300 rounded-xl hover:scale-[1.01] active:scale-[0.99]">
+                Authorize Profile Integration
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        
+
+        <!-- STATE E: WORLDVIEW GATE (added after Q2) -->
+        <div id="booth-worldview-gate" class="hidden w-full">
+          <div class="publisher-stage">
+            <div class="text-center mb-8">
+              <p class="text-sm font-semibold uppercase tracking-[0.28em] text-linen/75">Choose Your Publisher</p>
+              <h3 class="font-serif text-3xl text-cream mt-2 sm:text-4xl">Each worldview is an editorial house.</h3>
+              <p id="gate-recommendation" class="text-linen/55 text-sm mt-3 max-w-2xl mx-auto leading-relaxed">Your prepared reading points toward one publisher. You can accept it, or browse the neighboring lenses before you enter the private ledger.</p>
+            </div>
+
+            <div class="publisher-feature overflow-hidden rounded-2xl">
+              <div class="grid lg:grid-cols-[minmax(0,1.16fr)_minmax(340px,0.84fr)]">
+                <div class="publisher-video-frame aspect-video lg:aspect-auto">
+                  <video id="publisher-feature-video" muted loop playsinline preload="metadata"></video>
+                  <img id="publisher-feature-image" alt="" class="opacity-0 transition-opacity duration-500">
+                  <div class="absolute bottom-5 left-5 right-5 z-10 flex items-end justify-between gap-4">
+                    <div>
+                      <span id="publisher-feature-cadence" class="text-[9px] font-mono uppercase tracking-[0.24em] text-antique">Monthly</span>
+                      <h4 id="publisher-feature-title" class="mt-2 font-serif text-3xl text-cream sm:text-5xl">Becoming</h4>
+                    </div>
+                    <button type="button" id="publisher-preview-toggle" class="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border border-cream/30 bg-black/45 text-cream backdrop-blur transition duration-300 hover:border-antique hover:text-antique" aria-label="Play publisher preview">▶</button>
+                  </div>
+                </div>
+
+                <div class="p-6 sm:p-8 lg:p-9">
+                  <div class="flex items-start justify-between gap-5 border-b border-linen/10 pb-6">
+                    <div>
+                      <p id="publisher-feature-name" class="text-[10px] font-mono uppercase tracking-[0.24em] text-antique">Publisher</p>
+                      <h5 id="publisher-feature-issue" class="mt-3 font-serif text-2xl leading-tight text-cream">The current issue</h5>
+                    </div>
+                    <div class="text-right">
+                      <span class="block text-[9px] font-mono uppercase tracking-[0.22em] text-linen/35">After Trial</span>
+                      <span class="block font-serif text-4xl leading-none text-cream">$49</span>
+                      <span class="block text-xs italic text-linen/45">annually</span>
+                    </div>
+                  </div>
+
+                  <dl class="mt-6 grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <dt class="text-[9px] font-mono uppercase tracking-[0.2em] text-linen/35">Philosophical Lens</dt>
+                      <dd id="publisher-feature-lens" class="mt-1 font-serif text-lg text-cream">Self-overcoming</dd>
+                    </div>
+                    <div>
+                      <dt class="text-[9px] font-mono uppercase tracking-[0.2em] text-linen/35">Release Rhythm</dt>
+                      <dd id="publisher-feature-rhythm" class="mt-1 font-serif text-lg text-cream">Monthly issue</dd>
+                    </div>
+                  </dl>
+
+                  <p id="publisher-feature-description" class="mt-6 text-sm leading-relaxed text-linen/65"></p>
+
+                  <div class="publisher-access-form mt-7 rounded-xl p-4">
+                    <p class="text-[9px] font-mono uppercase tracking-[0.22em] text-antique/70">Private Ledger Access</p>
+                    <form id="publisher-access-form" class="mt-3 flex flex-col gap-3 sm:flex-row">
+                      <input type="email" id="publisher-access-email" required placeholder="your@email.com" class="min-w-0 flex-1 rounded-lg border border-linen/10 bg-[#14100e]/85 px-4 py-3 text-sm text-cream placeholder:text-linen/25 outline-none transition focus:border-antique/50">
+                      <button type="submit" class="rounded-lg bg-cream px-5 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-ink transition duration-300 hover:bg-antique active:scale-[0.99]">Send Link</button>
+                    </form>
+                    
+                    <!-- Active Selection Tray -->
+                    <div class="mt-4 pt-3 border-t border-white/[0.06]">
+                      <p class="text-[9px] font-mono uppercase tracking-[0.22em] text-linen/40 mb-1.5">Active Lenses Selected</p>
+                      <div id="cart-selection-tray" class="flex flex-wrap gap-1.5 mt-2">
+                        <span class="text-[9px] text-linen/30 italic">No lenses selected. Click cards below to add them.</span>
+                      </div>
+                    </div>
+                    
+                    <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <p id="publisher-access-feedback" class="min-h-[1.25em] text-[10px] font-mono text-antique/80"></p>
+                      <a href="/thedailyartcult/accounts.thedailyartcult" class="text-[9px] font-mono uppercase tracking-[0.2em] text-linen/40 transition hover:text-antique">Open account library →</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-7">
+              <div class="mb-4 flex items-center justify-between gap-4">
+                <p class="text-[9px] font-mono uppercase tracking-[0.24em] text-linen/40">Browse publication houses</p>
+                <p class="text-[9px] font-mono uppercase tracking-[0.18em] text-antique/55">6 months free</p>
+              </div>
+              <div id="worldview-grid-container" class="worldview-netflix-grid grid gap-3 grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"></div>
+            </div>
+          </div>
+        </div>
+
+
+<!-- STATE B: LOADING & ARCHIVE READING -->
+        <div id="booth-reading-frame" class="hidden opacity-0 transform translate-y-4 transition-all duration-700">
+          <div class="quiet-panel rounded-2xl p-8 shadow-soft flex flex-col items-center justify-center min-h-[180px]">
+            
+            <!-- Claude-Style Horizontal Flex Loader Container -->
+            <div class="flex items-center gap-4 my-4 max-w-md">
+              <!-- Animated custom loader -->
+              <img src="loader.gif" class="daily-art-loader shrink-0" alt="Loading" />
+              
+              <!-- Aligned Status Text -->
+              <div class="text-left">
+                <h4 class="font-serif text-xl text-cream leading-tight">Composing your reading.</h4>
+                <p id="azure-status-text" class="text-[10px] font-mono uppercase tracking-[0.2em] text-antique/60 mt-1">Consulting the archive...</p>
+              </div>
+            </div>
+
+            
+  <!-- Real-time progressive transcript container -->
+<div class="my-8 min-h-[120px] flex items-center justify-center">
+  <p id="ai-transcript" class="text-base sm:text-lg font-serif italic text-linen/90 max-w-xl mx-auto leading-relaxed transition-all duration-300"></p>
+</div>
+
+            <p id="still-yours" class="text-[10px] font-serif italic text-antique/50 opacity-0 transition-opacity duration-1000">Still yours.</p>
+          </div>
+        </div>
+
+        <!-- STATE C: INTERSTITIAL TRANSIT BRIDGE -->
+        <div id="booth-bridge-frame" class="hidden min-h-[200px] flex items-center justify-center text-center px-10">
+          <p id="bridge-text-container" class="font-serif text-2xl sm:text-3xl text-cream leading-relaxed"></p>
+        </div>
+
+        <!-- STATE D: INTEGRATED BESPOKE MASTER AUDIO PLAYER -->
+        <div id="booth-bespoke-frame" class="hidden opacity-0 transform translate-y-6 transition-all duration-1000">
+          <div class="premium-audio rounded-2xl p-6 sm:p-8 shadow-glow border-[#c6a766]/30">
+            
+            <!-- WRAPPER FOR PLAYER (To be hidden later) -->
+            <div id="bespoke-player-interface">
+              <div class="text-center mb-6">
+                <span class="inline-block text-antique/70 text-[9px] uppercase tracking-[0.25em] font-mono">Bespoke Master</span>
+                <h3 class="font-serif text-3xl font-semibold text-cream mt-3">The Bespoke Audio Edition</h3>
+                <p id="bespoke-territory-label" class="text-xs text-linen/70 mt-1 italic">A piece on becoming.</p>
+              </div>
+
+              <div class="membership-panel bg-black/35 border border-[#c6a766]/15 rounded-xl p-5 sm:p-6 backdrop-blur-md">
+                <div class="flex items-center gap-3">
+                  <span id="bespoke-time-current" class="text-[10px] font-mono text-linen/60">0:00</span>
+                  <div class="relative flex-1">
+                    <input type="range" id="bespoke-progress" value="0" max="100" class="audio-progress w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer">
+                  </div>
+                  <span id="bespoke-time-total" class="text-[10px] font-mono text-[#c6a766]">0:00</span>
+                </div>
+
+                <div class="flex items-center justify-center gap-8 mt-6">
+                  <button type="button" id="play-bespoke-btn" class="flex h-16 w-16 items-center justify-center rounded-full bg-cream text-ink text-xl transition-all duration-300 hover:bg-antique hover:scale-105 shadow-lg shadow-black/40">▶</button>
+                </div>
+              </div>
+            </div>
+
+          
+ <!-- THE REVISED OFFERING: THE MEMBERSHIP -->
+<div id="post-playback-ui" class="hidden text-left px-4 md:px-0">
+  <div class="mx-auto max-w-2xl py-8 text-center">
+    <a href="/thedailyartcult/accounts.thedailyartcult" class="text-[10px] font-mono uppercase tracking-[0.22em] text-linen/45 transition duration-300 hover:text-antique">
+      Open the private ledger →
+    </a>
+  </div>
+</div>
+        </div> <!-- [FIX] Closed booth-bespoke-frame wrapper -->
+      </div> <!-- [FIX] Closed studio-active-container wrapper -->
+
+      <!-- Centered Whispered Suggestions -->
+      <div id="hero-suggestions" class="mt-5 flex flex-wrap gap-2.5 justify-center"></div>
+      
+      
+      <!-- SIBLING BRANDS & COOPERATIVE IMPRINTS SLIDESHOW -->
+      <div class="mt-16 w-full overflow-hidden relative">
+        <!-- Ambient Left & Right Edge Fades to match the library background -->
+        <div class="absolute left-0 top-0 bottom-0 w-20 logo-carousel-fade-left z-10 pointer-events-none"></div>
+        <div class="absolute right-0 top-0 bottom-0 w-20 logo-carousel-fade-right z-10 pointer-events-none"></div>
+        
+        <p class="text-[9px] font-mono tracking-[0.25em] text-[#c6a766]/50 text-center uppercase mb-8"></p>
+        
+        <div class="w-full overflow-hidden">
+          <!-- Double-tracked scroll layout to create seamless infinite sliding -->
+          <div class="flex items-center gap-16 w-max animate-logo-scroll hover:[animation-play-state:paused] cursor-default">
+            
+            <!-- Original Set of 9 Mockup Logos -->
+            <div class="flex items-center gap-16 shrink-0">
+              <!-- Better Books & Garments - Main Featured Brand -->
+              <span class="font-serif italic font-semibold text-sm tracking-wider text-cream/70 hover:text-antique transition duration-300">Better Books & Garments</span>
+              <span class="font-sans font-light text-[10px] tracking-[0.3em] uppercase text-linen/40 hover:text-antique transition duration-300">Really Fucking Simple</span>
+              <span class="font-serif font-light text-xs tracking-widest text-linen/40 hover:text-antique transition duration-300">Food and Wine</span>
+              <span class="font-sans italic font-medium text-[11px] tracking-wide text-linen/40 hover:text-antique transition duration-300">Atelier Obsidian</span>
+              <span class="font-sans font-semibold text-[10px] tracking-[0.2em] uppercase text-linen/40 hover:text-antique transition duration-300">The Vellum Review</span>
+              <span class="font-serif italic text-xs tracking-[0.15em] text-linen/40 hover:text-antique transition duration-300">Anima Mundi Press</span>
+              <span class="font-serif font-semibold text-[10px] tracking-wider text-linen/40 hover:text-antique transition duration-300">The Nocturnal School</span>
+              <span class="font-sans font-medium text-[9px] tracking-[0.25em] uppercase text-linen/40 hover:text-antique transition duration-300">Friction & Form</span>
+              <span class="font-serif text-[11px] tracking-widest text-linen/40 hover:text-antique transition duration-300">MARROW ARCHIVE</span>
+            </div>
+            
+            <!-- Duplicate Cloned Set for Infinite Loop Mechanics -->
+            <div class="flex items-center gap-16 shrink-0" aria-hidden="true">
+              <span class="font-serif italic font-semibold text-sm tracking-wider text-cream/70 hover:text-antique transition duration-300">Better Books & Garments</span>
+              <span class="font-sans font-light text-[10px] tracking-[0.3em] uppercase text-linen/40 hover:text-antique transition duration-300">SILENT SPINE</span>
+              <span class="font-serif font-light text-xs tracking-widest text-linen/40 hover:text-antique transition duration-300">SOMA & THREAD</span>
+              <span class="font-sans italic font-medium text-[11px] tracking-wide text-linen/40 hover:text-antique transition duration-300">Atelier Obsidian</span>
+              <span class="font-sans font-semibold text-[10px] tracking-[0.2em] uppercase text-linen/40 hover:text-antique transition duration-300">The Vellum Review</span>
+              <span class="font-serif italic text-xs tracking-[0.15em] text-linen/40 hover:text-antique transition duration-300">Anima Mundi Press</span>
+              <span class="font-serif font-semibold text-[10px] tracking-wider text-linen/40 hover:text-antique transition duration-300">The Nocturnal School</span>
+              <span class="font-sans font-medium text-[9px] tracking-[0.25em] uppercase text-linen/40 hover:text-antique transition duration-300">Friction & Form</span>
+              <span class="font-serif text-[11px] tracking-widest text-linen/40 hover:text-antique transition duration-300">MARROW ARCHIVE</span>
+            </div>
+            
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Hidden audio playback engines -->
+    <audio id="ai-audio" preload="none"></audio>
+    <audio id="craft-audio" preload="none"></audio>
+
+  </header>
+
+  <main>
+  
+  <!-- SECTION 3.5: DUAL CONSOLE (MAP & PRIVACY) -->
+<section id="the-map-section" class="px-5 py-24 sm:py-28 relative">
+  <div class="mx-auto max-w-7xl">
+    
+    <!-- Console Header with Tab Toggle -->
+    <div class="reveal text-center mb-12 max-w-3xl mx-auto">
+      <div class="flex flex-col items-center gap-6">
+        <div class="inline-flex p-1 bg-black/40 border border-linen/10 rounded-full backdrop-blur-md">
+          <button id="toggle-map-view" class="px-6 py-2 rounded-full text-[10px] font-mono tracking-widest uppercase transition-all duration-300 bg-antique text-ink font-bold shadow-lg">
+            Transit Network
+          </button>
+          <button id="toggle-privacy-view" class="px-6 py-2 rounded-full text-[10px] font-mono tracking-widest uppercase transition-all duration-300 text-linen/50 hover:text-cream">
+            Security Sanctuary
+          </button>
+        </div>
+        
+        <!-- Dynamic Header Text -->
+        <div id="console-header-map">
+          <p class="text-sm font-semibold uppercase tracking-[0.28em] text-linen/75">Cards in Transit</p>
+          <h2 class="mt-4 font-serif text-4xl font-semibold text-cream sm:text-5xl">Your card is somewhere on this map.</h2>
+        </div>
+        <div id="console-header-privacy" class="hidden">
+          <p class="text-sm font-semibold uppercase tracking-[0.28em] text-antique">Your Privacy Matters</p>
+          <h2 class="mt-4 font-serif text-4xl font-semibold text-cream sm:text-5xl">Built on a Fortress of Silence.</h2>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN CONSOLE FRAME -->
+    <div class="quiet-panel rounded-2xl p-2 sm:p-3 shadow-soft relative overflow-hidden min-h-[500px]">
+      
+      <!-- LAYER A: THE MAP (Visible by Default) -->
+      <div id="map-layer" class="transition-all duration-700 opacity-100">
+        <div id="leaflet-map" class="w-full h-[450px] rounded-xl z-10"></div>
+        
+        <!-- Client Portrait Side Panel (Existing) -->
+        <div id="map-client-panel" aria-live="polite">
+           <!-- (Keep your existing panel content here) -->
+        </div>
+      </div>
+
+      <!-- LAYER B: THE PRIVACY SANCTUARY (Hidden by Default) -->
+      <div id="privacy-layer" class="hidden opacity-0 transition-all duration-700 absolute inset-2 sm:inset-3 bg-[#0d0907] rounded-xl z-20 flex flex-col md:flex-row items-center overflow-hidden">
+        
+        <!-- Interactive Vault Visualization -->
+        <div class="w-full md:w-1/2 h-64 md:h-full relative bg-black/40 flex items-center justify-center p-10 border-b md:border-b-0 md:border-r border-linen/10">
+          <div class="relative w-48 h-48">
+            <!-- Central Core (Your Data) -->
+            <div class="absolute inset-0 m-auto w-12 h-12 bg-antique rounded-sm flex items-center justify-center shadow-[0_0_30px_rgba(198,167,102,0.4)] z-30">
+               <svg class="w-6 h-6 text-ink" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+            </div>
+            <!-- Orbiting Shield 1 (Qubes OS) -->
+            <div class="absolute inset-0 border-2 border-dashed border-antique/20 rounded-full animate-[spin_10s_linear_infinite]"></div>
+            <!-- Orbiting Shield 2 (Nessus) -->
+            <div class="absolute -inset-8 border border-emerald/30 rounded-full animate-[spin_15s_linear_infinite_reverse]"></div>
+            <!-- Pulsing Defense Rings -->
+            <div class="absolute inset-0 rounded-full bg-antique/5 animate-ping"></div>
+          </div>
+        </div>
+
+<!-- Security Guide Content -->
+        <div class="w-full md:w-1/2 p-8 md:p-12 overflow-y-auto max-h-full">
+          <div class="space-y-8">
+            <div class="group">
+              <h4 class="text-[10px] font-mono uppercase tracking-[0.2em] text-antique mb-2 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-antique"></span> Qubes OS Architecture
+              </h4>
+              <p class="text-cream font-serif text-lg leading-relaxed">Security by Compartmentalization.</p>
+              <p class="text-linen/50 text-sm mt-2 leading-relaxed">Your personal .md files are processed in an <strong>isolated sandbox</strong>. Using the world's most secure OS, we ensure your data never touches the same system as the public internet.</p>
+            </div>
+
+            <!-- 2. PLACE THE DYNAMIC COOKIE LIST HERE -->
+            <div class="group border-t border-linen/10 pt-6">
+              <h4 class="text-[10px] font-mono uppercase tracking-[0.2em] text-antique mb-4">Cookie Declaration</h4>
+              <!-- Cookiebot declaration removed -->
+            </div>
+
+            <div class="group border-t border-linen/10 pt-6">
+              <p class="text-linen/70 italic text-sm">"We do not sell to third parties. Your mind is your property. Our site is simply the studio where it is voiced."</p>
+              <div class="mt-6 flex gap-4">
+                <a href="/thedailyartcult/policy.thedailyartcult" class="text-[9px] font-mono tracking-widest uppercase py-2 px-4 border border-linen/20 hover:border-antique hover:text-antique transition duration-300">Read Full Policy</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Persistent Tracker Link -->
+    <p class="mt-6 text-center">
+      <a href="track/index.html" class="text-[10px] font-mono tracking-[0.22em] uppercase text-antique/50 hover:text-antique transition duration-300 border-b border-antique/20 hover:border-antique/50 pb-px">Track Your Card →</a>
+    </p>
+  </div>
+</section>
+
+
+
+
+
+<!-- SECTION 6: IMMORTALITY PROJECT -->
+<section id="immortality-section" class="px-5 py-24 sm:py-28 relative border-t border-linen/10 overflow-hidden">
+  
+  <!-- Subtle atmospheric backdrop -->
+  <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(74,16,27,0.15),transparent_70%)]"></div>
+  </div>
+
+  <div class="mx-auto max-w-7xl relative z-10">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+      
+      <!-- Left Column: Copy & Presentation (Col-span 7) -->
+      <div class="lg:col-span-7 reveal text-left space-y-6">
+        <div>
+          <p class="text-sm font-semibold uppercase tracking-[0.28em] text-linen/75">The Experiment</p>
+          <h2 class="mt-4 font-serif text-4xl font-semibold text-cream sm:text-5xl leading-tight">
+            Immortality Projects
+          </h2>
+        </div>
+        
+        <div class="space-y-4 max-w-xl">
+          <p class="text-linen leading-relaxed text-base">
+            Becker argued that everything we build — every name we carve, every child we raise, every word we entrust to paper — is an act of defiance against our own erasure.
+          </p>
+          <p class="text-linen/60 leading-relaxed text-sm">
+            Members will be able to record the voice, the principles, and the particular phrases that made someone feel unmistakably present. What is left behind will respond — shaped by what you entrusted to it.
+          </p>
+        </div>
+
+        <div class="pt-4">
+          <a href="immortality/index.html" class="btn-sweep inline-flex items-center gap-2 border border-antique/30 px-6 py-3.5 text-[10px] font-bold uppercase tracking-widest text-antique transition duration-300">
+            Learn More About the Project
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="opacity-75"><path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+
+        <p class="text-[9px] font-mono tracking-widest uppercase text-linen/20 pt-4">
+          Inspired by Ernest Becker &nbsp;·&nbsp; <span class="italic">The Denial of Death</span>, 1973
+        </p>
+      </div>
+
+      <!-- Right Column: Interactive Registry Panel (Col-span 5) -->
+      <div class="lg:col-span-5 reveal">
+        <div class="quiet-panel p-8 rounded-2xl border-linen/10 relative overflow-hidden flex flex-col justify-between min-h-[340px]">
+          
+          <!-- Subtle gold filament at top of panel -->
+          <div class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-antique/40 to-transparent"></div>
+
+          <!-- Header of the Card -->
+          <div class="flex items-center justify-between border-b border-white/[0.06] pb-4 mb-6">
+            <span class="text-[10px] font-mono tracking-[0.25em] text-antique uppercase">Active Registry</span>
+            <span class="flex h-2 w-2 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-antique opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-antique"></span>
+            </span>
+          </div>
+
+          <!-- Countdown Grid -->
+          <div class="space-y-6 flex-1 flex flex-col justify-center">
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="bg-black/25 border border-white/[0.04] p-4 rounded-xl">
+                <span id="ip-days" class="block font-serif text-4xl sm:text-5xl text-cream font-medium tracking-wide">000</span>
+                <span class="block text-[8px] font-mono tracking-widest uppercase text-linen/40 mt-1">Days</span>
+              </div>
+              <div class="bg-black/25 border border-white/[0.04] p-4 rounded-xl">
+                <span id="ip-hours" class="block font-serif text-4xl sm:text-5xl text-cream font-medium tracking-wide">00</span>
+                <span class="block text-[8px] font-mono tracking-widest uppercase text-linen/40 mt-1">Hours</span>
+              </div>
+              <div class="bg-black/25 border border-white/[0.04] p-4 rounded-xl">
+                <span id="ip-minutes" class="block font-serif text-4xl sm:text-5xl text-cream font-medium tracking-wide">00</span>
+                <span class="block text-[8px] font-mono tracking-widest uppercase text-linen/40 mt-1">Mins</span>
+              </div>
+            </div>
+
+            <!-- Signature Breathing Line inside panel -->
+            <div class="flex justify-center py-2">
+              <div class="filament-breath w-32 h-px bg-gradient-to-r from-transparent via-antique/60 to-transparent"></div>
+            </div>
+          </div>
+
+          <!-- Footer of the Card -->
+          <div class="border-t border-white/[0.06] pt-4 mt-6 text-center">
+            <span class="font-mono text-[9px] tracking-[0.25em] text-linen/40 uppercase">Target Deployment: December 31, 2026</span>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+  
+  // --- SHOPPING CART STATE & LOGIC ---
+    let cartWorldviews = JSON.parse(localStorage.getItem('pending_worldviews') || '[]');
+
+    function updateCartUI() {
+      const tray = document.getElementById('cart-selection-tray');
+      if (!tray) return;
+
+      // Add a highlighted class to any cards in the worldview grid that match their selection
+      const tokens = document.querySelectorAll('.iconic-token');
+      tokens.forEach(token => {
+        const title = token.dataset.title;
+        const isSelected = cartWorldviews.includes(title);
+        token.classList.toggle('is-selected', isSelected);
+      });
+
+      if (cartWorldviews.length === 0) {
+        tray.innerHTML = `<span class="text-[9px] text-linen/30 italic">No lenses selected. Click cards below to add them.</span>`;
+        return;
+      }
+
+      tray.innerHTML = cartWorldviews.map(wv => `
+        <span class="inline-flex items-center gap-1 bg-antique/10 border border-antique/30 text-antique px-2 py-0.5 rounded text-[9px] font-mono uppercase tracking-wider">
+          ${wv}
+          <button type="button" class="hover:text-cream font-bold pl-1 focus:outline-none" onclick="toggleCartItem('${wv}')">×</button>
+        </span>
+      `).join('');
+    }
+
+    window.toggleCartItem = function(title) {
+      const idx = cartWorldviews.indexOf(title);
+      if (idx > -1) {
+        cartWorldviews.splice(idx, 1);
+      } else {
+        cartWorldviews.push(title);
+      }
+      localStorage.setItem('pending_worldviews', JSON.stringify(cartWorldviews));
+      updateCartUI();
+    };
+    
+    
+    (function () {
+      var target = new Date('2026-12-31T00:00:00');
+      function tick() {
+        var now = new Date();
+        var diff = target - now;
+        if (diff <= 0) return;
+        var days = Math.floor(diff / 86400000);
+        var hours = Math.floor((diff % 86400000) / 3600000);
+        var minutes = Math.floor((diff % 3600000) / 60000);
+        var d = document.getElementById('ip-days');
+        var h = document.getElementById('ip-hours');
+        var m = document.getElementById('ip-minutes');
+        if (d) d.textContent = String(days).padStart(3, '0');
+        if (h) h.textContent = String(hours).padStart(2, '0');
+        if (m) m.textContent = String(minutes).padStart(2, '0');
+      }
+      tick();
+      setInterval(tick, 30000);
+    })();
+  </script>
+</section>
+
+
+  </main>
+
+
+
+<footer class="site-footer border-t border-linen/12 px-5 pt-14 pb-10">
+  <div class="mx-auto max-w-7xl">
+
+    <!-- Top: Brand + Link Columns -->
+    <div class="grid gap-10 md:grid-cols-[1.6fr_1fr_1fr] md:gap-16 mb-12">
+
+      <!-- Brand Block -->
+      <div>
+        <p class="font-serif text-2xl font-semibold tracking-wide text-cream mb-3" data-i18n="brand.name">The Daily Art Cult</p>
+        <p class="text-xs text-linen/50 leading-relaxed max-w-xs">
+          A non-profit archive of philosophical voices. No shareholders. No exit. The archive belongs to the people who contribute to it.
+        </p>
+        <nav class="flex flex-wrap items-center gap-2 mt-6" aria-label="Social media">
+          <a href="#" class="social-link flex h-9 w-9 items-center justify-center rounded-full border border-linen/12 hover:border-antique/50 hover:text-antique transition" aria-label="X">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.74l7.73-8.835L1.254 2.25H8.08l4.261 5.632 5.903-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117Z"/></svg>
+          </a>
+          <a href="#" class="social-link flex h-9 w-9 items-center justify-center rounded-full border border-linen/12 hover:border-antique/50 hover:text-antique transition" aria-label="YouTube">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+          </a>
+          <a href="#" class="social-link flex h-9 w-9 items-center justify-center rounded-full border border-linen/12 hover:border-antique/50 hover:text-antique transition" aria-label="LinkedIn">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+          </a>
+          <a href="#" class="social-link flex h-9 w-9 items-center justify-center rounded-full border border-linen/12 hover:border-antique/50 hover:text-antique transition" aria-label="Discord">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418Z"/></svg>
+          </a>
+          <a href="#" class="social-link flex h-9 w-9 items-center justify-center rounded-full border border-linen/12 hover:border-antique/50 hover:text-antique transition" aria-label="Instagram">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+          </a>
+          <a href="#" class="social-link flex h-9 w-9 items-center justify-center rounded-full border border-linen/12 hover:border-antique/50 hover:text-antique transition" aria-label="TikTok">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.28 8.28 0 0 0 4.83 1.53V6.78a4.85 4.85 0 0 1-1.06-.09z"/></svg>
+          </a>
+        </nav>
+      </div>
+
+      <!-- The Ledger -->
+      <div>
+        <p class="text-[10px] font-mono tracking-[0.2em] uppercase text-antique/70 mb-5">The Ledger</p>
+        <ul class="space-y-3 text-sm text-linen/60">
+          <li><a href="/thedailyartcult/accounts.thedailyartcult" class="hover:text-antique transition duration-300">Membership</a></li>
+          <li><a href="educators/" class="hover:text-antique transition duration-300">TDAC for Educators</a></li>
+          <li><a href="giftcard/" class="hover:text-antique transition duration-300">Gift a Membership</a></li>
+          <li><a href="/thedailyartcult/support.thedailyartcult" class="hover:text-antique transition duration-300">Support</a></li>
+          <li><a href="/thedailyartcult/accounts.thedailyartcult/cancel" class="hover:text-antique transition duration-300">Cancel Subscription</a></li>
+          <li><a href="track/index.html" class="hover:text-antique transition duration-300">Track My Card</a></li>
+        </ul>
+      </div>
+
+      <!-- The Mission -->
+      <div>
+        <p class="text-[10px] font-mono tracking-[0.2em] uppercase text-antique/70 mb-5">The Mission</p>
+        <ul class="space-y-3 text-sm text-linen/60">
+          <li><a href="about/" class="hover:text-antique transition duration-300">About</a></li>
+          <li><a href="immortality/" class="hover:text-antique transition duration-300">Immortality Projects</a></li>
+          <li><a href="/thedailyartcult/publications.thedailyartcult" class="hover:text-antique transition duration-300">Publications</a></li>
+          <li><a href="/thedailyartcult/policy.thedailyartcult" class="hover:text-antique transition duration-300">Privacy & Terms</a></li>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- Divider -->
+    <div class="w-full h-px bg-linen/8 mb-7"></div>
+
+    <!-- Bottom: Copyright -->
+    <div class="flex flex-wrap items-center justify-between gap-4 text-xs text-linen/30">
+      <span data-i18n="footer.copyright">&copy; 2026 The Daily Art Cult. All rights reserved.</span>
+      <a href="accounts/alien/index.html" class="group flex items-center gap-1.5 text-linen/40 hover:text-antique transition-colors duration-300">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-3.5 w-3.5 text-antique/60 group-hover:text-antique transition-colors">
+          <circle cx="12" cy="12" r="9" opacity="0.3" />
+          <circle cx="12" cy="12" r="5" stroke-dasharray="2 2" opacity="0.5" />
+          <line x1="6" y1="18" x2="18" y2="6" stroke-linecap="round" />
+          <circle cx="18" cy="6" r="1.5" fill="currentColor" />
+        </svg>
+        <span class="font-sans text-[10px] tracking-[0.12em] uppercase">Powered by</span>
+        <span class="font-serif italic font-medium text-linen/60 group-hover:text-antique transition-colors">Alien.inc</span>
+      </a>
+      <span class="font-mono tracking-[0.18em] uppercase text-linen/20 text-[10px]">Non-Profit · No Shareholders · No Exit</span>
+    </div>
+
+  </div>
+</footer>
+  
+  <script>
+  
+  function syncTranscriptToAudio(text, element, audio) {
+  if (!element || !audio) return;
+  
+  const words = text.split(/\s+/);
+  element.textContent = ""; // Clear existing text
+
+  const updateWords = () => {
+    if (!audio.duration || audio.duration === 0) return;
+    
+    // Calculate progress ratio
+    const progress = Math.min(audio.currentTime / audio.duration, 1);
+    const wordsToShow = Math.ceil(progress * words.length);
+    
+    // Render the slice of words
+    element.textContent = words.slice(0, wordsToShow).join(" ");
+  };
+
+  // Bind the updates to the audio track's progress events
+  audio.addEventListener("timeupdate", updateWords);
+
+  // Return a cleanup function to prevent memory leaks or dual-binding in future runs
+  return () => {
+    audio.removeEventListener("timeupdate", updateWords);
+  };
+}
+  
+  
+  
+  
+  
+  
+
+
+document.addEventListener("DOMContentLoaded", () => {
+      initLiveMap();
+    });
+    
+    
+    
+    
+    
+    
+    
+
+    // Leaflet completely dark premium map skin integration
+    function initLiveMap() {
+      const map = L.map('leaflet-map', {
+        center: [20, 0],
+        zoom: 2,
+        minZoom: 1.5,
+        maxZoom: 7,
+        zoomControl: true,
+        scrollWheelZoom: false,
+        attributionControl: false
+      });
+
+      // Skin the map entirely dark with CartoDB labels layer
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 20
+      }).addTo(map);
+
+      // Confirm locations (Solid pulsing gold) — add photo, clientName, bookTitle, quote for each real client
+      const confirmedLocations = [
+        { 
+          coords: [19.8968, -155.5828], 
+          name: "Hawaiʻi", 
+          desc: "A physical bespoke gift card has arrived here.",
+          clientName: "Private Member",
+          bookTitle: "A Grief That Had No Name",
+          quote: "I never felt so home in a book. I closed my eyes halfway through and didn't open them.",
+          photo: null  // Replace with "clients/hawaii-client.jpg" once you have the photo
+        },
+        { 
+          coords: [46.8182, 8.2275], 
+          name: "Switzerland", 
+          desc: "A commissioned leather-bound review has arrived here.",
+          clientName: "Marc A., Geneva",
+          bookTitle: "Silence As A Second Language",
+          quote: "A devastatingly beautiful recording. The rhythm of the prose is exceptional.",
+          photo: null  // Replace with "clients/marc-geneva.jpg" once you have the photo
+        }
+      ];
+
+      // Future delivery locations (hollow circles)
+      const futureLocations = [
+        { coords: [48.8566, 2.3522], name: "Paris", desc: "A bespoke project is finding its way here." },
+        { coords: [35.6762, 139.6503], name: "Tokyo", desc: "A customized reflection is currently in transit." },
+        { coords: [40.7128, -74.0060], name: "New York", desc: "A handcrafted commission is currently being prepared." },
+        { coords: [51.5074, -0.1278], name: "London", desc: "A private studio master is currently being written." },
+        { coords: [-33.9249, 18.4241], name: "Cape Town", desc: "A patron's letter is finding its way here." },
+        { coords: [-33.8688, 151.2093], name: "Sydney", desc: "A bespoke code has been dispatched." }
+      ];
+
+      // Side panel DOM refs
+      const clientPanel = document.getElementById('map-client-panel');
+      const panelPhotoFrame = document.getElementById('panel-photo-frame');
+      const panelClientName = document.getElementById('panel-client-name');
+      const panelBookTitle = document.getElementById('panel-book-title');
+      const panelQuote = document.getElementById('panel-quote');
+      const panelLocation = document.getElementById('panel-location');
+      let panelHideTimeout = null;
+
+      function showClientPanel(loc) {
+        if (panelHideTimeout) clearTimeout(panelHideTimeout);
+
+        panelClientName.textContent = loc.clientName || loc.name;
+        panelBookTitle.textContent = loc.bookTitle || '';
+        panelQuote.textContent = loc.quote ? `"${loc.quote}"` : '';
+        panelLocation.textContent = loc.name;
+
+        // Photo or placeholder
+        if (loc.photo) {
+          panelPhotoFrame.innerHTML = `<img src="${loc.photo}" alt="Photo of ${loc.clientName}" loading="lazy">`;
+        } else {
+          panelPhotoFrame.innerHTML = `
+            <div class="client-photo-placeholder">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#c6a766" stroke-width="1.2">
+                <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+              <span style="font-size:9px;font-family:monospace;letter-spacing:0.18em;color:rgba(198,167,102,0.4);text-transform:uppercase;">Photo coming soon</span>
+            </div>`;
+        }
+
+        clientPanel.classList.add('panel-visible');
+      }
+
+      function hideClientPanel() {
+        panelHideTimeout = setTimeout(() => {
+          clientPanel.classList.remove('panel-visible');
+        }, 280);
+      }
+
+      confirmedLocations.forEach(loc => {
+        const customIcon = L.divIcon({
+          className: 'custom-map-icon',
+          html: `<span class="map-marker-pulse"></span>`,
+          iconSize: [14, 14],
+          iconAnchor: [7, 7]
+        });
+        
+        const popupContent = `
+          <div class="p-1">
+            <h4 class="font-serif text-sm font-semibold text-cream">${loc.name}</h4>
+            <p class="text-[10px] text-linen/70 mt-1 leading-relaxed">${loc.desc}</p>
+          </div>
+        `;
+        
+        const marker = L.marker(loc.coords, { icon: customIcon })
+          .addTo(map)
+          .bindPopup(popupContent, { closeButton: false, offset: L.point(0, -5) });
+
+        marker.on('mouseover', () => showClientPanel(loc));
+        marker.on('mouseout', () => hideClientPanel());
+        marker.on('click', () => showClientPanel(loc));
+      });
+
+      // Keep panel open when hovering the panel itself
+      if (clientPanel) {
+        clientPanel.addEventListener('mouseenter', () => {
+          if (panelHideTimeout) clearTimeout(panelHideTimeout);
+        });
+        clientPanel.addEventListener('mouseleave', () => hideClientPanel());
+      }
+
+      futureLocations.forEach(loc => {
+        const customIcon = L.divIcon({
+          className: 'custom-map-icon',
+          html: `<span class="map-marker-hollow"></span>`,
+          iconSize: [12, 12],
+          iconAnchor: [6, 6]
+        });
+        
+        const popupContent = `
+          <div class="p-1">
+            <h4 class="font-serif text-sm font-semibold text-cream">${loc.name}</h4>
+            <p class="text-[10px] text-linen/70 mt-1 leading-relaxed">${loc.desc}</p>
+          </div>
+        `;
+        
+        L.marker(loc.coords, { icon: customIcon })
+          .addTo(map)
+          .bindPopup(popupContent, { closeButton: false, offset: L.point(0, -5) });
+      });
+    }
+
+  </script>
+
+  <script>
+    /* Global Page Interactivity */
+    const revealEls = document.querySelectorAll(".reveal");
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.14 });
+    revealEls.forEach((el) => revealObserver.observe(el));
+
+    const pauseOtherAudio = (activeAudio) => {
+      document.querySelectorAll("audio").forEach((audio) => {
+        if (audio !== activeAudio) audio.pause();
+      });
+    };
+
+    document.querySelectorAll("audio").forEach((audio) => {
+      audio.addEventListener("play", () => pauseOtherAudio(audio));
+    });
+
+    const formatTime = (seconds) => {
+      if (!Number.isFinite(seconds)) return "0:00";
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = Math.floor(seconds % 60).toString().padStart(2, "0");
+      return `${minutes}:${remainingSeconds}`;
+    };
+    
+document.addEventListener("DOMContentLoaded", () => {
+  // --- HEADLINE ANIMATION LOGIC ---
+  updateCartUI();
+  const heroHeadlineWrap = document.getElementById('hero-headline-wrap');
+  const words = document.querySelectorAll('#hero-headline .word');
+  const countdownText = document.getElementById('hero-countdown-text');
+  const countdownValue = document.getElementById('hero-countdown-value');
+  const countdownUnit = document.getElementById('hero-countdown-unit');
+  let countdownInterval = null;
+  let countdownTimeout = null;
+  let countdownStopped = false;
+
+  const animateHeadline = () => {
+    let delay = 100;
+    words.forEach((word, idx) => {
+      setTimeout(() => {
+        word.classList.add('is-visible');
+
+        if (idx === 1 && countdownText) {
+          setTimeout(() => countdownText.classList.add('is-underlined'), 320);
+        }
+      }, delay);
+      delay += idx < 2 ? 170 : 125;
+    });
+
+    countdownTimeout = setTimeout(startHeadlineCountdown, delay + 600 + 5000);
+  };
+
+  const setCountdownText = (value, unit, shouldFade = false) => {
+    if (!countdownText || !countdownValue || !countdownUnit) return;
+    const underlineWidth = unit === 'Minute' ? '5.15em' : unit === 'Second' ? '4.1em' : unit === 'Seconds' ? '4.7em' : '4.35em';
+    countdownText.style.setProperty('--headline-underline-width', underlineWidth);
+
+    if (!shouldFade) {
+      countdownValue.innerHTML = value;
+      countdownUnit.textContent = unit;
+      return;
+    }
+
+    countdownText.classList.add('is-changing');
+    setTimeout(() => {
+      countdownValue.innerHTML = value;
+      countdownUnit.textContent = unit;
+      requestAnimationFrame(() => countdownText.classList.remove('is-changing'));
+    }, 180);
+  };
+
+  const formatCountdown = (seconds) => {
+    if (seconds >= 60) {
+      const mins = Math.floor(seconds / 60);
+      const secs = String(seconds % 60).padStart(2, '0');
+      return { value: `${mins}:<span class="headline-countdown-second">${secs}</span>`, unit: 'Minute' };
+    }
+
+    return {
+      value: `<span class="headline-countdown-second">${seconds}</span>`,
+      unit: seconds === 1 ? 'Second' : 'Seconds'
+    };
+  };
+
+  const startHeadlineCountdown = () => {
+    if (!countdownText || !countdownValue || !countdownUnit || countdownInterval || countdownStopped) return;
+
+    let remaining = 119;
+    const tick = () => {
+      if (countdownStopped) return;
+      const next = formatCountdown(remaining);
+      setCountdownText(next.value, next.unit, remaining === 119);
+
+      if (remaining <= 1) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+        setTimeout(() => setCountdownText('2', 'Minutes', true), 1200);
+        return;
+      }
+
+      remaining = Math.max(1, remaining - 3);
+    };
+
+    tick();
+    countdownInterval = setInterval(tick, 3000);
+  };
+
+  const stopHeadlineCountdown = () => {
+    if (countdownStopped) return;
+    countdownStopped = true;
+    clearTimeout(countdownTimeout);
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+    setCountdownText('2', 'Minutes', false);
+  };
+
+  const dismissHeroHeadline = () => {
+    stopHeadlineCountdown();
+    heroHeadlineWrap?.classList.add('is-dismissed');
+  };
+
+  animateHeadline();
+
+  // --- CONVERSATIONAL STUDIO WORKSPACE LOGIC ---
+  const chatInput = document.getElementById('hero-chat-input');
+  const mdInput = document.getElementById('hero-md-input');
+  const sourceInput = document.getElementById('hero-source-input');
+  const chatSubmit = document.getElementById('hero-chat-submit');
+  const chatHistory = document.getElementById('hero-chat-history');
+  const suggestionsContainer = document.getElementById('hero-suggestions');
+  const stageLabel = document.getElementById('studio-stage-label');
+  const charCounter = document.getElementById('studio-char-count');
+  const studioModeSwitcher = document.getElementById('studio-mode-switcher');
+  const studioModePrompt = document.getElementById('studio-mode-prompt');
+  const studioModeMd = document.getElementById('studio-mode-md');
+  const studioModeSource = document.getElementById('studio-mode-source');
+  const studioPromptPanel = document.getElementById('studio-prompt-panel');
+  const studioMdPanel = document.getElementById('studio-md-panel');
+  const studioSourcePanel = document.getElementById('studio-source-panel');
+  const studioFloatingQuestion = document.getElementById('studio-floating-question');
+  const studioFloatingQuestionText = document.getElementById('studio-floating-question-text');
+
+  const editorFrame = document.getElementById('hero-editor-frame');
+  const readingFrame = document.getElementById('booth-reading-frame');
+  const bridgeFrame = document.getElementById('booth-bridge-frame');
+  const bespokeFrame = document.getElementById('booth-bespoke-frame');
+  const bridgeTextContainer = document.getElementById('bridge-text-container');
+
+  const aiAudio = document.getElementById('ai-audio');
+  const craftAudio = document.getElementById('craft-audio');
+  const azureStatus = document.getElementById('azure-status-text');
+  const stillYours = document.getElementById('still-yours');
+
+  const bespokeProgress = document.getElementById('bespoke-progress');
+  const bespokeTimeCurrent = document.getElementById('bespoke-time-current');
+  const bespokeTimeTotal = document.getElementById('bespoke-time-total');
+  const playBespokeBtn = document.getElementById('play-bespoke-btn');
+  const postPlaybackUi = document.getElementById('post-playback-ui');
+
+  const dropZone = document.getElementById('md-drop-zone');
+  const dropZoneIdle = document.getElementById('drop-zone-idle');
+  const mdFileInput = document.getElementById('md-file-input');
+  const revealPasteBtn = document.getElementById('reveal-paste-btn');
+  const copyPromptBtn = document.getElementById('copy-profile-prompt-btn');
+
+  // New gate elements
+  const worldviewGate = document.getElementById('booth-worldview-gate');
+  const worldviewGrid = document.getElementById('worldview-grid-container');
+  const publisherFeatureVideo = document.getElementById('publisher-feature-video');
+  const publisherFeatureImage = document.getElementById('publisher-feature-image');
+  const publisherFeatureCadence = document.getElementById('publisher-feature-cadence');
+  const publisherFeatureTitle = document.getElementById('publisher-feature-title');
+  const publisherFeatureName = document.getElementById('publisher-feature-name');
+  const publisherFeatureIssue = document.getElementById('publisher-feature-issue');
+  const publisherFeatureLens = document.getElementById('publisher-feature-lens');
+  const publisherFeatureRhythm = document.getElementById('publisher-feature-rhythm');
+  const publisherFeatureDescription = document.getElementById('publisher-feature-description');
+  const publisherPreviewToggle = document.getElementById('publisher-preview-toggle');
+  const publisherAccessForm = document.getElementById('publisher-access-form');
+  const publisherAccessEmail = document.getElementById('publisher-access-email');
+  const publisherAccessFeedback = document.getElementById('publisher-access-feedback');
+
+
+  let currentStage = 1;
+  let studioInputMode = 'prompt';
+  let studioSubmissionSource = 'guided';
+  let studioIsThinking = false;
+  let latestStudioReading = null;
+  const stageLimits = { 1: 150, 2: 120, 3: 200 };
+  
+  // Updated to support first name and honorary title
+  const answers = { q1: '', q2: '', q3: '', content_source: '', source_input: '', worldview: '', worldview_label: '', philosopher: '', first_name: '', honorary: '' };
+
+  // New function to handle transition to the Patron Registry Frame
+  const showPatronRegistryFrame = () => {
+    editorFrame.classList.add("hidden");
+    const patronFrame = document.getElementById('booth-patron-frame');
+    if (patronFrame) {
+      patronFrame.classList.remove('hidden');
+      patronFrame.style.opacity = '0';
+      patronFrame.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+      patronFrame.style.transform = 'translateY(8px)';
+      requestAnimationFrame(() => {
+        patronFrame.style.opacity = '1';
+        patronFrame.style.transform = 'translateY(0)';
+      });
+    }
+    const nameInput = document.getElementById('patron-first-name');
+    if (nameInput) nameInput.focus();
+  };
+
+  // Listeners to capture the Patron Form submission values
+  const patronSubmitBtn = document.getElementById('patron-submit-btn');
+  const patronFirstNameInput = document.getElementById('patron-first-name');
+  const patronHonorarySelect = document.getElementById('patron-honorary');
+
+  if (patronSubmitBtn) {
+    patronSubmitBtn.addEventListener('click', () => {
+      const firstName = patronFirstNameInput ? patronFirstNameInput.value.trim() : "";
+      const honorary = patronHonorarySelect ? patronHonorarySelect.value : "Master";
+      
+      answers.first_name = firstName || "Patron";
+      answers.honorary = honorary;
+
+      const patronFrame = document.getElementById('booth-patron-frame');
+      if (patronFrame) patronFrame.classList.add('hidden');
+
+      beginReadingState();
+    });
+  }
+  
+
+  // Prompt Generator Content
+  const PROFILE_PROMPT_TEXT = `# Prompt: Generate My Personal Learning & Context Profile
+
+> **How to use this:** Paste everything below the horizontal rule into a new Claude conversation. Claude will synthesize everything it knows about you from past sessions into a \`.md\` file you can attach to future conversations as context.
+
+---
+
+Claude, I want you to generate a \`.md\` file that functions as my **permanent personal context profile** — a living document I'll attach to future conversations so you can calibrate how you engage with me from the very first message.
+
+Pull from everything you know about me across all our past conversations. Structure the output as follows:
+
+---
+
+## 1. Identity & Intellectual Self-Concept
+Who I understand myself to be. My core intellectual identity, the thinkers I self-identify with, my relationship to autodidactic learning vs. institutional frameworks, and any recurring self-images or archetypes that surface in how I think and speak.
+
+## 2. Philosophical Architecture
+The thinkers and texts that form my actual operating system — not what I've casually mentioned, but what shapes *how I think*. Include:
+- Primary canon (deeply internalized)
+- Secondary influences (engaged but not foundational)
+- Tensions or productive contradictions between my influences
+- How I use philosophy: instrumentally, aesthetically, ethically, or otherwise
+
+## 3. Psychological Profile (as observed across conversations)
+Patterns in how I engage, learn, and respond. Include:
+- How I process new information (do I go broad first or drill immediately?)
+- My relationship to structure vs. intuition
+- Where I show high curiosity vs. resistance
+- How I respond to challenge, disagreement, or complexity
+- Any recurring cognitive or emotional patterns
+
+## 4. Astrological / Archetypal Lens *(if inferable)*
+Any astrological, Jungian, or archetypal framing that maps to how I operate — either things I've stated directly or patterns consistent with known frameworks.
+
+## 5. Learning Style & Pedagogy Preferences
+How I learn fastest. Include:
+- Do I prefer Socratic dialogue, direct transmission, or exploratory synthesis?
+- Do I respond better to analogies, first principles, or narrative?
+- My preferred density of information (concise vs. rich)
+- How I respond to examples, counterexamples, and edge cases
+- My tolerance for ambiguity vs. need for resolution
+
+## 6. Active Projects & Working Context
+The professional and creative work currently underway that shapes what I need from our conversations. Be specific — project names, platforms, goals, current blockers if known.
+
+## 7. Communication Preferences
+How I like Claude to speak to me. Tone, register, format preferences, things I find annoying or useful, whether I prefer directness or nuance-first delivery.
+
+## 8. Blind Spots & Growth Edges *(observed, not prescribed)*
+Patterns where I seem to avoid, rush past, or undervalue something that might serve me. Note these diplomatically — this section is for my benefit, not critique.
+
+## 9. One-Line Summary
+A single sentence that captures me as a learner and thinker — precise enough that another version of Claude reading it cold would immediately know how to engage me.
+
+---
+
+**Output format:** A clean \`.md\` file, ready to be saved and attached to future conversations. Use headers, subheaders, and bullet points where clarity demands it — but write in a register that sounds like *me*, not a clinical report. Treat it as a document I'd actually want to read.`;
+
+  // Copy Profile Generation Prompt Logic
+  if (copyPromptBtn) {
+    copyPromptBtn.addEventListener("click", () => {
+      navigator.clipboard.writeText(PROFILE_PROMPT_TEXT).then(() => {
+        const span = copyPromptBtn.querySelector("span");
+        const originalText = span.textContent;
+        span.textContent = "Copied to Clipboard";
+        copyPromptBtn.classList.add("border-antique", "bg-antique/20");
+        setTimeout(() => {
+          span.textContent = originalText;
+          copyPromptBtn.classList.remove("border-antique", "bg-antique/20");
+        }, 2200);
+      }).catch(err => {
+        console.warn("Clipboard access failed, direct copy failed:", err);
+      });
+    });
+  }
+
+  // File Drop Mechanics
+  const processMdFile = (file) => {
+    if (!file) return;
+    const isMd = file.name.endsWith('.md') || file.type === 'text/markdown' || file.type === 'text/plain';
+    if (isMd) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (mdInput) {
+          mdInput.value = e.target.result;
+          mdInput.classList.remove("hidden");
+          dropZoneIdle.classList.add("hidden");
+          dropZone.classList.remove("border-dashed");
+          dropZone.classList.add("border-antique/50", "bg-black/25");
+          updateCharacterCount();
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  if (dropZone) {
+    // Styling animations on active dragover
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("border-antique", "bg-[#1c140f]");
+    });
+    dropZone.addEventListener("dragleave", () => {
+      dropZone.classList.remove("border-antique", "bg-[#1c140f]");
+    });
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("border-antique", "bg-[#1c140f]");
+      if (e.dataTransfer.files.length > 0) {
+        processMdFile(e.dataTransfer.files[0]);
+      }
+    });
+    dropZone.addEventListener("click", (e) => {
+      if (e.target !== mdInput && !revealPasteBtn.contains(e.target)) {
+        mdFileInput?.click();
+      }
+    });
+  }
+
+  if (mdFileInput) {
+    mdFileInput.addEventListener("change", (e) => {
+      if (e.target.files.length > 0) {
+        processMdFile(e.target.files[0]);
+      }
+    });
+  }
+
+  if (revealPasteBtn) {
+    revealPasteBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      dropZoneIdle.classList.add("hidden");
+      mdInput.classList.remove("hidden");
+      mdInput.focus();
+    });
+  }
+
+  // Q1 — What do you need this to give you? (tap suggestions + typewriter examples)
+  const q1Suggestions = [
+    { text: "I want to feel less alone in it", label: "Feel less alone" },
+    { text: "I want language for something I can't name", label: "Find language for it" },
+    { text: "I want to be challenged, not comforted", label: "Be challenged" }
+  ];
+
+  const q1Examples = [
+    "I want to feel less alone in this.",
+    "I want language for something I can't name.",
+    "I want to be challenged, not comforted."
+  ];
+
+  // Q3 — What are you really carrying today? (was Q1)
+  const q3Suggestions = [
+    { text: "Something I've lost that I haven't fully admitted I'm grieving.", label: "Something I've lost" },
+    { text: "Something I'm building or becoming inside myself or out in the world.", label: "Something I'm creating" },
+    { text: "A feeling I can't name or a want I can't let go of.", label: "Something I can't name" }
+  ];
+
+  // Typewriter placeholder cycle for Q1
+  let typingInterval = null;
+  let typingTimeout = null;
+
+  function startPlaceholderCycle() {
+    if (!chatInput) return;
+    stopPlaceholderCycle();
+    let exIdx = 0, chIdx = 0, deleting = false;
+
+    function tick() {
+      const phrase = q1Examples[exIdx];
+      if (!deleting) {
+        chatInput.placeholder = phrase.substring(0, chIdx + 1);
+        chIdx++;
+        if (chIdx === phrase.length) {
+          clearInterval(typingInterval);
+          typingTimeout = setTimeout(() => {
+            deleting = true;
+            typingInterval = setInterval(tick, 34);
+          }, 2000);
+          return;
+        }
+      } else {
+        chatInput.placeholder = phrase.substring(0, chIdx - 1);
+        chIdx--;
+        if (chIdx === 0) {
+          deleting = false;
+          exIdx = (exIdx + 1) % q1Examples.length;
+          clearInterval(typingInterval);
+          typingTimeout = setTimeout(() => {
+            typingInterval = setInterval(tick, 52);
+          }, 380);
+          return;
+        }
+      }
+    }
+    typingInterval = setInterval(tick, 52);
+  }
+
+  function stopPlaceholderCycle() {
+    clearInterval(typingInterval);
+    clearTimeout(typingTimeout);
+    typingInterval = null;
+    chatInput.placeholder = '';
+  }
+
+  // Echo validation message for Q2 — makes user feel heard
+  function buildValidationText(q1Answer) {
+    return "Do you want your response to be";
+  }
+
+  const updateCharacterCount = () => {
+    if (!chatInput || !charCounter) return;
+    if (studioInputMode === 'md' && mdInput) {
+      charCounter.textContent = `${mdInput.value.length} chars`;
+      return;
+    }
+    if (studioInputMode === 'source' && sourceInput) {
+      charCounter.textContent = `${sourceInput.value.length} chars`;
+      return;
+    }
+    const limit = stageLimits[currentStage] || 150;
+    const currentLen = chatInput.value.length;
+    charCounter.textContent = `${currentLen} / ${limit}`;
+
+    if (currentLen > limit) {
+      chatInput.value = chatInput.value.substring(0, limit);
+      charCounter.textContent = `${limit} / ${limit}`;
+    }
+  };
+
+  const appendChatMessage = (text) => {
+    if (!chatHistory) return;
+    
+    const msg = document.createElement('div');
+    msg.className = "self-end max-w-[85%] bg-[#1b110d]/50 border border-[#c6a766]/15 rounded-2xl px-5 py-3 text-sm text-[#f2eadc] shadow-md transition-all duration-500 ease-out transform translate-y-3 opacity-0";
+    msg.textContent = text;
+    chatHistory.appendChild(msg);
+    
+    requestAnimationFrame(() => {
+      msg.classList.remove('translate-y-3', 'opacity-0');
+    });
+
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+  };
+
+  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const setStudioSubmitEnabled = (enabled) => {
+    if (!chatSubmit) return;
+    chatSubmit.disabled = !enabled;
+    chatSubmit.classList.toggle('opacity-45', !enabled);
+    chatSubmit.classList.toggle('pointer-events-none', !enabled);
+  };
+
+  const setChoiceButtonsEnabled = (enabled) => {
+    [document.getElementById('choice-beginning'), document.getElementById('choice-ending')].forEach((btn) => {
+      if (!btn) return;
+      btn.disabled = !enabled;
+      btn.classList.toggle('opacity-45', !enabled);
+      btn.classList.toggle('pointer-events-none', !enabled);
+    });
+  };
+
+  const appendThinkingMessage = async (lines, settledText, options = {}) => {
+    if (!chatHistory) return;
+
+    const msg = document.createElement('div');
+    msg.className = "studio-thinking-message transition-all duration-500 ease-out transform translate-y-3 opacity-0";
+    msg.setAttribute('aria-live', 'polite');
+
+    const loader = document.createElement('img');
+    loader.src = 'loader.gif';
+    loader.alt = '';
+    loader.className = 'daily-art-loader shrink-0';
+
+    const copy = document.createElement('p');
+    copy.className = 'studio-thinking-copy';
+    copy.textContent = lines[0] || settledText;
+
+    msg.append(loader, copy);
+    chatHistory.appendChild(msg);
+
+    requestAnimationFrame(() => {
+      msg.classList.remove('translate-y-3', 'opacity-0');
+    });
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+
+    const stepDelay = options.stepDelay || 880;
+    for (let i = 1; i < lines.length; i++) {
+      await sleep(stepDelay);
+      copy.classList.add('is-changing');
+      await sleep(180);
+      copy.textContent = lines[i];
+      copy.classList.remove('is-changing');
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
+    await sleep(options.settleDelay || 760);
+    copy.classList.add('is-changing');
+    await sleep(180);
+    copy.textContent = settledText;
+    copy.classList.remove('is-changing');
+    msg.classList.add('is-settled');
+    loader.style.opacity = '0.42';
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+    await sleep(options.afterDelay || 520);
+  };
+
+  const setStudioInputMode = (mode) => {
+    studioInputMode = mode;
+    const isMdMode = mode === 'md';
+    const isSourceMode = mode === 'source';
+    const isPromptMode = mode === 'prompt';
+
+    studioPromptPanel?.classList.toggle('hidden', !isPromptMode);
+    studioMdPanel?.classList.toggle('hidden', !isMdMode);
+    studioSourcePanel?.classList.toggle('hidden', !isSourceMode);
+    studioModePrompt?.classList.toggle('bg-antique', isPromptMode);
+    studioModePrompt?.classList.toggle('text-ink', isPromptMode);
+    studioModePrompt?.classList.toggle('font-bold', isPromptMode);
+    studioModePrompt?.classList.toggle('shadow-lg', isPromptMode);
+    studioModePrompt?.classList.toggle('text-linen/50', !isPromptMode);
+    studioModePrompt?.classList.toggle('hover:text-cream', !isPromptMode);
+    studioModeMd?.classList.toggle('bg-antique', isMdMode);
+    studioModeMd?.classList.toggle('text-ink', isMdMode);
+    studioModeMd?.classList.toggle('font-bold', isMdMode);
+    studioModeMd?.classList.toggle('shadow-lg', isMdMode);
+    studioModeMd?.classList.toggle('text-linen/50', !isMdMode);
+    studioModeMd?.classList.toggle('hover:text-cream', !isMdMode);
+    studioModeSource?.classList.toggle('bg-antique', isSourceMode);
+    studioModeSource?.classList.toggle('text-ink', isSourceMode);
+    studioModeSource?.classList.toggle('font-bold', isSourceMode);
+    studioModeSource?.classList.toggle('shadow-lg', isSourceMode);
+    studioModeSource?.classList.toggle('text-linen/50', !isSourceMode);
+    studioModeSource?.classList.toggle('hover:text-cream', !isSourceMode);
+    studioModePrompt?.setAttribute('aria-pressed', String(isPromptMode));
+    studioModeMd?.setAttribute('aria-pressed', String(isMdMode));
+    studioModeSource?.setAttribute('aria-pressed', String(isSourceMode));
+
+    if (currentStage === 1) {
+      stageLabel.textContent = isMdMode ? 'Markdown archive' : isSourceMode ? 'Source material' : 'Step 1 of 3';
+      suggestionsContainer?.classList.toggle('hidden', isMdMode || isSourceMode);
+    }
+
+    if (isMdMode || isSourceMode) {
+      stopPlaceholderCycle();
+      if (isSourceMode) sourceInput?.focus();
+    } else if (currentStage === 1) {
+      startPlaceholderCycle();
+      chatInput?.focus();
+    } else {
+      stopPlaceholderCycle();
+      chatInput?.focus();
+    }
+    updateCharacterCount();
+  };
+
+  const syncActiveInputToChatInput = () => {
+    if (studioInputMode === 'md' && mdInput && chatInput) {
+      chatInput.value = mdInput.value;
+    }
+    if (studioInputMode === 'source' && sourceInput && chatInput) {
+      chatInput.value = sourceInput.value;
+    }
+  };
+
+  const beginReadingState = () => {
+    editorFrame.classList.add("hidden");
+    renderSuggestions(4);
+
+    readingFrame.classList.remove("hidden");
+    setTimeout(() => readingFrame.classList.remove("opacity-0", "translate-y-4"), 50);
+
+    runStudioPipeline();
+  };
+
+  const logStudioInteraction = (territory = "pending", script = "") => {
+    return supabaseClient.from('listening_logs').insert([
+      {
+        q1_carrying: answers.q1,
+        q2_state: answers.q2,
+        q3_goal: answers.q3,
+        worldview: answers.worldview,
+        philosopher: answers.philosopher,
+        assigned_territory: territory,
+        ai_script: script,
+        created_at: new Date().toISOString()
+      }
+    ]).then(({ error }) => {
+      if (error) {
+        console.error("Supabase logging failed:", error);
+        return false;
+      } else {
+        console.log("Interaction logged to production ledger.");
+        return true;
+      }
+    });
+  };
+
+  const renderSuggestions = (stage) => {
+    if (!suggestionsContainer) return;
+    suggestionsContainer.innerHTML = '';
+    
+    let list = [];
+    if (stage === 1) {
+      list = q1Suggestions;
+    } else if (stage === 3) {
+      list = q3Suggestions;
+    } else {
+      return; 
+    }
+    
+    list.forEach(item => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = "text-xs px-4 py-2 rounded-full border border-linen/10 bg-white/5 hover:bg-white/10 hover:border-antique/40 text-linen hover:text-[#f2eadc] transition duration-350";
+      btn.textContent = item.label;
+      btn.addEventListener('click', () => {
+        if (chatInput) {
+          chatInput.value = item.text;
+          chatInput.dispatchEvent(new Event('input'));
+          chatInput.focus();
+        }
+      });
+      suggestionsContainer.appendChild(btn);
+    });
+  };
+
+  if (chatInput) {
+    chatInput.addEventListener('input', () => {
+      stopHeadlineCountdown();
+      chatInput.style.height = 'auto';
+      chatInput.style.height = Math.min(chatInput.scrollHeight, 180) + 'px';
+      updateCharacterCount();
+    });
+
+    chatInput.addEventListener('focus', stopHeadlineCountdown);
+
+    chatInput.addEventListener('keydown', (e) => {
+      stopHeadlineCountdown();
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        chatSubmit.click();
+      }
+    });
+  }
+
+  if (mdInput) {
+    mdInput.addEventListener('input', () => {
+      stopHeadlineCountdown();
+      mdInput.style.height = 'auto';
+      mdInput.style.height = Math.min(mdInput.scrollHeight, 240) + 'px';
+      updateCharacterCount();
+    });
+
+    mdInput.addEventListener('focus', stopHeadlineCountdown);
+
+    mdInput.addEventListener('keydown', (e) => {
+      stopHeadlineCountdown();
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        syncActiveInputToChatInput();
+        chatSubmit.click();
+      }
+    });
+  }
+
+  if (sourceInput) {
+    sourceInput.addEventListener('input', () => {
+      stopHeadlineCountdown();
+      sourceInput.style.height = 'auto';
+      sourceInput.style.height = Math.min(sourceInput.scrollHeight, 220) + 'px';
+      updateCharacterCount();
+    });
+
+    sourceInput.addEventListener('focus', stopHeadlineCountdown);
+
+    sourceInput.addEventListener('keydown', (e) => {
+      stopHeadlineCountdown();
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        syncActiveInputToChatInput();
+        chatSubmit.click();
+      }
+    });
+  }
+
+  studioModePrompt?.addEventListener('click', () => setStudioInputMode('prompt'));
+  studioModeMd?.addEventListener('click', () => setStudioInputMode('md'));
+  studioModeSource?.addEventListener('click', () => setStudioInputMode('source'));
+
+  // --- Worldview Gate Logic ---
+
+  const defaultWorldviewData = [
+    {
+      title: "Becoming",
+      philosopher: "Nietzsche",
+      question: "Who are you becoming?",
+      character: "You are the person who suspects the life you're living was designed for someone else — and you're starting to find that unacceptable.",
+      tags: "Becoming · Will · Self-overcoming",
+      videoUrl: "assets/nietzsche.mp4",
+      images: [
+        "https://commons.wikimedia.org/wiki/Special:FilePath/Nietzsche187a.jpg",
+        "https://commons.wikimedia.org/wiki/Special:FilePath/Nietzsche_1882.jpg"
+      ]
+    },
+    {
+      title: "Existentialism",
+      philosopher: "de Beauvoir",
+      question: "Who am I without the role?",
+      character: "You are the person who performs yourself all day and wonders, alone, if there's anyone underneath.",
+      tags: "Freedom · Choice · Authenticity",
+      videoUrl: "assets/frida.mp4",
+      images: [
+        "https://commons.wikimedia.org/wiki/Special:FilePath/Simone_de_Beauvoir2.png",
+        "https://commons.wikimedia.org/wiki/Special:FilePath/Jean-Paul_Sartre_et_Simone_de_Beauvoir.jpg"
+      ]
+    },
+    {
+      title: "Stoicism",
+      philosopher: "Aurelius",
+      question: "What can I actually control?",
+      character: "You are the person who has realized the world will not cooperate — and you're looking for peace with that, without surrender.",
+      tags: "Control · Peace · Duty",
+      videoUrl: "assets/background1.mp4",
+      images: [
+        "https://commons.wikimedia.org/wiki/Special:FilePath/Marcus_Aurelius_Glyptothek_Munich.jpg",
+        "https://commons.wikimedia.org/wiki/Special:FilePath/Bust_of_Marcus_Aurelius_at_the_Metropolitan_Museum_of_Art.png"
+      ]
+    },
+    {
+      title: "Absurdism",
+      philosopher: "Camus",
+      question: "How do I keep going?",
+      character: "You are the person who has looked at the question long enough to know there isn't a clean answer — and has decided to keep going anyway.",
+      tags: "Absurd · Rebellion · Freedom",
+      videoUrl: "assets/background1.mp4",
+      images: [
+        "https://commons.wikimedia.org/wiki/Special:FilePath/Albert_Camus,_gagnant_de_prix_Nobel,_portrait_en_buste,_pos%C3%A9_au_bureau,_faisant_face_%C3%A0_gauche,_cigarette.jpg",
+        "https://commons.wikimedia.org/wiki/Special:FilePath/Camus_vers_1953.jpg"
+      ]
+    },
+    {
+      title: "The Leap",
+      philosopher: "Kierkegaard",
+      question: "What do I actually choose?",
+      character: "You are the person who has considered every angle — and finds that knowledge without commitment is its own kind of paralysis.",
+      tags: "Faith · Anxiety · Subjectivity",
+      videoUrl: "assets/background1.mp4",
+      images: [
+        "https://commons.wikimedia.org/wiki/Special:FilePath/Kierkegaard.jpg",
+        "https://commons.wikimedia.org/wiki/Special:FilePath/Kierkegaard_portrait_by_Luplau_Janssen.jpg"
+      ]
+    },
+    {
+      title: "Mysticism",
+      philosopher: "Rumi",
+      question: "Why does longing feel like home?",
+      character: "You are the person for whom the ache is not a problem to be solved — but a language you haven't learned to read yet.",
+      tags: "Longing · Love · Divine Union",
+      videoUrl: "assets/background1.mp4",
+      images: [
+        "https://commons.wikimedia.org/wiki/Special:FilePath/Rumi_portrait.jpg",
+        "https://commons.wikimedia.org/wiki/Special:FilePath/Persian_calligraphy_manuscript_Rumi.jpg"
+      ]
+    },
+    {
+      title: "Eastern Wisdom",
+      philosopher: "Lao Tzu",
+      question: "What if I stopped forcing it?",
+      character: "You are the person who is exhausted by the effort of becoming — and suspects there's something the West forgot to mention.",
+      tags: "Wu Wei · Tao · Balance",
+      videoUrl: "assets/background1.mp4",
+      images: [
+        "https://commons.wikimedia.org/wiki/Special:FilePath/Lao_Tzu_-_Project_Gutenberg_eText_15250.jpg",
+        "https://commons.wikimedia.org/wiki/Special:FilePath/Chinese_landscape_painting_with_mist.jpg"
+      ]
+    },
+    {
+      title: "Politics",
+      philosopher: "Arendt",
+      question: "What do we owe each other?",
+      character: "You are the person who thinks about what makes a society worth living in — and finds the current answer insufficient.",
+      tags: "Action · Plurality · Public Sphere",
+      videoUrl: "assets/background1.mp4",
+      images: [
+        "https://commons.wikimedia.org/wiki/Special:FilePath/Hannah_Arendt_1975.jpg",
+        "https://commons.wikimedia.org/wiki/Special:FilePath/Hannah_Arendt_working.jpg"
+      ]
+    },
+    {
+      title: "Witness",
+      philosopher: "Du Bois · Weil",
+      question: "What does it cost to exist?",
+      character: "You are the person who understands that being seen — truly seen — is rarer than it should be, and that most suffering comes not from cruelty but from inattention.",
+      tags: "Attention · Consciousness · Double Consciousness",
+      videoUrl: "assets/background1.mp4",
+      images: [
+        "https://commons.wikimedia.org/wiki/Special:FilePath/WEB_DuBois_1918.jpg",
+        "https://commons.wikimedia.org/wiki/Special:FilePath/Simone_Weil_1921.jpg"
+      ]
+    }
+  ];
+
+  const spiritualWorldviewData = [
+    {
+      title: "Guideposts",
+      philosopher: "Hope & Inspiration",
+      question: "Where do you find hope?",
+      character: "For those seeking daily comfort, true stories of answered prayers, and the quiet assurance of grace in everyday moments.",
+      tags: "Hope · Inspiration · True Stories",
+      videoUrl: "assets/background1.mp4",
+      images: [
+        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500",
+        "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=500"
+      ]
+    },
+    {
+      title: "Angels on Earth",
+      philosopher: "Mysterious Comfort",
+      question: "Who is watching over you?",
+      character: "For the seekers who believe in quiet miracles, unexpected messengers, and the invisible threads of comfort guiding our lives.",
+      tags: "Miracles · Angels · Comfort",
+      videoUrl: "assets/background1.mp4",
+      images: [
+        "https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=500",
+        "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=500"
+      ]
+    },
+    {
+      title: "Mysterious Ways",
+      philosopher: "Unexplained Grace",
+      question: "Where is the divine hidden?",
+      character: "For those who notice the strange, beautiful coincidences of life and find depth in the moments that logic cannot explain.",
+      tags: "Coincidence · Mystery · Faith",
+      videoUrl: "assets/background1.mp4",
+      images: [
+        "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=500",
+        "https://images.unsplash.com/photo-1472214222541-d510753a4707?w=500"
+      ]
+    },
+    {
+      title: "Mornings with Jesus",
+      philosopher: "Daily Devotions",
+      question: "How will you start your day?",
+      character: "A sanctuary of gentle reflection, Scripture-focused readings, and a peaceful way to align your thoughts with love before the day begins.",
+      tags: "Devotional · Scripture · Peace",
+      videoUrl: "assets/background1.mp4",
+      images: [
+        "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=500",
+        "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=500"
+      ]
+    },
+    {
+      title: "Strength & Grace",
+      philosopher: "Caregiver Support",
+      question: "Where do you draw strength?",
+      character: "A soft harbor for caregivers and those carrying heavy burdens, offering spiritual nourishment and gentle reminders that you do not walk alone.",
+      tags: "Caregiving · Resilience · Comfort",
+      videoUrl: "assets/background1.mp4",
+      images: [
+        "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=500",
+        "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=500"
+      ]
+    }
+  ];
+
+  let worldviewData = defaultWorldviewData;
+
+  const territoryWorldviewMap = {
+    becoming: "Becoming",
+    creation: "Becoming",
+    endurance: "Stoicism",
+    loss: "Stoicism",
+    faith: "The Leap",
+    longing: "Mysticism",
+    love: "Mysticism",
+    wonder: "Eastern Wisdom",
+    belonging: "Witness"
+  };
+
+  const spiritualTerritoryWorldviewMap = {
+    becoming: "Guideposts",
+    creation: "Guideposts",
+    endurance: "Strength & Grace",
+    loss: "Strength & Grace",
+    faith: "Mornings with Jesus",
+    longing: "Angels on Earth",
+    love: "Angels on Earth",
+    wonder: "Mysterious Ways",
+    belonging: "Guideposts"
+  };
+
+  const publisherDetails = {
+    Becoming: {
+      publisher: "The Nocturnal School",
+      issue: "The Version I Was Becoming",
+      cadence: "Monthly Issue",
+      rhythm: "Monthly",
+      lens: "Will, self-overcoming, identity under pressure",
+      description: "A house for people who feel the old self becoming too small. Its editions examine ambition, transformation, and the private cost of changing shape."
+    },
+    Existentialism: {
+      publisher: "Atelier Obsidian",
+      issue: "The Role and the Person Beneath It",
+      cadence: "Bi-weekly Issue",
+      rhythm: "Bi-weekly",
+      lens: "Freedom, authenticity, chosen life",
+      description: "An intimate publication for the performed self, the private self, and the difficult freedom of choosing what remains when the script is removed."
+    },
+    Stoicism: {
+      publisher: "The Vellum Review",
+      issue: "What Remains In Your Control",
+      cadence: "Monthly Issue",
+      rhythm: "Monthly",
+      lens: "Duty, composure, endurance",
+      description: "A calm editorial desk for pressure, grief, discipline, and the kind of dignity that is built when life refuses to cooperate."
+    },
+    Absurdism: {
+      publisher: "Friction & Form",
+      issue: "The Refusal To Collapse",
+      cadence: "Seasonal Issue",
+      rhythm: "Quarterly",
+      lens: "Absurdity, rebellion, lucid courage",
+      description: "A sharper house for people who have stopped expecting clean answers and still want a reason to move with grace."
+    },
+    "The Leap": {
+      publisher: "Silent Spine",
+      issue: "Anxiety Before Commitment",
+      cadence: "Seasonal Issue",
+      rhythm: "Quarterly",
+      lens: "Faith, choice, inward commitment",
+      description: "A slow publication for decisions that cannot be solved by more analysis, only entered with attention and risk."
+    },
+    Mysticism: {
+      publisher: "Anima Mundi Press",
+      issue: "Longing As A Native Language",
+      cadence: "Bi-weekly Issue",
+      rhythm: "Bi-weekly",
+      lens: "Love, longing, devotional attention",
+      description: "A lyrical imprint for the ache that refuses to be reduced to a problem, treating longing as a doorway rather than a defect."
+    },
+    "Eastern Wisdom": {
+      publisher: "Soma & Thread",
+      issue: "The Discipline Of Not Forcing",
+      cadence: "Monthly Issue",
+      rhythm: "Monthly",
+      lens: "Wu wei, balance, non-coercive action",
+      description: "A quieter house for exhaustion, nervous-system repair, and the intelligence that appears when forcing finally stops."
+    },
+    Politics: {
+      publisher: "Marrow Archive",
+      issue: "What We Owe Each Other",
+      cadence: "Seasonal Issue",
+      rhythm: "Quarterly",
+      lens: "Plurality, public life, responsibility",
+      description: "An archive-minded publisher for civic imagination, moral attention, and the pressure of living among others."
+    },
+    Witness: {
+      publisher: "Better Books & Garments",
+      issue: "Attention Is A Form Of Shelter",
+      cadence: "Monthly Issue",
+      rhythm: "Monthly",
+      lens: "Witness, attention, being seen",
+      description: "A publication for the people who need more than advice: they need a record that something was noticed, held, and not flattened."
+    },
+    Guideposts: {
+      publisher: "Guidepost Ministries",
+      issue: "Finding Light in Quiet Hours",
+      cadence: "Monthly Issue",
+      rhythm: "Monthly",
+      lens: "Everyday faith, prayer, and personal testimony",
+      description: "A beloved monthly beacon containing first-person stories of courage, hope, and connection that reaffirm the power of faith in daily lives."
+    },
+    "Angels on Earth": {
+      publisher: "Guidepost Ministries",
+      issue: "Unseen Companions and Quiet Miracles",
+      cadence: "Bi-monthly Issue",
+      rhythm: "Bi-monthly",
+      lens: "Mysterious comfort, angelic guidance, kindness",
+      description: "Editions dedicated to sharing extraordinary stories of comfort and guidance, reminding readers of the unseen, benevolent forces present in our daily struggles."
+    },
+    "Mysterious Ways": {
+      publisher: "Guidepost Ministries",
+      issue: "Coincidence or Divine Choreography?",
+      cadence: "Bi-monthly Issue",
+      rhythm: "Bi-monthly",
+      lens: "Unexplained grace, spiritual crossroads, wonder",
+      description: "Exploring the unexpected intersections of faith, miracle, and everyday occurrences that suggest a larger, divine hand at work."
+    },
+    "Mornings with Jesus": {
+      publisher: "Guidepost Ministries",
+      issue: "Morning Coffee and Quiet Devotion",
+      cadence: "Daily Devotions",
+      rhythm: "Daily",
+      lens: "Scripture, quiet reflection, heart-to-heart prayer",
+      description: "A devotional collection centered on the words and teachings of Jesus, designed to bring hope, clarity, and daily encouragement."
+    },
+    "Strength & Grace": {
+      publisher: "Guidepost Ministries",
+      issue: "Nourishment for the Weary Caregiver",
+      cadence: "Bi-monthly Issue",
+      rhythm: "Bi-monthly",
+      lens: "Caregiver devotion, renewal, shared burden",
+      description: "Devotions and stories crafted specifically for caregivers, offering daily spiritual inspiration and renewal for those who give so much of themselves."
+    }
+  };
+
+  function getRecommendedWorldviewTitle(territory) {
+    const key = String(territory || '').trim().toLowerCase();
+    if (answers.q2 === 'Spiritual') {
+      return spiritualTerritoryWorldviewMap[key] || "Guideposts";
+    }
+    return territoryWorldviewMap[key] || "Becoming";
+  }
+
+  function highlightRecommendedWorldview(territory) {
+    if (!worldviewGrid) return null;
+    const recommendedTitle = getRecommendedWorldviewTitle(territory);
+    const tokens = worldviewGrid.querySelectorAll('.iconic-token');
+    let recommendedToken = null;
+
+    tokens.forEach((token) => {
+      const isMatch = token.dataset.title === recommendedTitle;
+      token.classList.toggle('is-recommended', isMatch);
+      token.setAttribute('aria-label', isMatch
+        ? `${token.dataset.title}, recommended worldview publisher`
+        : `${token.dataset.title} worldview publisher`);
+      if (isMatch) recommendedToken = token;
+    });
+
+    return recommendedToken;
+  }
+
+  function getWorldviewByTitle(title) {
+    return worldviewData.find((item) => item.title === title) || worldviewData[0];
+  }
+
+  function selectPublisher(item, options = {}) {
+    if (!item || !worldviewGrid) return;
+    const details = publisherDetails[item.title] || {};
+    const tokens = worldviewGrid.querySelectorAll('.iconic-token');
+
+    tokens.forEach((token) => {
+      token.classList.toggle('is-selected', token.dataset.title === item.title);
+    });
+
+    answers.worldview = item.title;
+    answers.worldview_label = item.title;
+    answers.philosopher = item.philosopher;
+
+    if (publisherFeatureCadence) publisherFeatureCadence.textContent = details.cadence || "Publication";
+    if (publisherFeatureTitle) publisherFeatureTitle.textContent = item.title;
+    if (publisherFeatureName) publisherFeatureName.textContent = details.publisher || item.philosopher;
+    if (publisherFeatureIssue) publisherFeatureIssue.textContent = details.issue || item.question;
+    if (publisherFeatureLens) publisherFeatureLens.textContent = details.lens || item.tags;
+    if (publisherFeatureRhythm) publisherFeatureRhythm.textContent = details.rhythm || "Rotating";
+    if (publisherFeatureDescription) publisherFeatureDescription.textContent = details.description || item.character;
+
+    if (publisherFeatureImage) {
+      publisherFeatureImage.src = item.images?.[0] || "";
+      publisherFeatureImage.alt = `${item.title} publisher artwork`;
+      publisherFeatureImage.classList.toggle('opacity-0', Boolean(item.videoUrl));
+    }
+
+    if (publisherFeatureVideo) {
+      publisherFeatureVideo.pause();
+      publisherFeatureVideo.removeAttribute('src');
+      publisherFeatureVideo.load();
+      if (item.videoUrl) {
+        publisherFeatureVideo.src = item.videoUrl;
+        publisherFeatureVideo.load();
+        publisherFeatureVideo.play().catch(() => {});
+      }
+    }
+
+    if (publisherPreviewToggle) {
+      publisherPreviewToggle.classList.toggle('hidden', !item.videoUrl);
+      publisherPreviewToggle.classList.toggle('flex', Boolean(item.videoUrl));
+      publisherPreviewToggle.textContent = "▶";
+    }
+
+    if (options.scrollFeature) {
+      document.querySelector('.publisher-feature')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  function encodeAccountHandoff(payload) {
+    const json = JSON.stringify(payload);
+    return btoa(unescape(encodeURIComponent(json)));
+  }
+
+  function buildAccountRedirectUrl() {
+    const selectedWorldviews = cartWorldviews.length > 0
+      ? cartWorldviews
+      : [answers.worldview].filter(Boolean);
+    const sourceMaterials = JSON.parse(localStorage.getItem('pending_source_materials') || '[]');
+    const payload = {
+      selected_worldviews: selectedWorldviews,
+      source_materials: sourceMaterials
+    };
+
+    if (!payload.selected_worldviews.length && !payload.source_materials.length) {
+      return "/thedailyartcult/accounts.thedailyartcult";
+    }
+
+    const url = new URL("/thedailyartcult/accounts.thedailyartcult");
+    url.searchParams.set('handoff', encodeAccountHandoff(payload));
+    return url.toString();
+  }
+
+  async function requestPublisherAccessLink(email) {
+    const redirectTo = buildAccountRedirectUrl();
+    const { error } = await supabaseClient.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: redirectTo }
+    });
+
+    if (error) throw error;
+  }
+
+  function getSourceMaterialTitle(value) {
+    const text = String(value || '').trim();
+    if (!text) return 'Source Study';
+    try {
+      const url = new URL(text);
+      if (url.hostname.includes('youtu.be') || url.hostname.includes('youtube.com')) {
+        return 'YouTube Source Study';
+      }
+    } catch (e) {}
+    return text.length > 72 ? `${text.slice(0, 69)}...` : text;
+  }
+
+  function extractYouTubeVideoId(value) {
+    const text = String(value || '').trim();
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtu\.be\/)([A-Za-z0-9_-]{11})/,
+      /^[A-Za-z0-9_-]{11}$/
+    ];
+
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match) return match[1] || match[0];
+    }
+
+    return '';
+  }
+
+  function getYouTubeThumbnailUrl(videoId) {
+    return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : '';
+  }
+
+  function rememberPendingSourceMaterial() {
+    if (studioSubmissionSource !== 'source_material' || !answers.source_input) return;
+
+    const existing = JSON.parse(localStorage.getItem('pending_source_materials') || '[]');
+    const selectedWorldviews = cartWorldviews.length > 0
+      ? cartWorldviews
+      : [answers.worldview].filter(Boolean);
+    const pendingWorldviews = JSON.parse(localStorage.getItem('pending_worldviews') || '[]');
+    const mergedWorldviews = Array.from(new Set([...pendingWorldviews, ...selectedWorldviews]));
+    localStorage.setItem('pending_worldviews', JSON.stringify(mergedWorldviews));
+    const youtubeVideoId = extractYouTubeVideoId(answers.source_input);
+
+    const record = {
+      id: `source-${Date.now()}`,
+      created_at: new Date().toISOString(),
+      source_input: answers.source_input,
+      source_title: getSourceMaterialTitle(answers.source_input),
+      source_kind: youtubeVideoId ? 'youtube' : 'book',
+      youtube_video_id: youtubeVideoId,
+      thumbnail_url: getYouTubeThumbnailUrl(youtubeVideoId),
+      selected_worldviews: selectedWorldviews,
+      worldview: answers.worldview || selectedWorldviews[0] || '',
+      philosopher: answers.philosopher || '',
+      territory: latestStudioReading?.territory || '',
+      bridge_line: latestStudioReading?.bridge_line || '',
+      expanded_text: latestStudioReading?.expanded_text || '',
+      status: latestStudioReading?.expanded_text ? 'ready' : 'pending'
+    };
+
+    const withoutDuplicate = existing.filter((item) => item.source_input !== record.source_input);
+    withoutDuplicate.push(record);
+    localStorage.setItem('pending_source_materials', JSON.stringify(withoutDuplicate));
+  }
+
+  if (publisherPreviewToggle && publisherFeatureVideo) {
+    publisherPreviewToggle.addEventListener('click', async () => {
+      if (publisherFeatureVideo.paused) {
+        publisherFeatureVideo.muted = false;
+        await publisherFeatureVideo.play().catch(() => {
+          publisherFeatureVideo.muted = true;
+          return publisherFeatureVideo.play().catch(() => {});
+        });
+        publisherPreviewToggle.textContent = "Ⅱ";
+      } else {
+        publisherFeatureVideo.pause();
+        publisherPreviewToggle.textContent = "▶";
+      }
+    });
+  }
+
+  if (publisherAccessForm) {
+    publisherAccessForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const email = publisherAccessEmail ? publisherAccessEmail.value.trim() : "";
+      if (!email) return;
+
+      if (publisherAccessFeedback) {
+        publisherAccessFeedback.textContent = "Sending private ledger link...";
+      }
+
+      try {
+        rememberPendingSourceMaterial();
+        await requestPublisherAccessLink(email);
+        if (publisherAccessFeedback) {
+          publisherAccessFeedback.textContent = "Check your inbox. Your access link has been sent.";
+        }
+        publisherAccessForm.reset();
+        logStudioInteraction('publisher_access_requested', `Requested access for ${answers.worldview || 'selected publisher'}`);
+      } catch (error) {
+        console.error("Publisher access link failed:", error);
+        if (publisherAccessFeedback) {
+          publisherAccessFeedback.textContent = error.message || "Access link failed. Open the account library instead.";
+        }
+      }
+    });
+  }
+
+
+function renderWorldviewTokens() {
+    if (!worldviewGrid) return;
+    worldviewGrid.innerHTML = '';
+    
+    worldviewData.forEach((item, index) => {
+      const token = document.createElement('a');
+      token.href = '#';
+      token.className = 'iconic-token select-none focus-visible:outline-none';
+      token.dataset.title = item.title;
+      token.dataset.philosopher = item.philosopher;
+      token.dataset.videoUrl = item.videoUrl;
+      token.dataset.question = item.question;
+      token.dataset.character = item.character;
+
+      const imagesHtml = item.images.map((url, i) =>
+        `<img src="${url}" class="token-img-slide ${i === 0 ? 'active' : ''}" alt="${item.title}">`
+      ).join('');
+
+      token.innerHTML = `
+        <video class="token-video" muted loop playsinline preload="metadata"></video>
+        <div class="token-image-container">${imagesHtml}</div>
+        <span class="token-vignette"></span>
+        <button type="button" class="token-mute token-circle" aria-label="Mute video audio" data-muted-label="⌁" data-unmuted-label="◖">⌁</button>
+        <div class="token-topline flex justify-between items-start w-full">
+          <span class="text-[10px] font-mono tracking-widest text-[#c6a766] uppercase">${String(index + 1).padStart(2, '0')}</span>
+          <span class="text-xs text-linen/50">✦</span>
+        </div>
+        <div class="token-info text-left">
+          <div class="token-info-controls">
+            <div class="token-control-cluster">
+              <span class="token-circle token-primary-control">▶</span>
+              <span class="token-circle">♡</span>
+            </div>
+            <span class="token-circle token-expand-button">⌄</span>
+          </div>
+          <span class="token-title block font-serif font-medium text-cream">${item.title}</span>
+          <span class="token-meta block uppercase font-mono tracking-wider text-linen/60">${item.philosopher}</span>
+          <span class="token-question">${item.question}</span>
+          <span class="token-character">${item.character}</span>
+          <span class="token-tags">${item.tags}</span>
+        </div>
+      `;
+
+      const video = token.querySelector('.token-video');
+      const slides = token.querySelectorAll('.token-img-slide');
+      const iconMuteBtn = token.querySelector('.token-mute');
+      let hoverTimer = null;
+      let cycleInterval = null;
+
+      // Card hover animations and layout transforms [1]
+      token.addEventListener('mouseenter', () => {
+        const rect = token.getBoundingClientRect();
+        if (rect.left < 120) {
+          token.style.transformOrigin = "left center";
+        } else if (window.innerWidth - rect.right < 120) {
+          token.style.transformOrigin = "right center";
+        } else {
+          token.style.transformOrigin = "center center";
+        }
+
+        hoverTimer = window.setTimeout(() => {
+          const videoUrl = token.dataset.videoUrl;
+          if (video && videoUrl && !videoUrl.includes('REPLACE_WITH')) {
+            if (video.getAttribute('src') !== videoUrl) {
+              video.setAttribute('src', videoUrl);
+              video.load();
+            }
+            token.classList.add('is-previewing');
+            video.muted = true;
+            video.play().catch(() => {});
+          }
+        }, 360);
+
+        // Periodic background image crossfade cycles [1]
+        if (slides.length >= 2) {
+          let slideIdx = 0;
+          cycleInterval = setInterval(() => {
+            slides[slideIdx].classList.remove('active');
+            slideIdx = (slideIdx + 1) % slides.length;
+            slides[slideIdx].classList.add('active');
+          }, 1200);
+        }
+      });
+
+      token.addEventListener('mouseleave', () => {
+        clearTimeout(hoverTimer);
+        if (cycleInterval) {
+          clearInterval(cycleInterval);
+          cycleInterval = null;
+        }
+        token.classList.remove('is-previewing');
+        if (video) {
+          video.pause();
+          try { video.currentTime = 0; } catch (e) {}
+        }
+        slides.forEach((slide, idx) => {
+          slide.classList.toggle('active', idx === 0);
+        });
+        token.blur();
+      });
+
+      if (iconMuteBtn && video) {
+        iconMuteBtn.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          video.muted = !video.muted;
+          iconMuteBtn.textContent = video.muted ? '⌁' : '◖';
+        });
+      }
+
+// Selection handling click interaction (Updated for Shopping Bag multi-select)
+      token.addEventListener('click', (e) => {
+        if (e.target.closest('.token-circle') || e.target.closest('.token-mute')) {
+          e.preventDefault();
+          return;
+        }
+        e.preventDefault();
+
+        toggleCartItem(item.title);
+        selectPublisher(item, { scrollFeature: false });
+      });
+
+      worldviewGrid.appendChild(token);
+    });
+  }
+
+    function showWorldviewGateWithRecommendation(territory, bridgeLine) {
+    // Hide editor and reading frames
+    editorFrame.classList.add('hidden');
+    readingFrame.classList.add('hidden');
+    
+    // Show the gate
+    worldviewGate.classList.remove('hidden');
+
+    // Render tokens if not already rendered
+    if (!worldviewGate.dataset.rendered) {
+      renderWorldviewTokens();
+      worldviewGate.dataset.rendered = 'true';
+    }
+
+    const safeTerritory = String(territory || 'becoming');
+    const territoryDisplay = safeTerritory.charAt(0).toUpperCase() + safeTerritory.slice(1);
+    const recommendedTitle = getRecommendedWorldviewTitle(territory);
+    const recDiv = document.getElementById('gate-recommendation');
+    if (recDiv) {
+      recDiv.innerHTML = `Recommended from your reading: <span class="text-antique">${recommendedTitle}</span> for the <span class="text-antique">${territoryDisplay}</span> territory. <span class="block mt-1 text-xs italic text-linen/40">${bridgeLine || 'A quiet reflection.'}</span>`;
+    }
+
+    highlightRecommendedWorldview(territory);
+    selectPublisher(getWorldviewByTitle(recommendedTitle));
+  }
+
+  async function fetchRecommendation() {
+    const payload = {
+      q1: answers.q1,
+      q2: answers.q2,
+      q3: answers.q3,
+      content_source: answers.content_source || studioSubmissionSource,
+      source_input: answers.source_input || ''
+    };
+    const response = await fetch("https://frwjaixxlgthkgjtafhz.supabase.co/functions/v1/gemini", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status}`);
+    }
+    const data = await response.json();
+    return {
+      territory: data.territory || 'becoming',
+      bridge_line: data.bridge_line || 'A quiet reflection.'
+    };
+  }
+
+
+
+  // --- End Worldview Gate Logic ---
+
+if (chatSubmit) {
+  chatSubmit.addEventListener('click', async () => {
+    if (!chatInput) return;
+    if (studioIsThinking) return;
+
+
+
+    syncActiveInputToChatInput();
+    const text = chatInput.value.trim();
+    if (!text) return;
+
+      const isMdArchiveSubmission = studioInputMode === 'md' && currentStage === 1;
+      const isSourceSubmission = studioInputMode === 'source' && currentStage === 1;
+      appendChatMessage(isMdArchiveSubmission ? 'Markdown archive received.' : isSourceSubmission ? 'Source material received.' : text);
+
+      if (isMdArchiveSubmission) {
+        studioSubmissionSource = 'markdown_archive';
+        answers.content_source = 'markdown_archive';
+        answers.source_input = '';
+        answers.q1 = 'Markdown archive provided';
+        answers.q2 = 'Archive mode';
+        answers.q3 = text;
+        if (studioModeSwitcher) studioModeSwitcher.classList.add('hidden');
+        if (studioFloatingQuestion) studioFloatingQuestion.classList.add('hidden');
+        dismissHeroHeadline();
+        stopPlaceholderCycle();
+        
+        // Show Patron Registry step instead of immediate transition
+        showPatronRegistryFrame();
+        return;
+      }
+
+      if (isSourceSubmission) {
+        studioIsThinking = true;
+        setStudioSubmitEnabled(false);
+        studioSubmissionSource = 'source_material';
+        answers.content_source = 'source_material';
+        answers.source_input = text;
+        answers.q1 = 'Source material provided';
+        answers.q2 = 'Source mode';
+        answers.q3 = text;
+        if (studioModeSwitcher) studioModeSwitcher.classList.add('hidden');
+        if (studioFloatingQuestion) studioFloatingQuestion.classList.add('hidden');
+        dismissHeroHeadline();
+        stopPlaceholderCycle();
+
+        await appendThinkingMessage(
+          [
+            "I have the source.",
+            "If it is a YouTube link, I will look for its public transcript.",
+            "One final detail before I compose it for you."
+          ],
+          "I can work with that. How shall the archive address you?"
+        );
+
+        showPatronRegistryFrame();
+        studioIsThinking = false;
+        setStudioSubmitEnabled(true);
+        return;
+      }
+
+      if (currentStage === 1) {
+        studioIsThinking = true;
+        setStudioSubmitEnabled(false);
+        studioSubmissionSource = 'guided';
+        answers.content_source = 'guided';
+        answers.source_input = '';
+        answers.q1 = text;
+        currentStage = 2;
+        if (studioModeSwitcher) studioModeSwitcher.classList.add('hidden');
+        if (studioFloatingQuestion) studioFloatingQuestion.classList.add('hidden');
+        dismissHeroHeadline();
+        stopPlaceholderCycle();
+        stageLabel.textContent = "Step 2 of 3";
+        renderSuggestions(4);
+
+        await appendThinkingMessage(
+          [
+            "Thank you for putting words to that.",
+            "I am holding the shape of what you need.",
+            "Just to make sure we are on the same page..."
+          ],
+          "Thank you for providing that. Just to make sure we are on the same page, should this stay earthly or open toward the sacred?"
+        );
+
+        editorFrame.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+        editorFrame.style.opacity = '0';
+        editorFrame.style.transform = 'translateY(-8px)';
+        setTimeout(() => {
+          editorFrame.classList.add('hidden');
+          editorFrame.style.cssText = '';
+
+          const choiceFrame = document.getElementById('booth-choice-frame');
+          const validationEl = document.getElementById('booth-validation-text');
+          choiceFrame.classList.remove('hidden');
+          validationEl.textContent = buildValidationText(answers.q1);
+          requestAnimationFrame(() => validationEl.classList.remove('opacity-0'));
+          studioIsThinking = false;
+          setStudioSubmitEnabled(true);
+          setChoiceButtonsEnabled(true);
+        }, 420);
+
+      } else if (currentStage === 3) {
+        studioIsThinking = true;
+        setStudioSubmitEnabled(false);
+        answers.q3 = text;
+        if (studioFloatingQuestion) studioFloatingQuestion.classList.add('hidden');
+
+        await appendThinkingMessage(
+          [
+            "That is enough to begin listening.",
+            "I am lining this up with the lens you chose.",
+            "One final detail before I compose it for you."
+          ],
+          "That gives me enough to work with. I just need your name for the reading."
+        );
+        
+        // Show Patron Registry step instead of immediate transition
+        showPatronRegistryFrame();
+        studioIsThinking = false;
+        setStudioSubmitEnabled(true);
+      }
+    });
+  }
+  
+  // Q2 — binary choice buttons
+  const choiceBeginning = document.getElementById('choice-beginning');
+  const choiceEnding = document.getElementById('choice-ending');
+  const questionLabel = document.getElementById('studio-question-label');
+
+  async function advanceToQ3(value) {
+    if (studioIsThinking) return;
+    studioIsThinking = true;
+    setChoiceButtonsEnabled(false);
+    answers.q2 = value;
+    if (value === 'Spiritual') {
+      worldviewData = spiritualWorldviewData;
+    } else {
+      worldviewData = defaultWorldviewData;
+    }
+    if (worldviewGate) {
+      worldviewGate.removeAttribute('data-rendered');
+    }
+    currentStage = 3;
+    appendChatMessage(value);
+
+    await appendThinkingMessage(
+      [
+        `${value}. I will keep that lens in place.`,
+        "Now I need the actual weight of the day.",
+        "One last question, and be honest with yourself."
+      ],
+      "Got it. One last question: what are you really carrying today?"
+    );
+
+    const choiceFrame = document.getElementById('booth-choice-frame');
+    choiceFrame.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+    choiceFrame.style.opacity = '0';
+    choiceFrame.style.transform = 'translateY(-8px)';
+
+    setTimeout(() => {
+      choiceFrame.classList.add('hidden');
+      choiceFrame.style.cssText = '';
+
+      if (questionLabel) {
+        questionLabel.classList.add('hidden');
+      }
+
+      if (studioFloatingQuestion && studioFloatingQuestionText) {
+        studioFloatingQuestionText.textContent = 'What are you really carrying today?';
+        studioFloatingQuestion.classList.remove('hidden');
+      }
+
+      if (studioModeSwitcher) studioModeSwitcher.classList.add('hidden');
+      setStudioInputMode('prompt');
+      chatInput.value = '';
+      chatInput.style.height = 'auto';
+      chatInput.placeholder = "Last question — be honest with yourself. The more real you are, the closer we get.";
+      stageLabel.textContent = "Last question";
+      updateCharacterCount();
+      renderSuggestions(3);
+
+      editorFrame.classList.remove('hidden');
+      editorFrame.style.opacity = '0';
+      editorFrame.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+      editorFrame.style.transform = 'translateY(8px)';
+      setTimeout(() => {
+        editorFrame.style.opacity = '1';
+        editorFrame.style.transform = 'translateY(0)';
+        chatInput.focus();
+        studioIsThinking = false;
+        setStudioSubmitEnabled(true);
+      }, 50);
+    }, 420);
+  }
+
+  if (choiceBeginning) choiceBeginning.addEventListener('click', () => advanceToQ3('Secular'));
+  if (choiceEnding) choiceEnding.addEventListener('click', () => advanceToQ3('Spiritual'));
+
+async function runStudioPipeline() {
+    const payload = {
+      q1: answers.q1,
+      q2: answers.q2,
+      q3: answers.q3,
+      content_source: answers.content_source || studioSubmissionSource,
+      source_input: answers.source_input || '',
+      worldview: answers.worldview || '',
+      philosopher: answers.philosopher || '',
+      first_name: answers.first_name || 'Patron',
+      honorary: answers.honorary || 'Master'
+    };
+    let interactionLogged = false;
+
+    try {
+      azureStatus.textContent = "Consulting the archive...";
+      
+      // 1. Call your Gemini API (pointing directly to Supabase Edge)
+      const geminiRes = await fetch("https://frwjaixxlgthkgjtafhz.supabase.co/functions/v1/gemini", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!geminiRes.ok) {
+        throw new Error(`Gemini API returned status code ${geminiRes.status}`);
+      }
+      const data = await geminiRes.json();
+      latestStudioReading = data;
+      interactionLogged = await logStudioInteraction(data.territory, data.expanded_text);
+
+      // 2. Call your TTS API (pointing directly to Supabase Edge)
+      azureStatus.textContent = "Preparing the voice...";
+      const ttsRes = await fetch("https://frwjaixxlgthkgjtafhz.supabase.co/functions/v1/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: data.expanded_text })
+      });
+      
+      // Check if the response failed
+      if (!ttsRes.ok) {
+        const errData = await ttsRes.json().catch(() => ({}));
+        throw new Error(errData.error || `TTS API returned status code ${ttsRes.status}`);
+      }
+      
+      const blob = await ttsRes.blob();
+      if (!blob || blob.size === 0) {
+        throw new Error("TTS returned an empty audio file");
+      }
+      aiAudio.src = URL.createObjectURL(blob);
+      
+      const transcriptEl = document.getElementById("ai-transcript");
+      let clearTranscriptSync = null;
+
+      // 3. Play the AI reading
+      aiAudio.onended = () => {
+        if (clearTranscriptSync) clearTranscriptSync();
+        readingFrame.classList.add("opacity-0");
+        setTimeout(() => {
+          readingFrame.classList.add("hidden");
+          if (transcriptEl) transcriptEl.textContent = ""; // Reset
+          showWorldviewGateWithRecommendation(data.territory, data.bridge_line);
+        }, 700);
+      };
+
+      azureStatus.textContent = "Playing the voice...";
+      stillYours.classList.remove("opacity-0");
+
+      // Bind dynamic transcript playback
+      if (transcriptEl) {
+        clearTranscriptSync = syncTranscriptToAudio(data.expanded_text, transcriptEl, aiAudio);
+      }
+
+      try {
+        await aiAudio.play();
+      } catch (playErr) {
+        console.warn("Browser blocked AI audio autoplay:", playErr);
+        azureStatus.textContent = "Voice ready — tap play";
+
+        let manualPlayBtn = document.getElementById("ai-manual-play-btn");
+        if (!manualPlayBtn) {
+          manualPlayBtn = document.createElement("button");
+          manualPlayBtn.id = "ai-manual-play-btn";
+          manualPlayBtn.type = "button";
+          manualPlayBtn.className = "mt-5 mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-cream text-ink text-sm transition duration-300 hover:bg-antique active:scale-[0.97]";
+          manualPlayBtn.setAttribute("aria-label", "Play prepared voice reading");
+          manualPlayBtn.textContent = "▶";
+          readingFrame.querySelector(".quiet-panel")?.appendChild(manualPlayBtn);
+        }
+
+        manualPlayBtn.classList.remove("hidden");
+        manualPlayBtn.onclick = async () => {
+          manualPlayBtn.classList.add("hidden");
+          azureStatus.textContent = "Playing the voice...";
+          await aiAudio.play();
+        };
+      }
+
+} catch (err) {
+      console.error("Pipeline encountered an error. Falling back to Worldview Gate.", err);
+      if (!interactionLogged) {
+        const failureTerritory = ['markdown_archive', 'source_material'].includes(studioSubmissionSource) ? studioSubmissionSource : 'pipeline_error';
+        logStudioInteraction(failureTerritory, err.message || "Pipeline failed");
+      }
+      
+      // Gracefully transition to the Worldview Gate with a default suggestion instead of bypassing it
+      readingFrame.classList.add("opacity-0");
+      setTimeout(() => {
+        readingFrame.classList.add("hidden");
+        // Recommends 'becoming' and suggests a default text quote
+        showWorldviewGateWithRecommendation("becoming", "A quiet, unhurried reflection on who you are becoming.");
+      }, 700);
+    }
+  }
+
+  function revealBridgeText(text, callback) {
+    bridgeTextContainer.innerHTML = "";
+    const line = document.createElement("span");
+    line.textContent = text;
+    line.className = "studio-bridge-line inline-block";
+    bridgeTextContainer.appendChild(line);
+    setTimeout(callback, 2100);
+  }
+
+  function showBespokePlayer(territory) {
+    bridgeFrame.classList.add("opacity-0");
+    setTimeout(() => {
+      bridgeFrame.classList.add("hidden");
+      bespokeFrame.classList.remove("hidden");
+      
+      const validTerritories = ['loss', 'becoming', 'longing', 'belonging', 'endurance', 'creation', 'love', 'faith', 'wonder'];
+      const activeTerritory = validTerritories.includes(territory) ? territory : "becoming";
+      
+      craftAudio.src = `${activeTerritory}.mp3`;
+      document.getElementById("bespoke-territory-label").textContent = `A piece on ${activeTerritory}.`;
+      
+      setTimeout(() => {
+        bespokeFrame.classList.remove("opacity-0", "translate-y-6");
+        craftAudio.play();
+      }, 100);
+    }, 700);
+  }
+
+  // --- BESPOKE PLAYER CONTROLS ---
+  if (craftAudio) {
+    craftAudio.addEventListener("timeupdate", () => {
+      if (Number.isFinite(craftAudio.duration) && craftAudio.duration > 0) {
+        bespokeProgress.value = (craftAudio.currentTime / craftAudio.duration) * 100;
+        bespokeTimeCurrent.textContent = formatTime(craftAudio.currentTime);
+        bespokeTimeTotal.textContent = formatTime(craftAudio.duration);
+      }
+    });
+    
+    craftAudio.addEventListener("play", () => {
+      playBespokeBtn.textContent = "❚❚";
+      playBespokeBtn.classList.remove("animate-pulse");
+    });
+    
+    craftAudio.addEventListener("pause", () => {
+      playBespokeBtn.textContent = "▶";
+    });
+    
+    playBespokeBtn.addEventListener("click", () => {
+      if (craftAudio.paused) {
+        pauseOtherAudio(craftAudio);
+        craftAudio.play().catch(err => console.warn(err));
+      } else {
+        craftAudio.pause();
+      }
+    });
+    
+    bespokeProgress.addEventListener("input", () => {
+      if (Number.isFinite(craftAudio.duration) && craftAudio.duration > 0) {
+        craftAudio.currentTime = (bespokeProgress.value / 100) * craftAudio.duration;
+      }
+    });
+
+craftAudio.onended = () => {
+      // 1. Fade out the player interface smoothly
+      const playerInterface = document.getElementById("bespoke-player-interface");
+      if (playerInterface) {
+        playerInterface.style.transition = 'opacity 1s ease, transform 1s ease';
+        playerInterface.style.opacity = '0';
+        playerInterface.style.transform = 'translateY(-10px)';
+        
+        setTimeout(() => {
+          playerInterface.style.display = 'none';
+          
+          // 2. Reveal the new Offering/Gift UI
+          const postPlaybackUi = document.getElementById("post-playback-ui");
+          if (postPlaybackUi) {
+            postPlaybackUi.classList.remove("hidden");
+            postPlaybackUi.classList.add("py-16", "md:py-24");
+          }
+        }, 1000); // Wait for the player to fade out before showing the CTA
+      }
+    };
+  }
+
+  const resetBtn = document.getElementById("booth-reset");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      aiAudio.pause();
+      craftAudio.pause();
+      location.reload(); 
+    });
+  }
+
+renderSuggestions(1);
+  updateCharacterCount();
+  startPlaceholderCycle();
+});
+
+
+    /* Interactive Iconic Token Image Cyclers on Hover */
+    document.querySelectorAll(".iconic-token").forEach(token => {
+      let intervalId = null;
+      token.addEventListener("mouseenter", () => {
+        const slides = token.querySelectorAll(".token-img-slide");
+        if (slides.length < 2) return;
+        let slideIdx = 0;
+        
+        intervalId = setInterval(() => {
+          slides[slideIdx].classList.remove("active");
+          slideIdx = (slideIdx + 1) % slideIdx;
+          slides[slideIdx].classList.add("active");
+        }, 1200);
+      });
+
+      token.addEventListener("mouseleave", () => {
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+        const slides = token.querySelectorAll(".token-img-slide");
+        slides.forEach((slide, idx) => {
+          slide.classList.toggle("active", idx === 0);
+        });
+      });
+    });
+
+
+
+  </script>
+  
+      <!-- IMERSIVE NETFLIX DETAILS MODAL -->
+      <div id="explore-modal-backdrop" class="fixed inset-0 z-[9999] opacity-0 pointer-events-none bg-black/85 backdrop-blur-md overflow-y-auto flex items-start justify-center p-4 sm:p-6 md:p-10 select-none">
+        <div id="explore-modal-window" class="relative w-full max-w-4xl rounded-xl overflow-hidden my-8 text-cream">
+          
+          <!-- Close Button -->
+          <button id="explore-modal-close" class="absolute right-4 top-4 z-[10005] flex items-center justify-center w-10 h-10 rounded-full bg-black/60 border border-white/20 text-cream hover:bg-cream hover:text-ink transition duration-300">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          <!-- Top Hero Widescreen Video Box -->
+          <div class="relative aspect-video w-full overflow-hidden bg-black">
+            <video id="explore-modal-video" class="absolute inset-0 w-full h-full object-cover opacity-85" loop playsinline muted></video>
+            <div class="absolute inset-0 bg-gradient-to-t from-[#0d0907] via-transparent to-black/30"></div>
+            
+            <!-- Context Layout Overlay inside Video -->
+            <div class="absolute bottom-6 left-6 md:left-10 max-w-xl z-20 text-left">
+              <span class="text-[10px] font-mono tracking-[0.25em] text-[#c6a766] uppercase mb-1 block">Worldview Collection</span>
+              <h2 id="explore-modal-title" class="font-serif text-3xl md:text-5xl font-semibold text-cream leading-tight">Becoming</h2>
+              <p id="explore-modal-subtitle" class="font-mono text-xs text-linen/70 uppercase tracking-widest mt-1 mb-6">Nietzsche</p>
+              
+              <div class="flex items-center gap-3">
+                <button id="explore-modal-play-action" class="flex items-center gap-2.5 bg-cream hover:bg-[#c6a766] text-ink transition px-6 py-3 rounded-md font-bold text-sm shadow-lg">
+                  <span class="text-xs">▶</span> Play
+                </button>
+                <button class="flex items-center justify-center w-11 h-11 rounded-full border border-white/30 hover:border-white text-cream hover:bg-white/10 transition">
+                  <span class="text-lg font-light">+</span>
+                </button>
+                <button class="flex items-center justify-center w-11 h-11 rounded-full border border-white/30 hover:border-white text-cream hover:bg-white/10 transition">
+                  <span class="text-sm">♡</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Mute trigger bottom right inside Video -->
+            <button id="explore-modal-mute-toggle" class="absolute bottom-6 right-6 md:right-10 z-20 flex items-center justify-center w-11 h-11 rounded-full border border-white/30 bg-black/40 text-cream hover:border-white transition">
+              ⌁
+            </button>
+          </div>
+
+          <!-- Description Section -->
+          <div class="p-6 md:p-10 grid grid-cols-1 md:grid-cols-3 gap-8 text-left border-b border-white/[0.04]">
+            <!-- Core Profiles (2 cols) -->
+            <div class="md:col-span-2 space-y-4">
+              <div class="flex flex-wrap items-center gap-3 text-xs text-linen/60 font-mono">
+                <span class="border border-[#c6a766]/40 px-1.5 py-0.5 rounded text-[10px] font-bold text-[#c6a766]">PHIL-101</span>
+                <span class="text-emerald-400 font-bold">98% Match</span>
+                <span>2026</span>
+                <span class="border border-white/10 px-1.5 rounded text-[9px] uppercase tracking-wider font-semibold">HD</span>
+                <span>3 Chapters</span>
+              </div>
+              <p id="explore-modal-question" class="font-serif text-xl md:text-2xl text-cream italic leading-relaxed">Who are you becoming?</p>
+              <p id="explore-modal-character" class="text-sm leading-relaxed text-linen/85">You are the person who suspects the life you're living was designed for someone else — and you're starting to find that unacceptable.</p>
+            </div>
+
+            <!-- Metainfo lists (1 col) -->
+            <div class="space-y-4 text-xs leading-relaxed text-linen/50">
+              <div>
+                <span class="text-linen/35 font-semibold block mb-1">Narrated by:</span>
+                <span class="text-cream font-medium">Bespoke Voice Engine · Hand-Voiced</span>
+              </div>
+              <div>
+                <span class="text-linen/35 font-semibold block mb-1">Atmosphere:</span>
+                <span class="text-cream font-medium">Introspective, Quiet Luxury, Timeless</span>
+              </div>
+              <div>
+                <span class="text-linen/35 font-semibold block mb-1">Core Pillars:</span>
+                <span id="explore-modal-tags" class="text-cream font-medium">Becoming · Will · Self-overcoming</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Episodes List (Image 2 style) -->
+          <div class="p-6 md:p-10 text-left bg-black/20">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="font-serif text-xl font-semibold text-cream">Chapters</h3>
+              <span class="text-xs text-linen/40 font-mono tracking-widest uppercase">Season 1</span>
+            </div>
+
+            <div id="explore-modal-chapters" class="space-y-4">
+              <!-- Dynamically populated via JS loop -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+      
+      <script>
+    // Console Toggle Mechanics (Map & Privacy layers)
+    document.addEventListener("DOMContentLoaded", () => {
+      const btnMap = document.getElementById('toggle-map-view');
+      const btnPrivacy = document.getElementById('toggle-privacy-view');
+      const mapLayer = document.getElementById('map-layer');
+      const privacyLayer = document.getElementById('privacy-layer');
+      const headerMap = document.getElementById('console-header-map');
+      const headerPrivacy = document.getElementById('console-header-privacy');
+
+      function showPrivacy() {
+        if (!btnPrivacy || !btnMap) return;
+        btnPrivacy.classList.add('bg-antique', 'text-ink', 'font-bold', 'shadow-lg');
+        btnPrivacy.classList.remove('text-linen/50');
+        btnMap.classList.remove('bg-antique', 'text-ink', 'font-bold', 'shadow-lg');
+        btnMap.classList.add('text-linen/50');
+
+        if (mapLayer) mapLayer.classList.add('opacity-0');
+        if (headerMap) headerMap.classList.add('hidden');
+        if (headerPrivacy) headerPrivacy.classList.remove('hidden');
+        
+        setTimeout(() => {
+          if (mapLayer) mapLayer.classList.add('hidden');
+          if (privacyLayer) {
+            privacyLayer.classList.remove('hidden');
+            setTimeout(() => privacyLayer.classList.add('opacity-100'), 50);
+          }
+        }, 400);
+      }
+
+      function showMap() {
+        if (!btnPrivacy || !btnMap) return;
+        btnMap.classList.add('bg-antique', 'text-ink', 'font-bold', 'shadow-lg');
+        btnMap.classList.remove('text-linen/50');
+        btnPrivacy.classList.remove('bg-antique', 'text-ink', 'font-bold', 'shadow-lg');
+        btnPrivacy.classList.add('text-linen/50');
+
+        if (privacyLayer) privacyLayer.classList.remove('opacity-100');
+        if (headerPrivacy) headerPrivacy.classList.add('hidden');
+        if (headerMap) headerMap.classList.remove('hidden');
+
+        setTimeout(() => {
+          if (privacyLayer) privacyLayer.classList.add('hidden');
+          if (mapLayer) {
+            mapLayer.classList.remove('hidden');
+            setTimeout(() => mapLayer.classList.remove('opacity-0'), 50);
+          }
+        }, 400);
+      }
+
+      if (btnPrivacy) btnPrivacy.addEventListener('click', showPrivacy);
+      if (btnMap) btnMap.addEventListener('click', showMap);
+    });
+
+    // Netflix-Style Modal Setup & Expose Controller
+    (() => {
+      const modalBackdrop = document.getElementById("explore-modal-backdrop");
+      if (!modalBackdrop) return;
+
+      const cards = []; // Static collection is removed, as explore section is gone
+      const audio = new Audio();
+      let activeCard = null;
+
+      // Consolidated Episodes Database for Widescreen Modal Popups
+      const worldviewEpisodes = {
+        "Becoming": [
+          { title: "The Death of Safe Shelters", duration: "18m", desc: "Stepping away from inherited convictions to face the raw winds of existence." },
+          { title: "Active Nihilism as a Cleansing Fire", duration: "24m", desc: "Why breaking your own idols is the first act of real creation." },
+          { title: "Amor Fati and the Heavy Weight of the Hour", duration: "29m", desc: "To love your life so completely that you would repeat every error, every grief, for eternity." }
+        ],
+        "Existentialism": [
+          { title: "The Cage of Bad Faith", duration: "15m", desc: "Recognizing the comfortable roles we play to avoid the terrifying burden of freedom." },
+          { title: "The Ethics of Ambiguity", duration: "22m", desc: "How to construct a moral life when there are no absolute values written in the stars." },
+          { title: "Project and Transcendence", duration: "26m", desc: "Defining yourself not by what you are, but by the actions you throw yourself into next." }
+        ],
+        "Stoicism": [
+          { title: "The Citadel of the Mind", duration: "16m", desc: "Establishing the boundary between the chaos of the outer empire and your inner peace." },
+          { title: "The Obstacle is the Path", duration: "20m", desc: "Transforming blockages, betrayals, and delays into raw fuel for character." },
+          { title: "Memento Mori as a Great Grounding", duration: "25m", desc: "How the constant awareness of mortality makes every quiet breath sweet and urgent." }
+        ],
+        "Absurdism": [
+          { title: "The Sisyphus Revelation", duration: "17m", desc: "Finding joy in the repetitive, meaningless tasks of survival." },
+          { title: "The Three Consequences: Revolt, Freedom, Passion", duration: "23m", desc: "Living with maximum vitality precisely because nothing lasts." },
+          { title: "Summer in Algiers", duration: "21m", desc: "Embracing the physical beauty of the present moment despite the silent universe." }
+        ],
+        "The Leap": [
+          { title: "The Trembling of Anxiety", duration: "19m", desc: "Why deep dread is the calling card of a soul realizing its own possibilities." },
+          { title: "The Madness of Commitment", duration: "22m", desc: "Stepping past the paralysis of endless analysis into absolute devotion." },
+          { title: "Knight of Infinite Resignation", duration: "27m", desc: "Letting go of worldly demands to receive them back in a spirit of trust." }
+        ],
+        "Mysticism": [
+          { title: "The Architecture of Longing", duration: "14m", desc: "Understanding why your deepest ache is actually the destination itself." },
+          { title: "Escaping the Cage of Words", duration: "18m", desc: "Dismantling logical structures to experience direct, unmediated reality." },
+          { title: "The Caravan of No Despair", duration: "22m", desc: "A call to return to love, even if you have broken your vows a thousand times." }
+        ],
+        "Eastern Wisdom": [
+          { title: "Wu Wei — The Art of Non-Forcing", duration: "16m", desc: "Aligning with the natural stream of reality instead of paddling upstream." },
+          { title: "The Power of the Empty Vessel", duration: "19m", desc: "Why utility resides in what is absent, and strength in what is soft." },
+          { title: "Returning to the Root", duration: "23m", desc: "Quieting the intellect to remember the simple, unnamed source of balance." }
+        ],
+        "Postmodernism": [
+          { title: "The Desert of the Real", duration: "18m", desc: "How signs, symbols, and screens replaced the actual objects they once represented." },
+          { title: "Precession of Simulacra", duration: "21m", desc: "Navigating a world where the map has completely swallowed the territory." },
+          { title: "The Illusion of Endings", duration: "24m", desc: "Why we are fascinated by catastrophes as a way to pretend we are still alive." }
+        ],
+        "Power": [
+          { title: "The Eye of the Panopticon", duration: "20m", desc: "How modern structures teach us to watch, judge, and police ourselves." },
+          { title: "Docile Bodies, Secret Rules", duration: "22m", desc: "The invisible training that molds our schedules, gestures, and desires." },
+          { title: "Resistance as a Constant Shadow", duration: "25m", desc: "Wherever power operates, the friction of liberation is already active." }
+        ],
+        "Politics": [
+          { title: "The Space of Appearance", duration: "21m", desc: "Why speaking and acting in public is the only true defense against tyranny." },
+          { title: "The Banality of Unthinking", duration: "25m", desc: "How ordinary people participate in profound harm through simple thoughtlessness." },
+          { title: "Natality — The Grace of Beginnings", duration: "23m", desc: "Every birth represents a brand-new promise that can break history's momentum." }
+        ],
+        "Witness": [
+          { title: "Double Consciousness", duration: "19m", desc: "The pain and unique power of seeing oneself always through the eyes of others." },
+          { title: "Attention as the Purest Generosity", duration: "24m", desc: "Why truly looking at another’s suffering is the rarest form of love." },
+          { title: "The Weight of Gravity and Grace", duration: "22m", desc: "Resisting the spiritual gravity that pulls us toward self-preservation." }
+        ],
+        "Capital": [
+          { title: "The Alchemy of Commodity", duration: "19m", desc: "Dismantling the illusions that turn human labor into mere exchange value." },
+          { title: "The Machinery of Alienation", duration: "23m", desc: "Why modern work splits you from your creations, your peers, and your own nature." },
+          { title: "The Specter of the Future", duration: "28m", desc: "Reimagining a world where human development, not profit, is the absolute destination." }
+        ]
+      };
+
+      // Modal DOM Node Elements
+      const modalWindow = document.getElementById("explore-modal-window");
+      const modalClose = document.getElementById("explore-modal-close");
+      const modalVideo = document.getElementById("explore-modal-video");
+      const modalTitle = document.getElementById("explore-modal-title");
+      const modalSubtitle = document.getElementById("explore-modal-subtitle");
+      const modalQuestion = document.getElementById("explore-modal-question");
+      const modalCharacter = document.getElementById("explore-modal-character");
+      const modalTags = document.getElementById("explore-modal-tags");
+      const modalChaptersContainer = document.getElementById("explore-modal-chapters");
+      const modalMuteToggle = document.getElementById("explore-modal-mute-toggle");
+      const modalPlayAction = document.getElementById("explore-modal-play-action");
+
+      // Expose globally so dynamic workspace tokens can open detailed specs
+      window.openNetflixModal = function(card) {
+        const title = card.dataset.title;
+        const philosopher = card.dataset.philosopher;
+        const videoUrl = card.dataset.videoUrl;
+        const question = card.dataset.question;
+        const character = card.dataset.character;
+        const tags = card.querySelector(".token-tags") ? card.querySelector(".token-tags").textContent : "";
+
+        modalTitle.textContent = title;
+        modalSubtitle.textContent = philosopher;
+        modalQuestion.textContent = `"${question}"`;
+        modalCharacter.textContent = character;
+        modalTags.textContent = tags || `${title} · Insights`;
+
+        if (videoUrl && !videoUrl.includes("REPLACE_WITH")) {
+          modalVideo.src = videoUrl;
+          modalVideo.muted = true;
+          modalVideo.load();
+          modalVideo.play().catch(() => {});
+        } else {
+          modalVideo.removeAttribute("src");
+          modalVideo.load();
+        }
+
+        modalChaptersContainer.innerHTML = "";
+        const episodes = worldviewEpisodes[title] || [
+          { title: "Introduction Chapter", duration: "12m", desc: "A structural outline of this philosophical discipline." },
+          { title: "Direct Reflections", duration: "18m", desc: "Quiet integration paths focusing on historical manuscripts." }
+        ];
+
+        episodes.forEach((ep, index) => {
+          const epRow = document.createElement("div");
+          epRow.className = "group flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-lg bg-[#14100e]/30 border border-white/[0.03] hover:bg-[#1b1411]/50 hover:border-[#c6a766]/25 transition duration-300";
+          epRow.innerHTML = `
+            <span class="text-xl font-mono text-linen/30 font-semibold pl-2 hidden sm:block">${index + 1}</span>
+            <div class="relative aspect-video w-full sm:w-32 rounded overflow-hidden shrink-0 bg-black border border-white/5">
+              <video class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-100 transition duration-300" src="${videoUrl}" muted playsinline loop></video>
+              <div class="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition duration-300">
+                <span class="text-cream text-lg">▶</span>
+              </div>
+            </div>
+            <div class="flex-1 text-left space-y-1">
+              <div class="flex items-center justify-between">
+                <h4 class="text-sm font-semibold text-cream group-hover:text-antique transition duration-300">${ep.title}</h4>
+                <span class="text-xs font-mono text-linen/40">${ep.duration}</span>
+              </div>
+              <p class="text-xs text-linen/60 leading-relaxed">${ep.desc}</p>
+            </div>
+          `;
+
+          const rowVideo = epRow.querySelector("video");
+          epRow.addEventListener("mouseenter", () => {
+            if (rowVideo && videoUrl && !videoUrl.includes("REPLACE_WITH")) {
+              rowVideo.muted = true;
+              rowVideo.play().catch(() => {});
+            }
+          });
+          epRow.addEventListener("mouseleave", () => {
+            if (rowVideo) {
+              rowVideo.pause();
+              rowVideo.currentTime = 0;
+            }
+          });
+
+          modalChaptersContainer.appendChild(epRow);
+        });
+
+        modalBackdrop.classList.add("modal-active");
+        document.body.style.overflow = "hidden";
+      };
+
+      function closeNetflixModal() {
+        modalBackdrop.classList.remove("modal-active");
+        document.body.style.overflow = "";
+        modalVideo.pause();
+        modalVideo.removeAttribute("src");
+        modalVideo.load();
+      }
+
+      if (modalClose) {
+        modalClose.addEventListener("click", closeNetflixModal);
+      }
+
+      modalBackdrop.addEventListener("click", (e) => {
+        if (e.target === modalBackdrop) closeNetflixModal();
+      });
+
+      if (modalMuteToggle) {
+        modalMuteToggle.addEventListener("click", () => {
+          modalVideo.muted = !modalVideo.muted;
+          modalMuteToggle.textContent = modalVideo.muted ? "⌁" : "◖";
+        });
+      }
+
+      if (modalPlayAction) {
+        modalPlayAction.addEventListener("click", () => {
+          if (modalVideo.paused) {
+            modalVideo.play();
+            modalPlayAction.innerHTML = `<span class="text-xs">❚❚</span> Pause`;
+          } else {
+            modalVideo.pause();
+            modalPlayAction.innerHTML = `<span class="text-xs">▶</span> Play`;
+          }
+        });
+      }
+    })();
+  </script>
+
+  <!-- Subtle Classic Watermark -->
+  <div class="fixed bottom-6 right-6 z-50 flex items-center gap-2 select-none pointer-events-auto opacity-20 hover:opacity-90 transition-opacity duration-500">
+    <a href="accounts/alien/index.html" class="flex items-center gap-2 font-mono text-[9px] tracking-[0.25em] uppercase text-linen/40 hover:text-antique transition-colors">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-3.5 w-3.5 text-antique/60">
+        <circle cx="12" cy="12" r="9" opacity="0.3" />
+        <circle cx="12" cy="12" r="5" stroke-dasharray="2 2" opacity="0.5" />
+        <line x1="6" y1="18" x2="18" y2="6" stroke-linecap="round" />
+        <circle cx="18" cy="6" r="1.5" fill="currentColor" />
+      </svg>
+      <span>Sys: alien.inc // KMT 184.05</span>
+    </a>
+  </div>
+</body>
+</html>

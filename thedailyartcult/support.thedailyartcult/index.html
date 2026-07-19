@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Questions about your membership, card, or library — consulted and answered.">
+  <title>Support · The Daily Art Cult</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: "#070504",
+            cream: "#f2eadc",
+            linen: "#d8cbb8",
+            antique: "#c6a766"
+          },
+          fontFamily: {
+            serif: ["Playfair Display", "Georgia", "serif"],
+            sans: ["Inter", "system-ui", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      background: #1a120b;
+      color: #f2eadc;
+      font-family: "Inter", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .library-overlay {
+      background:
+        radial-gradient(circle at 50% 18%, rgba(70, 16, 27, 0.14), transparent 34%),
+        linear-gradient(180deg, rgba(7, 5, 4, 0.50), rgba(7, 5, 4, 0.54) 52%, rgba(7, 5, 4, 0.72));
+    }
+    .quiet-panel {
+      border: 1px solid rgba(242, 234, 220, 0.08);
+      background: rgba(9, 6, 5, 0.58);
+      backdrop-filter: blur(14px);
+    }
+    .status-dot {
+      width: 5px;
+      height: 5px;
+      background: #c6a766;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #c6a766;
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { transform: scale(0.95); opacity: 0.5; }
+      50% { transform: scale(1.15); opacity: 1; }
+    }
+  </style>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.tailwindcss.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com https://consent.cookiebot.com; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+</head>
+<body class="min-h-screen overflow-x-hidden relative flex flex-col justify-between">
+
+  <!-- Background Layer -->
+  <div class="fixed inset-0 -z-30 bg-[#1a120b]" aria-hidden="true">
+    <video id="background-video" class="h-full w-full scale-[1.02] object-cover opacity-95 saturate-[.9]" autoplay muted loop playsinline preload="metadata" poster="/foster.png">
+      <source src="/background.mp4" type="video/mp4">
+    </video>
+  </div>
+  <div class="library-overlay fixed inset-0 -z-20" aria-hidden="true"></div>
+
+  <!-- Header Navigation -->
+  <header class="relative w-full">
+    <nav class="mx-auto flex w-full max-w-7xl items-center justify-between py-6 px-5 text-sm text-linen/80">
+      <div class="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+        <a href="" class="font-serif text-xl font-semibold tracking-wide text-cream hover:text-antique transition-colors duration-300">The Daily Art Cult</a>
+        <span class="text-antique/20 select-none text-sm font-light">/</span>
+        <a href="/publications.thedailyartcult" class="text-xs font-medium tracking-widest uppercase text-linen/50 hover:text-antique transition-colors duration-300">Publications</a>
+        <span class="text-antique/20 select-none text-sm font-light">/</span>
+        <a href="/policy.thedailyartcult" class="text-xs font-medium tracking-widest uppercase text-linen/50 hover:text-antique transition-colors duration-300">Policy</a>
+        <span class="text-antique/20 select-none text-sm font-light">/</span>
+        <a href="#" class="text-xs font-medium tracking-widest uppercase text-antique transition-colors duration-300">Support</a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Content Workspace -->
+  <main class="flex-1 w-full relative z-10">
+    
+    <!-- Hero Header -->
+    <section class="max-w-4xl mx-auto text-center px-5 pt-16 pb-12">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#c6a766]/20 bg-[#c6a766]/5 text-antique font-mono text-[10px] tracking-widest uppercase mb-6">
+        <span class="status-dot"></span>
+        Archive Connection: Operational
+      </div>
+      <h1 class="font-serif text-4xl sm:text-5xl md:text-6xl font-semibold leading-[1.2] text-cream">
+        Consulting the <span class="italic text-antique">archive.</span>
+      </h1>
+    </section>
+
+    <!-- Quick Search Action Topics -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto px-5 mb-8" aria-label="Explore Topics">
+      <button type="button" onclick="triggerTopicSearch('membership')" class="group flex flex-col items-start p-5 rounded-xl border border-linen/10 bg-black/40 hover:border-antique/50 hover:bg-antique/5 transition-all duration-300">
+        <span class="font-mono text-[9px] uppercase tracking-wider text-antique/60 mb-2">01 / ACCESS</span>
+        <h3 class="font-serif text-base text-cream font-medium mb-1">Membership</h3>
+      </button>
+      <button type="button" onclick="triggerTopicSearch('card')" class="group flex flex-col items-start p-5 rounded-xl border border-linen/10 bg-black/40 hover:border-antique/50 hover:bg-antique/5 transition-all duration-300">
+        <span class="font-mono text-[9px] uppercase tracking-wider text-antique/60 mb-2">02 / HARDWARE</span>
+        <h3 class="font-serif text-base text-cream font-medium mb-1">Physical Cards</h3>
+      </button>
+      <button type="button" onclick="triggerTopicSearch('audiobooks')" class="group flex flex-col items-start p-5 rounded-xl border border-linen/10 bg-black/40 hover:border-antique/50 hover:bg-antique/5 transition-all duration-300">
+        <span class="font-mono text-[9px] uppercase tracking-wider text-antique/60 mb-2">03 / AUDIO</span>
+        <h3 class="font-serif text-base text-cream font-medium mb-1">Audiobooks</h3>
+      </button>
+    </section>
+
+    <!-- Unified Search Tool -->
+    <section class="max-w-5xl mx-auto px-5 mb-8">
+      <div class="relative rounded-xl border border-linen/10 bg-black/40 p-1 focus-within:border-antique/40 transition duration-300">
+        <div class="flex items-center">
+          <span class="pl-4 text-linen/40 font-mono text-sm">◦</span>
+          <input
+            type="search"
+            id="faq-search"
+            placeholder="Search the archive..."
+            class="w-full bg-transparent text-cream px-3 py-3 text-base outline-none font-sans leading-relaxed placeholder:text-linen/25"
+            aria-label="Search FAQ"
+            autocomplete="off">
+          <span class="pr-4 text-linen/20 font-mono text-[10px] tracking-widest">[/]</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Directory Display -->
+    <section class="max-w-5xl mx-auto px-5 mb-16" aria-label="Frequently asked questions">
+      <div id="faq-loading" class="text-center py-12 font-mono text-xs text-linen/40 uppercase tracking-widest animate-pulse">
+        Consulting the archive...
+      </div>
+      <div id="faq-error" class="hidden p-6 rounded-xl border border-burgundy/30 bg-[#160a06]/90 text-linen/70 text-sm mb-6"></div>
+      <div id="faq-list" role="list" class="space-y-1"></div>
+      <div id="no-results" class="hidden text-center py-12 font-mono text-xs text-linen/40 uppercase tracking-widest">
+        ◦ No matching archives found.
+      </div>
+    </section>
+
+<!-- Contact Section -->
+<section class="max-w-5xl mx-auto px-5 mb-20 border-t border-linen/10 pt-12">
+  <p class="font-mono text-[10px] uppercase tracking-widest text-linen/40 mb-8">Contact the team</p>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-px bg-linen/10 rounded-2xl overflow-hidden">
+
+    <!-- Live Chat -->
+    <div class="bg-[#0d0907] p-8 flex flex-col justify-between min-h-[220px]">
+      <div>
+        <p class="font-serif text-xl text-cream font-medium mb-2">Live Chat</p>
+        <p class="text-linen/50 text-sm leading-relaxed">Available during business hours. Typical response under two minutes.</p>
+      </div>
+      <button type="button" onclick="openLiveChat()" class="mt-6 self-start font-mono text-xs tracking-widest uppercase text-antique border-b border-antique/40 pb-0.5 hover:border-antique hover:text-cream transition-all duration-200">
+        Start conversation →
+      </button>
+    </div>
+
+    <!-- Email -->
+    <div class="bg-[#0d0907] p-8 flex flex-col justify-between min-h-[220px]">
+      <div>
+        <p class="font-serif text-xl text-cream font-medium mb-2">Email</p>
+        <p class="text-linen/50 text-sm leading-relaxed">For membership, billing, and account questions. We respond within 24 hours.</p>
+      </div>
+      <a href="mailto:support@thedailyartcult.lol" class="mt-6 self-start font-mono text-xs tracking-widest text-antique border-b border-antique/40 pb-0.5 hover:border-antique hover:text-cream transition-all duration-200">
+        support@thedailyartcult.lol
+      </a>
+    </div>
+
+    <!-- Phone -->
+    <div class="bg-[#0d0907] p-8 flex flex-col justify-between min-h-[220px]">
+      <div>
+        <p class="font-serif text-xl text-cream font-medium mb-2">Phone</p>
+        <p class="text-linen/50 text-sm leading-relaxed">Speak directly with a member of the team. Available Monday to Friday.</p>
+      </div>
+      <a href="tel:+17163855389" class="mt-6 self-start font-mono text-xs tracking-widest text-antique border-b border-antique/40 pb-0.5 hover:border-antique hover:text-cream transition-all duration-200">
+        +1 716 385-5389
+      </a>
+    </div>
+
+  </div>
+</section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer border-t border-linen/12 px-5 py-8 relative z-10">
+    <div class="mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-linen/60 max-w-7xl">
+      <p class="font-serif text-base font-semibold text-cream">The Daily Art Cult</p>
+      <p>&copy; 2026 The Daily Art Cult. All rights reserved. Cease and desist notices accepted. AI training on our content is prohibited. Logo usage requires written approval..</p>
+      <a href="/track/index.html" class="font-mono tracking-widest uppercase hover:text-antique transition">Track My Card →</a>
+    </div>
+  </footer>
+
+  <!-- Clean, Functional FAQ Script -->
+  <script>
+    const API_URL = "https://frwjaixxlgthkgjtafhz.supabase.co/functions/v1/confluence-faq";
+    const listEl = document.getElementById("faq-list");
+    const loadingEl = document.getElementById("faq-loading");
+    const errorEl = document.getElementById("faq-error");
+    const searchEl = document.getElementById("faq-search");
+    const noResults = document.getElementById("no-results");
+    let allFaqs = [];
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "/" && document.activeElement !== searchEl) {
+        e.preventDefault();
+        searchEl.focus();
+        searchEl.select();
+      }
+    });
+
+    async function loadFAQs() {
+      try {
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error(`${res.status}`);
+        const data = await res.json();
+        allFaqs = data.faqs || [];
+        loadingEl.style.display = "none";
+        renderFAQs(allFaqs);
+      } catch (err) {
+        loadingEl.style.display = "none";
+        errorEl.textContent = `◦ Archive connection lost: ${err.message}`;
+        errorEl.classList.remove("hidden");
+      }
+    }
+
+    function renderFAQs(faqs) {
+      listEl.innerHTML = "";
+      faqs.forEach((faq, i) => {
+        const item = document.createElement("div");
+        item.className = "faq-item border-b border-linen/10";
+        item.dataset.title = faq.title.toLowerCase();
+
+        const btnId = `faq-btn-${i}`;
+        const bodyId = `faq-body-${i}`;
+
+        item.innerHTML = `
+          <button class="faq-question w-full flex justify-between items-center py-5 text-left hover:text-cream transition group" id="${btnId}" aria-expanded="false" aria-controls="${bodyId}">
+            <span class="font-serif text-base text-linen/85 group-hover:text-cream transition">${escapeHTML(faq.title)}</span>
+            <span class="marker font-mono text-[10px] text-antique/60 transform duration-300">✦</span>
+          </button>
+          <div class="faq-answer hidden pb-5" id="${bodyId}" role="region">
+            <div class="text-linen/70 font-sans text-sm leading-relaxed space-y-4">
+              ${faq.body}
+            </div>
+          </div>
+        `;
+
+        item.querySelector(".faq-question").addEventListener("click", function () {
+          const isOpen = this.getAttribute("aria-expanded") === "true";
+          listEl.querySelectorAll(".faq-question").forEach(btn => {
+            btn.setAttribute("aria-expanded", "false");
+            document.getElementById(btn.getAttribute("aria-controls")).classList.add("hidden");
+            btn.querySelector(".marker").style.transform = "rotate(0deg)";
+          });
+          if (!isOpen) {
+            this.setAttribute("aria-expanded", "true");
+            document.getElementById(this.getAttribute("aria-controls")).classList.remove("hidden");
+            this.querySelector(".marker").style.transform = "rotate(45deg)";
+          }
+        });
+        listEl.appendChild(item);
+      });
+    }
+
+    function triggerTopicSearch(term) {
+      searchEl.value = term;
+      searchEl.focus();
+      filterResults(term);
+    }
+
+    searchEl.addEventListener("input", () => filterResults(searchEl.value));
+
+    function filterResults(query) {
+      const q = query.toLowerCase().trim();
+      let visible = 0;
+      listEl.querySelectorAll(".faq-item").forEach(item => {
+        const match = item.dataset.title.includes(q);
+        item.classList.toggle("hidden", !match);
+        if (match) visible++;
+      });
+      noResults.style.display = visible === 0 ? "block" : "none";
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+
+    loadFAQs();
+  </script>
+
+  <!-- ========================================== -->
+  <!--             CHATWOOT INTEGRATION           -->
+  <!-- ========================================== -->
+  <script>
+window.chatwootSettings = {
+  hideMessageBubble: true,
+  position: 'right',
+  locale: 'en',
+  type: 'standard'
+};
+    (function(d,t) {
+      var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+g.src="https://cs.thedailyartcult.lol/packs/js/sdk.js";
+      g.defer=true; g.async=true;
+      s.parentNode.insertBefore(g,s);
+      g.onload=function(){
+        window.chatwootSDK.run({
+          websiteToken: window.CHATWOOT_TOKEN || '',
+          baseUrl: 'https://cs.thedailyartcult.lol'
+        })
+      }
+    })(document,"script");
+
+    function openLiveChat() {
+      if (window.$chatwoot) {
+        window.$chatwoot.toggle("open");
+      }
+    }
+  </script>
+
+<div style="text-align:center;padding:12px;font-size:0.7rem;color:#888;margin-top:24px;">
+<p>&copy; 2026 — All rights reserved. &reg; &trade; ™ — Intellectual property owned by this company or licensed to it.
+For infringement concerns, DMCA takedown requests, or IP inquiries, contact legal department.
+Brand usage guidelines and trademark usage policy available on request. Unauthorized use of marks is prohibited.</p>
+</div>
+</body>
+</html>

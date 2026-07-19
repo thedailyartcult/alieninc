@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Redeem your physical Daily Art Cult gift card and configure your bespoke audiobook reflection.">
+  <title>The Daily Art Cult | Claim Your Reflection</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: "#070504",
+            night: "#0d0907",
+            walnut: "#1b110d",
+            leather: "#2b1913",
+            burgundy: "#4a101b",
+            emerald: "#102c26",
+            cream: "#f2eadc",
+            linen: "#d8cbb8",
+            smoke: "#9f9283",
+            antique: "#c6a766"
+          },
+          fontFamily: {
+            serif: ["Playfair Display", "Georgia", "serif"],
+            sans: ["Inter", "system-ui", "sans-serif"],
+            cormorant: ["Cormorant Garamond", "serif"],
+            jost: ["Jost", "sans-serif"]
+          },
+          boxShadow: {
+            soft: "0 22px 70px rgba(0, 0, 0, 0.34)",
+            glow: "0 18px 60px rgba(198, 167, 102, 0.10)"
+          }
+        }
+      }
+    };
+  </script>
+  
+  <!-- Supabase JS Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body {
+      background-color: #070504;
+      /* Image fallback in case the video fails to load or autoplay on mobile */
+      background-image: radial-gradient(circle at center, rgba(13, 9, 7, 0.2) 0%, rgba(7, 5, 4, 0.95) 100%), 
+                        url('marble-bg.jpg'); 
+      background-size: cover;
+      background-attachment: fixed;
+      background-position: center;
+      color: #f2eadc;
+      font-family: "Inter", system-ui, sans-serif;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Background Video Styles */
+    .bg-video-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -10;
+      overflow: hidden;
+    }
+    .bg-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    /* An elegant vignette overlay on top of the video to maintain legible text contrast */
+    .video-vignette {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -9;
+      background: radial-gradient(circle at center, rgba(13, 9, 7, 0.1) 0%, rgba(7, 5, 4, 0.85) 100%);
+      pointer-events: none;
+    }
+
+    /* Smooth scale and fade for the gateway card transition */
+    #gateway-card {
+      transition: transform 1.2s cubic-bezier(0.25, 1, 0.3, 1), opacity 1.2s ease, filter 1.2s ease;
+    }
+
+    .btn-sweep {
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+      transition: color 0.4s ease;
+    }
+    .btn-sweep::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #b89a6a;
+      z-index: -1;
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    .btn-sweep:hover {
+      color: #0d0b09 !important;
+    }
+    .btn-sweep:hover::before {
+      transform: scaleX(1);
+    }
+
+    .custom-input {
+      border: 1px solid rgba(242, 234, 220, 0.14);
+      background: rgba(9, 6, 5, 0.45);
+      backdrop-filter: blur(8px);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .custom-input:focus {
+      border-color: #c6a766;
+      box-shadow: 0 0 10px rgba(198, 167, 102, 0.15);
+      outline: none;
+    }
+
+    @keyframes subtle-pulse {
+      0%, 100% { border-color: rgba(198, 167, 102, 0.2); }
+      50% { border-color: rgba(198, 167, 102, 0.5); }
+    }
+    .glowing-border {
+      animation: subtle-pulse 3s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen relative flex flex-col justify-between">
+
+  <!-- ======================================================== -->
+  <!-- BACKGROUND VIDEO ELEMENTS -->
+  <!-- ======================================================== -->
+  <div class="bg-video-container">
+    <!-- Replace "video.mp4" with your background video's file name -->
+    <video autoplay muted loop playsinline class="bg-video" id="bg-video">
+      <source src="video.mp4" type="video/mp4">
+    </video>
+  </div>
+  <div class="video-vignette"></div>
+
+
+  <!-- ======================================================== -->
+  <!-- CINEMATIC ENTRY PORTAL (CARD DISSOLVE) -->
+  <!-- ======================================================== -->
+  <div id="portal-overlay" class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-md transition-opacity duration-1000 pointer-events-auto">
+    
+    <!-- Floating Gold Card Container using your transparent card2.png background -->
+    <div id="gateway-card" class="relative w-full max-w-2xl aspect-[1.45/1] bg-contain bg-center bg-no-repeat drop-shadow-[0_35px_35px_rgba(0,0,0,0.8)]" style="background-image: url('card.png');">
+      
+      <!-- Code Verification Form -->
+      <form id="code-verification-form" class="absolute inset-0">
+        
+        <!-- Input fields positioned over the scratch-off rectangle (Approx: 30% left, 48% top, 40% width, 14% height) -->
+        <div class="absolute left-[30%] top-[48%] w-[40%] h-[14%]">
+          <input 
+            type="text" 
+            id="gift-card-code" 
+            placeholder="ENTER CODE" 
+            maxlength="16"
+            required
+            class="w-full h-full tracking-[0.15em] uppercase font-mono text-center text-ink placeholder:text-ink/30 bg-transparent border-0 focus:ring-0 focus:outline-none text-xs sm:text-base md:text-lg font-bold"
+          />
+        </div>
+
+        <!-- Submit Button directly below the card to prevent visual clutter -->
+        <div class="absolute bottom-[-80px] left-1/2 -translate-x-1/2 w-64 text-center space-y-2">
+          <button 
+            type="submit" 
+            id="verification-submit" 
+            class="w-full py-3 rounded-sm bg-cream text-ink font-mono text-[10px] uppercase tracking-[0.25em] font-bold hover:bg-white active:scale-[0.98] transition duration-300 shadow-xl flex items-center justify-center gap-2"
+          >
+            <span>Decrypt Sequence</span>
+            <svg id="loading-spinner" class="hidden animate-spin h-3.5 w-3.5 text-ink" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </button>
+          
+          <p id="verification-error" class="hidden text-[10px] text-red-400 font-mono tracking-wider">
+            Unrecognized sequence. Please verify and retry.
+          </p>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- MAIN CONFIGURATION FORM (REVEALED UNDERNEATH) -->
+  <!-- ======================================================== -->
+  <header class="relative px-5 py-6 z-10">
+    <nav class="mx-auto flex w-full max-w-4xl items-center justify-between text-sm text-linen/80">
+      <a href="../index.html" class="font-serif text-lg font-semibold tracking-wide text-cream hover:text-antique transition">The Daily Art Cult</a>
+      <span class="font-mono text-[9px] uppercase tracking-[0.2em] text-linen/40">Bespoke Redemption</span>
+    </nav>
+  </header>
+
+  <main class="flex-grow flex items-center justify-center px-5 py-12 z-10">
+    <div id="configuration-container" class="w-full max-w-2xl bg-night/70 border border-linen/10 rounded-2xl p-6 sm:p-10 backdrop-blur-xl shadow-2xl opacity-0 transition-opacity duration-[1500ms] pointer-events-none">
+      
+      <!-- Form Header -->
+      <div class="text-center space-y-4 mb-10">
+        <span class="inline-block bg-emerald/20 border border-emerald/30 text-emerald-300 text-[9px] uppercase tracking-[0.25em] px-3.5 py-1 rounded-full font-bold">Code Verified</span>
+        <h2 class="font-serif text-3xl sm:text-4xl font-medium text-cream">Commission Your Reflection</h2>
+        <p class="text-sm text-linen/70 max-w-md mx-auto">
+          Each custom audiobook is constructed by hand, unhurriedly. Tell us what you are carrying, so we may shape the resonance.
+        </p>
+      </div>
+
+      <!-- Submission Form -->
+      <form id="bespoke-commission-form" class="space-y-8">
+        <input type="hidden" id="verified-code-field" name="gift_code" value="">
+
+        <!-- Personal Details -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div class="space-y-2">
+            <label for="recipient-name" class="block font-mono text-[10px] uppercase tracking-[0.18em] text-linen/60">Preferred Name</label>
+            <input 
+              type="text" 
+              id="recipient-name" 
+              required 
+              placeholder="How should the reader address you?" 
+              class="w-full custom-input rounded px-4 py-3 text-sm text-cream placeholder:text-linen/25"
+            />
+          </div>
+          <div class="space-y-2">
+            <label for="recipient-email" class="block font-mono text-[10px] uppercase tracking-[0.18em] text-linen/60">Email Address</label>
+            <input 
+              type="email" 
+              id="recipient-email" 
+              required 
+              placeholder="Where should the audio arrive?" 
+              class="w-full custom-input rounded px-4 py-3 text-sm text-cream placeholder:text-linen/25"
+            />
+          </div>
+        </div>
+
+        <!-- Worldview Track selection -->
+        <div class="space-y-3">
+          <label class="block font-mono text-[10px] uppercase tracking-[0.18em] text-linen/60">Choose an Anchor Worldview</label>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <label class="cursor-pointer">
+              <input type="radio" name="worldview" value="becoming" class="sr-only peer" checked>
+              <div class="border border-white/10 bg-white/[0.02] peer-checked:border-antique/80 peer-checked:bg-antique/5 rounded p-3 text-center transition duration-300">
+                <p class="font-serif text-sm text-cream">Becoming</p>
+                <p class="text-[9px] font-mono uppercase text-linen/40 mt-1">Nietzsche</p>
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="worldview" value="stoicism" class="sr-only peer">
+              <div class="border border-white/10 bg-white/[0.02] peer-checked:border-antique/80 peer-checked:bg-antique/5 rounded p-3 text-center transition duration-300">
+                <p class="font-serif text-sm text-cream">Stoicism</p>
+                <p class="text-[9px] font-mono uppercase text-linen/40 mt-1">Aurelius</p>
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="worldview" value="existentialism" class="sr-only peer">
+              <div class="border border-white/10 bg-white/[0.02] peer-checked:border-antique/80 peer-checked:bg-antique/5 rounded p-3 text-center transition duration-300">
+                <p class="font-serif text-sm text-cream">Existentialism</p>
+                <p class="text-[9px] font-mono uppercase text-linen/40 mt-1">de Beauvoir</p>
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="worldview" value="mysticism" class="sr-only peer">
+              <div class="border border-white/10 bg-white/[0.02] peer-checked:border-antique/80 peer-checked:bg-antique/5 rounded p-3 text-center transition duration-300">
+                <p class="font-serif text-sm text-cream">Mysticism</p>
+                <p class="text-[9px] font-mono uppercase text-linen/40 mt-1">Rumi</p>
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="worldview" value="eastern" class="sr-only peer">
+              <div class="border border-white/10 bg-white/[0.02] peer-checked:border-antique/80 peer-checked:bg-antique/5 rounded p-3 text-center transition duration-300">
+                <p class="font-serif text-sm text-cream">Eastern Wisdom</p>
+                <p class="text-[9px] font-mono uppercase text-linen/40 mt-1">Lao Tzu</p>
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="worldview" value="absurdism" class="sr-only peer">
+              <div class="border border-white/10 bg-white/[0.02] peer-checked:border-antique/80 peer-checked:bg-antique/5 rounded p-3 text-center transition duration-300">
+                <p class="font-serif text-sm text-cream">Absurdism</p>
+                <p class="text-[9px] font-mono uppercase text-linen/40 mt-1">Camus</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- The core prompt -->
+        <div class="space-y-2">
+          <label for="narrative-prompt" class="block font-mono text-[10px] uppercase tracking-[0.18em] text-linen/60">What are you carrying into this work?</label>
+          <textarea 
+            id="narrative-prompt" 
+            rows="5" 
+            required
+            placeholder="Share a struggle, a question you keep coming back to, or a transition in your life. The clearer the thought, the deeper the custom text resonates." 
+            class="w-full custom-input rounded px-4 py-3 text-sm text-cream placeholder:text-linen/25 resize-none leading-relaxed"
+          ></textarea>
+        </div>
+
+        <!-- Tone preference -->
+        <div class="space-y-2">
+          <label for="voice-tone" class="block font-mono text-[10px] uppercase tracking-[0.18em] text-linen/60">Preferred Delivery Aura</label>
+          <select id="voice-tone" class="w-full custom-input rounded px-4 py-3 text-sm text-cream font-serif">
+            <option value="unhurried">Unhurried & Calm — A quiet presence</option>
+            <option value="direct">Direct & Sharp — Clear and uncompromising</option>
+            <option value="gentle">Warm & Restful — Compassionate framework</option>
+          </select>
+        </div>
+
+        <!-- Submission Trigger -->
+        <button 
+          type="submit" 
+          id="commission-submit"
+          class="w-full btn-sweep py-5 rounded-sm border border-antique/60 text-cream font-mono text-xs uppercase tracking-[0.25em] font-bold transition duration-300 shadow-xl flex items-center justify-center gap-2"
+        >
+          <span>Submit Request to Atelier</span>
+          <svg id="form-spinner" class="hidden animate-spin h-4 w-4 text-cream" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        </button>
+      </form>
+
+      <!-- Success Panel -->
+      <div id="commission-success" class="hidden text-center space-y-6 py-8 animate-fade-in">
+        <div class="flex justify-center">
+          <span class="flex h-14 w-14 items-center justify-center rounded-full bg-emerald/20 border border-emerald-400/40 text-emerald-400 text-xl">✓</span>
+        </div>
+        <h3 class="font-serif text-3xl font-medium text-cream">Commission Documented</h3>
+        <p class="text-sm text-linen/70 max-w-md mx-auto leading-relaxed">
+          Your details have been written to our production ledger. The artisan team will review your prompt, select the corresponding voice structures, and begin writing. 
+        </p>
+        <p class="text-xs text-[#c6a766] font-serif italic">
+          Expect your notification link in 3 to 5 business days.
+        </p>
+        <div class="pt-6">
+          <a href="../index.html" class="inline-block text-xs font-mono uppercase tracking-[0.2em] text-linen/50 hover:text-cream border-b border-linen/20 hover:border-cream transition pb-1">Return to Main Study</a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="site-footer border-t border-linen/12 px-5 py-6 mt-12 z-10">
+    <div class="mx-auto max-w-4xl flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-linen/50">
+      <p>&copy; 2026 The Daily Art Cult. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- ======================================================== -->
+  <!-- INTEGRATION JAVASCRIPT -->
+  <!-- ======================================================== -->
+  <script>
+    // ========================================================
+    // 1. SUPABASE CLIENT CONFIGURATION (PLACEHOLDERS)
+    // ========================================================
+    const SUPABASE_URL = "https://frwjaixxlgthkgjtafhz.supabase.co"; 
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyd2phaXh4bGd0aGtnanRhZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDUzNDQsImV4cCI6MjA5NDYyMTM0NH0.j2DKz__QMml4WplMYNmsQpTUw0qu-kZG7Md3qBEEdEc"; 
+
+    let supabaseClient = null;
+    
+    try {
+      if (window.supabase) {
+        if (!SUPABASE_URL.includes("YOUR_PROJECT_ID")) {
+          supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          console.log("[Atelier] Supabase Client initialized successfully.");
+        } else {
+          console.log("[Atelier] Default credentials present. Operating under local demo fallback.");
+        }
+      } else {
+        console.warn("[Atelier] Supabase global variable undefined. Falling back to local demo.");
+      }
+    } catch (err) {
+      console.warn("[Atelier] Connection initialization warning:", err.message);
+    }
+
+    // ========================================================
+    // 2. DOM ELEMENT REFERENCES
+    // ========================================================
+    const portalOverlay = document.getElementById("portal-overlay");
+    const gatewayCard = document.getElementById("gateway-card");
+    const codeVerificationForm = document.getElementById("code-verification-form");
+    const giftCardCodeInput = document.getElementById("gift-card-code");
+    const verificationError = document.getElementById("verification-error");
+    const loadingSpinner = document.getElementById("loading-spinner");
+    const verificationSubmit = document.getElementById("verification-submit");
+
+    const configurationContainer = document.getElementById("configuration-container");
+    const bespokeCommissionForm = document.getElementById("bespoke-commission-form");
+    const verifiedCodeField = document.getElementById("verified-code-field");
+    const recipientName = document.getElementById("recipient-name");
+    const recipientEmail = document.getElementById("recipient-email");
+    const narrativePrompt = document.getElementById("narrative-prompt");
+    const worldviewInputs = document.getElementsByName("worldview");
+    const voiceTone = document.getElementById("voice-tone");
+    const formSpinner = document.getElementById("form-spinner");
+    const commissionSubmit = document.getElementById("commission-submit");
+    const commissionSuccess = document.getElementById("commission-success");
+
+    // ========================================================
+    // 3. ENTRANCE GATEWAY INTERACTIVE TRANSITION (DISSOLVE)
+    // ========================================================
+    async function triggerPortalOpenSequence(validCode) {
+      verifiedCodeField.value = validCode;
+
+      // 1. Zoom out, blur, and fade away the physical card asset
+      gatewayCard.classList.add("scale-[0.95]", "opacity-0", "blur-sm");
+      portalOverlay.classList.add("opacity-0");
+      
+      // 2. Allow transition to complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // 3. Hide the verification overlay entirely and enable form interactions
+      portalOverlay.classList.remove("pointer-events-auto");
+      portalOverlay.classList.add("pointer-events-none", "hidden");
+      
+      // 4. Reveal the elegant atelier submission form below
+      configurationContainer.classList.remove("opacity-0", "pointer-events-none");
+      configurationContainer.classList.add("opacity-100");
+    }
+
+    // ========================================================
+    // 4. REDEMPTION SEQUENCE & SUPABASE VERIFICATION
+    // ========================================================
+    codeVerificationForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const code = giftCardCodeInput.value.trim().toUpperCase();
+
+      if (!code) return;
+
+      // Reset feedback UI
+      verificationError.classList.add("hidden");
+      loadingSpinner.classList.remove("hidden");
+      verificationSubmit.setAttribute("disabled", "true");
+
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient
+            .from("gift_codes")
+            .select("code, is_redeemed")
+            .eq("code", code)
+            .maybeSingle();
+
+          if (error) throw error;
+
+          if (!data) {
+            throw new Error("PGRST116: Target code not found or permission issue.");
+          }
+
+          if (data.is_redeemed) {
+            verificationError.textContent = "This sequence has already been claimed.";
+            verificationError.classList.remove("hidden");
+            loadingSpinner.classList.add("hidden");
+            verificationSubmit.removeAttribute("disabled");
+            return;
+          }
+
+          // Code matches and is valid for consumption
+          loadingSpinner.classList.add("hidden");
+          await triggerPortalOpenSequence(code);
+
+        } catch (err) {
+          console.error("[Atelier] Verification error encountered:", err.message || err);
+          verificationError.textContent = "Credential sequence not recognized. Please retry.";
+          verificationError.classList.remove("hidden");
+          loadingSpinner.classList.add("hidden");
+          verificationSubmit.removeAttribute("disabled");
+        }
+      } else {
+        // --- DEMO FALLBACK MODE ---
+        setTimeout(async () => {
+          loadingSpinner.classList.add("hidden");
+          await triggerPortalOpenSequence(code);
+        }, 1500);
+      }
+    });
+
+    // ========================================================
+    // 5. ATELIER FORM DISPATCH TO LEDGER
+    // ========================================================
+    bespokeCommissionForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      // UI pending state updates
+      formSpinner.classList.remove("hidden");
+      commissionSubmit.setAttribute("disabled", "true");
+
+      // Determine checked worldview safely
+      let selectedWorldview = "becoming";
+      for (const input of worldviewInputs) {
+        if (input.checked) {
+          selectedWorldview = input.value;
+          break;
+        }
+      }
+
+      const submissionPayload = {
+        gift_code: verifiedCodeField.value,
+        name: recipientName.value.trim(),
+        email: recipientEmail.value.trim(),
+        worldview: selectedWorldview,
+        prompt: narrativePrompt.value.trim(),
+        tone: voiceTone.value,
+        created_at: new Date().toISOString()
+      };
+
+      if (supabaseClient) {
+        try {
+          const { error: insertError } = await supabaseClient
+            .from("commissions")
+            .insert([submissionPayload]);
+
+          if (insertError) throw insertError;
+
+          const { error: updateError } = await supabaseClient
+            .from("gift_codes")
+            .update({ is_redeemed: true })
+            .eq("code", submissionPayload.gift_code);
+
+          if (updateError) throw updateError;
+
+          // Transition successfully to completion panel
+          formSpinner.classList.add("hidden");
+          bespokeCommissionForm.classList.add("hidden");
+          commissionSuccess.classList.remove("hidden");
+
+        } catch (err) {
+          console.error("[Atelier] Submission error encountered:", err.message || err);
+          alert("Submission could not be completed. Please confirm parameters and try again.");
+          formSpinner.classList.add("hidden");
+          commissionSubmit.removeAttribute("disabled");
+        }
+      } else {
+        // --- DEMO SUCCESS FLOW ---
+        setTimeout(() => {
+          formSpinner.classList.add("hidden");
+          bespokeCommissionForm.classList.add("hidden");
+          commissionSuccess.classList.remove("hidden");
+        }, 1500);
+      }
+    });
+  </script>
+</body>
+</html>

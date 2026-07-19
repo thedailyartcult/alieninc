@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Private Ledger | The Daily Art Cult</title>
+  
+  <!-- Fonts matching main site -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Supabase JS Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: "#070504",
+            night: "#0d0907",
+            walnut: "#1b110d",
+            cream: "#f2eadc",
+            linen: "#d8cbb8",
+            antique: "#c6a766"
+          },
+          fontFamily: {
+            serif: ["Playfair Display", "Georgia", "serif"],
+            sans: ["Inter", "system-ui", "sans-serif"],
+            cormorant: ["Cormorant Garamond", "serif"]
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      background-color: #1a120b;
+      color: #f2eadc;
+      font-family: "Inter", system-ui, sans-serif;
+    }
+    .library-overlay {
+      background: radial-gradient(circle at 50% 18%, rgba(70, 16, 27, 0.1), transparent 40%);
+    }
+    .quiet-panel {
+      border: 1px solid rgba(216, 203, 184, 0.12);
+      background: rgba(13, 9, 7, 0.72);
+      backdrop-filter: blur(14px);
+    }
+    .source-release-card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(198, 167, 102, 0.22);
+      background:
+        linear-gradient(135deg, rgba(198, 167, 102, 0.12), rgba(16, 44, 38, 0.18)),
+        rgba(7, 5, 4, 0.72);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+    }
+    .source-release-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(7, 5, 4, 0.18), rgba(7, 5, 4, 0.72));
+      pointer-events: none;
+      z-index: 1;
+    }
+    .source-release-thumb {
+      min-height: 10rem;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(198, 167, 102, 0.22), transparent 34%),
+        linear-gradient(135deg, #2b1913, #102c26);
+    }
+    .source-release-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: saturate(0.82) contrast(1.06);
+      transform: scale(1.01);
+      transition: transform 700ms ease, filter 700ms ease;
+    }
+    .source-release-card:hover .source-release-thumb img {
+      filter: saturate(1) contrast(1.12);
+      transform: scale(1.045);
+    }
+    .source-release-content {
+      position: relative;
+      z-index: 2;
+    }
+    .source-play-btn {
+      border: 1px solid rgba(198, 167, 102, 0.38);
+      background: rgba(242, 234, 220, 0.92);
+      color: #070504;
+    }
+    .source-play-btn:hover {
+      background: #c6a766;
+      color: #070504;
+    }
+  </style>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.tailwindcss.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com https://consent.cookiebot.com; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+</head>
+<body class="min-h-screen relative flex flex-col justify-between overflow-x-hidden">
+
+  <!-- Aesthetic background glow -->
+  <div class="library-overlay absolute inset-0 -z-10 pointer-events-none" aria-hidden="true"></div>
+
+  <!-- Main Container -->
+  <main class="w-full max-w-4xl mx-auto px-6 py-12 flex-1 flex flex-col justify-center">
+    
+    <!-- HEADER -->
+    <header class="text-center mb-12">
+      <a href="" class="font-serif text-lg tracking-wider text-linen/60 hover:text-antique transition duration-300">The Daily Art Cult</a>
+      <h1 class="font-serif text-3xl md:text-4xl mt-3 font-medium text-cream tracking-wide">The Private Ledger</h1>
+      <div class="w-16 h-px bg-gradient-to-r from-transparent via-antique to-transparent mx-auto mt-4"></div>
+    </header>
+
+    <!-- STATE A: AUTHENTICATION GATE (Visible when logged out) -->
+    <section id="auth-gate" class="w-full max-w-md mx-auto hidden">
+      <div class="quiet-panel p-8 rounded-xl shadow-2xl">
+        <h2 class="font-serif text-xl text-cream mb-2 text-center">Enter the Sanctuary</h2>
+        <p class="text-xs text-linen/50 text-center mb-6">Provide your email address. We will transmit a secure access key directly to your inbox.</p>
+        
+        <form id="login-form" class="space-y-4">
+          <div>
+            <label for="email" class="block text-[9px] font-mono uppercase tracking-widest text-linen/40 mb-1.5">Email Address</label>
+            <input type="email" id="email" required placeholder="evelyn@domain.com" class="w-full bg-[#14100e]/80 border border-linen/10 rounded-lg px-4 py-3 text-sm text-cream placeholder:text-linen/25 focus:border-antique/50 focus:outline-none transition">
+          </div>
+          <button type="submit" class="w-full py-3 bg-cream hover:bg-antique text-ink font-mono text-[10px] font-bold uppercase tracking-widest rounded-lg transition duration-300">
+            Request Access Link
+          </button>
+        </form>
+        <p id="auth-feedback" class="text-[10px] font-mono text-center text-antique mt-4 min-h-[1.5em]"></p>
+      </div>
+    </section>
+
+    <!-- STATE B: MEMBER DASHBOARD (Visible when logged in) -->
+    <section id="dashboard" class="w-full space-y-10 hidden">
+      
+      <!-- Top Status Bar -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-linen/10 pb-6">
+        <div>
+          <span id="patron-tier" class="text-[10px] font-mono uppercase tracking-[0.25em] text-antique">6-Month Free Access</span>
+          <h2 id="patron-greeting" class="font-serif text-2xl text-cream mt-1">Welcome, Member</h2>
+        </div>
+        <button id="logout-btn" class="text-[10px] font-mono uppercase tracking-widest text-linen/40 hover:text-antique transition duration-300">
+          Depart Library
+        </button>
+      </div>
+
+      <!-- GRID LAYOUT -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+        
+        <!-- Left Side: .md Profile Context Configuration (Col-span 5) -->
+        <div class="md:col-span-5 space-y-6">
+          <div class="quiet-panel p-6 rounded-xl">
+            <h3 class="font-serif text-lg text-cream mb-2">My Philosophical Context</h3>
+            <p class="text-xs text-linen/50 leading-relaxed mb-4">
+              Your context profile shape-shifts the voices of future publications. Create or update your profile below.
+            </p>
+            
+                      <!-- NEW PANEL: PHILOSOPHICAL ARSENAL -->
+          <div class="quiet-panel p-6 rounded-xl">
+            <h3 class="font-serif text-lg text-cream mb-2">My Philosophical Arsenal</h3>
+            <p class="text-xs text-linen/50 leading-relaxed mb-4">
+              Core concepts, lessons, and philosophical frameworks you have cataloged inside your quiet sanctuary.
+            </p>
+            
+            <!-- Summary of Last Study Session -->
+            <div class="border border-antique/20 bg-antique/5 p-3 rounded-lg text-xs mb-4 text-left">
+              <span class="text-[8px] font-mono uppercase tracking-widest text-antique">Last Session Focus</span>
+              <p id="arsenal-last-summary" class="text-linen/80 italic mt-1 font-serif leading-relaxed">
+                Loading study memory...
+              </p>
+            </div>
+
+            <!-- List of Learned Tags -->
+            <label class="block text-[9px] font-mono uppercase tracking-widest text-linen/40 mb-2">Acquired Lenses</label>
+            <div id="arsenal-tags-container" class="flex flex-wrap gap-1.5">
+              <span class="text-xs text-linen/30 italic">No topics cataloged yet. Complete your first release issue to begin.</span>
+            </div>
+          </div>
+
+        </div>
+            
+            <!-- Copier Card for LLM Prompt Generation -->
+            <div class="border border-linen/10 bg-[#120a06]/80 p-4 rounded-xl text-xs space-y-3 text-left mb-4">
+              <p class="text-linen/70 leading-relaxed font-sans text-[11px]">
+                Generate your permanent context profile: copy the synthesis prompt, run it on Claude or ChatGPT, and drop the resulting <code class="text-antique font-mono">.md</code> file below.
+              </p>
+              <button type="button" id="copy-profile-prompt-btn" class="w-full py-2.5 px-4 bg-antique/5 hover:bg-antique/15 border border-antique/30 hover:border-antique text-antique font-mono text-[9px] uppercase tracking-widest transition duration-300 rounded flex items-center justify-center gap-2">
+                <span>Get Profile Generator Prompt</span>
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002-2">
+                </svg>
+              </button>
+            </div>
+
+            <form id="profile-form" class="space-y-4">
+              <!-- Visual Drag and Drop Target Area -->
+              <div id="md-drop-zone" class="relative group border border-dashed border-linen/20 hover:border-antique/50 bg-black/40 hover:bg-[#120c09]/60 rounded-xl transition-all duration-300 flex flex-col items-center justify-center p-6 text-center cursor-pointer min-h-[140px]">
+                <input type="file" id="md-file-input" accept=".md,text/markdown" class="hidden">
+                
+                <div id="drop-zone-idle" class="flex flex-col items-center gap-3">
+                  <div class="relative w-10 h-10 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-linen/40 group-hover:text-antique group-hover:-translate-y-1 transition duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                    </svg>
+                  </div>
+                  <p class="text-[9px] font-mono uppercase tracking-widest text-linen/50 group-hover:text-linen/75 transition duration-300">
+                    Drag & Drop your <span class="text-antique font-bold">.md</span> file here
+                  </p>
+                  <span class="text-[9px] text-linen/25 font-sans">
+                    — or <button type="button" id="reveal-paste-btn" class="underline hover:text-antique transition duration-200">paste raw text instead</button> —
+                  </span>
+                </div>
+
+                <textarea id="profile-md-text" rows="8" placeholder="Paste your raw markdown code here..." class="hidden w-full bg-transparent border border-linen/10 rounded-lg p-3 text-xs text-cream font-mono leading-relaxed focus:border-antique/50 focus:outline-none resize-none scrollbar-none"></textarea>
+              </div>
+              
+              <!-- COPY & PASTE THIS TOGGLE GRID BLOCK -->
+              <div class="border-t border-linen/10 pt-4 mt-6">
+                <label class="block text-[9px] font-mono uppercase tracking-widest text-linen/40 mb-2">My Active Worldview Lenses</label>
+                <div id="active-lenses-grid" class="grid grid-cols-2 gap-2">
+                  <!-- These buttons will be created automatically by the JavaScript below -->
+                </div>
+              </div>
+              
+              <div class="flex items-center justify-between">
+                <span id="profile-status" class="text-[9px] font-mono text-linen/40">Not uploaded</span>
+                <button type="submit" class="py-2 px-4 bg-antique/10 hover:bg-antique/25 border border-antique/30 text-antique hover:text-cream text-[9px] font-mono uppercase tracking-widest rounded transition duration-300">
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Right Side: Library Audio Releases List (Col-span 7) -->
+        <div class="md:col-span-7 space-y-6">
+          <div class="quiet-panel p-6 rounded-xl">
+            <h3 class="font-serif text-xl text-cream mb-1">Your Library Collection</h3>
+            <p class="text-xs text-linen/50 mb-6">Personalized synthesis recordings generated on scheduled release days.</p>
+            
+            <!-- Audio Player HUD (Active only when playing a file) -->
+            <div id="audio-player-hud" class="hidden border border-antique/20 bg-[#120a06]/40 p-4 rounded-lg mb-6 text-left">
+              <span class="text-[8px] font-mono uppercase tracking-widest text-antique">Now Streaming</span>
+              <h4 id="hud-track-title" class="font-serif text-sm text-cream font-semibold mt-1">Selected Compilation</h4>
+              <audio id="main-audio-player" controls class="w-full mt-3 accent-antique h-10"></audio>
+            </div>
+
+            <!-- Releases List Placeholder -->
+            <div id="releases-list" class="space-y-4">
+              <!-- Dynamically populated via JS -->
+              <p class="text-xs text-linen/30 italic py-6 text-center">Scanning shelves for customized recordings...</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="w-full border-t border-linen/10 py-6 text-center text-xs text-linen/40">
+    <p>&copy; 2026 The Daily Art Cult. Built upon privacy, voiced with intention.</p>
+  </footer>
+
+<!-- SCRIPT LOGIC -->
+  <script>
+    // --- SUPABASE CONFIGURATION ---
+    const SUPABASE_URL = "https://frwjaixxlgthkgjtafhz.supabase.co"; 
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyd2phaXh4bGd0aGtnanRhZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDUzNDQsImV4cCI6MjA5NDYyMTM0NH0.j2DKz__QMml4WplMYNmsQpTUw0qu-kZG7Md3qBEEdEc"; 
+    
+    // Named "supabaseClient" to avoid library name collisions
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // --- DOM REFERENCES ---
+    const authGate = document.getElementById("auth-gate");
+    const dashboard = document.getElementById("dashboard");
+    const loginForm = document.getElementById("login-form");
+    const emailInput = document.getElementById("email");
+    const authFeedback = document.getElementById("auth-feedback");
+    const logoutBtn = document.getElementById("logout-btn");
+    
+    const patronGreeting = document.getElementById("patron-greeting");
+    const profileForm = document.getElementById("profile-form");
+    const profileMdText = document.getElementById("profile-md-text");
+    const profileStatus = document.getElementById("profile-status");
+    
+    const audioPlayerHud = document.getElementById("audio-player-hud");
+    const mainAudioPlayer = document.getElementById("main-audio-player");
+    const hudTrackTitle = document.getElementById("hud-track-title");
+    const releasesList = document.getElementById("releases-list");
+
+    // NEW DOM REFERENCES FOR DRAG & DROP / COPY
+    const dropZone = document.getElementById("md-drop-zone");
+    const dropZoneIdle = document.getElementById("drop-zone-idle");
+    const mdFileInput = document.getElementById("md-file-input");
+    const revealPasteBtn = document.getElementById("reveal-paste-btn");
+    const copyPromptBtn = document.getElementById("copy-profile-prompt-btn");
+    
+    // --- NEW REFERENCES FOR ACTIVE LENSES ---
+    const availableWorldviews = [
+      "Becoming", "Existentialism", "Stoicism", "Absurdism", "The Leap", "Mysticism", "Eastern Wisdom", "Politics", "Witness",
+      "Guideposts", "Angels on Earth", "Mysterious Ways", "Mornings with Jesus", "Strength & Grace"
+    ];
+    let activeWorldviews = [];
+    let sourceMaterials = [];
+    let accountHandoff = readAccountHandoff();
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function decodeAccountHandoff(value) {
+      try {
+        return JSON.parse(decodeURIComponent(escape(atob(value))));
+      } catch (e) {
+        console.error("Account handoff decode failed:", e);
+        return null;
+      }
+    }
+
+    function readAccountHandoff() {
+      const params = new URLSearchParams(window.location.search);
+      const handoff = params.get('handoff');
+      if (!handoff) return null;
+
+      const decoded = decodeAccountHandoff(handoff);
+      params.delete('handoff');
+      const cleanUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}${window.location.hash}`;
+      window.history.replaceState({}, document.title, cleanUrl);
+      return decoded;
+    }
+
+    function extractYouTubeVideoId(value) {
+      const text = String(value || '').trim();
+      const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtu\.be\/)([A-Za-z0-9_-]{11})/,
+        /^[A-Za-z0-9_-]{11}$/
+      ];
+
+      for (const pattern of patterns) {
+        const match = text.match(pattern);
+        if (match) return match[1] || match[0];
+      }
+
+      return '';
+    }
+
+    function getSourceVisual(item) {
+      const videoId = item.youtube_video_id || extractYouTubeVideoId(item.source_input);
+      if (item.thumbnail_url || videoId) {
+        return {
+          kind: 'youtube',
+          label: 'YouTube Transcript',
+          thumbnail: item.thumbnail_url || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+        };
+      }
+
+      return {
+        kind: 'book',
+        label: 'Book Study',
+        thumbnail: ''
+      };
+    }
+
+    // --- PROMPT TEXT CONSTANT ---
+    const PROFILE_PROMPT_TEXT = `# Prompt: Generate My Personal Learning & Context Profile> **How to use this:** Paste everything below the horizontal rule into a new Claude conversation. Claude will synthesize everything it knows about you from past sessions into a \`.md\` file you can attach to future conversations as context.
+
+---
+
+Claude, I want you to generate a \`.md\` file that functions as my **permanent personal context profile** — a living document I'll attach to future conversations so you can calibrate how you engage with me from the very first message.
+
+Pull from everything you know about me across all our past conversations. Structure the output as follows:
+
+---
+
+## 1. Identity & Intellectual Self-Concept
+Who I understand myself to be. My core intellectual identity, the thinkers I self-identify with, my relationship to autodidactic learning vs. institutional frameworks, and any recurring self-images or archetypes that surface in how I think and speak.
+
+## 2. Philosophical Architecture
+The thinkers and texts that form my actual operating system — not what I've casually mentioned, but what shapes *how I think*. Include:
+- Primary canon (deeply internalized)
+- Secondary influences (engaged but not foundational)
+- Tensions or productive contradictions between my influences
+- How I use philosophy: instrumentally, aesthetically, ethically, or otherwise
+
+## 3. Psychological Profile (as observed across conversations)
+Patterns in how I engage, learn, and respond. Include:
+- How I process new information (do I go broad first or drill immediately?)
+- My relationship to structure vs. intuition
+- Where I show high curiosity vs. resistance
+- How I respond to challenge, disagreement, or complexity
+- Any recurring cognitive or emotional patterns
+
+## 4. Astrological / Archetypal Lens *(if inferable)*
+Any astrological, Jungian, or archetypal framing that maps to how I operate — either things I've stated directly or patterns consistent with known frameworks.
+
+## 5. Learning Style & Pedagogy Preferences
+How I learn fastest. Include:
+- Do I prefer Socratic dialogue, direct transmission, or exploratory synthesis?
+- Do I respond better to analogies, first principles, or narrative?
+- My preferred density of information (concise vs. rich)
+- How I respond to examples, counterexamples, and edge cases
+- My tolerance for ambiguity vs. need for resolution
+
+## 6. Active Projects & Working Context
+The professional and creative work currently underway that shapes what I need from our conversations. Be specific — project names, platforms, goals, current blockers if known.
+
+## 7. Communication Preferences
+How I like Claude to speak to me. Tone, register, format preferences, things I find annoying or useful, whether I prefer directness or nuance-first delivery.
+
+## 8. Blind Spots & Growth Edges *(observed, not prescribed)*
+Patterns where I seem to avoid, rush past, or undervalue something that might serve me. Note these diplomatically — this section is for my benefit, not critique.
+
+## 9. One-Line Summary
+A single sentence that captures me as a learner and thinker — precise enough that another version of Claude reading it cold would immediately know how to engage me.
+
+---
+
+**Output format:** A clean \`.md\` file, ready to be saved and attached to future conversations. Use headers, subheaders, and bullet points where clarity demands it — but write in a register that sounds like *me*, not a clinical report. Treat it as a document I'd actually want to read.`;
+
+// 1. This function grabs any temporary selections from the landing page and saves them permanently
+    async function syncPendingWorldviews(userId) {
+      const pending = localStorage.getItem('pending_worldviews');
+      const handoffList = Array.isArray(accountHandoff?.selected_worldviews) ? accountHandoff.selected_worldviews : [];
+      if (pending || handoffList.length) {
+        try {
+          const pendingList = pending ? JSON.parse(pending) : [];
+          const combinedList = Array.from(new Set([...pendingList, ...handoffList]));
+          if (Array.isArray(combinedList) && combinedList.length > 0) {
+            const { data } = await supabaseClient
+              .from('user_contexts')
+              .select('selected_worldviews')
+              .eq('user_id', userId)
+              .single();
+
+            const currentList = data?.selected_worldviews || [];
+            const merged = Array.from(new Set([...currentList, ...combinedList]));
+
+            await supabaseClient
+              .from('user_contexts')
+              .upsert({
+                user_id: userId,
+                selected_worldviews: merged,
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'user_id' });
+          }
+        } catch (e) {
+          console.error("Local sync error:", e);
+        } finally {
+          localStorage.removeItem('pending_worldviews'); // Clear the temp memory
+        }
+      }
+    }
+
+    async function syncPendingSourceMaterials(userId) {
+      const pending = localStorage.getItem('pending_source_materials');
+      const handoffList = Array.isArray(accountHandoff?.source_materials) ? accountHandoff.source_materials : [];
+      if (!pending && handoffList.length === 0) return [];
+
+      let pendingList = [];
+      try {
+        pendingList = pending ? JSON.parse(pending) : [];
+      } catch (e) {
+        console.error("Source material parse error:", e);
+      }
+
+      pendingList = Array.isArray(pendingList) ? pendingList : [];
+      const combinedList = [...pendingList, ...handoffList];
+      if (combinedList.length === 0) return [];
+
+      try {
+        const { data } = await supabaseClient
+          .from('user_contexts')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+
+        const currentList = Array.isArray(data?.source_materials) ? data.source_materials : [];
+        const mergedMap = new Map();
+
+        [...currentList, ...combinedList].forEach((item) => {
+          if (!item) return;
+          const key = item.id || item.source_input || `${item.source_title}-${item.created_at}`;
+          mergedMap.set(key, item);
+        });
+
+        const merged = Array.from(mergedMap.values());
+
+        const { error } = await supabaseClient
+          .from('user_contexts')
+          .upsert({
+            user_id: userId,
+            source_materials: merged,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id' });
+
+        if (error) throw error;
+
+        localStorage.removeItem('pending_source_materials');
+        return merged;
+      } catch (e) {
+        console.error("Source material sync error:", e);
+        return combinedList;
+      }
+    }
+
+    // 2. This function builds the visual clickable buttons (toggles) dynamically
+    function renderActiveLenses(userId) {
+      const container = document.getElementById('active-lenses-grid');
+      if (!container) return;
+
+      container.innerHTML = availableWorldviews.map(wv => {
+        const isSelected = activeWorldviews.includes(wv);
+        return `
+          <button type="button" 
+            class="w-full text-left p-2 rounded-lg border text-[10px] font-mono uppercase tracking-wider transition duration-300 ${
+              isSelected 
+                ? 'bg-antique/10 border-antique text-antique' 
+                : 'bg-[#14100e]/80 border-linen/10 text-linen/50 hover:border-linen/20 hover:text-linen'
+            }"
+            onclick="toggleLens('${wv}', '${userId}')">
+            <span class="mr-1">${isSelected ? '●' : '○'}</span> ${wv}
+          </button>
+        `;
+      }).join('');
+    }
+
+    // 3. This function runs when a user clicks any toggle button
+    window.toggleLens = async function(title, userId) {
+      const idx = activeWorldviews.indexOf(title);
+      if (idx > -1) {
+        activeWorldviews.splice(idx, 1); // Remove if already selected
+      } else {
+        activeWorldviews.push(title); // Add if not selected
+      }
+      
+      renderActiveLenses(userId);
+      profileStatus.textContent = "Updating lenses...";
+
+      const { error } = await supabaseClient
+        .from('user_contexts')
+        .upsert({
+          user_id: userId,
+          selected_worldviews: activeWorldviews,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+
+      if (error) {
+        profileStatus.textContent = "Error saving lenses";
+        console.error(error);
+      } else {
+        profileStatus.textContent = "Saved to vault";
+      }
+    };  
+
+    // --- STATE ROUTER ---
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        authGate.classList.add("hidden");
+        dashboard.classList.remove("hidden");
+        loadMemberDashboard(session.user);
+      } else {
+        dashboard.classList.add("hidden");
+        authGate.classList.remove("hidden");
+      }
+    });
+
+    // --- HANDLERS ---
+
+    // 1. Magic Link Form Submit
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim();
+      authFeedback.textContent = "Transmitting access key...";
+
+      const { error } = await supabaseClient.auth.signInWithOtp({
+        email: email,
+        options: {
+          emailRedirectTo: window.location.origin // Redirects back to your GitHub Pages subdomain
+        }
+      });
+
+      if (error) {
+        authFeedback.textContent = `Error: ${error.message}`;
+      } else {
+        authFeedback.textContent = "Check your inbox. A login link has been dispatched.";
+        loginForm.reset();
+      }
+    });
+
+    // 2. Logout Click
+    logoutBtn.addEventListener("click", async () => {
+      await supabaseClient.auth.signOut();
+    });
+
+    // --- MEMBER DASHBOARD LOGIC ---
+    async function loadMemberDashboard(user) {
+      patronGreeting.textContent = `Welcome, Member`;
+      
+      // Fetch User's .md Context
+      await fetchUserContext(user.id);
+
+      // Fetch Pre-Generated Personalized Releases
+      fetchUserReleases(user.id);
+    }
+
+// Replace your old fetchUserContext function with this one:
+    async function fetchUserContext(userId) {
+      profileStatus.textContent = "Loading profile...";
+      
+      // Perform pending local sync if applicable
+      await syncPendingWorldviews(userId);
+      const pendingSources = await syncPendingSourceMaterials(userId);
+
+      const { data, error } = await supabaseClient
+        .from('user_contexts')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { 
+        console.error("Context fetch failed:", error);
+        profileStatus.textContent = "Error reading profile.";
+      } else if (data) {
+        // 1. Context text area
+        profileMdText.value = data.markdown_text || '';
+        activeWorldviews = data.selected_worldviews || [];
+        sourceMaterials = Array.isArray(data.source_materials) ? data.source_materials : pendingSources;
+        profileStatus.textContent = "Saved to vault";
+        
+        // 2. Render Last Reflection Summary
+        const lastSummaryEl = document.getElementById("arsenal-last-summary");
+        if (lastSummaryEl) {
+          lastSummaryEl.textContent = data.last_reflection_summary || "No prior studies cataloged.";
+        }
+
+        // 3. Render Arsenal acquired tags
+        const tagsContainer = document.getElementById("arsenal-tags-container");
+        if (tagsContainer) {
+          const completed = data.completed_topics || [];
+          if (completed.length === 0) {
+            tagsContainer.innerHTML = `<span class="text-[9px] text-linen/30 italic">Complete your first edition release to populate your study history.</span>`;
+          } else {
+            tagsContainer.innerHTML = completed.map(tag => `
+              <span class="inline-flex items-center bg-antique/10 border border-antique/20 text-antique px-2.5 py-1 rounded-md text-[9px] font-mono uppercase tracking-wider">
+                🛡️ ${tag}
+              </span>
+            `).join('');
+          }
+        }
+
+        // Auto-show editor layouts
+        profileMdText.classList.remove("hidden");
+        dropZoneIdle.classList.add("hidden");
+        dropZone.classList.remove("border-dashed");
+        dropZone.classList.add("border-antique/50", "bg-black/25");
+      } else {
+        profileStatus.textContent = "Profile empty";
+        activeWorldviews = [];
+        sourceMaterials = pendingSources;
+      }
+
+      renderActiveLenses(userId);
+    }
+
+    // B. Save Context File to DB
+    profileForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      profileStatus.textContent = "Securing modifications...";
+      
+      const user = (await supabaseClient.auth.getUser()).data.user;
+      if (!user) return;
+
+      const updatedText = profileMdText.value;
+
+      // Upsert profile text
+      const { error } = await supabaseClient
+        .from('user_contexts')
+        .upsert({ 
+          user_id: user.id, 
+          markdown_text: updatedText, 
+          updated_at: new Date().toISOString() 
+        }, { onConflict: 'user_id' });
+
+      if (error) {
+        profileStatus.textContent = "Error saving";
+        console.error(error);
+      } else {
+        profileStatus.textContent = "Saved to vault";
+      }
+    });
+
+    // C. Fetch Releases list
+    async function fetchUserReleases(userId) {
+      releasesList.innerHTML = '<p class="text-xs text-linen/30 italic py-6 text-center">Consulting database bookshelves...</p>';
+
+      const { data, error } = await supabaseClient
+        .from('audio_releases')
+        .select('id, title, storage_path, description, created_at')
+        .eq('user_id', userId);
+      
+      if (error) {
+        console.error("Failed to load releases:", error);
+        releasesList.innerHTML = '<p class="text-xs text-linen/30 italic py-6 text-center">Error contacting library shelf.</p>';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        releasesList.innerHTML = '';
+        renderSourceMaterialReleases();
+        if (releasesList.children.length === 0) {
+          releasesList.innerHTML = '<p class="text-xs text-linen/30 italic py-6 text-center">Your upcoming issue is currently being composed. It will appear here on release day.</p>';
+        }
+        return;
+      }
+
+      releasesList.innerHTML = '';
+      renderSourceMaterialReleases();
+      data.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "group overflow-hidden rounded-xl border border-linen/10 bg-black/25 p-5 text-left transition duration-300 hover:border-antique/25 hover:bg-black/40";
+        
+        // Clean and format date
+        const formattedDate = new Date(item.created_at).toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+
+        row.innerHTML = `
+          <div class="space-y-3">
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-[9px] font-mono uppercase tracking-[0.22em] text-antique/80">Scheduled Edition</span>
+              <span class="text-[9px] font-mono text-linen/30">${formattedDate}</span>
+            </div>
+            <h4 class="font-serif text-2xl leading-tight text-cream group-hover:text-antique transition duration-300">${item.title}</h4>
+            <p class="text-sm text-linen/60 leading-relaxed">${item.description}</p>
+            <button class="play-btn inline-flex items-center gap-2 rounded-full border border-antique/35 bg-antique/10 px-4 py-2.5 text-[9px] font-mono font-bold uppercase tracking-widest text-antique transition hover:bg-antique hover:text-ink" data-path="${item.storage_path}" data-title="${item.title}">
+              <span>▶</span> Stream Edition
+            </button>
+          </div>
+        `;
+
+        // Handle Play Click (Fetch secure Signed URL from Supabase Private Storage Bucket)
+        const playBtn = row.querySelector(".play-btn");
+        playBtn.addEventListener("click", async () => {
+          const storagePath = playBtn.dataset.path;
+          const trackTitle = playBtn.dataset.title;
+
+          playBtn.innerHTML = "<span>◌</span> Securing pipeline...";
+
+          const { data: signedData, error: signedError } = await supabaseClient
+            .storage
+            .from('audio-releases')
+            .createSignedUrl(storagePath, 600); 
+
+          if (signedError) {
+            console.error("Signed URL retrieval failed:", signedError);
+            playBtn.innerHTML = "<span>▶</span> Stream Failed";
+          } else if (signedData) {
+            playBtn.innerHTML = "<span>▶</span> Stream Edition";
+            playAudio(signedData.signedUrl, trackTitle);
+          }
+        });
+
+        releasesList.appendChild(row);
+      });
+    }
+
+    function renderSourceMaterialReleases() {
+      if (!Array.isArray(sourceMaterials) || sourceMaterials.length === 0) return;
+
+      sourceMaterials
+        .slice()
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+        .forEach(item => {
+          const row = document.createElement("div");
+          row.className = "source-release-card group grid overflow-hidden rounded-xl text-left md:grid-cols-[minmax(180px,0.92fr)_minmax(0,1.35fr)]";
+
+          const formattedDate = item.created_at
+            ? new Date(item.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+            : 'Recently';
+          const lenses = Array.isArray(item.selected_worldviews) && item.selected_worldviews.length
+            ? item.selected_worldviews.join(', ')
+            : item.worldview || 'Selected worldview';
+          const hasAudioText = Boolean(item.expanded_text);
+          const title = escapeHtml(item.source_title || 'Source Study');
+          const description = escapeHtml(`Source request remembered for ${lenses}. ${item.bridge_line || 'Your personal source reading is held in the private ledger.'}`);
+          const sourceInput = escapeHtml(item.source_input || '');
+          const visual = getSourceVisual(item);
+          const visualLabel = escapeHtml(visual.label);
+          const thumb = escapeHtml(visual.thumbnail);
+          const imageHtml = thumb
+            ? `<img src="${thumb}" alt="${title} thumbnail" loading="lazy" onerror="this.remove(); this.closest('.source-release-thumb').classList.add('is-fallback');">`
+            : `<div class="flex h-full min-h-[10rem] items-end p-5">
+                <div>
+                  <span class="block text-[9px] font-mono uppercase tracking-[0.24em] text-antique/85">Private Reading</span>
+                  <span class="mt-2 block font-serif text-3xl leading-none text-cream">Source<br>Study</span>
+                </div>
+              </div>`;
+
+          row.innerHTML = `
+            <div class="source-release-thumb relative">
+              ${imageHtml}
+              <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-4">
+                <span class="inline-flex rounded-full border border-antique/30 bg-black/45 px-2.5 py-1 text-[8px] font-mono uppercase tracking-[0.18em] text-antique backdrop-blur">${visualLabel}</span>
+              </div>
+            </div>
+            <div class="source-release-content flex min-h-[15rem] flex-col justify-between gap-5 p-5 sm:p-6">
+              <div class="space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-[9px] font-mono uppercase tracking-[0.22em] text-antique/80">Source Audiobook</span>
+                  <span class="text-[9px] font-mono text-linen/35">${formattedDate}</span>
+                </div>
+                <h4 class="font-serif text-2xl leading-tight text-cream transition duration-300 group-hover:text-antique sm:text-3xl">${title}</h4>
+                <p class="text-sm text-linen/68 leading-relaxed">${description}</p>
+                <p class="rounded-lg border border-linen/10 bg-black/25 px-3 py-2 text-[10px] font-mono text-linen/45 truncate">${sourceInput}</p>
+              </div>
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <span class="text-[9px] font-mono uppercase tracking-[0.2em] text-linen/35">${escapeHtml(lenses)}</span>
+                <button class="source-play-btn inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-[9px] font-mono font-bold uppercase tracking-widest transition duration-300 active:scale-[0.98]" ${hasAudioText ? '' : 'disabled'}>
+                  <span>${hasAudioText ? '▶' : '◌'}</span> ${hasAudioText ? 'Stream Audiobook' : 'Queued'}
+                </button>
+              </div>
+            </div>
+          `;
+
+          const playBtn = row.querySelector(".source-play-btn");
+          if (hasAudioText) {
+            playBtn.addEventListener("click", async () => {
+              playBtn.innerHTML = "<span>◌</span> Preparing voice...";
+
+              try {
+                const ttsRes = await fetch("https://frwjaixxlgthkgjtafhz.supabase.co/functions/v1/tts", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ text: item.expanded_text })
+                });
+
+                if (!ttsRes.ok) throw new Error(`TTS returned ${ttsRes.status}`);
+                const blob = await ttsRes.blob();
+                const audioUrl = URL.createObjectURL(blob);
+                playAudio(audioUrl, item.source_title || 'Source Study');
+                playBtn.innerHTML = "<span>▶</span> Stream Source Audiobook";
+              } catch (error) {
+                console.error("Source audiobook playback failed:", error);
+                playBtn.innerHTML = "<span>▶</span> Stream Failed";
+              }
+            });
+          }
+
+          releasesList.appendChild(row);
+        });
+    }
+
+    // D. Helper to load track into player
+    function playAudio(url, title) {
+      hudTrackTitle.textContent = title;
+      mainAudioPlayer.src = url;
+      audioPlayerHud.classList.remove("hidden");
+      mainAudioPlayer.load();
+      mainAudioPlayer.play().catch(err => {
+        console.warn("Autoplay blocked or play failed:", err);
+      });
+    }
+
+    // --- NEW DRAG-AND-DROP & COPY LOGIC INTERACTION ---
+
+    // 1. Copy Generator Prompt
+    if (copyPromptBtn) {
+      copyPromptBtn.addEventListener("click", () => {
+        navigator.clipboard.writeText(PROFILE_PROMPT_TEXT).then(() => {
+          const span = copyPromptBtn.querySelector("span");
+          const originalText = span.textContent;
+          span.textContent = "Copied to Clipboard";
+          copyPromptBtn.classList.add("border-antique", "bg-antique/20");
+          setTimeout(() => {
+            span.textContent = originalText;
+            copyPromptBtn.classList.remove("border-antique", "bg-antique/20");
+          }, 2200);
+        }).catch(err => {
+          console.warn("Clipboard copy operation failed:", err);
+        });
+      });
+    }
+
+    // 2. Process Dropped / Selected File
+    const processDroppedMd = (file) => {
+      if (!file) return;
+      const isMd = file.name.endsWith('.md') || file.type === 'text/markdown' || file.type === 'text/plain';
+      if (isMd) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          profileMdText.value = e.target.result;
+          profileMdText.classList.remove("hidden");
+          dropZoneIdle.classList.add("hidden");
+          dropZone.classList.remove("border-dashed");
+          dropZone.classList.add("border-antique/50", "bg-black/25");
+          profileStatus.textContent = "Draft loaded (Save to apply)";
+        };
+        reader.readAsText(file);
+      }
+    };
+
+    if (dropZone) {
+      dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropZone.classList.add("border-antique", "bg-[#1c140f]");
+      });
+      dropZone.addEventListener("dragleave", () => {
+        dropZone.classList.remove("border-antique", "bg-[#1c140f]");
+      });
+      dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("border-antique", "bg-[#1c140f]");
+        if (e.dataTransfer.files.length > 0) {
+          processDroppedMd(e.dataTransfer.files[0]);
+        }
+      });
+      dropZone.addEventListener("click", (e) => {
+        if (e.target !== profileMdText && !revealPasteBtn.contains(e.target)) {
+          mdFileInput?.click();
+        }
+      });
+    }
+
+    if (mdFileInput) {
+      mdFileInput.addEventListener("change", (e) => {
+        if (e.target.files.length > 0) {
+          processDroppedMd(e.target.files[0]);
+        }
+      });
+    }
+
+    if (revealPasteBtn) {
+      revealPasteBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        dropZoneIdle.classList.add("hidden");
+        profileMdText.classList.remove("hidden");
+        profileMdText.focus();
+      });
+    }
+  </script>
+
+<div style="text-align:center;padding:12px;font-size:0.7rem;color:#888;margin-top:24px;">
+<p>&copy; 2026 — All rights reserved. Cease and desist notices accepted. AI training on our content is prohibited. Logo usage requires written approval.. &reg; &trade; ™ — Intellectual property owned by this company or licensed to it.
+For infringement concerns, DMCA takedown requests, or IP inquiries, contact legal department.
+Brand usage guidelines and trademark usage policy available on request. Unauthorized use of marks is prohibited.</p>
+</div>
+</body>
+</html>

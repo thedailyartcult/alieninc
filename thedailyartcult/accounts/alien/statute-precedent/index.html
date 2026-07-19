@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home | Statute & Precedent</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Playfair+Display:400,400i,700,700i|Rubik:300,300i,400,500,700,700i&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Base Reset & Core Setup */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            background-color: #161616;
+            font-family: 'Rubik', sans-serif;
+            color: #ffffff;
+            overflow: hidden;
+            transition: background-color 0.4s ease;
+        }
+
+        .showcase-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Shared wave topographic background design for Menu & Search states */
+        .wave-background-base {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #eaeaea; 
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 900' preserveAspectRatio='none'%3E%3Cpath d='M0,150 C300,180 600,120 900,160 C1200,200 1300,140 1440,170 M0,250 C300,220 500,290 800,240 C1100,190 1300,270 1440,230 M0,380 C400,320 700,420 1000,370 C1300,320 1350,390 1440,360 M0,510 C300,460 600,530 900,480 C1200,430 1300,520 1440,490 M0,640 C400,600 700,680 1000,630 C1300,580 1350,660 1440,620 M0,760 C300,720 600,790 900,740 C1200,690 1300,780 1440,750' fill='none' stroke='%23dcdcdc' stroke-width='1.5'/%3E%3C/svg%3E");
+            background-size: cover;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        /* 1. Diagonal Wedge Panel (Default Showcase Left Side) */
+        .wedge-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 44vw;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            z-index: 2;
+            clip-path: polygon(0 0, 91% 0, 100% 50%, 91% 100%, 0 100%);
+            transition: opacity 0.4s ease, transform 0.4s ease, background-image 0.4s ease;
+        }
+
+        /* Overlay shadow on wedge when news/grid is open (Image 2) */
+        .wedge-panel::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(18, 31, 56, 0.7); /* Deep dark overlay */
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: 3;
+        }
+        .news-open .wedge-panel::after {
+            opacity: 1;
+        }
+
+        /* Close Button inside Wedge (Image 2 bottom-left) */
+        .wedge-close-btn {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            z-index: 10;
+            background: none;
+            border: none;
+            color: #00cfc1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'Rubik', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 1.5px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease, transform 0.2s ease;
+        }
+        .wedge-close-btn svg {
+            width: 18px;
+            height: 18px;
+            stroke-width: 2.5;
+        }
+        .news-open .wedge-close-btn {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .wedge-close-btn:hover {
+            color: #ffffff;
+            transform: scale(1.05);
+        }
+        .wedge-close-line {
+            height: 1px;
+            background-color: currentColor;
+            width: 60px;
+            display: inline-block;
+        }
+
+        /* 2. Absolute Fixed Header (Ensures exact element alignment) */
+        .main-header {
+            position: absolute;
+            top: 40px;
+            left: 80px;
+            right: 80px;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 80px;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 500;
+            letter-spacing: 2px;
+            color: #ffffff;
+            text-transform: uppercase;
+            text-decoration: none;
+            /* Pushes logo horizontally to align exactly with the right content column start */
+            margin-left: 44vw; 
+            transition: margin-left 0.4s ease, color 0.4s ease, opacity 0.2s ease;
+        }
+        .logo:hover {
+            opacity: 0.8;
+            text-decoration: none;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+        }
+
+        /* Search Magnifier Control */
+        .search-btn {
+            background: none;
+            border: none;
+            color: #888888;
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.4s ease, transform 0.2s ease;
+        }
+        .search-btn:hover {
+            color: #ffffff;
+            transform: scale(1.05);
+        }
+        .search-icon {
+            width: 22px;
+            height: 22px;
+        }
+        .search-btn .icon-search-close {
+            display: none;
+        }
+
+        /* Menu Button */
+        .menu-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 4px;
+            transition: transform 0.2s ease;
+        }
+        .menu-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .menu-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 26px;
+            height: 17px;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .menu-bars .bar {
+            height: 3px;
+            background-color: #e86b56; 
+            border-radius: 1px;
+            width: 100%;
+            transition: transform 0.3s ease, opacity 0.3s ease, background-color 0.3s ease;
+        }
+
+        .menu-label {
+            font-family: 'Rubik', sans-serif;
+            font-size: 0.65rem;
+            letter-spacing: 1px;
+            color: #888888;
+            font-weight: 500;
+            margin-top: 2px;
+            transition: color 0.4s ease;
+        }
+
+        /* 3. Showcase Content Overlay (Closed State) */
+        .content-panel {
+            position: relative;
+            z-index: 3;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 120px 80px 40px calc(44vw + 80px); /* Aligns to right of wedge */
+            box-sizing: border-box;
+            transition: padding-left 0.4s ease, opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .hero-section {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+            padding: 40px 0;
+        }
+
+        .hero-body {
+            max-width: 680px;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+
+        .hero-body.fade {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .category-tag {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #888888;
+            display: block;
+            margin-bottom: 24px;
+        }
+
+        .hero-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            font-weight: 400;
+            line-height: 1.3;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        .hero-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px;
+        }
+
+        .carousel-nav {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .arrow-btn {
+            background: none;
+            border: none;
+            color: #00cfc1;
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+        .arrow-btn:hover {
+            color: #ffffff;
+            transform: scale(1.15);
+        }
+        .arrow-btn svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .carousel-progress {
+            display: flex;
+            gap: 8px;
+        }
+
+        .progress-bar {
+            width: 70px;
+            height: 8px;
+            background-color: #3e3e3e;
+            display: inline-block;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .progress-bar:hover {
+            background-color: #666666;
+        }
+
+        .progress-bar.active {
+            background-color: #ffffff;
+        }
+
+        .more-news {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+            justify-content: flex-end;
+            margin-left: 40px;
+        }
+
+        .more-news-link {
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 1.5px;
+            color: #00cfc1;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .more-news-link:hover {
+            color: #ffffff;
+            text-decoration: none;
+        }
+
+        .more-news-line {
+            height: 1px;
+            background-color: #00cfc1;
+            flex-grow: 1;
+            margin-left: 16px;
+            max-width: 150px;
+            transition: background-color 0.2s ease, max-width 0.3s ease;
+        }
+        .more-news:hover .more-news-line {
+            background-color: #ffffff;
+            max-width: 180px;
+        }
+
+
+        /* ==========================================================
+           4. More News / Performance Grid State (Image 2)
+           ========================================================== */
+        .news-overlay {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 56vw;
+            height: 100%;
+            background-color: #ffffff;
+            z-index: 3;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(100px);
+            transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 120px 80px 40px 80px;
+            overflow-y: auto;
+            color: #2e2e2e;
+        }
+
+        .news-open .news-overlay {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(0);
+        }
+
+        /* Performance cards grid layout */
+        .performance-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .news-card {
+            background-color: #ffffff;
+            border: 1.5px solid #3860BE; /* Sleek blue border */
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 280px;
+            text-decoration: none;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .news-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(56, 96, 190, 0.08);
+            text-decoration: none;
+        }
+
+        .news-card-meta {
+            font-size: 0.8rem;
+            color: #1e4edd;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        .news-card-line {
+            width: 20px;
+            height: 2px;
+            background-color: #1e4edd;
+            margin-bottom: 24px;
+        }
+
+        .news-card-title {
+            font-family: 'Rubik', sans-serif;
+            font-size: 1.25rem;
+            color: #2e2e2e;
+            line-height: 1.4;
+            font-weight: 400;
+        }
+
+        /* Large prominence card spanning columns */
+        .news-card.prominent {
+            grid-column: span 2;
+            background-color: #1e4edd;
+            border: none;
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+        .news-card.prominent .news-card-meta {
+            color: #eaeaea;
+        }
+        .news-card.prominent .news-card-line {
+            background-color: #ffffff;
+        }
+        .news-card.prominent .news-card-title {
+            color: #ffffff;
+            font-size: 1.6rem;
+            z-index: 2;
+            position: relative;
+        }
+
+        /* Subtle waves overlaying prominent card background */
+        .prominent-wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 300' preserveAspectRatio='none'%3E%3Cpath d='M0,150 C300,180 600,120 900,160 C1200,200 1300,140 1440,170 M0,250 C300,220 500,290 800,240 C1100,190 1300,270 1440,230' fill='none' stroke='%23ffffff' stroke-opacity='0.15' stroke-width='2'/%3E%3C/svg%3E");
+            background-size: cover;
+            z-index: 1;
+        }
+
+
+        /* ==========================================================
+           5. Open Menu Overlay (Image 3)
+           ========================================================== */
+        .menu-overlay {
+            z-index: 4; /* Keeps menu layered on top of other screen layers */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 120px 80px 40px 80px; 
+            box-sizing: border-box;
+        }
+
+        .menu-content {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 16px;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .primary-links {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 12px;
+            list-style: none;
+        }
+        .primary-links a {
+            font-size: 2.8rem;
+            font-weight: 400;
+            color: #1e4edd; 
+            text-decoration: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            display: inline-block;
+        }
+        .primary-links a:hover {
+            opacity: 0.7;
+            text-decoration: none;
+            transform: translateX(-5px);
+        }
+
+        .secondary-links {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+            list-style: none;
+            margin-top: 12px;
+        }
+        .secondary-links a {
+            font-size: 2.1rem;
+            font-weight: 400;
+            color: #2e2e2e; 
+            text-decoration: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            display: inline-block;
+        }
+        .secondary-links a:hover {
+            opacity: 0.7;
+            text-decoration: none;
+            transform: translateX(-5px);
+        }
+
+
+        /* ==========================================================
+           6. Open Search Overlay
+           ========================================================== */
+        .search-overlay {
+            z-index: 4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 80px 40px 80px;
+            box-sizing: border-box;
+        }
+
+        .search-box-container {
+            position: relative;
+            width: 100%;
+            max-width: 860px;
+            height: 76px;
+            background-color: #ffffff;
+            border: 1.5px solid #1e4edd; 
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            transform: translateY(20px);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .search-input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            font-family: 'Rubik', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 300;
+            color: #161616;
+            background: transparent;
+        }
+        .search-input::placeholder {
+            color: #888888;
+        }
+
+
+        /* ==========================================================
+           7. Master Active Interface State Toggles
+           ========================================================== */
+        
+        /* GENERAL LIGHT BG (Activated for Menu, Search, or News states) */
+        .menu-open, .search-open, .news-open {
+            background-color: #eaeaea;
+        }
+
+        /* Default showcase layouts collapse/fade during state changes */
+        .menu-open .content-panel, .search-open .content-panel {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(20px);
+        }
+        .news-open .content-panel {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Header typography adapted to dark color layout */
+        .menu-open .logo, .search-open .logo, .news-open .logo {
+            color: #161616;
+        }
+        .menu-open .search-btn, .search-open .search-btn, .news-open .search-btn {
+            color: #161616;
+        }
+        .menu-open .menu-label, .search-open .menu-label, .news-open .menu-label {
+            color: #161616;
+        }
+
+        /* Menu button transitions to coral 'X' */
+        .menu-open .menu-bars .bar:nth-child(1) {
+            transform: translateY(7px) rotate(45deg);
+        }
+        .menu-open .menu-bars .bar:nth-child(2) {
+            opacity: 0;
+        }
+        .menu-open .menu-bars .bar:nth-child(3) {
+            transform: translateY(-7px) rotate(-45deg);
+        }
+
+        /* Search transitions to dark 'X' */
+        .search-open .search-btn .icon-search-glass {
+            display: none;
+        }
+        .search-open .search-btn .icon-search-close {
+            display: block;
+        }
+
+        /* Showcase wedge fades completely on full overlay screens */
+        .menu-open .wedge-panel, .search-open .wedge-panel {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Overlay reveal states */
+        .menu-open .menu-overlay {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .search-open .search-overlay {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .search-open .search-box-container {
+            transform: translateY(0);
+        }
+
+
+        /* Responsive Styles */
+        @media (max-width: 1024px) {
+            .content-panel, .menu-overlay, .search-overlay, .news-overlay {
+                padding: 120px 40px 40px 40px;
+            }
+            .main-header {
+                top: 30px;
+                left: 40px;
+                right: 40px;
+            }
+            .logo {
+                margin-left: 0; /* Align default center on smaller screens */
+            }
+            .hero-title {
+                font-size: 2.2rem;
+            }
+            .news-overlay {
+                width: 100%;
+                transform: translateY(100px);
+            }
+            .news-open .wedge-panel {
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .performance-grid {
+                grid-template-columns: 1fr;
+            }
+            .news-card.prominent {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="showcase-container">
+        
+        <!-- Shared Header Block -->
+        <header class="main-header">
+            <a href="#" class="logo">Statute & Precedent</a>
+            <div class="header-right">
+                <button class="search-btn" aria-label="Toggle Search">
+                    <svg class="search-icon icon-search-glass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <svg class="search-icon icon-search-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <button class="menu-btn" aria-label="Toggle Menu">
+                    <span class="menu-bars">
+                        <span class="bar"></span>
+                        <span class="bar"></span>
+                        <span class="bar"></span>
+                    </span>
+                    <span class="menu-label">MENU</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- 1. Showcase wedge panel -->
+        <div class="wedge-panel" id="wedgePanel">
+            <!-- Close grid button inside the wedge container -->
+            <button class="wedge-close-btn" id="wedgeCloseBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                <span>CLOSE</span>
+                <span class="wedge-close-line"></span>
+            </button>
+        </div>
+
+        <!-- 2. Showcase Text content screen overlay -->
+        <div class="content-panel">
+            <main class="hero-section">
+                <div class="hero-body" id="heroBody">
+                    <span class="category-tag" id="categoryTag">Featured Practice</span>
+                    <h1 class="hero-title" id="heroTitle">Market-Leading Liability Management Across Capital Structures</h1>
+                </div>
+            </main>
+
+            <footer class="hero-footer">
+                <div class="carousel-nav">
+                    <button class="arrow-btn left" id="prevBtn" aria-label="Previous Slide">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                    <div class="carousel-progress">
+                        <span class="progress-bar active" data-slide="0"></span>
+                        <span class="progress-bar" data-slide="1"></span>
+                        <span class="progress-bar" data-slide="2"></span>
+                    </div>
+                    <button class="arrow-btn right" id="nextBtn" aria-label="Next Slide">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="more-news" id="moreNewsTrigger">
+                    <a href="#" class="more-news-link">+ MORE NEWS</a>
+                    <span class="more-news-line"></span>
+                </div>
+            </footer>
+        </div>
+
+        <!-- 3. More News / Performance Grid State Panel (Image 2) -->
+        <div class="news-overlay">
+            <div class="performance-grid">
+                
+                <a href="#" class="news-card">
+                    <div>
+                        <span class="news-card-meta">10 July 2026 — Press Release</span>
+                        <div class="news-card-line"></div>
+                        <h2 class="news-card-title">Statute & Precedent Advises Blue Owl on Acquisition and Financing of Spire Healthcare Portfolio</h2>
+                    </div>
+                </a>
+
+                <a href="#" class="news-card">
+                    <div>
+                        <span class="news-card-meta">10 July 2026 — Press Release</span>
+                        <div class="news-card-line"></div>
+                        <h2 class="news-card-title">Statute & Precedent Assists Kelun-Biotech on its HK$2.7 Billion H-Share Placing</h2>
+                    </div>
+                </a>
+
+                <a href="#" class="news-card">
+                    <div>
+                        <span class="news-card-meta">10 July 2026 — Press Release</span>
+                        <div class="news-card-line"></div>
+                        <h2 class="news-card-title">Statute & Precedent Represents Northampton Capital Partners on Partnership with Altius Minerals Corporation</h2>
+                    </div>
+                </a>
+
+                <a href="#" class="news-card prominent">
+                    <div class="prominent-wave"></div>
+                    <div style="position: relative; z-index: 2;">
+                        <span class="news-card-meta">10 July 2026 — Press Release</span>
+                        <div class="news-card-line"></div>
+                        <h2 class="news-card-title">Statute & Precedent Advises Northampton Capital Partners on JV with Olympus Power and Agreement to Acquire Generating Assets</h2>
+                    </div>
+                </a>
+
+                <a href="#" class="news-card">
+                    <div>
+                        <span class="news-card-meta">09 July 2026 — In the News</span>
+                        <div class="news-card-line"></div>
+                        <h2 class="news-card-title">Statute & Precedent Leads Mergermarket's H1 2026 European Buyouts and Exits League Tables</h2>
+                    </div>
+                </a>
+
+            </div>
+        </div>
+
+        <!-- 4. Menu overlay (Image 3) -->
+        <div class="wave-background-base menu-overlay">
+            <div class="menu-content">
+                <ul class="primary-links">
+                    <li><a href="#">Lawyers</a></li>
+                    <li><a href="#">Services</a></li>
+                    <li><a href="#">Social Commitment</a></li>
+                    <li><a href="#">Careers</a></li>
+                </ul>
+                <ul class="secondary-links">
+                    <li><a href="#">News & Insights</a></li>
+                    <li><a href="#">Locations</a></li>
+                    <li><a href="#">About</a></li>
+                </ul>
+            </div>
+
+            <div class="menu-footer">
+                <div class="social-grid">
+                    <a href="#" class="social-item" aria-label="LinkedIn">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/>
+                        </svg>
+                    </a>
+                    <a href="#" class="social-item" aria-label="Instagram">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8A3.6 3.6 0 0 0 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6A3.6 3.6 0 0 0 16.4 4H7.6m12.4 2.25a.75.75 0 0 1 .75.75.75.75 0 0 1-.75.75.75.75 0 0 1-.75-.75.75.75 0 0 1 .75-.75M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/>
+                        </svg>
+                    </a>
+                    <a href="#" class="social-item" aria-label="YouTube">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.06.8.08 1.54.08 2.24v1.38c0 .7-.02 1.44-.08 2.24a17.43 17.43 0 0 1-.28 1.9c-.14.5-.4.86-.77 1.1-.37.24-.87.4-1.5.47-.64.07-1.53.11-2.67.12H12c-1.15 0-2.03-.05-2.67-.12a8.55 8.55 0 0 1-1.5-.47c-.37-.24-.63-.6-.77-1.1-.13-.47-.22-1.1-.28-1.9C6.02 14.81 6 14.07 6 13.37v-1.38c0-.7.02-1.44.08-2.24a17.43 17.43 0 0 1 .28-1.9c.14-.5.4-.86.77-1.1.37-.24.87-.4 1.5-.47.64-.07 1.53-.11 2.67-.12h4.66c1.15 0 2.03.05 2.67.12.63.07 1.13.23 1.5.47.37.24.63.6.77 1.1z"/>
+                        </svg>
+                    </a>
+                </div>
+
+                <div class="legal-block">
+                    <ul class="legal-links">
+                        <li><a href="#">Alumni</a></li>
+                        <span>/</span>
+                        <li><a href="#">Privacy & Disclaimers</a></li>
+                        <span>/</span>
+                        <li><a href="#">Attorney Advertising</a></li>
+                    </ul>
+                    <span class="legal-copyright">© 2026 Statute & Precedent</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Overlay Search State (Image 2) -->
+        <div class="wave-background-base search-overlay">
+            <div class="search-box-container">
+                <input type="text" class="search-input" placeholder="Search" id="searchInput">
+                <button class="search-submit-btn" aria-label="Submit Search">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#1e4edd" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Script to drive the user interactions cohesively -->
+    <script>
+        const menuBtn = document.querySelector('.menu-btn');
+        const searchBtn = document.querySelector('.search-btn');
+        const container = document.querySelector('.showcase-container');
+        const searchInput = document.getElementById('searchInput');
+        
+        const wedgePanel = document.getElementById('wedgePanel');
+        const heroBody = document.getElementById('heroBody');
+        const categoryTag = document.getElementById('categoryTag');
+        const heroTitle = document.getElementById('heroTitle');
+        const progressBars = document.querySelectorAll('.progress-bar');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const moreNewsTrigger = document.getElementById('moreNewsTrigger');
+        const wedgeCloseBtn = document.getElementById('wedgeCloseBtn');
+
+        let activeSlideIndex = 0;
+
+        const slides = [
+            {
+                category: "Featured Practice",
+                title: "Market-Leading Liability Management Across Capital Structures",
+                bg: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&q=80&w=1200" // Blue Swirl Marbled Art
+            },
+            {
+                category: "Careers",
+                title: "A Warm Welcome to Our 2026 Summer Associate Class",
+                bg: "https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80&w=1200" // Careers Abstract
+            },
+            {
+                category: "Press Release",
+                title: "Statute & Precedent Launches Tokyo Office",
+                bg: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&q=80&w=1200" // Tokyo
+            }
+        ];
+
+        // Init setup
+        wedgePanel.style.backgroundImage = `url('${slides[0].bg}')`;
+
+        function updateSlide(index) {
+            heroBody.classList.add('fade');
+            setTimeout(() => {
+                categoryTag.textContent = slides[index].category;
+                heroTitle.textContent = slides[index].title;
+                wedgePanel.style.backgroundImage = `url('${slides[index].bg}')`;
+                
+                progressBars.forEach((bar, idx) => {
+                    bar.classList.toggle('active', idx === index);
+                });
+                heroBody.classList.remove('fade');
+            }, 250);
+        }
+
+        // Showcase nav controls
+        prevBtn.addEventListener('click', () => {
+            activeSlideIndex = (activeSlideIndex - 1 + slides.length) % slides.length;
+            updateSlide(activeSlideIndex);
+        });
+
+        nextBtn.addEventListener('click', () => {
+            activeSlideIndex = (activeSlideIndex + 1) % slides.length;
+            updateSlide(activeSlideIndex);
+        });
+
+        progressBars.forEach((bar) => {
+            bar.addEventListener('click', (e) => {
+                activeSlideIndex = parseInt(e.target.getAttribute('data-slide'));
+                updateSlide(activeSlideIndex);
+            });
+        });
+
+        // Wheel Event Slide Transition (Scroll hijacking)
+        let lastScrollTime = 0;
+        const scrollCooldown = 800;
+
+        window.addEventListener('wheel', (e) => {
+            if (container.classList.contains('menu-open') || container.classList.contains('search-open') || container.classList.contains('news-open')) {
+                return;
+            }
+
+            const now = Date.now();
+            if (now - lastScrollTime < scrollCooldown) return;
+
+            if (Math.abs(e.deltaY) > 20) {
+                if (e.deltaY > 0) {
+                    activeSlideIndex = (activeSlideIndex + 1) % slides.length;
+                } else {
+                    activeSlideIndex = (activeSlideIndex - 1 + slides.length) % slides.length;
+                }
+                updateSlide(activeSlideIndex);
+                lastScrollTime = now;
+            }
+        });
+
+        // Menu Overlay toggling mechanics
+        menuBtn.addEventListener('click', () => {
+            if (container.classList.contains('search-open')) {
+                container.classList.remove('search-open');
+            }
+            if (container.classList.contains('news-open')) {
+                container.classList.remove('news-open');
+            }
+            container.classList.toggle('menu-open');
+        });
+
+        // Search Overlay toggling mechanics
+        searchBtn.addEventListener('click', () => {
+            if (container.classList.contains('menu-open')) {
+                container.classList.remove('menu-open');
+            }
+            if (container.classList.contains('news-open')) {
+                container.classList.remove('news-open');
+            }
+            const isOpening = !container.classList.contains('search-open');
+            container.classList.toggle('search-open');
+            
+            if (isOpening) {
+                setTimeout(() => searchInput.focus(), 200);
+            }
+        });
+
+        // News Grid toggle actions
+        moreNewsTrigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (container.classList.contains('menu-open')) {
+                container.classList.remove('menu-open');
+            }
+            if (container.classList.contains('search-open')) {
+                container.classList.remove('search-open');
+            }
+            container.classList.add('news-open');
+        });
+
+        wedgeCloseBtn.addEventListener('click', () => {
+            container.classList.remove('news-open');
+        });
+    </script>
+</body>
+</html>

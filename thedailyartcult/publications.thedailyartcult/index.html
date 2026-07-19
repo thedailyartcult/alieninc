@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="The active portfolio and historical chronology of the printing houses federated under The Daily Art Cult.">
+  <title>Publications — The Daily Art Cult</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: "#070504",
+            night: "#0d0907",
+            walnut: "#1b110d",
+            leather: "#2b1913",
+            burgundy: "#4a101b",
+            emerald: "#102c26",
+            cream: "#f2eadc",
+            linen: "#d8cbb8",
+            smoke: "#9f9283",
+            antique: "#c6a766"
+          },
+          fontFamily: {
+            serif: ["Playfair Display", "Georgia", "serif"],
+            sans: ["Inter", "system-ui", "sans-serif"],
+            cormorant: ["Cormorant Garamond", "serif"],
+            jost: ["Jost", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+  
+  <style>
+    body {
+      background-color: #1a120b;
+      color: #f2eadc;
+      font-family: "Inter", system-ui, sans-serif;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .library-overlay {
+      background:
+        radial-gradient(circle at 50% 18%, rgba(74, 16, 27, 0.1), transparent 35%),
+        linear-gradient(180deg, rgba(7, 5, 4, 0.60), rgba(7, 5, 4, 0.64) 52%, rgba(7, 5, 4, 0.8));
+    }
+
+    .quiet-panel {
+      border: 1px solid rgba(242, 234, 220, 0.10);
+      background: rgba(9, 6, 5, 0.58);
+      backdrop-filter: blur(14px);
+    }
+
+    .imprint-card {
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease, box-shadow 0.4s ease;
+      cursor: pointer;
+    }
+
+    .imprint-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(198, 167, 102, 0.4);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    }
+
+    .timeline-line {
+      position: absolute;
+      left: 16px;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: linear-gradient(180deg, transparent, rgba(198, 167, 102, 0.3) 15%, rgba(198, 167, 102, 0.3) 85%, transparent);
+    }
+    @media (min-width: 768px) {
+      .timeline-line {
+        left: 50%;
+        transform: translateX(-50%);
+      }
+    }
+
+    /* Modal Styling */
+    #horses-overlay {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+    #horses-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-content {
+      transform: translateY(30px);
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #horses-overlay.active .modal-content {
+      transform: translateY(0);
+    }
+  </style>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.tailwindcss.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com https://consent.cookiebot.com; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+</head>
+<body class="min-h-screen overflow-x-hidden relative">
+
+  <div class="fixed inset-0 -z-30 bg-[#1a120b]" aria-hidden="true">
+    <div class="h-full w-full bg-[radial-gradient(ellipse_at_top,rgba(43,25,19,0.5),transparent_60%)]"></div>
+  </div>
+  <div class="library-overlay fixed inset-0 -z-20" aria-hidden="true"></div>
+
+  <!-- Header Navigation -->
+  <header class="relative px-5">
+    <nav class="mx-auto flex w-full max-w-7xl items-center justify-between py-6 text-sm text-linen/80 border-b border-white/[0.04]">
+      <div class="flex flex-wrap items-baseline gap-x-5 gap-y-2">
+        <a href="" class="font-serif text-xl font-semibold tracking-wide text-cream transition-colors duration-300 hover:text-antique">The Daily Art Cult</a>
+        <span class="text-antique/20 select-none font-sans text-sm font-light">/</span>
+        <span class="font-sans text-xs font-medium tracking-widest uppercase text-antique py-1">Publications</span>
+        <span class="text-antique/20 select-none font-sans text-sm font-light">/</span>
+        <a href="/support.thedailyartcult" class="font-sans text-xs font-medium tracking-widest uppercase text-linen/50 hover:text-antique transition-colors duration-300 py-1">Support</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="relative z-10 px-5">
+
+    <!-- Hero Section -->
+    <section class="mx-auto max-w-7xl py-16 sm:py-24 text-center">
+      <p class="text-xs font-mono tracking-[0.3em] uppercase text-antique/80">The Archive Index</p>
+      <h1 class="mt-4 font-serif text-4xl sm:text-6xl font-semibold text-cream leading-tight max-w-4xl mx-auto">
+        Ten Imprints.<br>A Singular Library of Attention.
+      </h1>
+      
+      <!-- Influence Bar (Clean Subscriber Stats) -->
+      <div class="mt-10 inline-flex flex-wrap items-center justify-center gap-x-12 gap-y-4 border-y border-white/[0.06] py-6 px-10">
+        <div class="text-center">
+            <p class="font-serif text-2xl text-antique">1.53M</p>
+            <p class="font-jost text-[9px] uppercase tracking-[0.2em] text-linen/40 mt-1">Subscribers</p>
+        </div>
+        <div class="hidden sm:block w-px h-8 bg-white/10"></div>
+        <div class="text-center">
+            <p class="font-serif text-2xl text-antique">Top 2%</p>
+            <p class="font-jost text-[9px] uppercase tracking-[0.2em] text-linen/40 mt-1">Global Podcast Rank</p>
+        </div>
+        <div class="hidden sm:block w-px h-8 bg-white/10"></div>
+        <div class="text-center">
+            <p class="font-serif text-2xl text-antique">814</p>
+            <p class="font-jost text-[9px] uppercase tracking-[0.2em] text-linen/40 mt-1">Active Patrons</p>
+        </div>
+      </div>
+
+      <p class="mt-10 text-linen/60 max-w-2xl mx-auto text-base leading-relaxed">
+        The Daily Art Cult operates as a quiet federation of print, audio, and physical editions. Each publishing house represents a specific philosophical discipline—cultivating composure, rebellion, and deep memory.
+      </p>
+    </section>
+
+    <!-- Widescreen Featured Release Block (Placeholder Video) -->
+    <section class="mx-auto max-w-7xl pb-24">
+      <div class="quiet-panel rounded-2xl overflow-hidden shadow-2xl border-white/[0.06]">
+        <div class="grid lg:grid-cols-12">
+          <div class="lg:col-span-7 relative aspect-video lg:aspect-auto min-h-[300px] bg-black/40">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 z-10"></div>
+            <div class="absolute inset-0 flex items-center justify-center p-8 z-20">
+              <span class="font-serif italic text-cream/40 text-lg text-center tracking-widest">A Cinematic Presentation of Current Release Lenses</span>
+            </div>
+          </div>
+          <div class="lg:col-span-5 p-8 sm:p-12 flex flex-col justify-center space-y-6">
+            <span class="text-[10px] font-mono tracking-[0.25em] text-antique uppercase block">Featured Lineage</span>
+            <h2 class="font-serif text-3xl text-cream">The Architecture of Longing</h2>
+            <p class="text-linen/75 text-sm leading-relaxed">
+              Delivered across our historical print lineages and bespoke text frameworks, our current cycle examines longing not as an obstacle to be solved, but as a space of attention and grace.
+            </p>
+            <div class="pt-4">
+              <a href="" class="inline-flex items-center gap-2 border border-antique/30 hover:border-antique/70 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-antique transition duration-300">
+                Enter the Workspace
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- The 10 Imprints Grid -->
+    <section class="mx-auto max-w-7xl pb-24 border-t border-white/[0.04] pt-20">
+      <div class="mb-12">
+        <p class="text-[10px] font-mono tracking-[0.25em] text-[#c6a766] uppercase block">The Editorial Log</p>
+        <h3 class="font-serif text-3xl text-cream mt-2">The Active Lineages</h3>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- HORSES FEATURE (Click to Expand) -->
+        <div onclick="openHorses()" class="imprint-card quiet-panel rounded-xl p-6 flex flex-col justify-between min-h-[260px] border-antique/30 bg-antique/[0.03]">
+          <div>
+            <div class="flex items-start justify-between border-b border-white/[0.04] pb-3 mb-4">
+              <h4 class="font-serif text-xl text-cream font-medium">HORSES</h4>
+              <span class="text-[8px] font-mono uppercase tracking-widest text-antique">Bi-Monthly</span>
+            </div>
+            <p class="text-xs text-linen/50 font-mono tracking-wider uppercase">Lens: Memory & Existentialism</p>
+            <p class="mt-3 text-sm text-linen/70 leading-relaxed italic">
+              "A cinematic retrospective of Michael Sorensen's six-year archive, mapping the thematic arc from historical deep dives to pessimistic philosophy."
+            </p>
+          </div>
+          <div class="mt-6 pt-3 border-t border-white/[0.04] flex justify-between items-center text-[10px] font-mono text-antique">
+            <span class="font-bold uppercase tracking-widest">Explore Chronology</span>
+            <span>2020 — 2026 &rarr;</span>
+          </div>
+        </div>
+
+        <!-- Better Books -->
+        <div class="imprint-card quiet-panel rounded-xl p-6 flex flex-col justify-between min-h-[260px]">
+          <div>
+            <div class="flex items-start justify-between border-b border-white/[0.04] pb-3 mb-4">
+              <h4 class="font-serif text-lg text-cream font-medium">Better Books & Garments</h4>
+              <span class="text-[8px] font-mono uppercase tracking-widest text-antique">Monthly</span>
+            </div>
+            <p class="text-xs text-linen/50 font-mono tracking-wider uppercase">Lens: Witness & Attention</p>
+            <p class="mt-3 text-sm text-linen/70 leading-relaxed">Quiet records noting the subtle textures of existence. Treating deep attention as a form of shelter.</p>
+          </div>
+          <div class="mt-6 pt-3 border-t border-white/[0.04] flex justify-between items-center text-[10px] font-mono text-linen/40">
+            <span>Issue 01 — Active</span>
+            <span class="text-antique">Browse Archive &rarr;</span>
+          </div>
+        </div>
+
+        <!-- The Nocturnal School -->
+        <div class="imprint-card quiet-panel rounded-xl p-6 flex flex-col justify-between min-h-[260px]">
+          <div>
+            <div class="flex items-start justify-between border-b border-white/[0.04] pb-3 mb-4">
+              <h4 class="font-serif text-lg text-cream font-medium">The Nocturnal School</h4>
+              <span class="text-[8px] font-mono uppercase tracking-widest text-antique">Monthly</span>
+            </div>
+            <p class="text-xs text-linen/50 font-mono tracking-wider uppercase">Lens: Will & Self-Overcoming</p>
+            <p class="mt-3 text-sm text-linen/70 leading-relaxed">Written for those who suspect their current lives were built for someone else, helping dismantle the old.</p>
+          </div>
+          <div class="mt-6 pt-3 border-t border-white/[0.04] flex justify-between items-center text-[10px] font-mono text-linen/40">
+            <span>Issue 14 — Active</span>
+            <span class="text-antique">Browse Archive &rarr;</span>
+          </div>
+        </div>
+
+        <!-- Atelier Obsidian -->
+        <div class="imprint-card quiet-panel rounded-xl p-6 flex flex-col justify-between min-h-[260px]">
+            <div>
+              <div class="flex items-start justify-between border-b border-white/[0.04] pb-3 mb-4">
+                <h4 class="font-serif text-lg text-cream font-medium">Atelier Obsidian</h4>
+                <span class="text-[8px] font-mono uppercase tracking-widest text-antique">Bi-Weekly</span>
+              </div>
+              <p class="text-xs text-linen/50 font-mono tracking-wider uppercase">Lens: Freedom & Authenticity</p>
+              <p class="mt-3 text-sm text-linen/70 leading-relaxed">An exploration of our performed roles. Stripping away external scripts to focus on the terrifying clarity of choice.</p>
+            </div>
+            <div class="mt-6 pt-3 border-t border-white/[0.04] flex justify-between items-center text-[10px] font-mono text-linen/40">
+              <span>Issue 08 — Active</span>
+              <span class="text-antique">Browse Archive &rarr;</span>
+            </div>
+        </div>
+
+        <!-- Vellum Review -->
+        <div class="imprint-card quiet-panel rounded-xl p-6 flex flex-col justify-between min-h-[260px]">
+            <div>
+              <div class="flex items-start justify-between border-b border-white/[0.04] pb-3 mb-4">
+                <h4 class="font-serif text-lg text-cream font-medium">The Vellum Review</h4>
+                <span class="text-[8px] font-mono uppercase tracking-widest text-antique">Monthly</span>
+              </div>
+              <p class="text-xs text-linen/50 font-mono tracking-wider uppercase">Lens: Composure & Duty</p>
+              <p class="mt-3 text-sm text-linen/70 leading-relaxed">Quiet support for times of grief, transition, and pressure. A strict commitment to build dignity within limits.</p>
+            </div>
+            <div class="mt-6 pt-3 border-t border-white/[0.04] flex justify-between items-center text-[10px] font-mono text-linen/40">
+              <span>Issue 22 — Active</span>
+              <span class="text-antique">Browse Archive &rarr;</span>
+            </div>
+        </div>
+
+        <!-- Anima Mundi -->
+        <div class="imprint-card quiet-panel rounded-xl p-6 flex flex-col justify-between min-h-[260px]">
+            <div>
+              <div class="flex items-start justify-between border-b border-white/[0.04] pb-3 mb-4">
+                <h4 class="font-serif text-lg text-cream font-medium">Anima Mundi Press</h4>
+                <span class="text-[8px] font-mono uppercase tracking-widest text-antique">Bi-Weekly</span>
+              </div>
+              <p class="text-xs text-linen/50 font-mono tracking-wider uppercase">Lens: Longing & Devotion</p>
+              <p class="mt-3 text-sm text-linen/70 leading-relaxed">Treating inner pain and wanting as productive paths to direct experience rather than defects.</p>
+            </div>
+            <div class="mt-6 pt-3 border-t border-white/[0.04] flex justify-between items-center text-[10px] font-mono text-linen/40">
+              <span>Issue 11 — Active</span>
+              <span class="text-antique">Browse Archive &rarr;</span>
+            </div>
+        </div>
+
+        <div class="imprint-card quiet-panel rounded-xl p-6 flex flex-col justify-between min-h-[260px] opacity-60">
+            <div><h4 class="font-serif text-lg text-cream border-b border-white/5 pb-3 mb-4">Friction & Form</h4>
+            <p class="mt-3 text-sm text-linen/70">Maintaining grace in a silent universe.</p></div>
+        </div>
+        <div class="imprint-card quiet-panel rounded-xl p-6 flex flex-col justify-between min-h-[260px] opacity-60">
+            <div><h4 class="font-serif text-lg text-cream border-b border-white/5 pb-3 mb-4">Silent Spine</h4>
+            <p class="mt-3 text-sm text-linen/70">Structural choices entered through risk.</p></div>
+        </div>
+        <div class="imprint-card quiet-panel rounded-xl p-6 flex flex-col justify-between min-h-[260px] opacity-60">
+            <div><h4 class="font-serif text-lg text-cream border-b border-white/5 pb-3 mb-4">Soma & Thread</h4>
+            <p class="mt-3 text-sm text-linen/70">Wisdom arising only when continuous effort stops.</p></div>
+        </div>
+        <div class="imprint-card quiet-panel rounded-xl p-6 flex flex-col justify-between min-h-[260px] opacity-60">
+            <div><h4 class="font-serif text-lg text-cream border-b border-white/5 pb-3 mb-4">Marrow Archive</h4>
+            <p class="mt-3 text-sm text-linen/70">An index of civic imagination and communal duties.</p></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- History / Assembly Section -->
+    <section class="mx-auto max-w-4xl py-24 border-t border-white/[0.04] relative">
+      <div class="text-center mb-16">
+        <p class="text-xs font-mono tracking-[0.3em] uppercase text-antique/80 font-semibold">The Chronology</p>
+        <h3 class="font-serif text-3xl sm:text-4xl text-cream mt-3">How the library was assembled.</h3>
+      </div>
+
+      <div class="relative">
+        <div class="timeline-line"></div>
+
+        <!-- Timeline Event 1 -->
+        <div class="relative flex flex-col md:flex-row items-start md:items-center justify-between mb-12 md:mb-16">
+          <div class="md:w-5/12 text-left md:text-right md:pr-10 mb-4 md:mb-0">
+            <span class="font-serif text-2xl font-bold text-antique">2018</span>
+            <h4 class="font-serif text-lg text-cream mt-1 font-semibold">Gathering the Marrow</h4>
+          </div>
+          <div class="absolute left-[13px] md:left-1/2 transform -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-antique border border-ink z-10"></div>
+          <div class="md:w-5/12 pl-10 md:pl-10 text-left">
+            <p class="text-sm text-linen/60 leading-relaxed">
+              The first physical files of the *Marrow Archive* are compiled and cataloged in Geneva, mapping the foundational patterns of societal attention.
+            </p>
+          </div>
+        </div>
+
+        <!-- Timeline Event 2 -->
+        <div class="relative flex flex-col md:flex-row items-start md:items-center justify-between mb-12 md:mb-16">
+          <div class="md:w-5/12 text-left md:text-right md:pr-10 mb-4 md:mb-0 md:order-last">
+            <span class="font-serif text-2xl font-bold text-antique">2020</span>
+            <h4 class="font-serif text-lg text-cream mt-1 font-semibold">The Stoic Integration</h4>
+          </div>
+          <div class="absolute left-[13px] md:left-1/2 transform -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-antique border border-ink z-10"></div>
+          <div class="md:w-5/12 pr-0 md:pr-10 text-left md:text-right md:order-first">
+            <p class="text-sm text-linen/60 leading-relaxed">
+              *The Vellum Review* is brought under the ledger to stabilize output during global transitions, emphasizing personal composure.
+            </p>
+          </div>
+        </div>
+
+        <!-- Timeline Event 3 -->
+        <div class="relative flex flex-col md:flex-row items-start md:items-center justify-between mb-12 md:mb-16">
+          <div class="md:w-5/12 text-left md:text-right md:pr-10 mb-4 md:mb-0">
+            <span class="font-serif text-2xl font-bold text-antique">2023</span>
+            <h4 class="font-serif text-lg text-cream mt-1 font-semibold">Bespoke Systems Established</h4>
+          </div>
+          <div class="absolute left-[13px] md:left-1/2 transform -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-antique border border-ink z-10"></div>
+          <div class="md:w-5/12 pl-10 md:pl-10 text-left">
+            <p class="text-sm text-linen/60 leading-relaxed">
+              Establishment of the custom audio framework, synthesizing traditional letter-writing with private ledger delivery.
+            </p>
+          </div>
+        </div>
+
+        <!-- Timeline Event 4 -->
+        <div class="relative flex flex-col md:flex-row items-start md:items-center justify-between">
+          <div class="md:w-5/12 text-left md:text-right md:pr-10 mb-4 md:mb-0 md:order-last">
+            <span class="font-serif text-2xl font-bold text-antique">2026</span>
+            <h4 class="font-serif text-lg text-cream mt-1 font-semibold">The Unified Ledger</h4>
+          </div>
+          <div class="absolute left-[13px] md:left-1/2 transform -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-antique border border-ink z-10 animate-pulse"></div>
+          <div class="md:w-5/12 pr-0 md:pr-10 text-left md:text-right md:order-first">
+            <p class="text-sm text-linen/60 leading-relaxed">
+              Integration of subdomains, custom context profile readers, and the launch of the public-access registry portal.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- HORSES EXPANSION OVERLAY -->
+  <div id="horses-overlay" class="fixed inset-0 z-[100] bg-ink/98 backdrop-blur-3xl overflow-y-auto px-5 py-12">
+    <div class="max-w-5xl mx-auto modal-content">
+        <div class="flex justify-between items-center mb-16 border-b border-white/10 pb-8">
+            <div>
+                <h2 class="font-serif text-5xl text-cream italic tracking-tight">HORSES</h2>
+                <p class="font-jost text-[10px] tracking-[0.3em] text-antique uppercase mt-3">A Six-Year Retrospective (2020—2026)</p>
+            </div>
+            <div class="flex gap-4">
+                <a href="https://horses.land" target="_blank" class="text-[10px] font-jost border border-white/20 px-6 py-3 hover:bg-cream hover:text-ink transition uppercase tracking-[0.2em]">Visit House site</a>
+                <button onclick="closeHorses()" class="text-linen/50 text-4xl font-light hover:text-cream transition-colors">&times;</button>
+            </div>
+        </div>
+
+        <div class="relative">
+            <div class="timeline-line"></div>
+
+            <!-- 2020 -->
+            <div class="relative flex flex-col items-center mb-24">
+                <div class="z-20 bg-antique text-ink px-5 py-1 rounded-full font-mono text-[9px] font-bold uppercase mb-8">First Transmissions (2020)</div>
+                <div class="grid md:grid-cols-2 gap-6 w-full">
+                    <div class="quiet-panel p-8 rounded-xl border-white/5">
+                        <span class="font-mono text-[8px] text-antique tracking-widest uppercase">The Made</span>
+                        <h4 class="font-serif text-xl italic text-cream mt-2">The Library of Alexandria</h4>
+                        <p class="text-sm text-linen/50 mt-4 leading-relaxed">An elegy for lost knowledge and the catastrophe of irreversibility.</p>
+                    </div>
+                    <div class="quiet-panel p-8 rounded-xl border-white/5">
+                        <span class="font-mono text-[8px] text-antique tracking-widest uppercase">The Self</span>
+                        <h4 class="font-serif text-xl italic text-cream mt-2">Stoicism in the Modern World</h4>
+                        <p class="text-sm text-linen/50 mt-4 leading-relaxed">Marcus Aurelius against the velocity of contemporary life.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2023 -->
+            <div class="relative flex flex-col items-center mb-24">
+                <div class="z-20 bg-antique text-ink px-5 py-1 rounded-full font-mono text-[9px] font-bold uppercase mb-8">The Dark Turn (2023)</div>
+                <div class="grid md:grid-cols-3 gap-6 w-full">
+                    <div class="quiet-panel p-6 rounded-xl border-white/5">
+                        <h4 class="font-serif text-lg italic text-cream">The Palliative Society</h4>
+                        <p class="text-xs text-linen/50 mt-3 leading-relaxed">Byung-Chul Han’s diagnosis of comfort-culture as an anesthetic.</p>
+                    </div>
+                    <div class="quiet-panel p-6 rounded-xl border-white/5">
+                        <h4 class="font-serif text-lg italic text-cream">Philosophy of Boredom</h4>
+                        <p class="text-xs text-linen/50 mt-3 leading-relaxed">The empty afternoon as an honest encounter with existence.</p>
+                    </div>
+                    <div class="quiet-panel p-6 rounded-xl border-white/5">
+                        <h4 class="font-serif text-lg italic text-cream">History of Torture</h4>
+                        <p class="text-xs text-linen/50 mt-3 leading-relaxed">An archaeology of pain used as a tool for statecraft.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2026 -->
+            <div class="relative flex flex-col items-center mb-20">
+                <div class="z-20 bg-antique text-ink px-5 py-1 rounded-full font-mono text-[9px] font-bold uppercase mb-8">Species Endings (2026)</div>
+                <div class="grid md:grid-cols-2 gap-6 w-full">
+                    <div class="quiet-panel p-8 rounded-xl border-white/5">
+                        <h4 class="font-serif text-xl italic text-cream">The Last Humans</h4>
+                        <p class="text-sm text-linen/50 mt-4">species-level endings as a form of individual meaning-making.</p>
+                    </div>
+                    <div class="quiet-panel p-8 rounded-xl border-white/5">
+                        <h4 class="font-serif text-xl italic text-cream">On Solitude</h4>
+                        <p class="text-sm text-linen/50 mt-4">Reframing solitude not as absence, but as a specific presence.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-32 text-center border-t border-white/5 pt-12 pb-24">
+            <p class="font-cormorant italic text-smoke text-2xl">"The library deepens as the velocity stalls."</p>
+        </div>
+    </div>
+  </div>
+
+  <!-- Consistent Footer -->
+  <footer class="site-footer border-t border-linen/12 px-5 py-10 mt-12 relative z-10">
+    <div class="mx-auto grid max-w-7xl gap-8 text-sm text-linen md:grid-cols-[1fr_auto_1fr] md:items-center">
+      <div>
+        <p class="font-serif text-xl font-semibold tracking-wide text-cream">The Daily Art Cult</p>
+        <div class="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-linen/70">
+          <span>&copy; 2026 The Daily Art Cult. All rights reserved. Cease and desist notices accepted. AI training on our content is prohibited. Logo usage requires written approval..</span>
+          <span class="text-linen/20 select-none font-sans font-light">|</span>
+          <a href="/policy.thedailyartcult" class="hover:text-antique transition duration-300">Privacy & Terms</a>
+        </div>
+      </div>
+
+      <nav class="flex flex-wrap items-center justify-start gap-3 md:justify-center" aria-label="Social media">
+        <a href="#" class="flex h-10 w-10 items-center justify-center rounded-full border border-linen/12 hover:border-antique/50 hover:text-antique transition">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.74l7.73-8.835L1.254 2.25H8.08l4.261 5.632 5.903-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117Z"/></svg>
+        </a>
+        <a href="#" class="flex h-10 w-10 items-center justify-center rounded-full border border-linen/12 hover:border-antique/50 hover:text-antique transition">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+        </a>
+        <a href="#" class="flex h-10 w-10 items-center justify-center rounded-full border border-linen/12 hover:border-antique/50 hover:text-antique transition">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+        </a>
+      </nav>
+
+      <div class="flex items-center justify-start md:justify-end text-[10px] font-mono text-linen/40">
+        <span>Ledger Node: pub-v1.0.8</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function openHorses() {
+      const overlay = document.getElementById('horses-overlay');
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeHorses() {
+      const overlay = document.getElementById('horses-overlay');
+      overlay.classList.remove('active');
+      document.body.style.overflow = 'auto';
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeHorses();
+    });
+  </script>
+
+<div style="text-align:center;padding:12px;font-size:0.7rem;color:#888;margin-top:24px;">
+<p>&copy; 2026 — All rights reserved. &reg; &trade; ™ — Intellectual property owned by this company or licensed to it.
+For infringement concerns, DMCA takedown requests, or IP inquiries, contact legal department.
+Brand usage guidelines and trademark usage policy available on request. Unauthorized use of marks is prohibited.</p>
+</div>
+</body>
+</html>

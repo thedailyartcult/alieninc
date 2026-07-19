@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Private Ledger | The Daily Art Cult</title>
+  
+  <!-- Fonts matching main site -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Supabase JS Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: "#070504",
+            night: "#0d0907",
+            walnut: "#1b110d",
+            cream: "#f2eadc",
+            linen: "#d8cbb8",
+            antique: "#c6a766"
+          },
+          fontFamily: {
+            serif: ["Playfair Display", "Georgia", "serif"],
+            sans: ["Inter", "system-ui", "sans-serif"],
+            cormorant: ["Cormorant Garamond", "serif"]
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      background-color: #1a120b;
+      color: #f2eadc;
+      font-family: "Inter", system-ui, sans-serif;
+    }
+    .library-overlay {
+      background: radial-gradient(circle at 50% 18%, rgba(70, 16, 27, 0.1), transparent 40%);
+    }
+    .quiet-panel {
+      border: 1px solid rgba(216, 203, 184, 0.12);
+      background: rgba(13, 9, 7, 0.72);
+      backdrop-filter: blur(14px);
+    }
+  </style>
+</head>
+<body class="min-h-screen relative flex flex-col justify-between overflow-x-hidden">
+
+  <!-- Aesthetic background glow -->
+  <div class="library-overlay absolute inset-0 -z-10 pointer-events-none" aria-hidden="true"></div>
+
+  <!-- Main Container -->
+  <main class="w-full max-w-4xl mx-auto px-6 py-12 flex-1 flex flex-col justify-center">
+    
+    <!-- HEADER -->
+    <header class="text-center mb-12">
+      <a href="https://thedailyartcult.lol" class="font-serif text-lg tracking-wider text-linen/60 hover:text-antique transition duration-300">The Daily Art Cult</a>
+      <h1 class="font-serif text-3xl md:text-4xl mt-3 font-medium text-cream tracking-wide">The Private Ledger</h1>
+      <div class="w-16 h-px bg-gradient-to-r from-transparent via-antique to-transparent mx-auto mt-4"></div>
+    </header>
+
+    <!-- STATE A: AUTHENTICATION GATE (Visible when logged out) -->
+    <section id="auth-gate" class="w-full max-w-md mx-auto hidden">
+      <div class="quiet-panel p-8 rounded-xl shadow-2xl">
+        <h2 class="font-serif text-xl text-cream mb-2 text-center">Enter the Sanctuary</h2>
+        <p class="text-xs text-linen/50 text-center mb-6">Provide your email address. We will transmit a secure access key directly to your inbox.</p>
+        
+        <form id="login-form" class="space-y-4">
+          <div>
+            <label for="email" class="block text-[9px] font-mono uppercase tracking-widest text-linen/40 mb-1.5">Email Address</label>
+            <input type="email" id="email" required placeholder="evelyn@domain.com" class="w-full bg-[#14100e]/80 border border-linen/10 rounded-lg px-4 py-3 text-sm text-cream placeholder:text-linen/25 focus:border-antique/50 focus:outline-none transition">
+          </div>
+          <button type="submit" class="w-full py-3 bg-cream hover:bg-antique text-ink font-mono text-[10px] font-bold uppercase tracking-widest rounded-lg transition duration-300">
+            Request Access Link
+          </button>
+        </form>
+        <p id="auth-feedback" class="text-[10px] font-mono text-center text-antique mt-4 min-h-[1.5em]"></p>
+      </div>
+    </section>
+
+    <!-- STATE B: MEMBER DASHBOARD (Visible when logged in) -->
+    <section id="dashboard" class="w-full space-y-10 hidden">
+      
+      <!-- Top Status Bar -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-linen/10 pb-6">
+        <div>
+          <span id="patron-tier" class="text-[10px] font-mono uppercase tracking-[0.25em] text-antique">6-Month Free Access</span>
+          <h2 id="patron-greeting" class="font-serif text-2xl text-cream mt-1">Welcome, Member</h2>
+        </div>
+        <button id="logout-btn" class="text-[10px] font-mono uppercase tracking-widest text-linen/40 hover:text-antique transition duration-300">
+          Depart Library
+        </button>
+      </div>
+
+      <!-- GRID LAYOUT -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+        
+        <!-- Left Side: .md Profile Context Configuration (Col-span 5) -->
+        <div class="md:col-span-5 space-y-6">
+          <div class="quiet-panel p-6 rounded-xl">
+            <h3 class="font-serif text-lg text-cream mb-2">My Philosophical Context</h3>
+            <p class="text-xs text-linen/50 leading-relaxed mb-4">
+              Your context profile shape-shifts the voices of future publications. Upload your updated <code class="text-antique font-mono">.md</code> format document below.
+            </p>
+            
+            <form id="profile-form" class="space-y-4">
+              <div>
+                <label class="block text-[9px] font-mono uppercase tracking-widest text-linen/40 mb-1.5">Profile markdown text</label>
+                <textarea id="profile-md-text" rows="8" placeholder="Paste your markdown context profile here..." class="w-full bg-[#14100e]/85 border border-linen/10 rounded-lg p-3 text-xs text-cream font-mono leading-relaxed focus:border-antique/50 focus:outline-none resize-none scrollbar-none"></textarea>
+              </div>
+              
+              <div class="flex items-center justify-between">
+                <span id="profile-status" class="text-[9px] font-mono text-linen/40">Not uploaded</span>
+                <button type="submit" class="py-2 px-4 bg-antique/10 hover:bg-antique/25 border border-antique/30 text-antique hover:text-cream text-[9px] font-mono uppercase tracking-widest rounded transition duration-300">
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Right Side: Library Audio Releases List (Col-span 7) -->
+        <div class="md:col-span-7 space-y-6">
+          <div class="quiet-panel p-6 rounded-xl">
+            <h3 class="font-serif text-xl text-cream mb-1">Your Library Collection</h3>
+            <p class="text-xs text-linen/50 mb-6">Personalized synthesis recordings generated on scheduled release days.</p>
+            
+            <!-- Audio Player HUD (Active only when playing a file) -->
+            <div id="audio-player-hud" class="hidden border border-antique/20 bg-[#120a06]/40 p-4 rounded-lg mb-6 text-left">
+              <span class="text-[8px] font-mono uppercase tracking-widest text-antique">Now Streaming</span>
+              <h4 id="hud-track-title" class="font-serif text-sm text-cream font-semibold mt-1">Selected Compilation</h4>
+              <audio id="main-audio-player" controls class="w-full mt-3 accent-antique h-10"></audio>
+            </div>
+
+            <!-- Releases List Placeholder -->
+            <div id="releases-list" class="space-y-4">
+              <!-- Dynamically populated via JS -->
+              <p class="text-xs text-linen/30 italic py-6 text-center">Scanning shelves for customized recordings...</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="w-full border-t border-linen/10 py-6 text-center text-xs text-linen/40">
+    <p>&copy; 2026 The Daily Art Cult. Built upon privacy, voiced with intention.</p>
+  </footer>
+
+<!-- SCRIPT LOGIC -->
+  <script>
+    // --- SUPABASE CONFIGURATION ---
+    const SUPABASE_URL = "https://frwjaixxlgthkgjtafhz.supabase.co"; 
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyd2phaXh4bGd0aGtnanRhZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDUzNDQsImV4cCI6MjA5NDYyMTM0NH0.j2DKz__QMml4WplMYNmsQpTUw0qu-kZG7Md3qBEEdEc"; 
+    
+    // Named "supabaseClient" to avoid library name collisions
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // --- DOM REFERENCES ---
+    const authGate = document.getElementById("auth-gate");
+    const dashboard = document.getElementById("dashboard");
+    const loginForm = document.getElementById("login-form");
+    const emailInput = document.getElementById("email");
+    const authFeedback = document.getElementById("auth-feedback");
+    const logoutBtn = document.getElementById("logout-btn");
+    
+    const patronGreeting = document.getElementById("patron-greeting");
+    const profileForm = document.getElementById("profile-form");
+    const profileMdText = document.getElementById("profile-md-text");
+    const profileStatus = document.getElementById("profile-status");
+    
+    const audioPlayerHud = document.getElementById("audio-player-hud");
+    const mainAudioPlayer = document.getElementById("main-audio-player");
+    const hudTrackTitle = document.getElementById("hud-track-title");
+    const releasesList = document.getElementById("releases-list");
+
+    // --- STATE ROUTER ---
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        authGate.classList.add("hidden");
+        dashboard.classList.remove("hidden");
+        loadMemberDashboard(session.user);
+      } else {
+        dashboard.classList.add("hidden");
+        authGate.classList.remove("hidden");
+      }
+    });
+
+    // --- HANDLERS ---
+
+    // 1. Magic Link Form Submit
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim();
+      authFeedback.textContent = "Transmitting access key...";
+
+      const { error } = await supabaseClient.auth.signInWithOtp({
+        email: email,
+        options: {
+          emailRedirectTo: window.location.origin // Redirects back to your GitHub Pages subdomain
+        }
+      });
+
+      if (error) {
+        authFeedback.textContent = `Error: ${error.message}`;
+      } else {
+        authFeedback.textContent = "Check your inbox. A login link has been dispatched.";
+        loginForm.reset();
+      }
+    });
+
+    // 2. Logout Click
+    logoutBtn.addEventListener("click", async () => {
+      await supabaseClient.auth.signOut();
+    });
+
+    // --- MEMBER DASHBOARD LOGIC ---
+    async function loadMemberDashboard(user) {
+      patronGreeting.textContent = `Welcome, Member`;
+      
+      // Fetch User's .md Context
+      fetchUserContext(user.id);
+
+      // Fetch Pre-Generated Personalized Releases
+      fetchUserReleases(user.id);
+    }
+
+    // A. Fetch Context File from DB
+    async function fetchUserContext(userId) {
+      profileStatus.textContent = "Loading profile...";
+      
+      const { data, error } = await supabaseClient
+        .from('user_contexts')
+        .select('markdown_text')
+        .eq('user_id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { 
+        console.error("Context fetch failed:", error);
+        profileStatus.textContent = "Error reading profile.";
+      } else if (data) {
+        profileMdText.value = data.markdown_text || '';
+        profileStatus.textContent = "Saved to vault";
+      } else {
+        profileStatus.textContent = "Profile empty";
+      }
+    }
+
+    // B. Save Context File to DB
+    profileForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      profileStatus.textContent = "Securing modifications...";
+      
+      const user = (await supabaseClient.auth.getUser()).data.user;
+      if (!user) return;
+
+      const updatedText = profileMdText.value;
+
+      // Upsert profile text
+      const { error } = await supabaseClient
+        .from('user_contexts')
+        .upsert({ 
+          user_id: user.id, 
+          markdown_text: updatedText, 
+          updated_at: new Date().toISOString() 
+        }, { onConflict: 'user_id' });
+
+      if (error) {
+        profileStatus.textContent = "Error saving";
+        console.error(error);
+      } else {
+        profileStatus.textContent = "Saved to vault";
+      }
+    });
+
+    // C. Fetch Releases list
+    async function fetchUserReleases(userId) {
+      releasesList.innerHTML = '<p class="text-xs text-linen/30 italic py-6 text-center">Consulting database bookshelves...</p>';
+
+      const { data, error } = await supabaseClient
+        .from('audio_releases')
+        .select('id, title, storage_path, description, created_at')
+        .eq('user_id', userId);
+      
+      if (error) {
+        console.error("Failed to load releases:", error);
+        releasesList.innerHTML = '<p class="text-xs text-linen/30 italic py-6 text-center">Error contacting library shelf.</p>';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        releasesList.innerHTML = '<p class="text-xs text-linen/30 italic py-6 text-center">Your upcoming issue is currently being composed. It will appear here on release day.</p>';
+        return;
+      }
+
+      releasesList.innerHTML = '';
+      data.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "group flex items-start gap-4 p-4 rounded-lg bg-black/20 border border-white/[0.03] hover:border-antique/20 hover:bg-black/40 transition duration-300 text-left";
+        
+        // Clean and format date
+        const formattedDate = new Date(item.created_at).toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+
+        row.innerHTML = `
+          <div class="flex-1 space-y-1">
+            <div class="flex items-center justify-between">
+              <h4 class="text-sm font-semibold text-cream group-hover:text-antique transition duration-300">${item.title}</h4>
+              <span class="text-[9px] font-mono text-linen/30">${formattedDate}</span>
+            </div>
+            <p class="text-xs text-linen/60 leading-relaxed">${item.description}</p>
+            <button class="play-btn pt-2 flex items-center gap-1.5 text-[9px] font-mono uppercase tracking-widest text-antique hover:text-cream transition" data-path="${item.storage_path}" data-title="${item.title}">
+              <span>▶</span> Stream Edition
+            </button>
+          </div>
+        `;
+
+        // Handle Play Click (Fetch secure Signed URL from Supabase Private Storage Bucket)
+        const playBtn = row.querySelector(".play-btn");
+        playBtn.addEventListener("click", async () => {
+          const storagePath = playBtn.dataset.path;
+          const trackTitle = playBtn.dataset.title;
+
+          playBtn.innerHTML = "<span>◌</span> Securing pipeline...";
+
+          const { data: signedData, error: signedError } = await supabaseClient
+            .storage
+            .from('audio-releases')
+            .createSignedUrl(storagePath, 600); 
+
+          if (signedError) {
+            console.error("Signed URL retrieval failed:", signedError);
+            playBtn.innerHTML = "<span>▶</span> Stream Failed";
+          } else if (signedData) {
+            playBtn.innerHTML = "<span>▶</span> Stream Edition";
+            playAudio(signedData.signedUrl, trackTitle);
+          }
+        });
+
+        releasesList.appendChild(row);
+      });
+    }
+
+    // D. Helper to load track into player
+    function playAudio(url, title) {
+      hudTrackTitle.textContent = title;
+      mainAudioPlayer.src = url;
+      audioPlayerHud.classList.remove("hidden");
+      mainAudioPlayer.load();
+      mainAudioPlayer.play().catch(err => {
+        console.warn("Autoplay blocked or play failed:", err);
+      });
+    }
+  </script>
+
+  
+</body>
+</html>

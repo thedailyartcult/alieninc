@@ -771,8 +771,8 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             form = {}
         user = (form.get('user', [''])[0] or '').strip()
         password = form.get('password', [''])[0] or ''
-        # Optional post-auth redirect; default to moderation portal.
-        default_redirect = '/moderation/' if SECURE_AUTH_BACKEND == 'supabase' else '/vault/'
+        # Optional post-auth redirect; default to root (safe for any host).
+        default_redirect = '/'
         redirect = _safe_redirect(form.get('next', [''])[0]) or default_redirect
         self._log_honeypot(user, password)
         if verify_secure_credentials(user, password):
@@ -874,6 +874,10 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_error(404)
                 return
             self._serve_ecosystem_api()
+        elif self.path == '/pxpadmin/bin/authform.cgi' or self.path.startswith('/pxpadmin/bin/authform.cgi?'):
+            self.send_response(302)
+            self.send_header('Location', '/')
+            self.end_headers()
         else:
             if self._is_blocked_path(self.path):
                 self.send_error(404)

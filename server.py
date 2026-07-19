@@ -680,6 +680,9 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                 return True
         return False
 
+    def _is_secure_connection(self):
+        return self.headers.get('X-Forwarded-Proto', '').lower() == 'https'
+
     def _is_secure_host(self):
         host = self.headers.get('Host', '').split(':')[0].lower()
         return host == 'secure.alieninc.tech'
@@ -775,9 +778,10 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             token = _issue_secure_session(user)
             domain = self.headers.get('Host', '').split(':')[0].lower()
             base = '.alieninc.tech'
+            secure_flag = '; Secure' if self._is_secure_connection() else ''
             def c(k, v):
                 sd = '; Domain=' + base if domain.endswith('alieninc.tech') else ''
-                return '%s=%s; Path=/; HttpOnly; Secure; SameSite=Lax%s' % (k, v, sd)
+                return '%s=%s; Path=/; HttpOnly; SameSite=Lax%s%s' % (k, v, secure_flag, sd)
             self.send_response(200)
             self.send_header('Set-Cookie', c(SECURE_SESSION_COOKIE, token))
             self.send_header('Set-Cookie', c(MAIN_SESSION_COOKIE, token))
@@ -821,20 +825,21 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Location', redirect)
             domain = self.headers.get('Host', '').split(':')[0].lower()
             base_domain = '.alieninc.tech'
+            secure_flag = '; Secure' if self._is_secure_connection() else ''
             if domain.endswith('alieninc.tech'):
                 self.send_header('Set-Cookie',
                                  SECURE_SESSION_COOKIE + '=' + token +
-                                 '; Path=/; HttpOnly; Secure; SameSite=Lax; Domain=' + base_domain)
+                                 '; Path=/; HttpOnly; SameSite=Lax; Domain=' + base_domain + secure_flag)
                 self.send_header('Set-Cookie',
                                  MAIN_SESSION_COOKIE + '=' + token +
-                                 '; Path=/; HttpOnly; Secure; SameSite=Lax; Domain=' + base_domain)
+                                 '; Path=/; HttpOnly; SameSite=Lax; Domain=' + base_domain + secure_flag)
             else:
                 self.send_header('Set-Cookie',
                                  SECURE_SESSION_COOKIE + '=' + token +
-                                 '; Path=/; HttpOnly; Secure; SameSite=Lax')
+                                 '; Path=/; HttpOnly; SameSite=Lax' + secure_flag)
                 self.send_header('Set-Cookie',
                                  MAIN_SESSION_COOKIE + '=' + token +
-                                 '; Path=/; HttpOnly; Secure; SameSite=Lax')
+                                 '; Path=/; HttpOnly; SameSite=Lax' + secure_flag)
             self.end_headers()
             sys.stderr.write('[SECURE-AUTH] success user=%r redirect=%r from %s\n' % (
                 user, redirect, self.address_string(),

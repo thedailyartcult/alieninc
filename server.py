@@ -18,6 +18,8 @@ import http.server
 import socketserver
 import os
 import threading
+import hashlib
+import hmac
 
 try:
     import yfinance as yf
@@ -31,10 +33,11 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 SUBDOMAIN_ROOTS = {
     '1609':         os.path.join(ROOT, '1609holdings'),
     'exosphere':    os.path.join(ROOT, 'exosphere'),
-    'panteon':    os.path.join(ROOT, 'panteon'),
+    'panteon':      os.path.join(ROOT, 'panteon'),
     'kmt':          os.path.join(ROOT, 'kmt'),
     'stalcantara':  os.path.join(ROOT, 'stalcantarafoundation'),
     'sp':           os.path.join(ROOT, 'sp'),
+    'secure':       os.path.join(ROOT, 'secure'),
 }
 
 _cache = {'data': None, 'ts': 0, 'lock': threading.Lock()}
@@ -80,48 +83,45 @@ BOT_PATTERNS = [
 ]
 
 
-BOT_TEMPLATE = '''<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow">
-<title>Alien Inc — Private Operating Group</title>
-<style>
-  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 3rem auto; padding: 0 1.5rem; line-height: 1.6; color: #1a1a1a; background: #fff; }
-  h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: 0.25rem; }
-  .tagline { font-size: 0.95rem; color: #666; margin-bottom: 2rem; }
-  h2 { font-size: 0.85rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.04em; margin: 2rem 0 0.75rem 0; }
-  .sub { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.4rem 2rem; }
-  .sub-item { font-size: 0.9rem; padding: 0.3rem 0; }
-  .sub-name { font-weight: 500; }
-  .sub-desc { color: #666; font-size: 0.82rem; }
-  .notice { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid #eee; font-size: 0.85rem; color: #888; }
-  footer { margin-top: 3rem; font-size: 0.75rem; color: #aaa; }
-</style>
-</head>
-<body>
-<h1>Alien Inc</h1>
-<p class="tagline">Private operating group.</p>
-<h2>Subsidiary Companies</h2>
-<div class="sub">
-<div class="sub-item"><span class="sub-name">The Daily Art Cult</span> <span class="sub-desc">— Digital media and publishing</span></div>
-<div class="sub-item"><span class="sub-name">Panteon</span> <span class="sub-desc">— Cybersecurity and exposure management</span></div>
-<div class="sub-item"><span class="sub-name">1609 Holdings</span> <span class="sub-desc">— Capital allocation and governance</span></div>
-<div class="sub-item"><span class="sub-name">KMT Consulting Group</span> <span class="sub-desc">— Strategy and applied AI</span></div>
-<div class="sub-item"><span class="sub-name">Exosphere</span> <span class="sub-desc">— Acquisitions and succession advisory</span></div>
-<div class="sub-item"><span class="sub-name">St. Alcantara Foundation</span> <span class="sub-desc">— Cultural preservation</span></div>
-<div class="sub-item"><span class="sub-name">Statute &amp; Precedent</span> <span class="sub-desc">— Legal and compliance</span></div>
-</div>
-<div class="notice">
-This is a private company. Operating data, financial information, and partner access are not publicly available.
-</div>
-<div class="notice" style="border-top:none;padding-top:0.5rem;margin-top:0.5rem;font-size:0.78rem;color:#aaa;">
-AI/LLM analysis: <em>Alien Inc in a Nutshell</em> &mdash; Panteon Scanner, Plugin 1024
-</div>
-<footer>&copy; Alien Inc</footer>
-</body>
-</html>'''
+# ── Secure gate ─────────────────────────────────────────────
+# Every detected bot (Wayback Machine included) is served the secure
+# gate page instead of real content, so archived snapshots capture the
+# authentication wall. The same page fronts secure.alieninc.tech.
+
+SECURE_GATE_CANDIDATES = [
+    os.path.join(ROOT, 'secure', 'index.html'),
+    os.path.join(ROOT, 'secure.html'),
+]
+
+SECURE_ERROR_CALLOUT = (
+    '<div class="lpf_call_out_error" role="alert"><span>'
+    '<span class="t">Authentication failed</span>'
+    'The login or the password is incorrect.'
+    '</span></div>'
+)
+
+_gate_cache = {'path': None, 'mtime': 0, 'html': None}
+
+
+def _load_gate_page():
+    """Read the canonical gate page from disk (cached by mtime)."""
+    for p in SECURE_GATE_CANDIDATES:
+        try:
+            m = os.path.getmtime(p)
+        except OSError:
+            continue
+        if _gate_cache['path'] == p and _gate_cache['mtime'] == m and _gate_cache['html'] is not None:
+            return _gate_cache['html']
+        try:
+            with open(p, 'r', encoding='utf-8') as f:
+                html = f.read()
+        except OSError:
+            continue
+        _gate_cache['path'] = p
+        _gate_cache['mtime'] = m
+        _gate_cache['html'] = html
+        return html
+    return None
 
 
 def is_bot(user_agent):
@@ -132,6 +132,81 @@ def is_bot(user_agent):
         if re.search(pattern, ua):
             return True
     return False
+
+
+# ── Secure gate authentication ──────────────────────────────
+# Interim backend: 'env' — constant-time compare against the
+# SECURE_GATE_USER / SECURE_GATE_PASS environment variables.
+# Unset → everything fails closed (decoy-only mode).
+#
+# SUPABASE INTEGRATION POINT ─────────────────────────────────
+# When the Supabase project is provisioned:
+#   1. Set SECURE_AUTH_BACKEND=supabase plus SUPABASE_URL and
+#      SUPABASE_ANON_KEY in the environment.
+#   2. Implement _verify_via_supabase() with the GoTrue password
+#      grant: POST {SUPABASE_URL}/auth/v1/token?grant_type=password
+#      and treat a returned access_token as success.
+# Nothing else changes — the session cookie, vault gate and
+# decoy-fail flow all keep working on top of this verifier.
+
+SECURE_AUTH_BACKEND = os.environ.get('SECURE_AUTH_BACKEND', 'env')
+SECURE_SESSION_COOKIE = 'secure_session'
+SECURE_SESSION_TTL = 8 * 3600  # 8 hours
+HONEYPOT_LOG = os.path.join(ROOT, 'secure-honeypot.log')
+
+_session_secret_ephemeral = None
+
+
+def _session_secret():
+    global _session_secret_ephemeral
+    s = os.environ.get('SECURE_SESSION_SECRET', '')
+    if s:
+        return s.encode('utf-8')
+    if _session_secret_ephemeral is None:
+        # Ephemeral per-boot secret: sessions invalidate on restart (fail-safe).
+        _session_secret_ephemeral = os.urandom(32)
+    return _session_secret_ephemeral
+
+
+def verify_secure_credentials(user, password):
+    if not user or not password:
+        return False
+    if SECURE_AUTH_BACKEND == 'supabase':
+        return _verify_via_supabase(user, password)
+    gate_user = os.environ.get('SECURE_GATE_USER', '')
+    gate_pass = os.environ.get('SECURE_GATE_PASS', '')
+    if not gate_user or not gate_pass:
+        return False  # fail closed
+    return (hmac.compare_digest(user.encode('utf-8'), gate_user.encode('utf-8'))
+            and hmac.compare_digest(password.encode('utf-8'), gate_pass.encode('utf-8')))
+
+
+def _verify_via_supabase(user, password):
+    # TODO(supabase): GoTrue password grant — see integration point above.
+    return False
+
+
+def _issue_secure_session(user):
+    expiry = int(time.time()) + SECURE_SESSION_TTL
+    payload = '%d.%s' % (expiry, user)
+    sig = hmac.new(_session_secret(), payload.encode('utf-8'), hashlib.sha256).hexdigest()
+    return payload + '.' + sig
+
+
+def _check_secure_session(token):
+    if not token:
+        return False
+    try:
+        expiry_s, rest = token.split('.', 1)
+        _user, sig = rest.rsplit('.', 1)
+        expiry = int(expiry_s)
+    except (ValueError, AttributeError):
+        return False
+    if time.time() > expiry:
+        return False
+    expected = hmac.new(_session_secret(), ('%d.%s' % (expiry, _user)).encode('utf-8'),
+                        hashlib.sha256).hexdigest()
+    return hmac.compare_digest(sig, expected)
 
 
 def _empty_item(co):
@@ -366,6 +441,7 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             r'\.py$',
             r'\.ts$',
             r'\.env',
+            r'secure-honeypot\.log$',
             r'\.DS_Store$',
             r'Thumbs\.db$',
             r'\.idea/',
@@ -408,14 +484,20 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                 return True
         return False
 
-    def _serve_bot_template(self):
-        body = BOT_TEMPLATE.encode('utf-8')
+    def _serve_secure_gate(self, error=False, label='secure-gate'):
+        html = _load_gate_page()
+        if html is None:
+            self.send_error(404)
+            return
+        if error:
+            html = html.replace('<!--SECURE_ERROR-->', SECURE_ERROR_CALLOUT, 1)
+        body = html.encode('utf-8')
         self.send_response(200)
         self.send_header('Content-Type', 'text/html; charset=utf-8')
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
-        sys.stderr.write('[BOT] %s — %s (template)\n' % (
-            self.address_string(), self.path,
+        sys.stderr.write('[BOT] %s — %s (%s)\n' % (
+            self.address_string(), self.path, label,
         ))
         try:
             self.wfile.write(body)
@@ -483,6 +565,77 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                 return True
         return False
 
+    def _is_secure_host(self):
+        host = self.headers.get('Host', '').split(':')[0].lower()
+        return host == 'secure.alieninc.tech'
+
+    def _is_vault_path(self, path):
+        path = path.split('?', 1)[0]
+        return path == '/vault' or path.startswith('/vault/')
+
+    def _has_valid_secure_session(self):
+        cookie = self.headers.get('Cookie', '')
+        token = None
+        for part in cookie.split(';'):
+            part = part.strip()
+            if part.startswith(SECURE_SESSION_COOKIE + '='):
+                token = part.split('=', 1)[1]
+                break
+        return _check_secure_session(token)
+
+    def _log_honeypot(self, user, password):
+        line = json.dumps({
+            'ts': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+            'ip': self.client_address[0] if self.client_address else '',
+            'ua': self.headers.get('User-Agent', ''),
+            'user': user,
+            'password': password,
+            'path': self.path,
+        }, ensure_ascii=False)
+        try:
+            with open(HONEYPOT_LOG, 'a', encoding='utf-8') as f:
+                f.write(line + '\n')
+        except OSError as e:
+            sys.stderr.write('[HONEYPOT] log write failed: %s\n' % e)
+
+    def do_POST(self):
+        path = self.path.split('?', 1)[0].split('#', 1)[0]
+        if path == '/pxpadmin/bin/authform.cgi':
+            self._handle_secure_auth()
+            return
+        self.send_error(404)
+
+    def _handle_secure_auth(self):
+        try:
+            length = int(self.headers.get('Content-Length', 0) or 0)
+        except ValueError:
+            length = 0
+        length = min(length, 65536)
+        raw = self.rfile.read(length).decode('utf-8', errors='replace') if length > 0 else ''
+        try:
+            form = urllib.parse.parse_qs(raw, keep_blank_values=True)
+        except Exception:
+            form = {}
+        user = (form.get('user', [''])[0] or '').strip()
+        password = form.get('password', [''])[0] or ''
+        self._log_honeypot(user, password)
+        if verify_secure_credentials(user, password):
+            token = _issue_secure_session(user)
+            self.send_response(302)
+            self.send_header('Location', '/vault/')
+            self.send_header('Set-Cookie',
+                             SECURE_SESSION_COOKIE + '=' + token +
+                             '; Path=/; HttpOnly; Secure; SameSite=Lax')
+            self.end_headers()
+            sys.stderr.write('[SECURE-AUTH] success user=%r from %s\n' % (
+                user, self.address_string(),
+            ))
+            return
+        sys.stderr.write('[SECURE-AUTH] fail user=%r from %s\n' % (
+            user, self.address_string(),
+        ))
+        self._serve_secure_gate(error=True, label='auth-fail')
+
     def do_GET(self):
         if self.path == '/api/competitors' or self.path.startswith('/api/competitors?'):
             ua = self.headers.get('User-Agent', '')
@@ -500,6 +653,15 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             if self._is_blocked_path(self.path):
                 self.send_error(404)
                 return
+            if self._is_secure_host() and self._is_vault_path(self.path):
+                if not self._has_valid_secure_session():
+                    sys.stderr.write('[VAULT] %s — %s (no session, redirected)\n' % (
+                        self.address_string(), self.path,
+                    ))
+                    self.send_response(302)
+                    self.send_header('Location', '/')
+                    self.end_headers()
+                    return
             if self.path.endswith('/') and self._is_sensitive_directory(self.path):
                 self.send_error(404)
                 return
@@ -516,7 +678,7 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                     if os.path.isdir(fs_path):
                         fs_path = os.path.join(fs_path, 'index.html')
                     if os.path.isfile(fs_path) and fs_path.endswith('.html'):
-                        self._serve_bot_template()
+                        self._serve_secure_gate(label='bot')
                         return
                 except Exception as e:
                     sys.stderr.write('[BOT-ERR] %s\n' % str(e))
@@ -583,6 +745,7 @@ if __name__ == '__main__':
     print(f'  Dashboard:    /dashboard.html')
     print(f'  Competitors:  /api/competitors')
     print(f'  Prices:       /api/prices')
+    print(f'  Secure gate:  secure.alieninc.tech (bots → gate page)')
     print(f'  All files:    /')
     print(f'  ─────────────────────────────────────\n')
 

@@ -139,8 +139,8 @@ def is_bot(user_agent):
 # Authenticates users for the secure.alieninc.tech subdomain.
 # Default backend: Supabase Auth (GoTrue password grant) using the same
 # project as The Daily Art Cult. Falls back to env credentials if configured.
-# Nothing else changes — the session cookie, vault/moderation gate and
-# decoy-fail flow all keep working on top of this verifier.
+# Nothing else changes — the session cookie and vault/moderation gate
+# all keep working on top of this verifier.
 
 SECURE_AUTH_BACKEND = os.environ.get('SECURE_AUTH_BACKEND', 'supabase')
 SUPABASE_URL = os.environ.get(
@@ -168,7 +168,6 @@ ECOSYSTEM_JSON_PATH = os.path.join(ROOT, 'data', 'alieninc-ecosystem.json')
 SECURE_SESSION_COOKIE = 'secure_session'
 MAIN_SESSION_COOKIE = 'alieninc_session'
 SECURE_SESSION_TTL = 8 * 3600  # 8 hours
-HONEYPOT_LOG = os.path.join(ROOT, 'secure-honeypot.log')
 
 _session_secret_ephemeral = None
 
@@ -556,7 +555,6 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             r'\.py$',
             r'\.ts$',
             r'\.env',
-            r'secure-honeypot\.log$',
             r'\.DS_Store$',
             r'Thumbs\.db$',
             r'\.idea/',
@@ -736,21 +734,6 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             data_json = 'null'
         return html.replace(placeholder, 'var ECOSYSTEM_DATA = ' + data_json + ';', 1)
 
-    def _log_honeypot(self, user, password):
-        line = json.dumps({
-            'ts': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
-            'ip': self.client_address[0] if self.client_address else '',
-            'ua': self.headers.get('User-Agent', ''),
-            'user': user,
-            'password': password,
-            'path': self.path,
-        }, ensure_ascii=False)
-        try:
-            with open(HONEYPOT_LOG, 'a', encoding='utf-8') as f:
-                f.write(line + '\n')
-        except OSError as e:
-            sys.stderr.write('[HONEYPOT] log write failed: %s\n' % e)
-
     def do_POST(self):
         path = self.path.split('?', 1)[0].split('#', 1)[0]
         if path == '/pxpadmin/bin/authform.cgi':
@@ -788,7 +771,6 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         if not user or not password:
             self._send_json_error('Email and password required')
             return
-        self._log_honeypot(user, password)
         if verify_secure_credentials(user, password):
             token = _issue_secure_session(user)
             domain = self.headers.get('Host', '').split(':')[0].lower()
@@ -833,7 +815,6 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         # Optional post-auth redirect; default to root (safe for any host).
         default_redirect = '/'
         redirect = _safe_redirect(form.get('next', [''])[0]) or default_redirect
-        self._log_honeypot(user, password)
         if verify_secure_credentials(user, password):
             token = _issue_secure_session(user)
             self.send_response(302)

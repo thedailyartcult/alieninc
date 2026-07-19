@@ -14,6 +14,7 @@ import json
 import re
 import time
 import urllib.parse
+import urllib.request
 import http.server
 import socketserver
 import os
@@ -135,26 +136,80 @@ def is_bot(user_agent):
 
 
 # ── Secure gate authentication ──────────────────────────────
-# Interim backend: 'env' — constant-time compare against the
-# SECURE_GATE_USER / SECURE_GATE_PASS environment variables.
-# Unset → everything fails closed (decoy-only mode).
-#
-# SUPABASE INTEGRATION POINT ─────────────────────────────────
-# When the Supabase project is provisioned:
-#   1. Set SECURE_AUTH_BACKEND=supabase plus SUPABASE_URL and
-#      SUPABASE_ANON_KEY in the environment.
-#   2. Implement _verify_via_supabase() with the GoTrue password
-#      grant: POST {SUPABASE_URL}/auth/v1/token?grant_type=password
-#      and treat a returned access_token as success.
-# Nothing else changes — the session cookie, vault gate and
+# Authenticates users for the secure.alieninc.tech subdomain.
+# Default backend: Supabase Auth (GoTrue password grant) using the same
+# project as The Daily Art Cult. Falls back to env credentials if configured.
+# Nothing else changes — the session cookie, vault/moderation gate and
 # decoy-fail flow all keep working on top of this verifier.
 
-SECURE_AUTH_BACKEND = os.environ.get('SECURE_AUTH_BACKEND', 'env')
+SECURE_AUTH_BACKEND = os.environ.get('SECURE_AUTH_BACKEND', 'supabase')
+SUPABASE_URL = os.environ.get(
+    'SUPABASE_URL',
+    'https://frwjaixxlgthkgjtafhz.supabase.co'
+)
+SUPABASE_ANON_KEY = os.environ.get(
+    'SUPABASE_ANON_KEY',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyd2phaXh4bGd0aGtnanRhZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDUzNDQsImV4cCI6MjA5NDYyMTM0NH0.j2DKz__QMml4WplMYNmsQpTUw0qu-kZG7Md3qBEEdEc'
+)
+# Set to "true" to require app_metadata.secure_access == true for login.
+SUPABASE_REQUIRE_ACCESS = os.environ.get('SUPABASE_REQUIRE_ACCESS', 'false').lower() in ('1', 'true', 'yes')
+
+# Path to moderation guidelines data (outside the git repo on production).
+# Defaults to secure/moderation/data/ inside the repo for local dev.
+MODERATION_DATA_PATH = os.environ.get(
+    'MODERATION_DATA_PATH',
+    os.path.join(ROOT, 'secure', 'moderation', 'data')
+)
+
 SECURE_SESSION_COOKIE = 'secure_session'
 SECURE_SESSION_TTL = 8 * 3600  # 8 hours
 HONEYPOT_LOG = os.path.join(ROOT, 'secure-honeypot.log')
 
 _session_secret_ephemeral = None
+
+# Moderation audit log: in-memory ring of recent accesses.
+MODERATION_AUDIT_LOG = []
+MODERATION_AUDIT_MAX = 5000
+MODERATION_AUDIT_PATH = os.path.join(ROOT, 'secure', 'moderation-audit.log')
+
+# Simple in-memory rate limiter: IP → list of timestamps (rolling window).
+_rate_limiter = {}
+
+RATE_LIMIT_WINDOW = 60       # seconds
+RATE_LIMIT_MAX = 30          # max requests per window per IP for moderation
+
+
+def _log_moderation_audit(action, user, remote_ip, path, detail=''):
+    entry = {
+        'ts': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+        'action': action,
+        'user': user,
+        'ip': remote_ip,
+        'path': path,
+        'detail': detail,
+    }
+    MODERATION_AUDIT_LOG.append(entry)
+    if len(MODERATION_AUDIT_LOG) > MODERATION_AUDIT_MAX:
+        MODERATION_AUDIT_LOG[:] = MODERATION_AUDIT_LOG[-MODERATION_AUDIT_MAX:]
+    try:
+        with open(MODERATION_AUDIT_PATH, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(entry) + '\n')
+    except OSError:
+        pass
+
+
+def _check_rate_limit(ip):
+    now = time.time()
+    window = now - RATE_LIMIT_WINDOW
+    if ip not in _rate_limiter:
+        _rate_limiter[ip] = []
+    timestamps = _rate_limiter[ip]
+    # Purge old entries
+    _rate_limiter[ip] = [t for t in timestamps if t > window]
+    if len(_rate_limiter[ip]) >= RATE_LIMIT_MAX:
+        return False
+    _rate_limiter[ip].append(now)
+    return True
 
 
 def _session_secret():
@@ -181,9 +236,45 @@ def verify_secure_credentials(user, password):
             and hmac.compare_digest(password.encode('utf-8'), gate_pass.encode('utf-8')))
 
 
-def _verify_via_supabase(user, password):
-    # TODO(supabase): GoTrue password grant — see integration point above.
-    return False
+def _verify_via_supabase(email, password):
+    """GoTrue password grant against Supabase Auth."""
+    url = '%s/auth/v1/token?grant_type=password' % SUPABASE_URL.rstrip('/')
+    payload = json.dumps({'email': email, 'password': password}).encode('utf-8')
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        headers={
+            'apikey': SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json',
+        },
+        method='POST',
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+    except urllib.error.HTTPError as e:
+        try:
+            body = json.loads(e.read().decode('utf-8'))
+            sys.stderr.write('[SUPABASE-AUTH] error: %s\n' % body)
+        except Exception:
+            sys.stderr.write('[SUPABASE-AUTH] HTTP error: %s\n' % e.code)
+        return False
+    except Exception as e:
+        sys.stderr.write('[SUPABASE-AUTH] request failed: %s\n' % e)
+        return False
+
+    access_token = data.get('access_token')
+    if not access_token:
+        return False
+
+    if SUPABASE_REQUIRE_ACCESS:
+        user = data.get('user', {})
+        metadata = user.get('app_metadata', {}) or user.get('user_metadata', {}) or {}
+        if not metadata.get('secure_access'):
+            sys.stderr.write('[SUPABASE-AUTH] access denied for %r (no secure_access metadata)\n' % email)
+            return False
+
+    return True
 
 
 def _issue_secure_session(user):
@@ -207,6 +298,19 @@ def _check_secure_session(token):
     expected = hmac.new(_session_secret(), ('%d.%s' % (expiry, _user)).encode('utf-8'),
                         hashlib.sha256).hexdigest()
     return hmac.compare_digest(sig, expected)
+
+
+def _safe_redirect(path):
+    """Prevent open redirects by only allowing local paths."""
+    if not path:
+        return None
+    path = path.split('?', 1)[0].split('#', 1)[0]
+    if not path.startswith('/'):
+        return None
+    # Disallow protocol-relative URLs and double slashes
+    if path.startswith('//'):
+        return None
+    return path
 
 
 def _empty_item(co):
@@ -398,6 +502,12 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         words = path.split('/')
         words = list(filter(None, words))
         root = self._get_host_root()
+
+        # /moderation/ is ONLY accessible via secure.alieninc.tech (its files live
+        # under secure/moderation/ and resolve naturally from the secure subdomain root).
+        if words and words[0] == 'moderation' and not self._is_secure_host():
+            return os.path.join(ROOT, '.nonexistent')
+
         filepath = root
         for word in words:
             if os.path.dirname(word) or word in (os.curdir, os.pardir):
@@ -472,6 +582,8 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         translated = self.translate_path(path)
         sensitive_dirs = [
             os.path.join(ROOT, 'data'),
+            os.path.join(ROOT, 'secure', 'vault'),
+            os.path.join(ROOT, 'secure', 'moderation'),
             os.path.join(ROOT, 'panteon', 'engine'),
             os.path.join(ROOT, 'panteon', 'plugins'),
             os.path.join(ROOT, 'sp', 'engine'),
@@ -573,6 +685,10 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         path = path.split('?', 1)[0]
         return path == '/vault' or path.startswith('/vault/')
 
+    def _is_moderation_path(self, path):
+        path = path.split('?', 1)[0]
+        return path == '/moderation' or path.startswith('/moderation/')
+
     def _has_valid_secure_session(self):
         cookie = self.headers.get('Cookie', '')
         token = None
@@ -618,23 +734,76 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             form = {}
         user = (form.get('user', [''])[0] or '').strip()
         password = form.get('password', [''])[0] or ''
+        # Optional post-auth redirect; default to moderation portal.
+        default_redirect = '/moderation/' if SECURE_AUTH_BACKEND == 'supabase' else '/vault/'
+        redirect = _safe_redirect(form.get('next', [''])[0]) or default_redirect
         self._log_honeypot(user, password)
         if verify_secure_credentials(user, password):
             token = _issue_secure_session(user)
             self.send_response(302)
-            self.send_header('Location', '/vault/')
+            self.send_header('Location', redirect)
             self.send_header('Set-Cookie',
                              SECURE_SESSION_COOKIE + '=' + token +
                              '; Path=/; HttpOnly; Secure; SameSite=Lax')
             self.end_headers()
-            sys.stderr.write('[SECURE-AUTH] success user=%r from %s\n' % (
-                user, self.address_string(),
+            sys.stderr.write('[SECURE-AUTH] success user=%r redirect=%r from %s\n' % (
+                user, redirect, self.address_string(),
             ))
             return
         sys.stderr.write('[SECURE-AUTH] fail user=%r from %s\n' % (
             user, self.address_string(),
         ))
         self._serve_secure_gate(error=True, label='auth-fail')
+
+    def _is_moderation_data_path(self, path):
+        path = path.split('?', 1)[0]
+        return path.startswith('/moderation/data/') or path == '/moderation/data'
+
+    def _check_secure_access(self):
+        """Verify the request is allowed for protected paths.
+        Returns True if the request may proceed, False if a response was already sent."""
+        if self._is_moderation_path(self.path) and not self._is_secure_host():
+            self.send_error(404)
+            return False
+        if self._is_secure_host() and (self._is_vault_path(self.path) or self._is_moderation_path(self.path)):
+            if not self._has_valid_secure_session():
+                sys.stderr.write('[SECURE-GATE] %s — %s (no session, redirected)\n' % (
+                    self.address_string(), self.path,
+                ))
+                self.send_response(302)
+                self.send_header('Location', '/')
+                self.end_headers()
+                return False
+        # Block direct access to moderation data files — data is only served
+        # embedded in the HTML by _serve_moderation_page.
+        if self._is_moderation_data_path(self.path):
+            _log_moderation_audit('DATA-BLOCK', '-', self.address_string(), self.path, 'Direct data path blocked')
+            self.send_error(404)
+            return False
+        return True
+
+    def do_HEAD(self):
+        if self.path.startswith('/api/'):
+            super().do_HEAD()
+            return
+        if self._is_blocked_path(self.path):
+            self.send_error(404)
+            return
+        if not self._check_secure_access():
+            return
+        if self._is_moderation_path(self.path):
+            ip = self.client_address[0] if self.client_address else '?'
+            if not _check_rate_limit(ip):
+                self.send_error(429)
+                return
+        super().do_HEAD()
+
+    def end_headers(self):
+        if self._is_moderation_path(self.path) or self._is_vault_path(self.path):
+            self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+            self.send_header('Pragma', 'no-cache')
+            self.send_header('Expires', '0')
+        super().end_headers()
 
     def do_GET(self):
         if self.path == '/api/competitors' or self.path.startswith('/api/competitors?'):
@@ -653,15 +822,19 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             if self._is_blocked_path(self.path):
                 self.send_error(404)
                 return
-            if self._is_secure_host() and self._is_vault_path(self.path):
-                if not self._has_valid_secure_session():
-                    sys.stderr.write('[VAULT] %s — %s (no session, redirected)\n' % (
-                        self.address_string(), self.path,
-                    ))
-                    self.send_response(302)
-                    self.send_header('Location', '/')
-                    self.end_headers()
+            if not self._check_secure_access():
+                return
+            # Serve moderation page with data embedded server-side
+            # (must run before sensitive-directory check since moderation dir
+            #  is listed there — we want /moderation/ to serve the page, not 404)
+            if self._is_moderation_path(self.path):
+                ip = self.client_address[0] if self.client_address else '?'
+                if not _check_rate_limit(ip):
+                    _log_moderation_audit('RATE-LIMIT', '-', ip, self.path)
+                    self.send_error(429)
                     return
+                self._serve_moderation_page()
+                return
             if self.path.endswith('/') and self._is_sensitive_directory(self.path):
                 self.send_error(404)
                 return
@@ -691,6 +864,60 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             except Exception:
                 pass
             super().do_GET()
+
+    def _serve_moderation_page(self):
+        """Serve moderation index.html with guidelines data embedded server-side.
+        No separate data endpoint exists — data is injected into the HTML."""
+        html_path = os.path.join(ROOT, 'secure', 'moderation', 'index.html')
+        data_path = os.path.join(MODERATION_DATA_PATH, 'guidelines.json')
+        if not os.path.isfile(html_path):
+            self.send_error(404)
+            return
+        try:
+            with open(html_path, 'r', encoding='utf-8') as f:
+                html = f.read()
+        except OSError:
+            self.send_error(404)
+            return
+        placeholder = '/*[GUIDELINES_DATA]*/'
+        if placeholder in html:
+            if os.path.isfile(data_path):
+                try:
+                    with open(data_path, 'r', encoding='utf-8') as f:
+                        data_json = f.read()
+                except OSError:
+                    data_json = 'null'
+            else:
+                data_json = 'null'
+            # NOTE: placeholder is already inside a <script> block — no wrapping tags
+            html = html.replace(placeholder, 'var GUIDELINES_DATA = ' + data_json + ';', 1)
+        user = self._get_session_user()
+        ip = self.client_address[0] if self.client_address else '?'
+        _log_moderation_audit('PAGE-SERVE', user or '-', ip, self.path)
+        body = html.encode('utf-8')
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html; charset=utf-8')
+        self.send_header('Content-Length', str(len(body)))
+        self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+        self.send_header('Pragma', 'no-cache')
+        self.send_header('Expires', '0')
+        self.end_headers()
+        try:
+            self.wfile.write(body)
+        except BrokenPipeError:
+            pass
+
+    def _get_session_user(self):
+        cookie = self.headers.get('Cookie', '')
+        for part in cookie.split(';'):
+            part = part.strip()
+            if part.startswith(SECURE_SESSION_COOKIE + '='):
+                token = part.split('=', 1)[1]
+                try:
+                    return token.split('.', 1)[1].rsplit('.', 1)[0]
+                except (IndexError, ValueError):
+                    return None
+        return None
 
     def _serve_prices(self):
         if 'flush=1' in self.path:
@@ -738,7 +965,16 @@ class ReusableTCPServer(socketserver.ThreadingTCPServer):
     daemon_threads = True
 
 
+# ── Local testing config ──────────────────────────────────
+# Drop local_config.py in this directory for localhost testing.
+# It monkey-patches _is_secure_host and _get_host_root so
+# http://localhost:8080/ behaves like secure.alieninc.tech.
+# The file is gitignored and never pushed to production.
 if __name__ == '__main__':
+    try:
+        import local_config  # noqa: F401
+    except ImportError:
+        pass
     import concurrent.futures
     print(f'\n  Alien Inc — http://localhost:{PORT}')
     print(f'  ─────────────────────────────────────')

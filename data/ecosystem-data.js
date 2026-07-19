@@ -1,6 +1,10 @@
 /**
  * EcosystemData — single data layer for all Alien.Inc sites.
  *
+ * The server can inject ecosystem data directly into the page HTML
+ * via the /*[ECOSYSTEM_DATA]*/ placeholder.  When that global is
+ * present, this module uses it directly and skips the network fetch.
+ *
  * Usage:
  *   <script src="path/to/ecosystem-data.js"></script>
  *   <script>
@@ -17,6 +21,11 @@ var EcosystemData = (function () {
   var _listeners = [];
   var _timer = null;
   var _jsonUrl = null;
+
+  // If the server injected the data (authenticated user), use it immediately.
+  if (typeof window.ECOSYSTEM_DATA !== 'undefined' && window.ECOSYSTEM_DATA) {
+    _data = window.ECOSYSTEM_DATA;
+  }
 
   // Capture document.currentScript NOW, during synchronous IIFE execution.
   // By the time resolveJsonUrl() is called from load() → init(), this will be null.
@@ -41,6 +50,10 @@ var EcosystemData = (function () {
   }
 
   function load() {
+    // Data was already injected server-side — skip the fetch.
+    if (_data) {
+      return Promise.resolve(_data);
+    }
     var url = resolveJsonUrl() + '?t=' + Date.now();
     return window.fetch(url)
       .then(function (res) {

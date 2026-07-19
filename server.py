@@ -161,7 +161,12 @@ MODERATION_DATA_PATH = os.environ.get(
     os.path.join(ROOT, 'secure', 'moderation', 'data')
 )
 
+# Ecosystem JSON is read from the repo's data/ directory (never served directly).
+# Cannot be overridden — always uses the repo path for consistency.
+ECOSYSTEM_JSON_PATH = os.path.join(ROOT, 'data', 'alieninc-ecosystem.json')
+
 SECURE_SESSION_COOKIE = 'secure_session'
+MAIN_SESSION_COOKIE = 'alieninc_session'
 SECURE_SESSION_TTL = 8 * 3600  # 8 hours
 HONEYPOT_LOG = os.path.join(ROOT, 'secure-honeypot.log')
 
@@ -699,6 +704,38 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                 break
         return _check_secure_session(token)
 
+    def _has_valid_main_session(self):
+        cookie = self.headers.get('Cookie', '')
+        token = None
+        for part in cookie.split(';'):
+            part = part.strip()
+            if part.startswith(MAIN_SESSION_COOKIE + '='):
+                token = part.split('=', 1)[1]
+                break
+        return _check_secure_session(token)
+
+    def _is_ecosystem_data_path(self, path):
+        lower = path.lower().split('?', 1)[0].split('#', 1)[0]
+        return lower == '/data/alieninc-ecosystem.json'
+
+    def _is_ecosystem_js_path(self, path):
+        lower = path.lower().split('?', 1)[0].split('#', 1)[0]
+        return lower in ('/data/ecosystem-data.js', '/data/ecosystem-render.js')
+
+    def _embed_ecosystem_data(self, html, authenticated):
+        placeholder = '/*[ECOSYSTEM_DATA]*/'
+        if placeholder not in html:
+            return html
+        if authenticated and os.path.isfile(ECOSYSTEM_JSON_PATH):
+            try:
+                with open(ECOSYSTEM_JSON_PATH, 'r', encoding='utf-8') as f:
+                    data_json = f.read()
+            except OSError:
+                data_json = 'null'
+        else:
+            data_json = 'null'
+        return html.replace(placeholder, 'var ECOSYSTEM_DATA = ' + data_json + ';', 1)
+
     def _log_honeypot(self, user, password):
         line = json.dumps({
             'ts': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
@@ -742,9 +779,22 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             token = _issue_secure_session(user)
             self.send_response(302)
             self.send_header('Location', redirect)
-            self.send_header('Set-Cookie',
-                             SECURE_SESSION_COOKIE + '=' + token +
-                             '; Path=/; HttpOnly; Secure; SameSite=Lax')
+            domain = self.headers.get('Host', '').split(':')[0].lower()
+            base_domain = '.alieninc.tech'
+            if domain.endswith('alieninc.tech'):
+                self.send_header('Set-Cookie',
+                                 SECURE_SESSION_COOKIE + '=' + token +
+                                 '; Path=/; HttpOnly; Secure; SameSite=Lax; Domain=' + base_domain)
+                self.send_header('Set-Cookie',
+                                 MAIN_SESSION_COOKIE + '=' + token +
+                                 '; Path=/; HttpOnly; Secure; SameSite=Lax; Domain=' + base_domain)
+            else:
+                self.send_header('Set-Cookie',
+                                 SECURE_SESSION_COOKIE + '=' + token +
+                                 '; Path=/; HttpOnly; Secure; SameSite=Lax')
+                self.send_header('Set-Cookie',
+                                 MAIN_SESSION_COOKIE + '=' + token +
+                                 '; Path=/; HttpOnly; Secure; SameSite=Lax')
             self.end_headers()
             sys.stderr.write('[SECURE-AUTH] success user=%r redirect=%r from %s\n' % (
                 user, redirect, self.address_string(),
@@ -818,8 +868,20 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                 self._serve_empty_json('prices')
                 return
             self._serve_prices()
+        elif self.path == '/api/ecosystem' or self.path.startswith('/api/ecosystem?'):
+            auth = self._has_valid_secure_session() or self._has_valid_main_session()
+            if not auth:
+                self.send_error(404)
+                return
+            self._serve_ecosystem_api()
         else:
             if self._is_blocked_path(self.path):
+                self.send_error(404)
+                return
+            # Direct access to the ecosystem JSON is always blocked.
+            # Data is only available via server-side embedding or the
+            # authenticated /api/ecosystem endpoint.
+            if self._is_ecosystem_data_path(self.path):
                 self.send_error(404)
                 return
             if not self._check_secure_access():
@@ -860,7 +922,10 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                 if os.path.isdir(fs_path):
                     fs_path = os.path.join(fs_path, 'index.html')
                 if os.path.isfile(fs_path) and fs_path.endswith('.html'):
-                    pass  # already handled above for bots
+                    base = os.path.basename(fs_path)
+                    if base == 'index.html' or base == 'dashboard.html':
+                        self._serve_html_with_ecosystem(fs_path)
+                        return
             except Exception:
                 pass
             super().do_GET()
@@ -901,6 +966,47 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, private')
         self.send_header('Pragma', 'no-cache')
         self.send_header('Expires', '0')
+        self.end_headers()
+        try:
+            self.wfile.write(body)
+        except BrokenPipeError:
+            pass
+
+    def _serve_html_with_ecosystem(self, fs_path):
+        auth = self._has_valid_secure_session() or self._has_valid_main_session()
+        try:
+            with open(fs_path, 'r', encoding='utf-8') as f:
+                html = f.read()
+        except OSError:
+            self.send_error(404)
+            return
+        html = self._embed_ecosystem_data(html, auth)
+        body = html.encode('utf-8')
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html; charset=utf-8')
+        self.send_header('Content-Length', str(len(body)))
+        self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+        self.end_headers()
+        try:
+            self.wfile.write(body)
+        except BrokenPipeError:
+            pass
+
+    def _serve_ecosystem_api(self):
+        if not os.path.isfile(ECOSYSTEM_JSON_PATH):
+            self.send_error(404)
+            return
+        try:
+            with open(ECOSYSTEM_JSON_PATH, 'r', encoding='utf-8') as f:
+                data = f.read()
+        except OSError:
+            self.send_error(404)
+            return
+        body = data.encode('utf-8')
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Content-Length', str(len(body)))
+        self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
         try:
             self.wfile.write(body)

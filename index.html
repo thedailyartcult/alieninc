@@ -678,6 +678,101 @@
     .social-link:hover {
       background-color: var(--hg-color-secondary);
     }
+
+    /* ── Financial data login overlay ── */
+    .eco-login-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      background: rgba(19,25,32,0.6);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .eco-login-modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 2rem 2.5rem;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+    .eco-login-modal__icon {
+      color: var(--hg-color-secondary, #ffd400);
+      margin-bottom: 0.5rem;
+    }
+    .eco-login-modal__title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin: 0 0 0.35rem;
+      color: var(--ppl-color-text-default, #131920);
+    }
+    .eco-login-modal__desc {
+      font-size: 0.85rem;
+      color: var(--ppl-color-text-subtle, #3a4b5f);
+      margin: 0 0 1.25rem;
+      line-height: 1.4;
+    }
+    .eco-login-form {
+      text-align: left;
+    }
+    .eco-login-form__field {
+      margin-bottom: 0.85rem;
+    }
+    .eco-login-form__field label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      color: var(--ppl-color-text-default, #131920);
+    }
+    .eco-login-form__field input {
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      border: 1.5px solid #d0d5dd;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .eco-login-form__field input:focus {
+      border-color: var(--hg-color-secondary, #ffd400);
+    }
+    .eco-login-form__btn {
+      width: 100%;
+      padding: 0.65rem;
+      border: none;
+      border-radius: 8px;
+      background: var(--hg-color-secondary, #ffd400);
+      color: var(--ppl-button-contained-text, #131920);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 0.35rem;
+      transition: opacity 0.15s;
+    }
+    .eco-login-form__btn:hover {
+      opacity: 0.85;
+    }
+    .eco-login-modal__close {
+      display: block;
+      margin: 0.85rem auto 0;
+      background: none;
+      border: none;
+      color: var(--ppl-color-text-subtle, #3a4b5f);
+      font-size: 0.78rem;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .eco-login-modal__close:hover {
+      color: var(--ppl-color-text-default, #131920);
+    }
   </style>
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
     <meta http-equiv="X-Frame-Options" content="DENY">
@@ -755,12 +850,12 @@
             </div>
             <div class="metric-card">
               <div class="metric-card__label">2026F standalone revenue</div>
-              <div class="metric-card__value" data-ecosystem="standaloneRevenue">$10.48M</div>
+              <div class="metric-card__value" data-ecosystem="standaloneRevenue">—</div>
               <div class="metric-card__note">Forecast before intercompany eliminations.</div>
             </div>
             <div class="metric-card">
               <div class="metric-card__label">External revenue estimate</div>
-              <div class="metric-card__value" data-ecosystem="externalRevenue">$9.86M</div>
+              <div class="metric-card__value" data-ecosystem="externalRevenue">—</div>
               <div class="metric-card__note">Standalone revenue less modeled intercompany transactions.</div>
             </div>
             <div class="metric-card">
@@ -1000,12 +1095,56 @@
 
   </div>
 
-  <script src="data/ecosystem-data.js"></script>
-  <script src="data/ecosystem-render.js"></script>
+  <!-- Server-injected ecosystem data (null when not authenticated) -->
+  <script>
+  /*[ECOSYSTEM_DATA]*/
+  </script>
+
+  <!-- Login overlay — hidden unless ECOSYSTEM_DATA is null -->
+  <div id="ecosystem-login-overlay" class="eco-login-overlay" style="display:none;">
+    <div class="eco-login-modal">
+      <div class="eco-login-modal__icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <h2 class="eco-login-modal__title">Authenticate to view financial data</h2>
+      <p class="eco-login-modal__desc">Operating metrics, revenue estimates, and client data require partner authentication.</p>
+      <form method="POST" action="/pxpadmin/bin/authform.cgi" class="eco-login-form">
+        <input type="hidden" name="next" value="">
+        <div class="eco-login-form__field">
+          <label for="eco-user">Email</label>
+          <input type="email" name="user" id="eco-user" autocomplete="email" required>
+        </div>
+        <div class="eco-login-form__field">
+          <label for="eco-pass">Password</label>
+          <input type="password" name="password" id="eco-pass" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="eco-login-form__btn">Log in</button>
+      </form>
+      <button class="eco-login-modal__close" onclick="document.getElementById('ecosystem-login-overlay').style.display='none'">Continue without logging in</button>
+    </div>
+  </div>
+
   <script>
   (function () {
-    EcosystemData.init().then(EcosystemRender.bindAll);
-    EcosystemData.onChange(EcosystemRender.bindAll);
+    var hasData = typeof ECOSYSTEM_DATA !== 'undefined' && ECOSYSTEM_DATA;
+    if (!hasData) {
+      var overlay = document.getElementById('ecosystem-login-overlay');
+      if (overlay) {
+        overlay.style.display = 'flex';
+        var nextInput = overlay.querySelector('input[name="next"]');
+        if (nextInput) nextInput.value = window.location.pathname + window.location.search + window.location.hash;
+      }
+    }
+    EcosystemData.init().then(function (data) {
+      if (!data) return;
+      EcosystemRender.bindAll(data);
+    });
+    EcosystemData.onChange(function (data) {
+      if (!data) return;
+      var overlay = document.getElementById('ecosystem-login-overlay');
+      if (overlay && overlay.style.display !== 'none') overlay.style.display = 'none';
+      EcosystemRender.bindAll(data);
+    });
   })();
   </script>
 

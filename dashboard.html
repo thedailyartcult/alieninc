@@ -1310,18 +1310,6 @@
     var _alienData = null;
     var _competitorData = null;
 
-    // Debug banner — shows exact load status
-    var _dbg = document.createElement('div');
-    _dbg.id = 'loadStatus';
-    _dbg.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;padding:8px 16px;font:12px/1.4 monospace;color:#fff;display:flex;gap:12px;align-items:center;';
-    _dbg.innerHTML = '<span style="background:#555;padding:2px 6px;border-radius:3px">INIT</span>';
-    document.body.appendChild(_dbg);
-    function status(msg, color) {
-      var s = _dbg.querySelector('span:first-child');
-      s.textContent = msg;
-      s.style.background = color || '#555';
-    }
-
     // Show login overlay if no server-injected data
     (function () {
       var hasData = typeof ECOSYSTEM_DATA !== 'undefined' && ECOSYSTEM_DATA;
@@ -1882,21 +1870,16 @@
     }
 
     // Init — onChange handles initial render and all subsequent updates
-    status('Loading ecosystem JSON...', '#b87333');
     EcosystemData.init().then(function (data) {
       if (!data) {
-        status('FINANCIAL DATA LOCKED — log in to view', '#3a4b5f');
-        setTimeout(function() { _dbg.style.display = 'none'; }, 4000);
         return;
       }
 
-      status('JSON OK (' + (data.companies||[]).length + ' companies) — fetching competitors...', '#2d7');
       _alienData = data;
 
-      try { render(EcosystemData.getPublicData()); } catch(e) { status('RENDER ERROR: ' + e.message, '#c00'); }
+      try { render(EcosystemData.getPublicData()); } catch(e) {}
 
       Competitors.init().then(function (list) {
-        status('Competitors: ' + list.filter(function(c){return c.status==='live';}).length + '/' + list.length + ' live — rendering', '#2d7');
         _competitorData = list;
         var hasLive = list.some(function (c) { return c.status === 'live'; });
         if (!hasLive && list.length > 0) {
@@ -1905,28 +1888,25 @@
           document.getElementById('serverHint').style.display = 'inline';
         }
 
-        ExchangeRates.init().then(function () {
-          var sel = document.getElementById('compareCurrency');
-          var saved = localStorage.getItem('alieninc_display_currency') || 'USD';
-          sel.value = ExchangeRates.SUPPORTED.indexOf(saved) >= 0 ? saved : 'USD';
-          renderComparison(data, list, sel.value);
-          sel.addEventListener('change', function () {
-            localStorage.setItem('alieninc_display_currency', sel.value);
-            renderComparison(_alienData, _competitorData, sel.value);
+          ExchangeRates.init().then(function () {
+            var sel = document.getElementById('compareCurrency');
+            var saved = localStorage.getItem('alieninc_display_currency') || 'USD';
+            sel.value = ExchangeRates.SUPPORTED.indexOf(saved) >= 0 ? saved : 'USD';
+            renderComparison(data, list, sel.value);
+            sel.addEventListener('change', function () {
+              localStorage.setItem('alieninc_display_currency', sel.value);
+              renderComparison(_alienData, _competitorData, sel.value);
+            });
           });
-          setTimeout(function() { _dbg.style.display = 'none'; }, 3000);
+        }).catch(function (err) {
+          document.getElementById('serverHint').style.display = 'inline';
+          renderComparison(data, [], 'USD');
         });
       }).catch(function (err) {
-        status('COMPETITOR FETCH FAILED: ' + err.message, '#c00');
-        document.getElementById('serverHint').style.display = 'inline';
-        renderComparison(data, [], 'USD');
+        var debug = document.getElementById('debugPanel');
+        debug.className = 'debug-panel visible';
+        debug.innerHTML = '<strong>Error initializing data layer:</strong> ' + err.message;
       });
-    }).catch(function (err) {
-      status('INIT FAILED: ' + err.message, '#c00');
-      var debug = document.getElementById('debugPanel');
-      debug.className = 'debug-panel visible';
-      debug.innerHTML = '<strong>Error initializing data layer:</strong> ' + err.message;
-    });
 
     EcosystemData.onChange(function () {
       try {

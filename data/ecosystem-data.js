@@ -103,6 +103,12 @@ var EcosystemData = (function () {
     return resolveJsonUrl();
   }
 
+  function setData(data) {
+    _data = data;
+    notify();
+    return _data;
+  }
+
   function init() {
     startPolling();
     return load();
@@ -138,6 +144,7 @@ var EcosystemData = (function () {
     init: init,
     load: load,
     getUrl: getUrl,
+    setData: setData,
     onChange: onChange,
     get: get,
     getPublicData: getPublicData

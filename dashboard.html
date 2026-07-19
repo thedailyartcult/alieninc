@@ -1332,11 +1332,22 @@
               .then(function (r) { return r.json(); })
               .then(function (d) {
                 if (d.ok) {
-                  window.location.reload();
-                } else {
-                  errorEl.textContent = d.error || 'Login failed';
-                  errorEl.style.display = 'block';
+                  overlay.style.display = 'none';
+                  return fetch('/api/ecosystem');
                 }
+                errorEl.textContent = d.error || 'Login failed';
+                errorEl.style.display = 'block';
+              })
+              .then(function (r) {
+                if (!r) return;
+                return r.json();
+              })
+              .then(function (data) {
+                if (!data) return;
+                EcosystemData.setData(data);
+                window.ECOSYSTEM_DATA = data;
+                _alienData = data;
+                runInitChain();
               })
               .catch(function () {
                 errorEl.textContent = 'Network error';
@@ -1869,14 +1880,9 @@
       body.innerHTML = html;
     }
 
-    // Init — onChange handles initial render and all subsequent updates
-    EcosystemData.init().then(function (data) {
-      if (!data) {
-        return;
-      }
-
+    function runInitChain(data) {
+      if (!data) return;
       _alienData = data;
-
       try { render(EcosystemData.getPublicData()); } catch(e) {}
 
       Competitors.init().then(function (list) {
@@ -1888,25 +1894,30 @@
           document.getElementById('serverHint').style.display = 'inline';
         }
 
-          ExchangeRates.init().then(function () {
-            var sel = document.getElementById('compareCurrency');
-            var saved = localStorage.getItem('alieninc_display_currency') || 'USD';
-            sel.value = ExchangeRates.SUPPORTED.indexOf(saved) >= 0 ? saved : 'USD';
-            renderComparison(data, list, sel.value);
-            sel.addEventListener('change', function () {
-              localStorage.setItem('alieninc_display_currency', sel.value);
-              renderComparison(_alienData, _competitorData, sel.value);
-            });
+        ExchangeRates.init().then(function () {
+          var sel = document.getElementById('compareCurrency');
+          var saved = localStorage.getItem('alieninc_display_currency') || 'USD';
+          sel.value = ExchangeRates.SUPPORTED.indexOf(saved) >= 0 ? saved : 'USD';
+          renderComparison(data, list, sel.value);
+          sel.addEventListener('change', function () {
+            localStorage.setItem('alieninc_display_currency', sel.value);
+            renderComparison(_alienData, _competitorData, sel.value);
           });
-        }).catch(function (err) {
-          document.getElementById('serverHint').style.display = 'inline';
-          renderComparison(data, [], 'USD');
         });
       }).catch(function (err) {
-        var debug = document.getElementById('debugPanel');
-        debug.className = 'debug-panel visible';
-        debug.innerHTML = '<strong>Error initializing data layer:</strong> ' + err.message;
+        document.getElementById('serverHint').style.display = 'inline';
+        renderComparison(data, [], 'USD');
       });
+    }
+
+    // Init — onChange handles initial render and all subsequent updates
+    EcosystemData.init().then(function (data) {
+      runInitChain(data);
+    }).catch(function (err) {
+      var debug = document.getElementById('debugPanel');
+      debug.className = 'debug-panel visible';
+      debug.innerHTML = '<strong>Error initializing data layer:</strong> ' + err.message;
+    });
 
     EcosystemData.onChange(function () {
       try {

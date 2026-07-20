@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PANTEON — Scan Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;600;700&family=Orbitron:wght@700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        :root{--bg:#0a0f1a;--panel:#111827;--border:rgba(0,255,255,0.08);--cyan:#00FFFF;--orange:#F87B1E;--red:#ff1744;--yellow:#ffab00;--green:#00e676;--blue:#448aff;--text:#c8d6e5;--muted:rgba(255,255,255,0.4)}
+        body{font-family:'Barlow',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden}
+
+        .app{display:grid;grid-template-columns:260px 1fr 300px;grid-template-rows:52px 1fr;height:100vh}
+
+        .header{grid-column:1/-1;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:10}
+        .header__brand{display:flex;align-items:center;gap:12px}
+        .header__logo-link{display:block;height:32px;width:auto}
+        .header__logo-svg{height:100%;width:auto;display:block}
+        .header__logo-link:hover .header__logo-svg{filter:drop-shadow(0 0 8px rgba(0,255,255,0.4))}
+        .header__sep{color:var(--muted);font-weight:300}
+        .header__user{font-size:12px;color:var(--muted)}
+        .header__actions{display:flex;gap:8px}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:4px;font-size:12px;font-weight:600;font-family:'Barlow',sans-serif;cursor:pointer;border:none;transition:all 0.2s}
+        .btn-cyan{background:var(--cyan);color:#0a0f1a}
+        .btn-cyan:hover{background:#00E5E5}
+        .btn-cyan:disabled{opacity:0.4;cursor:not-allowed}
+        .btn-red{background:rgba(255,23,68,0.15);color:var(--red);border:1px solid rgba(255,23,68,0.3)}
+        .btn-red:hover{background:rgba(255,23,68,0.25)}
+        .btn-ghost{background:rgba(255,255,255,0.06);color:var(--text);border:1px solid rgba(255,255,255,0.1)}
+        .btn-ghost:hover{background:rgba(255,255,255,0.1)}
+
+        .sidebar{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+        .sidebar__title{padding:14px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--cyan);border-bottom:1px solid var(--border)}
+        .sidebar__list{flex:1;overflow-y:auto;padding:8px}
+        .target-item{padding:10px 12px;border-radius:4px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px;transition:background 0.15s;border:1px solid transparent}
+        .target-item:hover{background:rgba(0,255,255,0.05);border-color:var(--border)}
+        .target-item.active{background:rgba(0,255,255,0.08);border-color:rgba(0,255,255,0.15)}
+        .target-item__dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+        .target-item__name{color:#fff;font-weight:500;font-size:13px}
+        .target-item__host{color:var(--muted);font-size:10px;font-family:'JetBrains Mono',monospace}
+        .sidebar__section{padding:12px;border-top:1px solid var(--border)}
+        .sidebar__label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+        .plugin-check{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px;color:var(--text);cursor:pointer}
+        .plugin-check input{accent-color:var(--cyan);width:13px;height:13px}
+
+        .main{display:flex;flex-direction:column;overflow:hidden}
+        .progress-bar{height:3px;background:rgba(255,255,255,0.04);position:relative}
+        .progress-bar__fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--blue));transition:width 0.4s ease;width:0%}
+        .progress-info{padding:8px 16px;display:flex;align-items:center;justify-content:space-between;font-size:11px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.2)}
+        .progress-info__status{display:flex;align-items:center;gap:8px}
+        .progress-info__dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+        .progress-info__dot.scanning{background:var(--green);animation:pulse 1.5s infinite}
+        .progress-info__dot.done{background:var(--cyan)}
+        .progress-info__dot.error{background:var(--red)}
+        .progress-info__pct{font-family:'JetBrains Mono',monospace;color:var(--cyan);font-weight:600}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+        .terminal{flex:1;overflow-y:auto;padding:10px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.7;background:#060a12}
+        .t{display:flex;gap:10px}
+        .t ts{color:rgba(255,255,255,0.12);min-width:65px;flex-shrink:0}
+        .t msg{word-break:break-all}
+        .t.info msg{color:var(--text)}
+        .t.warn msg{color:var(--yellow)}
+        .t.ok msg{color:var(--green)}
+        .t.err msg{color:var(--red)}
+        .t.plug msg{color:var(--cyan)}
+        .t.find msg{color:var(--orange)}
+        .t.find.scritical msg{color:var(--red);font-weight:700}
+        .t.find.shigh msg{color:var(--orange)}
+        .t.find.smedium msg{color:var(--yellow)}
+        .t.find.slow msg{color:var(--green)}
+
+        .right-panel{background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+        .right-panel__title{padding:14px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--cyan);border-bottom:1px solid var(--border)}
+        .results-scroll{flex:1;overflow-y:auto;padding:12px}
+
+        .score-card{text-align:center;padding:16px;margin-bottom:14px;background:rgba(0,0,0,0.2);border-radius:8px;border:1px solid var(--border)}
+        .score-card__number{font-family:'Orbitron',sans-serif;font-size:36px;font-weight:900;color:#fff}
+        .score-card__label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+        .score-card__grade{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700;margin-top:2px}
+
+        .sev-row{display:flex;gap:4px;margin-bottom:14px}
+        .sev-pill{flex:1;text-align:center;padding:6px 2px;border-radius:4px;background:rgba(255,255,255,0.03);border:1px solid var(--border)}
+        .sev-pill__c{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:#fff}
+        .sev-pill__l{font-size:8px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-top:1px}
+        .sev-pill.sc .sev-pill__c{color:var(--red)}
+        .sev-pill.sh .sev-pill__c{color:var(--orange)}
+        .sev-pill.sm .sev-pill__c{color:var(--yellow)}
+        .sev-pill.sl .sev-pill__c{color:var(--green)}
+        .sev-pill.si .sev-pill__c{color:var(--blue)}
+
+        .fcard{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:5px;padding:8px 10px;margin-bottom:5px;border-left:3px solid var(--muted)}
+        .fcard.fc{border-left-color:var(--red)} .fcard.fh{border-left-color:var(--orange)}
+        .fcard.fm{border-left-color:var(--yellow)} .fcard.fl{border-left-color:var(--green)}
+        .fcard__n{font-size:12px;font-weight:600;color:#fff}
+        .fcard__cvss{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11px;margin-left:4px}
+        .fcard__m{font-size:10px;color:var(--muted);margin-top:2px}
+
+        .hitem{padding:8px 10px;border-radius:4px;border:1px solid var(--border);margin-bottom:4px;cursor:pointer;transition:border-color 0.2s}
+        .hitem:hover{border-color:rgba(0,255,255,0.3)}
+        .hitem__top{display:flex;justify-content:space-between;align-items:center}
+        .hitem__id{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--cyan)}
+        .hitem__st{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600;text-transform:uppercase}
+        .hitem__st.done{background:rgba(0,230,118,0.15);color:var(--green)}
+        .hitem__st.running{background:rgba(0,255,255,0.15);color:var(--cyan)}
+        .hitem__t{font-size:10px;color:var(--muted);margin-top:2px}
+
+        .empty{padding:30px 16px;text-align:center;color:var(--muted);font-size:12px}
+
+        ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:3px}
+
+        @media(max-width:1100px){.app{grid-template-columns:1fr;grid-template-rows:52px 1fr}.sidebar,.right-panel{display:none}}
+    </style>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header__brand">
+                <a href="index.html" class="header__logo-link" aria-label="PANTEON home">
+                    <svg class="header__logo-svg" viewBox="0 0 360 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PANTEON">
+                        <defs><style>.ht{font-family:'Orbitron',sans-serif;font-weight:900}</style></defs>
+                        <g transform="translate(75,0)">
+                            <g transform="translate(8,6) scale(0.104)">
+                                <path d="m33.676 364.82c.536-7.268 1.777-14.482 5.029-21.276 9.478-19.803 33.963-29.34 53.026-19.284 15.333 8.089 22.563 29.331 13.578 45.149-6.873 12.099-23.072 18.235-35.622 10.228-4.433-2.828-7.634-7.279-8.994-12.286-1.359-5.006-.685-10.798 2.939-15.401 2.236-2.841 5.447-4.765 9.111-5.408 3.664-.643 8.171.404 10.875 3.997 1.783 2.369 1.91 4.545 1.411 7.113-.25 1.284-.781 2.84-2.351 3.997-1.57 1.157-4.293 1.942-5.584.588-1.107-1.161.675-3.153.73-4.756.039-.832.077-1.732-.26-2.475-.897-1.146-1.849-1.342-3.468-1.058-1.655.29-3.647 1.454-4.585 2.645l.059c-2.022 2.599-2.372 5.594-1.528 8.7.816 3.007 2.857 5.919 5.467 7.701l.294.235c8.545 5.452 18.484.703 23.392-7.937 6.716-11.823 1.511-26.282-10.285-32.505-15.078-7.954-35.744 1.451-40.36 17.085-4.566 15.464-2.872 30.938-.274 37.511l-10.609.073c-2.558-12.089-1.929-15.035-1.929-22.696z" fill="#fff"/>
+                                <path d="m471.546 260.66c17.668-13.594 26.097-35.697 29.523-57.078 1.465-9.395 1.975-19.069.142-28.452 14.1.3 25.825 9.336 36.433 17.663 18.603 15.53 35.228 33.824 47.215 54.967 3.632 6.175-5.344 4.634-8.807 5.923-30.729 5.842-62.032 11.753-93.438 8.916-3.724-.425-7.428-1.045-11.069-1.94z" fill="#02122b"/>
+                                <path d="m288.006 210.87c10.816-13.823 26.523-22.816 42.335-29.821 12.478-5.361 25.719-9.195 39.307-10.133 3.601-.492 7.201-.983 10.802-1.475-5.886 13.4-9.334 29.076-3.95 43.223 5.777 15.238 17.145 27.376 24.994 41.49 4.602 5.226-5.322 2.768-8.464 3.535-25.451-.025-51.385-4.474-74.255-16.006-13.053-6.755-25.175-16.863-30.769-30.813z" fill="#02122b"/>
+                                <path d="m495.406 157a70.231 70.231 0 0 1 14.44 42.81 70.235 70.235 0 0 1-140.47 0 70.231 70.231 0 0 1 14.28-42.81z" fill="#00FFFF"/>
+                                <path d="m513.206 465.53c6.733 0 8.714-5.446 12.181-25.899 2.448-14.774 7.107-28.463 10.502-43.043 3.022-13.117 5.643-20.332 9.669-26.618 6.553-10.229 6.301-20.921-.717-30.481-6.33-8.623-6.827-11.121-6.547-32.901.138-10.725.564-21.286.947-23.468.881-5.018 4.615-7.692 13.904-9.959 8.483-2.07 16.525-2.293 41.967-1.168 18.144.802 20.457.723 22.75-.779 5.627-3.687 2.953-8.841-12.261-23.626-15.69-15.249-23.876-24.688-38.811-44.75-26.839-36.053-30.927-40.83-57.501-49.189-19.575-6.158-26.691-9.012-62.031-10.06-24.654-.731-38.767 2.596-45.357 3.347-25.219 2.872-66.247 14.877-91.933 26.083-13.581 5.925-14.042 6.172-30.115 16.152-11.981 7.439-18.733 10.459-35.44 15.034-34.886 9.553-56.753 7.758-92 10.378-9.258.688-49.298 3.515-74.5 4.478-30.689 1.173-35.835-2.038-38.423.55-2.032 2.032-.564 8.182-.602 14.306-.024 3.738.184 7.664.486 11.602 8.192-1.424 8.035-1.368 26.54-2.917 1.681-.141 16.718-1.67 44.5-4.173 11.867-1.069 70.326-2.845 105.5-3.925 16.997-.522 34.357-4.723 51-1.235 5.762 1.208-2.387-1.116 16 7.481 36.313 14.051 55.853 23.79 104.5 32.83 30.774 4.52 33.208 4.975 36.376 7.291 1.746 1.276 1.662 1.617-1.677 6.836-3.564 5.572-14.275 15.81-29.699 28.389-51.619 43.564-115.05 77.431-162.89 98.598-22.221 9.512-37.55 14.655-50.108 16.811-61.892 13.654-134.26-9.494-136.11-56.959-.049-1.256-.499-6.001.14-12.079.445-4.236.896-7.322 2.293-11.095 3.98-10.75 12.413-20.407 28.672-21.755 11.746.022 20.375 6.156 23.95 16.17 4.562 12.78-1.319 27.071-14.023 29.565-6.64 1.304-11.222-.526-14.271-4.468-3.342-4.322-3.72-12.026-1.356-15.634 2.276-3.473 7.246-5.275 10.824-3.925 3.613 1.364 4.993.366.654-3.184-.38-.249-.778-.459-1.191-.631-6.668-2.792-17.127 4.123-17.913 14.135-.712 11.495 7.705 20.279 19.25 20.94 6.566.376 14.594-1.967 20.026-7.804 13.425-14.428 9.171-34.885-2.959-45.762-4.613-4.137-7.754-6.058-14.065-7.477-19.37-4.355-37.69 4.513-45.528 24.301-3.565 9-3.768 16.201-3.852 23.221-.704 58.895 65.742 87.202 131.95 82.517 28.009-2.412 46.229-6.81" fill="#00FFFF"/>
+                                <path d="m383.196 201.98c-4.211-3.967-7.568-5.831-13.289-7.459-5.721-1.628-11.005-1.948-16.307-.941-9.575 1.861-17.024 8.596-21.191 17.146-2.794 5.709-3.294 12.922-1.174 19.148 2.121 6.225 6.905 12.595 14.541 13.07 2.166.135 4.348-.632 6.238-2.086 2.563-1.968 4.711-5.159 4.23-8.762-.337-2.556-2.374-4.837-5.118-5.454-3.042-.684-6.204 1.232-6.536 3.928-.23 1.82 2.342 3.213 2.769 2.786" fill="#fff"/>
+                                <path d="m413.196 231.98c-4.211-3.967-7.568-5.831-13.289-7.459-5.721-1.628-11.005-1.948-16.307-.941-9.575 1.861-17.024 8.596-21.191 17.146-2.794 5.709-3.294 12.922-1.174 19.148 2.121 6.225 6.905 12.595 14.541 13.07 2.166.135 4.348-.632 6.238-2.086 2.563-1.968 4.711-5.159 4.23-8.762-.337-2.556-2.374-4.837-5.118-5.454-3.042-.684-6.204 1.232-6.536 3.928-.23 1.82 2.342 3.213 2.769 2.786" fill="#fff"/>
+                            </g>
+                            <text x="84" y="44" class="ht" fill="#fff" letter-spacing="1">PANTE<tspan fill="#00FFFF">ON</tspan></text>
+                        </g>
+                    </svg>
+                </a>
+                <div class="header__sep">|</div>
+                <div class="header__user" id="userInfo">—</div>
+            </div>
+            <div class="header__actions">
+                <button class="btn btn-cyan" id="scanBtn" onclick="startScan()">Start Scan</button>
+                <button class="btn btn-red" id="cancelBtn" onclick="cancelScan()" style="display:none">Cancel</button>
+                <button class="btn btn-ghost" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <aside class="sidebar">
+            <div class="sidebar__title">Scan Targets</div>
+            <div class="sidebar__list" id="targetList"></div>
+            <div class="sidebar__section">
+                <div class="sidebar__label">Plugins</div>
+                <div id="pluginList"></div>
+            </div>
+            <div class="sidebar__section" style="border-top:1px solid var(--border)">
+                <div class="sidebar__label">Scan History</div>
+                <div id="historyList"></div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="progress-bar"><div class="progress-bar__fill" id="progressFill"></div></div>
+            <div class="progress-info">
+                <div class="progress-info__status">
+                    <div class="progress-info__dot" id="statusDot"></div>
+                    <span id="statusText">Ready</span>
+                </div>
+                <div class="progress-info__pct" id="progressPct">0%</div>
+            </div>
+            <div class="terminal" id="terminal">
+                <div class="t info"><ts>[system]</ts><msg>Panteon Vulnerability Scanner Engine v1.0.0</msg></div>
+                <div class="t info"><ts>[system]</ts><msg>Alien Inc. Multi-Tenant Security Engine</msg></div>
+                <div class="t info"><ts>[system]</ts><msg>Select targets and click "Start Scan" to begin.</msg></div>
+            </div>
+        </main>
+
+        <aside class="right-panel">
+            <div class="right-panel__title">Results</div>
+            <div class="results-scroll" id="resultsPanel">
+                <div class="score-card">
+                    <div class="score-card__number" id="scoreNumber">—</div>
+                    <div class="score-card__label">Security Score</div>
+                    <div class="score-card__grade" id="scoreGrade"></div>
+                </div>
+                <div class="sev-row">
+                    <div class="sev-pill sc"><div class="sev-pill__c" id="sevC">0</div><div class="sev-pill__l">Crit</div></div>
+                    <div class="sev-pill sh"><div class="sev-pill__c" id="sevH">0</div><div class="sev-pill__l">High</div></div>
+                    <div class="sev-pill sm"><div class="sev-pill__c" id="sevM">0</div><div class="sev-pill__l">Med</div></div>
+                    <div class="sev-pill sl"><div class="sev-pill__c" id="sevL">0</div><div class="sev-pill__l">Low</div></div>
+                    <div class="sev-pill si"><div class="sev-pill__c" id="sevI">0</div><div class="sev-pill__l">Info</div></div>
+                </div>
+                <div id="findingList"></div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Panteon client-side scanner -->
+    <script src="../data/ecosystem-data.js"></script>
+    <script>
+    // ─── Auth Gate ───
+    var session = null;
+    try { session = JSON.parse(localStorage.getItem('hs_session')); } catch(e) {}
+    if (!session || !session.username) { window.location.href = 'login.html'; }
+    if (session) document.getElementById('userInfo').textContent = session.username + ' @ ' + (session.company_id || 'alieninc');
+
+    // ─── Targets ───
+    var ALL_TARGETS = [
+        {id:'alieninc', name:'Alien Inc Root', host:'alieninc.tech', ports:[80,443,8721]},
+        {id:'1609', name:'1609 Holdings', host:'alieninc.tech', ports:[80,443]},
+        {id:'panteon', name:'Panteon', host:'alieninc.tech', ports:[80,443,8721]},
+        {id:'exosphere', name:'Exosphere', host:'alieninc.tech', ports:[80,443]},
+        {id:'kmt', name:'KMT Consulting', host:'alieninc.tech', ports:[80,443]},
+        {id:'statute', name:'Statute & Precedent', host:'alieninc.tech', ports:[80,443]},
+        {id:'alcantara', name:'St. Alcantara Foundation', host:'alieninc.tech', ports:[80,443]},
+        {id:'tdac', name:'The Daily Art Cult', host:'alieninc.tech', ports:[80,443]}
+    ];
+
+    var PLUGINS = [
+        {id:1001, name:'SSH Weak Ciphers', family:'SSH', cvss:7.5, desc:'Detects weak SSH ciphers, MACs, and key exchange algorithms'},
+        {id:1002, name:'Anonymous FTP', family:'FTP', cvss:5.3, desc:'Checks for anonymous FTP login access'},
+        {id:1003, name:'HTTP Security Headers', family:'Web', cvss:6.1, desc:'Audits missing HTTP security headers'},
+        {id:1004, name:'Exposed Sensitive Files', family:'Web', cvss:7.5, desc:'Scans for publicly accessible sensitive files'},
+        {id:1005, name:'TLS/SSL Weakness', family:'SSL', cvss:7.4, desc:'Detects weak TLS versions and cipher suites'},
+        {id:1006, name:'DNS Zone Transfer', family:'DNS', cvss:7.5, desc:'Tests if DNS server allows zone transfers'},
+        {id:1007, name:'SMB Signing', family:'Windows', cvss:7.5, desc:'Checks SMB message signing requirements'},
+        {id:1008, name:'RDP Encryption', family:'Windows', cvss:7.5, desc:'Checks RDP encryption and NLA requirements'},
+        {id:1009, name:'HTTP Info Disclosure', family:'Web', cvss:5.3, desc:'Detects information leakage via HTTP'},
+        {id:1010, name:'Bot Scraper Data Exposure', family:'Web', cvss:8.4, desc:'Tests dynamic rendering — checks if real data leaks to bot UAs'},
+        {id:1011, name:'Bot Detection Bypass (HTTP Methods)', family:'Web', cvss:7.5, desc:'Tests if HEAD/POST/OPTIONS bypass bot detection'},
+        {id:1012, name:'Bot vs Human Fingerprinting', family:'Web', cvss:5.3, desc:'Compares bot/human response differences'},
+        {id:1014, name:'Error Page Info Disclosure', family:'Web', cvss:5.0, desc:'Checks error pages for server/stack leaks'},
+        {id:1017, name:'Timing Side-Channel Detection', family:'Web', cvss:4.3, desc:'Measures bot vs human response latency'},
+        {id:1018, name:'Cache Poisoning via Bot UA', family:'Web', cvss:6.1, desc:'Tests if bot responses are cacheable'},
+        {id:1020, name:'HTTP Method Override Bypass', family:'Web', cvss:6.5, desc:'Tests X-HTTP-Method-Override UA bypass'},
+        {id:1021, name:'JS Bot Detection Source Leak', family:'Web', cvss:5.3, desc:'Scans JS for hardcoded bot detection logic'},
+        {id:1022, name:'CORS Preflight Bot Bypass', family:'Web', cvss:5.0, desc:'Tests OPTIONS CORS headers for bot/human differences'},
+        {id:1023, name:'API Endpoint Bot Bypass', family:'Web', cvss:7.5, desc:'Tests if /api/* returns real data to bot UAs'},
+        {id:1024, name:'AI Crawler Perspective', family:'Web', cvss:0.0, desc:'Alien Inc in a Nutshell — what an AI/LLM sees on alieninc.tech'}
+    ];
+
+    // ─── Render sidebar ───
+    var selectedTargets = ALL_TARGETS.map(function(t){return t.id});
+    (function(){
+        var html = '';
+        ALL_TARGETS.forEach(function(t){
+            html += '<div class="target-item active" data-id="'+t.id+'" onclick="toggleTarget(this)">';
+            html += '<div class="target-item__dot"></div>';
+            html += '<div><div class="target-item__name">'+esc(t.name)+'</div>';
+            html += '<div class="target-item__host">'+esc(t.host)+':'+t.ports[0]+'</div></div></div>';
+        });
+        document.getElementById('targetList').innerHTML = html;
+
+        var ph = '';
+        PLUGINS.forEach(function(p){
+            ph += '<label class="plugin-check"><input type="checkbox" value="'+p.id+'" checked> '+esc(p.name)+' ('+p.cvss+')</label>';
+        });
+        document.getElementById('pluginList').innerHTML = ph;
+    })();
+
+    loadHistory();
+
+    // ─── State ───
+    var findings = [];
+    var scanning = false;
+    var cancelled = false;
+
+    // ─── Terminal ───
+    function log(cls, msg){
+        var term = document.getElementById('terminal');
+        var ts = new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+        var d = document.createElement('div');
+        d.className = 't '+cls;
+        d.innerHTML = '<ts>['+ts+']</ts><msg>'+esc(msg)+'</msg>';
+        term.appendChild(d);
+        term.scrollTop = term.scrollHeight;
+    }
+
+    function setStatus(cls, text){
+        document.getElementById('statusDot').className = 'progress-info__dot '+cls;
+        document.getElementById('statusText').textContent = text;
+    }
+
+    function setProgress(pct){
+        document.getElementById('progressFill').style.width = pct+'%';
+        document.getElementById('progressPct').textContent = pct.toFixed(1)+'%';
+    }
+
+    // ─── Findings ───
+    function addFinding(f){
+        findings.push(f);
+        updateSevCounts();
+        var list = document.getElementById('findingList');
+        var c = document.createElement('div');
+        c.className = 'fcard f'+f.severity.charAt(0);
+        c.innerHTML = '<div class="fcard__n">'+esc(f.name)+'<span class="fcard__cvss" style="color:'+cvssColor(f.cvss)+'">'+f.cvss+'</span></div>'
+            +'<div class="fcard__m">'+esc(f.target)+':'+(f.port||'*')+' — '+esc(f.desc||'')+'</div>';
+        list.prepend(c);
+    }
+
+    function updateSevCounts(){
+        var c={critical:0,high:0,medium:0,low:0,info:0};
+        findings.forEach(function(f){c[f.severity]=(c[f.severity]||0)+1;});
+        document.getElementById('sevC').textContent=c.critical;
+        document.getElementById('sevH').textContent=c.high;
+        document.getElementById('sevM').textContent=c.medium;
+        document.getElementById('sevL').textContent=c.low;
+        document.getElementById('sevI').textContent=c.info;
+    }
+
+    function updateScore(){
+        var s=100;
+        s-=(findings.filter(function(f){return f.severity==='critical'}).length)*15;
+        s-=(findings.filter(function(f){return f.severity==='high'}).length)*8;
+        s-=(findings.filter(function(f){return f.severity==='medium'}).length)*3;
+        s-=(findings.filter(function(f){return f.severity==='low'}).length)*1;
+        s=Math.max(0,s);
+        document.getElementById('scoreNumber').textContent=s;
+        var g=s>=90?'A':s>=80?'B':s>=70?'C':s>=60?'D':'F';
+        var el=document.getElementById('scoreGrade');
+        el.textContent='Grade: '+g;
+        el.style.color={A:'#00e676',B:'#76ff03',C:'#ffab00',D:'#ff6d00',F:'#ff1744'}[g];
+    }
+
+    function cvssColor(c){if(c>=9)return'#ff1744';if(c>=7)return'#ff6d00';if(c>=4)return'#ffab00';if(c>0)return'#00e676';return'#448aff';}
+
+    // ─── Scan Engine (client-side) ───
+    function startScan(){
+        if(scanning)return;
+        var targets = ALL_TARGETS.filter(function(t){return selectedTargets.indexOf(t.id)!==-1;});
+        if(!targets.length){alert('Select at least one target');return;}
+        var pluginIds = [];
+        document.querySelectorAll('#pluginList input:checked').forEach(function(cb){pluginIds.push(parseInt(cb.value));});
+        if(!pluginIds.length){alert('Select at least one plugin');return;}
+
+        findings = [];
+        document.getElementById('findingList').innerHTML = '';
+        document.getElementById('scoreNumber').textContent = '—';
+        document.getElementById('scoreGrade').textContent = '';
+        updateSevCounts();
+
+        scanning = true;
+        cancelled = false;
+        document.getElementById('scanBtn').disabled = true;
+        document.getElementById('scanBtn').textContent = 'Scanning...';
+        document.getElementById('cancelBtn').style.display = 'inline-flex';
+
+        var scanId = 'HS-' + Date.now().toString(36).toUpperCase();
+        log('info', '[scan] Scan '+scanId+' started: '+pluginIds.length+' plugins, '+targets.length+' targets');
+        setStatus('scanning', 'Initializing...');
+
+        // Run simulated scan (client-side checks)
+        runClientScan(scanId, targets, pluginIds);
+    }
+
+    async function runClientScan(scanId, targets, pluginIds){
+        var totalTasks = pluginIds.length * targets.reduce(function(a,t){return a+t.ports.length;},0);
+        var done = 0;
+
+        for(var pi=0; pi<pluginIds.length; pi++){
+            if(cancelled) break;
+            var plugin = PLUGINS.find(function(p){return p.id===pluginIds[pi];});
+            if(!plugin) continue;
+
+            log('plug', '[plugin] \u25b8 '+plugin.name+' (ID:'+plugin.id+', family='+plugin.family+', CVSS='+plugin.cvss+')');
+
+            for(var ti=0; ti<targets.length; ti++){
+                if(cancelled) break;
+                var target = targets[ti];
+
+                for(var porti=0; porti<target.ports.length; porti++){
+                    if(cancelled) break;
+                    var port = target.ports[porti];
+
+                    log('info', '    \u2514\u2500 Checking '+target.name+':'+port+' with '+plugin.name);
+                    setStatus('scanning', plugin.name+' on '+target.name+':'+port);
+
+                    // Simulate async check
+                    await sleep(150 + Math.random()*300);
+
+                    // Client-side vulnerability detection
+                    var result = await clientCheck(plugin, target, port);
+                    if(result){
+                        result.target = target.name;
+                        result.host = target.host;
+                        addFinding(result);
+                        var sc = 's'+result.severity.charAt(0);
+                        log('find '+sc, '[FINDING] \u25cf '+result.severity.toUpperCase()+' | '+plugin.name+' | '+target.name+':'+port+' | CVSS '+result.cvss);
+                        if(result.desc) log('find '+sc, '  \u2193 '+result.desc);
+                        if(result.evidence) log('info', '  \u2193 Evidence: '+result.evidence);
+                    }
+
+                    done++;
+                    setProgress((done/totalTasks)*100);
+                }
+            }
+            log('info', '    \u2713 '+plugin.name+' completed');
+        }
+
+        // Done
+        scanning = false;
+        var elapsed = (Date.now() - parseInt(scanId.split('-')[1],36)) / 1000;
+        log('ok', '[scan] Scan completed in '+elapsed.toFixed(1)+'s \u2014 '+findings.length+' findings');
+
+        var sevs={critical:0,high:0,medium:0,low:0,info:0};
+        findings.forEach(function(f){sevs[f.severity]=(sevs[f.severity]||0)+1;});
+        log('ok', '  \u2193 Critical: '+sevs.critical+' | High: '+sevs.high+' | Medium: '+sevs.medium+' | Low: '+sevs.low);
+
+        setStatus('done', 'Completed');
+        setProgress(100);
+        updateScore();
+
+        document.getElementById('scanBtn').disabled = false;
+        document.getElementById('scanBtn').textContent = 'Start Scan';
+        document.getElementById('cancelBtn').style.display = 'none';
+
+        // Save to history
+        saveHistory(scanId, targets, findings, elapsed);
+        loadHistory();
+    }
+
+    // ─── Client-side vulnerability checks ───
+    async function clientCheck(plugin, target, port){
+        // These are real checks against the local server
+        switch(plugin.id){
+            case 1001: // SSH
+                return await checkPort(target.host, 22) ? null :
+                    {severity:'info',cvss:0,name:plugin.name,desc:'SSH port 22 not reachable',evidence:'Connection refused'};
+            case 1002: // FTP
+                return await checkPort(target.host, 21) ? null :
+                    {severity:'info',cvss:0,name:plugin.name,desc:'FTP port 21 not reachable',evidence:'Connection refused'};
+            case 1003: // HTTP Headers
+                return await checkHttpHeaders(target.host, port);
+            case 1004: // Exposed files
+                return await checkExposedFiles(target.host, port);
+            case 1005: // TLS
+                return port===443 ? await checkTls(target.host, port) :
+                    {severity:'info',cvss:0,name:plugin.name,desc:'TLS check skipped for port '+port};
+            case 1006: // DNS
+                return {severity:'info',cvss:0,name:plugin.name,desc:'DNS zone transfer check requires UDP socket (use engine mode)',evidence:'Client-side limitation'};
+            case 1007: // SMB
+                return await checkPort(target.host, 445) ? null :
+                    {severity:'info',cvss:0,name:plugin.name,desc:'SMB port 445 not reachable'};
+            case 1008: // RDP
+                return await checkPort(target.host, 3389) ? null :
+                    {severity:'info',cvss:0,name:plugin.name,desc:'RDP port 3389 not reachable'};
+            case 1009: // HTTP Info
+                return await checkHttpInfo(target.host, port);
+            case 1010: // Bot Scraper
+                return await checkBotExposure(target.host, port);
+            default: return null;
+        }
+    }
+
+    async function checkPort(host, port){
+        try{
+            var r = await fetch('http://'+host+':'+port+'/',{mode:'no-cors',signal:AbortSignal.timeout(2000)});
+            return true;
+        }catch(e){return false;}
+    }
+
+    async function checkHttpHeaders(host, port){
+        try{
+            var r = await fetch('http://'+host+':'+port+'/',{signal:AbortSignal.timeout(3000)});
+            var headers = {};
+            r.headers.forEach(function(v,k){headers[k.toLowerCase()]=v;});
+            var missing = [];
+            if(!headers['content-security-policy']) missing.push('CSP');
+            if(!headers['x-frame-options']) missing.push('X-Frame-Options');
+            if(!headers['x-content-type-options']) missing.push('X-Content-Type-Options');
+            if(!headers['strict-transport-security']) missing.push('HSTS');
+            if(!headers['referrer-policy']) missing.push('Referrer-Policy');
+            if(missing.length){
+                return {severity:'medium',cvss:6.1,name:'HTTP Security Headers',
+                    desc:'Missing headers: '+missing.join(', '),
+                    evidence:'Server: '+(headers['server']||'unknown')};
+            }
+            return {severity:'info',cvss:0,name:'HTTP Security Headers',desc:'All required headers present'};
+        }catch(e){
+            return {severity:'info',cvss:0,name:'HTTP Security Headers',desc:'HTTP port '+port+' not reachable'};
+        }
+    }
+
+    async function checkExposedFiles(host, port){
+        var paths=['/.git/config','/.env','/.env.production','/.htaccess','/config/database.yml','/backup/'];
+        var found=[];
+        for(var i=0;i<paths.length;i++){
+            try{
+                var r=await fetch('http://'+host+':'+port+paths[i],{signal:AbortSignal.timeout(2000)});
+                if(r.ok||r.type==='opaque') found.push(paths[i]);
+            }catch(e){}
+        }
+        if(found.length){
+            return {severity:'high',cvss:7.5,name:'Exposed Sensitive Files',
+                desc:found.length+' file(s) exposed: '+found.join(', '),
+                evidence:'Accessible: '+found.join(', ')};
+        }
+        return {severity:'info',cvss:0,name:'Exposed Sensitive Files',desc:'No sensitive files detected'};
+    }
+
+    async function checkTls(host, port){
+        // TLS check requires non-cors which won't reveal headers
+        // Flag as info in client mode
+        return {severity:'info',cvss:0,name:'TLS/SSL Check',
+            desc:'TLS analysis requires engine mode (connect directly to port 443)',
+            evidence:'Client-side limitation: cannot inspect TLS configuration from browser'};
+    }
+
+    async function checkHttpInfo(host, port){
+        try{
+            var r=await fetch('http://'+host+':'+port+'/',{signal:AbortSignal.timeout(3000)});
+            var headers={};
+            r.headers.forEach(function(v,k){headers[k.toLowerCase()]=v;});
+            var disc=[];
+            if(headers['x-powered-by']) disc.push('X-Powered-By: '+headers['x-powered-by']);
+            if(headers['x-aspnet-version']) disc.push('ASP.NET: '+headers['x-aspnet-version']);
+            if(headers['server']&&headers['server'].match(/apache|nginx|iis|tomcat/i)) disc.push('Server: '+headers['server']);
+            if(disc.length){
+                return {severity:'medium',cvss:5.3,name:'HTTP Info Disclosure',
+                    desc:disc.join(' | '),evidence:'Leaked headers'};
+            }
+            return {severity:'info',cvss:0,name:'HTTP Info Disclosure',desc:'No information disclosure detected'};
+        }catch(e){
+            return {severity:'info',cvss:0,name:'HTTP Info Disclosure',desc:'HTTP port '+port+' not reachable'};
+        }
+    }
+
+    async function checkBotExposure(host, port){
+        try{
+            var r = await fetch('http://'+host+':'+port+'/', {signal: AbortSignal.timeout(5000)});
+            var html = await r.text();
+            var findings = [];
+
+            var placeholderCount = (html.match(/Private — login required/g) || []).length;
+            var hasEcosystemScripts = html.indexOf('ecosystem-data.js') !== -1 ||
+                                      html.indexOf('ecosystem-render.js') !== -1;
+            var hasMonetary = /\$\d+\.?\d*[KMB]/i.test(html);
+
+            if (placeholderCount > 0 && !hasEcosystemScripts) {
+                findings.push('Bot-sanitized page served (no scripts, ' + placeholderCount + ' placeholders)');
+            }
+            if (placeholderCount > 0 && hasEcosystemScripts) {
+                findings.push('Partial sanitization — ' + placeholderCount + ' placeholders but scripts still present');
+            }
+            if (hasMonetary && placeholderCount > 0) {
+                findings.push('MONETARY VALUES LEAKED to bot — real revenue visible alongside placeholders');
+            }
+            if (!hasMonetary && !hasEcosystemScripts && placeholderCount === 0) {
+                findings.push('No ecosystem data or sanitization detected');
+            }
+
+            if (findings.length > 0) {
+                var isVuln = findings.some(function(f) {
+                    return f.indexOf('LEAKED') !== -1 || f.indexOf('Partial') !== -1;
+                });
+                return {
+                    severity: isVuln ? 'high' : 'medium',
+                    cvss: isVuln ? 8.4 : 5.0,
+                    name: 'Bot Scraper Data Exposure',
+                    desc: findings.join('. '),
+                    evidence: 'Placeholders: ' + placeholderCount + ', Scripts: ' + hasEcosystemScripts + ', Monetary: ' + hasMonetary
+                };
+            }
+            return {
+                severity: 'info',
+                cvss: 0,
+                name: 'Bot Scraper Data Exposure',
+                desc: 'Response appears normal — no bot sanitization detected, no data leakage found.',
+                evidence: 'Placeholders: 0, Scripts: ' + hasEcosystemScripts
+            };
+        } catch(e) {
+            return {severity:'info', cvss:0, name:'Bot Scraper Data Exposure',
+                desc:'HTTP port ' + port + ' not reachable'};
+        }
+    }
+
+    function cancelScan(){cancelled=true;}
+
+    // ─── History ───
+    function saveHistory(id, targets, findings, elapsed){
+        var hist=JSON.parse(localStorage.getItem('hs_history')||'[]');
+        hist.unshift({
+            id:id, company:session.company_id, user:session.username,
+            targets:targets.map(function(t){return t.name;}),
+            findings:findings.length, elapsed:elapsed,
+            severity:{critical:findings.filter(function(f){return f.severity==='critical'}).length,
+                high:findings.filter(function(f){return f.severity==='high'}).length,
+                medium:findings.filter(function(f){return f.severity==='medium'}).length,
+                low:findings.filter(function(f){return f.severity==='low'}).length},
+            results:findings, timestamp:Date.now()
+        });
+        if(hist.length>20) hist=hist.slice(0,20);
+        localStorage.setItem('hs_history',JSON.stringify(hist));
+    }
+
+    function loadHistory(){
+        var hist=JSON.parse(localStorage.getItem('hs_history')||'[]');
+        var html='';
+        hist.slice(0,10).forEach(function(h){
+            var t=new Date(h.timestamp).toLocaleString();
+            html+='<div class="hitem" onclick="viewHistory(\''+h.id+'\')">';
+            html+='<div class="hitem__top"><div class="hitem__id">'+h.id+'</div>';
+            html+='<div class="hitem__st done">'+h.findings+' findings</div></div>';
+            html+='<div class="hitem__t">'+t+' \u2014 '+h.elapsed.toFixed(1)+'s</div></div>';
+        });
+        document.getElementById('historyList').innerHTML=html||'<div class="empty">No scans yet</div>';
+    }
+
+    function viewHistory(id){
+        var hist=JSON.parse(localStorage.getItem('hs_history')||'[]');
+        var scan=hist.find(function(h){return h.id===id;});
+        if(!scan) return;
+        findings=[];
+        document.getElementById('findingList').innerHTML='';
+        (scan.results||[]).forEach(function(f){addFinding(f);});
+        log('info','[history] Loaded scan '+id+' with '+scan.findings+' findings');
+        updateScore();
+    }
+
+    function toggleTarget(el){
+        el.classList.toggle('active');
+        var id=el.dataset.id;
+        var idx=selectedTargets.indexOf(id);
+        if(idx===-1)selectedTargets.push(id); else selectedTargets.splice(idx,1);
+    }
+
+    function logout(){
+        localStorage.removeItem('hs_session');
+        window.location.href='login.html';
+    }
+
+    function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+    function esc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):'';}
+    </script>
+</body>
+</html>

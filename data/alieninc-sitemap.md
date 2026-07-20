@@ -22,7 +22,7 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 | 1609 Holdings | `https://1609.alieninc.tech` | Capital allocation, governance, portfolio reporting |
 | 1609 Fund Centre | `https://1609.alieninc.tech/funds.html` | Group operating model and financial access page |
 | Panteon | `https://panteon.alieninc.tech` | Cybersecurity defense, managed detection, exposure management, diligence |
-| Exosphere | `https://exosphere.alieninc.tech` | Acquisition sourcing, succession advisory, commercial diligence |
+| Immanuel | `https://immanuel.alieninc.tech` | Acquisition sourcing, succession advisory, commercial diligence |
 | KMT Consulting Group | `https://kmt.alieninc.tech` | Strategy, applied AI, operating model, post-merger integration |
 | St. Alcantara Foundation | `https://stalcantara.alieninc.tech` | Culture and art preservation nonprofit |
 | Statute & Precedent | `https://sp.alieninc.tech` | AI-enabled legal services, transactions, contracts, governance |
@@ -33,7 +33,7 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 | --- | --- |
 | `alieninc.tech` | `./` |
 | `1609.aliendinc.tech` | `1609holdings/` |
-| `exosphere.aliendinc.tech` | `exosphere/` |
+| `immanuel.aliendinc.tech` | `immanuel/` |
 | `panteon.aliendinc.tech` | `panteon/` |
 | `kmt.aliendinc.tech` | `kmt/` |
 | `stalcantara.aliendinc.tech` | `stalcantarafoundation/` |
@@ -52,10 +52,10 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 
 | Loop | Lead | Participants |
 | --- | --- | --- |
-| Acquire-to-Improve | Exosphere | 1609 Holdings, KMT, Panteon, Statute & Precedent |
+| Acquire-to-Improve | Immanuel | 1609 Holdings, KMT, Panteon, Statute & Precedent |
 | Culture-to-Audience | St. Alcantara Foundation | The Daily Art Cult, Statute & Precedent, 1609 Holdings |
-| Risk-to-Product | Panteon | KMT, Statute & Precedent, Exosphere |
-| Insight-to-Capital | 1609 Holdings | KMT, The Daily Art Cult, Exosphere |
+| Risk-to-Product | Panteon | KMT, Statute & Precedent, Immanuel |
+| Insight-to-Capital | 1609 Holdings | KMT, The Daily Art Cult, Immanuel |
 
 ## Editing Rule
 

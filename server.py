@@ -33,7 +33,6 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 
 SUBDOMAIN_ROOTS = {
     '1609':         os.path.join(ROOT, '1609holdings'),
-    'exosphere':    os.path.join(ROOT, 'exosphere'),
     'panteon':      os.path.join(ROOT, 'panteon'),
     'kmt':          os.path.join(ROOT, 'kmt'),
     'stalcantara':  os.path.join(ROOT, 'stalcantarafoundation'),

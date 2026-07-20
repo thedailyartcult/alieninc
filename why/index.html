@@ -1,301 +1,944 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Relocation Log // Alien.Inc → AlienInc.Tech</title>
-  <link rel="icon" type="image/png" href="../logo.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&family=Instrument+Sans+Condensed:wght@700;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --hg-font-primary: "Instrument Sans", system-ui, -apple-system, sans-serif;
-      --hg-font-secondary: "Instrument Sans Condensed", var(--hg-font-primary);
-      --hg-color-primary: #14181c;
-      --hg-color-secondary: #ffd400;
-      --hg-color-secondary-bold: #4ea2fd;
-      --hg-color-tertiary: #f6f6f6;
-      --hg-color-darkest: #131920;
-      --hg-color-lightest: #ffffff;
-      --hg-color-muted: #f7f7f7;
-      --ppl-color-text-default: #131920;
-      --ppl-color-text-subtle: #3a4b5f;
-      --ppl-color-text-inverse: #ffffff;
-      --ppl-color-bg-default: #ffffff;
-      --ppl-button-contained-bg: #ffd400;
-      --ppl-button-contained-text: #131920;
-      --header-height: 4.875rem;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALIEN.INC - DECLASSIFIED</title>
+    
+    <!-- Google Fonts import for VT323 terminal look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
-    * { box-sizing: border-box; }
+    <!-- MapLibre GL (replaces the Flourish/whitehouse.gov embed; native right-drag rotate/tilt) -->
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 
-    body {
-      font-family: var(--hg-font-primary);
-      margin: 0;
-      padding: 0;
-      line-height: 1.6;
-      background-color: #ffffff;
-      color: var(--ppl-color-text-default);
-      overflow-x: hidden;
-      -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-    }
+    <style>
+        /* Retro Terminal Styling Rules mapped to the declassified WH design */
+        body {
+            font-family: 'VT323', 'Courier New', Courier, monospace;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: geometricPrecision;
+            background-color: #000000;
+            color: #4ade80;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
 
-    a { color: inherit; text-decoration: none; }
+        /* Starfield background */
+        .aliens-star-canvas canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
 
-    .l-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 1.5rem;
-      width: 100%;
-      box-sizing: border-box;
-    }
+        /* Scanline Overlay for retro-CRT aesthetic */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 999;
+            background-size: 100% 4px, 3px 100%;
+            pointer-events: none;
+        }
 
-    .header {
-      height: var(--header-height);
-      background-color: var(--ppl-color-bg-default);
-      border-bottom: 1px solid rgba(0,0,0,0.08);
-      display: flex;
-      align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.01);
-    }
+        /* Green glow — used on titles, counters, nav logo */
+        .neon-cyan {
+            color: #4ade80;
+            text-shadow: 0 0 10px #22d3ee, 0 0 20px #22d3ee, 0 0 40px #22d3ee;
+        }
 
-    .header__inner {
-      display: flex;
-      flex-direction: row;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 1.5rem;
-      box-sizing: border-box;
-    }
+        /* Scroll-reveal CSS */
+        body:not(.wp-admin) .section {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 1s ease, transform 1s ease;
+        }
+        body:not(.wp-admin) .section.visible { 
+            opacity: 1; 
+            transform: translateY(0); 
+        }
 
-    .header__logo { display: flex; align-items: center; height: 100%; }
+        /* Typewriter text formatting rules */
+        .typewriter {
+            overflow: hidden;
+            white-space: normal;
+            letter-spacing: normal;
+        }
+        .typewriter-start::after {
+            content:'_';
+            animation: aliens-blink 1s step-end infinite;
+            color: #22d3ee;
+        }
+        .typewriter-done::after { 
+            border-right: none; 
+        }
+        @keyframes aliens-blink {
+            from, to { opacity: 0; }
+            50%       { opacity: 1; }
+        }
 
-    .brand-logo {
-      display: flex;
-      align-items: center;
-      gap: 0.12rem;
-      height: 100%;
-      text-decoration: none;
-    }
+        /* rest-of-page reveals sequentially post typing completion */
+        body:not(.wp-admin) #rest-of-page { 
+            opacity: 0; 
+            transition: opacity 1.2s ease; 
+        }
 
-    .brand-logo__text {
-      font-family: var(--hg-font-secondary);
-      font-size: clamp(24px, 5vw, 29px);
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      color: #131920;
-      line-height: 1;
-    }
+        /* Top Announcement Banner */
+        .top-banner {
+            background-color: #ffffff;
+            color: #000000;
+            text-align: center;
+            font-size: 0.85rem;
+            letter-spacing: 0.25em;
+            padding: 8px 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(74, 222, 128, 0.3);
+        }
 
-    .brand-logo__dot {
-      height: 0.41em;
-      width: 0.41em;
-      margin-top: 0.48em;
-      display: block;
-    }
+        /* Glassmorphic Navbar Component */
+        .aliens-nav {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(34, 211, 238, 0.3);
+        }
+        .aliens-nav-inner {
+            max-width: 80rem;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            box-sizing: border-box;
+        }
+        .aliens-nav-logo { 
+            font-size: 1.875rem; 
+            font-weight: 700; 
+            letter-spacing: 0.15em; 
+        }
+        .aliens-nav-tagline { 
+            font-size: 0.75rem; 
+            text-transform: uppercase; 
+            letter-spacing: 4px; 
+        }
 
-    .nav__list {
-      display: flex;
-      flex-direction: row;
-      gap: 2rem;
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
+        /* Hero Container */
+        .aliens-hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 6rem;
+            padding-bottom: 8rem;
+            position: relative;
+            box-sizing: border-box;
+        }
+        .aliens-hero-inner { 
+            max-width: 64rem; 
+            padding: 0 1.5rem; 
+            text-align: center; 
+        }
+        .aliens-hero-title {
+            font-size: clamp(3rem, 8vw, 7rem);
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            margin-bottom: 4rem;
+            text-transform: uppercase;
+        }
+        .aliens-typewriter-block {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+            font-size: clamp(1.35rem, 2.5vw, 2rem);
+            line-height: 1.8;
+            max-width: 56rem;
+            margin: 0 auto;
+            text-align: left;
+        }
+        .aliens-hero-kicker { 
+            font-size: clamp(1.8rem, 3vw, 2.5rem); 
+            font-weight: 700; 
+            margin-top: 2rem; 
+        }
 
-    .nav__list-item-link {
-      font-weight: 700;
-      font-size: 1.125rem;
-      color: var(--ppl-color-text-default);
-      transition: color 0.2s ease-out;
-      padding: 0.25rem 0;
-      position: relative;
-    }
+        /* Flourish interactive map section block */
+        .aliens-map-section {
+            padding: 6rem 0;
+            background: rgba(0, 0, 0, 0.9);
+            border-top: 1px solid rgba(34, 211, 238, 0.3);
+            border-bottom: 1px solid rgba(34, 211, 238, 0.3);
+        }
+        .aliens-map-inner { 
+            max-width: 72rem; 
+            margin: 0 auto; 
+            padding: 0 1.5rem; 
+        }
+        .aliens-map-label-wrap { 
+            text-align: center; 
+            margin-bottom: 2rem; 
+        }
+        .aliens-clearance-badge {
+            display: inline-block;
+            padding: 0.75rem 2rem;
+            background: rgba(220, 38, 38, 0.2);
+            color: #ef4444;
+            font-size: 1rem;
+            letter-spacing: 0.15em;
+            border: 1px solid #ef4444;
+            font-weight: bold;
+        }
+        .aliens-map-title { 
+            font-family: 'VT323', 'Courier New', Courier, monospace; 
+            font-size: clamp(2rem, 5vw, 3.75rem); 
+            text-align: center; 
+            margin-bottom: 3rem; 
+        }
+        .aliens-scroll-hint { 
+            text-align: center; 
+            margin-top: 2rem; 
+            color: rgba(34, 211, 238, 0.7); 
+            font-size: 1.125rem; 
+            letter-spacing: 4px;
+        }
 
-    .nav__list-item-link:hover,
-    .nav__list-item-link.is-active {
-      text-decoration: underline;
-      text-decoration-color: var(--hg-color-secondary);
-      text-decoration-thickness: 0.16em;
-      text-underline-offset: 0.2em;
-    }
+        /* Split-Flap board mechanics */
+        .aliens-metrics-section { 
+            padding: 6rem 0; 
+        }
+        .aliens-metrics-grid {
+            max-width: 72rem;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 5rem;
+            flex-wrap: wrap;
+        }
+        .aliens-metric { 
+            text-align: center; 
+        }
+        .aliens-metric-label { 
+            font-size: 1.5rem; 
+            margin-top: 1.5rem; 
+            letter-spacing: 0.15em; 
+            color: #22d3ee;
+        }
 
-    .log-hero {
-      padding: 6rem 0 4rem;
-      border-bottom: 1px solid rgba(19,25,32,0.08);
-    }
+        .num-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .digit {
+            position: relative;
+            width: 140px;
+            height: 200px;
+            overflow: hidden;
+            border-radius: 5px;
+            filter: drop-shadow(0 0 10px #000a);
+        }
+        .mark {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            font-size: 90px;
+            width: 30px;
+            color: #1c1c1c;
+        }
 
-    .log-hero__label {
-      font-family: var(--hg-font-secondary);
-      font-size: 0.78rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--ppl-color-text-subtle);
-      margin-bottom: 1.5rem;
-    }
+        .static-top,
+        .static-bottom,
+        .flip-top,
+        .flip-bottom {
+            position: absolute;
+            width: 100%;
+            height: 50%;
+            overflow: hidden;
+            left: 0;
+            backface-visibility: hidden;
+        }
+        .static-top,
+        .flip-top {
+            top: 0;
+            transform-origin: bottom;
+            background: #0d132d;
+            border-bottom: 1px solid #333;
+        }
+        .static-bottom,
+        .flip-bottom {
+            bottom: 0;
+            transform-origin: top;
+            background: #0d132d;
+            border-top: 1px solid #000;
+        }
 
-    .log-hero__title {
-      font-family: var(--hg-font-secondary);
-      font-size: clamp(2.8rem, 6vw, 5rem);
-      font-weight: 800;
-      text-transform: uppercase;
-      line-height: 1;
-      margin: 0 0 1rem;
-      letter-spacing: -0.02em;
-      color: var(--ppl-color-text-default);
-    }
+        .static-top span,
+        .flip-top span {
+            position: absolute;
+            width: 100%;
+            height: 200%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 160px;
+            color: #eee;
+            top: 0;
+        }
+        .static-bottom span,
+        .flip-bottom span {
+            position: absolute;
+            width: 100%;
+            height: 200%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 160px;
+            color: #eee;
+            top: -100%;
+        }
 
-    .log-hero__sub {
-      font-size: 1.35rem;
-      font-weight: 500;
-      color: var(--ppl-color-text-subtle);
-      margin: 0;
-    }
+        .flip-top {
+            animation-iteration-count: 1;
+            animation: flipTop 0.5s linear forwards;
+            z-index: 5;
+        }
+        .flip-bottom {
+            animation-iteration-count: 1;
+            animation: flipBottom 0.5s linear forwards;
+            z-index: 4;
+        }
+        .flip-top.fast {
+            animation: flipTop 0.08s linear forwards;
+        }
+        .flip-bottom.fast {
+            animation: flipBottom 0.08s linear forwards;
+        }
 
-    .log-entry {
-      padding: 3.5rem 0;
-      border-bottom: 1px solid rgba(19,25,32,0.06);
-    }
+        @keyframes flipTop {
+            0%   { transform: rotateX(0deg); }
+            100% { transform: rotateX(-90deg); }
+        }
+        @keyframes flipBottom {
+            0%   { transform: rotateX(90deg); }
+            100% { transform: rotateX(0deg); }
+        }
 
-    .log-entry:last-of-type {
-      border-bottom: none;
-    }
+        /* Action/CTA button styled to match ICE Tip Button */
+        .aliens-cta-button {
+            margin-top: 3.5rem;
+            margin-bottom: 3.5rem;
+            text-align: center;
+        }
+        .aliens-cta-button .wp-block-button__link {
+            display: inline-block;
+            background-color: #dc2626 !important;
+            color: #ffffff !important;
+            font-family: inherit !important;
+            font-size: clamp(1.3rem, 2.5vw, 1.85rem) !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.15em !important;
+            padding: 1.5rem 3rem !important;
+            border-radius: 0 !important;
+            text-decoration: none;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 0 15px rgba(220, 38, 38, 0.6);
+            cursor: pointer;
+            border: none;
+        }
+        .aliens-cta-button .wp-block-button__link:hover {
+            background-color: #b91c1c !important;
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(220, 38, 38, 0.9);
+        }
 
-    .log-entry__title {
-      font-family: var(--hg-font-secondary);
-      font-size: clamp(1.5rem, 3vw, 2rem);
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: -0.01em;
-      margin: 0 0 1rem;
-      color: var(--ppl-color-text-default);
-      line-height: 1.2;
-      border-left: 4px solid var(--hg-color-secondary);
-      padding-left: 1.25rem;
-    }
+        /* Addendum Panel Block */
+        .aliens-addendum-box {
+            max-width: 56rem;
+            margin: 6rem auto 3rem auto;
+            padding: 2.5rem;
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            background: rgba(69, 10, 10, 0.25);
+            border-radius: 1.5rem;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .aliens-addendum-label {
+            color: #f87171;
+            font-size: 1rem;
+            letter-spacing: 8px;
+            margin-bottom: 1.5rem;
+            font-weight: bold;
+        }
+        .aliens-reveal-headline {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            line-height: 1.1;
+            margin: 1rem 0;
+            color: #4ade80;
+        }
+        .aliens-yellow-warning { 
+            margin-top: 2rem; 
+            font-size: clamp(1.25rem, 2.5vw, 1.6rem); 
+            line-height: 1.5;
+            color: #4ade80; 
+        }
 
-    .log-entry__body {
-      font-size: 1.1rem;
-      line-height: 1.7;
-      color: var(--ppl-color-text-subtle);
-      max-width: 720px;
-      margin: 0;
-    }
+        /* Email Registration Form section styling */
+        .email-form {
+            max-width: 32rem;
+            margin: 4rem auto;
+            padding: 2rem;
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 8px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .email-form h3 {
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+            color: #4ade80;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .whitehouse-form__label {
+            display: block;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            text-align: left;
+            color: #4ade80;
+        }
+        .whitehouse-form__required {
+            color: #ef4444;
+        }
+        .whitehouse-form__field {
+            width: 100%;
+            box-sizing: border-box;
+            background-color: #000000;
+            border: 1px solid #4ade80;
+            color: #4ade80;
+            padding: 0.75rem;
+            font-family: inherit;
+            font-size: 1.25rem;
+            outline: none;
+        }
+        .whitehouse-form__field:focus {
+            border-color: #22d3ee;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+        }
+        .whitehouse-form__button {
+            width: 100%;
+            background-color: transparent;
+            border: 1px solid #4ade80;
+            color: #4ade80;
+            padding: 1rem;
+            font-family: inherit;
+            font-size: 1.4rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            margin-top: 1.5rem;
+        }
+        .whitehouse-form__button:hover {
+            background-color: #4ade80;
+            color: #000000;
+            box-shadow: 0 0 15px rgba(74, 222, 128, 0.5);
+        }
 
-    .log-closing {
-      padding: 3rem 0 5rem;
-      background: var(--hg-color-muted);
-    }
+        /* Footer block */
+        .aliens-footer {
+            padding: 4rem 1.5rem;
+            text-align: center;
+            border-top: 1px solid rgba(74, 222, 128, 0.15);
+            font-size: 1.1rem;
+            letter-spacing: 0.15em;
+            color: #4ade80;
+        }
 
-    .log-closing__line {
-      font-family: var(--hg-font-secondary);
-      font-size: 0.85rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--ppl-color-text-subtle);
-      margin: 0;
-      text-align: center;
-    }
+        /* Network Map (MapLibre GL) — replaces the Flourish/whitehouse.gov embed */
+        .aliens-network-map {
+            position: relative;
+            height: 600px;
+            width: 100%;
+            border: 1px solid rgba(74, 222, 128, 0.4);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+            box-shadow: 0 0 24px rgba(34, 211, 238, 0.15) inset;
+        }
+        #aliens-network-map {
+            height: 100%;
+            width: 100%;
+        }
+        .aliens-map-hint {
+            position: absolute;
+            bottom: 10px;
+            left: 12px;
+            font-size: 0.95rem;
+            letter-spacing: 2px;
+            color: rgba(74, 222, 128, 0.6);
+            pointer-events: none;
+            z-index: 5;
+        }
+        .maplibregl-ctrl-attrib {
+            background: rgba(0,0,0,0.7) !important;
+            color: rgba(74, 222, 128, 0.6) !important;
+        }
+        .maplibregl-ctrl-attrib a { color: rgba(34, 211, 238, 0.8) !important; }
+        .maplibregl-ctrl-group {
+            background: #000 !important;
+            border: 1px solid rgba(74, 222, 128, 0.4) !important;
+        }
+        .maplibregl-ctrl-group button {
+            background: #000 !important;
+        }
+        .maplibregl-ctrl-icon { filter: invert(1) hue-rotate(90deg); }
+        .aliens-node-marker {
+            width: 14px; height: 14px;
+            background: #4ade80;
+            border: 2px solid #22d3ee;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #22d3ee, 0 0 20px rgba(34, 211, 238, 0.6);
+            cursor: pointer;
+        }
+        .maplibregl-popup-content {
+            background: #000 !important;
+            color: #4ade80 !important;
+            border: 1px solid #22d3ee !important;
+            border-radius: 4px !important;
+            font-family: 'VT323', 'Courier New', Courier, monospace !important;
+            font-size: 1.15rem;
+        }
+        .maplibregl-popup-content strong { color: #22d3ee; letter-spacing: 1px; }
+        .maplibregl-popup-tip { border-top-color: #22d3ee !important; border-bottom-color: #22d3ee !important; }
+        .maplibregl-popup-close-button { color: #4ade80 !important; }
 
-    .log-closing__back {
-      display: block;
-      text-align: center;
-      margin-top: 1.5rem;
-      font-weight: 700;
-      font-size: 0.9rem;
-      color: var(--ppl-color-text-default);
-    }
-
-    .log-closing__back:hover {
-      text-decoration: underline;
-      text-decoration-color: var(--hg-color-secondary);
-      text-decoration-thickness: 0.16em;
-      text-underline-offset: 0.2em;
-    }
-
-    @media (max-width: 768px) {
-      .log-hero { padding: 3rem 0 2rem; }
-      .log-entry { padding: 2rem 0; }
-      .log-entry__body { font-size: 1rem; }
-    }
-
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 3px; }
-  </style>
+        /* Responsiveness for small displays */
+        @media screen and (max-width: 1200px){
+            .num-container { gap: 10px; }
+            .static-bottom span, .flip-bottom span, .static-top span, .flip-top span { font-size: 90px; }
+            .mark { width: 20px; font-size: 60px; }
+            .digit { width: 80px; height: 120px; }
+        }
+        @media screen and (max-width: 768px) {
+            .aliens-nav-inner { flex-direction: column; gap: 0.5rem; }
+            .aliens-hero { padding-bottom: 0; }
+            .aliens-hero-title { font-size: 2.5rem; letter-spacing: 0.3em; line-height: 1.5; }
+            .aliens-typewriter-block { font-size: 1.25rem; gap: 1.5rem; }
+            .aliens-hero-kicker { font-size: 1.75rem; }
+            .aliens-addendum-box { padding: 1.5rem; }
+            .aliens-network-map { height: 420px; }
+        }
+        @media screen and (max-width: 500px){
+            .num-container { gap: 5px; }
+            .static-bottom span, .flip-bottom span, .static-top span, .flip-top span { font-size: 40px; }
+            .mark { width: 16px; font-size: 30px; }
+            .digit { width: 40px; height: 70px; }
+        }
+    </style>
 </head>
-<body>
+<body class="wp-singular page-template page-template-wp-custom-template-full-width">
 
-  <header class="header">
-    <div class="header__inner l-container">
-      <div class="header__logo">
-        <a href="../index.html" class="brand-logo" aria-label="visit the Alien Inc Homepage">
-          <span class="brand-logo__text">Alien</span>
-          <img src="../logo.png" alt="•" class="brand-logo__dot">
-          <span class="brand-logo__text">Inc</span>
-        </a>
-      </div>
-      <nav class="nav">
-        <ul class="nav__list">
-          <li class="nav__list-item"><a href="../founder.html" class="nav__list-item-link">Founder</a></li>
-          <li class="nav__list-item"><a href="../index.html#portfolio" class="nav__list-item-link">Companies</a></li>
-          <li class="nav__list-item"><a href="../index.html#operating-system" class="nav__list-item-link">Operating Model</a></li>
-          <li class="nav__list-item"><a href="../dashboard.html" class="nav__list-item-link">Dashboard</a></li>
-          <li class="nav__list-item"><a href="../index.html#contact" class="nav__list-item-link">Contact</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
+    <!-- Active Twinkling Canvas Star Backdrop -->
+    <div id="star-container" class="aliens-star-canvas"><canvas></canvas></div>
 
-  <main>
-
-    <section class="log-hero">
-      <div class="l-container">
-        <p class="log-hero__label">// RELOCATION LOG</p>
-        <h1 class="log-hero__title">RELOCATION LOG //<br>ALIEN.INC → ALIENINC.TECH</h1>
-        <p class="log-hero__sub">Orbit Abandoned. Coordinates Updated.</p>
-      </div>
-    </section>
-
-    <section class="log-entry">
-      <div class="l-container">
-        <h2 class="log-entry__title">One Small Step for a Domain</h2>
-        <p class="log-entry__body">Every landing requires a surface to land on. Alien.Inc was built for orbit — a name, a signal, a claim staked in territory we did not fully control. On approach, we found the ground already spoken for.</p>
-      </div>
-    </section>
-
-    <section class="log-entry">
-      <div class="l-container">
-        <h2 class="log-entry__title">Occupied Territory</h2>
-        <p class="log-entry__body">The alien domain is under the jurisdiction of a higher entity — one whose claim predates ours and whose control we cannot override. Rather than contest occupied ground, we relocated. AlienInc.Tech is our registered coordinates: sovereign, verifiable, ours.</p>
-      </div>
-    </section>
-
-    <section class="log-entry">
-      <div class="l-container">
-        <h2 class="log-entry__title">New Coordinates, Same Signal</h2>
-        <p class="log-entry__body">Alien.Inc is now AlienInc.Tech. Same operating model, same seven subsidiaries, same record. Only the address has changed — filed, registered, and built to last.</p>
-      </div>
-    </section>
-
-    <div class="log-closing">
-      <div class="l-container">
-        <p class="log-closing__line">Transmission logged. Orbit closed. AlienInc.Tech is live.</p>
-        <a href="../index.html" class="log-closing__back">← Back to AlienInc.Tech</a>
-      </div>
+    <!-- Top Announcement Banner -->
+    <div class="top-banner">
+        CLASSIFIED // STATUS: DECLASSIFIED — ALIEN.INC INTERNAL RECORDS
     </div>
 
-  </main>
+    <!-- Navigation Header -->
+    <nav class="aliens-nav">
+        <div class="aliens-nav-inner">
+            <div class="aliens-nav-logo neon-cyan">ALIEN.INC</div>
+            <div class="aliens-nav-tagline">DECLASSIFIED</div>
+        </div>
+    </nav>
 
+    <!-- Hero Introduction Block (Typewriter sequential animation) -->
+    <section id="hero" class="aliens-hero">
+        <div class="aliens-hero-inner">
+            <h1 class="aliens-hero-title neon-cyan">THEY WALK AMONG US</h1>
+            <div id="text-blocks" class="aliens-typewriter-block">
+                <!-- Data paragraph blocks containing user custom text -->
+                <p id="p1" class="typewriter" data-text="For over a year, ALIEN.INC has operated quietly under a single registered name."></p>
+                <p id="p2" class="typewriter" data-text="Seven subsidiaries, one origin point, one domain — held since 2024."></p>
+                <p id="p3" class="typewriter" data-text="Then came the conflict. A separate registry, unrelated to us, claimed ground adjacent to our name."></p>
+                <p id="p4" class="typewriter" data-text="Rather than share airspace with confusion, we made contact with a new coordinate: alieninc.tech."></p>
+                <p id="p5" class="typewriter" data-text="The transition wasn't a retreat. It was a correction of orbit."></p>
+                <p id="p6" class="typewriter" data-text="Some records say the timing wasn't an accident — that it landed on the same footing as another crossing, made July 21, at the exact spot where a man once left the first human footprint off-world."></p>
+                <p id="p7" class="typewriter aliens-hero-kicker neon-cyan" data-text="We simply call it: the exit, and the landing."></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Rest of Document reveal container post text-typing completion -->
+    <div id="rest-of-page">
+        
+        <p class="aliens-scroll-hint">↓ SCROLL FOR TRANSMISSION DETAILS ↓</p>
+
+        <!-- Mechanical Split-Flap Active Transmissions Metrics Panel -->
+        <section class="aliens-metrics-section section">
+            <h2 class="aliens-map-title neon-cyan" style="letter-spacing:12px">ACTIVE TRANSMISSIONS</h2>
+            <div class="aliens-metrics-grid">
+                <div class="aliens-metric">
+                    <!-- Configured to automatically flip to 07 -->
+                    <div class="num-container" data-count="7"></div>
+                    <div class="aliens-metric-label">SUBSIDIARIES</div>
+                </div>
+                <div class="aliens-metric">
+                    <!-- Configured to automatically flip to 01 -->
+                    <div class="num-container" data-count="1"></div>
+                    <div class="aliens-metric-label">ORIGIN</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Map Coordinates Visualization Section -->
+        <section id="map-section" class="aliens-map-section section">
+            <div class="aliens-map-inner">
+                <div class="aliens-map-label-wrap">
+                    <span class="aliens-clearance-badge">TOP SECRET RECORDS</span>
+                </div>
+                <h2 class="aliens-map-title neon-cyan" style="letter-spacing: 8px; margin-bottom: 1rem;">COORDINATES</h2>
+                <h3 class="aliens-map-title neon-cyan" style="font-size: 1.85rem; letter-spacing: 4px; margin-bottom: 3rem;">ALIEN.INC NETWORK MAP • LIVE</h3>
+                
+                <!-- ALIEN.INC Network Map (MapLibre GL, self-hosted data — no third-party embed) -->
+                <div class="aliens-network-map">
+                    <div id="aliens-network-map"></div>
+                    <div class="aliens-map-hint">LEFT-DRAG: PAN &nbsp;•&nbsp; RIGHT-DRAG: ROTATE/TILT &nbsp;•&nbsp; SCROLL: ZOOM</div>
+                </div>
+
+                <p style="font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.6; margin-top: 3rem; text-align: center; max-width: 48rem; margin-left: auto; margin-right: auto;">
+                    Every subsidiary under ALIEN.INC operates as its own signal — distinct, self-contained, transmitting from its own coordinates. This is where they broadcast from.
+                </p>
+
+                <!-- CTA Action Link styled exactly to declassified visual specifications -->
+                <div class="wp-block-buttons is-content-justification-center aliens-cta-button">
+                    <div class="wp-block-button">
+                        <a class="wp-block-button__link wp-element-button" href="https://alieninc.tech" target="_blank" rel="noreferrer noopener">
+                            EXPLORE THE NETWORK → VISIT ALIENINC.TECH
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Declassified Addendum Panel -->
+        <section id="reveal" class="section">
+            <div class="aliens-addendum-box">
+                <p class="aliens-addendum-label">CLASSIFIED ADDENDUM • DECLASSIFIED 2026</p>
+                <h2 class="aliens-reveal-headline">THIS WASN'T A DISAPPEARANCE.</h2>
+                <p class="aliens-yellow-warning">
+                    alien.inc didn't vanish — it relocated. The name held since 2024 needed a domain that couldn't be mistaken for anyone else's territory. alieninc.tech is that domain. Same origin. New coordinates. No conflict left unresolved.
+                </p>
+            </div>
+        </section>
+
+        <!-- Newsletter Registration/Opt-In panel matching WH styled components -->
+        <section class="email-form section">
+            <h3>Stay Informed of Transmissions From the Network</h3>
+            <form id="optin-form" onsubmit="handleForm(event)">
+                <div style="text-align: left; margin-bottom: 1.5rem;">
+                    <label class="whitehouse-form__label" for="email">
+                        Email Address <span class="whitehouse-form__required">* Required</span>
+                    </label>
+                    <input class="whitehouse-form__field" type="email" id="email" required placeholder="name@domain.com">
+                </div>
+                <input type="submit" value="JOIN THE SIGNAL" class="whitehouse-form__button">
+            </form>
+            <div id="form-msg" style="margin-top: 1rem; display: none;" class="neon-cyan"></div>
+        </section>
+
+        <!-- Footer block -->
+        <footer class="aliens-footer">
+            ALIEN.INC © 2026 • ALIENINC.TECH
+        </footer>
+
+    </div>
+
+    <!-- Active scripts (Starfield + Typing Loop + Split Flaps mechanics + Network Map) -->
+    <script>
+        // ── ALIEN.INC Network Map Data ─────────────────────────────────
+        // EDIT THIS: replace with your real coordinates per subsidiary.
+        const aliensNetworkNodes = [
+            { name: "ALIEN.INC",              detail: "Origin node — Manila",         lat: 14.5995, lng: 120.9842 },
+            { name: "THE DAILY ART CULT",      detail: "Publishing / audio",           lat: 40.7128, lng: -74.0060 },
+            { name: "HAWKSIGHT",               detail: "Exposure & defense monitoring", lat: 51.5072, lng: -0.1276 },
+            { name: "KMT 184.05",              detail: "Management consulting",         lat: 1.3521,  lng: 103.8198 },
+            { name: "1609 HOLDINGS",           detail: "Capital allocation",            lat: 47.3769, lng: 8.5417 },
+            { name: "EXOSPHERE",               detail: "Acquisitions / frontier scouting", lat: 25.2048, lng: 55.2708 },
+            { name: "ST. ALCÁNTARA FOUNDATION", detail: "Charity & gallery museum",     lat: 41.9028, lng: 12.4964 },
+            { name: "STATUTE & PRECEDENT",     detail: "Legal & compliance",            lat: 38.9072, lng: -77.0369 },
+            // add/adjust as needed — these are placeholder coordinates
+        ];
+
+        function initNetworkMap() {
+            const mapEl = document.getElementById('aliens-network-map');
+            if (!mapEl || typeof maplibregl === 'undefined') return;
+
+            const map = new maplibregl.Map({
+                container: 'aliens-network-map',
+                style: {
+                    version: 8,
+                    sources: {
+                        countries: {
+                            type: 'vector',
+                            url: 'https://demotiles.maplibre.org/tiles/tiles.json',
+                        },
+                    },
+                    layers: [
+                        { id: 'bg', type: 'background', paint: { 'background-color': '#000000' } },
+                        {
+                            id: 'land', type: 'fill', source: 'countries', 'source-layer': 'countries',
+                            paint: { 'fill-color': '#0a2e1a', 'fill-opacity': 0.9 },
+                        },
+                        {
+                            id: 'borders', type: 'line', source: 'countries', 'source-layer': 'countries',
+                            paint: { 'line-color': '#4ade80', 'line-width': 0.6, 'line-opacity': 0.5 },
+                        },
+                    ],
+                },
+                center: [20, 15],   // world view, not zoomed into one cluster
+                zoom: 1.3,
+                pitch: 20,
+                attributionControl: { compact: true },
+                // dragRotate (right-click/two-finger drag to rotate+tilt) and
+                // dragPan (left-click drag to pan) are both on by default —
+                // no extra wiring needed, unlike the earlier Leaflet version.
+            });
+
+            map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+
+            map.on('load', () => {
+                const bounds = new maplibregl.LngLatBounds();
+                aliensNetworkNodes.forEach(node => {
+                    const el = document.createElement('div');
+                    el.className = 'aliens-node-marker';
+
+                    new maplibregl.Marker({ element: el })
+                        .setLngLat([node.lng, node.lat])
+                        .setPopup(
+                            new maplibregl.Popup({ offset: 16 })
+                                .setHTML(`<strong>${node.name}</strong><br>${node.detail}`)
+                        )
+                        .addTo(map);
+
+                    bounds.extend([node.lng, node.lat]);
+                });
+            });
+        }
+
+        // Starfield Canvas Renderer
+        const canvas = document.querySelector('#star-container canvas');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        for (let i = 0; i < 400; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 2,
+                speed: Math.random() * 0.4 + 0.1
+            });
+        }
+
+        function drawStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#22d3ee';
+            stars.forEach(s => {
+                ctx.globalAlpha = Math.random() * 0.7 + 0.3;
+                ctx.fillRect(s.x, s.y, s.size, s.size);
+                s.y += s.speed;
+                if (s.y > canvas.height) {
+                    s.y = 0;
+                    s.x = Math.random() * canvas.width;
+                }
+            });
+            requestAnimationFrame(drawStars);
+        }
+        drawStars();
+
+        // Sequential Typewriter Logic
+        const paragraphs = [
+            document.getElementById('p1'),
+            document.getElementById('p2'),
+            document.getElementById('p3'),
+            document.getElementById('p4'),
+            document.getElementById('p5'),
+            document.getElementById('p6'),
+            document.getElementById('p7')
+        ];
+        let currentPara = 0;
+
+        function typeParagraph() {
+            if (currentPara >= paragraphs.length) {
+                document.getElementById('rest-of-page').style.opacity = '1';
+                initSplitFlaps();
+                return;
+            }
+            const el = paragraphs[currentPara];
+            if (!el) return;
+            const text = el.getAttribute('data-text');
+            let i = 0;
+            el.textContent = '';
+            el.classList.add('typewriter');
+            
+            function type() {
+                if (i < text.length) {
+                    el.classList.add('typewriter-start');
+                    el.textContent += text.charAt(i++);
+                    setTimeout(type, 35);
+                } else {
+                    el.classList.add('typewriter-done');
+                    currentPara++;
+                    setTimeout(typeParagraph, 600);
+                }
+            }
+            type();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(typeParagraph, 800);
+            initNetworkMap();
+        });
+
+        // Split-Flap board animation sequence
+        function initSplitFlaps() {
+            const flipSpeed = 2000;
+            const introSteps = 20;
+            const introInterval = 160;
+
+            document.querySelectorAll('.num-container').forEach(container => {
+                const targetValue = parseInt(container.dataset.count, 10);
+                const digitsCount = targetValue.toString().length;
+                let value = 0;
+
+                // Build digits starting at 0
+                for (let i = 0; i < digitsCount; i++) {
+                    const staticTop = document.createElement('div');
+                    staticTop.className = 'static-top';
+                    const staticTopSpan = document.createElement('span');
+                    staticTopSpan.textContent = '0';
+                    staticTop.appendChild(staticTopSpan);
+
+                    const staticBottom = document.createElement('div');
+                    staticBottom.className = 'static-bottom';
+                    const staticBottomSpan = document.createElement('span');
+                    staticBottomSpan.textContent = '0';
+                    staticBottom.appendChild(staticBottomSpan);
+
+                    const digit = document.createElement('div');
+                    digit.className = 'digit';
+                    digit.appendChild(staticTop);
+                    digit.appendChild(staticBottom);
+                    container.appendChild(digit);
+
+                    const remaining = digitsCount - 1 - i;
+                    if (remaining > 0 && remaining % 3 === 0) {
+                        const mark = document.createElement('div');
+                        mark.className = 'mark';
+                        const markSpan = document.createElement('span');
+                        markSpan.textContent = ',';
+                        mark.appendChild(markSpan);
+                        container.appendChild(mark);
+                    }
+                }
+
+                const digits = container.querySelectorAll('.digit');
+
+                function update(newVal, fast) {
+                    const str = newVal.toString().padStart(digitsCount, '0');
+
+                    digits.forEach((digit, index) => {
+                        const topEl = digit.querySelector('.static-top span');
+                        if (!topEl) return;
+                        const current = topEl.textContent;
+                        const next = str[index];
+
+                        if (current !== next) {
+                            const flipTop = document.createElement('div');
+                            flipTop.className = fast ? 'flip-top fast' : 'flip-top';
+
+                            const topSpan = document.createElement('span');
+                            topSpan.textContent = current;
+                            flipTop.appendChild(topSpan);
+
+                            const flipBottom = document.createElement('div');
+                            flipBottom.className = fast ? 'flip-bottom fast' : 'flip-bottom';
+
+                            const bottomSpan = document.createElement('span');
+                            bottomSpan.textContent = next;
+                            flipBottom.appendChild(bottomSpan);
+
+                            digit.appendChild(flipTop);
+                            topEl.textContent = next;
+
+                            flipTop.addEventListener('animationend', () => {
+                                digit.appendChild(flipBottom);
+                            });
+
+                            flipBottom.addEventListener('animationend', () => {
+                                const bottomEl = digit.querySelector('.static-bottom span');
+                                if (bottomEl) bottomEl.textContent = next;
+                                flipTop.remove();
+                                flipBottom.remove();
+                            });
+                        }
+                    });
+                }
+
+                // Intro: flip quickly from 0 up to targetValue
+                const step = Math.max(1, Math.floor(targetValue / introSteps));
+                const introTimer = setInterval(() => {
+                    value = Math.min(value + step, targetValue);
+                    update(value, true);
+                    if (value >= targetValue) {
+                        clearInterval(introTimer);
+                    }
+                }, introInterval);
+            });
+        }
+
+        // Scroll reveal controller
+        const sectionObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => { 
+                if (entry.isIntersecting) entry.target.classList.add('visible'); 
+            });
+        }, { threshold: 0.1 });
+        
+        document.querySelectorAll('.section').forEach(s => sectionObserver.observe(s));
+
+        // Simulated Opt-in Submission
+        function handleForm(e) {
+            e.preventDefault();
+            const input = document.getElementById('email');
+            const msg = document.getElementById('form-msg');
+            msg.style.display = "block";
+            msg.textContent = `TRANSMISSION SECURED: ${input.value} LOGGED INTO SIGNAL ARRAY.`;
+            input.value = "";
+        }
+    </script>
 </body>
 </html>

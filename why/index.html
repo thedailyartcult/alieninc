@@ -167,12 +167,31 @@
             line-height: 1.8;
             max-width: 56rem;
             margin: 0 auto;
-            text-align: left;
+            text-align: center;
         }
         .aliens-hero-kicker { 
             font-size: clamp(1.8rem, 3vw, 2.5rem); 
             font-weight: 700; 
             margin-top: 2rem; 
+        }
+
+        /* Moment log — static terminal readout, revealed after the rendezvous line */
+        .aliens-moment-log {
+            font-size: clamp(1rem, 1.6vw, 1.35rem);
+            line-height: 1.9;
+            border: 1px solid rgba(34, 211, 238, 0.4);
+            padding: 1rem 1.5rem;
+            color: #4ade80;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+        .aliens-moment-log.visible {
+            opacity: 1;
+        }
+        .aliens-moment-log-punchline {
+            display: inline-block;
+            margin-top: 0.75rem;
+            color: #22d3ee;
         }
 
         /* Flourish interactive map section block */
@@ -572,16 +591,24 @@
     <!-- Hero Introduction Block (Typewriter sequential animation) -->
     <section id="hero" class="aliens-hero">
         <div class="aliens-hero-inner">
-            <h1 class="aliens-hero-title neon-cyan">THEY WALK AMONG US</h1>
+            <h1 class="aliens-hero-title neon-cyan">ONE SMALL STEP<br>ONE NEW COORDINATE</h1>
             <div id="text-blocks" class="aliens-typewriter-block">
                 <!-- Data paragraph blocks containing user custom text -->
-                <p id="p1" class="typewriter" data-text="For over a year, ALIEN.INC has operated quietly under a single registered name."></p>
-                <p id="p2" class="typewriter" data-text="Seven subsidiaries, one origin point, one domain — held since 2024."></p>
+                <p id="p1" class="typewriter" data-text="For over a decade, ALIEN.INC has operated quietly under a single registered name."></p>
+                <p id="p2" class="typewriter" data-text="Seven subsidiaries, one origin point, one domain — held since Dec 2016."></p>
                 <p id="p3" class="typewriter" data-text="Then came the conflict. A separate registry, unrelated to us, claimed ground adjacent to our name."></p>
                 <p id="p4" class="typewriter" data-text="Rather than share airspace with confusion, we made contact with a new coordinate: alieninc.tech."></p>
                 <p id="p5" class="typewriter" data-text="The transition wasn't a retreat. It was a correction of orbit."></p>
-                <p id="p6" class="typewriter" data-text="Some records say the timing wasn't an accident — that it landed on the same footing as another crossing, made July 21, at the exact spot where a man once left the first human footprint off-world."></p>
-                <p id="p7" class="typewriter aliens-hero-kicker neon-cyan" data-text="We simply call it: the exit, and the landing."></p>
+                <p id="p6" class="typewriter" data-text="On July 21, 1969, at 02:56:15 UTC, Neil Armstrong set his foot on the Moon — the first human footprint off-world."></p>
+                <p id="p7" class="typewriter" data-text="We set ours at the same hour, fifty-seven years later."></p>
+                <p id="p8" class="typewriter" data-text="Not a coincidence. A rendezvous."></p>
+                <div class="aliens-moment-log">
+                    MOMENT LOG<br>
+                    1969-07-21&nbsp;&nbsp;&nbsp;02:56:15 UTC&nbsp;&nbsp;&nbsp;—&nbsp;&nbsp;&nbsp;first human step, off-world<br>
+                    2026-07-21&nbsp;&nbsp;&nbsp;02:56:15 UTC&nbsp;&nbsp;&nbsp;—&nbsp;&nbsp;&nbsp;alieninc.tech, live<br>
+                    <span class="aliens-moment-log-punchline">57 years apart. same second.</span>
+                </div>
+                <p id="p9" class="typewriter aliens-hero-kicker neon-cyan" data-text="We call it: the exit, and the landing."></p>
             </div>
         </div>
     </section>
@@ -644,7 +671,7 @@
                 <p class="aliens-addendum-label">CLASSIFIED ADDENDUM • DECLASSIFIED 2026</p>
                 <h2 class="aliens-reveal-headline">THIS WASN'T A DISAPPEARANCE.</h2>
                 <p class="aliens-yellow-warning">
-                    alien.inc didn't vanish — it relocated. The name held since 2024 needed a domain that couldn't be mistaken for anyone else's territory. alieninc.tech is that domain. Same origin. New coordinates. No conflict left unresolved.
+                    alien.inc didn't vanish — it relocated. The name held since 2016 needed a domain that couldn't be mistaken for anyone else's territory. alieninc.tech is that domain. Same origin. New coordinates. No conflict left unresolved.
                 </p>
             </div>
         </section>
@@ -788,7 +815,9 @@
             document.getElementById('p4'),
             document.getElementById('p5'),
             document.getElementById('p6'),
-            document.getElementById('p7')
+            document.getElementById('p7'),
+            document.getElementById('p8'),
+            document.getElementById('p9')
         ];
         let currentPara = 0;
 
@@ -811,8 +840,12 @@
                     el.textContent += text.charAt(i++);
                     setTimeout(type, 35);
                 } else {
+                    el.classList.remove('typewriter-start');
                     el.classList.add('typewriter-done');
                     currentPara++;
+                    if (el.id === 'p8') {
+                        document.querySelector('.aliens-moment-log').classList.add('visible');
+                    }
                     setTimeout(typeParagraph, 600);
                 }
             }

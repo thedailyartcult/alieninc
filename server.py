@@ -35,6 +35,7 @@ SUBDOMAIN_ROOTS = {
     '1609':         os.path.join(ROOT, '1609holdings'),
     'panteon':      os.path.join(ROOT, 'panteon'),
     'kmt':          os.path.join(ROOT, 'kmt'),
+    'immanuel':     os.path.join(ROOT, 'immanuel'),
     'stalcantara':  os.path.join(ROOT, 'stalcantarafoundation'),
     'sp':           os.path.join(ROOT, 'sp'),
     'secure':       os.path.join(ROOT, 'secure'),

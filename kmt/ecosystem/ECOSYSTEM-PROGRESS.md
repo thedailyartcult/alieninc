@@ -22,7 +22,7 @@ A self-evolving organism where 7 companies breathe together. Each day, companies
 │       └────────────┴────────────┴────────────┘              │
 │                         ↕                                   │
 │  ┌─────────┐  ┌─────────┐  ┌─────────┐                    │
-│  │ Statute │  │  TDAC   │  │Alcantara│                    │
+│  │ Centra  │  │  TDAC   │  │Alcantara│                    │
 │  │& Preced │←→│         │←→│Foundation│                    │
 │  └─────────┘  └─────────┘  └─────────┘                    │
 │                                                             │
@@ -107,7 +107,7 @@ Panteon                    $265K     100       0.0
 Centra                     $239K     100       0.0
 KMT Consulting Group         $388K      98      -1.0
 Alcantara Art Foundation     $100K     100       0.0
-Statute & Precedent          $215K     100       0.0
+Centra                         $680K     100       0.0
 ```
 
 **Events Generated:**

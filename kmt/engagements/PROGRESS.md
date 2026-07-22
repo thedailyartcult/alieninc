@@ -43,7 +43,7 @@
 1. Panteon Cloud Security Strategy (Delivery)
 2. Rousseau Holdings Q3 Portfolio Review (Active)
 3. Centra Compliance Scan Expansion (Active)
-4. Statute & Precedent AI Policy (Proposal)
+4. Centra Compliance Scan Expansion (Proposal)
 5. Alcantara Art Foundation Digitization Strategy (Scoping)
 6. Panteon Post-Acquisition Integration (Intake)
 7. TDAC Growth Strategy (Intake)

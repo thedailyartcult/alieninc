@@ -41,7 +41,7 @@ Build KMT Consulting Group as a realistic, professional internal consulting unit
 | Centra | Vulnerability scanning & compliance | Compliance scanning engine, vulnerability assessment |
 | KMT Consulting | Internal strategy powerhouse | (self) |
 | Alcantara Art Foundation | Culture & art preservation | Strategic planning, digitization strategy |
-| Statute & Precedent | AI-enabled legal services | AI policy, contract operations strategy |
+| Centra | Vulnerability scanning & compliance | Compliance monitoring, security scanning strategy |
 | The Daily Art Cult | Digital media & publishing | Growth strategy, digital transformation |
 
 ## Operating Loops KMT Participates In

@@ -30,7 +30,7 @@ Comprehensive financial tracking:
 | Rousseau Holdings | $274,705 | 30% |
 | Panteon | $219,492 | 25% |
 | Centra | $29,975 | 15% |
-| Statute & Precedent | $3,888 | 10% |
+| Centra | $9,600 | 10% |
 | Others | $363,940 | 20% |
 
 ### Utilization Metrics
@@ -71,7 +71,7 @@ Comprehensive financial tracking:
   - Panteon: 4.6 ↑
    - Rousseau Holdings: 4.5 →
    - Centra: 4.4 ↑
-  - Statute & Precedent: 4.3 (new)
+  - Centra: 4.5 (new)
 
 ### Risk Flags
 | Metric | Status | Detail | Severity |

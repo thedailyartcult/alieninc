@@ -26,7 +26,7 @@ Internal fee structures across the 7 companies:
 |------|----|---------------------|
 | KMT | Panteon | 12% |
 | KMT | Centra | 10% |
-| KMT | Statute & Precedent | 8% |
+| KMT | Centra | 10% |
 | KMT | Alcantara Art Foundation | 5% (nonprofit) |
 | KMT | The Daily Art Cult | 10% |
 | KMT | Rousseau Holdings | 15% |
@@ -70,7 +70,7 @@ Internal fee structures across the 7 companies:
 | Panteon | $219,492 |
 | Rousseau Holdings | $274,705 |
 | Centra | $29,975 |
-| Statute & Precedent | $3,888 |
+| Centra | $9,600 |
 
 ### Revenue by Service Line
 | Service Line | Revenue |

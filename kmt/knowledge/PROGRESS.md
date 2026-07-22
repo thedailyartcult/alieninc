@@ -10,7 +10,7 @@ Comprehensive profiles for all 7 Alien.Inc companies including:
 - **Rousseau Holdings** - Investment holding & capital allocation
 - **Panteon** - Cybersecurity & defense
 - **Centra** - Vulnerability scanning & compliance
-- **Statute & Precedent** - Legal services & AI-enabled law
+- **Centra** - Vulnerability scanning & compliance monitoring
 - **Alcantara Art Foundation** - Nonprofit & cultural preservation
 - **The Daily Art Cult** - Digital media & publishing
 - **KMT Consulting** - Internal strategy consulting (self-profile)
@@ -39,7 +39,7 @@ Each subsidiary profile contains:
 - **Rousseau Holdings**: Developing (centralized capital, decentralized operations)
 - **Panteon**: Established (productized services, strong tech stack)
 - **Centra**: Developing (scanning operations maturity)
-- **Statute & Precedent**: Developing (hybrid AI-traditional model)
+- **Centra**: Establishing (automated scanning platform)
 - **Alcantara Art Foundation**: Nascent (manual processes, limited tech)
 - **TDAC**: Establishing (content-first, lean operations)
 - **KMT**: Establishing (project-based delivery)

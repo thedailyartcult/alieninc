@@ -69,7 +69,7 @@ node kmt/cli.js kmt overview
 node kmt/cli.js portfolio
 
 # Get cross-company insights
-node kmt/cli.js statute insights
+node kmt/cli.js centra insights
 ```
 
 ## Example Output (Panteon)

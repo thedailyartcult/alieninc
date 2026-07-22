@@ -11,7 +11,7 @@ Comprehensive profiles for all 7 Alien.Inc companies including:
 - **Panteon** - Cybersecurity & defense
 - **Exosphere** - Private equity & acquisitions
 - **Statute & Precedent** - Legal services & AI-enabled law
-- **St. Alcantara Foundation** - Nonprofit & cultural preservation
+- **Alcantara Art Foundation** - Nonprofit & cultural preservation
 - **The Daily Art Cult** - Digital media & publishing
 - **KMT Consulting** - Internal strategy consulting (self-profile)
 
@@ -40,7 +40,7 @@ Each subsidiary profile contains:
 - **Panteon**: Established (productized services, strong tech stack)
 - **Exosphere**: Developing (deal-by-deal execution)
 - **Statute & Precedent**: Developing (hybrid AI-traditional model)
-- **St. Alcantara Foundation**: Nascent (manual processes, limited tech)
+- **Alcantara Art Foundation**: Nascent (manual processes, limited tech)
 - **TDAC**: Establishing (content-first, lean operations)
 - **KMT**: Establishing (project-based delivery)
 

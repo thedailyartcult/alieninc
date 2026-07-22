@@ -59,7 +59,7 @@ const CortexWidget = (() => {
       buttonRadius: '8px',
       cardRadius: '12px'
     },
-    stalcantara: {
+    alcantaraartfoundation: {
       primary: '#161616',
       accent: '#BF955F',
       font: "'Austin', Georgia, serif",
@@ -361,7 +361,7 @@ const CortexWidget = (() => {
       placeholder: 'e.g., What are our highest-priority regulatory risks?',
       ctaLabel: 'Analyze'
     },
-    stalcantara: {
+    alcantaraartfoundation: {
       title: 'Cortex Cultural Intelligence',
       subtitle: 'AI-powered cultural analysis. Ask about preservation priorities, collection insights, or audience engagement.',
       quickActions: ['Collection Insights', 'Preservation', 'Audience Growth', 'Exhibition Planning'],
@@ -517,18 +517,18 @@ const CortexWidget = (() => {
           return 'Active projects: ' + active.map(function(p){return p.name;}).join(', ') + '. Headcount: ' + sp.headcount['2026F'] + ' (' + sp.headcount.fullTime + ' full-time, ' + sp.headcount.contractors + ' contractors). 2026F EBITDA: $' + (sp.annualFinancials.find(function(f){return f.year===2026;}).ebitda/1000).toFixed(0) + 'K.';
         }, 'Statute & Precedent conducts due diligence across corporate filings, regulatory proceedings, and adverse media.')
       },
-      stalcantara: {
+      alcantaraartfoundation: {
         'collection insights': buildFromEco(function(eco) {
           var alc = eco.companies.find(function(c){return c.id==='alcantara';});
           var kpis = alc.kpis2026F;
-          return 'St. Alcantara Foundation: ' + kpis.artifactsDigitized.toLocaleString() + ' artifacts digitized. Collection risk score: ' + kpis.collectionRiskScore + '. Program attendance: ' + kpis.programAttendance.toLocaleString() + '. Active donors: ' + kpis.activeDonors + '. Grant success rate: ' + (kpis.grantSuccessRate * 100).toFixed(0) + '%.';
-        }, 'St. Alcantara Foundation preserves cultural memory through conservation, digitization, education, and public access.'),
+          return 'Alcantara Art Foundation: ' + kpis.artifactsDigitized.toLocaleString() + ' artifacts digitized. Collection risk score: ' + kpis.collectionRiskScore + '. Program attendance: ' + kpis.programAttendance.toLocaleString() + '. Active donors: ' + kpis.activeDonors + '. Grant success rate: ' + (kpis.grantSuccessRate * 100).toFixed(0) + '%.';
+        }, 'Alcantara Art Foundation preserves cultural memory through conservation, digitization, education, and public access.'),
         'preservation priorities': buildFromEco(function(eco) {
           var alc = eco.companies.find(function(c){return c.id==='alcantara';});
           var rev = alc.annualFinancials.find(function(f){return f.year===2026;});
           var breakdown = alc.revenueBreakdown2026F;
           return '2026F revenue: $' + (rev.revenue/1000).toFixed(0) + 'K. Service lines: digitization and preservation $' + (breakdown[1].amount/1000).toFixed(0) + 'K (' + (breakdown[1].share*100).toFixed(1) + '%), public programs $' + (breakdown[0].amount/1000).toFixed(0) + 'K (' + (breakdown[0].share*100).toFixed(1) + '%), donor membership $' + (breakdown[2].amount/1000).toFixed(0) + 'K (' + (breakdown[2].share*100).toFixed(1) + '%).';
-        }, 'St. Alcantara Foundation prioritizes preservation based on condition scoring, environmental exposure, and cultural significance.'),
+        }, 'Alcantara Art Foundation prioritizes preservation based on condition scoring, environmental exposure, and cultural significance.'),
         'audience growth': buildFromEco(function(eco) {
           var alc = eco.companies.find(function(c){return c.id==='alcantara';});
           var kpis = alc.kpis2026F;
@@ -536,12 +536,12 @@ const CortexWidget = (() => {
           var rev2026 = alc.annualFinancials.find(function(f){return f.year===2026;});
           var growth = ((rev2026.revenue - rev2025.revenue) / rev2025.revenue * 100).toFixed(1);
           return 'Revenue trajectory: $' + (rev2025.revenue/1000).toFixed(0) + 'K (2025) to $' + (rev2026.revenue/1000).toFixed(0) + 'K (2026F), ' + growth + '% growth. Donor retention: ' + (kpis.donorRetentionRate * 100).toFixed(0) + '% with ' + kpis.activeDonors + ' active donors.';
-        }, 'St. Alcantara Foundation tracks audience engagement across physical programs and digital channels.'),
+        }, 'Alcantara Art Foundation tracks audience engagement across physical programs and digital channels.'),
         'exhibition planning': buildFromEco(function(eco) {
           var alc = eco.companies.find(function(c){return c.id==='alcantara';});
           var clients = eco.clientDatabase.filter(function(cl){return cl.companyId==='alcantara';});
           return 'Active partnerships: ' + clients.map(function(c){return c.clientName;}).join(', ') + '. Headcount: ' + alc.headcount['2026F'] + ' (' + alc.headcount.fullTime + ' full-time, ' + alc.headcount.contractors + ' contractors). 2026F EBITDA: $' + (alc.annualFinancials.find(function(f){return f.year===2026;}).ebitda/1000).toFixed(0) + 'K.';
-        }, 'St. Alcantara Foundation plans exhibitions based on collection utilization, visitor interest, and conservation priorities.')
+        }, 'Alcantara Art Foundation plans exhibitions based on collection utilization, visitor interest, and conservation priorities.')
       },
       alieninc: {
         'ecosystem health': buildFromEco(function(eco) {
@@ -636,8 +636,8 @@ const CortexWidget = (() => {
       panteon: 'Panteon delivers managed detection and response, exposure and vulnerability management, and cyber diligence for acquisitions. Headcount: 16 across 12 full-time and 4 contractors.',
       exosphere: 'Exosphere provides succession and sell-side advisory, buy-side search, and commercial diligence for owner-led businesses in the $3M-$30M segment.',
       statute: 'Statute & Precedent delivers M&A and transaction counsel, contract operations, and governance and compliance services. Average bill rate: $285/hour.',
-      stalcantara: 'St. Alcantara Foundation preserves cultural memory through conservation, digitization, education, and public access. 18,400 artifacts digitized to date.',
-      alieninc: 'Alien.Inc operates 7 companies: KMT Consulting, Panteon, Exosphere, Statute & Precedent, The Daily Art Cult, St. Alcantara Foundation, and Rousseau.',
+      alcantaraartfoundation: 'Alcantara Art Foundation preserves cultural memory through conservation, digitization, education, and public access. 18,400 artifacts digitized to date.',
+      alieninc: 'Alien.Inc operates 7 companies: KMT Consulting, Panteon, Exosphere, Statute & Precedent, The Daily Art Cult, Alcantara Art Foundation, and Rousseau.',
       "rousseau": 'Rousseau allocates capital and governance capacity across the Alien.Inc group. Fund centre: EUR 5.77B across 6 funds.'
     };
     

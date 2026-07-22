@@ -18,7 +18,7 @@ const EcosystemIntegrator = (() => {
       exosphere: { name: "Exosphere Succession Partners", role: "acquisition_advisory" },
       statute: { name: "Statute & Precedent", role: "legal_services" },
       tdac: { name: "The Daily Art Cult", role: "media_publishing" },
-      alcantara: { name: "St. Alcantara Foundation", role: "nonprofit_culture" },
+      alcantara: { name: "Alcantara Art Foundation", role: "nonprofit_culture" },
       "rousseau": { name: "Rousseau", role: "holding_company" }
     },
     intercompanyRates2026: {

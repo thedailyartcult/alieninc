@@ -24,7 +24,7 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 | Panteon | `https://panteon.alieninc.tech` | Cybersecurity defense, managed detection, exposure management, diligence |
 | Immanuel | `https://immanuel.alieninc.tech` | Acquisition sourcing, succession advisory, commercial diligence |
 | KMT Consulting Group | `https://kmt.alieninc.tech` | Strategy, applied AI, operating model, post-merger integration |
-| St. Alcantara Foundation | `https://stalcantara.alieninc.tech` | Culture and art preservation nonprofit |
+| Alcantara Art Foundation | `https://alcantaraartfoundation.alieninc.tech` | Culture and art preservation nonprofit |
 | Statute & Precedent | `https://sp.alieninc.tech` | AI-enabled legal services, transactions, contracts, governance |
 
 ## Directory Map
@@ -36,7 +36,7 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 | `immanuel.aliendinc.tech` | `immanuel/` |
 | `panteon.aliendinc.tech` | `panteon/` |
 | `kmt.aliendinc.tech` | `kmt/` |
-| `stalcantara.aliendinc.tech` | `stalcantarafoundation/` |
+| `alcantaraartfoundation.aliendinc.tech` | `alcantaraartfoundation/` |
 | `sp.aliendinc.tech` | `sp/` |
 
 ## Supporting Pages
@@ -44,8 +44,8 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 | Subdomain | Path | Notes |
 | --- | --- | --- |
 | `panteon.aliendinc.tech` | `/login.html` | Panteon portal/login surface |
-| `stalcantara.aliendinc.tech` | `/login.html` | Foundation login surface |
-| `stalcantara.aliendinc.tech` | `/privacy.html` | Foundation privacy page |
+| `alcantaraartfoundation.aliendinc.tech` | `/login.html` | Foundation login surface |
+| `alcantaraartfoundation.aliendinc.tech` | `/privacy.html` | Foundation privacy page |
 | `aliendinc.tech` | `/data/alieninc-ecosystem.json` | Operating dataset |
 
 ## Operating Loops
@@ -53,7 +53,7 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 | Loop | Lead | Participants |
 | --- | --- | --- |
 | Acquire-to-Improve | Immanuel | 1609 Holdings, KMT, Panteon, Statute & Precedent |
-| Culture-to-Audience | St. Alcantara Foundation | The Daily Art Cult, Statute & Precedent, 1609 Holdings |
+| Culture-to-Audience | Alcantara Art Foundation | The Daily Art Cult, Statute & Precedent, 1609 Holdings |
 | Risk-to-Product | Panteon | KMT, Statute & Precedent, Immanuel |
 | Insight-to-Capital | 1609 Holdings | KMT, The Daily Art Cult, Immanuel |
 

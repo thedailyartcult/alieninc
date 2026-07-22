@@ -37,12 +37,12 @@ W = 72
 
 _ALL_SITES = [
     ('/', 'Alien Inc (Group)'),
+    ('/panteon/', 'Panteon'),
     ('/rousseau/', 'Rousseau'),
     ('/centra/', 'Centra'),
-    ('/exosphere/', 'Exosphere'),
+    ('/immanuel/', 'Immanuel'),
     ('/kmt/', 'KMT Consulting Group'),
-    ('/sp/', 'Statute & Precedent'),
-    ('/stalcantarafoundation/', 'St. Alcantara Foundation'),
+    ('/alcantaraartfoundation/', 'Alcantara Art Foundation'),
     ('/thedailyartcult/', 'The Daily Art Cult'),
 ]
 

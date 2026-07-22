@@ -35,11 +35,12 @@ const WAIT_AFTER_LOAD = 5000;
 const COMPANIES = {
     alieninc:         { name: 'Alien.Inc',                    url: 'https://alieninc.tech/' },
     'rousseau':   { name: 'Rousseau',               url: 'https://rousseau.alieninc.tech' },
-    exosphere:        { name: 'Exosphere',                    url: 'https://exosphere.alieninc.tech' },
     panteon:        { name: 'Panteon',                    url: 'https://panteon.alieninc.tech' },
+    immanuel:       { name: 'Immanuel',                   url: 'https://immanuel.alieninc.tech' },
+    centra:         { name: 'Centra',                     url: 'https://centra.alieninc.tech' },
     kmt:              { name: 'KMT Consulting Group',         url: 'https://kmt.alieninc.tech' },
     thedailyartcult:  { name: 'The Daily Art Cult',           url: 'https://thedailyartcult.lol' },
-    alcantara:        { name: 'St. Alcantara Foundation',     url: 'https://stalcantara.alieninc.tech' },
+    alcantara:        { name: 'Alcantara Art Foundation',     url: 'https://alcantaraartfoundation.alieninc.tech' },
 };
 
 // ── Load EDPB WAT adblocker filter lists ──────────────────────────────────────

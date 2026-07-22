@@ -106,7 +106,7 @@ The Daily Art Cult           $176K     100       0.0
 Panteon                    $265K     100       0.0
 Exosphere                    $239K     100       0.0
 KMT Consulting Group         $388K      98      -1.0
-St. Alcantara Foundation     $100K     100       0.0
+Alcantara Art Foundation     $100K     100       0.0
 Statute & Precedent          $215K     100       0.0
 ```
 

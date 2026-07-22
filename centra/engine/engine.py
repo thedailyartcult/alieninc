@@ -26,17 +26,11 @@ COMPANY_TARGETS = {
     'centra': [
         {'host': 'localhost', 'name': 'Centra', 'ports': [80, 443, 8721]},
     ],
-    'exosphere': [
-        {'host': 'localhost', 'name': 'Exosphere', 'ports': [80, 443]},
-    ],
     'kmt': [
         {'host': 'localhost', 'name': 'KMT Consulting', 'ports': [80, 443]},
     ],
-    'statute': [
-        {'host': 'localhost', 'name': 'Statute & Precedent', 'ports': [80, 443]},
-    ],
     'alcantara': [
-        {'host': 'localhost', 'name': 'St. Alcantara Foundation', 'ports': [80, 443]},
+        {'host': 'localhost', 'name': 'Alcantara Art Foundation', 'ports': [80, 443]},
     ],
     'tdac': [
         {'host': 'localhost', 'name': 'The Daily Art Cult', 'ports': [80, 443]},

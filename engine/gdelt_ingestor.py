@@ -65,7 +65,7 @@ COMPANY_CONTEXT = {
         "regions": ["global"],
     },
     "alcantara": {
-        "name": "St. Alcantara Foundation",
+        "name": "Alcantara Art Foundation",
         "sector": "cultural preservation, art conservation, nonprofit, heritage, museum, digitization",
         "keywords": ["cultural preservation", "art conservation", "heritage", "museum",
                       "digitization", "cultural heritage", "endangered culture", "preservation",
@@ -132,7 +132,7 @@ MACRO_EVENTS = [
                      "art conservation", "cultural heritage", "UNESCO"],
         "affected": ["alcantara", "tdac"],
         "severity": "low",
-        "description_template": "Cultural preservation event — St. Alcantara Foundation engagement opportunity",
+        "description_template": "Cultural preservation event — Alcantara Art Foundation engagement opportunity",
     },
     {
         "pattern": ["currency", "euro", "exchange rate", "forex", "dollar"],

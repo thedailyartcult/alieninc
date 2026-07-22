@@ -12,7 +12,7 @@
 | Exosphere | 91% | 100% | 58% | 87% | Strong |
 | Panteon | 91% | 100% | 58% | 87% | Strong |
 | Statute & Precedent | 91% | 100% | 58% | 87% | Strong |
-| St. Alcantara Foundation | 91% | 100% | 58% | 87% | Strong |
+| Alcantara Art Foundation | 91% | 100% | 58% | 87% | Strong |
 | Alien Inc | 91% | 100% | 33% | 79% | Good |
 
 ---
@@ -95,7 +95,7 @@
   - Statute & Precedent: Legal professional privilege, matter files, SRA compliance
 
 ### 14 July 2026 — Scanner Enhancements
-- Fixed St. Alcantara path (was `/alcantara/`, now `/stalcantarafoundation/`)
+- Fixed Alcantara Art Foundation path (was `/alcantara/`, now `/alcantaraartfoundation/`)
 - Added subdomain directory detection (e.g., policy.thedailyartcult/)
 - Added in-page tab detection for cookies/terms panels
 - Fixed duplicate risk entries in reports
@@ -114,7 +114,7 @@
 
 ### Content Depth Issues
 - **Alien Inc root**: No privacy policy at all (0 words) — needs parent company policy
-- **St. Alcantara Foundation**: Privacy policy is 1483 words (needs expansion to 3000+)
+- **Alcantara Art Foundation**: Privacy policy is 1483 words (needs expansion to 3000+)
 - **Cookie consent mechanism**: None of the sites have an actual cookie consent banner (Cookiebot, OneTrust, etc.)
 
 ### Remaining Gaps
@@ -167,7 +167,7 @@
 
 1. **Create Alien Inc root privacy policy** — Parent company needs its own policy (currently 33% depth)
 2. **Add cookie consent mechanisms** — All sites need Cookiebot/OneTrust or similar
-3. **Expand St. Alcantara privacy policy** — Could be expanded to 3000+ words for higher depth score
+3. **Expand Alcantara Art Foundation privacy policy** — Could be expanded to 3000+ words for higher depth score
 
 ---
 

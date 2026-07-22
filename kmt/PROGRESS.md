@@ -40,7 +40,7 @@ Build KMT Consulting Group as a realistic, professional internal consulting unit
 | Panteon | Cybersecurity defense | Cloud security strategy, vulnerability program design |
 | Exosphere | Acquisition sourcing, succession | Commercial diligence, post-acquisition integration |
 | KMT Consulting | Internal strategy powerhouse | (self) |
-| St. Alcantara Foundation | Culture & art preservation | Strategic planning, digitization strategy |
+| Alcantara Art Foundation | Culture & art preservation | Strategic planning, digitization strategy |
 | Statute & Precedent | AI-enabled legal services | AI policy, contract operations strategy |
 | The Daily Art Cult | Digital media & publishing | Growth strategy, digital transformation |
 

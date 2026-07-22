@@ -111,7 +111,7 @@ def _assess_locally(report):
         strengths.append("Audit report publicly accessible")
     
     # ── 8. Per-company content differentiation ──
-    company_dirs = ["rousseau", "exosphere", "panteon", "kmt", "sp", "thedailyartcult", "stalcantarafoundation"]
+    company_dirs = ["panteon", "alcantaraartfoundation", "thedailyartcult", "rousseau", "immanuel", "centra", "kmt"]
     from pathlib import Path
     base = Path(__file__).parent.parent.parent.parent.parent  # alieninc root
     companies_with_privacy = sum(1 for d in company_dirs if (base / d / "privacy.html").exists())

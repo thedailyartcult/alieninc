@@ -88,10 +88,8 @@ async def seed_defaults():
         'alieninc': 'Alien.Inc',
         'rousseau': 'Rousseau',
         'centra': 'Centra',
-        'exosphere': 'Exosphere',
         'kmt': 'KMT Consulting Group',
-        'statute': 'Statute & Precedent',
-        'alcantara': 'St. Alcantara Foundation',
+        'alcantara': 'Alcantara Art Foundation',
         'tdac': 'The Daily Art Cult',
     }
     for cid, name in companies.items():

@@ -44,7 +44,7 @@
 2. 1609 Holdings Q3 Portfolio Review (Active)
 3. Exosphere Target Company Diligence (Active)
 4. Statute & Precedent AI Policy (Proposal)
-5. St. Alcantara Digitization Strategy (Scoping)
+5. Alcantara Art Foundation Digitization Strategy (Scoping)
 6. Panteon Post-Acquisition Integration (Intake)
 7. TDAC Growth Strategy (Intake)
 8. 1609 Annual Strategy Offsite (Scoping)

@@ -27,7 +27,7 @@ Internal fee structures across the 7 companies:
 | KMT | Panteon | 12% |
 | KMT | Exosphere | 10% |
 | KMT | Statute & Precedent | 8% |
-| KMT | St. Alcantara Foundation | 5% (nonprofit) |
+| KMT | Alcantara Art Foundation | 5% (nonprofit) |
 | KMT | The Daily Art Cult | 10% |
 | KMT | 1609 Holdings | 15% |
 | 1609 Holdings | KMT | 15% |

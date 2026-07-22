@@ -28,8 +28,8 @@ COMPANY_REPOS = {
     "immanuel": [],
     "sp": [],
     "tdac": [],
+    "immanuel": [],
     "alcantara": [],
-    "exosphere": [],
 }
 
 

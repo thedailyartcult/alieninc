@@ -26,12 +26,13 @@ var CentraScanner = (function () {
   // =========================================================================
   var ECOSYSTEM_DOMAINS = [
     { id: 'alieninc',     name: 'Alien.Inc',                url: '/' },
-    { id: 'rousseau',         name: 'Rousseau',            url: 'https://rousseau.alieninc.tech' },
-    { id: 'centra',    name: 'Centra',                url: 'https://centra.alieninc.tech' },
-    { id: 'exosphere',    name: 'Exosphere',                url: 'https://exosphere.alieninc.tech' },
-    { id: 'kmt',          name: 'KMT Consulting Group',     url: 'https://kmt.alieninc.tech' },
-    { id: 'alcantara',    name: 'St. Alcantara Foundation', url: 'https://stalcantara.alieninc.tech' },
-    { id: 'tdac',         name: 'The Daily Art Cult',       url: 'https://thedailyartcult.lol' }
+    { id: 'panteon',      name: 'Panteon',                  url: 'https://panteon.alieninc.tech' },
+    { id: 'alcantara',    name: 'Alcantara Art Foundation', url: 'https://alcantaraartfoundation.alieninc.tech' },
+    { id: 'tdac',         name: 'The Daily Art Cult',       url: 'https://thedailyartcult.lol' },
+    { id: 'rousseau',     name: 'Rousseau Holdings',        url: 'https://rousseau.alieninc.tech' },
+    { id: 'immanuel',     name: 'Immanuel',                 url: 'https://immanuel.alieninc.tech' },
+    { id: 'centra',       name: 'Centra',                   url: 'https://centra.alieninc.tech' },
+    { id: 'kmt',          name: 'KMT Consulting Group',     url: 'https://kmt.alieninc.tech' }
   ];
 
   // =========================================================================

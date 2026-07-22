@@ -33,12 +33,13 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 
 SUBDOMAIN_ROOTS = {
     'rousseau':         os.path.join(ROOT, 'rousseau'),
-    'panteon':      os.path.join(ROOT, 'panteon'),
-    'kmt':          os.path.join(ROOT, 'kmt'),
-    'immanuel':     os.path.join(ROOT, 'immanuel'),
-    'stalcantara':  os.path.join(ROOT, 'stalcantarafoundation'),
-    'sp':           os.path.join(ROOT, 'sp'),
-    'secure':       os.path.join(ROOT, 'secure'),
+    'panteon':          os.path.join(ROOT, 'panteon'),
+    'centra':           os.path.join(ROOT, 'centra'),
+    'kmt':              os.path.join(ROOT, 'kmt'),
+    'immanuel':         os.path.join(ROOT, 'immanuel'),
+    'alcantaraartfoundation': os.path.join(ROOT, 'stalcantarafoundation'),
+    'sp':               os.path.join(ROOT, 'sp'),
+    'secure':           os.path.join(ROOT, 'secure'),
 }
 
 _cache = {'data': None, 'ts': 0, 'lock': threading.Lock()}

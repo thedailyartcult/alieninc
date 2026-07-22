@@ -25,14 +25,14 @@ Internal fee structures across the 7 companies:
 | From | To | Management Fee Rate |
 |------|----|---------------------|
 | KMT | Panteon | 12% |
-| KMT | Exosphere | 10% |
+| KMT | Centra | 10% |
 | KMT | Statute & Precedent | 8% |
 | KMT | Alcantara Art Foundation | 5% (nonprofit) |
 | KMT | The Daily Art Cult | 10% |
-| KMT | 1609 Holdings | 15% |
-| 1609 Holdings | KMT | 15% |
-| 1609 Holdings | Panteon | 10% |
-| 1609 Holdings | Exosphere | 10% |
+| KMT | Rousseau Holdings | 15% |
+| Rousseau Holdings | KMT | 15% |
+| Rousseau Holdings | Panteon | 10% |
+| Rousseau Holdings | Centra | 10% |
 
 ### Invoice Management
 - Generate invoices from approved time entries
@@ -54,9 +54,9 @@ Internal fee structures across the 7 companies:
 
 ## Files Created
 - `kmt/billing/billing-engine.js` - Core billing management engine
-- `kmt/billing/data/invoices.json` - Sample invoice data (10 invoices)
+- `kmt/billing/data/invoices.json` - Operating invoice data (10 invoices)
 
-## Sample Financial Data
+## Financial Data
 
 ### YTD Performance (through July 2026)
 - **Total Revenue:** $892,000
@@ -68,8 +68,8 @@ Internal fee structures across the 7 companies:
 | Company | Revenue |
 |---------|---------|
 | Panteon | $219,492 |
-| 1609 Holdings | $274,705 |
-| Exosphere | $29,975 |
+| Rousseau Holdings | $274,705 |
+| Centra | $29,975 |
 | Statute & Precedent | $3,888 |
 
 ### Revenue by Service Line
@@ -83,7 +83,7 @@ Internal fee structures across the 7 companies:
 ## Integration Points
 - Feeds **Engagement Management** with budget tracking
 - Powers **Performance Dashboard** with financial metrics
-- Reports to **1609 Holdings** for portfolio oversight
+- Reports to **Rousseau Holdings** for portfolio oversight
 - Links to **Knowledge Base** for company financial data
 
 ## Next Component

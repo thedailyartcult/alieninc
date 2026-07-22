@@ -50,7 +50,7 @@ _SECTOR_MARKET_SENSITIVITY = {
     "rousseau": {"bull": 1.15, "neutral": 1.0, "bear": 0.82, "crisis": 0.65},
     "tdac": {"bull": 1.05, "neutral": 1.0, "bear": 0.90, "crisis": 0.78},
     "panteon": {"bull": 1.10, "neutral": 1.0, "bear": 1.12, "crisis": 1.25},
-    "exosphere": {"bull": 1.20, "neutral": 1.0, "bear": 0.70, "crisis": 0.50},
+    "centra": {"bull": 1.10, "neutral": 1.0, "bear": 1.12, "crisis": 1.25},
     "kmt": {"bull": 1.08, "neutral": 1.0, "bear": 0.85, "crisis": 0.72},
     "alcantara": {"bull": 0.95, "neutral": 1.0, "bear": 0.92, "crisis": 0.80},
     "statute": {"bull": 1.02, "neutral": 1.0, "bear": 0.95, "crisis": 0.88},

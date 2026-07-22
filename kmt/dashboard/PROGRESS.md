@@ -27,9 +27,9 @@ Comprehensive financial tracking:
 ### Revenue by Client
 | Client | Revenue | Share |
 |--------|---------|-------|
-| 1609 Holdings | $274,705 | 30% |
+| Rousseau Holdings | $274,705 | 30% |
 | Panteon | $219,492 | 25% |
-| Exosphere | $29,975 | 15% |
+| Centra | $29,975 | 15% |
 | Statute & Precedent | $3,888 | 10% |
 | Others | $363,940 | 20% |
 
@@ -69,8 +69,8 @@ Comprehensive financial tracking:
 - **Response Rate:** 82%
 - **By Client:**
   - Panteon: 4.6 ↑
-  - 1609 Holdings: 4.5 →
-  - Exosphere: 4.4 ↑
+   - Rousseau Holdings: 4.5 →
+   - Centra: 4.4 ↑
   - Statute & Precedent: 4.3 (new)
 
 ### Risk Flags
@@ -103,7 +103,7 @@ Comprehensive financial tracking:
 ## Integration Points
 - Pulls data from **Engagement Management** system
 - Receives financials from **Billing System**
-- Informs **1609 Holdings** operating reviews
+- Informs **Rousseau Holdings** operating reviews
 - Supports **Knowledge Base** with client health data
 
 ## Final Status

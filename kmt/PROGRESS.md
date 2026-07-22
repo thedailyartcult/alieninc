@@ -36,9 +36,9 @@ Build KMT Consulting Group as a realistic, professional internal consulting unit
 
 | Company | Role | KMT Services |
 |---------|------|--------------|
-| 1609 Holdings | Capital allocation, governance | Portfolio analytics, operating reviews |
+| Rousseau Holdings | Capital allocation, governance | Portfolio analytics, operating reviews |
 | Panteon | Cybersecurity defense | Cloud security strategy, vulnerability program design |
-| Exosphere | Acquisition sourcing, succession | Commercial diligence, post-acquisition integration |
+| Centra | Vulnerability scanning & compliance | Compliance scanning engine, vulnerability assessment |
 | KMT Consulting | Internal strategy powerhouse | (self) |
 | Alcantara Art Foundation | Culture & art preservation | Strategic planning, digitization strategy |
 | Statute & Precedent | AI-enabled legal services | AI policy, contract operations strategy |
@@ -46,16 +46,16 @@ Build KMT Consulting Group as a realistic, professional internal consulting unit
 
 ## Operating Loops KMT Participates In
 
-1. **Acquire-to-Improve** (Lead: Exosphere) - KMT executes first 180-day operating plans
+1. **Acquire-to-Improve** (Lead: Immanuel) - KMT executes first 180-day operating plans
 2. **Risk-to-Product** (Lead: Panteon) - KMT builds remediation delivery capabilities
-3. **Insight-to-Capital** (Lead: 1609) - KMT provides sector and operating intelligence
+3. **Insight-to-Capital** (Lead: Rousseau Holdings) - KMT provides sector and operating intelligence
 
 ## Data Source
 All financial and operational data: `data/alieninc-ecosystem.json`
 
 ## Notes
 - KMT only serves Alien.Inc companies (internal consulting unit)
-- Fees are internal transfer fees / management fees tracked by 1609 Holdings
+- Fees are internal transfer fees / management fees tracked by Rousseau Holdings
 - No external clients - focus entirely on the 7-company ecosystem
 - Deliverables must meet Big 3 consulting quality standards
 
@@ -72,7 +72,7 @@ All financial and operational data: `data/alieninc-ecosystem.json`
 - Budget vs. actual monitoring
 - Deliverables management with version control
 - Risk and dependency tracking
-- **Sample Data:** 8 engagements across all service lines
+- **Operating Data:** 8 engagements across all service lines
 
 #### 2. Knowledge Base (`knowledge/`)
 - Comprehensive profiles for all 7 Alien.Inc companies
@@ -95,7 +95,7 @@ All financial and operational data: `data/alieninc-ecosystem.json`
 - Invoice generation from time entries
 - Revenue tracking by company and service line
 - Utilization metrics by employee
-- **Sample Data:** 10 invoices, $892K YTD revenue
+- **Operating Data:** 10 invoices, $892K YTD revenue
 
 #### 5. Methodology Library (`methodology/`)
 - 5 complete engagement playbooks (Strategy, Operations, Integration, AI, M&A)
@@ -146,6 +146,6 @@ kmt/
 ### Next Steps (Future Work)
 1. Build integration layer between components
 2. Create UI dashboard for visualization
-3. Add real-time data sync with 1609 Holdings
+3. Add real-time data sync with Rousseau Holdings
 4. Build client-facing portal for engagement visibility
 5. Add AI-powered insights and recommendations

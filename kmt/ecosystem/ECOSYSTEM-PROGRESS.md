@@ -15,14 +15,14 @@ A self-evolving organism where 7 companies breathe together. Each day, companies
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐       │
-│  │  1609   │  │ Panteon│  │Exosphere│  │   KMT   │       │
+│  │Rousseau │  │ Panteon│  │ Centra  │  │   KMT   │       │
 │  │Holdings │←→│         │←→│         │←→│         │       │
 │  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘       │
 │       │            │            │            │              │
 │       └────────────┴────────────┴────────────┘              │
 │                         ↕                                   │
 │  ┌─────────┐  ┌─────────┐  ┌─────────┐                    │
-│  │ Statute │  │  TDAC   │  │St. Alc  │                    │
+│  │ Statute │  │  TDAC   │  │Alcantara│                    │
 │  │& Preced │←→│         │←→│Foundation│                    │
 │  └─────────┘  └─────────┘  └─────────┘                    │
 │                                                             │
@@ -101,10 +101,10 @@ node runner.py company panteon
 ```
 Company                    Cash       Health  Momentum
 ──────────────────────────────────────────────────────
-1609 Holdings                $981K     100       0.0
+Rousseau Holdings            $981K     100       0.0
 The Daily Art Cult           $176K     100       0.0
 Panteon                    $265K     100       0.0
-Exosphere                    $239K     100       0.0
+Centra                     $239K     100       0.0
 KMT Consulting Group         $388K      98      -1.0
 Alcantara Art Foundation     $100K     100       0.0
 Statute & Precedent          $215K     100       0.0

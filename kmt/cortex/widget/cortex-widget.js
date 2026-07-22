@@ -31,9 +31,9 @@ const CortexWidget = (() => {
       buttonRadius: '4px',
       cardRadius: '8px'
     },
-    exosphere: {
-      primary: '#557D5A',
-      accent: '#7CA682',
+    centra: {
+      primary: '#1A3A5C',
+      accent: '#00B4D8',
       font: '"Inter", sans-serif',
       buttonRadius: '3px',
       cardRadius: '12px'
@@ -337,12 +337,12 @@ const CortexWidget = (() => {
       placeholder: 'e.g., What are my highest-risk exposed assets?',
       ctaLabel: 'Analyze'
     },
-    exosphere: {
-      title: 'Cortex Market Intelligence',
-      subtitle: 'AI-powered deal analysis. Ask about market conditions, buyer networks, or valuation benchmarks.',
-      quickActions: ['Market Valuation', 'Buyer Landscape', 'Deal Readiness', 'Sector Trends'],
-      quickQueries: ['market valuation', 'buyer landscape', 'deal readiness', 'sector trends'],
-      placeholder: 'e.g., What is the current valuation range for my sector?',
+    centra: {
+      title: 'Cortex Security Intelligence',
+      subtitle: 'AI-powered vulnerability analysis. Ask about scanning coverage, compliance gaps, or attack surface risks.',
+      quickActions: ['Vulnerability Scan', 'Compliance Status', 'Attack Surface', 'Bot Defense'],
+      quickQueries: ['vulnerability scanning', 'compliance monitoring', 'attack surface assessment', 'bot defense analysis'],
+      placeholder: 'e.g., What are my current CIS benchmark compliance gaps?',
       ctaLabel: 'Analyze'
     },
     "rousseau": {
@@ -469,30 +469,30 @@ const CortexWidget = (() => {
           return 'Panteon operates three service lines: managed detection and response, exposure and vulnerability management, and cyber diligence for acquisitions. All 16 staff are focused on reducing exposure across the Alien.Inc group.';
         }, 'Panteon audits compliance posture across the Alien.Inc group against target security frameworks.')
       },
-      exosphere: {
-        'market valuation': buildFromEco(function(eco) {
-          var ex = eco.companies.find(function(c){return c.id==='exosphere';});
-          var rev = ex.annualFinancials.find(function(f){return f.year===2026;});
-          return 'Exosphere 2026F revenue: $' + (rev.revenue/1000000).toFixed(2) + 'M with EBITDA of $' + (rev.ebitda/1000).toFixed(0) + 'K. Service lines: succession and sell-side advisory (59.3%), buy-side search (26.0%), and commercial diligence (14.7%).';
-        }, 'Exosphere advises on succession, sale, acquisition, and continuity for owner-led businesses.'),
-        'buyer landscape': buildFromEco(function(eco) {
-          var ex = eco.companies.find(function(c){return c.id==='exosphere';});
-          var kpis = ex.kpis2026F;
-          return 'Exosphere pipeline: ' + kpis.qualifiedTargets + ' qualified targets, ' + kpis.activeMandates + ' active mandates, ' + kpis.loisIssued + ' letters of intent issued. Forecast closed transactions: ' + kpis.closedTransactionsForecast + '. Weighted pipeline fees: $' + (kpis.weightedPipelineFees/1000).toFixed(0) + 'K. Average deal cycle: ' + kpis.avgDealCycleMonths + ' months.';
-        }, 'Exosphere sources qualified buyers and targets across the lower middle market.'),
-        'deal readiness': buildFromEco(function(eco) {
-          var ex = eco.companies.find(function(c){return c.id==='exosphere';});
-          var clients = eco.clientDatabase.filter(function(cl){return cl.companyId==='exosphere';});
-          return 'Exosphere manages ' + clients.length + ' client relationships with service lines in succession advisory, buy-side search, and commercial diligence. Active clients include ' + clients.map(function(c){return c.clientName;}).join(', ') + '.';
-        }, 'Exosphere evaluates deal readiness across financial, operational, and succession dimensions.'),
-        'sector trends': buildFromEco(function(eco) {
-          var ex = eco.companies.find(function(c){return c.id==='exosphere';});
-          var rev = ex.annualFinancials;
+      centra: {
+        'vulnerability scanning': buildFromEco(function(eco) {
+          var ct = eco.companies.find(function(c){return c.id==='centra';});
+          var rev = ct.annualFinancials.find(function(f){return f.year===2026;});
+          return 'Centra 2026F revenue: $' + (rev.revenue/1000000).toFixed(2) + 'M with EBITDA of $' + (rev.ebitda/1000).toFixed(0) + 'K. Service lines: vulnerability scanning (52.4%), compliance monitoring (28.1%), and bot defense and intrusion detection (19.5%).';
+        }, 'Centra delivers continuous vulnerability scanning, compliance monitoring, and bot defense across the Alien.Inc group.'),
+        'compliance monitoring': buildFromEco(function(eco) {
+          var ct = eco.companies.find(function(c){return c.id==='centra';});
+          var kpis = ct.kpis2026F;
+          return 'Centra monitoring coverage: ' + kpis.scannedEndpoints + ' endpoints, ' + kpis.complianceFrameworks + ' frameworks tracked, ' + kpis.detectedVulnerabilities + ' vulnerabilities identified. Average scan frequency: ' + kpis.scanFrequency + '. SLA compliance: ' + (kpis.slaCompliance * 100).toFixed(1) + '%.';
+        }, 'Centra monitors compliance posture against CIS benchmarks, DISA STIG, PCI-DSS, and NIST frameworks.'),
+        'attack surface assessment': buildFromEco(function(eco) {
+          var ct = eco.companies.find(function(c){return c.id==='centra';});
+          var clients = eco.clientDatabase.filter(function(cl){return cl.companyId==='centra';});
+          return 'Centra manages ' + clients.length + ' client security relationships with services in vulnerability scanning, compliance monitoring, and intrusion detection. Active clients include ' + clients.map(function(c){return c.clientName;}).join(', ') + '.';
+        }, 'Centra assesses and reduces attack surfaces across enterprise environments.'),
+        'bot defense analysis': buildFromEco(function(eco) {
+          var ct = eco.companies.find(function(c){return c.id==='centra';});
+          var rev = ct.annualFinancials;
           var rev2025 = rev.find(function(f){return f.year===2025;});
           var rev2026 = rev.find(function(f){return f.year===2026;});
           var growth = ((rev2026.revenue - rev2025.revenue) / rev2025.revenue * 100).toFixed(1);
-          return 'Exosphere revenue trajectory: $' + (rev2025.revenue/1000000).toFixed(2) + 'M (2025 actual) to $' + (rev2026.revenue/1000000).toFixed(2) + 'M (2026 forecast), representing ' + growth + '% year-over-year growth.';
-        }, 'Exosphere tracks M&A activity and buyer appetite in the Canadian lower middle market.')
+          return 'Centra revenue trajectory: $' + (rev2025.revenue/1000000).toFixed(2) + 'M (2025 actual) to $' + (rev2026.revenue/1000000).toFixed(2) + 'M (2026 forecast), representing ' + growth + '% year-over-year growth.';
+        }, 'Centra tracks threat patterns and bot activity across monitored environments.')
       },
       statute: {
         'regulatory risk': buildFromEco(function(eco) {
@@ -634,10 +634,10 @@ const CortexWidget = (() => {
     
     var brandDefault = {
       panteon: 'Panteon delivers managed detection and response, exposure and vulnerability management, and cyber diligence for acquisitions. Headcount: 16 across 12 full-time and 4 contractors.',
-      exosphere: 'Exosphere provides succession and sell-side advisory, buy-side search, and commercial diligence for owner-led businesses in the $3M-$30M segment.',
+      centra: 'Centra delivers continuous vulnerability scanning, compliance monitoring, and bot defense across enterprise environments. Monitors CIS benchmarks, DISA STIG, and PCI-DSS compliance.',
       statute: 'Statute & Precedent delivers M&A and transaction counsel, contract operations, and governance and compliance services. Average bill rate: $285/hour.',
       alcantaraartfoundation: 'Alcantara Art Foundation preserves cultural memory through conservation, digitization, education, and public access. 18,400 artifacts digitized to date.',
-      alieninc: 'Alien.Inc operates 7 companies: KMT Consulting, Panteon, Exosphere, Statute & Precedent, The Daily Art Cult, Alcantara Art Foundation, and Rousseau.',
+      alieninc: 'Alien.Inc operates 7 companies: KMT Consulting, Panteon, Centra, Statute & Precedent, The Daily Art Cult, Alcantara Art Foundation, and Rousseau.',
       "rousseau": 'Rousseau allocates capital and governance capacity across the Alien.Inc group. Fund centre: EUR 5.77B across 6 funds.'
     };
     

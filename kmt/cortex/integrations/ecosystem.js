@@ -5,7 +5,7 @@
  * Enables cross-sell opportunities and unified client intelligence.
  * 
  * Architecture: Event-driven with message queue
- * Companies: Rousseau, Panteon, Exosphere, Statute, TDAC, Alcantara
+ * Companies: Rousseau, Panteon, Centra, Statute, TDAC, Alcantara
  */
 
 const EcosystemIntegrator = (() => {
@@ -15,7 +15,7 @@ const EcosystemIntegrator = (() => {
     companies: {
       kmt: { name: "KMT Consulting Group", role: "strategy_ai_consulting" },
       panteon: { name: "Panteon Cyber Defense", role: "cybersecurity" },
-      exosphere: { name: "Exosphere Succession Partners", role: "acquisition_advisory" },
+      centra: { name: "Centra Security", role: "vulnerability_scanning_compliance" },
       statute: { name: "Statute & Precedent", role: "legal_services" },
       tdac: { name: "The Daily Art Cult", role: "media_publishing" },
       alcantara: { name: "Alcantara Art Foundation", role: "nonprofit_culture" },
@@ -23,8 +23,8 @@ const EcosystemIntegrator = (() => {
     },
     intercompanyRates2026: {
       "kmt-panteon": 96000,
-      "exosphere-panteon": 88000,
-      "exosphere-statute": 142000,
+      "centra-panteon": 88000,
+      "centra-statute": 142000,
       "kmt-statute": 78000,
       "alcantara-tdac": 54000,
       "tdac-statute": 36000,
@@ -50,17 +50,17 @@ const EcosystemIntegrator = (() => {
         { service: "contract_operations", description: "Client contract management" },
         { service: "ip_protection", description: "Intellectual property for AI models" }
       ],
-      exosphere: [
-        { service: "deal_flow", description: "Acquisition targets for KMT clients" },
-        { service: "commercial_diligence", description: "Market validation for strategies" }
+      centra: [
+        { service: "vulnerability_scanning", description: "Continuous vulnerability assessment for KMT clients" },
+        { service: "compliance_monitoring", description: "Compliance posture monitoring and reporting" }
       ]
     },
 
     // Other companies require KMT services
     kmtProvides: {
-      exosphere: [
-        { service: "strategy_advisory", description: "Strategic options for acquisition targets" },
-        { service: "post_acquisition_integration", description: "PMI for completed deals" }
+      centra: [
+        { service: "security_scanning", description: "Vulnerability scanning and security posture management" },
+        { service: "compliance_automation", description: "Automated CIS benchmark and DISA STIG reporting" }
       ],
       panteon: [
         { service: "security_strategy", description: "Cybersecurity strategy consulting" },
@@ -86,7 +86,7 @@ const EcosystemIntegrator = (() => {
         "kmt-strategy": ["kmt-ai", "kmt-ops", "panteon-mdr", "statute-governance"],
         "kmt-ai": ["kmt-strategy", "kmt-ops", "panteon-exposure", "statute-ai_policy"],
         "kmt-ops": ["kmt-strategy", "kmt-pmi", "panteon-diligence", "statute-contracts"],
-        "kmt-pmi": ["kmt-ops", "exosphere-sellside", "statute-transactions"]
+        "kmt-pmi": ["kmt-ops", "centra-vulnerability", "statute-transactions"]
       };
 
       const adjacentServices = adjacencyMap[currentServiceLine] || [];

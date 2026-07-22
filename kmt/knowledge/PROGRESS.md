@@ -7,9 +7,9 @@
 
 ### Subsidiary Profiles
 Comprehensive profiles for all 7 Alien.Inc companies including:
-- **1609 Holdings** - Investment holding & capital allocation
+- **Rousseau Holdings** - Investment holding & capital allocation
 - **Panteon** - Cybersecurity & defense
-- **Exosphere** - Private equity & acquisitions
+- **Centra** - Vulnerability scanning & compliance
 - **Statute & Precedent** - Legal services & AI-enabled law
 - **Alcantara Art Foundation** - Nonprofit & cultural preservation
 - **The Daily Art Cult** - Digital media & publishing
@@ -36,9 +36,9 @@ Each subsidiary profile contains:
 ## Key Insights Captured
 
 ### Maturity Levels
-- **1609 Holdings**: Developing (centralized capital, decentralized operations)
+- **Rousseau Holdings**: Developing (centralized capital, decentralized operations)
 - **Panteon**: Established (productized services, strong tech stack)
-- **Exosphere**: Developing (deal-by-deal execution)
+- **Centra**: Developing (scanning operations maturity)
 - **Statute & Precedent**: Developing (hybrid AI-traditional model)
 - **Alcantara Art Foundation**: Nascent (manual processes, limited tech)
 - **TDAC**: Establishing (content-first, lean operations)

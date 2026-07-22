@@ -381,8 +381,8 @@ class KMTEngine {
       role.contributions = ['Strategy consulting', 'Operational improvement', 'AI transformation'];
     } else if (company.id === 'panteon') {
       role.contributions = ['Cybersecurity', 'Risk management', 'Diligence support'];
-    } else if (company.id === 'exosphere') {
-      role.contributions = ['Acquisition sourcing', 'Succession advisory', 'Deal execution'];
+    } else if (company.id === 'centra') {
+      role.contributions = ['Vulnerability scanning', 'Compliance monitoring', 'Bot defense'];
     } else if (company.id === 'statute') {
       role.contributions = ['Legal services', 'Contract operations', 'AI policy'];
     } else if (company.id === 'tdac') {

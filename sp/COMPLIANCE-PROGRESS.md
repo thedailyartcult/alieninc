@@ -8,8 +8,8 @@
 | Company | Baseline | Art. 13 | Depth | Realistic | Status |
 |---------|----------|---------|-------|-----------|--------|
 | The Daily Art Cult | 100% | 100% | 100% | 100% | Excellent |
-| 1609 Holdings | 91% | 100% | 58% | 87% | Strong |
-| Exosphere | 91% | 100% | 58% | 87% | Strong |
+| Rousseau Holdings | 91% | 100% | 58% | 87% | Strong |
+| Centra | 91% | 100% | 58% | 87% | Strong |
 | Panteon | 91% | 100% | 58% | 87% | Strong |
 | Statute & Precedent | 91% | 100% | 58% | 87% | Strong |
 | Alcantara Art Foundation | 91% | 100% | 58% | 87% | Strong |
@@ -27,12 +27,12 @@
   - Brand usage guidelines
   - Infringement reporting (email)
   - AI training opt-out
-- Companies updated: 1609 Holdings, Exosphere, Panteon, Statute & Precedent, St. Alcantara, The Daily Art Cult
+- Companies updated: Rousseau Holdings, Centra, Panteon, Statute & Precedent, Alcantara Art Foundation, The Daily Art Cult
 - Scanner expanded from 19 to 25 rules (6 new IP/Trademark checks)
 - All IP checks now passing across all companies
 
 ### 14 July 2026 — Initial Privacy Policies
-- Added `privacy.html` to 1609 Holdings, Exosphere, Panteon, Statute & Precedent
+- Added `privacy.html` to Rousseau Holdings, Centra, Panteon, Statute & Precedent
 - Each matches site's design language (fonts, colors, layout)
 - Includes GDPR Art. 13 required items:
   - Data controller identity and contact
@@ -53,11 +53,11 @@
   - Automated decision-making (Art. 22)
 
 ### 14 July 2026 — Cookies Policies
-- Added `cookies.html` to 1609 Holdings, Exosphere, Panteon, Statute & Precedent
+- Added `cookies.html` to Rousseau Holdings, Centra, Panteon, Statute & Precedent
 - Includes cookie types, purposes, durations, third-party disclosure, management options
 
 ### 14 July 2026 — Terms of Service
-- Added `terms.html` to 1609 Holdings, Exosphere, Panteon, Statute & Precedent
+- Added `terms.html` to Rousseau Holdings, Centra, Panteon, Statute & Precedent
 - Includes intellectual property, limitation of liability, governing law
 
 ### 14 July 2026 — Robots.txt with AI Training Opt-Out
@@ -65,11 +65,11 @@
 - Blocks GPTBot, CCBot, anthropic-ai, Google-Extended, Omgilibot, FacebookBot
 
 ### 14 July 2026 — Comprehensive Privacy Policies
-- Rewrote privacy policies for 1609 Holdings, Exosphere, Panteon, Statute & Precedent
+- Rewrote privacy policies for Rousseau Holdings, Centra, Panteon, Statute & Precedent
 - Each policy now follows the Daily Art Cult baseline structure (16 sections)
 - Each policy matches its company's exact design language:
-  - **1609 Holdings**: Navy (#0d2344) + gold (#c5a059) + Montserrat
-  - **Exosphere**: Sage green (#557D5A) + Inter
+  - **Rousseau Holdings**: Navy (#0d2344) + gold (#c5a059) + Montserrat
+  - **Centra**: Dark navy (#041E42) + cyan (#00FFFF) + Barlow
   - **Panteon**: Dark navy (#041E42) + cyan (#00FFFF) + Barlow + card layout
   - **Statute & Precedent**: Dark (#161616) + teal (#00cfc1) + Playfair Display + Rubik
 - All policies now include complete GDPR Art. 13 items:
@@ -89,8 +89,8 @@
   - Data security measures
   - Cookie policy reference
 - Each policy includes business-specific content:
-  - 1609 Holdings: Investment, KYC/AML, fund structures
-  - Exosphere: M&A advisory, succession planning, transaction data
+  - Rousseau Holdings: Investment, KYC/AML, fund structures
+  - Centra: Vulnerability scanning, compliance monitoring, security assessment
   - Panteon: Security scanning, vulnerability data, threat intelligence
   - Statute & Precedent: Legal professional privilege, matter files, SRA compliance
 

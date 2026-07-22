@@ -48,13 +48,13 @@ COMPANY_CONTEXT = {
                       "cyber attack", "malware", "phishing", "incident response", "zero-day"],
         "regions": ["global"],
     },
-    "exosphere": {
-        "name": "Exosphere",
-        "sector": "acquisition advisory, succession planning, M&A, buy-side search, business transitions",
-        "keywords": ["merger", "acquisition", "M&A", "succession planning", "buy-side",
-                      "business acquisition", "deal flow", "due diligence", "business succession",
-                      "lower middle market", "private equity deal"],
-        "regions": ["North America", "Canada", "United States"],
+    "centra": {
+        "name": "Centra",
+        "sector": "vulnerability scanning, compliance monitoring, cybersecurity, bot defense, intrusion detection",
+        "keywords": ["vulnerability scanning", "compliance monitoring", "bot defense", "intrusion detection",
+                      "security scanning", "CIS benchmark", "DISA STIG", "PCI-DSS", "OWASP", "NIST",
+                      "threat detection", "security posture", "attack surface"],
+        "regions": ["global"],
     },
     "kmt": {
         "name": "KMT Consulting Group",
@@ -128,10 +128,10 @@ MACRO_EVENTS = [
     {
         "pattern": ["acquisition", "merger", "M&A deal", "takeover", "buyout",
                      "private equity acquisition", "strategic acquisition", "IPO"],
-        "affected": ["exosphere", "rousseau"],
+        "affected": ["centra", "rousseau"],
         "severity": "medium",
         "event_type": "market",
-        "description_template": "M&A activity surge — Exosphere deal pipeline opportunity, Rousseau capital allocation review",
+        "description_template": "M&A activity surge — Rousseau capital allocation review, Centra security diligence on targets",
     },
     {
         "pattern": ["heritage", "cultural preservation", "museum funding", "endangered site",

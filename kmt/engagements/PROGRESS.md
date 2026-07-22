@@ -37,23 +37,23 @@
 
 ## Files Created
 - `kmt/engagements/engagement-engine.js` - Core engagement management engine
-- `kmt/engagements/data/engagements.json` - Sample engagement data (8 engagements)
+- `kmt/engagements/data/engagements.json` - Operating engagement data (8 engagements)
 
 ## Sample Engagements Loaded
 1. Panteon Cloud Security Strategy (Delivery)
-2. 1609 Holdings Q3 Portfolio Review (Active)
-3. Exosphere Target Company Diligence (Active)
+2. Rousseau Holdings Q3 Portfolio Review (Active)
+3. Centra Compliance Scan Expansion (Active)
 4. Statute & Precedent AI Policy (Proposal)
 5. Alcantara Art Foundation Digitization Strategy (Scoping)
 6. Panteon Post-Acquisition Integration (Intake)
 7. TDAC Growth Strategy (Intake)
-8. 1609 Annual Strategy Offsite (Scoping)
+8. Rousseau Annual Strategy Offsite (Scoping)
 
 ## Integration Points
 - Links to **Knowledge Base** for subsidiary data
 - Links to **Billing System** for fee calculation
 - Links to **Performance Dashboard** for metrics
-- Feeds **1609 Holdings** operating reviews
+- Feeds **Rousseau Holdings** operating reviews
 
 ## Next Component
 → Knowledge Base (subsidiary profiles and operational data)

@@ -19,10 +19,11 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 | Company | URL | Role |
 | --- | --- | --- |
 | The Daily Art Cult | `https://thedailyartcult.lol` | Digital media, publishing, membership, editorial studio, licensing |
-| 1609 Holdings | `https://1609.alieninc.tech` | Capital allocation, governance, portfolio reporting |
-| 1609 Fund Centre | `https://1609.alieninc.tech/funds.html` | Group operating model and financial access page |
+| Rousseau Holdings | `https://rousseau.alieninc.tech` | Capital allocation, governance, portfolio reporting |
+| Rousseau Fund Centre | `https://rousseau.alieninc.tech/funds.html` | Group operating model and financial access page |
 | Panteon | `https://panteon.alieninc.tech` | Cybersecurity defense, managed detection, exposure management, diligence |
-| Immanuel | `https://immanuel.alieninc.tech` | Acquisition sourcing, succession advisory, commercial diligence |
+| Immanuel | `https://immanuel.alieninc.tech` | Crisis management, risk intelligence, and global assistance across 190+ countries |
+| Centra | `https://centra.alieninc.tech` | Vulnerability scanning, compliance monitoring, bot defense, intrusion detection |
 | KMT Consulting Group | `https://kmt.alieninc.tech` | Strategy, applied AI, operating model, post-merger integration |
 | Alcantara Art Foundation | `https://alcantaraartfoundation.alieninc.tech` | Culture and art preservation nonprofit |
 | Statute & Precedent | `https://sp.alieninc.tech` | AI-enabled legal services, transactions, contracts, governance |
@@ -32,30 +33,31 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 | Subdomain | Directory |
 | --- | --- |
 | `alieninc.tech` | `./` |
-| `1609.aliendinc.tech` | `1609holdings/` |
-| `immanuel.aliendinc.tech` | `immanuel/` |
-| `panteon.aliendinc.tech` | `panteon/` |
-| `kmt.aliendinc.tech` | `kmt/` |
-| `alcantaraartfoundation.aliendinc.tech` | `alcantaraartfoundation/` |
-| `sp.aliendinc.tech` | `sp/` |
+| `rousseau.alieninc.tech` | `rousseau/` |
+| `immanuel.alieninc.tech` | `immanuel/` |
+| `panteon.alieninc.tech` | `panteon/` |
+| `kmt.alieninc.tech` | `kmt/` |
+| `alcantaraartfoundation.alieninc.tech` | `alcantaraartfoundation/` |
+| `sp.alieninc.tech` | `sp/` |
+| `centra.alieninc.tech` | `centra/` |
 
 ## Supporting Pages
 
 | Subdomain | Path | Notes |
 | --- | --- | --- |
-| `panteon.aliendinc.tech` | `/login.html` | Panteon portal/login surface |
-| `alcantaraartfoundation.aliendinc.tech` | `/login.html` | Foundation login surface |
-| `alcantaraartfoundation.aliendinc.tech` | `/privacy.html` | Foundation privacy page |
-| `aliendinc.tech` | `/data/alieninc-ecosystem.json` | Operating dataset |
+| `panteon.alieninc.tech` | `/login.html` | Panteon portal/login surface |
+| `alcantaraartfoundation.alieninc.tech` | `/login.html` | Foundation login surface |
+| `alcantaraartfoundation.alieninc.tech` | `/privacy.html` | Foundation privacy page |
+| `alieninc.tech` | `/data/alieninc-ecosystem.json` | Operating dataset |
 
 ## Operating Loops
 
 | Loop | Lead | Participants |
 | --- | --- | --- |
-| Acquire-to-Improve | Immanuel | 1609 Holdings, KMT, Panteon, Statute & Precedent |
-| Culture-to-Audience | Alcantara Art Foundation | The Daily Art Cult, Statute & Precedent, 1609 Holdings |
+| Acquire-to-Improve | Immanuel | Rousseau Holdings, KMT, Panteon, Statute & Precedent |
+| Culture-to-Audience | Alcantara Art Foundation | The Daily Art Cult, Statute & Precedent, Rousseau Holdings |
 | Risk-to-Product | Panteon | KMT, Statute & Precedent, Immanuel |
-| Insight-to-Capital | 1609 Holdings | KMT, The Daily Art Cult, Immanuel |
+| Insight-to-Capital | Rousseau Holdings | KMT, The Daily Art Cult, Immanuel |
 
 ## Editing Rule
 

@@ -40,10 +40,21 @@ _CLIENT_WIN_SOURCES = [
 ]
 
 _MARKET_CONDITIONS = {
-    "bull": {"revenue_multiplier": 1.08, "win_prob_boost": 0.03},
-    "neutral": {"revenue_multiplier": 1.0, "win_prob_boost": 0.0},
-    "bear": {"revenue_multiplier": 0.92, "win_prob_boost": -0.02},
-    "crisis": {"revenue_multiplier": 0.80, "win_prob_boost": -0.05},
+    "bull": {"revenue_multiplier": 1.12, "win_prob_boost": 0.04, "client_loss_prob": 0.005, "risk_event_prob": 0.002},
+    "neutral": {"revenue_multiplier": 1.0, "win_prob_boost": 0.0, "client_loss_prob": 0.01, "risk_event_prob": 0.005},
+    "bear": {"revenue_multiplier": 0.88, "win_prob_boost": -0.03, "client_loss_prob": 0.018, "risk_event_prob": 0.012},
+    "crisis": {"revenue_multiplier": 0.72, "win_prob_boost": -0.06, "client_loss_prob": 0.03, "risk_event_prob": 0.025},
+}
+
+_SECTOR_MARKET_SENSITIVITY = {
+    "rousseau": {"bull": 1.15, "neutral": 1.0, "bear": 0.82, "crisis": 0.65},
+    "tdac": {"bull": 1.05, "neutral": 1.0, "bear": 0.90, "crisis": 0.78},
+    "panteon": {"bull": 1.10, "neutral": 1.0, "bear": 1.12, "crisis": 1.25},
+    "exosphere": {"bull": 1.20, "neutral": 1.0, "bear": 0.70, "crisis": 0.50},
+    "kmt": {"bull": 1.08, "neutral": 1.0, "bear": 0.85, "crisis": 0.72},
+    "alcantara": {"bull": 0.95, "neutral": 1.0, "bear": 0.92, "crisis": 0.80},
+    "statute": {"bull": 1.02, "neutral": 1.0, "bear": 0.95, "crisis": 0.88},
+    "immanuel": {"bull": 1.05, "neutral": 1.0, "bear": 1.15, "crisis": 1.35},
 }
 
 
@@ -87,17 +98,30 @@ class EcosystemEngine:
     def _get_market_conditions(self):
         conn = self.conn
         last_30_events = conn.execute(
-            "SELECT impact_severity FROM events WHERE processed = 1 ORDER BY ingested_at DESC LIMIT 30"
+            "SELECT impact_severity, event_type, published_date FROM events WHERE processed = 1 ORDER BY ingested_at DESC LIMIT 30"
         ).fetchall()
 
         severity_scores = {"low": 0, "medium": 1, "high": 2, "critical": 3}
         total_severity = sum(severity_scores.get(e["impact_severity"], 0) for e in last_30_events)
 
-        if total_severity > 30:
+        event_type_weights = {
+            "cybersecurity": 2.5, "financial": 2.0, "geopolitical": 2.2,
+            "regulatory": 1.8, "market": 1.5, "operational": 1.2,
+            "reputational": 1.0, "natural_disaster": 2.8, "pandemic": 3.0,
+        }
+
+        weighted_severity = 0
+        for e in last_30_events:
+            base = severity_scores.get(e["impact_severity"], 0)
+            event_type = e["event_type"] if "event_type" in e.keys() else ""
+            weight = event_type_weights.get(event_type, 1.0)
+            weighted_severity += base * weight
+
+        if weighted_severity > 45:
             self.market = "crisis"
-        elif total_severity > 15:
+        elif weighted_severity > 25:
             self.market = "bear"
-        elif total_severity > 5:
+        elif weighted_severity > 10:
             self.market = "neutral"
         else:
             self.market = "bull"
@@ -112,10 +136,11 @@ class EcosystemEngine:
 
     def _get_daily_revenue(self, company_id, clients, market):
         total = 0
+        sector_sensitivity = _SECTOR_MARKET_SENSITIVITY.get(company_id, {}).get(self.market, 1.0)
         for c in clients:
             acv = c["annual_contract_value"] or 0
             daily = acv / 365.0
-            total += daily * market["revenue_multiplier"]
+            total += daily * market["revenue_multiplier"] * sector_sensitivity
         return total
 
     def _get_daily_costs(self, company_id):
@@ -190,8 +215,8 @@ class EcosystemEngine:
             "source": source,
         }
 
-    def _generate_client_loss(self, company_id, company_name, clients):
-        if not clients or random.random() > 0.01:
+    def _generate_client_loss(self, company_id, company_name, clients, market):
+        if not clients or random.random() > market.get("client_loss_prob", 0.01):
             return None
 
         client = random.choice(clients)
@@ -211,9 +236,16 @@ class EcosystemEngine:
             "reason": reason,
         }
 
-    def _generate_risk_event(self, company_id, company_name):
-        if random.random() > 0.005:
+    def _generate_risk_event(self, company_id, company_name, market):
+        if random.random() > market.get("risk_event_prob", 0.005):
             return None
+
+        market_risk_bias = {
+            "bull": [("market", 0.3), ("operational", 0.2)],
+            "neutral": [("compliance", 0.2), ("operational", 0.2)],
+            "bear": [("financial", 0.3), ("market", 0.3), ("reputational", 0.2)],
+            "crisis": [("security", 0.3), ("financial", 0.3), ("reputational", 0.2), ("legal", 0.2)],
+        }
 
         risks = [
             ("security", "Potential vulnerability detected in production infrastructure"),
@@ -226,8 +258,23 @@ class EcosystemEngine:
             ("legal", "Contract ambiguity flagged by review — clarification needed"),
         ]
 
-        risk_type, description = random.choice(risks)
-        severity = random.choice(["low", "medium", "high"])
+        bias = market_risk_bias.get(self.market, [])
+        if bias and random.random() < 0.6:
+            bias_types = [b[0] for b in bias]
+            bias_weights = [b[1] for b in bias]
+            risk_type = random.choices(bias_types, weights=bias_weights, k=1)[0]
+            matching = [r for r in risks if r[0] == risk_type]
+            if matching:
+                risk_type, description = matching[0]
+            else:
+                risk_type, description = random.choice(risks)
+        else:
+            risk_type, description = random.choice(risks)
+
+        severity_pool = ["low", "low", "medium", "medium", "high"]
+        if self.market in ("bear", "crisis"):
+            severity_pool = ["low", "medium", "medium", "high", "high", "critical"]
+        severity = random.choice(severity_pool)
 
         return {
             "type": "risk",
@@ -438,11 +485,11 @@ class EcosystemEngine:
                 if win:
                     day_events.append(win)
 
-                loss = self._generate_client_loss(cid, cname, clients)
+                loss = self._generate_client_loss(cid, cname, clients, market)
                 if loss:
                     day_events.append(loss)
 
-                risk = self._generate_risk_event(cid, cname)
+                risk = self._generate_risk_event(cid, cname, market)
                 if risk:
                     day_events.append(risk)
 

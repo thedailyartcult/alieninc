@@ -136,6 +136,60 @@ def is_bot(user_agent):
     return False
 
 
+def _sanitize_html_for_bots(html):
+    """Strip sensitive data from HTML served to bot user agents."""
+    sanitized = html
+    sanitized = re.sub(
+        r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b',
+        'Private — login required', sanitized
+    )
+    sanitized = re.sub(
+        r'(?:\+?\d{1,3}[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}',
+        'Private — login required', sanitized
+    )
+    sanitized = re.sub(
+        r'\$\s*[\d,]+(?:\.\d+)?\s*[KMBT]?(?:illion|illion)?',
+        'Private — login required', sanitized
+    )
+    sanitized = re.sub(
+        r'€\s*[\d,]+(?:\.\d+)?',
+        'Private — login required', sanitized
+    )
+    sanitized = re.sub(
+        r'£\s*[\d,]+(?:\.\d+)?',
+        'Private — login required', sanitized
+    )
+    sanitized = re.sub(
+        r'<script[^>]*src=["\'](?:data/)?ecosystem-data\.js["\'][^>]*>',
+        '<!-- ecosystem-data.js removed -->', sanitized
+    )
+    sanitized = re.sub(
+        r'<script[^>]*src=["\'](?:data/)?ecosystem-render\.js["\'][^>]*>',
+        '<!-- ecosystem-render.js removed -->', sanitized
+    )
+    sanitized = re.sub(
+        r'EcosystemData\.init\([^)]*\)',
+        '/* Private — login required */', sanitized
+    )
+    sanitized = re.sub(
+        r'EcosystemRender\.bindAll\([^)]*\)',
+        '/* Private — login required */', sanitized
+    )
+    sanitized = re.sub(
+        r'EcosystemData\.onChange\([^)]*\)',
+        '/* Private — login required */', sanitized
+    )
+    sanitized = re.sub(
+        r'var\s+ECOSYSTEM_DATA\s*=\s*\{[^}]*\}',
+        'var ECOSYSTEM_DATA = null', sanitized
+    )
+    sanitized = re.sub(
+        r'var\s+ECOSYSTEM_DATA\s*=\s*[^;]+;',
+        'var ECOSYSTEM_DATA = null;', sanitized
+    )
+    return sanitized
+
+
 # ── Secure gate authentication ──────────────────────────────
 # Authenticates users for the secure.alieninc.tech subdomain.
 # Default backend: Supabase Auth (GoTrue password grant) using the same
@@ -964,13 +1018,13 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/api/competitors' or self.path.startswith('/api/competitors?'):
             ua = self.headers.get('User-Agent', '')
-            if is_bot(ua) and not self._is_internal_scanner() and not self._is_localhost():
+            if is_bot(ua) and not self._is_internal_scanner():
                 self._serve_empty_json('competitors')
                 return
             self._serve_competitors()
         elif self.path == '/api/prices' or self.path.startswith('/api/prices?'):
             ua = self.headers.get('User-Agent', '')
-            if is_bot(ua) and not self._is_internal_scanner() and not self._is_localhost():
+            if is_bot(ua) and not self._is_internal_scanner():
                 self._serve_empty_json('prices')
                 return
             self._serve_prices()
@@ -1050,7 +1104,7 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_error(404)
                 return
             ua = self.headers.get('User-Agent', '')
-            if is_bot(ua) and not self._is_internal_scanner() and not self._is_localhost():
+            if is_bot(ua) and not self._is_internal_scanner():
                 if self._is_bot_data_path(self.path):
                     if '/robots.txt' in self.path or '/sitemap' in self.path:
                         self._serve_bot_robotstxt()
@@ -1062,7 +1116,7 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                     if os.path.isdir(fs_path):
                         fs_path = os.path.join(fs_path, 'index.html')
                     if os.path.isfile(fs_path) and fs_path.endswith('.html'):
-                        self._serve_secure_gate(label='bot')
+                        self._serve_sanitized_html(fs_path)
                         return
                 except Exception as e:
                     sys.stderr.write('[BOT-ERR] %s\n' % str(e))
@@ -1136,6 +1190,29 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Content-Length', str(len(body)))
         self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, private')
         self.end_headers()
+        try:
+            self.wfile.write(body)
+        except BrokenPipeError:
+            pass
+
+    def _serve_sanitized_html(self, fs_path):
+        """Serve HTML with sensitive data stripped for bot user agents."""
+        try:
+            with open(fs_path, 'r', encoding='utf-8') as f:
+                html = f.read()
+        except OSError:
+            self.send_error(404)
+            return
+        html = _sanitize_html_for_bots(html)
+        body = html.encode('utf-8')
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html; charset=utf-8')
+        self.send_header('Content-Length', str(len(body)))
+        self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+        self.end_headers()
+        sys.stderr.write('[BOT-SANITIZE] %s — %s\n' % (
+            self.address_string(), self.path,
+        ))
         try:
             self.wfile.write(body)
         except BrokenPipeError:

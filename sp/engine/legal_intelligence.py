@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Statute & Precedent — Compliance Scanner
+Centra — Compliance Scanner
 Audit-driven engine. Reads .audit.json policy files and targets.json.
 Each audit item executes via a check engine. Zero hardcoded rules.
 """
@@ -243,7 +243,7 @@ def run_full_scan(profile="full_scan"):
         try:
             req = urllib.request.Request(target['url'], headers={
                 'User-Agent': 'AlienInc-Compliance/1.0',
-                'X-AlienInc-Audit': 'statute',
+                'X-AlienInc-Audit': 'centra',
             })
             resp = urllib.request.urlopen(req, timeout=10)
             resp_headers = {k.lower(): v for k, v in dict(resp.headers).items()}

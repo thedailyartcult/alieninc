@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Statute & Precedent — WAT Runner
+ * Centra — WAT Runner
  * =================================
  * Puppeteer-based website auditor using the EDPB WAT's own
  * @ghostery/adblocker libraries for tracker detection.
@@ -73,7 +73,7 @@ try {
 async function auditUrl(browser, url, companyName) {
     const page = await browser.newPage();
     await page.setExtraHTTPHeaders({
-        'X-AlienInc-Audit': 'statute',
+        'X-AlienInc-Audit': 'centra',
     });
     const results = {
         url,
@@ -378,7 +378,7 @@ function matchTrackers(requests) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
-    console.log('\n  Statute & Precedent — WAT Runner');
+    console.log('\n  Centra — WAT Runner');
     console.log('  ─────────────────────────────────────────');
     console.log('  EDPB Website Auditing Tool integration');
     console.log('  Using @ghostery/adblocker for tracker detection\n');

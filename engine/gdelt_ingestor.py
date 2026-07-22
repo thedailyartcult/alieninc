@@ -72,14 +72,6 @@ COMPANY_CONTEXT = {
                       "nonprofit arts", "cultural foundation", "archive", "conservation"],
         "regions": ["global"],
     },
-    "statute": {
-        "name": "Statute & Precedent",
-        "sector": "legal services, compliance, governance, AI policy, regulatory, contract law",
-        "keywords": ["legal services", "compliance", "governance", "AI regulation", "AI policy",
-                      "regulatory", "contract law", "legal tech", "data protection",
-                      "GDPR", "AI Act", "corporate governance", "M&A legal"],
-        "regions": ["United Kingdom", "Europe", "global"],
-    },
     "immanuel": {
         "name": "Immanuel",
         "sector": "crisis management, security, risk management, medical evacuation, travel security, intelligence",
@@ -120,10 +112,10 @@ MACRO_EVENTS = [
         "pattern": ["regulation", "new law", "compliance mandate", "regulatory change",
                      "AI regulation", "AI Act", "data protection law", "GDPR enforcement",
                      "antitrust", "monopoly investigation"],
-        "affected": ["statute", "kmt"],
+        "affected": ["kmt"],
         "severity": "medium",
         "event_type": "regulatory",
-        "description_template": "Regulatory change detected — Statute & Precedent compliance workload increase",
+        "description_template": "Regulatory change detected — KMT compliance advisory workload increase",
     },
     {
         "pattern": ["acquisition", "merger", "M&A deal", "takeover", "buyout",
@@ -153,10 +145,10 @@ MACRO_EVENTS = [
         "pattern": ["AI breakthrough", "artificial intelligence", "generative AI", "AGI",
                      "AI safety", "AI governance", "AI regulation", "machine learning",
                      "deepfake", "AI misalignment"],
-        "affected": ["kmt", "statute", "panteon"],
+        "affected": ["kmt", "panteon"],
         "severity": "medium",
         "event_type": "operational",
-        "description_template": "AI industry development — KMT advisory demand, Statute governance workload, Panteon AI security review",
+        "description_template": "AI industry development — KMT advisory demand, Panteon AI security review",
     },
     {
         "pattern": ["pandemic", "epidemic", "outbreak", "virus", "health crisis",
@@ -185,10 +177,10 @@ MACRO_EVENTS = [
     {
         "pattern": ["scandal", "fraud", "corruption", "embezzlement", "accounting fraud",
                      "executive misconduct", "governance failure"],
-        "affected": ["statute", "kmt", "rousseau"],
+        "affected": ["kmt", "rousseau"],
         "severity": "high",
         "event_type": "reputational",
-        "description_template": "Corporate governance scandal — Statute legal response, KMT governance advisory, Rousseau portfolio review",
+        "description_template": "Corporate governance scandal — KMT governance advisory, Rousseau portfolio review",
     },
 ]
 

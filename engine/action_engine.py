@@ -81,11 +81,11 @@ DEFAULT_RULES = [
     {
         "id": "panteon-financial-anomaly",
         "name": "Financial Anomaly Detection",
-        "description": "When unusual financial patterns detected, notify Rousseau and Statute & Precedent.",
+        "description": "When unusual financial patterns detected, notify Rousseau and KMT.",
         "trigger_condition": "ontology_entities.entity_type = 'financial_metric' AND ontology_entities.risk_score >= 20",
         "action_type": "notify",
         "action_config": json.dumps({
-            "notify": ["rousseau", "statute"],
+            "notify": ["rousseau", "kmt"],
             "message_template": "Financial anomaly at {company_id}: {entity_name} flagged. Amount: {amount}. Review recommended.",
         }),
         "severity": "medium",
@@ -106,11 +106,11 @@ DEFAULT_RULES = [
     {
         "id": "panteon-covenant-monitor",
         "name": "Debt Covenant Monitor",
-        "description": "When fund centre NAV approaches covenant threshold, alert Rousseau and Statute immediately.",
+        "description": "When fund centre NAV approaches covenant threshold, alert Rousseau and KMT immediately.",
         "trigger_condition": "risk_metrics.covenant_headroom_pct < 20",
         "action_type": "escalate",
         "action_config": json.dumps({
-            "notify": ["rousseau", "statute"],
+            "notify": ["rousseau", "kmt"],
             "escalation_level": "critical",
             "message_template": "COVENANT WARNING: Fund centre NAV headroom at {headroom_pct}%. Threshold breach at 0%. Immediate treasurer review required.",
         }),

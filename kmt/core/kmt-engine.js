@@ -383,8 +383,6 @@ class KMTEngine {
       role.contributions = ['Cybersecurity', 'Risk management', 'Diligence support'];
     } else if (company.id === 'centra') {
       role.contributions = ['Vulnerability scanning', 'Compliance monitoring', 'Bot defense'];
-    } else if (company.id === 'statute') {
-      role.contributions = ['Legal services', 'Contract operations', 'AI policy'];
     } else if (company.id === 'tdac') {
       role.contributions = ['Media distribution', 'Content creation', 'Audience building'];
     } else if (company.id === 'alcantara') {

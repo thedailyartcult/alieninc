@@ -45,13 +45,6 @@ const CortexWidget = (() => {
       buttonRadius: '4px',
       cardRadius: '8px'
     },
-    statute: {
-      primary: '#161616',
-      accent: '#00cfc1',
-      font: '"Rubik", sans-serif',
-      buttonRadius: '6px',
-      cardRadius: '10px'
-    },
     tdac: {
       primary: '#1a1a1a',
       accent: '#e8b4b8',
@@ -353,14 +346,6 @@ const CortexWidget = (() => {
       placeholder: 'e.g., How is capital flowing across the group this quarter?',
       ctaLabel: 'Analyze'
     },
-    statute: {
-      title: 'Cortex Legal Intelligence',
-      subtitle: 'AI-powered legal analysis. Ask about regulatory exposure, contract risk, or compliance gaps.',
-      quickActions: ['Regulatory Risk', 'Contract Analysis', 'Compliance', 'Due Diligence'],
-      quickQueries: ['regulatory risk', 'contract analysis', 'compliance gaps', 'due diligence'],
-      placeholder: 'e.g., What are our highest-priority regulatory risks?',
-      ctaLabel: 'Analyze'
-    },
     alcantaraartfoundation: {
       title: 'Cortex Cultural Intelligence',
       subtitle: 'AI-powered cultural analysis. Ask about preservation priorities, collection insights, or audience engagement.',
@@ -494,29 +479,6 @@ const CortexWidget = (() => {
           return 'Centra revenue trajectory: $' + (rev2025.revenue/1000000).toFixed(2) + 'M (2025 actual) to $' + (rev2026.revenue/1000000).toFixed(2) + 'M (2026 forecast), representing ' + growth + '% year-over-year growth.';
         }, 'Centra tracks threat patterns and bot activity across monitored environments.')
       },
-      statute: {
-        'regulatory risk': buildFromEco(function(eco) {
-          var sp = eco.companies.find(function(c){return c.id==='statute';});
-          var kpis = sp.kpis2026F;
-          return 'Statute & Precedent utilization rate: ' + (kpis.employeeUtilizationRate * 100).toFixed(0) + '% against target of ' + (kpis.targetUtilizationRate * 100).toFixed(0) + '%. Average bill rate: $' + kpis.avgBillRate + '/hour. Matter cycle time: ' + kpis.matterCycleTimeDays + ' days. Contract review turnaround: ' + kpis.contractReviewTurnaroundDays + ' days.';
-        }, 'Statute & Precedent delivers AI-enabled legal services for transactions, governance, contracts, and AI policy.'),
-        'contract analysis': buildFromEco(function(eco) {
-          var sp = eco.companies.find(function(c){return c.id==='statute';});
-          var rev = sp.revenueBreakdown2026F;
-          return 'Revenue by service line: M&A and transaction counsel $' + (rev[0].amount/1000).toFixed(0) + 'K (' + (rev[0].share*100).toFixed(1) + '%), contract operations $' + (rev[1].amount/1000).toFixed(0) + 'K (' + (rev[1].share*100).toFixed(1) + '%), governance and compliance $' + (rev[2].amount/1000).toFixed(0) + 'K (' + (rev[2].share*100).toFixed(1) + '%).';
-        }, 'Statute & Precedent manages contract operations, transaction counsel, and governance compliance.'),
-        'compliance gaps': buildFromEco(function(eco) {
-          var sp = eco.companies.find(function(c){return c.id==='statute';});
-          var clients = eco.clientDatabase.filter(function(cl){return cl.companyId==='statute';});
-          return 'Active clients: ' + clients.map(function(c){return c.clientName;}).join(', ') + '. Retainer MRR: $' + (sp.kpis2026F.retainerMrr/1000).toFixed(0) + 'K. Client acquisition cost: $' + (sp.kpis2026F.avgClientCac/1000).toFixed(1) + 'K against lifetime value of $' + (sp.kpis2026F.avgClientLtv/1000).toFixed(0) + 'K.';
-        }, 'Statute & Precedent evaluates compliance gaps across governance, contract, and AI policy frameworks.'),
-        'due diligence': buildFromEco(function(eco) {
-          var sp = eco.companies.find(function(c){return c.id==='statute';});
-          var projects = eco.majorProjectsPipeline.filter(function(p){return p.companyId==='statute';});
-          var active = projects.filter(function(p){return p.stage==='in_delivery';});
-          return 'Active projects: ' + active.map(function(p){return p.name;}).join(', ') + '. Headcount: ' + sp.headcount['2026F'] + ' (' + sp.headcount.fullTime + ' full-time, ' + sp.headcount.contractors + ' contractors). 2026F EBITDA: $' + (sp.annualFinancials.find(function(f){return f.year===2026;}).ebitda/1000).toFixed(0) + 'K.';
-        }, 'Statute & Precedent conducts due diligence across corporate filings, regulatory proceedings, and adverse media.')
-      },
       alcantaraartfoundation: {
         'collection insights': buildFromEco(function(eco) {
           var alc = eco.companies.find(function(c){return c.id==='alcantara';});
@@ -548,7 +510,7 @@ const CortexWidget = (() => {
           var rollup = eco.groupRollup;
           var totalClients = eco.clientDatabase.length;
           return 'Group-wide metrics: $' + (rollup.standaloneRevenueTotal2026F/1000000).toFixed(2) + 'M standalone revenue, $' + (rollup.standaloneEbitdaTotal2026F/1000000).toFixed(2) + 'M EBITDA, ' + totalClients + ' active client relationships across 7 companies. External revenue: $' + (rollup.estimatedExternalRevenue2026F/1000000).toFixed(2) + 'M.';
-        }, 'Alien.Inc operates 7 companies across consulting, cybersecurity, media, acquisitions, legal services, and cultural preservation.'),
+        }, 'Alien.Inc operates 7 companies across consulting, cybersecurity, media, acquisitions, capital allocation, and cultural preservation.'),
         'synergy mapping': buildFromEco(function(eco) {
           var txns = eco.intercompanyTransactions2026F;
           var totalIc = txns.reduce(function(sum,t){return sum+t.amount;}, 0);
@@ -635,9 +597,8 @@ const CortexWidget = (() => {
     var brandDefault = {
       panteon: 'Panteon delivers managed detection and response, exposure and vulnerability management, and cyber diligence for acquisitions. Headcount: 16 across 12 full-time and 4 contractors.',
       centra: 'Centra delivers continuous vulnerability scanning, compliance monitoring, and bot defense across enterprise environments. Monitors CIS benchmarks, DISA STIG, and PCI-DSS compliance.',
-      statute: 'Statute & Precedent delivers M&A and transaction counsel, contract operations, and governance and compliance services. Average bill rate: $285/hour.',
       alcantaraartfoundation: 'Alcantara Art Foundation preserves cultural memory through conservation, digitization, education, and public access. 18,400 artifacts digitized to date.',
-      alieninc: 'Alien.Inc operates 7 companies: KMT Consulting, Panteon, Centra, Statute & Precedent, The Daily Art Cult, Alcantara Art Foundation, and Rousseau.',
+      alieninc: 'Alien.Inc operates 7 companies: KMT Consulting, Panteon, Centra, The Daily Art Cult, Alcantara Art Foundation, Immanuel, and Rousseau.',
       "rousseau": 'Rousseau allocates capital and governance capacity across the Alien.Inc group. Fund centre: EUR 5.77B across 6 funds.'
     };
     

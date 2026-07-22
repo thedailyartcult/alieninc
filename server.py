@@ -606,7 +606,6 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
     def _is_internal_scanner(self):
         return (
             self.headers.get('X-AlienInc-Internal', '').lower() == 'panteon'
-            or self.headers.get('X-AlienInc-Audit', '').lower() == 'statute'
         )
 
     def _is_localhost(self):

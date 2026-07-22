@@ -1,5 +1,5 @@
 """
-Statute & Precedent — Compliance API Server
+Centra — Compliance API Server
 ============================================
 Serves the Legal Intelligence Dashboard and provides API endpoints
 for running compliance scans and retrieving reports.
@@ -282,7 +282,7 @@ def main():
     server = ReusableThreadingTCPServer(('0.0.0.0', port), ComplianceHandler)
     server.daemon_threads = True
 
-    print(f"Statute & Precedent — Legal Intelligence API")
+    print(f"Centra — Compliance API")
     print(f"Listening on http://0.0.0.0:{port}")
     print(f"Dashboard: http://localhost:{port}/")
     print(f"API: http://localhost:{port}/api/compliance/report")

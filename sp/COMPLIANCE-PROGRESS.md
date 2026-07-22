@@ -1,4 +1,6 @@
-# Statute & Precedent — Compliance Progress Tracker
+# Compliance Progress Tracker
+
+> Note: Statute & Precedent was removed from the Alien.Inc ecosystem. The compliance scanning engine originally built by Statute & Precedent is now operated by Centra.
 
 ## Current Status (as of 15 July 2026)
 
@@ -11,7 +13,6 @@
 | Rousseau Holdings | 91% | 100% | 58% | 87% | Strong |
 | Centra | 91% | 100% | 58% | 87% | Strong |
 | Panteon | 91% | 100% | 58% | 87% | Strong |
-| Statute & Precedent | 91% | 100% | 58% | 87% | Strong |
 | Alcantara Art Foundation | 91% | 100% | 58% | 87% | Strong |
 | Alien Inc | 91% | 100% | 33% | 79% | Good |
 

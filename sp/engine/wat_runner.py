@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Statute & Precedent — WAT Runner (Python wrapper)
+Centra — WAT Runner (Python wrapper)
 ==================================================
 Calls the Node.js WAT runner, parses results, and stores
 web audit findings in the compliance SQLite database.

@@ -26,7 +26,6 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 | Centra | `https://centra.alieninc.tech` | Vulnerability scanning, compliance monitoring, bot defense, intrusion detection |
 | KMT Consulting Group | `https://kmt.alieninc.tech` | Strategy, applied AI, operating model, post-merger integration |
 | Alcantara Art Foundation | `https://alcantaraartfoundation.alieninc.tech` | Culture and art preservation nonprofit |
-| Statute & Precedent | `https://sp.alieninc.tech` | AI-enabled legal services, transactions, contracts, governance |
 
 ## Directory Map
 
@@ -54,9 +53,9 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 
 | Loop | Lead | Participants |
 | --- | --- | --- |
-| Acquire-to-Improve | Immanuel | Rousseau Holdings, KMT, Panteon, Statute & Precedent |
-| Culture-to-Audience | Alcantara Art Foundation | The Daily Art Cult, Statute & Precedent, Rousseau Holdings |
-| Risk-to-Product | Panteon | KMT, Statute & Precedent, Immanuel |
+| Acquire-to-Improve | Immanuel | Rousseau Holdings, KMT, Panteon |
+| Culture-to-Audience | Alcantara Art Foundation | The Daily Art Cult, Rousseau Holdings |
+| Risk-to-Product | Panteon | KMT, Immanuel |
 | Insight-to-Capital | Rousseau Holdings | KMT, The Daily Art Cult, Immanuel |
 
 ## Editing Rule

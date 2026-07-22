@@ -5,7 +5,7 @@
  * Enables cross-sell opportunities and unified client intelligence.
  * 
  * Architecture: Event-driven with message queue
- * Companies: Rousseau, Panteon, Centra, Statute, TDAC, Alcantara
+ * Companies: Rousseau, Panteon, Centra, TDAC, Alcantara, Immanuel
  */
 
 const EcosystemIntegrator = (() => {
@@ -16,7 +16,6 @@ const EcosystemIntegrator = (() => {
       kmt: { name: "KMT Consulting Group", role: "strategy_ai_consulting" },
       panteon: { name: "Panteon Cyber Defense", role: "cybersecurity" },
       centra: { name: "Centra Security", role: "vulnerability_scanning_compliance" },
-      statute: { name: "Statute & Precedent", role: "legal_services" },
       tdac: { name: "The Daily Art Cult", role: "media_publishing" },
       alcantara: { name: "Alcantara Art Foundation", role: "nonprofit_culture" },
       "rousseau": { name: "Rousseau", role: "holding_company" }
@@ -24,10 +23,7 @@ const EcosystemIntegrator = (() => {
     intercompanyRates2026: {
       "kmt-panteon": 96000,
       "centra-panteon": 88000,
-      "centra-statute": 142000,
-      "kmt-statute": 78000,
       "alcantara-tdac": 54000,
-      "tdac-statute": 36000,
       "rousseau-kmt": 126000,
       "rousseau-alcantara": 150000
     }
@@ -44,11 +40,6 @@ const EcosystemIntegrator = (() => {
         { service: "cloud_security", description: "Security for client data and AI models" },
         { service: "vulnerability_scans", description: "Regular security assessments" },
         { service: "client_delivery_security", description: "Security review of client deliverables" }
-      ],
-      statute: [
-        { service: "ai_policy_review", description: "AI governance and compliance" },
-        { service: "contract_operations", description: "Client contract management" },
-        { service: "ip_protection", description: "Intellectual property for AI models" }
       ],
       centra: [
         { service: "vulnerability_scanning", description: "Continuous vulnerability assessment for KMT clients" },
@@ -83,10 +74,10 @@ const EcosystemIntegrator = (() => {
       
       // Map service line adjacencies
       const adjacencyMap = {
-        "kmt-strategy": ["kmt-ai", "kmt-ops", "panteon-mdr", "statute-governance"],
-        "kmt-ai": ["kmt-strategy", "kmt-ops", "panteon-exposure", "statute-ai_policy"],
-        "kmt-ops": ["kmt-strategy", "kmt-pmi", "panteon-diligence", "statute-contracts"],
-        "kmt-pmi": ["kmt-ops", "centra-vulnerability", "statute-transactions"]
+        "kmt-strategy": ["kmt-ai", "kmt-ops", "panteon-mdr"],
+        "kmt-ai": ["kmt-strategy", "kmt-ops", "panteon-exposure"],
+        "kmt-ops": ["kmt-strategy", "kmt-pmi", "panteon-diligence"],
+        "kmt-pmi": ["kmt-ops", "centra-vulnerability"]
       };
 
       const adjacentServices = adjacencyMap[currentServiceLine] || [];

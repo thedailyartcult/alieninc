@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panteon | AI-Powered Automation</title>
+    <!-- Import high-quality sans-serif display font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Design Tokens & CSS Reset */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-dark: #070809;
+            --bg-light: #ffffff;
+            --bg-gray: #f4f4f6;
+            --text-dark: #111213;
+            --text-light: #ffffff;
+            --text-muted: #707275;
+            --border-light: rgba(255, 255, 255, 0.1);
+            --border-dark: rgba(0, 0, 0, 0.08);
+            --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: var(--font-sans);
+            line-height: 1.5;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+            transition: opacity 0.25s ease;
+        }
+
+        a:hover {
+            opacity: 0.75;
+        }
+
+        /* 1. Announcement Bar */
+        .announcement-bar {
+            background-color: #0b0c0d;
+            color: var(--text-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px 40px;
+            font-size: 0.8rem;
+            letter-spacing: 0.02em;
+            border-bottom: 1px solid var(--border-light);
+            position: relative;
+            z-index: 1001;
+        }
+
+        .announcement-bar a {
+            text-decoration: underline;
+            margin-left: 6px;
+            font-weight: 500;
+        }
+
+        .announcement-bar .close-btn {
+            position: absolute;
+            right: 40px;
+            background: none;
+            border: none;
+            color: var(--text-light);
+            cursor: pointer;
+            font-size: 1.2rem;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .announcement-bar .close-btn:hover {
+            opacity: 1;
+        }
+
+        /* 2. Floating Glass Header (Exactly like Palantir) */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background-color: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(25px) saturate(160%);
+            -webkit-backdrop-filter: blur(25px) saturate(160%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-light);
+            transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+        }
+
+        /* Scrolled Light Glass state */
+        header.scrolled {
+            background-color: rgba(246, 246, 248, 0.85);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            color: var(--text-dark);
+            border-color: rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02);
+        }
+
+        .logo {
+            font-weight: 600;
+            font-size: 1rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .logo svg {
+            fill: currentColor;
+            width: 20px;
+            height: 20px;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .get-started-btn {
+            background-color: var(--text-light);
+            color: var(--bg-dark);
+            border: 1px solid var(--text-light);
+            padding: 10px 28px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        header.scrolled .get-started-btn {
+            background-color: var(--text-dark);
+            color: var(--text-light);
+            border-color: var(--text-dark);
+        }
+
+        .header-icon-box {
+            width: 42px;
+            height: 38px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            cursor: pointer;
+            color: inherit;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+
+        .header-icon-box:hover {
+            border-color: rgba(255, 255, 255, 0.6);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        header.scrolled .header-icon-box {
+            border-color: rgba(0, 0, 0, 0.15);
+        }
+
+        header.scrolled .header-icon-box:hover {
+            border-color: var(--text-dark);
+            background-color: rgba(0, 0, 0, 0.03);
+        }
+
+        /* Hamburger icon inner lines */
+        .burger-lines {
+            width: 16px;
+            height: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .burger-lines span {
+            display: block;
+            width: 100%;
+            height: 1.5px;
+            background-color: currentColor;
+        }
+
+        /* 3. Immersive Cinematic Hero */
+        .hero {
+            position: relative;
+            min-height: 95vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 40px 20px;
+            overflow: hidden;
+            background-color: var(--bg-dark);
+        }
+
+        .hero-video-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            object-fit: cover;
+            filter: brightness(0.4) contrast(1.05);
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 1100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .hero-title {
+            font-size: clamp(2.6rem, 6.5vw, 4.8rem);
+            font-weight: 300;
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+            margin-bottom: 24px;
+            color: var(--text-light);
+        }
+
+        /* Style the customized "A" for the premium editorial brand feel */
+        .stylized-A {
+            font-weight: 400;
+            position: relative;
+            display: inline-block;
+        }
+
+        .hero-arrow {
+            margin-top: 40px;
+            animation: bounce 2s infinite;
+        }
+
+        .hero-arrow svg {
+            width: 20px;
+            height: 22px;
+            fill: var(--text-light);
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-8px); }
+            60% { transform: translateY(-4px); }
+        }
+
+        /* 4. Main White-Mode Stream Layout */
+        .main-content {
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            position: relative;
+            z-index: 10;
+        }
+
+        /* 5. Automatic Highlights Slider */
+        .highlights-section {
+            padding: 100px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .highlights-tabs {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            margin-bottom: 40px;
+            scrollbar-width: none;
+        }
+
+        .highlights-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .highlights-pill {
+            background-color: transparent;
+            border: 1px solid transparent;
+            padding: 8px 18px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            white-space: nowrap;
+            border-radius: 2px;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .highlights-pill:hover {
+            color: var(--text-dark);
+        }
+
+        .highlights-pill.active {
+            color: var(--text-dark);
+            background-color: #ffffff;
+            border-color: rgba(0, 0, 0, 0.15);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .highlights-pill.see-all {
+            margin-left: auto;
+            border: 1px solid var(--text-dark);
+            color: var(--text-dark);
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        .highlights-hero-card {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr;
+            border: 1px solid var(--border-dark);
+            background-color: #ffffff;
+            min-height: 520px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide-bg-media {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            object-fit: cover;
+            transition: opacity 0.8s ease, transform 1.2s ease;
+            transform: scale(1.02);
+        }
+
+        .slide-bg-media.switching {
+            opacity: 0.7;
+            transform: scale(1);
+        }
+
+        /* Glass Text Overlay Box (Positioned exactly like Palantir's slide text) */
+        .slide-glass-box {
+            position: relative;
+            z-index: 2;
+            margin: auto auto auto 60px;
+            background-color: rgba(15, 17, 18, 0.82);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 48px;
+            max-width: 520px;
+            color: var(--text-light);
+            border-radius: 2px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            transition: transform 0.6s ease, opacity 0.6s ease;
+        }
+
+        .slide-glass-box.switching {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .slide-glass-box .tag {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #9ab4c1;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .slide-glass-box h2 {
+            font-size: 1.9rem;
+            font-weight: 300;
+            line-height: 1.2;
+            margin-bottom: 24px;
+            letter-spacing: -0.015em;
+        }
+
+        .cta-link-arrow {
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Manual slider arrows */
+        .slider-controls {
+            position: absolute;
+            bottom: 40px;
+            left: 60px;
+            z-index: 3;
+            display: flex;
+            gap: 12px;
+        }
+
+        .slider-arrow-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: rgba(0, 0, 0, 0.4);
+            color: var(--text-light);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .slider-arrow-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Mid-Page Editorial Callout */
+        .editorial-callout {
+            background-color: var(--bg-gray);
+            border-top: 1px solid #eaeaea;
+            border-bottom: 1px solid #eaeaea;
+            padding: 100px 40px;
+            text-align: center;
+        }
+
+        .editorial-callout-text {
+            max-width: 1000px;
+            margin: 0 auto;
+            font-size: clamp(1.4rem, 3vw, 2.2rem);
+            font-weight: 300;
+            line-height: 1.3;
+            letter-spacing: -0.02em;
+            color: var(--text-dark);
+        }
+
+        /* 6. Product Lists Section (Rows with Interactive Zoom-reveals) */
+        .software-section {
+            padding: 120px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .software-section h2 {
+            font-size: 2.8rem;
+            font-weight: 300;
+            letter-spacing: -0.02em;
+            margin-bottom: 48px;
+        }
+
+        .software-row {
+            display: grid;
+            grid-template-columns: 1fr 1.6fr 1.4fr;
+            padding: 44px 20px;
+            border-top: 1px solid #eaeaea;
+            align-items: center;
+            cursor: pointer;
+            transition: opacity 0.3s ease, background-color 0.3s ease;
+        }
+
+        .software-row:last-child {
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        .software-row-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .software-row-meta .num {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .software-row-meta p {
+            font-size: 1rem;
+            line-height: 1.45;
+            color: var(--text-dark);
+            padding-right: 40px;
+        }
+
+        /* Middle Column (Mockup Thumbnail Image Container) */
+        .software-preview-container {
+            width: 100%;
+            aspect-ratio: 16 / 10;
+            overflow: hidden;
+            background-color: #0d0f10;
+            border: 1px solid var(--border-dark);
+            border-radius: 2px;
+            transform: scale(0.96);
+            opacity: 0.5;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                        opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .software-preview-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: contrast(1.05) brightness(0.95);
+        }
+
+        /* Right Column (Giant signature title) */
+        .software-signature-box {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            font-size: clamp(3rem, 8vw, 6.5rem);
+            font-weight: 300;
+            letter-spacing: -0.03em;
+            color: var(--text-dark);
+            opacity: 0.25;
+            transform: translateX(15px);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                        opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* ROW HOVER STATES (Palantir style interaction) */
+        /* 1. Scale active preview & slide signature inwards */
+        .software-row:hover .software-preview-container {
+            transform: scale(1.02);
+            opacity: 1;
+        }
+
+        .software-row:hover .software-signature-box {
+            transform: translateX(0px);
+            opacity: 1;
+            font-weight: 400;
+        }
+
+        /* 2. Dim non-hovered siblings when software section is hovered */
+        .software-list-group:hover .software-row:not(:hover) {
+            opacity: 0.35;
+        }
+
+        /* 7. Structural Footer */
+        footer {
+            background-color: #ffffff;
+            color: var(--text-dark);
+            border-top: 1px solid #eaeaea;
+            padding: 100px 40px 60px;
+        }
+
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 80px;
+        }
+
+        .footer-left-branding {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .footer-left-branding p {
+            font-size: 0.85rem;
+            color: var(--text-dark);
+        }
+
+        .footer-left-branding .all-rights {
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .footer-divider-line {
+            width: 100%;
+            height: 1px;
+            background-color: #eaeaea;
+            margin: 24px 0;
+        }
+
+        .footer-cookie-btn {
+            background: none;
+            border: none;
+            font-size: 0.85rem;
+            color: var(--text-dark);
+            cursor: pointer;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .footer-cookie-btn:hover {
+            color: var(--text-muted);
+        }
+
+        .footer-locales {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            gap: 16px;
+        }
+
+        .footer-locales a {
+            color: var(--text-muted);
+        }
+
+        .footer-locales a:hover, .footer-locales a.active {
+            color: var(--text-dark);
+        }
+
+        .footer-social-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 24px;
+        }
+
+        .social-capsule {
+            border: 1px solid #d2d2d7;
+            border-radius: 20px;
+            padding: 8px 18px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        .social-capsule:hover {
+            background-color: var(--bg-gray);
+            border-color: #b5b5b5;
+        }
+
+        .footer-links-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 40px;
+        }
+
+        .footer-links-col h4 {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        .footer-links-col ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            font-size: 0.85rem;
+        }
+
+        .footer-links-col ul a {
+            color: var(--text-dark);
+            transition: color 0.2s;
+        }
+
+        .footer-links-col ul a:hover {
+            color: var(--text-muted);
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 1024px) {
+            .footer-container {
+                grid-template-columns: 1fr;
+                gap: 60px;
+            }
+            .footer-links-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .software-row {
+                grid-template-columns: 1fr 1fr;
+                gap: 24px;
+            }
+            .software-signature-box {
+                justify-content: flex-start;
+                transform: none;
+            }
+            .slide-glass-box {
+                margin: auto 40px;
+                max-width: calc(100% - 80px);
+            }
+            .slider-controls {
+                left: 40px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 16px 24px;
+            }
+            .announcement-bar .close-btn {
+                right: 20px;
+            }
+            .software-row {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 32px 0;
+            }
+            .software-preview-container {
+                max-width: 320px;
+            }
+            .footer-links-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. Top Announcement Bar -->
+    <div class="announcement-bar" id="top-announcement">
+        Read CEO Patrick Neil’s <a href="#">Letter to Shareholders ↗</a>
+        <button class="close-btn" onclick="document.getElementById('top-announcement').style.display='none'">×</button>
+    </div>
+
+    <!-- 2. Sticky Adaptive Glass Header -->
+    <header id="main-header">
+        <div class="logo">
+            <!-- Palantir Minimalist Chevron Icon -->
+            <svg viewBox="0 0 401 494" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                <path d="M371.928849,357.289894 L400.39,410.386051 L200.423563,493.218741 L0.39,410.386051 L28.9182766,357.289894 L200.423563,429.315402 L371.928849,357.289894 Z M200.423563,0.72 C306.347375,0.72 392.267832,84.2239436 392.267832,187.194241 C392.267832,290.164538 306.414501,373.668481 200.423563,373.668481 C94.4326246,373.668481 8.51216815,290.164538 8.51216815,187.194241 C8.51216815,84.2239436 94.4326246,0.72 200.423563,0.72 Z M200.423563,58.4478067 C127.122673,58.4478067 67.783858,116.108488 67.783858,187.328491 C67.783858,258.548495 127.189799,316.276301 200.423563,316.276301 C273.657327,316.276301 333.063267,258.61562 333.063267,187.395617 C333.063267,116.175613 273.724452,58.4478067 200.423563,58.4478067 Z"></path>
+            </svg>
+            PANTEON
+        </div>
+        <div class="nav-right">
+            <button class="get-started-btn"><span>↖</span> Get Started</button>
+            <button class="header-icon-box" aria-label="Search button">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 16 16">
+                    <circle cx="9.5" cy="6.5" r="5.5" stroke-width="1.5"></circle>
+                    <path d="M5.5 10.5l-4.5 4.5" stroke-width="1.5"></path>
+                </svg>
+            </button>
+            <button class="header-icon-box" aria-label="Menu button">
+                <div class="burger-lines">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </button>
+        </div>
+    </header>
+
+    <!-- 3. Full-Screen Hero Monitor Section -->
+    <section class="hero">
+        <video class="hero-video-bg" autoplay loop muted playsinline poster="https://www.palantir.com/assets/xrfr7uokpv1b/3TsGAouDhfTVSaTejJi4Rw/65d5948db29c4c9e1a97265ea280fbc1/homepage_hero_poster_new.jpg">
+            <source src="https://www.palantir.com/assets/xrfr7uokpv1b/YKDjrsUKCWLesL5XVPlpf/a815dcde00865af08e15a99cb870c6a3/Website_Reel_Update_V7.mp4" type="video/mp4">
+        </video>
+        <div class="hero-content">
+            <h1 class="hero-title">
+                <span class="stylized-A">AI</span>-Powered Automation <br> for Every Decision
+            </h1>
+            <p style="font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.85;">Scroll to Explore</p>
+            <div class="hero-arrow">
+                <svg viewBox="0 0 242.07 238.58">
+                    <path d="M135.85,0v187.55l106.22-93.17v38.53l-121.31,105.67L0,132.91v-38.53l105.67,93.17V0"></path>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. Main White-Mode Stream Content -->
+    <main class="main-content" id="scroll-content">
+
+        <!-- 5. Automatic Tabs Highlights Section -->
+        <section class="highlights-section">
+            <div class="highlights-tabs" id="tab-pills-container">
+                <!-- Tabs rendered and managed dynamically via JS below -->
+            </div>
+
+            <div class="highlights-hero-card">
+                <!-- Slide Graphic Backdrop -->
+                <img id="slide-backdrop" class="slide-bg-media" src="" alt="Slide Backdrop Media">
+                
+                <!-- Glass Information Overlaid Box -->
+                <div class="slide-glass-box" id="slide-content-box">
+                    <span class="tag" id="slide-tag">CATEGORY</span>
+                    <h2 id="slide-headline">Headline Content</h2>
+                    <a href="#" class="cta-link-arrow">Read More <span>↳</span></a>
+                </div>
+
+                <!-- Slider Arrows -->
+                <div class="slider-controls">
+                    <button class="slider-arrow-btn" onclick="prevSlide()" aria-label="Previous slide">←</button>
+                    <button class="slider-arrow-btn" onclick="nextSlide()" aria-label="Next slide">→</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Mid-Page Editorial Callout -->
+        <section class="editorial-callout">
+            <h2 class="editorial-callout-text">
+                Our platforms are used throughout the public, private, and non-profit sectors to help organizations quickly implement solutions to the hardest problems they face.
+            </h2>
+        </section>
+
+        <!-- 6. Our Software Platform Lists (Rows with Interactive Slide-Zoom Mockups) -->
+        <section class="software-section">
+            <h2>Our Software</h2>
+
+            <div class="software-list-group">
+                <!-- AIP row -->
+                <div class="software-row" onclick="window.location.href='#aip'">
+                    <div class="software-row-meta">
+                        <span class="num">/0.1</span>
+                        <p>Automate operations, from the factory floor to the front lines</p>
+                    </div>
+                    <div class="software-preview-container">
+                        <!-- Loaded static high-fidelity AIP dashboard mockup image -->
+                        <img src="https://images.ctfassets.net/xrfr7uokpv1b/203IJsHEcTS4wbltpHvTgz/adc2924a67059e22ed911586f1c7626d/SAP_Migration_-_Progress_Bars_-_Homepage_4x.png" alt="AIP Interface Dashboard">
+                    </div>
+                    <div class="software-signature-box">
+                        AIP
+                    </div>
+                </div>
+
+                <!-- Gotham row -->
+                <div class="software-row" onclick="window.location.href='#gotham'">
+                    <div class="software-row-meta">
+                        <span class="num">/0.2</span>
+                        <p>Achieve AI-driven combat superiority, from space to mud</p>
+                    </div>
+                    <div class="software-preview-container">
+                        <img src="https://images.ctfassets.net/xrfr7uokpv1b/57VlGICG58lbQ0wZF4SBal/5c8e9272c4c0b3a7a30daa0d833a8927/TITAN_.png" alt="Gotham Strategy interface Dashboard">
+                    </div>
+                    <div class="software-signature-box">
+                        Gotham
+                    </div>
+                </div>
+
+                <!-- Foundry row -->
+                <div class="software-row" onclick="window.location.href='#foundry'">
+                    <div class="software-row-meta">
+                        <span class="num">/0.3</span>
+                        <p>Build and manage ontology-powered business operating systems</p>
+                    </div>
+                    <div class="software-preview-container">
+                        <img src="https://images.ctfassets.net/xrfr7uokpv1b/6CYBVbXesFzbJG60ZZTUDY/faa66ed64744272efaacd405fbe54925/MMDP_cover_image.png" alt="Foundry Supply-Chain interface">
+                    </div>
+                    <div class="software-signature-box">
+                        Foundry
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 7. Multi-Column Structural Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-left-branding">
+                <p>© 2026 Panteon Technologies Inc.</p>
+                <p class="all-rights">All rights reserved.</p>
+                <div class="footer-divider-line"></div>
+                <button class="footer-cookie-btn">Cookies Settings</button>
+                <div class="footer-divider-line"></div>
+                <div class="footer-locales">
+                    <a href="#" class="active">US</a>
+                    <a href="#">UK</a>
+                    <a href="#">JP</a>
+                </div>
+                <div class="footer-divider-line"></div>
+                <div class="footer-social-container">
+                    <a href="#" class="social-capsule">Youtube</a>
+                    <a href="#" class="social-capsule">X</a>
+                    <a href="#" class="social-capsule">Linkedin</a>
+                    <a href="#" class="social-capsule">Github</a>
+                    <a href="#" class="social-capsule">Store</a>
+                </div>
+            </div>
+
+            <div class="footer-links-grid">
+                <div class="footer-links-col">
+                    <h4>Offerings</h4>
+                    <ul>
+                        <li><a href="#">American Tech Fellowship</a></li>
+                        <li><a href="#">Anti-Money Laundering</a></li>
+                        <li><a href="#">Automotive & Mobility</a></li>
+                        <li><a href="#">Construction</a></li>
+                        <li><a href="#">Data Protection</a></li>
+                        <li><a href="#">Defense</a></li>
+                        <li><a href="#">Energy</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Impact Studies</h4>
+                    <ul>
+                        <li><a href="#">Airbus</a></li>
+                        <li><a href="#">Axel Springer</a></li>
+                        <li><a href="#">Cleveland Clinic</a></li>
+                        <li><a href="#">Concordance</a></li>
+                        <li><a href="#">Doosan Infracore</a></li>
+                        <li><a href="#">Fujitsu</a></li>
+                        <li><a href="#">Jacobs</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Capabilities</h4>
+                    <ul>
+                        <li><a href="#">AI + ML</a></li>
+                        <li><a href="#">AIP for Developers</a></li>
+                        <li><a href="#">Data Integration</a></li>
+                        <li><a href="#">Digital Twin</a></li>
+                        <li><a href="#">Dynamic Scheduling</a></li>
+                        <li><a href="#">Edge AI</a></li>
+                        <li><a href="#">Marketplace</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Documents</h4>
+                    <ul>
+                        <li><a href="#">Developer Community</a></li>
+                        <li><a href="#">Platform Documentation</a></li>
+                        <li><a href="#">Panteon Developers</a></li>
+                        <li><a href="#">Trust Center</a></li>
+                        <li><a href="#">Modern Slavery Statement</a></li>
+                        <li><a href="#">Cookies</a></li>
+                        <li><a href="#">Privacy and Civil Liberties</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Interactive Navigation Background Transition Scroll Listener -->
+    <script>
+        const header = document.getElementById('main-header');
+        const scrollThreshold = window.innerHeight * 0.4;
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY >= scrollThreshold) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        /* --- CAROUSEL SLIDER DATA & LOGIC --- */
+        const slides = [
+            {
+                tag: "ShipOS",
+                headline: "Rebuilding American Sea Power with Intelligent Fleet Orchestration",
+                img: "https://www.palantir.com/assets/xrfr7uokpv1b/7M8IyM7xipV1h9mdqIUZpB/5f53ac4d162dbe9c9153b546ae92cee4/shutterstock_690389866.jpg"
+            },
+            {
+                tag: "Warp Speed",
+                headline: "The Manufacturing OS for American Re-Industrialization",
+                img: "https://www.palantir.com/assets/xrfr7uokpv1b/44a39QNvwOiXh46KptFpLS/f1ef86734a4f276ccfae71a8d2e49027/WarpSpeed___1_.png"
+            },
+            {
+                tag: "AIPCon 9",
+                headline: "How Foundry and AIP Create Magic on the Front Lines: 55 Speakers",
+                img: "https://images.ctfassets.net/xrfr7uokpv1b/7GpnCN76IYKSNcG16Rlx6/9aefb430493f84c10c152386beafe209/007-Dr.Alex_Karp-AIPCon9__1_.jpg"
+            },
+            {
+                tag: "Chain Reaction",
+                headline: "The Operating System for American AI Infrastructure",
+                img: "https://www.palantir.com/assets/xrfr7uokpv1b/3BDq1fdUIfzwqG691uZkgy/3ca97383cf78d39c8bee3545c2ecb45d/Asset_2_4x.png"
+            }
+        ];
+
+        let currentIdx = 0;
+        let autoSlideTimer;
+
+        // Render Slide Pills
+        const pillsContainer = document.getElementById('tab-pills-container');
+        function renderPills() {
+            pillsContainer.innerHTML = '';
+            slides.forEach((slide, idx) => {
+                const pill = document.createElement('span');
+                pill.className = `highlights-pill ${idx === currentIdx ? 'active' : ''}`;
+                pill.textContent = slide.tag;
+                pill.onclick = () => selectSlide(idx);
+                pillsContainer.appendChild(pill);
+            });
+
+            // Add static 'SEE ALL' pill
+            const seeAll = document.createElement('span');
+            seeAll.className = 'highlights-pill see-all';
+            seeAll.textContent = 'SEE ALL ↗';
+            pillsContainer.appendChild(seeAll);
+        }
+
+        const backdropImg = document.getElementById('slide-backdrop');
+        const contentBox = document.getElementById('slide-content-box');
+        const slideTag = document.getElementById('slide-tag');
+        const slideHeadline = document.getElementById('slide-headline');
+
+        // Apply slide content changes smoothly
+        function updateSlide() {
+            // Apply temporal CSS transition state to fade out
+            backdropImg.classList.add('switching');
+            contentBox.classList.add('switching');
+
+            setTimeout(() => {
+                const current = slides[currentIdx];
+                backdropImg.src = current.img;
+                slideTag.textContent = current.tag;
+                slideHeadline.textContent = current.headline;
+
+                // Render matching active state on pills
+                const pills = document.querySelectorAll('.highlights-pill');
+                pills.forEach((pill, idx) => {
+                    if (idx < slides.length) {
+                        pill.className = `highlights-pill ${idx === currentIdx ? 'active' : ''}`;
+                    }
+                });
+
+                // Smoothly fade back in
+                backdropImg.classList.remove('switching');
+                contentBox.classList.remove('switching');
+            }, 300); // matching CSS fade delays
+        }
+
+        function selectSlide(idx) {
+            currentIdx = idx;
+            updateSlide();
+            resetAutoSlide();
+        }
+
+        function nextSlide() {
+            currentIdx = (currentIdx + 1) % slides.length;
+            updateSlide();
+            resetAutoSlide();
+        }
+
+        function prevSlide() {
+            currentIdx = (currentIdx - 1 + slides.length) % slides.length;
+            updateSlide();
+            resetAutoSlide();
+        }
+
+        function startAutoSlide() {
+            autoSlideTimer = setInterval(() => {
+                currentIdx = (currentIdx + 1) % slides.length;
+                updateSlide();
+            }, 5000); // Switch slide every 5 seconds automatically
+        }
+
+        function resetAutoSlide() {
+            clearInterval(autoSlideTimer);
+            startAutoSlide();
+        }
+
+        // Initialize Carousel
+        renderPills();
+        updateSlide();
+        startAutoSlide();
+    </script>
+</body>
+</html>

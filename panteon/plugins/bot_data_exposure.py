@@ -60,7 +60,7 @@ SANITIZED_INDICATOR = 'Private — login required'
 
 ECOSYSTEM_SITES = [
     ('/',                  'Alien Inc (Group)',            'Critical — main landing page with revenue metrics'),
-    ('/1609holdings/',     '1609 Holdings',                'Capital allocator subsidiary'),
+    ('/rousseau/',     'Rousseau',                'Capital allocator subsidiary'),
     ('/panteon/',        'Panteon',                    'Cybersecurity subsidiary'),
     ('/exosphere/',        'Exosphere',                    'Acquisitions subsidiary'),
     ('/kmt/',              'KMT Consulting Group',         'Consulting subsidiary'),

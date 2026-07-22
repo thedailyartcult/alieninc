@@ -38,7 +38,7 @@ const CortexWidget = (() => {
       buttonRadius: '3px',
       cardRadius: '12px'
     },
-    "1609": {
+    "rousseau": {
       primary: '#0d2344',
       accent: '#c5a059',
       font: '"Montserrat", sans-serif',
@@ -345,7 +345,7 @@ const CortexWidget = (() => {
       placeholder: 'e.g., What is the current valuation range for my sector?',
       ctaLabel: 'Analyze'
     },
-    "1609": {
+    "rousseau": {
       title: 'Cortex Capital Intelligence',
       subtitle: 'AI-powered portfolio analysis. Ask about capital allocation, risk exposure, or subsidiary performance.',
       quickActions: ['Capital Flow', 'Risk Exposure', 'Subsidiary KPIs', 'Allocation'],
@@ -568,7 +568,7 @@ const CortexWidget = (() => {
           return 'Revenue by company (2026F): ' + lines.join(', ') + '. Total: $' + (eco.groupRollup.standaloneRevenueTotal2026F/1000000).toFixed(2) + 'M.';
         }, 'Alien.Inc tracks operating performance across all 7 subsidiaries from the consolidated operating model.')
       },
-      "1609": {
+      "rousseau": {
         'capital allocation': buildFromEco(function(eco) {
           var cap = eco.holdingsAndCapitalFlow.allocationSummary;
           var deployed = cap.capitalDeployedByCompany;
@@ -577,13 +577,13 @@ const CortexWidget = (() => {
             return co.brandName + ' $' + (deployed[id]/1000).toFixed(0) + 'K';
           });
           return 'Capital deployed: ' + cap.totalCapitalDeployedFormatted + ' total. Positions: ' + lines.join(', ') + '. Debt outstanding: ' + cap.totalDebtOutstandingFormatted + '.';
-        }, '1609 Holdings allocates capital and governance capacity across the Alien.Inc group.'),
+        }, 'Rousseau allocates capital and governance capacity across the Alien.Inc group.'),
         'risk exposure': buildFromEco(function(eco) {
           var cap = eco.holdingsAndCapitalFlow.allocationSummary;
           var parentCash = cap.parentCashPosition2026F;
           var subCash = cap.subsidiaryCashPosition2026F;
           return 'Liquidity: ' + cap.liquidityMonthsOfOperatingCosts + ' months of operating costs. Parent cash: $' + (parentCash/1000000).toFixed(2) + 'M. Subsidiary cash: $' + (subCash/1000000).toFixed(2) + 'M. Consolidated: $' + (cap.consolidatedCashPosition2026F/1000000).toFixed(2) + 'M.';
-        }, '1609 Holdings monitors liquidity, cash position, and capital adequacy across the group.'),
+        }, 'Rousseau monitors liquidity, cash position, and capital adequacy across the group.'),
         'subsidiary performance': buildFromEco(function(eco) {
           var ebitdas = eco.companies.map(function(c) {
             var rev = c.annualFinancials.find(function(f){return f.year===2026;});
@@ -591,7 +591,7 @@ const CortexWidget = (() => {
           }).sort(function(a,b){return b.ebitda - a.ebitda;});
           var positive = ebitdas.filter(function(e){return e.ebitda > 0;});
           return 'EBITDA-positive subsidiaries (2026F): ' + positive.length + ' of 7. Range: $' + (ebitdas[ebitdas.length-1].ebitda/1000).toFixed(0) + 'K (' + ebitdas[ebitdas.length-1].name + ') to $' + (ebitdas[0].ebitda/1000).toFixed(0) + 'K (' + ebitdas[0].name + ').';
-        }, '1609 Holdings oversees EBITDA performance across all operating subsidiaries.'),
+        }, 'Rousseau oversees EBITDA performance across all operating subsidiaries.'),
         'allocation strategy': buildFromEco(function(eco) {
           var fc = eco.fundCentre.summary;
           var revs = eco.groupRollup.standaloneRevenue2026F;
@@ -600,7 +600,7 @@ const CortexWidget = (() => {
           var panteonPct = (revs.panteon / totalRev * 100).toFixed(1);
           var growth = ((eco.companies.find(function(c){return c.id==='kmt';}).annualFinancials.find(function(f){return f.year===2026;}).revenue - eco.companies.find(function(c){return c.id==='kmt';}).annualFinancials.find(function(f){return f.year===2025;}).revenue) / eco.companies.find(function(c){return c.id==='kmt';}).annualFinancials.find(function(f){return f.year===2025;}).revenue * 100).toFixed(1);
           return 'Fund centre: ' + fc.totalAumFormatted + ' across ' + fc.totalFunds + ' funds (' + fc.totalShareClasses + ' share classes). KMT represents ' + kmtPct + '% of group revenue, Panteon ' + panteonPct + '%. KMT YoY growth: ' + growth + '%.';
-        }, '1609 Holdings manages allocation across operating companies and the fund centre.')
+        }, 'Rousseau manages allocation across operating companies and the fund centre.')
       },
       kmt: {
         'market analysis': buildFromEco(function(eco) {
@@ -637,8 +637,8 @@ const CortexWidget = (() => {
       exosphere: 'Exosphere provides succession and sell-side advisory, buy-side search, and commercial diligence for owner-led businesses in the $3M-$30M segment.',
       statute: 'Statute & Precedent delivers M&A and transaction counsel, contract operations, and governance and compliance services. Average bill rate: $285/hour.',
       stalcantara: 'St. Alcantara Foundation preserves cultural memory through conservation, digitization, education, and public access. 18,400 artifacts digitized to date.',
-      alieninc: 'Alien.Inc operates 7 companies: KMT Consulting, Panteon, Exosphere, Statute & Precedent, The Daily Art Cult, St. Alcantara Foundation, and 1609 Holdings.',
-      "1609": '1609 Holdings allocates capital and governance capacity across the Alien.Inc group. Fund centre: EUR 5.77B across 6 funds.'
+      alieninc: 'Alien.Inc operates 7 companies: KMT Consulting, Panteon, Exosphere, Statute & Precedent, The Daily Art Cult, St. Alcantara Foundation, and Rousseau.',
+      "rousseau": 'Rousseau allocates capital and governance capacity across the Alien.Inc group. Fund centre: EUR 5.77B across 6 funds.'
     };
     
     // Build response from ecosystem data or fallback to service description

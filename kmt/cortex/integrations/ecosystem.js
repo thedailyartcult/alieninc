@@ -5,7 +5,7 @@
  * Enables cross-sell opportunities and unified client intelligence.
  * 
  * Architecture: Event-driven with message queue
- * Companies: 1609, Panteon, Exosphere, Statute, TDAC, Alcantara
+ * Companies: Rousseau, Panteon, Exosphere, Statute, TDAC, Alcantara
  */
 
 const EcosystemIntegrator = (() => {
@@ -19,7 +19,7 @@ const EcosystemIntegrator = (() => {
       statute: { name: "Statute & Precedent", role: "legal_services" },
       tdac: { name: "The Daily Art Cult", role: "media_publishing" },
       alcantara: { name: "St. Alcantara Foundation", role: "nonprofit_culture" },
-      "1609": { name: "1609 Holdings", role: "holding_company" }
+      "rousseau": { name: "Rousseau", role: "holding_company" }
     },
     intercompanyRates2026: {
       "kmt-panteon": 96000,
@@ -28,8 +28,8 @@ const EcosystemIntegrator = (() => {
       "kmt-statute": 78000,
       "alcantara-tdac": 54000,
       "tdac-statute": 36000,
-      "1609-kmt": 126000,
-      "1609-alcantara": 150000
+      "rousseau-kmt": 126000,
+      "rousseau-alcantara": 150000
     }
   };
 
@@ -66,7 +66,7 @@ const EcosystemIntegrator = (() => {
         { service: "security_strategy", description: "Cybersecurity strategy consulting" },
         { service: "compliance_advisory", description: "Regulatory compliance consulting" }
       ],
-      "1609": [
+      "rousseau": [
         { service: "portfolio_analytics", description: "Operating metrics and analysis" },
         { service: "board_reporting", description: "Board presentation materials" }
       ]

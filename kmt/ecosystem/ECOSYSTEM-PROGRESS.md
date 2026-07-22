@@ -36,13 +36,13 @@ A self-evolving organism where 7 companies breathe together. Each day, companies
 #### 1. Ecosystem Engine (`ecosystem-engine.js`)
 Main orchestrator that:
 - Manages 7 companies as living entities
-- Simulates daily operations (revenue, costs, cash)
+- Processes daily operations (revenue, costs, cash)
 - Generates business events
 - Executes intercompany flows
 - Tracks health, momentum, and alerts
 - Records history for trend analysis
 
-#### 2. Company Simulation
+#### 2. Company Operations
 Each company daily:
 - **Revenue**: Calculated from active clients × daily rate
 - **Costs**: Operating costs with inflation and risk adjustments
@@ -81,22 +81,22 @@ Companies influence each other:
 
 ```bash
 # Run 1 day
-node simulate.js
+node runner.py
 
 # Run 30 days
-node simulate.js 30
+node runner.py 30
 
 # Run 1 year and export
-node simulate.js 365 --export
+node runner.py 365 --export
 
 # Show current state
-node simulate.js status
+node runner.py status
 
 # Show specific company
-node simulate.js company panteon
+node runner.py company panteon
 ```
 
-### 30-Day Simulation Results
+### 30-Day Operations Results
 
 ```
 Company                    Cash       Health  Momentum
@@ -119,8 +119,8 @@ Statute & Precedent          $215K     100       0.0
 
 ```
 kmt/ecosystem/
-├── ecosystem-engine.js   # Core simulation engine
-├── simulate.js           # CLI runner
+├── ecosystem_engine.py   # Core operations engine
+├── runner.py              # Operations runner
 └── ECOSYSTEM-PROGRESS.md # This file
 ```
 
@@ -145,10 +145,10 @@ kmt/ecosystem/
 
 ```bash
 # 1. Run simulation for 30 days
-cd kmt/ecosystem && node simulate.js 30
+cd kmt/ecosystem && node runner.py 30
 
 # 2. Export state
-node simulate.js 30 --export
+node runner.py 30 --export
 
 # 3. Analyze with KMT engine
 cd .. && node cli.js panteon

@@ -168,7 +168,7 @@ const ClientPortal = (() => {
           title: "Market Analysis Brief",
           type: "research_brief",
           status: "review",
-          generatedBy: "ai_generated",
+          generatedBy: "ai_assisted",
           qualityScore: 88,
           reviewDeadline: "2026-07-20"
         }

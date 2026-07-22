@@ -86,7 +86,7 @@ async def startup():
 async def seed_defaults():
     companies = {
         'alieninc': 'Alien.Inc',
-        '1609': '1609 Holdings',
+        'rousseau': 'Rousseau',
         'panteon': 'Panteon',
         'exosphere': 'Exosphere',
         'kmt': 'KMT Consulting Group',

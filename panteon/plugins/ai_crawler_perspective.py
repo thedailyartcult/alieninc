@@ -37,7 +37,7 @@ W = 72
 
 _ALL_SITES = [
     ('/', 'Alien Inc (Group)'),
-    ('/1609holdings/', '1609 Holdings'),
+    ('/rousseau/', 'Rousseau'),
     ('/panteon/', 'Panteon'),
     ('/exosphere/', 'Exosphere'),
     ('/kmt/', 'KMT Consulting Group'),
@@ -245,7 +245,7 @@ class AiCrawlerPerspective(NaslPlugin):
             self._probe_quick(target, port, 'conditional-304', '/',
                 headers={'If-None-Match': '"deadbeef"'}),
             self._probe_quick(target, port, 'cookie-injection', '/',
-                headers={'Cookie': 'session=fake'}),
+                headers={'Cookie': 'session=probe_test'}),
             self._probe_quick(target, port, 'x-forwarded-for', '/',
                 headers={'X-Forwarded-For': '127.0.0.1'}),
             self._probe_quick(target, port, 'websocket', '/ws/scan'),

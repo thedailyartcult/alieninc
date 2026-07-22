@@ -7,7 +7,7 @@
  * - Engagement-level fee tracking
  * - Internal transfer pricing between companies
  * - Cost allocation and profitability analysis
- * - 1609 Holdings oversight and reporting
+ * - Rousseau oversight and reporting
  */
 
 class BillingSystem {
@@ -279,10 +279,10 @@ class BillingSystem {
       { from: 'kmt', to: 'statute', managementFeeRate: 0.08, description: 'KMT to Statute - Legal services rate' },
       { from: 'kmt', to: 'stalcantara', managementFeeRate: 0.05, description: 'KMT to St. Alcantara - Nonprofit rate' },
       { from: 'kmt', to: 'thedailyartcult', managementFeeRate: 0.10, description: 'KMT to TDAC - Standard rate' },
-      { from: 'kmt', to: '1609holdings', managementFeeRate: 0.15, description: 'KMT to 1609 - Holdco oversight rate' },
-      { from: '1609holdings', to: 'kmt', managementFeeRate: 0.15, description: '1609 to KMT - Management fee' },
-      { from: '1609holdings', to: 'panteon', managementFeeRate: 0.10, description: '1609 to Panteon - Portfolio oversight' },
-      { from: '1609holdings', to: 'exosphere', managementFeeRate: 0.10, description: '1609 to Exosphere - Portfolio oversight' }
+      { from: 'kmt', to: 'rousseau', managementFeeRate: 0.15, description: 'KMT to Rousseau - Holdco oversight rate' },
+      { from: 'rousseau', to: 'kmt', managementFeeRate: 0.15, description: 'Rousseau to KMT - Management fee' },
+      { from: 'rousseau', to: 'panteon', managementFeeRate: 0.10, description: 'Rousseau to Panteon - Portfolio oversight' },
+      { from: 'rousseau', to: 'exosphere', managementFeeRate: 0.10, description: 'Rousseau to Exosphere - Portfolio oversight' }
     ];
 
     rules.forEach(rule => {

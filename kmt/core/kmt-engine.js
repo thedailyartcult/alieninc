@@ -347,7 +347,7 @@ class KMTEngine {
       portfolioSize: allCompanies.length,
       portfolioRevenue: totalRevenue,
       companyShare: totalRevenue > 0 ? (companyRevenue / totalRevenue * 100).toFixed(1) + '%' : '0%',
-      holdingCompany: allCompanies.find(c => c.id === '1609'),
+      holdingCompany: allCompanies.find(c => c.id === 'rousseau'),
       roleInPortfolio: this._assessPortfolioRole(company)
     };
   }
@@ -375,7 +375,7 @@ class KMTEngine {
     };
     
     // Identify contributions based on category and services
-    if (company.id === '1609') {
+    if (company.id === 'rousseau') {
       role.contributions = ['Capital allocation', 'Governance', 'Strategic oversight'];
     } else if (company.id === 'kmt') {
       role.contributions = ['Strategy consulting', 'Operational improvement', 'AI transformation'];

@@ -6,7 +6,7 @@
  * - Engagement pipeline (stages: Intake → Scoping → Proposal → Active → Delivery → Closed)
  * - Resource allocation across engagements
  * - Status tracking and milestone management
- * - Cross-company visibility (1609 Holdings oversight)
+ * - Cross-company visibility (Rousseau oversight)
  * - Performance metrics (utilization, margin, CSAT)
  */
 

@@ -26,7 +26,7 @@ var PanteonScanner = (function () {
   // =========================================================================
   var ECOSYSTEM_DOMAINS = [
     { id: 'alieninc',     name: 'Alien.Inc',                url: '/' },
-    { id: '1609',         name: '1609 Holdings',            url: 'https://1609.alieninc.tech' },
+    { id: 'rousseau',         name: 'Rousseau',            url: 'https://rousseau.alieninc.tech' },
     { id: 'panteon',    name: 'Panteon',                url: 'https://panteon.alieninc.tech' },
     { id: 'exosphere',    name: 'Exosphere',                url: 'https://exosphere.alieninc.tech' },
     { id: 'kmt',          name: 'KMT Consulting Group',     url: 'https://kmt.alieninc.tech' },

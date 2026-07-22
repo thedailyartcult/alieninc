@@ -34,7 +34,7 @@ const WAIT_AFTER_LOAD = 5000;
 
 const COMPANIES = {
     alieninc:         { name: 'Alien.Inc',                    url: 'https://alieninc.tech/' },
-    '1609holdings':   { name: '1609 Holdings',               url: 'https://1609.alieninc.tech' },
+    'rousseau':   { name: 'Rousseau',               url: 'https://rousseau.alieninc.tech' },
     exosphere:        { name: 'Exosphere',                    url: 'https://exosphere.alieninc.tech' },
     panteon:        { name: 'Panteon',                    url: 'https://panteon.alieninc.tech' },
     kmt:              { name: 'KMT Consulting Group',         url: 'https://kmt.alieninc.tech' },

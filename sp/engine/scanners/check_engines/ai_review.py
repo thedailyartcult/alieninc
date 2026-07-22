@@ -59,7 +59,7 @@ def _assess_locally(report):
     if company_scores:
         same = len(set(company_scores)) == 1
         if same:
-            # Check if it's actually shared infrastructure vs fake auditing
+            # Check if shared infrastructure is intentional architecture vs duplicated config
             # Shared infra is VALID — one server serving 7 subsidiaries is architecture, not fraud
             # The AI should note this as a conscious design choice, not a red flag
             findings.append("7 subsidiaries share parent infrastructure — centralized compliance monitoring (intentional architecture)")
@@ -111,7 +111,7 @@ def _assess_locally(report):
         strengths.append("Audit report publicly accessible")
     
     # ── 8. Per-company content differentiation ──
-    company_dirs = ["1609holdings", "exosphere", "panteon", "kmt", "sp", "thedailyartcult", "stalcantarafoundation"]
+    company_dirs = ["rousseau", "exosphere", "panteon", "kmt", "sp", "thedailyartcult", "stalcantarafoundation"]
     from pathlib import Path
     base = Path(__file__).parent.parent.parent.parent.parent  # alieninc root
     companies_with_privacy = sum(1 for d in company_dirs if (base / d / "privacy.html").exists())

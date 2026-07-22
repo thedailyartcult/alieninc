@@ -1,7 +1,7 @@
 /**
  * KMT DELIVERABLE STUDIO
  * 
- * Auto-generates executive-ready presentations and reports.
+ * Generates executive-ready presentations and reports.
  * Reduces slide production time by 80% while maintaining KMT quality standards.
  * 
  * Architecture: Template-based with AI enrichment
@@ -38,7 +38,7 @@ const DeliverableStudio = (() => {
 
   /**
    * Slide Builder
-   * Constructs presentation slides with AI-generated content
+   * Constructs presentation slides with automated content generation
    */
   const SlideBuilder = {
     createSlide(type, content, options = {}) {

@@ -20,8 +20,8 @@ COMPANY_TARGETS = {
     'alieninc': [
         {'host': 'localhost', 'name': 'Alien Inc Root', 'ports': [80, 443, 8721]},
     ],
-    '1609': [
-        {'host': 'localhost', 'name': '1609 Holdings', 'ports': [80, 443]},
+    'rousseau': [
+        {'host': 'localhost', 'name': 'Rousseau', 'ports': [80, 443]},
     ],
     'panteon': [
         {'host': 'localhost', 'name': 'Panteon', 'ports': [80, 443, 8721]},

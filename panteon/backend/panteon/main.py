@@ -24,6 +24,7 @@ from panteon.api.routes_workspaces import router as workspaces_router
 from panteon.api.routes_group import router as group_router
 from panteon.api.routes_gotham import router as gotham_router
 from panteon.api.routes_contour import router as contour_router
+from panteon.api.routes_aip import router as aip_router
 
 PANTEON_SITE = Path(os.path.dirname(__file__)).parent.parent
 
@@ -68,6 +69,7 @@ app.include_router(workspaces_router, prefix="/api/v1")
 app.include_router(group_router, prefix="/api/v1")
 app.include_router(gotham_router, prefix="/api/v1")
 app.include_router(contour_router, prefix="/api/v1")
+app.include_router(aip_router, prefix="/api/v1")
 
 
 @app.get("/")

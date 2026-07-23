@@ -1,8 +1,9 @@
 import uuid
 from datetime import datetime
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from panteon.ono.models import Automation, AutomationExecution
-from panteon.ono.service import LLMOrchestrator
+from panteon.core.config import settings
 import structlog
 import httpx
 
@@ -17,7 +18,7 @@ class TDACDailyReflectionAutomation:
         automation = Automation(
             name="tdac_daily_reflection",
             display_name="TDAC Daily Reflection",
-            description="Generate and deliver daily philosophical reflection to active patrons",
+            description="Generate and deliver daily philosophical reflection to active patrons via Supabase edge function",
             trigger_type="cron",
             trigger_config={
                 "schedule": "0 6 * * *",
@@ -28,25 +29,10 @@ class TDACDailyReflectionAutomation:
             ],
             effects=[
                 {
-                    "type": "llm_call",
+                    "type": "edge_function_call",
                     "config": {
-                        "purpose": "compose_reflection",
-                        "prompt_template": "Compose a 200-300 word philosophical reflection for {patron_name} based on their context: {philosophical_context}. Publisher worldview: {publisher_worldview}. Topic: {topic}.",
-                    },
-                },
-                {
-                    "type": "tts_synthesis",
-                    "config": {
-                        "voice": "en-US-BrianNeural",
-                        "rate": "-8%",
-                        "pitch": "-5%",
-                    },
-                },
-                {
-                    "type": "webhook",
-                    "config": {
-                        "url": "https://thedailyartcult.lol/api/reflection-delivered",
-                        "method": "POST",
+                        "function": "synthesize-issue",
+                        "description": "Calls Supabase edge function which has Gemini + Azure TTS secrets",
                     },
                 },
             ],
@@ -56,108 +42,83 @@ class TDACDailyReflectionAutomation:
         await self.db.flush()
         return automation
 
+    async def _call_edge_function(
+        self,
+        payload: dict,
+        supabase_url: str,
+        service_role_key: str,
+        anon_key: str,
+    ) -> dict:
+        function_url = f"{supabase_url}/functions/v1/synthesize-issue"
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                function_url,
+                headers={
+                    "Authorization": f"Bearer {service_role_key}",
+                    "apikey": anon_key,
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+                timeout=120.0,
+            )
+            if resp.status_code != 200:
+                raise Exception(f"Edge function returned {resp.status_code}: {resp.text[:300]}")
+            return resp.json()
+
     async def execute_for_patron(
         self,
         patron_id: str,
-        patron_name: str,
-        philosophical_context: str,
-        publisher_worldview: str,
-        topic: str,
-        gemini_api_key: str,
-        azure_speech_key: str,
-        azure_speech_region: str,
+        issue_id: Optional[str] = None,
     ) -> dict:
-        logger.info("generating_daily_reflection", patron_id=patron_id)
+        if not settings.supabase_url or not settings.supabase_service_role_key:
+            raise Exception("Supabase not configured")
 
-        gemini_prompt = f"""Compose a 200-300 word philosophical reflection for {patron_name} based on their context:
-{philosophical_context}
+        logger.info("triggering_daily_reflection", patron_id=patron_id, issue_id=issue_id)
 
-Publisher worldview: {publisher_worldview}
-Topic: {topic}
+        payload = {"test_user_id": patron_id}
+        if issue_id:
+            payload["issue_id"] = issue_id
 
-Write in a contemplative, literary style. Be personal and direct. Avoid clichés. Make it feel like a letter from a thoughtful friend."""
+        result = await self._call_edge_function(
+            payload=payload,
+            supabase_url=settings.supabase_url,
+            service_role_key=settings.supabase_service_role_key,
+            anon_key=settings.supabase_anon_key or "",
+        )
 
-        async with httpx.AsyncClient() as client:
-            gemini_response = await client.post(
-                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={gemini_api_key}",
-                json={
-                    "contents": [{"parts": [{"text": gemini_prompt}]}],
-                    "generationConfig": {
-                        "temperature": 0.8,
-                        "maxOutputTokens": 500,
-                    },
-                },
-                timeout=30.0,
-            )
-            gemini_response.raise_for_status()
-            gemini_data = gemini_response.json()
-
-        script_text = gemini_data["candidates"][0]["content"]["parts"][0]["text"]
-
-        ssml = f"""
-<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">
-    <voice name="en-US-BrianNeural">
-        <prosody rate="-8%" pitch="-5%">
-            {script_text}
-        </prosody>
-    </voice>
-</speak>
-"""
-
-        async with httpx.AsyncClient() as client:
-            tts_response = await client.post(
-                f"https://{azure_speech_region}.tts.speech.microsoft.com/cognitiveservices/v1",
-                headers={
-                    "Ocp-Apim-Subscription-Key": azure_speech_key,
-                    "Content-Type": "application/ssml+xml",
-                    "X-Microsoft-OutputFormat": "audio-24khz-160kbitrate-mono-mp3",
-                },
-                content=ssml,
-                timeout=30.0,
-            )
-            tts_response.raise_for_status()
-
-        audio_bytes = tts_response.content
-
-        logger.info("daily_reflection_generated", patron_id=patron_id, script_length=len(script_text), audio_size=len(audio_bytes))
+        logger.info("daily_reflection_delivered", patron_id=patron_id, result=str(result)[:200])
 
         return {
             "patron_id": patron_id,
-            "script_text": script_text,
-            "audio_bytes": audio_bytes,
+            "status": "delivered",
+            "edge_function_result": result,
             "generated_at": datetime.utcnow().isoformat(),
         }
 
     async def execute_batch(
         self,
-        patrons: list[dict],
-        gemini_api_key: str,
-        azure_speech_key: str,
-        azure_speech_region: str,
+        issue_id: Optional[str] = None,
     ) -> dict:
-        results = []
-        errors = []
+        if not settings.supabase_url or not settings.supabase_service_role_key:
+            raise Exception("Supabase not configured")
 
-        for patron in patrons:
-            try:
-                result = await self.execute_for_patron(
-                    patron_id=patron["id"],
-                    patron_name=patron["name"],
-                    philosophical_context=patron.get("philosophical_context", ""),
-                    publisher_worldview=patron.get("publisher_worldview", "Stoicism"),
-                    topic=patron.get("topic", "becoming"),
-                    gemini_api_key=gemini_api_key,
-                    azure_speech_key=azure_speech_key,
-                    azure_speech_region=azure_speech_region,
-                )
-                results.append({"patron_id": patron["id"], "status": "success"})
-            except Exception as e:
-                logger.error("daily_reflection_failed", patron_id=patron["id"], error=str(e))
-                errors.append({"patron_id": patron["id"], "error": str(e)})
+        logger.info("triggering_batch_reflections", issue_id=issue_id)
+
+        payload = {}
+        if issue_id:
+            payload["issue_id"] = issue_id
+
+        result = await self._call_edge_function(
+            payload=payload,
+            supabase_url=settings.supabase_url,
+            service_role_key=settings.supabase_service_role_key,
+            anon_key=settings.supabase_anon_key or "",
+        )
+
+        logger.info("batch_reflections_complete", result=str(result)[:200])
 
         return {
-            "total": len(patrons),
-            "successful": len(results),
-            "failed": len(errors),
-            "errors": errors,
+            "status": "completed",
+            "edge_function_result": result,
+            "generated_at": datetime.utcnow().isoformat(),
         }

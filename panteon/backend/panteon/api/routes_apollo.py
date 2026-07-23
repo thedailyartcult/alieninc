@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from panteon.core.database import get_db
+from panteon.core.auth import get_current_user
 from panteon.apollo.service import ApolloService
 from panteon.api.schemas_apollo import (
     EnvironmentCreate, EnvironmentResponse,
@@ -14,7 +15,7 @@ from panteon.api.schemas_apollo import (
     FleetStatusResponse,
 )
 
-router = APIRouter(prefix="/apollo", tags=["Apollo"])
+router = APIRouter(prefix="/apollo", tags=["Apollo"], dependencies=[Depends(get_current_user)])
 
 
 @router.get("/fleet-status", response_model=FleetStatusResponse)

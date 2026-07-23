@@ -38,9 +38,15 @@ async def get_db() -> AsyncSession:
 
 
 async def init_db():
-    from panteon.spinal_craker.models import ObjectType, Object, LinkType, Link, ActionType, ActionExecution
+    from panteon.spinal_craker.models import ObjectType, Object, LinkType, Link, ActionType, ActionExecution, DataPipeline, DataPipelineRun
     from panteon.ono.models import LLMProvider, LLMModel, LLMExecution, Agent, AgentSession, Automation, AutomationExecution, Evaluation, EvaluationRun
     from panteon.core.tenant import Tenant, TenantMetric, TenantWebhook
     from panteon.apollo.models import Environment, ApolloAgent, Service, Deployment, HealthCheck, Pipeline, PipelineRun
+    from panteon.core.audit import AuditLog
+    from panteon.core.apikeys import APIKey
+    from panteon.core.lineage import LineageNode, LineageEdge, LineageEvent
+    from panteon.core.workspace import Workspace, WorkspaceMembership
+    from panteon.gotham.models import Investigation, Finding, Evidence, ThreatEntity, GeoEvent, PatternAlert, TimelineEvent, CountryRiskProfile
+    from panteon.contour.models import Dashboard, Chart, PipelineSchedule, PipelineScheduleRun, DataQualityRule, DataQualityViolation, SearchIndex
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

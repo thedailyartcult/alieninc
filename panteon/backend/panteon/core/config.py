@@ -16,14 +16,29 @@ class Settings(BaseSettings):
     openai_api_key: Optional[str] = None
     anthropic_api_key: Optional[str] = None
     google_api_key: Optional[str] = None
+    gemini_api_key: Optional[str] = None
+
+    azure_speech_key: Optional[str] = None
+    azure_speech_region: str = "eastus"
+
+    resend_api_key: Optional[str] = None
 
     jwt_secret: str = Field(default="change-me-in-production")
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60 * 24
 
+    supabase_url: Optional[str] = None
+    supabase_anon_key: Optional[str] = None
+    supabase_service_role_key: Optional[str] = None
+
+    superadmin_emails: Optional[str] = None
+    admin_emails: Optional[str] = None
+    editor_emails: Optional[str] = None
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "ignore"
 
 
 settings = Settings()

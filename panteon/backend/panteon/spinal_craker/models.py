@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional
 from sqlalchemy import (
     Column, String, Text, DateTime, Boolean, ForeignKey,
-    UniqueConstraint, Index
+    UniqueConstraint, Index, Integer
 )
 from sqlalchemy.orm import relationship
 from panteon.core.database import Base
@@ -149,4 +149,47 @@ class ActionExecution(Base):
     __table_args__ = (
         Index("ix_action_executions_status", "status"),
         Index("ix_action_executions_executed_at", "executed_at"),
+    )
+
+
+class DataPipeline(Base):
+    __tablename__ = "sc_pipelines"
+
+    id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String(255), nullable=False)
+    display_name = Column(String(255), nullable=False)
+    description = Column(Text)
+    stages = Column(JSONB, default=list)
+    connections = Column(JSONB, default=list)
+    config = Column(JSONB, default=dict)
+    is_draft = Column(Boolean, default=True)
+    is_enabled = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    runs = relationship("DataPipelineRun", back_populates="pipeline", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        Index("ix_pipelines_name", "name"),
+    )
+
+
+class DataPipelineRun(Base):
+    __tablename__ = "sc_pipeline_runs"
+
+    id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
+    pipeline_id = Column(UUID_COL(), ForeignKey("sc_pipelines.id"), nullable=False)
+    status = Column(String(50), default="pending")
+    triggered_by = Column(String(255))
+    stage_results = Column(JSONB, default=list)
+    error = Column(Text)
+    started_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime)
+    records_processed = Column(Integer, default=0)
+
+    pipeline = relationship("DataPipeline", back_populates="runs")
+
+    __table_args__ = (
+        Index("ix_pipeline_runs_status", "status"),
+        Index("ix_pipeline_runs_pipeline", "pipeline_id"),
     )

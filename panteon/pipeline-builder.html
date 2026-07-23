@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panteon — Pipeline Builder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        :root{
+            --bg:#070809;--bg-card:#0d0e10;--bg-sidebar:#0a0b0d;--bg-input:#111214;
+            --text:#ffffff;--text-muted:#707275;--text-dim:#4a4c50;
+            --border:rgba(255,255,255,0.1);--border-hover:rgba(255,255,255,0.18);
+            --accent:#9ab4c1;--cyan:#00FFFF;--green:#34d399;--red:#f87171;--amber:#fbbf24;
+            --font-sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+            --font-mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+            --c-source:#3b82f6;--c-transform:#a855f7;--c-filter:#f59e0b;
+            --c-aggregate:#10b981;--c-join:#ec4899;--c-sink:#ef4444;
+        }
+        html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+        a{color:inherit;text-decoration:none}
+        button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+        input,select,textarea{font-family:inherit;font-size:13px;color:var(--text);background:var(--bg-input);border:1px solid var(--border);border-radius:6px;padding:8px 12px;outline:none;width:100%;transition:border-color .2s}
+        input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+        select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23707275' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+        textarea{resize:vertical;min-height:60px}
+        ::selection{background:rgba(0,255,255,0.2)}
+        ::-webkit-scrollbar{width:6px;height:6px}
+        ::-webkit-scrollbar-track{background:transparent}
+        ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:3px}
+        ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.2)}
+
+        .app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+        .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--border);background:rgba(7,8,9,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);min-height:49px;flex-shrink:0;gap:12px}
+        .topbar-left{display:flex;align-items:center;gap:16px;flex-shrink:0}
+        .topbar-logo{display:flex;align-items:center;gap:8px}
+        .topbar-logo svg{width:24px;height:24px}
+        .topbar-logo span{font-weight:600;font-size:12px;letter-spacing:.18em;text-transform:uppercase}
+        .topbar-sep{width:1px;height:24px;background:var(--border);flex-shrink:0}
+        .topbar-title{font-size:14px;font-weight:500;color:var(--accent)}
+        .topbar-center{display:flex;align-items:center;gap:8px;flex:1;justify-content:center}
+        .topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;font-size:13px;font-weight:500;border-radius:6px;transition:all .15s;border:1px solid var(--border)}
+        .btn:hover{border-color:var(--border-hover);background:rgba(255,255,255,0.04)}
+        .btn-primary{background:var(--cyan);color:#000;border-color:var(--cyan);font-weight:600}
+        .btn-primary:hover{background:#33ffff;border-color:#33ffff}
+        .btn-sm{padding:4px 10px;font-size:12px}
+        .btn-danger{color:var(--red);border-color:rgba(248,113,113,0.3)}
+        .btn-danger:hover{background:rgba(248,113,113,0.1)}
+        .btn-ghost{border-color:transparent}
+        .btn-ghost:hover{border-color:var(--border);background:rgba(255,255,255,0.04)}
+
+        .pipeline-select{background:var(--bg-input);border:1px solid var(--border);border-radius:6px;padding:6px 32px 6px 12px;font-size:13px;color:var(--text);min-width:200px;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23707275' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;outline:none}
+        .pipeline-select:focus{border-color:var(--accent)}
+        .pipeline-select option{background:var(--bg-card);color:var(--text)}
+
+        .workspace{display:flex;flex:1;overflow:hidden}
+
+        .palette{width:240px;min-width:240px;background:var(--bg-sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+        .palette-header{padding:16px 16px 12px;border-bottom:1px solid var(--border)}
+        .palette-title{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim)}
+        .palette-items{padding:8px}
+        .palette-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:6px;cursor:pointer;transition:all .15s;border:1px solid transparent;margin-bottom:2px}
+        .palette-item:hover{background:rgba(255,255,255,0.04);border-color:var(--border)}
+        .palette-icon{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .palette-icon svg{width:16px;height:16px}
+        .palette-label{font-size:13px;font-weight:500}
+        .palette-desc{font-size:11px;color:var(--text-dim);margin-top:1px}
+
+        .canvas-wrap{flex:1;position:relative;overflow:hidden;background:var(--bg)}
+        .canvas-bg{position:absolute;inset:0;pointer-events:none}
+        .canvas{position:absolute;inset:0;overflow:auto}
+        .canvas-inner{position:relative;width:4000px;height:4000px;min-width:100%;min-height:100%}
+        .canvas-grid{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,0.04) 1px,transparent 1px);background-size:24px 24px;pointer-events:none}
+        .svg-layer{position:absolute;inset:0;width:4000px;height:4000px;pointer-events:none;z-index:1}
+        .svg-layer line,.svg-layer path{pointer-events:stroke}
+
+        .node{position:absolute;width:200px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;cursor:grab;user-select:none;z-index:10;transition:box-shadow .2s,border-color .2s}
+        .node:hover{border-color:var(--border-hover)}
+        .node.selected{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan),0 0 20px rgba(0,255,255,0.08)}
+        .node.dragging{cursor:grabbing;z-index:100;opacity:0.9}
+        .node-header{height:6px;border-radius:8px 8px 0 0}
+        .node-body{padding:12px 14px}
+        .node-top{display:flex;align-items:center;gap:8px}
+        .node-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .node-icon svg{width:14px;height:14px}
+        .node-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .node-type-label{font-size:11px;color:var(--text-dim);margin-top:2px}
+        .node-ports{display:flex;justify-content:space-between;margin-top:8px}
+        .port{width:12px;height:12px;border-radius:50%;border:2px solid var(--text-dim);background:var(--bg-card);cursor:crosshair;transition:all .15s;position:relative}
+        .port:hover{border-color:var(--cyan);background:rgba(0,255,255,0.15);transform:scale(1.3)}
+        .port.connecting{border-color:var(--amber);background:rgba(251,191,36,0.2)}
+        .port-label{position:absolute;top:16px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--text-dim);white-space:nowrap}
+        .port-in .port-label{left:0;transform:none}
+        .port-out .port-label{left:auto;right:0;transform:none}
+
+        .config-panel{width:280px;min-width:280px;background:var(--bg-sidebar);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+        .config-header{padding:16px;border-bottom:1px solid var(--border)}
+        .config-title{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px}
+        .config-section{padding:16px;border-bottom:1px solid var(--border)}
+        .config-section-title{font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:12px}
+        .form-group{margin-bottom:12px}
+        .form-label{display:block;font-size:11px;font-weight:500;color:var(--text-dim);margin-bottom:4px;letter-spacing:.03em}
+
+        .results-panel{border-top:1px solid var(--border);background:var(--bg-card);max-height:280px;overflow-y:auto;display:none}
+        .results-panel.open{display:block}
+        .results-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg-card);z-index:5}
+        .results-title{font-size:13px;font-weight:600}
+        .results-body{padding:16px 20px}
+        .result-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+        .result-row:last-child{border-bottom:none}
+        .result-status{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+        .result-status.success{background:var(--green)}
+        .result-status.warning{background:var(--amber)}
+        .result-status.error{background:var(--red)}
+        .result-name{font-size:13px;font-weight:500;min-width:100px}
+        .result-stat{font-size:12px;color:var(--text-muted);font-family:var(--font-mono)}
+        .result-total{display:flex;gap:24px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+        .result-total-item{font-size:12px;color:var(--text-muted)}
+        .result-total-item span{font-weight:600;color:var(--text);font-family:var(--font-mono)}
+
+        .temp-line{pointer-events:none}
+
+        .toast-container{position:fixed;top:60px;right:16px;z-index:3000;display:flex;flex-direction:column;gap:8px}
+        .toast{padding:10px 16px;border-radius:6px;font-size:13px;font-weight:500;animation:toast-in .3s ease;border:1px solid var(--border);background:var(--bg-card);max-width:360px;display:flex;align-items:center;gap:8px}
+        .toast-success{border-color:rgba(52,211,153,0.3);color:var(--green)}
+        .toast-error{border-color:rgba(248,113,113,0.3);color:var(--red)}
+        @keyframes toast-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes flowDot{0%{offset-distance:0%}100%{offset-distance:100%}}
+
+        .empty-canvas{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:var(--text-dim);pointer-events:none;z-index:0}
+        .empty-canvas-icon{margin-bottom:12px;opacity:0.3}
+        .empty-canvas-text{font-size:14px;font-weight:500;margin-bottom:4px}
+        .empty-canvas-sub{font-size:12px}
+
+        .loading-spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+
+        @media(max-width:1024px){
+            .palette{width:200px;min-width:200px}
+            .config-panel{width:240px;min-width:240px}
+        }
+        @media(max-width:768px){
+            .palette,.config-panel{display:none}
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="topbar">
+        <div class="topbar-left">
+            <div class="topbar-logo">
+                <svg viewBox="0 0 401 494" xmlns="http://www.w3.org/2000/svg">
+                    <path d="m 33.676246,364.82 c 0.53628,-7.2677 1.7767,-14.482 5.0286,-21.276 9.4786,-19.803 33.963,-29.34 53.026,-19.284 15.333,8.0885 22.563,29.331 13.578,45.149 -6.873,12.099 -23.072,18.235 -35.622,10.228 -4.4328,-2.828 -7.6343,-7.2793 -8.9938,-12.286 -1.3595,-5.0063 -0.68452,-10.798 2.9392,-15.401 2.2364,-2.8407 5.4473,-4.7654 9.1114,-5.408 3.664,-0.64263 8.1708,0.40388 10.875,3.9972 1.7829,2.3692 1.91,4.5449 1.4108,7.1127 -0.24961,1.2839 -0.78116,2.8399 -2.3513,3.9972 -1.5702,1.1573 -4.2926,1.9424 -5.5844,0.58783 -1.1069,-1.1607 0.67477,-3.153 0.73029,-4.7559 0.0388,-0.83158 0.0772,-1.7317 -0.26004,-2.4745 -0.89679,-1.1463 -1.8493,-1.342 -3.4682,-1.0581 -1.6548,0.29023 -3.6474,1.4542 -4.5851,2.6452 l 0,0.0588 c -2.0224,2.5986 -2.3717,5.5943 -1.5284,8.6999 0.81645,3.0066 2.8568,5.919 5.4668,7.7006 l 0.29391,0.23513 c 8.5452,5.4516 18.484,0.70317 23.392,-7.9366 6.716,-11.823 1.511,-26.282 -10.285,-32.505 -15.078,-7.9537 -35.744,1.451 -40.36,17.085 -4.566,15.464 -2.8715,30.938 -0.27385,37.511 l -10.609,0.073 c -2.5579,-12.089 -1.9287,-15.035 -1.9287,-22.696 z" fill="#FFFFFF"/>
+                    <path d="m 471.546,260.66 c 17.668,-13.594 26.097,-35.697 29.523,-57.078 1.465,-9.3951 1.975,-19.069 0.142,-28.452 14.1,0.299 25.825,9.3358 36.433,17.663 18.603,15.53 35.228,33.824 47.215,54.967 3.632,6.1751 -5.344,4.6337 -8.807,5.9233 -30.729,5.8422 -62.032,11.753 -93.438,8.9164 -3.724,-0.42453 -7.428,-1.0454 -11.069,-1.9403 z" fill="#02122b"/>
+                    <path d="m 288.006,210.87 c 10.816,-13.823 26.523,-22.816 42.335,-29.821 12.478,-5.3611 25.719,-9.195 39.307,-10.133 3.601,-0.49169 7.201,-0.98339 10.802,-1.4751 -5.886,13.4 -9.334,29.076 -3.95,43.223 5.777,15.238 17.145,27.376 24.994,41.49 4.602,5.2258 -5.322,2.7679 -8.464,3.5354 -25.451,-0.0247 -51.385,-4.4738 -74.255,-16.006 -13.053,-6.7549 -25.175,-16.863 -30.769,-30.813 z" fill="#02122b"/>
+                    <path d="m 495.406,157 a 70.231,70.231 0 0 1 14.44,42.81 70.235,70.235 0 0 1 -140.47,0 70.231,70.231 0 0 1 14.28,-42.81 l 111.75,0 z" fill="#00FFFF"/>
+                    <path d="m 37.276,420 c -1.872,14.728 -0.535,34.385 7.978,46.464 4.278,6.059 12.577,13.449 18.658,17.463 6.913,4.56 17.372,7.25 25.397,8.99 4.125,0.893 10.691,2.327 15.908,2.897 5.504,0.6 11.275,1.075 16.669,1.075 l 17.36,0 c 4.817,0 10.729,-0.16 15.545,-0.67 5.548,-0.587 13.857,-1.76 19.013,-3.41 7.715,-2.47 18.808,-6.388 25.385,-11.43 5.66,-4.336 14.095,-11.32 17.973,-17.44 5.444,-8.59 10.047,-22.03 11.07,-32.2 0.668,-6.622 1.056,-16.893 0.36,-23.27 -0.873,-8.003 -3.154,-18.252 -6.846,-25.28 -3.534,-6.72 -10.637,-14.736 -16.287,-19.54 -5.521,-4.694 -14.704,-9.373 -21.353,-12.16 -6.145,-2.576 -15.086,-4.628 -21.574,-5.73 -3.529,-0.6 -7.768,-1.11 -11.497,-1.54 -10.437,-1.2 -24.631,-1.227 -34.97,0.13 -4.34,0.572 -10.906,1.896 -15.04,3.08 -7.573,2.17 -17.238,5.82 -23.89,10.19 -4.127,2.71 -9.935,7.66 -13.137,11.44 -3.477,4.106 -8.358,11.36 -10.607,16.39 -2.268,5.075 -3.745,11.43 -4.748,16.73 -1.242,6.556 -1.982,15.12 -1.375,21.83 z" fill="#FFFFFF"/>
+                    <path d="m 117.356,425.72 c -0.797,-0.81 -1.714,-1.58 -2.595,-2.26 l -0.18,-0.14 c -2.037,-1.55 -3.472,-3.99 -4.08,-6.53 -0.612,-2.54 -0.33,-5.48 0.97,-7.72 1.427,-2.45 3.704,-3.91 6.06,-4.43 2.16,-0.47 4.44,-0.19 6.48,0.7 2.05,0.89 3.82,2.33 5.38,4.09 1.23,1.39 2.54,3.23 3.7,5.48 2.66,-3.96 5.77,-7.63 9.05,-10.88 3.92,-3.89 8.35,-7.09 13.14,-8.75 3.02,-1.05 6.53,-1.46 9.7,-0.6 3.29,0.89 6.04,3.46 7.38,6.64 1.51,3.58 1.63,8.1 0.39,11.86 -1.14,3.45 -3.44,6.39 -6.44,8.43 -3.12,2.12 -7.06,3.31 -10.93,3.48 -3.79,0.17 -7.7,-0.44 -11.18,-1.71 -0.84,-0.31 -1.82,-0.76 -2.79,-1.27 -0.08,0.22 -0.17,0.44 -0.26,0.65 -1.53,3.53 -3.48,6.82 -5.63,9.73 -2.35,3.17 -4.83,5.62 -7.72,8.01 l -0.26,0.22 c -2.43,2 -4.89,3.39 -7.51,4.38 -3.4,1.29 -6.84,1.58 -10.09,0.82 -3.35,-0.78 -6.17,-2.82 -7.87,-5.71 -1.53,-2.61 -2.1,-5.87 -1.82,-9.01 0.27,-3.01 1.35,-5.92 3.15,-8.26 1.59,-2.07 3.7,-3.61 5.7,-4.49 -0.17,-0.18 -0.34,-0.36 -0.5,-0.54 z" fill="#070809"/>
+                </svg>
+                <span>PANTE<span style="color:var(--cyan)">ON</span></span>
+            </div>
+            <div class="topbar-sep"></div>
+            <div class="topbar-title">Pipeline Builder</div>
+        </div>
+        <div class="topbar-center">
+            <select class="pipeline-select" id="pipelineSelect">
+                <option value="">— Saved Pipelines —</option>
+            </select>
+        </div>
+        <div class="topbar-right">
+            <button class="btn btn-sm btn-ghost" onclick="newPipeline()">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10"/></svg>
+                New
+            </button>
+            <button class="btn btn-sm" onclick="savePipeline()" id="saveBtn">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 13h10M5 13V7h6v6M6 7V4h4v3"/></svg>
+                Save
+            </button>
+            <button class="btn btn-sm btn-primary" onclick="executePipeline()" id="executeBtn">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 3l9 5-9 5z" fill="currentColor" stroke="none"/></svg>
+                Execute
+            </button>
+            <div class="topbar-sep"></div>
+            <a href="/admin" class="btn btn-sm btn-ghost">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3L5 8l5 5"/></svg>
+                Admin
+            </a>
+        </div>
+    </div>
+
+    <div class="workspace">
+        <div class="palette" id="palette">
+            <div class="palette-header">
+                <div class="palette-title">Node Types</div>
+            </div>
+            <div class="palette-items" id="paletteItems"></div>
+        </div>
+
+        <div class="canvas-wrap" id="canvasWrap">
+            <div class="canvas" id="canvas">
+                <div class="canvas-inner" id="canvasInner">
+                    <div class="canvas-grid"></div>
+                    <svg class="svg-layer" id="svgLayer" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="rgba(255,255,255,0.3)"/>
+                            </marker>
+                        </defs>
+                    </svg>
+                    <div class="empty-canvas" id="emptyHint">
+                        <div class="empty-canvas-icon">
+                            <svg width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5"><path d="M2 4h4M10 4h4M2 8h4M10 8h4M2 12h4M10 12h4M6 4v8M10 4v8"/></svg>
+                        </div>
+                        <div class="empty-canvas-text">Click a node type to begin</div>
+                        <div class="empty-canvas-sub">Build your data pipeline visually</div>
+                    </div>
+                </div>
+            </div>
+            <div class="results-panel" id="resultsPanel">
+                <div class="results-header">
+                    <div class="results-title">Execution Results</div>
+                    <button class="btn btn-sm btn-ghost" onclick="closeResults()">
+                        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+                    </button>
+                </div>
+                <div class="results-body" id="resultsBody"></div>
+            </div>
+        </div>
+
+        <div class="config-panel" id="configPanel">
+            <div class="config-header">
+                <div class="config-title">Pipeline Settings</div>
+                <div class="form-group" style="margin-bottom:10px">
+                    <label class="form-label">Name</label>
+                    <input type="text" id="pipelineName" placeholder="My Pipeline" value="">
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                    <label class="form-label">Description</label>
+                    <textarea id="pipelineDesc" placeholder="Describe this pipeline..." rows="2"></textarea>
+                </div>
+            </div>
+            <div id="nodeConfigArea">
+                <div class="config-section">
+                    <div class="empty-state" style="padding:24px 0;font-size:13px;color:var(--text-dim)">Select a node to configure</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const API_BASE = 'http://localhost:8000/api/v1/spinal-craker';
+const NODE_TYPES = {
+    source: {
+        label: 'Source',
+        desc: 'Data source (DB, API, file)',
+        color: 'var(--c-source)',
+        icon: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="8" cy="4" rx="5" ry="2.5"/><path d="M3 4v4c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5V4"/><path d="M3 8v4c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5V8"/><path d="M8 8v5" stroke-dasharray="2 2"/></svg>'
+    },
+    transform: {
+        label: 'Transform',
+        desc: 'Transform / map data',
+        color: 'var(--c-transform)',
+        icon: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M13 4l-3-2M13 4l-3 2"/><path d="M13 12H3M3 12l3-2M3 12l3 2"/></svg>'
+    },
+    filter: {
+        label: 'Filter',
+        desc: 'Filter rows by condition',
+        color: 'var(--c-filter)',
+        icon: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12l-4.5 5v5l-3-2V8z"/></svg>'
+    },
+    aggregate: {
+        label: 'Aggregate',
+        desc: 'Group & aggregate data',
+        color: 'var(--c-aggregate)',
+        icon: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14V9M6 14V5M10 14V7M14 14V3"/></svg>'
+    },
+    join: {
+        label: 'Join',
+        desc: 'Join two datasets',
+        color: 'var(--c-join)',
+        icon: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5h5l3 3-3 3H2"/><path d="M14 5H9l-3 3 3 3h5"/></svg>'
+    },
+    sink: {
+        label: 'Sink',
+        desc: 'Output target (DB, API, file)',
+        color: 'var(--c-sink)',
+        icon: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="8" cy="12" rx="5" ry="2.5"/><path d="M3 12V8c0-1.4 2.2-2.5 5-2.5s5 1.1 5 2.5v4"/><path d="M3 8V4c0-1.4 2.2-2.5 5-2.5s5 1.1 5 2.5v4"/><path d="M8 8V3" stroke-dasharray="2 2"/></svg>'
+    }
+};
+
+let state = {
+    nodes: [],
+    connections: [],
+    selectedNodeId: null,
+    currentPipelineId: null,
+    connecting: null,
+    dragging: null,
+    dragOffset: { x: 0, y: 0 },
+    nextId: 1,
+    tempLine: null
+};
+
+function init() {
+    checkAuth();
+    renderPalette();
+    loadPipelineList();
+    setupCanvasEvents();
+    document.addEventListener('keydown', handleKeyDown);
+}
+
+function checkAuth() {
+    const token = localStorage.getItem('panteon_token');
+    if (!token) {
+        window.location.href = '/admin';
+    }
+}
+
+function apiHeaders() {
+    const token = localStorage.getItem('panteon_token');
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+    };
+}
+
+async function apiFetch(path, opts = {}) {
+    const res = await fetch(API_BASE + path, { ...opts, headers: { ...apiHeaders(), ...(opts.headers || {}) } });
+    if (res.status === 401) {
+        window.location.href = '/admin';
+        return null;
+    }
+    return res;
+}
+
+function renderPalette() {
+    const container = document.getElementById('paletteItems');
+    container.innerHTML = Object.entries(NODE_TYPES).map(([type, cfg]) => `
+        <div class="palette-item" onclick="addNode('${type}')" title="${cfg.desc}">
+            <div class="palette-icon" style="background:${cfg.color}20;color:${cfg.color}">
+                ${cfg.icon}
+            </div>
+            <div>
+                <div class="palette-label">${cfg.label}</div>
+                <div class="palette-desc">${cfg.desc}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function addNode(type, data = {}) {
+    const canvas = document.getElementById('canvas');
+    const scrollX = canvas.scrollLeft;
+    const scrollY = canvas.scrollTop;
+    const wrap = document.getElementById('canvasWrap');
+    const paletteW = 240;
+    const configW = 280;
+    const cx = scrollX + (wrap.clientWidth - paletteW - configW) / 2 - 100 + (Math.random() * 60 - 30);
+    const cy = scrollY + (wrap.clientHeight) / 2 - 50 + (Math.random() * 60 - 30);
+
+    const node = {
+        id: 'node_' + state.nextId++,
+        type,
+        x: data.x || Math.max(40, cx),
+        y: data.y || Math.max(40, cy),
+        label: data.label || NODE_TYPES[type].label + ' ' + (state.nodes.filter(n => n.type === type).length + 1),
+        config: data.config || {}
+    };
+    state.nodes.push(node);
+    renderNode(node);
+    selectNode(node.id);
+    updateEmptyHint();
+    return node;
+}
+
+function renderNode(node) {
+    const existing = document.getElementById(node.id);
+    if (existing) existing.remove();
+
+    const cfg = NODE_TYPES[node.type];
+    const el = document.createElement('div');
+    el.className = 'node' + (state.selectedNodeId === node.id ? ' selected' : '');
+    el.id = node.id;
+    el.style.left = node.x + 'px';
+    el.style.top = node.y + 'px';
+    el.dataset.nodeId = node.id;
+
+    el.innerHTML = `
+        <div class="node-header" style="background:${cfg.color}"></div>
+        <div class="node-body">
+            <div class="node-top">
+                <div class="node-icon" style="background:${cfg.color}20;color:${cfg.color}">${cfg.icon}</div>
+                <div style="min-width:0;flex:1">
+                    <div class="node-name">${node.label}</div>
+                    <div class="node-type-label">${cfg.label}</div>
+                </div>
+            </div>
+            <div class="node-ports">
+                <div class="port port-in" data-port="in" data-node="${node.id}" title="Input">
+                    <span class="port-label">IN</span>
+                </div>
+                <div class="port port-out" data-port="out" data-node="${node.id}" title="Output">
+                    <span class="port-label">OUT</span>
+                </div>
+            </div>
+        </div>
+    `;
+
+    el.addEventListener('mousedown', (e) => {
+        if (e.target.classList.contains('port')) return;
+        e.preventDefault();
+        selectNode(node.id);
+        state.dragging = node.id;
+        const rect = el.getBoundingClientRect();
+        const canvas = document.getElementById('canvasInner');
+        const canvasRect = canvas.getBoundingClientRect();
+        state.dragOffset = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+        el.classList.add('dragging');
+    });
+
+    el.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('port')) {
+            selectNode(node.id);
+        }
+    });
+
+    const portIn = el.querySelector('.port-in');
+    const portOut = el.querySelector('.port-out');
+
+    portOut.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        state.connecting = { fromNodeId: node.id, fromPort: 'out' };
+        portOut.classList.add('connecting');
+        createTempLine(e);
+    });
+
+    portIn.addEventListener('mouseup', (e) => {
+        e.stopPropagation();
+        if (state.connecting && state.connecting.fromNodeId !== node.id) {
+            addConnection(state.connecting.fromNodeId, node.id);
+            endConnecting();
+        }
+    });
+
+    document.getElementById('canvasInner').appendChild(el);
+}
+
+function createTempLine(e) {
+    const svg = document.getElementById('svgLayer');
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.classList.add('temp-line');
+    const pos = getPortCenter(state.connecting.fromNodeId, 'out');
+    line.setAttribute('x1', pos.x);
+    line.setAttribute('y1', pos.y);
+    line.setAttribute('x2', pos.x);
+    line.setAttribute('y2', pos.y);
+    line.setAttribute('stroke', 'rgba(251,191,36,0.5)');
+    line.setAttribute('stroke-width', '2');
+    line.setAttribute('stroke-dasharray', '6 4');
+    svg.appendChild(line);
+    state.tempLine = line;
+}
+
+function selectNode(id) {
+    state.selectedNodeId = id;
+    document.querySelectorAll('.node').forEach(el => {
+        el.classList.toggle('selected', el.id === id);
+    });
+    renderConfigPanel();
+}
+
+function renderConfigPanel() {
+    const area = document.getElementById('nodeConfigArea');
+    if (!state.selectedNodeId) {
+        area.innerHTML = '<div class="config-section"><div style="padding:24px 0;font-size:13px;color:var(--text-dim);text-align:center">Select a node to configure</div></div>';
+        return;
+    }
+    const node = state.nodes.find(n => n.id === state.selectedNodeId);
+    if (!node) return;
+
+    const cfg = NODE_TYPES[node.type];
+    let fields = '';
+
+    switch (node.type) {
+        case 'source':
+            fields = `
+                <div class="form-group">
+                    <label class="form-label">Connection Type</label>
+                    <select onchange="updateNodeConfig('connection_type', this.value)">
+                        <option value="postgresql" ${node.config.connection_type === 'postgresql' ? 'selected' : ''}>PostgreSQL</option>
+                        <option value="api" ${node.config.connection_type === 'api' ? 'selected' : ''}>API</option>
+                        <option value="file" ${node.config.connection_type === 'file' ? 'selected' : ''}>File</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">${node.config.connection_type === 'api' ? 'URL' : node.config.connection_type === 'file' ? 'File Path' : 'Table'}</label>
+                    <input type="text" value="${node.config.table || node.config.url || node.config.path || ''}" onchange="updateNodeConfig('${node.config.connection_type === 'api' ? 'url' : node.config.connection_type === 'file' ? 'path' : 'table'}', this.value)" placeholder="${node.config.connection_type === 'api' ? 'https://...' : node.config.connection_type === 'file' ? '/data/file.csv' : 'public.users'}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Query</label>
+                    <textarea onchange="updateNodeConfig('query', this.value)" placeholder="SELECT * FROM ...">${node.config.query || ''}</textarea>
+                </div>
+            `;
+            break;
+        case 'transform':
+            fields = `
+                <div class="form-group">
+                    <label class="form-label">Operation</label>
+                    <select onchange="updateNodeConfig('operation', this.value)">
+                        <option value="deduplicate" ${node.config.operation === 'deduplicate' ? 'selected' : ''}>Deduplicate</option>
+                        <option value="rename" ${node.config.operation === 'rename' ? 'selected' : ''}>Rename</option>
+                        <option value="cast" ${node.config.operation === 'cast' ? 'selected' : ''}>Cast Type</option>
+                        <option value="enrich" ${node.config.operation === 'enrich' ? 'selected' : ''}>Enrich</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Expression</label>
+                    <textarea onchange="updateNodeConfig('expression', this.value)" placeholder="field_name AS new_name">${node.config.expression || ''}</textarea>
+                </div>
+            `;
+            break;
+        case 'filter':
+            fields = `
+                <div class="form-group">
+                    <label class="form-label">Field</label>
+                    <input type="text" value="${node.config.field || ''}" onchange="updateNodeConfig('field', this.value)" placeholder="column_name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Operator</label>
+                    <select onchange="updateNodeConfig('operator', this.value)">
+                        <option value="equals" ${node.config.operator === 'equals' ? 'selected' : ''}>Equals</option>
+                        <option value="contains" ${node.config.operator === 'contains' ? 'selected' : ''}>Contains</option>
+                        <option value="gt" ${node.config.operator === 'gt' ? 'selected' : ''}>Greater Than</option>
+                        <option value="lt" ${node.config.operator === 'lt' ? 'selected' : ''}>Less Than</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Value</label>
+                    <input type="text" value="${node.config.value || ''}" onchange="updateNodeConfig('value', this.value)" placeholder="filter value">
+                </div>
+            `;
+            break;
+        case 'aggregate':
+            fields = `
+                <div class="form-group">
+                    <label class="form-label">Group By Field</label>
+                    <input type="text" value="${node.config.group_by || ''}" onchange="updateNodeConfig('group_by', this.value)" placeholder="category">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Aggregation</label>
+                    <select onchange="updateNodeConfig('aggregation', this.value)">
+                        <option value="count" ${node.config.aggregation === 'count' ? 'selected' : ''}>Count</option>
+                        <option value="sum" ${node.config.aggregation === 'sum' ? 'selected' : ''}>Sum</option>
+                        <option value="avg" ${node.config.aggregation === 'avg' ? 'selected' : ''}>Average</option>
+                        <option value="min" ${node.config.aggregation === 'min' ? 'selected' : ''}>Min</option>
+                        <option value="max" ${node.config.aggregation === 'max' ? 'selected' : ''}>Max</option>
+                    </select>
+                </div>
+            `;
+            break;
+        case 'join':
+            fields = `
+                <div class="form-group">
+                    <label class="form-label">Right Source</label>
+                    <input type="text" value="${node.config.right_source || ''}" onchange="updateNodeConfig('right_source', this.value)" placeholder="source_node_id or table">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Join Type</label>
+                    <select onchange="updateNodeConfig('join_type', this.value)">
+                        <option value="inner" ${node.config.join_type === 'inner' ? 'selected' : ''}>Inner</option>
+                        <option value="left" ${node.config.join_type === 'left' ? 'selected' : ''}>Left</option>
+                        <option value="right" ${node.config.join_type === 'right' ? 'selected' : ''}>Right</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">On Field</label>
+                    <input type="text" value="${node.config.on_field || ''}" onchange="updateNodeConfig('on_field', this.value)" placeholder="id">
+                </div>
+            `;
+            break;
+        case 'sink':
+            fields = `
+                <div class="form-group">
+                    <label class="form-label">Connection Type</label>
+                    <select onchange="updateNodeConfig('connection_type', this.value)">
+                        <option value="s3" ${node.config.connection_type === 's3' ? 'selected' : ''}>S3</option>
+                        <option value="postgresql" ${node.config.connection_type === 'postgresql' ? 'selected' : ''}>PostgreSQL</option>
+                        <option value="api" ${node.config.connection_type === 'api' ? 'selected' : ''}>API</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">${node.config.connection_type === 's3' ? 'Bucket' : node.config.connection_type === 'api' ? 'URL' : 'Table'}</label>
+                    <input type="text" value="${node.config.bucket || node.config.table || node.config.url || ''}" onchange="updateNodeConfig('${node.config.connection_type === 's3' ? 'bucket' : node.config.connection_type === 'api' ? 'url' : 'table'}', this.value)" placeholder="${node.config.connection_type === 's3' ? 'my-bucket/output' : node.config.connection_type === 'api' ? 'https://...' : 'public.output_table'}">
+                </div>
+            `;
+            break;
+    }
+
+    area.innerHTML = `
+        <div class="config-section">
+            <div class="config-section-title" style="display:flex;align-items:center;justify-content:space-between">
+                <span style="display:flex;align-items:center;gap:6px">
+                    <span style="width:8px;height:8px;border-radius:50%;background:${cfg.color};display:inline-block"></span>
+                    ${node.label}
+                </span>
+                <button class="btn btn-sm btn-danger" onclick="deleteSelectedNode()" title="Delete node">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M6 4V3h4v1M5 4v9h6V4"/></svg>
+                </button>
+            </div>
+            ${fields}
+        </div>
+    `;
+}
+
+function updateNodeConfig(key, value) {
+    const node = state.nodes.find(n => n.id === state.selectedNodeId);
+    if (node) {
+        node.config[key] = value;
+    }
+}
+
+function addConnection(fromId, toId) {
+    const exists = state.connections.find(c => c.from === fromId && c.to === toId);
+    if (exists || fromId === toId) return;
+    state.connections.push({ from: fromId, to: toId, id: 'conn_' + fromId + '_' + toId });
+    renderConnections();
+}
+
+function renderConnections() {
+    const svg = document.getElementById('svgLayer');
+    svg.querySelectorAll('.connection-line, .flow-dot').forEach(el => el.remove());
+
+    state.connections.forEach(conn => {
+        const fromPos = getPortCenter(conn.from, 'out');
+        const toPos = getPortCenter(conn.to, 'in');
+        if (!fromPos || !toPos) return;
+
+        const dx = Math.abs(toPos.x - fromPos.x) * 0.5;
+        const pathD = `M${fromPos.x},${fromPos.y} C${fromPos.x + dx},${fromPos.y} ${toPos.x - dx},${toPos.y} ${toPos.x},${toPos.y}`;
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', pathD);
+        path.setAttribute('stroke', 'rgba(255,255,255,0.15)');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('fill', 'none');
+        path.setAttribute('marker-end', 'url(#arrowhead)');
+        path.classList.add('connection-line');
+        path.id = conn.id;
+        svg.appendChild(path);
+
+        const pathLen = path.getTotalLength();
+        for (let i = 0; i < 3; i++) {
+            const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            dot.setAttribute('r', '2.5');
+            dot.setAttribute('fill', 'var(--cyan)');
+            dot.setAttribute('opacity', '0.7');
+            dot.classList.add('flow-dot');
+            dot.style.offsetPath = `path('${pathD}')`;
+            dot.style.offsetDistance = '0%';
+            dot.style.animation = `flowDot ${2 + i * 0.3}s linear ${i * 0.6}s infinite`;
+            svg.appendChild(dot);
+        }
+    });
+}
+
+function getPortCenter(nodeId, port) {
+    const el = document.getElementById(nodeId);
+    if (!el) return null;
+    const portEl = el.querySelector(`.port-${port}`);
+    if (!portEl) return null;
+    const canvasInner = document.getElementById('canvasInner');
+    const canvasRect = canvasInner.getBoundingClientRect();
+    const portRect = portEl.getBoundingClientRect();
+    return {
+        x: portRect.left + portRect.width / 2 - canvasRect.left,
+        y: portRect.top + portRect.height / 2 - canvasRect.top
+    };
+}
+
+function setupCanvasEvents() {
+    const canvas = document.getElementById('canvas');
+    const canvasInner = document.getElementById('canvasInner');
+
+    document.addEventListener('mousemove', (e) => {
+        if (state.dragging) {
+            const node = state.nodes.find(n => n.id === state.dragging);
+            if (!node) return;
+            const canvasRect = canvasInner.getBoundingClientRect();
+            node.x = Math.max(0, e.clientX - canvasRect.left - state.dragOffset.x);
+            node.y = Math.max(0, e.clientY - canvasRect.top - state.dragOffset.y);
+            const el = document.getElementById(node.id);
+            el.style.left = node.x + 'px';
+            el.style.top = node.y + 'px';
+            renderConnections();
+        }
+        if (state.connecting && state.tempLine) {
+            const canvasRect = canvasInner.getBoundingClientRect();
+            state.tempLine.setAttribute('x2', e.clientX - canvasRect.left);
+            state.tempLine.setAttribute('y2', e.clientY - canvasRect.top);
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (state.dragging) {
+            const el = document.getElementById(state.dragging);
+            if (el) el.classList.remove('dragging');
+            state.dragging = null;
+        }
+        if (state.connecting) {
+            endConnecting();
+        }
+    });
+
+    canvasInner.addEventListener('mouseup', (e) => {
+        if (state.connecting && !e.target.classList.contains('port-in')) {
+            endConnecting();
+        }
+    });
+
+    canvas.addEventListener('click', (e) => {
+        if (e.target === canvas || e.target === canvasInner || e.target.classList.contains('canvas-grid')) {
+            state.selectedNodeId = null;
+            document.querySelectorAll('.node').forEach(el => el.classList.remove('selected'));
+            renderConfigPanel();
+        }
+    });
+}
+
+function endConnecting() {
+    if (state.tempLine) {
+        state.tempLine.remove();
+        state.tempLine = null;
+    }
+    document.querySelectorAll('.port.connecting').forEach(el => el.classList.remove('connecting'));
+    state.connecting = null;
+}
+
+function deleteSelectedNode() {
+    if (!state.selectedNodeId) return;
+    const id = state.selectedNodeId;
+    state.connections = state.connections.filter(c => c.from !== id && c.to !== id);
+    state.nodes = state.nodes.filter(n => n.id !== id);
+    const el = document.getElementById(id);
+    if (el) el.remove();
+    state.selectedNodeId = null;
+    renderConnections();
+    renderConfigPanel();
+    updateEmptyHint();
+}
+
+function handleKeyDown(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    if ((e.key === 'Delete' || e.key === 'Backspace') && state.selectedNodeId) {
+        e.preventDefault();
+        deleteSelectedNode();
+    }
+}
+
+function updateEmptyHint() {
+    const hint = document.getElementById('emptyHint');
+    hint.style.display = state.nodes.length === 0 ? 'block' : 'none';
+}
+
+function newPipeline() {
+    state.nodes.forEach(n => {
+        const el = document.getElementById(n.id);
+        if (el) el.remove();
+    });
+    state.nodes = [];
+    state.connections = [];
+    state.selectedNodeId = null;
+    state.currentPipelineId = null;
+    state.nextId = 1;
+    document.getElementById('pipelineName').value = '';
+    document.getElementById('pipelineDesc').value = '';
+    document.getElementById('pipelineSelect').value = '';
+    renderConnections();
+    renderConfigPanel();
+    updateEmptyHint();
+    closeResults();
+}
+
+async function savePipeline() {
+    const name = document.getElementById('pipelineName').value.trim();
+    const desc = document.getElementById('pipelineDesc').value.trim();
+    if (!name) {
+        toast('Please enter a pipeline name', 'error');
+        return;
+    }
+    if (state.nodes.length === 0) {
+        toast('Add at least one node', 'error');
+        return;
+    }
+
+    const payload = {
+        name,
+        description: desc,
+        stages: buildStages(),
+        nodes: state.nodes,
+        connections: state.connections
+    };
+
+    const btn = document.getElementById('saveBtn');
+    btn.innerHTML = '<span class="loading-spinner"></span> Saving...';
+    btn.disabled = true;
+
+    try {
+        let res;
+        if (state.currentPipelineId) {
+            res = await apiFetch('/pipelines/' + state.currentPipelineId, {
+                method: 'PATCH',
+                body: JSON.stringify(payload)
+            });
+        } else {
+            res = await apiFetch('/pipelines', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+        }
+
+        if (res && res.ok) {
+            const data = await res.json();
+            state.currentPipelineId = data.id || data._id || state.currentPipelineId;
+            toast('Pipeline saved', 'success');
+            loadPipelineList();
+        } else {
+            const err = res ? await res.json().catch(() => ({})) : {};
+            toast(err.detail || 'Failed to save pipeline', 'error');
+        }
+    } catch (err) {
+        toast('Network error saving pipeline', 'error');
+    }
+
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 13h10M5 13V7h6v6M6 7V4h4v3"/></svg> Save';
+    btn.disabled = false;
+}
+
+function buildStages() {
+    const sorted = topologicalSort(state.nodes, state.connections);
+    return sorted.map(node => ({
+        id: node.id,
+        type: node.type,
+        label: node.label,
+        config: node.config
+    }));
+}
+
+function topologicalSort(nodes, connections) {
+    const inDegree = {};
+    const adj = {};
+    const map = {};
+    nodes.forEach(n => {
+        inDegree[n.id] = 0;
+        adj[n.id] = [];
+        map[n.id] = n;
+    });
+    connections.forEach(c => {
+        if (adj[c.from] && inDegree[c.to] !== undefined) {
+            adj[c.from].push(c.to);
+            inDegree[c.to]++;
+        }
+    });
+    const queue = Object.keys(inDegree).filter(id => inDegree[id] === 0);
+    const result = [];
+    while (queue.length > 0) {
+        const id = queue.shift();
+        result.push(map[id]);
+        adj[id].forEach(next => {
+            inDegree[next]--;
+            if (inDegree[next] === 0) queue.push(next);
+        });
+    }
+    nodes.forEach(n => {
+        if (!result.find(r => r.id === n.id)) result.push(n);
+    });
+    return result;
+}
+
+async function executePipeline() {
+    if (!state.currentPipelineId) {
+        toast('Save the pipeline first', 'error');
+        return;
+    }
+    const btn = document.getElementById('executeBtn');
+    btn.innerHTML = '<span class="loading-spinner"></span> Executing...';
+    btn.disabled = true;
+
+    try {
+        const res = await apiFetch('/pipelines/' + state.currentPipelineId + '/execute', { method: 'POST' });
+        if (res && res.ok) {
+            const data = await res.json();
+            showResults(data);
+            toast('Pipeline executed', 'success');
+        } else {
+            const err = res ? await res.json().catch(() => ({})) : {};
+            toast(err.detail || 'Execution failed', 'error');
+        }
+    } catch (err) {
+        toast('Network error executing pipeline', 'error');
+    }
+
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 3l9 5-9 5z" fill="currentColor" stroke="none"/></svg> Execute';
+    btn.disabled = false;
+}
+
+function showResults(data) {
+    const panel = document.getElementById('resultsPanel');
+    const body = document.getElementById('resultsBody');
+    panel.classList.add('open');
+
+    const stages = data.stages || data.results || [];
+    let totalIn = 0, totalOut = 0, totalDuration = 0;
+
+    let html = stages.map(s => {
+        const status = s.status === 'success' ? 'success' : s.status === 'warning' ? 'warning' : 'error';
+        totalIn += s.records_in || 0;
+        totalOut += s.records_out || 0;
+        totalDuration += s.duration_ms || 0;
+        return `
+            <div class="result-row">
+                <div class="result-status ${status}"></div>
+                <div class="result-name">${s.label || s.stage || s.id || 'Stage'}</div>
+                <div class="result-stat">In: ${s.records_in ?? '—'}</div>
+                <div class="result-stat">Out: ${s.records_out ?? '—'}</div>
+                <div class="result-stat">${s.duration_ms ?? '—'}ms</div>
+            </div>
+        `;
+    }).join('');
+
+    if (stages.length > 0) {
+        html += `
+            <div class="result-total">
+                <div class="result-total-item">Total In: <span>${totalIn}</span></div>
+                <div class="result-total-item">Total Out: <span>${totalOut}</span></div>
+                <div class="result-total-item">Total Duration: <span>${totalDuration}ms</span></div>
+            </div>
+        `;
+    } else {
+        html = '<div style="padding:12px 0;font-size:13px;color:var(--text-dim)">No stage results returned</div>';
+    }
+
+    body.innerHTML = html;
+}
+
+function closeResults() {
+    document.getElementById('resultsPanel').classList.remove('open');
+}
+
+async function loadPipelineList() {
+    try {
+        const res = await apiFetch('/pipelines');
+        if (res && res.ok) {
+            const data = await res.json();
+            const list = Array.isArray(data) ? data : (data.pipelines || data.items || []);
+            const sel = document.getElementById('pipelineSelect');
+            sel.innerHTML = '<option value="">— Saved Pipelines —</option>';
+            list.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id || p._id;
+                opt.textContent = p.name || 'Untitled';
+                sel.appendChild(opt);
+            });
+            sel.onchange = () => {
+                if (sel.value) loadPipeline(sel.value);
+            };
+        }
+    } catch (err) {
+        // silent fail — API may not be running
+    }
+}
+
+async function loadPipeline(id) {
+    try {
+        const res = await apiFetch('/pipelines/' + id);
+        if (res && res.ok) {
+            const data = await res.json();
+            newPipeline();
+            state.currentPipelineId = data.id || data._id || id;
+            document.getElementById('pipelineName').value = data.name || '';
+            document.getElementById('pipelineDesc').value = data.description || '';
+            document.getElementById('pipelineSelect').value = state.currentPipelineId;
+
+            (data.nodes || []).forEach(n => {
+                const cfg = NODE_TYPES[n.type];
+                if (!cfg) return;
+                const node = {
+                    id: n.id,
+                    type: n.type,
+                    x: n.x || 200,
+                    y: n.y || 200,
+                    label: n.label || cfg.label,
+                    config: n.config || {}
+                };
+                state.nodes.push(node);
+                renderNode(node);
+                const numPart = parseInt(n.id.replace('node_', ''));
+                if (numPart >= state.nextId) state.nextId = numPart + 1;
+            });
+
+            (data.connections || []).forEach(c => {
+                addConnection(c.from, c.to);
+            });
+
+            renderConnections();
+            selectNode(null);
+            toast('Pipeline loaded', 'success');
+        }
+    } catch (err) {
+        toast('Failed to load pipeline', 'error');
+    }
+}
+
+function toast(msg, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    const el = document.createElement('div');
+    el.className = 'toast toast-' + type;
+    el.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">${type === 'success' ? '<path d="M3 8l3 3 7-7"/>' : '<path d="M3 3l10 10M13 3L3 13"/>'}</svg>${msg}`;
+    container.appendChild(el);
+    setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity .3s';
+        setTimeout(() => el.remove(), 300);
+    }, 3000);
+}
+
+window.addEventListener('resize', () => renderConnections());
+init();
+</script>
+</body>
+</html>

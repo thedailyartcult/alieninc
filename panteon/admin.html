@@ -164,10 +164,51 @@
         @media(max-width:1024px) and (min-width:769px){
             .grid-4,.grid-5,.grid-6{grid-template-columns:repeat(3,1fr)}
         }
+
+        .login-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:5000}
+        .login-overlay.hidden{display:none}
+        .login-card{width:100%;max-width:380px;padding:40px 32px;text-align:center}
+        .login-logo{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:32px}
+        .login-logo svg{width:36px;height:36px}
+        .login-logo span{font-weight:600;font-size:16px;letter-spacing:.18em;text-transform:uppercase}
+        .login-title{font-size:18px;font-weight:600;margin-bottom:6px}
+        .login-sub{font-size:13px;color:var(--text-muted);margin-bottom:32px}
+        .login-form{text-align:left}
+        .login-form .form-group{margin-bottom:16px}
+        .login-form .form-label{display:block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px}
+        .login-form input{width:100%;padding:10px 14px;font-size:14px;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none;transition:border-color .2s}
+        .login-form input:focus{border-color:var(--cyan)}
+        .login-btn{width:100%;padding:11px;font-size:14px;font-weight:600;background:var(--cyan);color:#000;border:none;border-radius:8px;cursor:pointer;margin-top:8px;transition:background .15s}
+        .login-btn:hover{background:#33ffff}
+        .login-btn:disabled{opacity:.5;cursor:not-allowed}
+        .login-error{font-size:12px;color:var(--red);margin-top:12px;min-height:18px}
+        .user-badge{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12px;color:var(--text-muted);cursor:pointer;border-radius:6px;transition:background .15s}
+        .user-badge:hover{background:rgba(255,255,255,0.04)}
+        .user-avatar{width:24px;height:24px;border-radius:50%;background:var(--cyan);color:#000;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
     </style>
 </head>
 <body>
-<div class="app">
+<div class="login-overlay" id="loginOverlay">
+    <div class="login-card">
+        <div class="login-logo">
+            <svg viewBox="0 0 401 494" xmlns="http://www.w3.org/2000/svg"><path d="m 33.676246,364.82 c 0.53628,-7.2677 1.7767,-14.482 5.0286,-21.276 9.4786,-19.803 33.963,-29.34 53.026,-19.284 15.333,8.0885 22.563,29.331 13.578,45.149 -6.873,12.099 -23.072,18.235 -35.622,10.228 -4.4328,-2.828 -7.6343,-7.2793 -8.9938,-12.286 -1.3595,-5.0063 -0.68452,-10.798 2.9392,-15.401 2.2364,-2.8407 5.4473,-4.7654 9.1114,-5.408 3.664,-0.64263 8.1708,0.40388 10.875,3.9972 1.7829,2.3692 1.91,4.5449 1.4108,7.1127 -0.24961,1.2839 -0.78116,2.8399 -2.3513,3.9972 -1.5702,1.1573 -4.2926,1.9424 -5.5844,0.58783 -1.1069,-1.1607 0.67477,-3.153 0.73029,-4.7559 0.0388,-0.83158 0.0772,-1.7317 -0.26004,-2.4745 -0.89679,-1.1463 -1.8493,-1.342 -3.4682,-1.0581 -1.6548,0.29023 -3.6474,1.4542 -4.5851,2.6452 l 0,0.0588 c -2.0224,2.5986 -2.3717,5.5943 -1.5284,8.6999 0.81645,3.0066 2.8568,5.919 5.4668,7.7006 l 0.29391,0.23513 c 8.5452,5.4516 18.484,0.70317 23.392,-7.9366 6.716,-11.823 1.511,-26.282 -10.285,-32.505 -15.078,-7.9537 -35.744,1.451 -40.36,17.085 -4.566,15.464 -2.8715,30.938 -0.27385,37.511 l -10.609,0.073 c -2.5579,-12.089 -1.9287,-15.035 -1.9287,-22.696 z" fill="#FFFFFF"/><path d="m 37.276,420 c -1.872,14.728 -0.535,34.385 7.978,46.464 4.278,6.059 12.577,13.449 18.658,17.463 6.913,4.56 17.372,7.25 25.397,8.99 4.125,0.893 10.691,2.327 15.908,2.897 5.504,0.6 11.275,1.075 16.669,1.075 l 17.36,0 c 4.817,0 10.729,-0.16 15.545,-0.67 5.548,-0.587 13.857,-1.76 19.013,-3.41 7.715,-2.47 18.808,-6.388 25.385,-11.43 5.66,-4.336 14.095,-11.32 17.973,-17.44 5.444,-8.59 10.047,-22.03 11.07,-32.2 0.668,-6.622 1.056,-16.893 0.36,-23.27 -0.873,-8.003 -3.154,-18.252 -6.846,-25.28 -3.534,-6.72 -10.637,-14.736 -16.287,-19.54 -5.521,-4.694 -14.704,-9.373 -21.353,-12.16 -6.145,-2.576 -15.086,-4.628 -21.574,-5.73 -3.529,-0.6 -7.768,-1.11 -11.497,-1.54 -10.437,-1.2 -24.631,-1.227 -34.97,0.13 -4.34,0.572 -10.906,1.896 -15.04,3.08 -7.573,2.17 -17.238,5.82 -23.89,10.19 -4.127,2.71 -9.935,7.66 -13.137,11.44 -3.477,4.106 -8.358,11.36 -10.607,16.39 -2.268,5.075 -3.745,11.43 -4.748,16.73 -1.242,6.556 -1.982,15.12 -1.375,21.83 z" fill="#FFFFFF"/><path d="m 495.406,157 a 70.231,70.231 0 0 1 14.44,42.81 70.235,70.235 0 0 1 -140.47,0 70.231,70.231 0 0 1 14.28,-42.81 l 111.75,0 z" fill="#00FFFF"/></svg>
+            <span>PANTE<span style="color:var(--cyan)">ON</span></span>
+        </div>
+        <div class="login-title">Admin Console</div>
+        <div class="login-sub">Enter your email to receive a secure login link</div>
+        <form class="login-form" id="loginForm" onsubmit="return doLogin(event)">
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" id="loginEmail" autocomplete="email" placeholder="you@alieninc.tech" required>
+            </div>
+            <button type="submit" class="login-btn" id="loginBtn">Send Login Link</button>
+            <div class="login-error" id="loginError"></div>
+            <div class="login-error" id="loginSuccess" style="color:var(--green)"></div>
+        </form>
+    </div>
+</div>
+
+<div class="app" id="mainApp" style="display:none">
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -205,6 +246,10 @@
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="8" r="2.5"/><circle cx="12" cy="8" r="2.5"/><path d="M6.5 8h3"/></svg>
                     Link Types
                 </div>
+                <a href="/pipeline-builder" class="nav-item" style="text-decoration:none;color:inherit">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="4" height="4" rx="1"/><rect x="11" y="9" width="4" height="4" rx="1"/><path d="M5 5h2a2 2 0 012 2v0a2 2 0 002 2h2"/></svg>
+                    Pipeline Builder
+                </a>
             </div>
             <div class="nav-section">
                 <div class="nav-section-title">ONO</div>
@@ -259,6 +304,97 @@
                     Dashboard
                 </div>
             </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Workspaces</div>
+                <div class="nav-item" data-page="workspaces">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+                    All Workspaces
+                </div>
+                <div class="nav-item" data-page="cross-lineage">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><path d="M6 4h4M4 6v4M12 6v4M6 12h4"/></svg>
+                    Cross-Company Flow
+                </div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Contour Analytics</div>
+                <div class="nav-item" data-page="contour-dashboards">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="4" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="7" width="6" height="8" rx="1"/></svg>
+                    Dashboards
+                </div>
+                <div class="nav-item" data-page="contour-schedules">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l3 2"/></svg>
+                    Pipeline Schedules
+                </div>
+                <div class="nav-item" data-page="contour-quality">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4z"/></svg>
+                    Data Quality
+                </div>
+                <div class="nav-item" data-page="contour-search">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4"/><path d="M10 10l4 4"/></svg>
+                    Search
+                </div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Gotham Intelligence</div>
+                <div class="nav-item" data-page="gotham-dashboard">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2"/><path d="M8 2v2M8 12v2M2 8h2M12 8h2"/></svg>
+                    Intelligence Dashboard
+                </div>
+                <div class="nav-item" data-page="gotham-investigations">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="2" width="10" height="12" rx="1"/><path d="M6 5h4M6 8h4M6 11h2"/></svg>
+                    Investigations
+                </div>
+                <div class="nav-item" data-page="gotham-threatmap">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c-2 2.5-2 5.5 0 6s2 3.5 0 6M8 2c2 2.5 2 5.5 0 6s-2 3.5 0 6"/></svg>
+                    Threat Map
+                </div>
+                <div class="nav-item" data-page="gotham-entities">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="8" cy="12" r="2"/><path d="M5.5 5.5L7 10.5M10.5 5.5L9 10.5M6 4h4"/></svg>
+                    Threat Entities
+                </div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Group Operations</div>
+                <div class="nav-item" data-page="group-overview">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="4" r="2.5"/><circle cx="3" cy="12" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="13" cy="12" r="2"/><path d="M8 6.5v3M5.5 11L3.5 12M10.5 11l2 1"/></svg>
+                    Group Overview
+                </div>
+                <div class="nav-item" data-page="group-flows">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h4l2 4 2-4h4"/><path d="M2 12h4l2-4 2 4h4"/></svg>
+                    ICT Flows
+                </div>
+                <div class="nav-item" data-page="group-catalog">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="4" rx="1"/><rect x="2" y="8" width="12" height="4" rx="1"/><path d="M5 4h0M5 10h0M8 4h3M8 10h3"/></svg>
+                    Service Catalog
+                </div>
+                <div class="nav-item" data-page="group-billing">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M2 6h12"/><path d="M5 9h2M5 11h4"/></svg>
+                    Billing
+                </div>
+                <div class="nav-item" data-page="group-holdings">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14V6l6-4 6 4v8"/><path d="M6 14v-4h4v4"/></svg>
+                    Holdings &amp; Capital
+                </div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Platform Intelligence</div>
+                <div class="nav-item" data-page="lineage-graph">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="3" cy="8" r="1.5"/><circle cx="13" cy="4" r="1.5"/><circle cx="13" cy="12" r="1.5"/><path d="M4.5 8L11.5 4M4.5 8L11.5 12"/></svg>
+                    Lineage Graph
+                </div>
+                <div class="nav-item" data-page="lineage-events">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2v12M2 14h12"/><circle cx="5" cy="11" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="11" cy="5" r="1"/></svg>
+                    Lineage Events
+                </div>
+                <div class="nav-item" data-page="observability">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14V2M2 14h12"/><path d="M4 10l3-3 2 2 4-5"/></svg>
+                    Observability
+                </div>
+                <div class="nav-item" data-page="audit-logs">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="2" width="10" height="12" rx="1"/><path d="M5 5h6M5 8h6M5 11h4"/></svg>
+                    Audit Logs
+                </div>
+            </div>
         </nav>
         <div class="sidebar-footer">
             Panteon Admin v1.0<br>
@@ -273,6 +409,10 @@
                 <span class="topbar-title" id="topbarTitle">Overview</span>
             </div>
             <div class="topbar-actions">
+                <div class="user-badge" id="userBadge" onclick="doLogout()" title="Click to sign out">
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <span id="userName">Admin</span>
+                </div>
                 <div class="topbar-status">
                     <span class="status-dot" id="apiStatusDot"></span>
                     <span id="apiStatusText">Connecting...</span>
@@ -556,6 +696,382 @@
                 </div>
             </div>
 
+            <div class="page" id="page-workspaces">
+                <div class="grid grid-3" id="workspaceCards" style="margin-bottom:16px">
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Group Structure</span></div>
+                    <div id="workspaceTree" style="font-size:13px">Loading...</div>
+                </div>
+            </div>
+
+            <div class="page" id="page-cross-lineage">
+                <div class="card" style="margin-bottom:16px">
+                    <div class="card-header">
+                        <span class="card-title">Cross-Company Data Flow</span>
+                        <button class="btn btn-sm" onclick="loadCrossLineage()">Refresh</button>
+                    </div>
+                    <div id="crossLineageCanvas" style="width:100%;height:500px;background:var(--bg-input);border-radius:8px;position:relative;overflow:hidden">
+                        <svg id="crossLineageSvg" style="width:100%;height:100%"></svg>
+                    </div>
+                    <div style="display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--text-muted);flex-wrap:wrap">
+                        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#3b82f6;display:inline-block"></span> Risk Data</span>
+                        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block"></span> Vulnerability Data</span>
+                        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block"></span> Reports</span>
+                        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block"></span> Cultural Programming</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Data Flow Details</span></div>
+                    <div id="crossLineageDetails" style="font-size:13px;color:var(--text-muted)">Hover over a connection to see details</div>
+                </div>
+            </div>
+
+            <div class="page" id="page-group-overview">
+                <div class="grid grid-4" style="margin-bottom:16px" id="groupKpiCards"></div>
+                <div class="card" style="margin-bottom:16px">
+                    <div class="card-header">
+                        <span class="card-title">Alien.Inc Group Companies</span>
+                        <button class="btn btn-sm" onclick="loadGroupOverview()">Refresh</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Company</th><th>Category</th><th>HC</th><th>Revenue 2026F</th><th>EBITDA</th><th>Margin</th><th>$/emp</th><th>ICT In</th><th>ICT Out</th><th>Clients</th></tr></thead>
+                            <tbody id="groupCompaniesBody"><tr><td colspan="10"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Revenue Composition</span></div>
+                    <div id="groupRevenueChart" style="height:160px"></div>
+                </div>
+            </div>
+
+            <div class="page" id="page-group-flows">
+                <div class="card" style="margin-bottom:16px">
+                    <div class="card-header">
+                        <span class="card-title">Intercompany Transaction Flow Matrix</span>
+                        <button class="btn btn-sm" onclick="loadGroupFlows()">Refresh</button>
+                    </div>
+                    <div id="flowMatrixContainer" style="overflow-x:auto">
+                        <div id="flowMatrix"><div class="empty-state"><span class="loading"></span></div></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">All Transactions (31)</span></div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>ID</th><th>From</th><th>To</th><th>Description</th><th>Amount</th><th>Cadence</th></tr></thead>
+                            <tbody id="ictsBody"><tr><td colspan="6"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-group-catalog">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Intercompany Service Catalog</span>
+                        <button class="btn btn-sm" onclick="loadServiceCatalog()">Refresh</button>
+                    </div>
+                    <div id="serviceCatalogContent"><div class="empty-state"><span class="loading"></span></div></div>
+                </div>
+            </div>
+
+            <div class="page" id="page-group-billing">
+                <div class="grid grid-3" style="margin-bottom:16px" id="billingKpis"></div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Intercompany Invoices</span>
+                        <button class="btn btn-sm" onclick="loadBilling()">Refresh</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>ID</th><th>Provider</th><th>Consumer</th><th>Description</th><th>Monthly</th><th>Annual</th><th>Cadence</th></tr></thead>
+                            <tbody id="billingBody"><tr><td colspan="7"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-group-holdings">
+                <div class="grid grid-3" style="margin-bottom:16px" id="holdingsKpis"></div>
+                <div class="grid grid-2">
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Capital Structure</span></div>
+                        <div id="capitalStructure"><div class="empty-state"><span class="loading"></span></div></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Subsidiary Investments</span></div>
+                        <div id="subsidiaryInvestments"><div class="empty-state"><span class="loading"></span></div></div>
+                    </div>
+                </div>
+                <div class="card" style="margin-top:16px">
+                    <div class="card-header"><span class="card-title">Fund Centre — 5,770M EUR AUM</span></div>
+                    <div id="fundCentreContent"><div class="empty-state"><span class="loading"></span></div></div>
+                </div>
+            </div>
+
+            <div class="page" id="page-gotham-dashboard">
+                <div class="grid grid-4" style="margin-bottom:16px" id="gothamKpiCards"></div>
+                <div class="grid grid-2">
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Active Investigations</span></div>
+                        <div id="gothamInvestigationsList"><div class="empty-state"><span class="loading"></span></div></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Pattern Alerts</span></div>
+                        <div id="gothamAlertsList"><div class="empty-state"><span class="loading"></span></div></div>
+                    </div>
+                </div>
+                <div class="card" style="margin-top:16px">
+                    <div class="card-header"><span class="card-title">Top Risk Countries</span></div>
+                    <div id="gothamRiskCountries"><div class="empty-state"><span class="loading"></span></div></div>
+                </div>
+            </div>
+
+            <div class="page" id="page-gotham-investigations">
+                <div class="card" style="margin-bottom:16px">
+                    <div class="card-header">
+                        <span class="card-title">Investigations</span>
+                        <div style="display:flex;gap:8px">
+                            <select id="invStatusFilter" onchange="loadGothamInvestigations()" style="width:auto;padding:4px 8px;font-size:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:4px;color:var(--text)">
+                                <option value="">All Statuses</option>
+                                <option value="open">Open</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="closed">Closed</option>
+                            </select>
+                            <button class="btn btn-sm" onclick="loadGothamInvestigations()">Refresh</button>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Case #</th><th>Title</th><th>Status</th><th>Priority</th><th>Classification</th><th>Findings</th><th>Analysts</th><th>Created</th></tr></thead>
+                            <tbody id="investigationsBody"><tr><td colspan="8"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card" id="investigationDetail" style="display:none">
+                    <div class="card-header"><span class="card-title" id="invDetailTitle">Investigation Detail</span><button class="btn btn-sm" onclick="document.getElementById('investigationDetail').style.display='none'">Close</button></div>
+                    <div id="invDetailContent"></div>
+                </div>
+            </div>
+
+            <div class="page" id="page-gotham-threatmap">
+                <div class="card" style="margin-bottom:16px">
+                    <div class="card-header">
+                        <span class="card-title">Global Threat Map</span>
+                        <button class="btn btn-sm" onclick="loadGothamThreatMap()">Refresh</button>
+                    </div>
+                    <div id="threatMapCanvas" style="width:100%;height:500px;background:var(--bg-input);border-radius:8px;position:relative;overflow:hidden">
+                        <svg id="threatMapSvg" style="width:100%;height:100%"></svg>
+                    </div>
+                    <div style="display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--text-muted)">
+                        <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block"></span> Informational</span>
+                        <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:var(--amber);display:inline-block"></span> Minor/Moderate</span>
+                        <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:#f97316;display:inline-block"></span> Major</span>
+                        <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block"></span> Critical</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Country Risk Scores</span></div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Country</th><th>Overall Risk</th><th>Security</th><th>Political</th><th>Health</th><th>Events (90d)</th></tr></thead>
+                            <tbody id="countryRiskBody"><tr><td colspan="6"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-gotham-entities">
+                <div class="card" style="margin-bottom:16px">
+                    <div class="card-header">
+                        <span class="card-title">Threat Entities</span>
+                        <button class="btn btn-sm" onclick="loadGothamEntities()">Refresh</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Name</th><th>Type</th><th>Threat Level</th><th>Risk Score</th><th>Aliases</th><th>Connections</th><th>Last Seen</th></tr></thead>
+                            <tbody id="entitiesBody"><tr><td colspan="7"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Entity Graph</span></div>
+                    <div id="entityGraphCanvas" style="width:100%;height:400px;background:var(--bg-input);border-radius:8px;overflow:hidden">
+                        <svg id="entityGraphSvg" style="width:100%;height:100%"></svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-contour-dashboards">
+                <div class="card" style="margin-bottom:16px">
+                    <div class="card-header">
+                        <span class="card-title">Dashboard Gallery</span>
+                        <button class="btn btn-sm" onclick="loadContourDashboards()">Refresh</button>
+                    </div>
+                    <div id="dashboardGallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px"><div class="empty-state"><span class="loading"></span></div></div>
+                </div>
+                <div class="card" id="dashboardViewer" style="display:none">
+                    <div class="card-header">
+                        <span class="card-title" id="dashboardViewerTitle">Dashboard</span>
+                        <button class="btn btn-sm" onclick="document.getElementById('dashboardViewer').style.display='none'">Close</button>
+                    </div>
+                    <div id="dashboardCharts" style="display:grid;grid-template-columns:repeat(12,1fr);gap:8px"></div>
+                </div>
+            </div>
+
+            <div class="page" id="page-contour-schedules">
+                <div class="card" style="margin-bottom:16px">
+                    <div class="card-header">
+                        <span class="card-title">Pipeline Schedules</span>
+                        <button class="btn btn-sm" onclick="loadContourSchedules()">Refresh</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Name</th><th>Cron</th><th>Timezone</th><th>Status</th><th>Last Run</th><th>Next Run</th><th>Actions</th></tr></thead>
+                            <tbody id="schedulesBody"><tr><td colspan="7"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-contour-quality">
+                <div class="grid grid-2" style="margin-bottom:16px">
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">Data Quality Rules</span>
+                        </div>
+                        <div id="dqRulesSummary"><div class="empty-state">Run checks to see rule status</div></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">Run Quality Checks</span>
+                            <button class="btn btn-sm btn-primary" onclick="runDQChecks()">Run All Checks</button>
+                        </div>
+                        <div id="dqRunResult"><div class="empty-state">Click "Run All Checks" to validate data quality</div></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Active Violations</span>
+                        <button class="btn btn-sm" onclick="loadDQViolations()">Refresh</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Type</th><th>Object</th><th>Details</th><th>Detected</th><th>Status</th></tr></thead>
+                            <tbody id="dqViolationsBody"><tr><td colspan="5"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-contour-search">
+                <div class="card" style="margin-bottom:16px">
+                    <div class="card-header">
+                        <span class="card-title">Full-Text Search</span>
+                        <div style="display:flex;gap:8px">
+                            <button class="btn btn-sm" onclick="rebuildSearchIndex()">Rebuild Index</button>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:8px;margin-bottom:16px">
+                        <input type="text" id="searchInput" placeholder="Search across all ontology objects..." style="flex:1;padding:10px 14px;font-size:14px;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;color:var(--text)" onkeydown="if(event.key==='Enter')doSearch()">
+                        <button class="btn btn-primary" onclick="doSearch()">Search</button>
+                    </div>
+                    <div id="searchResults"><div class="empty-state">Enter a search term to find objects across all workspaces</div></div>
+                </div>
+            </div>
+
+            <div class="page" id="page-lineage-graph">
+                <div class="card" style="margin-bottom:16px">
+                    <div class="card-header">
+                        <span class="card-title">Data Lineage Graph</span>
+                        <div style="display:flex;gap:8px;align-items:center">
+                            <span style="font-size:11px;color:var(--text-muted)" id="lineageStats">--</span>
+                            <button class="btn btn-sm" onclick="loadLineageGraph()">Refresh</button>
+                        </div>
+                    </div>
+                    <div id="lineageCanvas" style="width:100%;height:600px;background:var(--bg-input);border-radius:8px;position:relative;overflow:hidden">
+                        <svg id="lineageSvg" style="width:100%;height:100%"></svg>
+                        <div id="lineageTooltip" style="display:none;position:absolute;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px;pointer-events:none;z-index:100;max-width:300px"></div>
+                    </div>
+                    <div style="display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--text-muted)">
+                        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#3b82f6;display:inline-block"></span> External Source</span>
+                        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#a855f7;display:inline-block"></span> Pipeline</span>
+                        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block"></span> Stage</span>
+                        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block"></span> Object Type</span>
+                        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block"></span> Object</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Selected Node Details</span>
+                        <button class="btn btn-sm" onclick="clearLineageSelection()">Clear</button>
+                    </div>
+                    <div id="lineageDetails" style="font-size:13px;color:var(--text-muted)">Click a node to see details</div>
+                </div>
+            </div>
+
+            <div class="page" id="page-lineage-events">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Lineage Events</span>
+                        <button class="btn btn-sm" onclick="loadLineageEvents()">Refresh</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Time</th><th>Event</th><th>Node</th><th>Actor</th><th>Details</th></tr></thead>
+                            <tbody id="lineageEventsBody"><tr><td colspan="5"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-observability">
+                <div class="grid grid-4" style="margin-bottom:16px" id="observabilityCards">
+                    <div class="card"><div class="card-title">Total Requests</div><div class="card-value" id="obsTotalRequests">--</div><div class="card-sub" id="obsTotalSub">Last 24h</div></div>
+                    <div class="card"><div class="card-title">Error Rate</div><div class="card-value" id="obsErrorRate">--</div><div class="card-sub" id="obsErrorSub">4xx + 5xx</div></div>
+                    <div class="card"><div class="card-title">Auth Failures</div><div class="card-value" id="obsAuthFailures">--</div><div class="card-sub">401 responses</div></div>
+                    <div class="card"><div class="card-title">Avg Latency</div><div class="card-value" id="obsAvgLatency">--</div><div class="card-sub" id="obsP95Sub">p95: --ms</div></div>
+                </div>
+                <div class="grid grid-2" style="margin-bottom:16px">
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Request Volume</span></div>
+                        <div id="volumeChart" style="height:200px"></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Error Rate</span></div>
+                        <div id="errorChart" style="height:200px"></div>
+                    </div>
+                </div>
+                <div class="grid grid-2">
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Top Endpoints</span></div>
+                        <div id="topEndpoints" style="font-size:13px">Loading...</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Top Errors</span></div>
+                        <div id="topErrors" style="font-size:13px">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-audit-logs">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Audit Log</span>
+                        <button class="btn btn-sm" onclick="loadAuditLogs()">Refresh</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Time</th><th>Method</th><th>Path</th><th>Status</th><th>User</th><th>Duration</th><th>Client</th></tr></thead>
+                            <tbody id="auditLogsBody"><tr><td colspan="7"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -566,12 +1082,19 @@
 
 <div class="toast-container" id="toastContainer"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+const SUPABASE_URL = 'https://frwjaixxlgthkgjtafhz.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyd2phaXh4bGd0aGtnanRhZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDUzNDQsImV4cCI6MjA5NDYyMTM0NH0.j2DKz__QMml4WplMYNmsQpTUw0qu-kZG7Md3qBEEdEc';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 const API_BASE = 'http://localhost:8000/api/v1';
 let apiOnline = false;
 let objectTypeCache = [];
 let providerCache = [];
 let refreshInterval = null;
+let authToken = null;
+let currentUser = null;
 
 const PAGES = {
     'overview': 'Overview',
@@ -583,16 +1106,89 @@ const PAGES = {
     'ono-automations': 'Automations',
     'tdac-resonance': 'Resonance Index',
     'tdac-metrics': 'Metrics',
-    'tdac-dashboard': 'Dashboard'
+    'tdac-dashboard': 'Dashboard',
+    'lineage-graph': 'Lineage Graph',
+    'lineage-events': 'Lineage Events',
+    'observability': 'Observability',
+    'audit-logs': 'Audit Logs',
+    'workspaces': 'Workspaces',
+    'cross-lineage': 'Cross-Company Flow',
+    'group-overview': 'Group Overview',
+    'group-flows': 'ICT Flows',
+    'group-catalog': 'Service Catalog',
+    'group-billing': 'Billing',
+    'group-holdings': 'Holdings & Capital',
+    'gotham-dashboard': 'Intelligence Dashboard',
+    'gotham-investigations': 'Investigations',
+    'gotham-threatmap': 'Threat Map',
+    'gotham-entities': 'Threat Entities',
+    'contour-dashboards': 'Dashboards',
+    'contour-schedules': 'Pipeline Schedules',
+    'contour-quality': 'Data Quality',
+    'contour-search': 'Search'
 };
+
+async function doLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('loginBtn');
+    const err = document.getElementById('loginError');
+    const success = document.getElementById('loginSuccess');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    err.textContent = '';
+    success.textContent = '';
+    try {
+        const email = document.getElementById('loginEmail').value.trim();
+        const { error } = await supabaseClient.auth.signInWithOtp({
+            email: email,
+            options: { emailRedirectTo: window.location.origin + '/admin' }
+        });
+        if (error) throw new Error(error.message);
+        success.textContent = 'Check your inbox. A login link has been dispatched.';
+        document.getElementById('loginForm').reset();
+    } catch (ex) {
+        err.textContent = ex.message;
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Send Login Link';
+    }
+    return false;
+}
+
+async function doLogout() {
+    await supabaseClient.auth.signOut();
+    authToken = null;
+    currentUser = null;
+    document.getElementById('loginOverlay').classList.remove('hidden');
+    document.getElementById('mainApp').style.display = 'none';
+    if (refreshInterval) clearInterval(refreshInterval);
+}
+
+function showApp(user) {
+    document.getElementById('loginOverlay').classList.add('hidden');
+    document.getElementById('mainApp').style.display = '';
+    if (user) {
+        const name = user.email || user.id;
+        document.getElementById('userName').textContent = name;
+        document.getElementById('userAvatar').textContent = name.charAt(0).toUpperCase();
+    }
+    init();
+}
 
 async function api(path, opts = {}) {
     const url = API_BASE + path;
+    const headers = { 'Content-Type': 'application/json', ...opts.headers };
+    if (!authToken) {
+        const { data } = await supabaseClient.auth.getSession();
+        if (data.session) authToken = data.session.access_token;
+    }
+    if (authToken) headers['Authorization'] = 'Bearer ' + authToken;
     try {
-        const res = await fetch(url, {
-            headers: { 'Content-Type': 'application/json', ...opts.headers },
-            ...opts
-        });
+        const res = await fetch(url, { headers, ...opts });
+        if (res.status === 401) {
+            doLogout();
+            throw new Error('Session expired');
+        }
         if (!res.ok) {
             const err = await res.json().catch(() => ({ detail: res.statusText }));
             throw new Error(err.detail || `HTTP ${res.status}`);
@@ -676,6 +1272,25 @@ function loadPageData(page) {
         case 'tdac-resonance': loadResonance(); break;
         case 'tdac-metrics': loadMetrics(); break;
         case 'tdac-dashboard': loadDashboard(); break;
+        case 'lineage-graph': loadLineageGraph(); break;
+        case 'lineage-events': loadLineageEvents(); break;
+        case 'observability': loadObservability(); break;
+        case 'audit-logs': loadAuditLogs(); break;
+        case 'workspaces': loadWorkspaces(); break;
+        case 'cross-lineage': loadCrossLineage(); break;
+        case 'group-overview': loadGroupOverview(); break;
+        case 'group-flows': loadGroupFlows(); break;
+        case 'group-catalog': loadServiceCatalog(); break;
+        case 'group-billing': loadBilling(); break;
+        case 'group-holdings': loadHoldings(); break;
+        case 'gotham-dashboard': loadGothamDashboard(); break;
+        case 'gotham-investigations': loadGothamInvestigations(); break;
+        case 'gotham-threatmap': loadGothamThreatMap(); break;
+        case 'gotham-entities': loadGothamEntities(); break;
+        case 'contour-dashboards': loadContourDashboards(); break;
+        case 'contour-schedules': loadContourSchedules(); break;
+        case 'contour-quality': loadDQViolations(); break;
+        case 'contour-search': document.getElementById('searchInput').focus(); break;
     }
 }
 
@@ -1045,6 +1660,883 @@ async function loadDashboard() {
     }
 }
 
+let lineageGraphData = null;
+let selectedLineageNode = null;
+
+async function loadLineageGraph() {
+    try {
+        const data = await api('/lineage/graph');
+        lineageGraphData = data;
+        document.getElementById('lineageStats').textContent = `${data.nodes.length} nodes, ${data.edges.length} edges`;
+        renderLineageGraph(data);
+    } catch (e) {
+        document.getElementById('lineageStats').textContent = `Error: ${e.message}`;
+    }
+}
+
+function renderLineageGraph(data) {
+    const svg = document.getElementById('lineageSvg');
+    const W = svg.clientWidth || 900;
+    const H = svg.clientHeight || 600;
+    const colors = { external_source: '#3b82f6', pipeline: '#a855f7', pipeline_stage: '#f59e0b', object_type: '#10b981', object: '#ef4444' };
+
+    const nodeMap = {};
+    data.nodes.forEach((n, i) => { nodeMap[n.id] = i; });
+
+    const inDeg = {};
+    data.nodes.forEach(n => { inDeg[n.id] = 0; });
+    data.edges.forEach(e => { if (inDeg[e.downstream_node_id] !== undefined) inDeg[e.downstream_node_id]++; });
+
+    const layers = [];
+    const placed = new Set();
+    let remaining = data.nodes.map(n => n.id);
+    while (remaining.length > 0) {
+        const layer = remaining.filter(id => !placed.has(id) && (inDeg[id] === 0 || data.edges.every(e => e.downstream_node_id !== id || placed.has(e.upstream_node_id))));
+        if (layer.length === 0) { layer.push(...remaining.filter(id => !placed.has(id))); }
+        layers.push(layer);
+        layer.forEach(id => placed.add(id));
+        remaining = remaining.filter(id => !placed.has(id));
+    }
+
+    const positions = {};
+    const padX = 80, padY = 50;
+    const layerW = (W - padX * 2) / Math.max(layers.length - 1, 1);
+    layers.forEach((layer, li) => {
+        const x = padX + li * layerW;
+        const nodeH = (H - padY * 2) / Math.max(layer.length + 1, 2);
+        layer.forEach((id, ni) => {
+            positions[id] = { x: x, y: padY + (ni + 1) * nodeH };
+        });
+    });
+
+    let svgContent = '';
+    data.edges.forEach(e => {
+        const from = positions[e.upstream_node_id];
+        const to = positions[e.downstream_node_id];
+        if (from && to) {
+            const cx1 = from.x + (to.x - from.x) * 0.4;
+            const cx2 = from.x + (to.x - from.x) * 0.6;
+            svgContent += `<path d="M${from.x},${from.y} C${cx1},${from.y} ${cx2},${to.y} ${to.x},${to.y}" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>`;
+        }
+    });
+
+    data.nodes.forEach(n => {
+        const pos = positions[n.id];
+        if (!pos) return;
+        const col = colors[n.node_type] || '#9ab4c1';
+        const label = (n.name || n.node_id).slice(0, 24);
+        svgContent += `
+            <g class="lineage-node" data-id="${n.id}" style="cursor:pointer" onclick="selectLineageNode('${n.id}')">
+                <rect x="${pos.x - 55}" y="${pos.y - 18}" width="110" height="36" rx="8" fill="${col}22" stroke="${col}" stroke-width="1.5"/>
+                <circle cx="${pos.x - 40}" cy="${pos.y}" r="5" fill="${col}"/>
+                <text x="${pos.x - 28}" y="${pos.y + 4}" fill="white" font-size="11" font-family="var(--font-sans)">${label}</text>
+            </g>`;
+    });
+
+    svg.innerHTML = svgContent;
+}
+
+function selectLineageNode(nodeId) {
+    if (!lineageGraphData) return;
+    const node = lineageGraphData.nodes.find(n => n.id === nodeId);
+    if (!node) return;
+    selectedLineageNode = node;
+
+    const incoming = lineageGraphData.edges.filter(e => e.downstream_node_id === nodeId);
+    const outgoing = lineageGraphData.edges.filter(e => e.upstream_node_id === nodeId);
+
+    let html = `<div style="margin-bottom:12px"><strong style="color:var(--text)">${node.name || node.node_id}</strong><br><span class="tag">${node.node_type}</span> <span class="mono" style="font-size:11px;color:var(--text-dim)">${node.node_id}</span></div>`;
+    if (node.description) html += `<div style="margin-bottom:8px;font-size:12px">${node.description}</div>`;
+    if (node.metadata && Object.keys(node.metadata).length) html += `<div style="font-size:11px;font-family:var(--font-mono);color:var(--accent);margin-bottom:8px">${JSON.stringify(node.metadata, null, 2).slice(0, 200)}</div>`;
+    html += `<div style="font-size:12px;color:var(--text-muted)"><strong>${incoming.length}</strong> upstream &middot; <strong>${outgoing.length}</strong> downstream</div>`;
+
+    document.getElementById('lineageDetails').innerHTML = html;
+
+    document.querySelectorAll('.lineage-node rect').forEach(r => r.setAttribute('stroke-width', '1.5'));
+    const el = document.querySelector(`.lineage-node[data-id="${nodeId}"] rect`);
+    if (el) el.setAttribute('stroke-width', '3');
+}
+
+function clearLineageSelection() {
+    selectedLineageNode = null;
+    document.getElementById('lineageDetails').innerHTML = 'Click a node to see details';
+    document.querySelectorAll('.lineage-node rect').forEach(r => r.setAttribute('stroke-width', '1.5'));
+}
+
+async function loadLineageEvents() {
+    try {
+        const events = await api('/lineage/events');
+        const body = document.getElementById('lineageEventsBody');
+        if (!events.length) { body.innerHTML = '<tr><td colspan="5"><div class="empty-state">No lineage events</div></td></tr>'; return; }
+        body.innerHTML = events.map(e => `
+            <tr>
+                <td style="white-space:nowrap">${fmtDate(e.created_at)}</td>
+                <td><span class="tag">${e.event_type}</span></td>
+                <td class="mono" style="font-size:11px">${truncate(e.node_id, 8)}</td>
+                <td>${e.actor || '--'}</td>
+                <td style="font-size:11px;color:var(--text-muted)">${JSON.stringify(e.details || {}).slice(0, 80)}</td>
+            </tr>`).join('');
+    } catch (e) {
+        document.getElementById('lineageEventsBody').innerHTML = `<tr><td colspan="5"><div class="empty-state">Error: ${e.message}</div></td></tr>`;
+    }
+}
+
+async function loadObservability() {
+    try {
+        const data = await api('/monitoring/summary');
+        document.getElementById('obsTotalRequests').textContent = data.total_requests.toLocaleString();
+        document.getElementById('obsErrorRate').textContent = data.error_rate + '%';
+        document.getElementById('obsErrorRate').style.color = data.error_rate > 5 ? 'var(--red)' : data.error_rate > 1 ? 'var(--amber)' : 'var(--green)';
+        document.getElementById('obsAuthFailures').textContent = data.auth_failures.toLocaleString();
+        document.getElementById('obsAvgLatency').textContent = data.avg_latency_ms + 'ms';
+        document.getElementById('obsP95Sub').textContent = 'p95: ' + data.p95_latency_ms + 'ms';
+
+        const top = document.getElementById('topEndpoints');
+        if (data.top_endpoints && data.top_endpoints.length) {
+            top.innerHTML = data.top_endpoints.map(e => `
+                <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+                    <span class="mono" style="font-size:11px">${e.path}</span>
+                    <span style="color:var(--accent);font-variant-numeric:tabular-nums">${e.count.toLocaleString()}</span>
+                </div>`).join('');
+        } else { top.innerHTML = '<div class="empty-state">No data</div>'; }
+
+        const errs = document.getElementById('topErrors');
+        if (data.top_errors && data.top_errors.length) {
+            errs.innerHTML = data.top_errors.map(e => `
+                <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+                    <span><span class="tag ${e.status >= 500 ? 'tag-red' : 'tag-amber'}">${e.status}</span> <span class="mono" style="font-size:11px">${e.path}</span></span>
+                    <span style="color:var(--accent);font-variant-numeric:tabular-nums">${e.count}</span>
+                </div>`).join('');
+        } else { errs.innerHTML = '<div class="empty-state">No errors</div>'; }
+
+        const history = await api('/monitoring/health-history');
+        renderVolumeChart(history);
+        renderErrorChart(history);
+    } catch (e) {
+        document.getElementById('obsTotalRequests').textContent = 'Error';
+    }
+}
+
+function renderVolumeChart(history) {
+    const el = document.getElementById('volumeChart');
+    if (!history || !history.length) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
+    const W = el.clientWidth || 400, H = el.clientHeight || 200;
+    const max = Math.max(...history.map(h => h.total_requests), 1);
+    const barW = Math.max(2, (W - 40) / history.length - 2);
+    let svg = `<svg width="${W}" height="${H}" style="overflow:visible">`;
+    history.forEach((h, i) => {
+        const x = 20 + i * ((W - 40) / history.length);
+        const barH = (h.total_requests / max) * (H - 30);
+        svg += `<rect x="${x}" y="${H - 20 - barH}" width="${barW}" height="${barH}" rx="2" fill="var(--cyan)" opacity="0.7"><title>${h.timestamp}: ${h.total_requests} reqs</title></rect>`;
+    });
+    svg += `<line x1="20" y1="${H - 20}" x2="${W - 20}" y2="${H - 20}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>`;
+    svg += '</svg>';
+    el.innerHTML = svg;
+}
+
+function renderErrorChart(history) {
+    const el = document.getElementById('errorChart');
+    if (!history || !history.length) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
+    const W = el.clientWidth || 400, H = el.clientHeight || 200;
+    const max = Math.max(...history.map(h => h.errors_5xx + h.errors_4xx), 1);
+    let svg = `<svg width="${W}" height="${H}">`;
+    const stepX = (W - 40) / Math.max(history.length - 1, 1);
+    let pts4 = '', pts5 = '';
+    history.forEach((h, i) => {
+        const x = 20 + i * stepX;
+        const y4 = H - 20 - (h.errors_4xx / max) * (H - 30);
+        const y5 = H - 20 - (h.errors_5xx / max) * (H - 30);
+        pts4 += `${x},${y4} `;
+        pts5 += `${x},${y5} `;
+    });
+    svg += `<polyline points="${pts4}" fill="none" stroke="var(--amber)" stroke-width="2"/>`;
+    svg += `<polyline points="${pts5}" fill="none" stroke="var(--red)" stroke-width="2"/>`;
+    svg += `<line x1="20" y1="${H - 20}" x2="${W - 20}" y2="${H - 20}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>`;
+    svg += `<text x="${W - 80}" y="16" fill="var(--amber)" font-size="10">4xx</text>`;
+    svg += `<text x="${W - 40}" y="16" fill="var(--red)" font-size="10">5xx</text>`;
+    svg += '</svg>';
+    el.innerHTML = svg;
+}
+
+async function loadAuditLogs() {
+    try {
+        const data = await api('/admin/audit');
+        const body = document.getElementById('auditLogsBody');
+        if (!data || !data.length) { body.innerHTML = '<tr><td colspan="7"><div class="empty-state">No audit logs</div></td></tr>'; return; }
+        body.innerHTML = data.map(l => `
+            <tr>
+                <td style="white-space:nowrap">${fmtDate(l.timestamp)}</td>
+                <td><span class="tag" style="min-width:48px;text-align:center">${l.method}</span></td>
+                <td class="mono" style="font-size:11px;max-width:300px;overflow:hidden;text-overflow:ellipsis">${l.path}</td>
+                <td><span class="tag ${l.status_code >= 500 ? 'tag-red' : l.status_code >= 400 ? 'tag-amber' : 'tag-green'}">${l.status_code}</span></td>
+                <td style="font-size:12px">${l.user_email || 'anonymous'}</td>
+                <td style="font-variant-numeric:tabular-nums">${l.duration_ms != null ? l.duration_ms + 'ms' : '--'}</td>
+                <td style="font-size:11px;color:var(--text-dim)">${l.client_ip || '--'}</td>
+            </tr>`).join('');
+    } catch (e) {
+        document.getElementById('auditLogsBody').innerHTML = `<tr><td colspan="7"><div class="empty-state">Error: ${e.message}</div></td></tr>`;
+    }
+}
+
+let workspacesData = [];
+
+async function loadWorkspaces() {
+    try {
+        const data = await api('/workspaces');
+        workspacesData = data;
+        const typeColors = { holding: '#9ab4c1', company: '#00FFFF', platform: '#a855f7', foundation: '#10b981' };
+        const cards = document.getElementById('workspaceCards');
+        cards.innerHTML = data.map(w => `
+            <div class="card" style="border-left:3px solid ${typeColors[w.workspace_type] || 'var(--border)'}">
+                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+                    <div class="card-title" style="color:var(--text);font-weight:600">${w.name}</div>
+                    <span class="tag">${w.workspace_type}</span>
+                </div>
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">${w.description || ''}</div>
+                <div style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono)">${w.domain || ''}</div>
+            </div>`).join('');
+
+        const parent = data.find(w => w.workspace_type === 'holding');
+        const children = data.filter(w => w.parent_workspace_id);
+        const tree = document.getElementById('workspaceTree');
+        let html = '';
+        if (parent) {
+            html += `<div style="font-weight:600;margin-bottom:8px">${parent.name} <span class="tag">${parent.workspace_type}</span></div>`;
+            html += '<div style="padding-left:20px;border-left:2px solid var(--border)">';
+            children.forEach(c => {
+                html += `<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+                    <span style="font-weight:500">${c.name}</span>
+                    <span class="tag" style="margin-left:8px">${c.workspace_type}</span>
+                    <span style="font-size:11px;color:var(--text-dim);margin-left:8px;font-family:var(--font-mono)">${c.domain || ''}</span>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${c.description || ''}</div>
+                </div>`;
+            });
+            html += '</div>';
+        }
+        tree.innerHTML = html || '<div class="empty-state">No workspaces</div>';
+    } catch (e) {
+        document.getElementById('workspaceCards').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+    }
+}
+
+async function loadCrossLineage() {
+    try {
+        const data = await api('/lineage/graph');
+        const wsNodes = data.nodes.filter(n => n.node_type === 'workspace');
+        const wsEdges = data.edges.filter(e => {
+            const fromNode = data.nodes.find(n => n.id === e.upstream_node_id);
+            const toNode = data.nodes.find(n => n.id === e.downstream_node_id);
+            return fromNode && toNode && fromNode.node_type === 'workspace' && toNode.node_type === 'workspace';
+        });
+
+        const svg = document.getElementById('crossLineageSvg');
+        const W = svg.clientWidth || 900;
+        const H = svg.clientHeight || 500;
+        const edgeColors = { risk_data: '#3b82f6', vulnerability_data: '#ef4444', reports: '#f59e0b', cultural_programming: '#10b981' };
+
+        const cx = W / 2, cy = H / 2, r = Math.min(W, H) * 0.35;
+        const positions = {};
+        wsNodes.forEach((n, i) => {
+            const angle = (i / wsNodes.length) * Math.PI * 2 - Math.PI / 2;
+            positions[n.id] = { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+        });
+
+        let svgContent = '';
+        wsEdges.forEach(e => {
+            const from = positions[e.upstream_node_id];
+            const to = positions[e.downstream_node_id];
+            if (!from || !to) return;
+            const col = edgeColors[e.edge_type] || '#9ab4c1';
+            const dx = to.x - from.x, dy = to.y - from.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const nx = dx / dist, ny = dy / dist;
+            const x1 = from.x + nx * 40, y1 = from.y + ny * 40;
+            const x2 = to.x - nx * 40, y2 = to.y - ny * 40;
+            const mx = (x1 + x2) / 2 + ny * 30, my = (y1 + y2) / 2 - nx * 30;
+            svgContent += `<path d="M${x1},${y1} Q${mx},${my} ${x2},${y2}" fill="none" stroke="${col}" stroke-width="2" opacity="0.6" stroke-dasharray="6,3">
+                <animate attributeName="stroke-dashoffset" from="0" to="-18" dur="2s" repeatCount="infinite"/>
+            </path>`;
+            const ax = x2 - nx * 8 + ny * 5, ay = y2 - ny * 8 - nx * 5;
+            const bx = x2 - nx * 8 - ny * 5, by = y2 - ny * 8 + nx * 5;
+            svgContent += `<polygon points="${x2},${y2} ${ax},${ay} ${bx},${by}" fill="${col}" opacity="0.6"/>`;
+            const lx = mx, ly = my - 8;
+            svgContent += `<text x="${lx}" y="${ly}" fill="${col}" font-size="9" text-anchor="middle" font-family="var(--font-sans)" opacity="0.8">${e.description ? e.description.slice(0, 30) : e.edge_type}</text>`;
+        });
+
+        wsNodes.forEach(n => {
+            const pos = positions[n.id];
+            if (!pos) return;
+            svgContent += `
+                <circle cx="${pos.x}" cy="${pos.y}" r="36" fill="rgba(0,255,255,0.08)" stroke="var(--cyan)" stroke-width="1.5"/>
+                <text x="${pos.x}" y="${pos.y + 4}" fill="white" font-size="11" text-anchor="middle" font-weight="500" font-family="var(--font-sans)">${(n.name || n.node_id).slice(0, 14)}</text>`;
+        });
+
+        svg.innerHTML = svgContent;
+
+        const details = document.getElementById('crossLineageDetails');
+        if (wsEdges.length) {
+            details.innerHTML = wsEdges.map(e => {
+                const from = wsNodes.find(n => n.id === e.upstream_node_id);
+                const to = wsNodes.find(n => n.id === e.downstream_node_id);
+                const col = edgeColors[e.edge_type] || '#9ab4c1';
+                return `<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+                    <span style="font-weight:500">${from ? from.name : '?'}</span>
+                    <span style="color:${col}">-- ${e.edge_type} --></span>
+                    <span style="font-weight:500">${to ? to.name : '?'}</span>
+                    <span style="font-size:11px;color:var(--text-dim);margin-left:auto">${e.description || ''}</span>
+                </div>`;
+            }).join('');
+        } else {
+            details.innerHTML = '<div class="empty-state">No cross-company data flows found</div>';
+        }
+    } catch (e) {
+        document.getElementById('crossLineageDetails').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+    }
+}
+
+function fmtMoney(n) {
+    if (n >= 1000000) return '$' + (n/1000000).toFixed(2) + 'M';
+    if (n >= 1000) return '$' + (n/1000).toFixed(0) + 'K';
+    return '$' + n.toLocaleString();
+}
+
+async function loadGroupOverview() {
+    try {
+        const data = await api('/group/overview');
+        const gt = data.groupTotals;
+
+        document.getElementById('groupKpiCards').innerHTML = `
+            <div class="card"><div class="card-title">Group Revenue</div><div class="card-value">${fmtMoney(gt.totalRevenue)}</div><div class="card-sub">${data.companies.length} companies</div></div>
+            <div class="card"><div class="card-title">Group EBITDA</div><div class="card-value" style="color:${gt.totalEbitda >= 0 ? 'var(--green)' : 'var(--red)'}">${fmtMoney(gt.totalEbitda)}</div><div class="card-sub">${gt.groupMargin}% margin</div></div>
+            <div class="card"><div class="card-title">Total Headcount</div><div class="card-value">${gt.totalHeadcount}</div><div class="card-sub">Across ${data.companies.length} entities</div></div>
+            <div class="card"><div class="card-title">Revenue Split</div><div class="card-value">${gt.internalPct}%</div><div class="card-sub">internal / ${gt.externalPct}% external</div></div>`;
+
+        const tbody = document.getElementById('groupCompaniesBody');
+        tbody.innerHTML = data.companies.map(c => `
+            <tr>
+                <td style="font-weight:500">${c.brandName}</td>
+                <td style="font-size:12px">${c.category}</td>
+                <td>${c.headcount}</td>
+                <td style="font-variant-numeric:tabular-nums">${fmtMoney(c.revenue2026F)}</td>
+                <td style="font-variant-numeric:tabular-nums;color:${c.ebitda2026F >= 0 ? 'var(--green)' : 'var(--red)'}">${fmtMoney(c.ebitda2026F)}</td>
+                <td>${c.margin}%</td>
+                <td style="font-variant-numeric:tabular-nums">${fmtMoney(c.revenuePerEmployee)}</td>
+                <td style="font-variant-numeric:tabular-nums">${c.ictIncome ? fmtMoney(c.ictIncome) : '--'}</td>
+                <td style="font-variant-numeric:tabular-nums">${c.ictSpend ? fmtMoney(c.ictSpend) : '--'}</td>
+                <td>${c.clientCount || 0}</td>
+            </tr>`).join('');
+
+        const chart = document.getElementById('groupRevenueChart');
+        const maxRev = Math.max(...data.companies.map(c => c.revenue2026F));
+        chart.innerHTML = data.companies.map(c => {
+            const pct = (c.revenue2026F / maxRev * 100).toFixed(1);
+            const color = c.id === 'tdac' || c.id === 'alcantara' ? 'var(--cyan)' : 'var(--accent)';
+            return `<div style="display:flex;align-items:center;gap:12px;padding:4px 0">
+                <span style="width:140px;font-size:12px;text-align:right">${c.brandName}</span>
+                <div style="flex:1;height:20px;background:rgba(255,255,255,0.04);border-radius:4px;overflow:hidden">
+                    <div style="width:${pct}%;height:100%;background:${color};border-radius:4px;opacity:0.7"></div>
+                </div>
+                <span style="width:80px;font-size:12px;font-variant-numeric:tabular-nums">${fmtMoney(c.revenue2026F)}</span>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        document.getElementById('groupKpiCards').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+    }
+}
+
+async function loadGroupFlows() {
+    try {
+        const [matrix, icts] = await Promise.all([api('/group/icts/flow-matrix'), api('/group/icts')]);
+        const ids = matrix.companyIds;
+        const names = {rousseau:'Rousseau',tdac:'TDAC',panteon:'Panteon',kmt:'KMT',alcantara:'Alcantara',immanuel:'Immanuel',centra:'Centra'};
+
+        let table = '<table style="font-size:11px"><thead><tr><th style="min-width:80px">Provider ↓ / Consumer →</th>';
+        ids.forEach(id => { table += `<th style="text-align:center;min-width:70px">${names[id] || id}</th>`; });
+        table += '<th style="text-align:center;min-width:70px;font-weight:600">Total Out</th></tr></thead><tbody>';
+
+        ids.forEach(src => {
+            table += `<tr><td style="font-weight:500">${names[src] || src}</td>`;
+            ids.forEach(dst => {
+                const cell = matrix.matrix[src][dst];
+                const val = cell.amount;
+                const bg = val > 500000 ? 'rgba(0,255,255,0.15)' : val > 100000 ? 'rgba(0,255,255,0.08)' : val > 0 ? 'rgba(0,255,255,0.04)' : '';
+                table += `<td style="text-align:center;background:${bg};font-variant-numeric:tabular-nums">${val ? fmtMoney(val) : ''}</td>`;
+            });
+            table += `<td style="text-align:center;font-weight:600;font-variant-numeric:tabular-nums">${fmtMoney(matrix.totalsByProvider[src] || 0)}</td></tr>`;
+        });
+
+        table += '<tr style="border-top:2px solid var(--border)"><td style="font-weight:600">Total In</td>';
+        ids.forEach(dst => { table += `<td style="text-align:center;font-weight:600;font-variant-numeric:tabular-nums">${fmtMoney(matrix.totalsByConsumer[dst] || 0)}</td>`; });
+        table += `<td style="text-align:center;font-weight:700;color:var(--cyan)">${fmtMoney(matrix.grandTotal)}</td></tr></tbody></table>`;
+
+        document.getElementById('flowMatrix').innerHTML = table;
+
+        const tbody = document.getElementById('ictsBody');
+        tbody.innerHTML = icts.transactions.map(t => `
+            <tr>
+                <td class="mono" style="font-size:11px">${t.transactionId}</td>
+                <td style="font-weight:500">${names[t.fromCompanyId] || t.fromCompanyId}</td>
+                <td style="font-weight:500">${names[t.toCompanyId] || t.toCompanyId}</td>
+                <td style="font-size:12px;max-width:300px">${t.description}</td>
+                <td style="font-variant-numeric:tabular-nums">${fmtMoney(t.amount)}</td>
+                <td><span class="tag">${t.billingCadence}</span></td>
+            </tr>`).join('');
+    } catch (e) {
+        document.getElementById('flowMatrix').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+    }
+}
+
+async function loadServiceCatalog() {
+    try {
+        const data = await api('/group/service-catalog');
+        const names = {rousseau:'Rousseau',tdac:'TDAC',panteon:'Panteon',kmt:'KMT',alcantara:'Alcantara',immanuel:'Immanuel',centra:'Centra'};
+        const container = document.getElementById('serviceCatalogContent');
+
+        container.innerHTML = data.catalog.filter(c => c.providedTo.length > 0).map(c => `
+            <div style="margin-bottom:20px;padding:16px;background:var(--bg-input);border-radius:8px;border:1px solid var(--border)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                    <div><strong style="font-size:14px">${c.brandName}</strong><span style="font-size:11px;color:var(--text-muted);margin-left:8px">${c.category}</span></div>
+                    <div class="card-value" style="font-size:18px">${fmtMoney(c.totalRevenueFromICTs)}</div>
+                </div>
+                <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Service Offerings</div>
+                <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px">
+                    ${c.serviceOfferings.map(s => `<span class="tag">${s.name}</span>`).join('')}
+                </div>
+                <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Provided To</div>
+                ${c.providedTo.map(p => `
+                    <div style="display:flex;align-items:center;gap:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+                        <span style="width:100px;font-weight:500;font-size:12px">${names[p.companyId] || p.companyId}</span>
+                        <div style="flex:1;font-size:11px;color:var(--text-muted)">${p.services.map(s => s.description).join('; ')}</div>
+                        <span style="font-variant-numeric:tabular-nums;font-size:12px">${fmtMoney(p.totalAmount)}</span>
+                    </div>`).join('')}
+            </div>`).join('');
+    } catch (e) {
+        document.getElementById('serviceCatalogContent').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+    }
+}
+
+async function loadBilling() {
+    try {
+        const data = await api('/group/billing/invoices');
+        document.getElementById('billingKpis').innerHTML = `
+            <div class="card"><div class="card-title">Total Invoices</div><div class="card-value">${data.count}</div><div class="card-sub">Intercompany transactions</div></div>
+            <div class="card"><div class="card-title">Monthly Total</div><div class="card-value">${fmtMoney(data.totalMonthly)}</div><div class="card-sub">Recurring monthly</div></div>
+            <div class="card"><div class="card-title">Annual Total</div><div class="card-value">${fmtMoney(data.totalAnnual)}</div><div class="card-sub">Full year 2026F</div></div>`;
+
+        const names = {rousseau:'Rousseau',tdac:'TDAC',panteon:'Panteon',kmt:'KMT',alcantara:'Alcantara',immanuel:'Immanuel',centra:'Centra'};
+        const tbody = document.getElementById('billingBody');
+        tbody.innerHTML = data.invoices.map(i => `
+            <tr>
+                <td class="mono" style="font-size:11px">${i.transactionId}</td>
+                <td style="font-weight:500">${i.providerName}</td>
+                <td style="font-weight:500">${i.consumerName}</td>
+                <td style="font-size:12px;max-width:280px">${i.description}</td>
+                <td style="font-variant-numeric:tabular-nums">${i.monthlyAmount ? fmtMoney(i.monthlyAmount) : '--'}</td>
+                <td style="font-variant-numeric:tabular-nums">${fmtMoney(i.annualAmount)}</td>
+                <td><span class="tag">${i.billingCadence}</span></td>
+            </tr>`).join('');
+    } catch (e) {
+        document.getElementById('billingKpis').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+    }
+}
+
+async function loadHoldings() {
+    try {
+        const data = await api('/group/holdings');
+        const alloc = data.allocationSummary;
+        document.getElementById('holdingsKpis').innerHTML = `
+            <div class="card"><div class="card-title">Total Capital Deployed</div><div class="card-value">${fmtMoney(alloc.totalCapitalDeployedToSubsidiaries)}</div><div class="card-sub">To 6 subsidiaries</div></div>
+            <div class="card"><div class="card-title">Total Debt</div><div class="card-value">${alloc.totalDebtOutstandingFormatted}</div><div class="card-sub">Wt. avg ${((alloc.weightedAverageDebtRate||0)*100).toFixed(1)}% rate</div></div>
+            <div class="card"><div class="card-title">Liquidity</div><div class="card-value">${alloc.liquidityMonthsOfOperatingCosts} mo</div><div class="card-sub">Months of operating costs</div></div>`;
+
+        const capStruct = data.capitalStructureRousseau;
+        document.getElementById('capitalStructure').innerHTML = `
+            <div style="margin-bottom:12px"><strong>Common Equity</strong></div>
+            ${capStruct.commonEquity.map(e => `
+                <div style="display:flex;justify-content:space-between;padding:4px 0"><span>${e.holder}</span><span class="mono">${(e.ownershipPct*100).toFixed(0)}%</span></div>`).join('')}
+            <div style="margin:12px 0 8px"><strong>Debt Instruments</strong></div>
+            ${capStruct.debt.map(d => `
+                <div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+                    <div style="display:flex;justify-content:space-between"><span>${d.instrument}</span><span class="mono">${fmtMoney(d.principalOutstanding)}</span></div>
+                    <div style="font-size:11px;color:var(--text-muted)">${((d.interestRate||0)*100).toFixed(2)}% → matures ${d.maturity}</div>
+                </div>`).join('')}
+            <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">${capStruct.cashReservePolicy}</div>`;
+
+        document.getElementById('subsidiaryInvestments').innerHTML = data.subsidiaryInvestmentsAndLoans.map(inv => `
+            <div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+                <div style="display:flex;justify-content:space-between"><span style="font-weight:500">${inv.recipientCompanyId.toUpperCase()}</span><span class="mono">${fmtMoney(inv.amount)}</span></div>
+                <div style="font-size:11px;color:var(--text-muted)">${inv.instrument} · ${inv.purpose}</div>
+                <div style="font-size:11px;color:var(--text-dim)">${inv.date} · <span class="tag ${inv.status === 'funded' ? 'tag-green' : 'tag-amber'}">${inv.status}</span></div>
+            </div>`).join('');
+
+        const fc = (await api('/group/fund-centre'));
+        document.getElementById('fundCentreContent').innerHTML = `
+            <div style="display:flex;gap:24px;margin-bottom:16px">
+                <div><div class="card-title">Total AUM</div><div style="font-size:24px;font-weight:600">${fc.summary.totalAumFormatted}</div></div>
+                <div><div class="card-title">Avg YTD Return</div><div style="font-size:24px;font-weight:600;color:var(--green)">${fc.summary.averageYtdReturn}%</div></div>
+                <div><div class="card-title">Annualised Return</div><div style="font-size:24px;font-weight:600">${fc.summary.averageAnnualisedReturn}%</div></div>
+                <div><div class="card-title">Funds</div><div style="font-size:24px;font-weight:600">${fc.summary.totalFunds}</div></div>
+            </div>
+            <div class="table-wrap"><table>
+                <thead><tr><th>Fund</th><th>Category</th><th>NAV</th><th>YTD</th><th>1Y</th><th>3Y</th><th>AUM</th></tr></thead>
+                <tbody>${fc.funds.map(f => {
+                    const sc = f.shareClasses[0];
+                    return `<tr>
+                        <td style="font-weight:500">${f.name}</td>
+                        <td style="font-size:12px">${f.category}</td>
+                        <td class="mono">${sc.nav}</td>
+                        <td style="color:${sc.performance.ytd >= 0 ? 'var(--green)' : 'var(--red)'}">${sc.performance.ytd}%</td>
+                        <td style="color:${sc.performance.oneYear >= 0 ? 'var(--green)' : 'var(--red)'}">${sc.performance.oneYear}%</td>
+                        <td style="color:${sc.performance.threeYear >= 0 ? 'var(--green)' : 'var(--red)'}">${sc.performance.threeYear}%</td>
+                        <td>${sc.aumFormatted}</td>
+                    </tr>`;
+                }).join('')}</tbody>
+            </table></div>`;
+    } catch (e) {
+        document.getElementById('holdingsKpis').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+    }
+}
+
+async function loadGothamDashboard() {
+    try {
+        const stats = await api('/gotham/dashboard');
+        const inv = stats.investigations;
+        document.getElementById('gothamKpiCards').innerHTML = `
+            <div class="card"><div class="card-title">Open Investigations</div><div class="card-value">${inv.open}</div><div class="card-sub">${inv.total} total</div></div>
+            <div class="card"><div class="card-title">Threat Entities</div><div class="card-value">${stats.threat_entities.total}</div><div class="card-sub" style="color:var(--red)">${stats.threat_entities.critical} critical</div></div>
+            <div class="card"><div class="card-title">Active Alerts</div><div class="card-value" style="color:var(--amber)">${stats.active_alerts}</div><div class="card-sub">Pattern detections</div></div>
+            <div class="card"><div class="card-title">Events (24h)</div><div class="card-value">${stats.geo_events_24h}</div><div class="card-sub">Geo events</div></div>`;
+
+        const invs = await api('/gotham/investigations?limit=10');
+        const statusColors = {open:'tag-green',in_progress:'tag',pending_review:'tag-amber',closed:'',archived:''};
+        document.getElementById('gothamInvestigationsList').innerHTML = invs.length ? invs.map(i => `
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer" onclick="showInvestigationDetail('${i.id}')">
+                <div><div style="font-weight:500;font-size:13px">${i.title}</div><div style="font-size:11px;color:var(--text-dim)">${i.case_number}</div></div>
+                <div style="text-align:right"><span class="tag ${statusColors[i.status]||''}">${i.status}</span><div style="font-size:11px;color:var(--text-dim);margin-top:2px">${i.finding_count} findings</div></div>
+            </div>`).join('') : '<div class="empty-state">No investigations</div>';
+
+        const alerts = await api('/gotham/alerts?limit=10');
+        const sevColors = {critical:'tag-red',high:'tag-amber',moderate:'tag',low:''};
+        document.getElementById('gothamAlertsList').innerHTML = alerts.length ? alerts.map(a => `
+            <div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+                <div style="display:flex;justify-content:space-between"><span style="font-weight:500;font-size:13px">${a.title}</span><span class="tag ${sevColors[a.severity]||''}">${a.severity}</span></div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${a.description}</div>
+                <div style="font-size:10px;color:var(--text-dim);margin-top:2px">Confidence: ${(a.confidence*100).toFixed(0)}% · ${fmtTimeAgo(a.created_at)}</div>
+            </div>`).join('') : '<div class="empty-state">No active alerts</div>';
+
+        const riskCountries = stats.top_risk_countries || [];
+        const maxRisk = Math.max(...riskCountries.map(c => c.overall_risk_score), 1);
+        document.getElementById('gothamRiskCountries').innerHTML = riskCountries.length ? riskCountries.map(c => `
+            <div style="display:flex;align-items:center;gap:12px;padding:4px 0">
+                <span style="width:100px;font-size:12px;text-align:right">${c.country}</span>
+                <div style="flex:1;height:16px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden">
+                    <div style="width:${(c.overall_risk_score/maxRisk*100)}%;height:100%;background:${c.overall_risk_score>5?'var(--red)':c.overall_risk_score>2?'var(--amber)':'var(--green)'};border-radius:3px;opacity:0.7"></div>
+                </div>
+                <span style="width:40px;font-size:12px;font-variant-numeric:tabular-nums;text-align:right">${c.overall_risk_score.toFixed(1)}</span>
+            </div>`).join('') : '<div class="empty-state">No country risk data</div>';
+    } catch (e) {
+        document.getElementById('gothamKpiCards').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+    }
+}
+
+async function showInvestigationDetail(invId) {
+    try {
+        const inv = await api('/gotham/investigations/' + invId);
+        document.getElementById('invDetailTitle').textContent = inv.case_number + ' — ' + inv.title;
+        document.getElementById('investigationDetail').style.display = '';
+        document.getElementById('invDetailContent').innerHTML = `
+            <div style="display:flex;gap:24px;margin-bottom:16px;font-size:12px">
+                <div><span class="tag">${inv.status}</span> <span class="tag">${inv.classification}</span> <span class="tag">${inv.priority}</span></div>
+                <div style="color:var(--text-muted)">Created ${fmtDate(inv.created_at)} by ${inv.created_by || 'unknown'}</div>
+                <div style="color:var(--text-muted)">Analysts: ${(inv.assigned_analysts||[]).join(', ') || 'none'}</div>
+            </div>
+            <div style="font-size:13px;margin-bottom:12px">${inv.description || 'No description'}</div>
+            ${inv.findings && inv.findings.length ? '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Findings</div>' + inv.findings.map(f => `
+                <div style="padding:10px;background:var(--bg-input);border-radius:6px;margin-bottom:8px;border-left:3px solid ${f.confidence > 0.7 ? 'var(--cyan)' : f.confidence > 0.4 ? 'var(--amber)' : 'var(--text-dim)'}">
+                    <div style="font-weight:500;font-size:13px">${f.title}</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:4px">${f.summary || ''}</div>
+                    <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Confidence: ${(f.confidence*100).toFixed(0)}% · ${f.finding_type} · ${f.status}</div>
+                </div>`).join('') : ''}
+            ${inv.timeline_events && inv.timeline_events.length ? '<div style="font-size:11px;color:var(--text-dim);margin:12px 0 8px;text-transform:uppercase;letter-spacing:.06em">Timeline</div>' + inv.timeline_events.sort((a,b) => new Date(b.occurred_at) - new Date(a.occurred_at)).map(t => `
+                <div style="display:flex;gap:8px;padding:4px 0;font-size:12px">
+                    <span style="color:var(--text-dim);white-space:nowrap">${fmtDate(t.occurred_at)}</span>
+                    <span class="tag" style="font-size:10px">${t.event_type}</span>
+                    <span style="color:var(--text-muted)">${t.description}</span>
+                </div>`).join('') : ''}`;
+    } catch (e) { toast('Error loading investigation: ' + e.message, 'error'); }
+}
+
+async function loadGothamInvestigations() {
+    try {
+        const statusFilter = document.getElementById('invStatusFilter').value;
+        const url = '/gotham/investigations?limit=50' + (statusFilter ? '&status=' + statusFilter : '');
+        const invs = await api(url);
+        const statusColors = {open:'tag-green',in_progress:'tag',pending_review:'tag-amber',closed:'',archived:''};
+        const prioColors = {high:'tag-red',medium:'tag-amber',low:'',critical:'tag-red'};
+        document.getElementById('investigationsBody').innerHTML = invs.length ? invs.map(i => `
+            <tr style="cursor:pointer" onclick="showInvestigationDetail('${i.id}')">
+                <td class="mono" style="font-size:11px">${i.case_number}</td>
+                <td style="font-weight:500;max-width:300px">${i.title}</td>
+                <td><span class="tag ${statusColors[i.status]||''}">${i.status}</span></td>
+                <td><span class="tag ${prioColors[i.priority]||''}">${i.priority}</span></td>
+                <td><span class="tag">${i.classification}</span></td>
+                <td style="font-variant-numeric:tabular-nums">${i.finding_count}</td>
+                <td style="font-size:11px">${(i.assigned_analysts||[]).length}</td>
+                <td style="white-space:nowrap">${fmtDate(i.created_at)}</td>
+            </tr>`).join('') : '<tr><td colspan="8"><div class="empty-state">No investigations found</div></td></tr>';
+    } catch (e) {
+        document.getElementById('investigationsBody').innerHTML = `<tr><td colspan="8"><div class="empty-state">Error: ${e.message}</div></td></tr>`;
+    }
+}
+
+async function loadGothamThreatMap() {
+    try {
+        const [events, risk] = await Promise.all([api('/gotham/geo-events?days_back=90&limit=500'), api('/gotham/country-risk')]);
+        const svg = document.getElementById('threatMapSvg');
+        const W = svg.clientWidth || 900, H = svg.clientHeight || 500;
+
+        function lonToX(lon) { return ((lon + 180) / 360) * W; }
+        function latToY(lat) { return ((90 - lat) / 180) * H; }
+
+        const sevColors = {informational:'var(--green)',minor:'var(--amber)',moderate:'var(--amber)',major:'#f97316',critical:'var(--red)'};
+        const sevRadius = {informational:3,minor:4,moderate:5,major:7,critical:9};
+
+        let mapContent = '';
+        mapContent += `<rect width="${W}" height="${H}" fill="var(--bg-input)"/>`;
+        for (let lon = -180; lon <= 180; lon += 30) { mapContent += `<line x1="${lonToX(lon)}" y1="0" x2="${lonToX(lon)}" y2="${H}" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>`; }
+        for (let lat = -90; lat <= 90; lat += 30) { mapContent += `<line x1="0" y1="${latToY(lat)}" x2="${W}" y2="${latToY(lat)}" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>`; }
+
+        events.forEach(e => {
+            if (e.latitude && e.longitude) {
+                const x = lonToX(e.longitude), y = latToY(e.latitude);
+                const col = sevColors[e.severity] || 'var(--accent)';
+                const r = sevRadius[e.severity] || 4;
+                mapContent += `<circle cx="${x}" cy="${y}" r="${r}" fill="${col}" opacity="0.7"><title>${e.title} (${e.country}, ${e.severity})</title></circle>`;
+                mapContent += `<circle cx="${x}" cy="${y}" r="${r+4}" fill="none" stroke="${col}" opacity="0.3" stroke-width="1"><animate attributeName="r" from="${r+2}" to="${r+12}" dur="2s" repeatCount="infinite"/><animate attributeName="opacity" from="0.3" to="0" dur="2s" repeatCount="infinite"/></circle>`;
+            }
+        });
+
+        svg.innerHTML = mapContent;
+
+        const tbody = document.getElementById('countryRiskBody');
+        tbody.innerHTML = risk.length ? risk.map(c => {
+            const events90 = c.recent_events ? Object.values(c.recent_events).reduce((a,b) => a+b, 0) : 0;
+            return `<tr>
+                <td style="font-weight:500">${c.country}</td>
+                <td><span class="tag ${c.overall_risk_score>5?'tag-red':c.overall_risk_score>2?'tag-amber':''}">${c.overall_risk_score.toFixed(1)}</span></td>
+                <td>${c.security_risk.toFixed(1)}</td>
+                <td>${c.political_risk.toFixed(1)}</td>
+                <td>${c.health_risk.toFixed(1)}</td>
+                <td style="font-variant-numeric:tabular-nums">${events90}</td>
+            </tr>`;
+        }).join('') : '<tr><td colspan="6"><div class="empty-state">No country risk data</div></td></tr>';
+    } catch (e) {
+        document.getElementById('threatMapCanvas').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+    }
+}
+
+async function loadGothamEntities() {
+    try {
+        const [entities, graph] = await Promise.all([api('/gotham/entities?limit=100'), api('/gotham/graph/analyze')]);
+        const levelColors = {low:'',elevated:'tag-amber',high:'tag-red',critical:'tag-red',imminent:'tag-red'};
+        document.getElementById('entitiesBody').innerHTML = entities.length ? entities.map(e => `
+            <tr>
+                <td style="font-weight:500">${e.name}</td>
+                <td><span class="tag">${e.entity_type}</span></td>
+                <td><span class="tag ${levelColors[e.threat_level]||''}">${e.threat_level}</span></td>
+                <td style="font-variant-numeric:tabular-nums">${e.risk_score.toFixed(1)}</td>
+                <td style="font-size:11px">${(e.aliases||[]).join(', ') || '--'}</td>
+                <td style="font-variant-numeric:tabular-nums">${e.connection_count}</td>
+                <td style="white-space:nowrap">${e.last_seen ? fmtDate(e.last_seen) : '--'}</td>
+            </tr>`).join('') : '<tr><td colspan="7"><div class="empty-state">No entities found</div></td></tr>';
+
+        if (graph.nodes.length) {
+            const svg = document.getElementById('entityGraphSvg');
+            const W = svg.clientWidth || 900, H = svg.clientHeight || 400;
+            const cx = W/2, cy = H/2, r = Math.min(W, H) * 0.35;
+            const positions = {};
+            graph.nodes.forEach((n, i) => {
+                const angle = (i / graph.nodes.length) * Math.PI * 2 - Math.PI/2;
+                positions[n.id] = { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+            });
+
+            const nodeColors = {person:'#3b82f6',organization:'#a855f7',location:'#10b981',asset:'#f59e0b'};
+            let content = '';
+            graph.edges.forEach(e => {
+                const from = positions[e.source], to = positions[e.target];
+                if (from && to) content += `<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>`;
+            });
+            graph.nodes.forEach(n => {
+                const pos = positions[n.id];
+                if (!pos) return;
+                const col = nodeColors[n.type] || 'var(--accent)';
+                const sz = 20 + n.risk_score * 2;
+                content += `<circle cx="${pos.x}" cy="${pos.y}" r="${sz}" fill="${col}22" stroke="${col}" stroke-width="2"/>`;
+                content += `<text x="${pos.x}" y="${pos.y + 4}" fill="white" font-size="10" text-anchor="middle" font-family="var(--font-sans)">${(n.name||'').slice(0,12)}</text>`;
+                if (n.risk_score > 0) content += `<text x="${pos.x}" y="${pos.y + sz + 14}" fill="${col}" font-size="9" text-anchor="middle">${n.risk_score.toFixed(1)}</text>`;
+            });
+            svg.innerHTML = content;
+        }
+    } catch (e) {
+        document.getElementById('entitiesBody').innerHTML = `<tr><td colspan="7"><div class="empty-state">Error: ${e.message}</div></td></tr>`;
+    }
+}
+
+async function loadContourDashboards() {
+    try {
+        const dashboards = await api('/contour/dashboards');
+        const gallery = document.getElementById('dashboardGallery');
+        if (!dashboards.length) { gallery.innerHTML = '<div class="empty-state">No dashboards yet</div>'; return; }
+
+        const typeIcons = {bar:'&#9638;',line:'&#8767;',area:'&#9650;',scatter:'&#8226;',pie:'&#9675;',table:'&#9638;',map:'&#9737;',kpi:'&#9733;',gauge:'&#9682;'};
+        gallery.innerHTML = dashboards.map(d => `
+            <div class="card" style="cursor:pointer" onclick="openDashboard('${d.id}')">
+                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+                    <div style="font-weight:600;font-size:14px">${d.name}</div>
+                    <span class="tag">${d.workspace_id || 'global'}</span>
+                </div>
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">${d.description || 'No description'}</div>
+                <div style="display:flex;gap:8px;font-size:11px;color:var(--text-dim)">
+                    <span>${d.charts.length} chart${d.charts.length !== 1 ? 's' : ''}</span>
+                    <span>&middot;</span>
+                    <span>${d.view_count} views</span>
+                    <span>&middot;</span>
+                    <span>${d.charts.map(c => typeIcons[c.chart_type] || '?').join(' ')}</span>
+                </div>
+            </div>`).join('');
+    } catch (e) { document.getElementById('dashboardGallery').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`; }
+}
+
+async function openDashboard(dashboardId) {
+    try {
+        const d = await api('/contour/dashboards/' + dashboardId);
+        document.getElementById('dashboardViewerTitle').textContent = d.name;
+        document.getElementById('dashboardViewer').style.display = '';
+
+        const chartsContainer = document.getElementById('dashboardCharts');
+        chartsContainer.innerHTML = d.charts.map(c => {
+            const pos = c.position || {};
+            const style = `grid-column:span ${pos.w || 4};grid-row:span ${pos.h || 2}`;
+            return `<div style="${style};background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:12px;min-height:100px" id="chart-${c.id}">
+                <div style="font-size:12px;font-weight:500;margin-bottom:8px">${c.title} <span class="tag" style="font-size:9px">${c.chart_type}</span></div>
+                <div id="chart-data-${c.id}" style="font-size:11px;color:var(--text-muted)">Loading...</div>
+            </div>`;
+        }).join('');
+
+        for (const c of d.charts) {
+            try {
+                const result = await api('/contour/charts/' + c.id + '/query', {method: 'POST'});
+                const el = document.getElementById('chart-data-' + c.id);
+                if (result.data && result.data.length) {
+                    if (c.chart_type === 'kpi') {
+                        const val = result.data[0];
+                        const mainVal = val.value !== undefined ? val.value : Object.values(val).find(v => typeof v === 'number') || '--';
+                        el.innerHTML = `<div style="font-size:28px;font-weight:700;color:var(--cyan)">${typeof mainVal === 'number' ? mainVal.toLocaleString() : mainVal}</div>`;
+                    } else if (c.chart_type === 'gauge') {
+                        const val = result.data[0];
+                        const pct = val.error_rate || val.value || 0;
+                        el.innerHTML = `<div style="height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;margin-top:8px"><div style="width:${Math.min(pct, 100)}%;height:100%;background:${pct > 10 ? 'var(--red)' : pct > 5 ? 'var(--amber)' : 'var(--green)'};border-radius:4px"></div></div><div style="margin-top:4px;font-variant-numeric:tabular-nums">${pct}${typeof pct === 'number' && pct < 100 ? '%' : ''}</div>`;
+                    } else {
+                        const maxVal = Math.max(...result.data.map(d => typeof d.value === 'number' ? d.value : 0), 1);
+                        el.innerHTML = result.data.slice(0, 8).map(item => {
+                            const label = item.label || item.pk || item.country || '';
+                            const val = item.value !== undefined ? item.value : Object.values(item).find(v => typeof v === 'number') || 0;
+                            const pct = (val / maxVal * 100).toFixed(0);
+                            return `<div style="display:flex;align-items:center;gap:8px;padding:2px 0"><span style="width:80px;font-size:10px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</span><div style="flex:1;height:12px;background:rgba(255,255,255,0.04);border-radius:2px;overflow:hidden"><div style="width:${pct}%;height:100%;background:var(--cyan);opacity:0.6;border-radius:2px"></div></div><span style="font-size:10px;font-variant-numeric:tabular-nums;width:50px;text-align:right">${typeof val === 'number' ? val.toLocaleString() : val}</span></div>`;
+                        }).join('');
+                    }
+                } else if (result.error) {
+                    el.innerHTML = `<span style="color:var(--red)">${result.error}</span>`;
+                } else {
+                    el.innerHTML = '<span style="color:var(--text-dim)">No data</span>';
+                }
+            } catch (e) {
+                document.getElementById('chart-data-' + c.id).innerHTML = `<span style="color:var(--red)">Error</span>`;
+            }
+        }
+    } catch (e) { toast('Error loading dashboard: ' + e.message, 'error'); }
+}
+
+async function loadContourSchedules() {
+    try {
+        const schedules = await api('/contour/schedules');
+        const tbody = document.getElementById('schedulesBody');
+        if (!schedules.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">No pipeline schedules configured</div></td></tr>'; return; }
+        tbody.innerHTML = schedules.map(s => `
+            <tr>
+                <td style="font-weight:500">${s.name}</td>
+                <td class="mono" style="font-size:11px">${s.cron_expression}</td>
+                <td style="font-size:11px">${s.timezone}</td>
+                <td><span class="tag ${s.is_enabled ? 'tag-green' : ''}">${s.is_enabled ? 'active' : 'paused'}</span></td>
+                <td style="white-space:nowrap">${s.last_run_at ? fmtDate(s.last_run_at) : '--'} ${s.last_run_status ? `<span class="tag ${s.last_run_status === 'completed' ? 'tag-green' : 'tag-red'}" style="font-size:9px">${s.last_run_status}</span>` : ''}</td>
+                <td style="white-space:nowrap">${s.next_run_at ? fmtDate(s.next_run_at) : '--'}</td>
+                <td><button class="btn btn-sm" onclick="runPipelineSchedule('${s.id}')">Run Now</button></td>
+            </tr>`).join('');
+    } catch (e) { document.getElementById('schedulesBody').innerHTML = `<tr><td colspan="7"><div class="empty-state">Error: ${e.message}</div></td></tr>`; }
+}
+
+async function runPipelineSchedule(scheduleId) {
+    try {
+        const result = await api('/contour/schedules/' + scheduleId + '/run', {method: 'POST'});
+        toast(`Pipeline run: ${result.status} (${result.records_processed || 0} records)`);
+        loadContourSchedules();
+    } catch (e) { toast('Schedule run failed: ' + e.message, 'error'); }
+}
+
+async function runDQChecks() {
+    try {
+        const result = await api('/contour/data-quality/check', {method: 'POST'});
+        document.getElementById('dqRunResult').innerHTML = `
+            <div style="display:flex;gap:24px;margin-bottom:12px">
+                <div><div class="card-title">Rules Checked</div><div style="font-size:24px;font-weight:600">${result.rules_checked}</div></div>
+                <div><div class="card-title">Violations Found</div><div style="font-size:24px;font-weight:600;color:${result.violations_found > 0 ? 'var(--red)' : 'var(--green)'}">${result.violations_found}</div></div>
+            </div>`;
+        loadDQViolations();
+    } catch (e) { toast('DQ check failed: ' + e.message, 'error'); }
+}
+
+async function loadDQViolations() {
+    try {
+        const violations = await api('/contour/data-quality/violations?limit=50');
+        const tbody = document.getElementById('dqViolationsBody');
+        if (!violations.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">No active violations</div></td></tr>'; return; }
+        tbody.innerHTML = violations.map(v => `
+            <tr>
+                <td><span class="tag ${v.violation_type === 'not_null' ? 'tag-red' : 'tag-amber'}">${v.violation_type}</span></td>
+                <td class="mono" style="font-size:11px">${v.object_id ? v.object_id.slice(0, 8) + '...' : '--'}</td>
+                <td style="font-size:11px;max-width:300px">${JSON.stringify(v.details || {}).slice(0, 120)}</td>
+                <td style="white-space:nowrap">${fmtDate(v.detected_at)}</td>
+                <td><span class="tag">${v.status}</span></td>
+            </tr>`).join('');
+    } catch (e) { document.getElementById('dqViolationsBody').innerHTML = `<tr><td colspan="5"><div class="empty-state">Error: ${e.message}</div></td></tr>`; }
+}
+
+async function doSearch() {
+    const query = document.getElementById('searchInput').value.trim();
+    if (query.length < 2) { document.getElementById('searchResults').innerHTML = '<div class="empty-state">Enter at least 2 characters</div>'; return; }
+    try {
+        const results = await api('/contour/search?query=' + encodeURIComponent(query));
+        const el = document.getElementById('searchResults');
+        if (!results.length) { el.innerHTML = `<div class="empty-state">No results for "${query}"</div>`; return; }
+        el.innerHTML = `<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">${results.length} results for "${query}"</div>` + results.map(r => `
+            <div style="padding:10px;background:var(--bg-input);border-radius:6px;margin-bottom:8px;border-left:3px solid var(--cyan)">
+                <div style="display:flex;justify-content:space-between">
+                    <div style="font-weight:500;font-size:13px">${r.title}</div>
+                    <div><span class="tag">${r.object_type}</span> <span class="tag" style="font-size:9px">${r.workspace_id || 'global'}</span></div>
+                </div>
+                ${r.content_preview ? `<div style="font-size:12px;color:var(--text-muted);margin-top:4px">${r.content_preview.slice(0, 200)}</div>` : ''}
+                <div style="font-size:10px;color:var(--text-dim);margin-top:4px">${r.tags ? r.tags.join(', ') : ''}</div>
+            </div>`).join('');
+    } catch (e) { document.getElementById('searchResults').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`; }
+}
+
+async function rebuildSearchIndex() {
+    try {
+        const result = await api('/contour/search/rebuild-index', {method: 'POST'});
+        toast(`Search index rebuilt: ${result.indexed} objects indexed`);
+    } catch (e) { toast('Index rebuild failed: ' + e.message, 'error'); }
+}
+
 function updateCountdown() {
     const target = new Date('2026-12-31T00:00:00Z').getTime();
     const now = Date.now();
@@ -1338,7 +2830,13 @@ function init() {
     }, 30000);
 }
 
-init();
+supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    if (session) {
+        authToken = session.access_token;
+        currentUser = { email: session.user.email, id: session.user.id };
+        showApp(currentUser);
+    }
+});
 </script>
 </body>
 </html>

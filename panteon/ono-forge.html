@@ -931,12 +931,16 @@ const state = {
 /* ─── API CLIENT ─── */
 const api = {
     async request(method, path, body) {
-        const opts = {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-        };
+        const token = localStorage.getItem('panteon_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        const opts = { method, headers };
         if (body !== undefined) opts.body = JSON.stringify(body);
         const res = await fetch(`${API_BASE}${path}`, opts);
+        if (res.status === 401) {
+            window.location.href = '/admin';
+            throw new Error('Session expired');
+        }
         if (!res.ok) {
             const err = await res.text().catch(() => res.statusText);
             throw new Error(`${res.status}: ${err}`);

@@ -2,6 +2,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from panteon.core.database import get_db
+from panteon.core.auth import get_current_user
 from panteon.ono.service import LLMOrchestrator, AgentService, AutomationService
 from panteon.api.schemas_ono import (
     LLMProviderCreate, LLMProviderResponse,
@@ -12,7 +13,7 @@ from panteon.api.schemas_ono import (
     AutomationCreate, AutomationResponse,
 )
 
-router = APIRouter(prefix="/ono", tags=["ONO"])
+router = APIRouter(prefix="/ono", tags=["ONO"], dependencies=[Depends(get_current_user)])
 
 
 @router.post("/providers", response_model=LLMProviderResponse)

@@ -69,6 +69,7 @@ class OntologyService:
         )
         self.db.add(obj)
         await self.db.flush()
+        await self._lineage_event(obj, "object_created", created_by, {"primary_key": primary_key_value})
         return obj
 
     async def get_object(self, object_id: uuid.UUID) -> Optional[Object]:
@@ -119,6 +120,7 @@ class OntologyService:
         obj.properties = {**obj.properties, **properties}
         obj.updated_by = updated_by
         await self.db.flush()
+        await self._lineage_event(obj, "object_updated", updated_by, {"changed_keys": list(properties.keys())})
         return obj
 
     async def delete_object(self, object_id: uuid.UUID) -> bool:
@@ -244,3 +246,24 @@ class OntologyService:
                     filtered.append(obj)
             return filtered[:limit]
         return objects
+
+    async def _lineage_event(self, obj: Object, event_type: str, actor: str = None, details: dict = None):
+        try:
+            from panteon.core.lineage_service import LineageService
+            lineage = LineageService(self.db)
+            obj_type = obj.object_type if hasattr(obj, 'object_type') and obj.object_type else None
+            type_name = obj_type.display_name if obj_type else str(obj.object_type_id)
+            node = await lineage.get_or_create_node(
+                node_type="object",
+                node_id=str(obj.id),
+                name=f"{type_name}:{obj.primary_key_value}",
+                metadata={"object_type_id": str(obj.object_type_id), "primary_key": obj.primary_key_value},
+            )
+            await lineage.record_event(
+                node_id=str(node.id),
+                event_type=event_type,
+                actor=actor,
+                details=details or {},
+            )
+        except Exception:
+            pass

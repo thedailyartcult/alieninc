@@ -1,11 +1,15 @@
 import uuid
+import hashlib
+import hmac
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Header, Request
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from pydantic import BaseModel, Field
 from typing import Optional
 from panteon.core.database import get_db
-from panteon.core.tenant import Tenant, TenantMetric
+from panteon.core.tenant import Tenant, TenantMetric, TenantWebhook
+from panteon.core.config import settings
 import structlog
 
 logger = structlog.get_logger()
@@ -41,16 +45,48 @@ class GiftCardRedeemed(BaseModel):
     destination: Optional[str] = None
 
 
-def verify_webhook_secret(secret: str = Header(None, alias="X-Webhook-Secret")):
-    if not secret:
-        raise HTTPException(status_code=401, detail="Missing webhook secret")
-    return secret
+async def verify_webhook(
+    request: Request,
+    x_webhook_secret: Optional[str] = Header(None),
+    x_webhook_signature: Optional[str] = Header(None),
+    db: AsyncSession = Depends(get_db),
+):
+    body = await request.body()
+
+    if x_webhook_signature:
+        result = await db.execute(
+            select(TenantWebhook).where(TenantWebhook.is_active == True)
+        )
+        webhooks = result.scalars().all()
+        for wh in webhooks:
+            if wh.secret:
+                expected = hmac.new(
+                    wh.secret.encode(), body, hashlib.sha256
+                ).hexdigest()
+                if hmac.compare_digest(expected, x_webhook_signature):
+                    return True
+
+    if x_webhook_secret:
+        result = await db.execute(
+            select(TenantWebhook).where(
+                TenantWebhook.secret == x_webhook_secret,
+                TenantWebhook.is_active == True,
+            )
+        )
+        if result.scalar_one_or_none():
+            return True
+
+    if settings.debug and x_webhook_secret == "dev-webhook-secret":
+        return True
+
+    raise HTTPException(status_code=401, detail="Invalid webhook signature")
 
 
 @router.post("/reflection-completed")
 async def on_reflection_completed(
     data: ReflectionCompleted,
     request: Request,
+    _verified: bool = Depends(verify_webhook),
     db: AsyncSession = Depends(get_db),
 ):
     logger.info("tdac_reflection_completed", patron_id=data.patron_id, reflection_id=data.reflection_id)
@@ -81,6 +117,7 @@ async def on_reflection_completed(
 @router.post("/patron-updated")
 async def on_patron_updated(
     data: PatronUpdated,
+    _verified: bool = Depends(verify_webhook),
     db: AsyncSession = Depends(get_db),
 ):
     logger.info("tdac_patron_updated", patron_id=data.patron_id)
@@ -108,6 +145,7 @@ async def on_patron_updated(
 @router.post("/game-played")
 async def on_game_played(
     data: GamePlayed,
+    _verified: bool = Depends(verify_webhook),
     db: AsyncSession = Depends(get_db),
 ):
     logger.info("tdac_game_played", patron_id=data.patron_id, game_type=data.game_type)
@@ -136,6 +174,7 @@ async def on_game_played(
 @router.post("/giftcard-redeemed")
 async def on_giftcard_redeemed(
     data: GiftCardRedeemed,
+    _verified: bool = Depends(verify_webhook),
     db: AsyncSession = Depends(get_db),
 ):
     logger.info("tdac_giftcard_redeemed", giftcard_id=data.giftcard_id, patron_id=data.patron_id)

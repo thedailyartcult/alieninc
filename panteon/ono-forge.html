@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panteon | ONO Forge — AI Agent Builder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #070809;
+            --bg-elev: #0d0f11;
+            --bg-card: #111316;
+            --bg-input: #0a0c0e;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.18);
+            --border-focus: rgba(154, 180, 193, 0.5);
+            --text: #ffffff;
+            --text-muted: #6b7280;
+            --text-dim: #9ab4c1;
+            --accent: #9ab4c1;
+            --accent-glow: rgba(154, 180, 193, 0.15);
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --user-bubble: #1a1d22;
+            --assistant-bubble: #14171b;
+            --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--sans);
+            font-size: 14px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            overflow: hidden;
+        }
+
+        button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+        input, textarea, select { font-family: inherit; color: inherit; }
+        ::selection { background: rgba(154, 180, 193, 0.3); }
+
+        /* ─── HEADER ─── */
+        .forge-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 52px;
+            padding: 0 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg);
+            flex-shrink: 0;
+        }
+
+        .forge-header .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .forge-header .logo-mark {
+            width: 22px;
+            height: 22px;
+            color: var(--text);
+        }
+
+        .forge-header .logo-wordmark {
+            font-size: 0.82rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            color: var(--text);
+        }
+
+        .forge-header .logo-wordmark span { color: #00e5ff; }
+
+        .forge-header .divider {
+            width: 1px;
+            height: 20px;
+            background: var(--border);
+        }
+
+        .forge-header .page-title {
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--text-dim);
+            letter-spacing: 0.04em;
+        }
+
+        .forge-header .header-meta {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-family: var(--mono);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .forge-header .status-dot-live {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 6px var(--success);
+            animation: pulse-live 2s infinite;
+        }
+
+        @keyframes pulse-live {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* ─── LAYOUT ─── */
+        .forge-layout {
+            display: flex;
+            height: calc(100vh - 52px);
+        }
+
+        /* ─── LEFT PANEL: AGENT LIST ─── */
+        .panel-left {
+            width: 260px;
+            min-width: 260px;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            background: var(--bg);
+        }
+
+        .panel-left-header {
+            padding: 14px 14px 10px;
+            flex-shrink: 0;
+        }
+
+        .btn-create {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 0;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            font-size: 0.78rem;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            transition: all 0.15s;
+        }
+        .btn-create:hover {
+            background: rgba(255,255,255,0.04);
+            border-color: var(--border-hover);
+        }
+        .btn-create svg { width: 12px; height: 12px; }
+
+        .agent-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 8px 16px;
+        }
+
+        .agent-list::-webkit-scrollbar { width: 4px; }
+        .agent-list::-webkit-scrollbar-track { background: transparent; }
+        .agent-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+        .agent-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.12s;
+            margin-bottom: 2px;
+        }
+        .agent-item:hover { background: rgba(255,255,255,0.04); }
+        .agent-item.active { background: rgba(154,180,193,0.08); }
+
+        .agent-item .dot {
+            width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+            background: var(--text-muted);
+        }
+        .agent-item .dot.active {
+            background: var(--success);
+            box-shadow: 0 0 5px rgba(34,197,94,0.6);
+        }
+
+        .agent-item-info { flex: 1; min-width: 0; }
+        .agent-item-name {
+            font-size: 0.8rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .agent-item-model {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            font-family: var(--mono);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .agent-list-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            gap: 8px;
+        }
+        .agent-list-empty svg { width: 28px; height: 28px; opacity: 0.4; }
+
+        /* ─── CENTER PANEL: CONFIG ─── */
+        .panel-center {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-center::-webkit-scrollbar { width: 5px; }
+        .panel-center::-webkit-scrollbar-track { background: transparent; }
+        .panel-center::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+
+        .config-empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+            gap: 16px;
+        }
+
+        .config-empty-state .empty-icon {
+            width: 64px; height: 64px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-muted);
+        }
+        .config-empty-state .empty-icon svg { width: 28px; height: 28px; }
+
+        .config-empty-state h2 {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text);
+        }
+        .config-empty-state p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            max-width: 320px;
+            line-height: 1.6;
+        }
+
+        .config-form {
+            padding: 28px 32px 48px;
+            max-width: 680px;
+            width: 100%;
+        }
+
+        .config-section {
+            margin-bottom: 28px;
+        }
+
+        .config-section-label {
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .form-row > * { flex: 1; }
+
+        .field-label {
+            display: block;
+            font-size: 0.74rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .field-input,
+        .field-select,
+        .field-textarea {
+            width: 100%;
+            padding: 8px 11px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-input);
+            color: var(--text);
+            font-size: 0.82rem;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .field-input:focus,
+        .field-select:focus,
+        .field-textarea:focus {
+            border-color: var(--border-focus);
+        }
+        .field-input::placeholder,
+        .field-textarea::placeholder {
+            color: rgba(255,255,255,0.2);
+        }
+
+        .field-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 28px;
+            cursor: pointer;
+        }
+        .field-select option { background: #111316; }
+
+        .field-textarea {
+            resize: vertical;
+            min-height: 180px;
+            font-family: var(--mono);
+            font-size: 0.78rem;
+            line-height: 1.7;
+        }
+
+        .model-info-bar {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+        }
+        .model-info-tag {
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            font-family: var(--mono);
+            font-size: 0.68rem;
+        }
+
+        /* Tools grid */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .tool-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+            padding: 10px 11px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-input);
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .tool-checkbox:hover {
+            border-color: var(--border-hover);
+            background: rgba(255,255,255,0.02);
+        }
+        .tool-checkbox.checked {
+            border-color: rgba(154,180,193,0.4);
+            background: rgba(154,180,193,0.05);
+        }
+
+        .tool-checkbox input { display: none; }
+
+        .tool-check-box {
+            width: 15px; height: 15px; border-radius: 3px;
+            border: 1.5px solid var(--border-hover);
+            flex-shrink: 0;
+            margin-top: 1px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s;
+        }
+        .tool-checkbox.checked .tool-check-box {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+        .tool-check-box svg { width: 9px; height: 9px; opacity: 0; transition: opacity 0.12s; }
+        .tool-checkbox.checked .tool-check-box svg { opacity: 1; }
+
+        .tool-info { flex: 1; min-width: 0; }
+        .tool-name {
+            font-family: var(--mono);
+            font-size: 0.74rem;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+        .tool-desc {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* Slider */
+        .slider-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .slider-wrap input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 3px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.12);
+            outline: none;
+        }
+        .slider-wrap input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            border: 2px solid var(--bg);
+            box-shadow: 0 0 0 1px var(--accent);
+        }
+        .slider-value {
+            font-family: var(--mono);
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            min-width: 24px;
+            text-align: right;
+        }
+
+        /* Buttons row */
+        .config-actions {
+            display: flex;
+            gap: 10px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn {
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #070809;
+        }
+        .btn-primary:hover { background: #b0c8d4; }
+        .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .btn-ghost {
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+        .btn-ghost:hover { border-color: var(--border-hover); color: var(--text); }
+
+        .btn-danger-ghost {
+            border: 1px solid rgba(239,68,68,0.3);
+            color: rgba(239,68,68,0.8);
+            margin-left: auto;
+        }
+        .btn-danger-ghost:hover {
+            border-color: rgba(239,68,68,0.6);
+            color: var(--danger);
+        }
+
+        .btn-loading .btn-spinner {
+            width: 12px; height: 12px;
+            border: 1.5px solid rgba(7,8,9,0.3);
+            border-top-color: #070809;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─── RIGHT PANEL: CHAT ─── */
+        .panel-right {
+            width: 400px;
+            min-width: 400px;
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            background: var(--bg);
+        }
+
+        .chat-header {
+            height: 52px;
+            padding: 0 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .chat-header-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .chat-header-title .agent-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: rgba(154,180,193,0.1);
+            border: 1px solid rgba(154,180,193,0.2);
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        .chat-header-empty {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .btn-clear-chat {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            transition: all 0.15s;
+        }
+        .btn-clear-chat:hover { border-color: var(--border-hover); color: var(--text); }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-messages::-webkit-scrollbar { width: 4px; }
+        .chat-messages::-webkit-scrollbar-track { background: transparent; }
+        .chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+        .chat-empty {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 24px;
+            gap: 10px;
+        }
+        .chat-empty-icon {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-muted);
+        }
+        .chat-empty-icon svg { width: 18px; height: 18px; }
+        .chat-empty p { font-size: 0.78rem; color: var(--text-muted); }
+
+        .msg-bubble {
+            max-width: 88%;
+            padding: 9px 13px;
+            border-radius: 12px;
+            font-size: 0.82rem;
+            line-height: 1.6;
+            word-wrap: break-word;
+            animation: msg-in 0.2s ease;
+        }
+        @keyframes msg-in {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg-user {
+            align-self: flex-end;
+            background: var(--user-bubble);
+            border: 1px solid var(--border);
+            border-bottom-right-radius: 4px;
+        }
+
+        .msg-assistant {
+            align-self: flex-start;
+            background: var(--assistant-bubble);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .msg-role {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+            font-family: var(--mono);
+            letter-spacing: 0.04em;
+        }
+
+        .msg-text { white-space: pre-wrap; }
+        .msg-text p { margin: 0; }
+
+        .typing-indicator {
+            align-self: flex-start;
+            background: var(--assistant-bubble);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            border-bottom-left-radius: 4px;
+            padding: 12px 16px;
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .typing-indicator .dot {
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            animation: typing-bounce 1.2s infinite;
+        }
+        .typing-indicator .dot:nth-child(2) { animation-delay: 0.15s; }
+        .typing-indicator .dot:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes typing-bounce {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-4px); opacity: 1; }
+        }
+
+        .chat-input-area {
+            padding: 12px 14px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-input);
+            color: var(--text);
+            font-size: 0.82rem;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .chat-input:focus { border-color: var(--border-focus); }
+        .chat-input::placeholder { color: rgba(255,255,255,0.2); }
+        .chat-input:disabled { opacity: 0.4; }
+
+        .btn-send {
+            width: 36px; height: 36px;
+            border-radius: 6px;
+            background: var(--accent);
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s;
+            flex-shrink: 0;
+        }
+        .btn-send:hover { background: #b0c8d4; }
+        .btn-send:disabled { opacity: 0.3; cursor: not-allowed; }
+        .btn-send svg { width: 14px; height: 14px; color: #070809; }
+
+        /* ─── TOAST ─── */
+        .toast-container {
+            position: fixed;
+            top: 60px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .toast {
+            padding: 10px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            font-size: 0.78rem;
+            pointer-events: auto;
+            animation: toast-in 0.2s ease, toast-out 0.2s ease forwards;
+            animation-delay: 0s, 3s;
+            max-width: 320px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .toast.success { border-color: rgba(34,197,94,0.3); }
+        .toast.success::before { content: '✓'; color: var(--success); font-weight: 700; }
+        .toast.error { border-color: rgba(239,68,68,0.3); }
+        .toast.error::before { content: '✕'; color: var(--danger); font-weight: 700; }
+        .toast.info { border-color: rgba(154,180,193,0.3); }
+        .toast.info::before { content: 'ℹ'; color: var(--accent); font-weight: 700; }
+
+        @keyframes toast-in { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes toast-out { from { opacity: 1; } to { opacity: 0; transform: translateX(16px); } }
+
+        /* ─── LOADING SKELETON ─── */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 1200px) {
+            .panel-right { width: 340px; min-width: 340px; }
+        }
+
+        @media (max-width: 1024px) {
+            .panel-left { width: 220px; min-width: 220px; }
+            .panel-right { width: 300px; min-width: 300px; }
+            .tools-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 820px) {
+            .forge-layout { flex-direction: column; height: auto; overflow: auto; }
+            html, body { overflow: auto; }
+            .panel-left {
+                width: 100%; min-width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                max-height: 180px;
+            }
+            .agent-list { display: flex; gap: 4px; overflow-x: auto; padding: 8px; flex-wrap: nowrap; }
+            .agent-item { min-width: 160px; flex-shrink: 0; }
+            .panel-center { min-height: 50vh; }
+            .panel-right {
+                width: 100%; min-width: 100%;
+                border-left: none;
+                border-top: 1px solid var(--border);
+                min-height: 400px;
+            }
+            .config-form { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ─── HEADER ─── -->
+<header class="forge-header">
+    <div class="logo-group">
+        <svg class="logo-mark" viewBox="0 0 401 494" xmlns="http://www.w3.org/2000/svg">
+            <path fill="currentColor" d="M371.928849,357.289894 L400.39,410.386051 L200.423563,493.218741 L0.39,410.386051 L28.9182766,357.289894 L200.423563,429.315402 L371.928849,357.289894 Z M200.423563,0.72 C306.347375,0.72 392.267832,84.2239436 392.267832,187.194241 C392.267832,290.164538 306.414501,373.668481 200.423563,373.668481 C94.4326246,373.668481 8.51216815,290.164538 8.51216815,187.194241 C8.51216815,84.2239436 94.4326246,0.72 200.423563,0.72 Z M200.423563,58.4478067 C127.122673,58.4478067 67.783858,116.108488 67.783858,187.328491 C67.783858,258.548495 127.189799,316.276301 200.423563,316.276301 C273.657327,316.276301 333.063267,258.61562 333.063267,187.395617 C333.063267,116.175613 273.724452,58.4478067 200.423563,58.4478067 Z"/>
+        </svg>
+        <span class="logo-wordmark">PANTE<span>ON</span></span>
+        <div class="divider"></div>
+        <span class="page-title">ONO Forge</span>
+    </div>
+    <div class="header-meta">
+        <div class="status-dot-live" id="api-status-dot"></div>
+        <span id="api-status-text">connecting…</span>
+    </div>
+</header>
+
+<!-- ─── MAIN LAYOUT ─── -->
+<div class="forge-layout">
+
+    <!-- LEFT: AGENT LIST -->
+    <aside class="panel-left">
+        <div class="panel-left-header">
+            <button class="btn-create" id="btn-create-agent">
+                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v10M1 6h10"/></svg>
+                Create Agent
+            </button>
+        </div>
+        <div class="agent-list" id="agent-list">
+            <div class="agent-list-empty" id="agent-list-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+                <span>No agents yet</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- CENTER: CONFIG PANEL -->
+    <main class="panel-center" id="panel-center">
+        <div class="config-empty-state" id="config-empty">
+            <div class="empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a5 5 0 015 5v2a5 5 0 01-10 0V7a5 5 0 015-5z"/><path d="M17 12v1a5 5 0 01-10 0v-1"/><path d="M12 18v4M8 22h8"/></svg>
+            </div>
+            <h2>Build an AI Agent</h2>
+            <p>Select an agent from the list or create a new one to begin configuring its model, tools, and behaviour.</p>
+            <button class="btn btn-primary" id="btn-create-agent-empty">Create Agent</button>
+        </div>
+
+        <div class="config-form" id="config-form" style="display:none;">
+            <!-- Identity -->
+            <div class="config-section">
+                <div class="config-section-label">Identity</div>
+                <div class="form-row">
+                    <div>
+                        <label class="field-label" for="f-name">Agent ID</label>
+                        <input class="field-input" id="f-name" placeholder="my_agent" spellcheck="false">
+                    </div>
+                    <div>
+                        <label class="field-label" for="f-display-name">Display Name</label>
+                        <input class="field-input" id="f-display-name" placeholder="My Agent">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Model -->
+            <div class="config-section">
+                <div class="config-section-label">Model</div>
+                <label class="field-label" for="f-model">Foundation Model</label>
+                <select class="field-select" id="f-model">
+                    <option value="">Loading models…</option>
+                </select>
+                <div class="model-info-bar" id="model-info-bar"></div>
+            </div>
+
+            <!-- System Prompt -->
+            <div class="config-section">
+                <div class="config-section-label">System Prompt</div>
+                <textarea class="field-textarea" id="f-system-prompt" placeholder="You are a helpful AI assistant…"></textarea>
+            </div>
+
+            <!-- Tools -->
+            <div class="config-section">
+                <div class="config-section-label">Tools</div>
+                <div class="tools-grid" id="tools-grid"></div>
+            </div>
+
+            <!-- Memory -->
+            <div class="config-section">
+                <div class="config-section-label">Memory Configuration</div>
+                <div class="form-row">
+                    <div>
+                        <label class="field-label">Max Iterations</label>
+                        <div class="slider-wrap">
+                            <input type="range" id="f-max-iter" min="1" max="50" value="10">
+                            <span class="slider-value" id="f-max-iter-val">10</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="field-label" for="f-memory-type">Memory Type</label>
+                        <select class="field-select" id="f-memory-type">
+                            <option value="buffer">Buffer — Sliding window</option>
+                            <option value="summary">Summary — Compressed context</option>
+                            <option value="entity">Entity — Named entity tracking</option>
+                            <option value="knowledge">Knowledge — Persistent graph</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="config-actions">
+                <button class="btn btn-primary" id="btn-save-agent">Save Agent</button>
+                <button class="btn btn-ghost" id="btn-discard">Discard</button>
+                <button class="btn btn-danger-ghost" id="btn-delete-agent">Delete</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- RIGHT: CHAT PANEL -->
+    <aside class="panel-right">
+        <div class="chat-header">
+            <div class="chat-header-title" id="chat-header-title">
+                <span class="chat-header-empty">Test Agent</span>
+            </div>
+            <button class="btn-clear-chat" id="btn-clear-chat" style="display:none;">Clear</button>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="chat-empty" id="chat-empty">
+                <div class="chat-empty-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                </div>
+                <p>Select an agent to start a test conversation.</p>
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <input class="chat-input" id="chat-input" placeholder="Select an agent to begin…" disabled>
+            <button class="btn-send" id="btn-send" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+        </div>
+    </aside>
+
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+const API_BASE = 'http://localhost:8000/api/v1/ono';
+
+const TOOLS_META = [
+    { id: 'search_reflections',  name: 'search_reflections',  desc: 'Search stored reflections and past interactions' },
+    { id: 'recommend_publisher', name: 'recommend_publisher', desc: 'Recommend content publishers based on context' },
+    { id: 'update_context',      name: 'update_context',      desc: 'Update the agent\'s contextual knowledge base' },
+    { id: 'generate_archive',    name: 'generate_archive',    desc: 'Generate and store conversation archives' },
+    { id: 'select_painting',     name: 'select_painting',     desc: 'Select relevant artwork or visual content' },
+    { id: 'select_quote',        name: 'select_quote',        desc: 'Select and retrieve meaningful quotes' },
+];
+
+const state = {
+    agents: [],
+    models: [],
+    providers: [],
+    selectedId: null,
+    sessions: {},
+    messages: {},
+    isSaving: false,
+    isChatting: false,
+};
+
+/* ─── API CLIENT ─── */
+const api = {
+    async request(method, path, body) {
+        const opts = {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+        };
+        if (body !== undefined) opts.body = JSON.stringify(body);
+        const res = await fetch(`${API_BASE}${path}`, opts);
+        if (!res.ok) {
+            const err = await res.text().catch(() => res.statusText);
+            throw new Error(`${res.status}: ${err}`);
+        }
+        const text = await res.text();
+        return text ? JSON.parse(text) : null;
+    },
+    listAgents:      ()          => api.request('GET',  '/agents'),
+    getAgent:        (id)        => api.request('GET',  `/agents/${id}`),
+    createAgent:     (data)      => api.request('POST', '/agents', data),
+    updateAgent:     (id, data)  => api.request('PUT',  `/agents/${id}`, data),
+    deleteAgent:     (id)        => api.request('DELETE',`/agents/${id}`),
+    chat:            (payload)   => api.request('POST', '/agents/chat', payload),
+    listModels:      ()          => api.request('GET',  '/models'),
+    listProviders:   ()          => api.request('GET',  '/providers'),
+};
+
+/* ─── TOAST ─── */
+function toast(msg, type = 'info') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 3400);
+}
+
+/* ─── RENDER: AGENT LIST ─── */
+function renderAgentList() {
+    const list = document.getElementById('agent-list');
+    const empty = document.getElementById('agent-list-empty');
+
+    if (state.agents.length === 0) {
+        list.innerHTML = '';
+        list.appendChild(empty);
+        empty.style.display = 'flex';
+        return;
+    }
+
+    list.innerHTML = '';
+    state.agents.forEach(a => {
+        const model = state.models.find(m => m.id === a.model || m.name === a.model);
+        const isActive = a.active !== false;
+        const el = document.createElement('div');
+        el.className = `agent-item${a.id === state.selectedId ? ' active' : ''}`;
+        el.dataset.id = a.id;
+        el.innerHTML = `
+            <div class="dot${isActive ? ' active' : ''}"></div>
+            <div class="agent-item-info">
+                <div class="agent-item-name">${esc(a.display_name || a.name || a.id)}</div>
+                <div class="agent-item-model">${esc(model ? (model.name || model.id) : (a.model || 'no model'))}</div>
+            </div>
+        `;
+        el.addEventListener('click', () => selectAgent(a.id));
+        list.appendChild(el);
+    });
+}
+
+/* ─── RENDER: MODEL SELECT ─── */
+function renderModelSelect() {
+    const sel = document.getElementById('f-model');
+    sel.innerHTML = '';
+    if (state.models.length === 0) {
+        sel.innerHTML = '<option value="">No models available</option>';
+        return;
+    }
+    state.models.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.id || m.name;
+        opt.textContent = m.name || m.id;
+        sel.appendChild(opt);
+    });
+    sel.addEventListener('change', renderModelInfo);
+}
+
+function renderModelInfo() {
+    const bar = document.getElementById('model-info-bar');
+    const selVal = document.getElementById('f-model').value;
+    const model = state.models.find(m => (m.id || m.name) === selVal);
+    if (!model) { bar.innerHTML = ''; return; }
+
+    const provider = state.providers.find(p =>
+        p.id === model.provider || p.name === model.provider
+    );
+
+    const tags = [];
+    if (provider) tags.push(provider.name || provider.id);
+    if (model.capabilities) {
+        const caps = Array.isArray(model.capabilities) ? model.capabilities : [model.capabilities];
+        caps.forEach(c => tags.push(c));
+    }
+    if (model.context_length) tags.push(`${model.context_length} ctx`);
+
+    bar.innerHTML = tags.map(t => `<span class="model-info-tag">${esc(String(t))}</span>`).join('');
+}
+
+/* ─── RENDER: TOOLS ─── */
+function renderTools(selected = []) {
+    const grid = document.getElementById('tools-grid');
+    grid.innerHTML = '';
+    TOOLS_META.forEach(t => {
+        const checked = selected.includes(t.id);
+        const el = document.createElement('label');
+        el.className = `tool-checkbox${checked ? ' checked' : ''}`;
+        el.innerHTML = `
+            <input type="checkbox" value="${t.id}" ${checked ? 'checked' : ''}>
+            <div class="tool-check-box">
+                <svg viewBox="0 0 12 12" fill="none" stroke="#070809" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2.5 6 5 8.5 9.5 3.5"/></svg>
+            </div>
+            <div class="tool-info">
+                <div class="tool-name">${t.name}</div>
+                <div class="tool-desc">${t.desc}</div>
+            </div>
+        `;
+        const input = el.querySelector('input');
+        input.addEventListener('change', () => {
+            el.classList.toggle('checked', input.checked);
+        });
+        grid.appendChild(el);
+    });
+}
+
+function getSelectedTools() {
+    return Array.from(document.querySelectorAll('#tools-grid input:checked')).map(i => i.value);
+}
+
+/* ─── RENDER: CONFIG FORM ─── */
+function populateForm(agent) {
+    document.getElementById('f-name').value = agent.name || '';
+    document.getElementById('f-display-name').value = agent.display_name || '';
+    document.getElementById('f-system-prompt').value = agent.system_prompt || '';
+    document.getElementById('f-max-iter').value = agent.max_iterations || 10;
+    document.getElementById('f-max-iter-val').textContent = agent.max_iterations || 10;
+    document.getElementById('f-memory-type').value = agent.memory_type || 'buffer';
+
+    const modelVal = agent.model || '';
+    const sel = document.getElementById('f-model');
+    if (modelVal && [...sel.options].some(o => o.value === modelVal)) {
+        sel.value = modelVal;
+    }
+    renderModelInfo();
+    renderTools(agent.tools || []);
+}
+
+function showConfigEmpty() {
+    document.getElementById('config-empty').style.display = 'flex';
+    document.getElementById('config-form').style.display = 'none';
+}
+
+function showConfigForm() {
+    document.getElementById('config-empty').style.display = 'none';
+    document.getElementById('config-form').style.display = 'block';
+}
+
+/* ─── RENDER: CHAT ─── */
+function renderChatHeader() {
+    const el = document.getElementById('chat-header-title');
+    const clearBtn = document.getElementById('btn-clear-chat');
+    if (!state.selectedId) {
+        el.innerHTML = '<span class="chat-header-empty">Test Agent</span>';
+        clearBtn.style.display = 'none';
+        return;
+    }
+    const agent = state.agents.find(a => a.id === state.selectedId);
+    el.innerHTML = `<span>Test Agent</span><span class="agent-badge">${esc(agent ? (agent.display_name || agent.name || agent.id) : '')}</span>`;
+    clearBtn.style.display = '';
+}
+
+function renderChatMessages() {
+    const container = document.getElementById('chat-messages');
+    const empty = document.getElementById('chat-empty');
+
+    if (!state.selectedId) {
+        container.innerHTML = '';
+        container.appendChild(empty);
+        empty.style.display = 'flex';
+        return;
+    }
+
+    const msgs = state.messages[state.selectedId] || [];
+    container.innerHTML = '';
+
+    if (msgs.length === 0) {
+        const emptyEl = document.createElement('div');
+        emptyEl.className = 'chat-empty';
+        emptyEl.innerHTML = `
+            <div class="chat-empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            </div>
+            <p>Send a message to test this agent.</p>
+        `;
+        container.appendChild(emptyEl);
+        return;
+    }
+
+    msgs.forEach(m => {
+        const bubble = document.createElement('div');
+        bubble.className = `msg-bubble ${m.role === 'user' ? 'msg-user' : 'msg-assistant'}`;
+        bubble.innerHTML = `<div class="msg-role">${m.role === 'user' ? 'you' : 'agent'}</div><div class="msg-text">${esc(m.content)}</div>`;
+        container.appendChild(bubble);
+    });
+
+    container.scrollTop = container.scrollHeight;
+}
+
+function showTypingIndicator() {
+    const container = document.getElementById('chat-messages');
+    const el = document.createElement('div');
+    el.className = 'typing-indicator';
+    el.id = 'typing-indicator';
+    el.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+    container.appendChild(el);
+    container.scrollTop = container.scrollHeight;
+}
+
+function hideTypingIndicator() {
+    const el = document.getElementById('typing-indicator');
+    if (el) el.remove();
+}
+
+/* ─── AGENT SELECTION ─── */
+function selectAgent(id) {
+    state.selectedId = id;
+    renderAgentList();
+    renderChatHeader();
+    renderChatMessages();
+
+    const agent = state.agents.find(a => a.id === id);
+    if (agent) {
+        showConfigForm();
+        populateForm(agent);
+    }
+
+    document.getElementById('chat-input').disabled = false;
+    document.getElementById('chat-input').placeholder = 'Type a message…';
+    document.getElementById('btn-send').disabled = false;
+}
+
+/* ─── CREATE AGENT ─── */
+function createNewAgent() {
+    const defaultName = `agent_${Date.now().toString(36)}`;
+    const newAgent = {
+        name: defaultName,
+        display_name: 'New Agent',
+        model: state.models[0] ? (state.models[0].id || state.models[0].name) : '',
+        system_prompt: '',
+        tools: [],
+        max_iterations: 10,
+        memory_type: 'buffer',
+        active: true,
+    };
+
+    api.createAgent(newAgent)
+        .then(created => {
+            toast('Agent created', 'success');
+            return api.listAgents();
+        })
+        .then(agents => {
+            state.agents = agents;
+            renderAgentList();
+            if (state.agents.length > 0) {
+                const last = state.agents[state.agents.length - 1];
+                selectAgent(last.id);
+            }
+        })
+        .catch(err => toast(`Create failed: ${err.message}`, 'error'));
+}
+
+/* ─── SAVE AGENT ─── */
+function saveAgent() {
+    if (!state.selectedId || state.isSaving) return;
+    state.isSaving = true;
+
+    const btn = document.getElementById('btn-save-agent');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="btn-spinner"></div> Saving…';
+    btn.classList.add('btn-loading');
+
+    const payload = {
+        name: document.getElementById('f-name').value.trim(),
+        display_name: document.getElementById('f-display-name').value.trim(),
+        model: document.getElementById('f-model').value,
+        system_prompt: document.getElementById('f-system-prompt').value,
+        tools: getSelectedTools(),
+        max_iterations: parseInt(document.getElementById('f-max-iter').value, 10),
+        memory_type: document.getElementById('f-memory-type').value,
+    };
+
+    api.updateAgent(state.selectedId, payload)
+        .then(() => {
+            toast('Agent saved', 'success');
+            return api.listAgents();
+        })
+        .then(agents => {
+            state.agents = agents;
+            renderAgentList();
+            const updated = state.agents.find(a => a.id === state.selectedId);
+            if (updated) populateForm(updated);
+        })
+        .catch(err => toast(`Save failed: ${err.message}`, 'error'))
+        .finally(() => {
+            state.isSaving = false;
+            btn.disabled = false;
+            btn.textContent = 'Save Agent';
+            btn.classList.remove('btn-loading');
+        });
+}
+
+/* ─── DELETE AGENT ─── */
+function deleteAgent() {
+    if (!state.selectedId) return;
+    const agent = state.agents.find(a => a.id === state.selectedId);
+    const label = agent ? (agent.display_name || agent.name) : state.selectedId;
+    if (!confirm(`Delete "${label}"? This cannot be undone.`)) return;
+
+    api.deleteAgent(state.selectedId)
+        .then(() => {
+            toast('Agent deleted', 'success');
+            delete state.sessions[state.selectedId];
+            delete state.messages[state.selectedId];
+            return api.listAgents();
+        })
+        .then(agents => {
+            state.agents = agents;
+            state.selectedId = null;
+            renderAgentList();
+            showConfigEmpty();
+            renderChatHeader();
+            renderChatMessages();
+            document.getElementById('chat-input').disabled = true;
+            document.getElementById('chat-input').placeholder = 'Select an agent to begin…';
+            document.getElementById('btn-send').disabled = true;
+        })
+        .catch(err => toast(`Delete failed: ${err.message}`, 'error'));
+}
+
+/* ─── SEND MESSAGE ─── */
+async function sendMessage() {
+    if (!state.selectedId || state.isChatting) return;
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = '';
+    if (!state.messages[state.selectedId]) state.messages[state.selectedId] = [];
+    state.messages[state.selectedId].push({ role: 'user', content: text });
+    renderChatMessages();
+
+    state.isChatting = true;
+    document.getElementById('btn-send').disabled = true;
+    showTypingIndicator();
+
+    const payload = {
+        agent_id: state.selectedId,
+        message: text,
+    };
+    if (state.sessions[state.selectedId]) {
+        payload.session_id = state.sessions[state.selectedId];
+    }
+
+    try {
+        const res = await api.chat(payload);
+        hideTypingIndicator();
+        const reply = typeof res === 'string' ? res : (res.response || res.message || res.content || JSON.stringify(res));
+        if (res && res.session_id) state.sessions[state.selectedId] = res.session_id;
+        state.messages[state.selectedId].push({ role: 'assistant', content: reply });
+    } catch (err) {
+        hideTypingIndicator();
+        state.messages[state.selectedId].push({ role: 'assistant', content: `Error: ${err.message}` });
+        toast(`Chat error: ${err.message}`, 'error');
+    } finally {
+        state.isChatting = false;
+        document.getElementById('btn-send').disabled = false;
+        renderChatMessages();
+    }
+}
+
+/* ─── CLEAR CHAT ─── */
+function clearChat() {
+    if (!state.selectedId) return;
+    state.messages[state.selectedId] = [];
+    state.sessions[state.selectedId] = null;
+    renderChatMessages();
+    toast('Conversation cleared', 'info');
+}
+
+/* ─── UTIL ─── */
+function esc(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+}
+
+/* ─── API HEALTH ─── */
+async function checkApiHealth() {
+    const dot = document.getElementById('api-status-dot');
+    const txt = document.getElementById('api-status-text');
+    try {
+        await api.listAgents();
+        dot.style.background = 'var(--success)';
+        dot.style.boxShadow = '0 0 6px var(--success)';
+        txt.textContent = 'connected';
+        return true;
+    } catch {
+        dot.style.background = 'var(--danger)';
+        dot.style.boxShadow = '0 0 6px var(--danger)';
+        txt.textContent = 'offline';
+        return false;
+    }
+}
+
+/* ─── BOOT ─── */
+async function boot() {
+    await checkApiHealth();
+
+    const [agents, models, providers] = await Promise.all([
+        api.listAgents().catch(() => []),
+        api.listModels().catch(() => []),
+        api.listProviders().catch(() => []),
+    ]);
+
+    state.agents = Array.isArray(agents) ? agents : (agents.data || []);
+    state.models = Array.isArray(models) ? models : (models.data || []);
+    state.providers = Array.isArray(providers) ? providers : (providers.data || []);
+
+    renderAgentList();
+    renderModelSelect();
+    renderTools();
+}
+
+/* ─── EVENT BINDINGS ─── */
+document.getElementById('btn-create-agent').addEventListener('click', createNewAgent);
+document.getElementById('btn-create-agent-empty').addEventListener('click', createNewAgent);
+document.getElementById('btn-save-agent').addEventListener('click', saveAgent);
+document.getElementById('btn-delete-agent').addEventListener('click', deleteAgent);
+document.getElementById('btn-clear-chat').addEventListener('click', clearChat);
+document.getElementById('btn-send').addEventListener('click', sendMessage);
+document.getElementById('btn-discard').addEventListener('click', () => {
+    if (state.selectedId) {
+        const agent = state.agents.find(a => a.id === state.selectedId);
+        if (agent) populateForm(agent);
+        toast('Changes discarded', 'info');
+    }
+});
+
+document.getElementById('f-max-iter').addEventListener('input', (e) => {
+    document.getElementById('f-max-iter-val').textContent = e.target.value;
+});
+
+document.getElementById('chat-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
+boot();
+</script>
+</body>
+</html>

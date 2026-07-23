@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panteon Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        :root{
+            --bg:#070809;--bg-card:#0d0e10;--bg-sidebar:#0a0b0d;--bg-input:#111214;
+            --text:#ffffff;--text-muted:#707275;--text-dim:#4a4c50;
+            --border:rgba(255,255,255,0.1);--border-hover:rgba(255,255,255,0.18);
+            --accent:#9ab4c1;--cyan:#00FFFF;--green:#34d399;--red:#f87171;--amber:#fbbf24;
+            --font-sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+            --font-mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+            --sidebar-w:240px;
+        }
+        html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+        a{color:inherit;text-decoration:none}
+        button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+        input,select,textarea{font-family:inherit;font-size:13px;color:var(--text);background:var(--bg-input);border:1px solid var(--border);border-radius:6px;padding:8px 12px;outline:none;width:100%;transition:border-color .2s}
+        input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+        select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23707275' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+        textarea{resize:vertical;min-height:80px}
+        ::selection{background:rgba(0,255,255,0.2)}
+        ::-webkit-scrollbar{width:6px;height:6px}
+        ::-webkit-scrollbar-track{background:transparent}
+        ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:3px}
+        ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.2)}
+
+        .app{display:flex;height:100vh;overflow:hidden}
+
+        .sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--bg-sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;transition:transform .3s ease}
+        .sidebar-header{padding:20px 20px 16px;border-bottom:1px solid var(--border)}
+        .sidebar-logo{display:flex;align-items:center;gap:10px}
+        .sidebar-logo svg{width:30px;height:30px}
+        .sidebar-logo span{font-weight:600;font-size:13px;letter-spacing:.18em;text-transform:uppercase}
+        .sidebar-logo .tm{font-size:8px;color:var(--cyan);vertical-align:super;margin-left:1px}
+        .sidebar-nav{flex:1;padding:12px 0}
+        .nav-section{margin-bottom:4px}
+        .nav-section-title{padding:8px 20px 4px;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim)}
+        .nav-item{display:flex;align-items:center;gap:10px;padding:7px 20px;font-size:13px;color:var(--text-muted);cursor:pointer;transition:all .15s;border-left:2px solid transparent}
+        .nav-item:hover{color:var(--text);background:rgba(255,255,255,0.03)}
+        .nav-item.active{color:var(--text);background:rgba(255,255,255,0.05);border-left-color:var(--cyan)}
+        .nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.6}
+        .nav-item.active svg{opacity:1}
+        .sidebar-footer{padding:16px 20px;border-top:1px solid var(--border);font-size:11px;color:var(--text-dim)}
+
+        .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+        .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--border);background:rgba(7,8,9,0.8);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);min-height:49px;flex-shrink:0}
+        .topbar-title{font-size:15px;font-weight:500;letter-spacing:-.01em}
+        .topbar-actions{display:flex;align-items:center;gap:12px}
+        .topbar-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted)}
+        .status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0}
+        .status-dot.offline{background:var(--red)}
+        .hamburger{display:none;padding:4px}
+        .hamburger svg{width:20px;height:20px}
+
+        .content{flex:1;overflow-y:auto;padding:24px}
+
+        .page{display:none}
+        .page.active{display:block}
+
+        .grid{display:grid;gap:16px}
+        .grid-2{grid-template-columns:repeat(2,1fr)}
+        .grid-3{grid-template-columns:repeat(3,1fr)}
+        .grid-4{grid-template-columns:repeat(4,1fr)}
+        .grid-5{grid-template-columns:repeat(5,1fr)}
+        .grid-6{grid-template-columns:repeat(6,1fr)}
+
+        .card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:20px;transition:border-color .2s}
+        .card:hover{border-color:var(--border-hover)}
+        .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+        .card-title{font-size:13px;font-weight:500;color:var(--text-muted)}
+        .card-value{font-size:28px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+        .card-sub{font-size:12px;color:var(--text-dim);margin-top:4px}
+
+        .section{margin-bottom:24px}
+        .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+        .section-title{font-size:15px;font-weight:600;letter-spacing:-.01em}
+
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;font-size:13px;font-weight:500;border-radius:6px;transition:all .15s;border:1px solid var(--border)}
+        .btn:hover{border-color:var(--border-hover);background:rgba(255,255,255,0.04)}
+        .btn-primary{background:var(--cyan);color:#000;border-color:var(--cyan);font-weight:600}
+        .btn-primary:hover{background:#33ffff;border-color:#33ffff}
+        .btn-sm{padding:4px 10px;font-size:12px}
+        .btn-danger{color:var(--red);border-color:rgba(248,113,113,0.3)}
+        .btn-danger:hover{background:rgba(248,113,113,0.1)}
+
+        .table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:8px}
+        table{width:100%;border-collapse:collapse;font-size:13px}
+        th{text-align:left;padding:10px 16px;font-weight:500;color:var(--text-muted);font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);background:rgba(255,255,255,0.02)}
+        td{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle}
+        tr:last-child td{border-bottom:none}
+        tr:hover td{background:rgba(255,255,255,0.02)}
+        .mono{font-family:var(--font-mono);font-size:12px;color:var(--accent)}
+        .tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:rgba(154,180,193,0.12);color:var(--accent)}
+        .tag-green{background:rgba(52,211,153,0.12);color:var(--green)}
+        .tag-red{background:rgba(248,113,113,0.12);color:var(--red)}
+        .tag-amber{background:rgba(251,191,36,0.12);color:var(--amber)}
+
+        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:2000}
+        .modal-overlay.open{display:flex}
+        .modal{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;padding:24px}
+        .modal-title{font-size:16px;font-weight:600;margin-bottom:20px}
+        .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+
+        .form-group{margin-bottom:14px}
+        .form-label{display:block;font-size:12px;font-weight:500;color:var(--text-muted);margin-bottom:5px}
+
+        .bar-chart{display:flex;flex-direction:column;gap:10px}
+        .bar-row{display:flex;align-items:center;gap:12px}
+        .bar-label{width:120px;font-size:12px;color:var(--text-muted);flex-shrink:0}
+        .bar-track{flex:1;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden}
+        .bar-fill{height:100%;border-radius:4px;transition:width .6s ease}
+        .bar-value{width:48px;text-align:right;font-size:12px;font-family:var(--font-mono);color:var(--accent);flex-shrink:0}
+
+        .feed{display:flex;flex-direction:column;gap:0}
+        .feed-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+        .feed-item:last-child{border-bottom:none}
+        .feed-dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);margin-top:6px;flex-shrink:0}
+        .feed-content{flex:1;min-width:0}
+        .feed-text{font-size:13px}
+        .feed-time{font-size:11px;color:var(--text-dim);margin-top:2px}
+
+        .resonance-display{text-align:center;padding:32px 0}
+        .resonance-number{font-size:64px;font-weight:700;letter-spacing:-.04em;font-variant-numeric:tabular-nums;background:linear-gradient(135deg,var(--cyan),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .resonance-label{font-size:13px;color:var(--text-muted);margin-top:4px}
+
+        .countdown{text-align:center;padding:20px 0}
+        .countdown-grid{display:flex;justify-content:center;gap:16px;margin-top:12px}
+        .countdown-unit{display:flex;flex-direction:column;align-items:center}
+        .countdown-value{font-size:32px;font-weight:600;font-family:var(--font-mono);color:var(--cyan)}
+        .countdown-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-top:2px}
+
+        .toast-container{position:fixed;top:16px;right:16px;z-index:3000;display:flex;flex-direction:column;gap:8px}
+        .toast{padding:10px 16px;border-radius:6px;font-size:13px;font-weight:500;animation:toast-in .3s ease;border:1px solid var(--border);background:var(--bg-card);max-width:360px;display:flex;align-items:center;gap:8px}
+        .toast-success{border-color:rgba(52,211,153,0.3);color:var(--green)}
+        .toast-error{border-color:rgba(248,113,113,0.3);color:var(--red)}
+        @keyframes toast-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+        .empty-state{text-align:center;padding:48px 24px;color:var(--text-dim);font-size:13px}
+        .loading{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+
+        .json-display{font-family:var(--font-mono);font-size:11px;background:rgba(0,0,0,0.3);padding:12px;border-radius:6px;overflow-x:auto;white-space:pre-wrap;word-break:break-all;color:var(--accent);max-height:200px;overflow-y:auto}
+
+        .tab-bar{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px}
+        .tab{padding:8px 16px;font-size:13px;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+        .tab:hover{color:var(--text)}
+        .tab.active{color:var(--text);border-bottom-color:var(--cyan)}
+
+        @media(max-width:768px){
+            .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:1500;transform:translateX(-100%)}
+            .sidebar.open{transform:translateX(0)}
+            .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1400}
+            .sidebar-backdrop.open{display:block}
+            .hamburger{display:block}
+            .grid-2,.grid-3,.grid-4,.grid-5,.grid-6{grid-template-columns:1fr}
+        }
+        @media(max-width:1024px) and (min-width:769px){
+            .grid-4,.grid-5,.grid-6{grid-template-columns:repeat(3,1fr)}
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <svg viewBox="0 0 401 494" xmlns="http://www.w3.org/2000/svg">
+                    <path d="m 33.676246,364.82 c 0.53628,-7.2677 1.7767,-14.482 5.0286,-21.276 9.4786,-19.803 33.963,-29.34 53.026,-19.284 15.333,8.0885 22.563,29.331 13.578,45.149 -6.873,12.099 -23.072,18.235 -35.622,10.228 -4.4328,-2.828 -7.6343,-7.2793 -8.9938,-12.286 -1.3595,-5.0063 -0.68452,-10.798 2.9392,-15.401 2.2364,-2.8407 5.4473,-4.7654 9.1114,-5.408 3.664,-0.64263 8.1708,0.40388 10.875,3.9972 1.7829,2.3692 1.91,4.5449 1.4108,7.1127 -0.24961,1.2839 -0.78116,2.8399 -2.3513,3.9972 -1.5702,1.1573 -4.2926,1.9424 -5.5844,0.58783 -1.1069,-1.1607 0.67477,-3.153 0.73029,-4.7559 0.0388,-0.83158 0.0772,-1.7317 -0.26004,-2.4745 -0.89679,-1.1463 -1.8493,-1.342 -3.4682,-1.0581 -1.6548,0.29023 -3.6474,1.4542 -4.5851,2.6452 l 0,0.0588 c -2.0224,2.5986 -2.3717,5.5943 -1.5284,8.6999 0.81645,3.0066 2.8568,5.919 5.4668,7.7006 l 0.29391,0.23513 c 8.5452,5.4516 18.484,0.70317 23.392,-7.9366 6.716,-11.823 1.511,-26.282 -10.285,-32.505 -15.078,-7.9537 -35.744,1.451 -40.36,17.085 -4.566,15.464 -2.8715,30.938 -0.27385,37.511 l -10.609,0.073 c -2.5579,-12.089 -1.9287,-15.035 -1.9287,-22.696 z" fill="#FFFFFF"/>
+                    <path d="m 471.546,260.66 c 17.668,-13.594 26.097,-35.697 29.523,-57.078 1.465,-9.3951 1.975,-19.069 0.142,-28.452 14.1,0.299 25.825,9.3358 36.433,17.663 18.603,15.53 35.228,33.824 47.215,54.967 3.632,6.1751 -5.344,4.6337 -8.807,5.9233 -30.729,5.8422 -62.032,11.753 -93.438,8.9164 -3.724,-0.42453 -7.428,-1.0454 -11.069,-1.9403 z" fill="#02122b"/>
+                    <path d="m 288.006,210.87 c 10.816,-13.823 26.523,-22.816 42.335,-29.821 12.478,-5.3611 25.719,-9.195 39.307,-10.133 3.601,-0.49169 7.201,-0.98339 10.802,-1.4751 -5.886,13.4 -9.334,29.076 -3.95,43.223 5.777,15.238 17.145,27.376 24.994,41.49 4.602,5.2258 -5.322,2.7679 -8.464,3.5354 -25.451,-0.0247 -51.385,-4.4738 -74.255,-16.006 -13.053,-6.7549 -25.175,-16.863 -30.769,-30.813 z" fill="#02122b"/>
+                    <path d="m 495.406,157 a 70.231,70.231 0 0 1 14.44,42.81 70.235,70.235 0 0 1 -140.47,0 70.231,70.231 0 0 1 14.28,-42.81 l 111.75,0 z" fill="#00FFFF"/>
+                    <path d="m 37.276,420 c -1.872,14.728 -0.535,34.385 7.978,46.464 4.278,6.059 12.577,13.449 18.658,17.463 6.913,4.56 17.372,7.25 25.397,8.99 4.125,0.893 10.691,2.327 15.908,2.897 5.504,0.6 11.275,1.075 16.669,1.075 l 17.36,0 c 4.817,0 10.729,-0.16 15.545,-0.67 5.548,-0.587 13.857,-1.76 19.013,-3.41 7.715,-2.47 18.808,-6.388 25.385,-11.43 5.66,-4.336 14.095,-11.32 17.973,-17.44 5.444,-8.59 10.047,-22.03 11.07,-32.2 0.668,-6.622 1.056,-16.893 0.36,-23.27 -0.873,-8.003 -3.154,-18.252 -6.846,-25.28 -3.534,-6.72 -10.637,-14.736 -16.287,-19.54 -5.521,-4.694 -14.704,-9.373 -21.353,-12.16 -6.145,-2.576 -15.086,-4.628 -21.574,-5.73 -3.529,-0.6 -7.768,-1.11 -11.497,-1.54 -10.437,-1.2 -24.631,-1.227 -34.97,0.13 -4.34,0.572 -10.906,1.896 -15.04,3.08 -7.573,2.17 -17.238,5.82 -23.89,10.19 -4.127,2.71 -9.935,7.66 -13.137,11.44 -3.477,4.106 -8.358,11.36 -10.607,16.39 -2.268,5.075 -3.745,11.43 -4.748,16.73 -1.242,6.556 -1.982,15.12 -1.375,21.83 z" fill="#FFFFFF"/>
+                    <path d="m 117.356,425.72 c -0.797,-0.81 -1.714,-1.58 -2.595,-2.26 l -0.18,-0.14 c -2.037,-1.55 -3.472,-3.99 -4.08,-6.53 -0.612,-2.54 -0.33,-5.48 0.97,-7.72 1.427,-2.45 3.704,-3.91 6.06,-4.43 2.16,-0.47 4.44,-0.19 6.48,0.7 2.05,0.89 3.82,2.33 5.38,4.09 1.23,1.39 2.54,3.23 3.7,5.48 2.66,-3.96 5.77,-7.63 9.05,-10.88 3.92,-3.89 8.35,-7.09 13.14,-8.75 3.02,-1.05 6.53,-1.46 9.7,-0.6 3.29,0.89 6.04,3.46 7.38,6.64 1.51,3.58 1.63,8.1 0.39,11.86 -1.14,3.45 -3.44,6.39 -6.44,8.43 -3.12,2.12 -7.06,3.31 -10.93,3.48 -3.79,0.17 -7.7,-0.44 -11.18,-1.71 -0.84,-0.31 -1.82,-0.76 -2.79,-1.27 -0.08,0.22 -0.17,0.44 -0.26,0.65 -1.53,3.53 -3.48,6.82 -5.63,9.73 -2.35,3.17 -4.83,5.62 -7.72,8.01 l -0.26,0.22 c -2.43,2 -4.89,3.39 -7.51,4.38 -3.4,1.29 -6.84,1.58 -10.09,0.82 -3.35,-0.78 -6.17,-2.82 -7.87,-5.71 -1.53,-2.61 -2.1,-5.87 -1.82,-9.01 0.27,-3.01 1.35,-5.92 3.15,-8.26 1.59,-2.07 3.7,-3.61 5.7,-4.49 -0.17,-0.18 -0.34,-0.36 -0.5,-0.54 z" fill="#070809"/>
+                </svg>
+                <span>PANTE<span style="color:var(--cyan)">ON</span><sup style="font-size:8px;color:var(--cyan)">™</sup></span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Platform</div>
+                <div class="nav-item active" data-page="overview">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+                    Overview
+                </div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Spinal Craker</div>
+                <div class="nav-item" data-page="sc-types">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
+                    Object Types
+                </div>
+                <div class="nav-item" data-page="sc-objects">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/></svg>
+                    Objects
+                </div>
+                <div class="nav-item" data-page="sc-links">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="8" r="2.5"/><circle cx="12" cy="8" r="2.5"/><path d="M6.5 8h3"/></svg>
+                    Link Types
+                </div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">ONO</div>
+                <div class="nav-item" data-page="ono-providers">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12V6l6-4 6 4v6l-6 4z"/></svg>
+                    LLM Providers
+                </div>
+                <div class="nav-item" data-page="ono-agents">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M3 14c0-2.8 2.2-5 5-5s5 2.2 5 5"/></svg>
+                    Agents
+                </div>
+                <div class="nav-item" data-page="ono-automations">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 2.5l-3 8h4l-7 5 3-8h-4z"/></svg>
+                    Automations
+                </div>
+                <a href="/ono-forge" class="nav-item" style="text-decoration:none;color:var(--cyan);border-left-color:transparent;">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1v4M8 11v4M1 8h4M11 8h4M3.5 3.5l2.5 2.5M10 10l2.5 2.5M12.5 3.5L10 6M6 10l-2.5 2.5"/></svg>
+                    ONO Forge ↗
+                </a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Apollo</div>
+                <div class="nav-item" data-page="apollo-fleet">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+                    Fleet Status
+                </div>
+                <div class="nav-item" data-page="apollo-environments">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c2.2 2.2 2.2 9.8 0 12M8 2c-2.2 2.2-2.2 9.8 0 12"/></svg>
+                    Environments
+                </div>
+                <div class="nav-item" data-page="apollo-deployments">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2l5 4v6l-5 4-5-4V6z"/></svg>
+                    Deployments
+                </div>
+                <div class="nav-item" data-page="apollo-pipelines">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h4M10 4h4M2 8h4M10 8h4M2 12h4M10 12h4M6 4v8M10 4v8"/></svg>
+                    Pipelines
+                </div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">TDAC</div>
+                <div class="nav-item" data-page="tdac-resonance">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 8c2-4 4-6 7 0s5 4 7 0"/></svg>
+                    Resonance Index
+                </div>
+                <div class="nav-item" data-page="tdac-metrics">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14V9M6 14V5M10 14V7M14 14V3"/></svg>
+                    Metrics
+                </div>
+                <div class="nav-item" data-page="tdac-dashboard">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12"/></svg>
+                    Dashboard
+                </div>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            Panteon Admin v1.0<br>
+            <span style="color:var(--text-dim)">Enterprise Data & AI OS</span>
+        </div>
+    </aside>
+
+    <div class="main">
+        <header class="topbar">
+            <div style="display:flex;align-items:center;gap:12px">
+                <button class="hamburger" id="hamburgerBtn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5h14M3 10h14M3 15h14"/></svg></button>
+                <span class="topbar-title" id="topbarTitle">Overview</span>
+            </div>
+            <div class="topbar-actions">
+                <div class="topbar-status">
+                    <span class="status-dot" id="apiStatusDot"></span>
+                    <span id="apiStatusText">Connecting...</span>
+                </div>
+            </div>
+        </header>
+        <div class="content" id="contentArea">
+
+            <div class="page active" id="page-overview">
+                <div class="grid grid-3" style="margin-bottom:24px">
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Platform Health</span></div>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <span class="status-dot" id="healthDot"></span>
+                            <span id="healthText" style="font-size:15px;font-weight:600">Checking...</span>
+                        </div>
+                        <div class="card-sub" id="healthSub">Connecting to API</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">API Endpoint</div>
+                        <div class="mono" style="margin-top:8px;font-size:12px">http://localhost:8000/api/v1/</div>
+                        <div class="card-sub" id="apiPingResult"></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">TDAC Resonance</div>
+                        <div id="overviewResonance" style="font-size:28px;font-weight:600;margin-top:8px;font-variant-numeric:tabular-nums">--</div>
+                        <div class="card-sub" id="overviewResonanceSub">30-day aggregate</div>
+                    </div>
+                </div>
+                <div class="grid grid-6" style="margin-bottom:24px" id="overviewCards">
+                    <div class="card"><div class="card-title">Object Types</div><div class="card-value" id="countObjTypes">--</div></div>
+                    <div class="card"><div class="card-title">Objects</div><div class="card-value" id="countObjects">--</div></div>
+                    <div class="card"><div class="card-title">LLM Providers</div><div class="card-value" id="countProviders">--</div></div>
+                    <div class="card"><div class="card-title">ONO Agents</div><div class="card-value" id="countAgents">--</div></div>
+                    <div class="card"><div class="card-title">Environments</div><div class="card-value" id="countEnvs">--</div></div>
+                    <div class="card"><div class="card-title">Agents Online</div><div class="card-value" id="countFleetAgents">--</div></div>
+                    <div class="card"><div class="card-title">Services</div><div class="card-value" id="countServices">--</div></div>
+                    <div class="card"><div class="card-title">Deployments</div><div class="card-value" id="countDeploys">--</div></div>
+                    <div class="card"><div class="card-title">Pipelines</div><div class="card-value" id="countPipelines">--</div></div>
+                    <div class="card"><div class="card-title">Automations</div><div class="card-value" id="countAutomations">--</div></div>
+                    <div class="card"><div class="card-title">TDAC Patrons</div><div class="card-value" id="countPatrons">--</div></div>
+                    <div class="card"><div class="card-title">TDAC Metrics</div><div class="card-value" id="countMetrics">--</div></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Recent Activity</span><button class="btn btn-sm" onclick="loadOverview()">Refresh</button></div>
+                    <div class="feed" id="overviewFeed"><div class="empty-state">Loading activity feed...</div></div>
+                </div>
+            </div>
+
+            <div class="page" id="page-sc-types">
+                <div class="section">
+                    <div class="section-header">
+                        <span class="section-title">Object Types</span>
+                        <button class="btn btn-primary" onclick="openModal('modalObjectType')">+ Create Type</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table><thead><tr><th>Name</th><th>Display Name</th><th>Description</th><th>Properties</th><th>ID</th></tr></thead>
+                        <tbody id="objTypesBody"><tr><td colspan="5"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
+                    </div>
+                </div>
+                <div class="section">
+                    <div class="section-header">
+                        <span class="section-title">Action Types</span>
+                    </div>
+                    <div class="table-wrap">
+                        <table><thead><tr><th>Name</th><th>Display Name</th><th>Object Type</th><th>Enabled</th><th>ID</th></tr></thead>
+                        <tbody id="actionTypesBody"><tr><td colspan="5"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-sc-objects">
+                <div class="section">
+                    <div class="section-header">
+                        <span class="section-title">Objects</span>
+                        <div style="display:flex;gap:8px;align-items:center">
+                            <select id="objTypeFilter" style="width:200px" onchange="loadObjects()"><option value="">All types</option></select>
+                            <button class="btn btn-primary" onclick="openModal('modalObject')">+ Create Object</button>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table><thead><tr><th>Primary Key</th><th>Type</th><th>Properties</th><th>Created</th><th>ID</th><th></th></tr></thead>
+                        <tbody id="objectsBody"><tr><td colspan="6"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-sc-links">
+                <div class="section">
+                    <div class="section-header">
+                        <span class="section-title">Link Types</span>
+                        <button class="btn btn-primary" onclick="openModal('modalLinkType')">+ Create Link Type</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table><thead><tr><th>Name</th><th>Display Name</th><th>Source Type</th><th>Target Type</th><th>Cardinality</th><th>ID</th></tr></thead>
+                        <tbody id="linkTypesBody"><tr><td colspan="6"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-ono-providers">
+                <div class="section">
+                    <div class="section-header">
+                        <span class="section-title">LLM Providers</span>
+                        <button class="btn btn-primary" onclick="openModal('modalProvider')">+ Create Provider</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table><thead><tr><th>Name</th><th>Type</th><th>Base URL</th><th>Enabled</th><th>ID</th></tr></thead>
+                        <tbody id="providersBody"><tr><td colspan="5"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
+                    </div>
+                </div>
+                <div class="section">
+                    <div class="section-header">
+                        <span class="section-title">Models</span>
+                        <button class="btn btn-primary" onclick="openModal('modalModel')">+ Create Model</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table><thead><tr><th>Model ID</th><th>Display Name</th><th>Provider</th><th>Max Tokens</th><th>Capabilities</th><th>Enabled</th></tr></thead>
+                        <tbody id="modelsBody"><tr><td colspan="6"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-ono-agents">
+                <div class="section">
+                    <div class="section-header">
+                        <span class="section-title">Agents</span>
+                        <button class="btn btn-primary" onclick="openModal('modalAgent')">+ Create Agent</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table><thead><tr><th>Name</th><th>Display Name</th><th>Description</th><th>Model</th><th>Tools</th><th>Enabled</th></tr></thead>
+                        <tbody id="agentsBody"><tr><td colspan="6"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-ono-automations">
+                <div class="section">
+                    <div class="section-header">
+                        <span class="section-title">Automations</span>
+                        <button class="btn btn-primary" onclick="openModal('modalAutomation')">+ Create Automation</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table><thead><tr><th>Name</th><th>Display Name</th><th>Trigger</th><th>Effects</th><th>Enabled</th><th>Last Triggered</th></tr></thead>
+                        <tbody id="automationsBody"><tr><td colspan="6"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-apollo-fleet">
+                <div class="section">
+                    <div class="section-header"><span class="section-title">Fleet Status</span></div>
+                    <div class="grid grid-4" id="fleetCards">
+                        <div class="card"><div class="card-label">Environments</div><div class="card-value" id="fleet-envs">—</div></div>
+                        <div class="card"><div class="card-label">Agents Online</div><div class="card-value" id="fleet-agents">—</div></div>
+                        <div class="card"><div class="card-label">Services Healthy</div><div class="card-value" id="fleet-svcs">—</div></div>
+                        <div class="card"><div class="card-label">Active Deploys</div><div class="card-value" id="fleet-deploys">—</div></div>
+                    </div>
+                    <div class="section" style="margin-top:32px">
+                        <span class="section-title" style="font-size:14px">Agents</span>
+                        <div class="table-wrap" style="margin-top:12px">
+                            <table><thead><tr><th>Name</th><th>Type</th><th>Environment</th><th>Hostname</th><th>Version</th><th>Status</th><th>Last Heartbeat</th></tr></thead>
+                            <tbody id="fleetAgentsBody"><tr><td colspan="7"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-apollo-environments">
+                <div class="section">
+                    <div class="section-header">
+                        <span class="section-title">Environments</span>
+                        <button class="btn btn-primary" onclick="openModal('modalEnvironment')">+ Add Environment</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table><thead><tr><th>Name</th><th>Display Name</th><th>Type</th><th>Status</th><th>Created</th></tr></thead>
+                        <tbody id="envsBody"><tr><td colspan="5"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-apollo-deployments">
+                <div class="section">
+                    <div class="section-header">
+                        <span class="section-title">Deployments</span>
+                        <button class="btn btn-primary" onclick="openModal('modalDeploy')">+ Deploy</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table><thead><tr><th>Service</th><th>Environment</th><th>Version</th><th>Type</th><th>Status</th><th>Started</th><th>Triggered By</th></tr></thead>
+                        <tbody id="deploysBody"><tr><td colspan="7"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-apollo-pipelines">
+                <div class="section">
+                    <div class="section-header">
+                        <span class="section-title">CI/CD Pipelines</span>
+                        <button class="btn btn-primary" onclick="openModal('modalPipeline')">+ Create Pipeline</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table><thead><tr><th>Name</th><th>Stages</th><th>Triggers</th><th>Last Run</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody id="pipelinesBody"><tr><td colspan="6"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-tdac-resonance">
+                <div class="grid grid-2">
+                    <div class="card">
+                        <div class="card-title" style="text-align:center">Tenant Resonance Index</div>
+                        <div class="resonance-display">
+                            <div class="resonance-number" id="resonanceValue">--</div>
+                            <div class="resonance-label">30-day aggregate average</div>
+                        </div>
+                        <div class="grid grid-3" style="text-align:center;margin-top:12px">
+                            <div><div class="mono" id="resMin">--</div><div class="card-sub">Min</div></div>
+                            <div><div class="mono" id="resMax">--</div><div class="card-sub">Max</div></div>
+                            <div><div class="mono" id="resCount">--</div><div class="card-sub">Patrons</div></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Component Breakdown</div>
+                        <div class="bar-chart" style="margin-top:16px" id="resonanceChart">
+                            <div class="bar-row"><span class="bar-label">R1 Return Rate (25%)</span><div class="bar-track"><div class="bar-fill" id="barR1" style="width:0;background:var(--cyan)"></div></div><span class="bar-value" id="valR1">--</span></div>
+                            <div class="bar-row"><span class="bar-label">R2 Depth Score (25%)</span><div class="bar-track"><div class="bar-fill" id="barR2" style="width:0;background:#6366f1"></div></div><span class="bar-value" id="valR2">--</span></div>
+                            <div class="bar-row"><span class="bar-label">R3 Discovery (20%)</span><div class="bar-track"><div class="bar-fill" id="barR3" style="width:0;background:var(--green)"></div></div><span class="bar-value" id="valR3">--</span></div>
+                            <div class="bar-row"><span class="bar-label">R4 Ritual Score (15%)</span><div class="bar-track"><div class="bar-fill" id="barR4" style="width:0;background:var(--amber)"></div></div><span class="bar-value" id="valR4">--</span></div>
+                            <div class="bar-row"><span class="bar-label">R5 Gift Score (15%)</span><div class="bar-track"><div class="bar-fill" id="barR5" style="width:0;background:#f472b6"></div></div><span class="bar-value" id="valR5">--</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card" style="margin-top:16px">
+                    <div class="card-header"><span class="card-title">Countdown to Immortality AI</span><span class="tag">Dec 31, 2026</span></div>
+                    <div class="countdown" id="countdownDisplay">
+                        <div class="countdown-grid">
+                            <div class="countdown-unit"><span class="countdown-value" id="cdDays">--</span><span class="countdown-label">Days</span></div>
+                            <div class="countdown-unit"><span class="countdown-value" id="cdHours">--</span><span class="countdown-label">Hours</span></div>
+                            <div class="countdown-unit"><span class="countdown-value" id="cdMins">--</span><span class="countdown-label">Minutes</span></div>
+                            <div class="countdown-unit"><span class="countdown-value" id="cdSecs">--</span><span class="countdown-label">Seconds</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-tdac-metrics">
+                <div class="section">
+                    <div class="section-header">
+                        <span class="section-title">TDAC Metrics</span>
+                        <select id="metricTypeFilter" style="width:200px" onchange="loadMetrics()">
+                            <option value="">All types</option>
+                            <option value="reflection_completed">reflection_completed</option>
+                            <option value="patron_context_updated">patron_context_updated</option>
+                            <option value="game_played">game_played</option>
+                            <option value="giftcard_redeemed">giftcard_redeemed</option>
+                        </select>
+                    </div>
+                    <div class="table-wrap">
+                        <table><thead><tr><th>Type</th><th>Value</th><th>Computed At</th><th>ID</th></tr></thead>
+                        <tbody id="metricsBody"><tr><td colspan="4"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-tdac-dashboard">
+                <div class="grid grid-2" style="margin-bottom:16px">
+                    <div class="card">
+                        <div class="card-title">TDAC Tenant</div>
+                        <div style="font-size:20px;font-weight:600;margin-top:8px" id="tdacTenant">--</div>
+                        <div class="card-sub" id="tdacTenantSub"></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Aggregate Resonance</div>
+                        <div style="font-size:28px;font-weight:600;margin-top:8px;font-variant-numeric:tabular-nums" id="tdacResonance">--</div>
+                        <div class="card-sub" id="tdacResonanceSub"></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Recent Activity</span><button class="btn btn-sm" onclick="loadDashboard()">Refresh</button></div>
+                    <div class="feed" id="dashboardFeed"><div class="empty-state">Loading...</div></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modalContent"></div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const API_BASE = 'http://localhost:8000/api/v1';
+let apiOnline = false;
+let objectTypeCache = [];
+let providerCache = [];
+let refreshInterval = null;
+
+const PAGES = {
+    'overview': 'Overview',
+    'sc-types': 'Object Types',
+    'sc-objects': 'Objects',
+    'sc-links': 'Link Types',
+    'ono-providers': 'LLM Providers',
+    'ono-agents': 'Agents',
+    'ono-automations': 'Automations',
+    'tdac-resonance': 'Resonance Index',
+    'tdac-metrics': 'Metrics',
+    'tdac-dashboard': 'Dashboard'
+};
+
+async function api(path, opts = {}) {
+    const url = API_BASE + path;
+    try {
+        const res = await fetch(url, {
+            headers: { 'Content-Type': 'application/json', ...opts.headers },
+            ...opts
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ detail: res.statusText }));
+            throw new Error(err.detail || `HTTP ${res.status}`);
+        }
+        return await res.json();
+    } catch (e) {
+        throw e;
+    }
+}
+
+function toast(msg, type = 'success') {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast toast-${type}`;
+    t.innerHTML = `<span>${type === 'success' ? '&#10003;' : '&#10007;'}</span><span>${msg}</span>`;
+    c.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; setTimeout(() => t.remove(), 300); }, 4000);
+}
+
+function fmtDate(iso) {
+    if (!iso) return '--';
+    try { return new Date(iso).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch { return iso; }
+}
+
+function fmtTimeAgo(iso) {
+    if (!iso) return '';
+    try {
+        const diff = Date.now() - new Date(iso).getTime();
+        const mins = Math.floor(diff / 60000);
+        if (mins < 1) return 'just now';
+        if (mins < 60) return `${mins}m ago`;
+        const hrs = Math.floor(mins / 60);
+        if (hrs < 24) return `${hrs}h ago`;
+        return `${Math.floor(hrs / 24)}d ago`;
+    } catch { return ''; }
+}
+
+function truncate(s, n = 6) { return s ? (s.length > n ? s.slice(0, n) + '...' : s) : ''; }
+
+async function checkHealth() {
+    try {
+        await api('/spinal-craker/object-types');
+        apiOnline = true;
+        document.getElementById('apiStatusDot').classList.remove('offline');
+        document.getElementById('apiStatusText').textContent = 'API Connected';
+        document.getElementById('healthDot').classList.remove('offline');
+        document.getElementById('healthText').textContent = 'Operational';
+        document.getElementById('healthSub').textContent = 'All services responding';
+    } catch {
+        apiOnline = false;
+        document.getElementById('apiStatusDot').classList.add('offline');
+        document.getElementById('apiStatusText').textContent = 'API Offline';
+        document.getElementById('healthDot').classList.add('offline');
+        document.getElementById('healthText').textContent = 'Offline';
+        document.getElementById('healthSub').textContent = 'Cannot reach API at localhost:8000';
+    }
+}
+
+function navigate(page) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
+    document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + page));
+    document.getElementById('topbarTitle').textContent = PAGES[page] || page;
+    window.location.hash = page;
+    closeSidebar();
+    loadPageData(page);
+}
+
+function loadPageData(page) {
+    switch (page) {
+        case 'overview': loadOverview(); break;
+        case 'sc-types': loadObjectTypes(); loadActionTypes(); break;
+        case 'sc-objects': loadObjectTypeFilter(); loadObjects(); break;
+        case 'sc-links': loadLinkTypes(); break;
+        case 'ono-providers': loadProviders(); loadModels(); break;
+        case 'ono-agents': loadAgents(); break;
+        case 'ono-automations': loadAutomations(); break;
+        case 'apollo-fleet': loadFleetStatus(); break;
+        case 'apollo-environments': loadEnvironments(); break;
+        case 'apollo-deployments': loadDeployments(); break;
+        case 'apollo-pipelines': loadPipelines(); break;
+        case 'tdac-resonance': loadResonance(); break;
+        case 'tdac-metrics': loadMetrics(); break;
+        case 'tdac-dashboard': loadDashboard(); break;
+    }
+}
+
+async function loadOverview() {
+    const calls = [
+        api('/spinal-craker/object-types').then(d => { document.getElementById('countObjTypes').textContent = d.length; return d; }).catch(() => { document.getElementById('countObjTypes').textContent = '--'; return []; }),
+        api('/ono/providers').then(d => { document.getElementById('countProviders').textContent = d.length; providerCache = d; }).catch(() => { document.getElementById('countProviders').textContent = '--'; }),
+        api('/ono/agents').then(d => { document.getElementById('countAgents').textContent = d.length; }).catch(() => { document.getElementById('countAgents').textContent = '--'; }),
+        api('/ono/automations?enabled_only=false').then(d => { document.getElementById('countAutomations').textContent = d.length; }).catch(() => { document.getElementById('countAutomations').textContent = '--'; }),
+        api('/apollo/fleet-status').then(d => {
+            document.getElementById('countEnvs').textContent = d.environments;
+            document.getElementById('countFleetAgents').textContent = `${d.agents_online}/${d.agents_total}`;
+            document.getElementById('countServices').textContent = d.services_total;
+            document.getElementById('countDeploys').textContent = d.total_deployments;
+        }).catch(() => {}),
+        api('/apollo/pipelines').then(d => { document.getElementById('countPipelines').textContent = d.length; }).catch(() => { document.getElementById('countPipelines').textContent = '--'; }),
+        api('/tdac/resonance').then(d => {
+            const val = d.average_resonance != null ? d.average_resonance : '--';
+            document.getElementById('overviewResonance').textContent = val;
+            document.getElementById('overviewResonanceSub').textContent = d.patron_count != null ? `${d.patron_count} patrons, ${d.period_days}-day window` : '';
+            document.getElementById('countPatrons').textContent = d.patron_count || '--';
+        }).catch(() => { document.getElementById('overviewResonance').textContent = '--'; }),
+    ];
+
+    api('/tdac/dashboard').then(d => {
+        const feed = document.getElementById('overviewFeed');
+        if (d.recent_activity && d.recent_activity.length) {
+            feed.innerHTML = d.recent_activity.slice(0, 15).map(a => `
+                <div class="feed-item">
+                    <div class="feed-dot"></div>
+                    <div class="feed-content">
+                        <div class="feed-text"><span class="tag">${a.type}</span> <span class="mono">${typeof a.value === 'object' ? JSON.stringify(a.value).slice(0, 80) : a.value}</span></div>
+                        <div class="feed-time">${fmtTimeAgo(a.at)}</div>
+                    </div>
+                </div>`).join('');
+        } else {
+            feed.innerHTML = '<div class="empty-state">No recent activity</div>';
+        }
+    }).catch(() => {
+        document.getElementById('overviewFeed').innerHTML = '<div class="empty-state">Unable to load activity</div>';
+    });
+
+    api('/spinal-craker/objects').then(d => { document.getElementById('countObjects').textContent = d.length; }).catch(() => {});
+    api('/tdac/metrics').then(d => { document.getElementById('countMetrics').textContent = d.length; }).catch(() => {});
+}
+
+async function loadObjectTypes() {
+    try {
+        const data = await api('/spinal-craker/object-types');
+        objectTypeCache = data;
+        const tb = document.getElementById('objTypesBody');
+        if (!data.length) { tb.innerHTML = '<tr><td colspan="5"><div class="empty-state">No object types found</div></td></tr>'; return; }
+        tb.innerHTML = data.map(t => `<tr>
+            <td class="mono">${t.name}</td>
+            <td>${t.display_name}</td>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.description || '--'}</td>
+            <td><span class="tag">${Object.keys(t.properties_schema || {}).length} props</span></td>
+            <td class="mono" style="font-size:11px">${truncate(String(t.id), 8)}</td>
+        </tr>`).join('');
+    } catch (e) { document.getElementById('objTypesBody').innerHTML = `<tr><td colspan="5"><div class="empty-state">Error: ${e.message}</div></td></tr>`; }
+}
+
+async function loadActionTypes() {
+    try {
+        const data = await api('/spinal-craker/action-types');
+        const tb = document.getElementById('actionTypesBody');
+        if (!data.length) { tb.innerHTML = '<tr><td colspan="5"><div class="empty-state">No action types</div></td></tr>'; return; }
+        tb.innerHTML = data.map(t => `<tr>
+            <td class="mono">${t.name}</td>
+            <td>${t.display_name}</td>
+            <td class="mono" style="font-size:11px">${truncate(String(t.object_type_id), 8)}</td>
+            <td><span class="tag ${t.is_enabled ? 'tag-green' : 'tag-red'}">${t.is_enabled ? 'Yes' : 'No'}</span></td>
+            <td class="mono" style="font-size:11px">${truncate(String(t.id), 8)}</td>
+        </tr>`).join('');
+    } catch (e) { document.getElementById('actionTypesBody').innerHTML = `<tr><td colspan="5"><div class="empty-state">Error: ${e.message}</div></td></tr>`; }
+}
+
+async function loadObjectTypeFilter() {
+    try {
+        const data = await api('/spinal-craker/object-types');
+        objectTypeCache = data;
+        const sel = document.getElementById('objTypeFilter');
+        sel.innerHTML = '<option value="">All types</option>' + data.map(t => `<option value="${t.id}">${t.display_name}</option>`).join('');
+    } catch {}
+}
+
+async function loadObjects() {
+    try {
+        const typeId = document.getElementById('objTypeFilter').value;
+        const params = typeId ? `?object_type_id=${typeId}` : '';
+        const data = await api('/spinal-craker/objects' + params);
+        const tb = document.getElementById('objectsBody');
+        if (!data.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty-state">No objects found</div></td></tr>'; return; }
+        tb.innerHTML = data.map(o => {
+            const typeName = (objectTypeCache.find(t => t.id === o.object_type_id) || {}).display_name || truncate(String(o.object_type_id), 8);
+            return `<tr>
+                <td class="mono">${o.primary_key_value}</td>
+                <td><span class="tag">${typeName}</span></td>
+                <td><span class="mono" style="font-size:11px;cursor:pointer" onclick="showJson(this, ${escAttr(JSON.stringify(o.properties))})">${truncate(JSON.stringify(o.properties), 30)}</span></td>
+                <td style="font-size:12px;color:var(--text-dim)">${fmtDate(o.created_at)}</td>
+                <td class="mono" style="font-size:11px">${truncate(String(o.id), 8)}</td>
+                <td><button class="btn btn-sm btn-danger" onclick="deleteObject('${o.id}')">Delete</button></td>
+            </tr>`;
+        }).join('');
+    } catch (e) { document.getElementById('objectsBody').innerHTML = `<tr><td colspan="6"><div class="empty-state">Error: ${e.message}</div></td></tr>`; }
+}
+
+function showJson(el, obj) {
+    const existing = el.nextElementSibling;
+    if (existing && existing.classList.contains('json-display')) { existing.remove(); return; }
+    const div = document.createElement('div');
+    div.className = 'json-display';
+    div.style.marginTop = '4px';
+    div.textContent = JSON.stringify(obj, null, 2);
+    el.parentNode.appendChild(div);
+}
+
+function escAttr(s) { return s.replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
+
+async function deleteObject(id) {
+    if (!confirm('Delete this object?')) return;
+    try {
+        await api('/spinal-craker/objects/' + id, { method: 'DELETE' });
+        toast('Object deleted');
+        loadObjects();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+async function loadLinkTypes() {
+    try {
+        const data = await api('/spinal-craker/link-types');
+        const tb = document.getElementById('linkTypesBody');
+        if (!data.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty-state">No link types</div></td></tr>'; return; }
+        tb.innerHTML = data.map(l => `<tr>
+            <td class="mono">${l.name}</td>
+            <td>${l.display_name}</td>
+            <td class="mono" style="font-size:11px">${truncate(String(l.source_type_id), 8)}</td>
+            <td class="mono" style="font-size:11px">${truncate(String(l.target_type_id), 8)}</td>
+            <td><span class="tag">${l.cardinality}</span></td>
+            <td class="mono" style="font-size:11px">${truncate(String(l.id), 8)}</td>
+        </tr>`).join('');
+    } catch (e) { document.getElementById('linkTypesBody').innerHTML = `<tr><td colspan="6"><div class="empty-state">Error: ${e.message}</div></td></tr>`; }
+}
+
+async function loadProviders() {
+    try {
+        const data = await api('/ono/providers');
+        providerCache = data;
+        const tb = document.getElementById('providersBody');
+        if (!data.length) { tb.innerHTML = '<tr><td colspan="5"><div class="empty-state">No providers</div></td></tr>'; return; }
+        tb.innerHTML = data.map(p => `<tr>
+            <td>${p.name}</td>
+            <td><span class="tag">${p.provider_type}</span></td>
+            <td class="mono" style="font-size:11px">${p.base_url || '--'}</td>
+            <td><span class="tag ${p.is_enabled ? 'tag-green' : 'tag-red'}">${p.is_enabled ? 'Yes' : 'No'}</span></td>
+            <td class="mono" style="font-size:11px">${truncate(String(p.id), 8)}</td>
+        </tr>`).join('');
+    } catch (e) { document.getElementById('providersBody').innerHTML = `<tr><td colspan="5"><div class="empty-state">Error: ${e.message}</div></td></tr>`; }
+}
+
+async function loadModels() {
+    try {
+        const data = await api('/ono/models');
+        const tb = document.getElementById('modelsBody');
+        if (!data.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty-state">No models</div></td></tr>'; return; }
+        tb.innerHTML = data.map(m => {
+            const provName = (providerCache.find(p => p.id === m.provider_id) || {}).name || truncate(String(m.provider_id), 8);
+            return `<tr>
+                <td class="mono">${m.model_id}</td>
+                <td>${m.display_name}</td>
+                <td>${provName}</td>
+                <td class="mono">${m.max_tokens}</td>
+                <td>${(m.capabilities || []).map(c => `<span class="tag" style="margin-right:4px">${c}</span>`).join('')}</td>
+                <td><span class="tag ${m.is_enabled ? 'tag-green' : 'tag-red'}">${m.is_enabled ? 'Yes' : 'No'}</span></td>
+            </tr>`;
+        }).join('');
+    } catch (e) { document.getElementById('modelsBody').innerHTML = `<tr><td colspan="6"><div class="empty-state">Error: ${e.message}</div></td></tr>`; }
+}
+
+async function loadAgents() {
+    try {
+        const data = await api('/ono/agents');
+        const tb = document.getElementById('agentsBody');
+        if (!data.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty-state">No agents</div></td></tr>'; return; }
+        tb.innerHTML = data.map(a => `<tr>
+            <td class="mono">${a.name}</td>
+            <td>${a.display_name}</td>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.description || '--'}</td>
+            <td class="mono" style="font-size:11px">${a.model_id ? truncate(String(a.model_id), 8) : '--'}</td>
+            <td>${(a.tools || []).length}</td>
+            <td><span class="tag ${a.is_enabled ? 'tag-green' : 'tag-red'}">${a.is_enabled ? 'Yes' : 'No'}</span></td>
+        </tr>`).join('');
+    } catch (e) { document.getElementById('agentsBody').innerHTML = `<tr><td colspan="6"><div class="empty-state">Error: ${e.message}</div></td></tr>`; }
+}
+
+async function loadAutomations() {
+    try {
+        const data = await api('/ono/automations?enabled_only=false');
+        const tb = document.getElementById('automationsBody');
+        if (!data.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty-state">No automations</div></td></tr>'; return; }
+        tb.innerHTML = data.map(a => `<tr>
+            <td class="mono">${a.name}</td>
+            <td>${a.display_name}</td>
+            <td><span class="tag">${a.trigger_type}</span></td>
+            <td class="mono" style="font-size:11px">${(a.effects || []).length} effects</td>
+            <td><span class="tag ${a.is_enabled ? 'tag-green' : 'tag-red'}">${a.is_enabled ? 'Yes' : 'No'}</span></td>
+            <td style="font-size:12px;color:var(--text-dim)">${a.last_triggered_at ? fmtDate(a.last_triggered_at) : 'Never'}</td>
+        </tr>`).join('');
+    } catch (e) { document.getElementById('automationsBody').innerHTML = `<tr><td colspan="6"><div class="empty-state">Error: ${e.message}</div></td></tr>`; }
+}
+
+async function loadFleetStatus() {
+    try {
+        const data = await api('/apollo/fleet-status');
+        document.getElementById('fleet-envs').textContent = data.environments;
+        document.getElementById('fleet-agents').textContent = `${data.agents_online}/${data.agents_total}`;
+        document.getElementById('fleet-svcs').textContent = `${data.services_healthy}/${data.services_total}`;
+        document.getElementById('fleet-deploys').textContent = data.active_deployments;
+        const agents = await api('/apollo/agents');
+        const tb = document.getElementById('fleetAgentsBody');
+        if (!agents.length) { tb.innerHTML = '<tr><td colspan="7"><div class="empty-state">No agents</div></td></tr>'; return; }
+        tb.innerHTML = agents.map(a => `<tr>
+            <td class="mono">${a.name}</td>
+            <td><span class="tag">${a.agent_type}</span></td>
+            <td style="font-size:12px">${a.environment_id.slice(0,8)}...</td>
+            <td class="mono" style="font-size:11px">${a.hostname || '—'}</td>
+            <td class="mono" style="font-size:11px">${a.version || '—'}</td>
+            <td><span class="tag ${a.status === 'online' ? 'tag-green' : a.status === 'degraded' ? 'tag-yellow' : 'tag-red'}">${a.status}</span></td>
+            <td style="font-size:12px;color:var(--text-dim)">${a.last_heartbeat ? fmtDate(a.last_heartbeat) : '—'}</td>
+        </tr>`).join('');
+    } catch (e) { document.getElementById('fleetAgentsBody').innerHTML = `<tr><td colspan="7"><div class="empty-state">Error: ${e.message}</div></td></tr>`; }
+}
+
+async function loadEnvironments() {
+    try {
+        const data = await api('/apollo/environments');
+        const tb = document.getElementById('envsBody');
+        if (!data.length) { tb.innerHTML = '<tr><td colspan="5"><div class="empty-state">No environments</div></td></tr>'; return; }
+        tb.innerHTML = data.map(e => `<tr>
+            <td class="mono">${e.name}</td>
+            <td>${e.display_name}</td>
+            <td><span class="tag">${e.env_type}</span></td>
+            <td><span class="tag ${e.status === 'active' ? 'tag-green' : 'tag-red'}">${e.status}</span></td>
+            <td style="font-size:12px;color:var(--text-dim)">${fmtDate(e.created_at)}</td>
+        </tr>`).join('');
+    } catch (e) { document.getElementById('envsBody').innerHTML = `<tr><td colspan="5"><div class="empty-state">Error: ${e.message}</div></td></tr>`; }
+}
+
+async function loadDeployments() {
+    try {
+        const data = await api('/apollo/deployments?limit=30');
+        const tb = document.getElementById('deploysBody');
+        if (!data.length) { tb.innerHTML = '<tr><td colspan="7"><div class="empty-state">No deployments</div></td></tr>'; return; }
+        tb.innerHTML = data.map(d => `<tr>
+            <td class="mono" style="font-size:11px">${d.service_id.slice(0,8)}...</td>
+            <td class="mono" style="font-size:11px">${d.environment_id.slice(0,8)}...</td>
+            <td class="mono">${d.version}</td>
+            <td><span class="tag">${d.deploy_type}</span></td>
+            <td><span class="tag ${d.status === 'completed' ? 'tag-green' : d.status === 'running' ? 'tag-yellow' : d.status === 'rolled_back' ? 'tag-red' : ''}">${d.status}</span></td>
+            <td style="font-size:12px;color:var(--text-dim)">${fmtDate(d.started_at)}</td>
+            <td style="font-size:12px">${d.triggered_by || '—'}</td>
+        </tr>`).join('');
+    } catch (e) { document.getElementById('deploysBody').innerHTML = `<tr><td colspan="7"><div class="empty-state">Error: ${e.message}</div></td></tr>`; }
+}
+
+async function loadPipelines() {
+    try {
+        const data = await api('/apollo/pipelines');
+        const tb = document.getElementById('pipelinesBody');
+        if (!data.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty-state">No pipelines</div></td></tr>'; return; }
+        tb.innerHTML = data.map(p => `<tr>
+            <td class="mono">${p.name}</td>
+            <td class="mono" style="font-size:11px">${(p.stages || []).join(' → ')}</td>
+            <td style="font-size:12px">${(p.triggers || []).map(t => t.type).join(', ')}</td>
+            <td style="font-size:12px;color:var(--text-dim)">${p.last_run_at ? fmtDate(p.last_run_at) : 'Never'}</td>
+            <td><span class="tag ${p.last_status === 'success' ? 'tag-green' : p.last_status === 'failed' ? 'tag-red' : ''}">${p.last_status || '—'}</span></td>
+            <td><button class="btn btn-sm" onclick="triggerPipeline('${p.id}')">Trigger</button></td>
+        </tr>`).join('');
+    } catch (e) { document.getElementById('pipelinesBody').innerHTML = `<tr><td colspan="6"><div class="empty-state">Error: ${e.message}</div></td></tr>`; }
+}
+
+async function triggerPipeline(id) {
+    try { await api(`/apollo/pipelines/${id}/trigger`, { method: 'POST' }); toast('Pipeline triggered', 'success'); loadPipelines(); }
+    catch (e) { toast(e.message, 'error'); }
+}
+
+async function loadResonance() {
+    try {
+        const data = await api('/tdac/resonance');
+        if (data.average_resonance != null) {
+            document.getElementById('resonanceValue').textContent = data.average_resonance;
+            document.getElementById('resMin').textContent = data.min_resonance;
+            document.getElementById('resMax').textContent = data.max_resonance;
+            document.getElementById('resCount').textContent = data.patron_count;
+        }
+    } catch {}
+
+    try {
+        const metrics = await api('/tdac/metrics?limit=200');
+        const patronMetrics = metrics.filter(m => m.metric_type === 'reflection_completed' && m.value && m.value.patron_id);
+        if (patronMetrics.length > 0) {
+            const patronId = patronMetrics[0].value.patron_id;
+            const r = await api(`/tdac/resonance/${patronId}`);
+            if (r.components) {
+                const max = 10;
+                const set = (id, val, weight) => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.width = Math.min((val / max) * 100, 100) + '%';
+                };
+                set('barR1', r.components.r1_return_rate);
+                set('barR2', r.components.r2_depth_score);
+                set('barR3', r.components.r3_discovery_rate);
+                set('barR4', r.components.r4_ritual_score);
+                set('barR5', r.components.r5_gift_score);
+                document.getElementById('valR1').textContent = r.components.r1_return_rate;
+                document.getElementById('valR2').textContent = r.components.r2_depth_score;
+                document.getElementById('valR3').textContent = r.components.r3_discovery_rate;
+                document.getElementById('valR4').textContent = r.components.r4_ritual_score;
+                document.getElementById('valR5').textContent = r.components.r5_gift_score;
+            }
+        }
+    } catch {}
+}
+
+async function loadMetrics() {
+    try {
+        const typeFilter = document.getElementById('metricTypeFilter').value;
+        const params = typeFilter ? `?metric_type=${typeFilter}` : '';
+        const data = await api('/tdac/metrics' + params);
+        const tb = document.getElementById('metricsBody');
+        if (!data.length) { tb.innerHTML = '<tr><td colspan="4"><div class="empty-state">No metrics found</div></td></tr>'; return; }
+        tb.innerHTML = data.map(m => `<tr>
+            <td><span class="tag">${m.metric_type}</span></td>
+            <td class="mono" style="font-size:11px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${typeof m.value === 'object' ? JSON.stringify(m.value) : m.value}</td>
+            <td style="font-size:12px;color:var(--text-dim)">${fmtDate(m.computed_at)}</td>
+            <td class="mono" style="font-size:11px">${truncate(String(m.id), 8)}</td>
+        </tr>`).join('');
+    } catch (e) { document.getElementById('metricsBody').innerHTML = `<tr><td colspan="4"><div class="empty-state">Error: ${e.message}</div></td></tr>`; }
+}
+
+async function loadDashboard() {
+    try {
+        const data = await api('/tdac/dashboard');
+        document.getElementById('tdacTenant').textContent = data.tenant || 'The Daily Art Cult';
+        document.getElementById('tdacTenantSub').textContent = data.recent_activity ? `${data.recent_activity.length} recent events` : '';
+        const res = data.resonance_index;
+        if (res && res.average_resonance != null) {
+            document.getElementById('tdacResonance').textContent = res.average_resonance;
+            document.getElementById('tdacResonanceSub').textContent = res.patron_count != null ? `${res.patron_count} patrons` : '';
+        }
+        const feed = document.getElementById('dashboardFeed');
+        if (data.recent_activity && data.recent_activity.length) {
+            feed.innerHTML = data.recent_activity.map(a => `
+                <div class="feed-item">
+                    <div class="feed-dot"></div>
+                    <div class="feed-content">
+                        <div class="feed-text"><span class="tag">${a.type}</span> <span class="mono">${typeof a.value === 'object' ? JSON.stringify(a.value).slice(0, 100) : a.value}</span></div>
+                        <div class="feed-time">${fmtTimeAgo(a.at)}</div>
+                    </div>
+                </div>`).join('');
+        } else {
+            feed.innerHTML = '<div class="empty-state">No recent activity</div>';
+        }
+    } catch (e) {
+        document.getElementById('tdacTenant').textContent = '--';
+        document.getElementById('dashboardFeed').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+    }
+}
+
+function updateCountdown() {
+    const target = new Date('2026-12-31T00:00:00Z').getTime();
+    const now = Date.now();
+    const diff = Math.max(0, target - now);
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    document.getElementById('cdDays').textContent = d;
+    document.getElementById('cdHours').textContent = String(h).padStart(2, '0');
+    document.getElementById('cdMins').textContent = String(m).padStart(2, '0');
+    document.getElementById('cdSecs').textContent = String(s).padStart(2, '0');
+}
+
+function openModal(id) {
+    const modal = document.getElementById('modalOverlay');
+    const content = document.getElementById('modalContent');
+    content.innerHTML = getModalHTML(id);
+    modal.classList.add('open');
+    if (id === 'modalObject') populateObjectTypeSelect();
+    if (id === 'modalModel') populateProviderSelect();
+    if (id === 'modalLinkType') populateTypeSelects();
+    if (id === 'modalAgent') populateModelSelect();
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+function getModalHTML(id) {
+    const modals = {
+        modalObjectType: `
+            <div class="modal-title">Create Object Type</div>
+            <form onsubmit="submitObjectType(event)">
+                <div class="form-group"><label class="form-label">Name</label><input name="name" required placeholder="e.g. tdac_patron"></div>
+                <div class="form-group"><label class="form-label">Display Name</label><input name="display_name" required placeholder="e.g. TDAC Patron"></div>
+                <div class="form-group"><label class="form-label">Description</label><textarea name="description" placeholder="Optional description"></textarea></div>
+                <div class="form-group"><label class="form-label">Properties Schema (JSON)</label><textarea name="properties_schema" placeholder='{"field": "type"}'>{}</textarea></div>
+                <div class="form-group"><label class="form-label">Icon</label><input name="icon" placeholder="Optional icon name"></div>
+                <div class="modal-actions"><button type="button" class="btn" onclick="closeModal()">Cancel</button><button type="submit" class="btn btn-primary">Create</button></div>
+            </form>`,
+        modalObject: `
+            <div class="modal-title">Create Object</div>
+            <form onsubmit="submitObject(event)">
+                <div class="form-group"><label class="form-label">Object Type</label><select name="object_type_id" id="objTypeSelect" required></select></div>
+                <div class="form-group"><label class="form-label">Primary Key Value</label><input name="primary_key_value" required placeholder="Unique identifier"></div>
+                <div class="form-group"><label class="form-label">Properties (JSON)</label><textarea name="properties" placeholder='{"key": "value"}'>{}</textarea></div>
+                <div class="modal-actions"><button type="button" class="btn" onclick="closeModal()">Cancel</button><button type="submit" class="btn btn-primary">Create</button></div>
+            </form>`,
+        modalLinkType: `
+            <div class="modal-title">Create Link Type</div>
+            <form onsubmit="submitLinkType(event)">
+                <div class="form-group"><label class="form-label">Name</label><input name="name" required placeholder="e.g. patron_reflection"></div>
+                <div class="form-group"><label class="form-label">Display Name</label><input name="display_name" required placeholder="e.g. Patron Reflection"></div>
+                <div class="form-group"><label class="form-label">Source Type</label><select name="source_type_id" id="linkSourceSelect" required></select></div>
+                <div class="form-group"><label class="form-label">Target Type</label><select name="target_type_id" id="linkTargetSelect" required></select></div>
+                <div class="form-group"><label class="form-label">Cardinality</label><select name="cardinality"><option value="many-to-many">Many to Many</option><option value="one-to-many">One to Many</option><option value="one-to-one">One to One</option></select></div>
+                <div class="form-group"><label class="form-label">Description</label><textarea name="description"></textarea></div>
+                <div class="modal-actions"><button type="button" class="btn" onclick="closeModal()">Cancel</button><button type="submit" class="btn btn-primary">Create</button></div>
+            </form>`,
+        modalProvider: `
+            <div class="modal-title">Create LLM Provider</div>
+            <form onsubmit="submitProvider(event)">
+                <div class="form-group"><label class="form-label">Name</label><input name="name" required placeholder="e.g. OpenAI"></div>
+                <div class="form-group"><label class="form-label">Provider Type</label><select name="provider_type" required><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="google">Google</option><option value="ollama">Ollama</option><option value="custom">Custom</option></select></div>
+                <div class="form-group"><label class="form-label">API Key</label><input name="api_key" type="password" placeholder="sk-..."></div>
+                <div class="form-group"><label class="form-label">Base URL</label><input name="base_url" placeholder="https://api.openai.com/v1"></div>
+                <div class="modal-actions"><button type="button" class="btn" onclick="closeModal()">Cancel</button><button type="submit" class="btn btn-primary">Create</button></div>
+            </form>`,
+        modalModel: `
+            <div class="modal-title">Create LLM Model</div>
+            <form onsubmit="submitModel(event)">
+                <div class="form-group"><label class="form-label">Provider</label><select name="provider_id" id="modelProviderSelect" required></select></div>
+                <div class="form-group"><label class="form-label">Model ID</label><input name="model_id" required placeholder="e.g. gpt-4o"></div>
+                <div class="form-group"><label class="form-label">Display Name</label><input name="display_name" required placeholder="e.g. GPT-4o"></div>
+                <div class="form-group"><label class="form-label">Max Tokens</label><input name="max_tokens" type="number" value="4096"></div>
+                <div class="form-group"><label class="form-label">Cost per 1K Input ($)</label><input name="cost_per_1k_input" type="number" step="0.001" value="0"></div>
+                <div class="form-group"><label class="form-label">Cost per 1K Output ($)</label><input name="cost_per_1k_output" type="number" step="0.001" value="0"></div>
+                <div class="modal-actions"><button type="button" class="btn" onclick="closeModal()">Cancel</button><button type="submit" class="btn btn-primary">Create</button></div>
+            </form>`,
+        modalAgent: `
+            <div class="modal-title">Create Agent</div>
+            <form onsubmit="submitAgent(event)">
+                <div class="form-group"><label class="form-label">Name</label><input name="name" required placeholder="e.g. research_assistant"></div>
+                <div class="form-group"><label class="form-label">Display Name</label><input name="display_name" required placeholder="e.g. Research Assistant"></div>
+                <div class="form-group"><label class="form-label">Description</label><textarea name="description"></textarea></div>
+                <div class="form-group"><label class="form-label">System Prompt</label><textarea name="system_prompt" required placeholder="You are a helpful assistant..."></textarea></div>
+                <div class="form-group"><label class="form-label">Model</label><select name="model_id" id="agentModelSelect"><option value="">None</option></select></div>
+                <div class="form-group"><label class="form-label">Tools (JSON array)</label><textarea name="tools" placeholder='[]'>[]</textarea></div>
+                <div class="modal-actions"><button type="button" class="btn" onclick="closeModal()">Cancel</button><button type="submit" class="btn btn-primary">Create</button></div>
+            </form>`,
+        modalAutomation: `
+            <div class="modal-title">Create Automation</div>
+            <form onsubmit="submitAutomation(event)">
+                <div class="form-group"><label class="form-label">Name</label><input name="name" required placeholder="e.g. daily_reflection_digest"></div>
+                <div class="form-group"><label class="form-label">Display Name</label><input name="display_name" required placeholder="e.g. Daily Reflection Digest"></div>
+                <div class="form-group"><label class="form-label">Description</label><textarea name="description"></textarea></div>
+                <div class="form-group"><label class="form-label">Trigger Type</label><input name="trigger_type" required placeholder="e.g. schedule, webhook, event"></div>
+                <div class="form-group"><label class="form-label">Trigger Config (JSON)</label><textarea name="trigger_config" required placeholder='{"cron": "0 9 * * *"}'>{}</textarea></div>
+                <div class="form-group"><label class="form-label">Effects (JSON array)</label><textarea name="effects" required placeholder='[{"type": "notify", "target": "admin"}]'>[]</textarea></div>
+                <div class="form-group"><label class="form-label">Conditions (JSON array)</label><textarea name="conditions" placeholder='[]'>[]</textarea></div>
+                <div class="modal-actions"><button type="button" class="btn" onclick="closeModal()">Cancel</button><button type="submit" class="btn btn-primary">Create</button></div>
+            </form>`
+    };
+    return modals[id] || '';
+}
+
+function populateObjectTypeSelect() {
+    const sel = document.getElementById('objTypeSelect');
+    sel.innerHTML = objectTypeCache.map(t => `<option value="${t.id}">${t.display_name}</option>`).join('');
+    if (!objectTypeCache.length) {
+        api('/spinal-craker/object-types').then(d => {
+            objectTypeCache = d;
+            sel.innerHTML = d.map(t => `<option value="${t.id}">${t.display_name}</option>`).join('');
+        }).catch(() => {});
+    }
+}
+
+function populateProviderSelect() {
+    const sel = document.getElementById('modelProviderSelect');
+    sel.innerHTML = providerCache.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    if (!providerCache.length) {
+        api('/ono/providers').then(d => {
+            providerCache = d;
+            sel.innerHTML = d.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        }).catch(() => {});
+    }
+}
+
+function populateModelSelect() {
+    const sel = document.getElementById('agentModelSelect');
+    api('/ono/models').then(d => {
+        sel.innerHTML = '<option value="">None</option>' + d.map(m => `<option value="${m.id}">${m.display_name} (${m.model_id})</option>`).join('');
+    }).catch(() => {});
+}
+
+function populateTypeSelects() {
+    const src = document.getElementById('linkSourceSelect');
+    const tgt = document.getElementById('linkTargetSelect');
+    const populate = (sel) => {
+        sel.innerHTML = objectTypeCache.map(t => `<option value="${t.id}">${t.display_name}</option>`).join('');
+    };
+    if (objectTypeCache.length) { populate(src); populate(tgt); return; }
+    api('/spinal-craker/object-types').then(d => {
+        objectTypeCache = d;
+        populate(src); populate(tgt);
+    }).catch(() => {});
+}
+
+async function submitObjectType(e) {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    let schema = {};
+    try { schema = JSON.parse(f.get('properties_schema') || '{}'); } catch { toast('Invalid JSON in properties schema', 'error'); return; }
+    try {
+        await api('/spinal-craker/object-types', {
+            method: 'POST',
+            body: JSON.stringify({ name: f.get('name'), display_name: f.get('display_name'), description: f.get('description') || null, properties_schema: schema, icon: f.get('icon') || null })
+        });
+        toast('Object type created');
+        closeModal();
+        loadObjectTypes();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+async function submitObject(e) {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    let props = {};
+    try { props = JSON.parse(f.get('properties') || '{}'); } catch { toast('Invalid JSON in properties', 'error'); return; }
+    try {
+        await api('/spinal-craker/objects', {
+            method: 'POST',
+            body: JSON.stringify({ object_type_id: f.get('object_type_id'), primary_key_value: f.get('primary_key_value'), properties: props })
+        });
+        toast('Object created');
+        closeModal();
+        loadObjects();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+async function submitLinkType(e) {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    try {
+        await api('/spinal-craker/link-types', {
+            method: 'POST',
+            body: JSON.stringify({ name: f.get('name'), display_name: f.get('display_name'), source_type_id: f.get('source_type_id'), target_type_id: f.get('target_type_id'), cardinality: f.get('cardinality'), description: f.get('description') || null })
+        });
+        toast('Link type created');
+        closeModal();
+        loadLinkTypes();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+async function submitProvider(e) {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    try {
+        await api('/ono/providers', {
+            method: 'POST',
+            body: JSON.stringify({ name: f.get('name'), provider_type: f.get('provider_type'), api_key: f.get('api_key') || null, base_url: f.get('base_url') || null })
+        });
+        toast('Provider created');
+        closeModal();
+        loadProviders();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+async function submitModel(e) {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    try {
+        await api('/ono/models', {
+            method: 'POST',
+            body: JSON.stringify({ provider_id: f.get('provider_id'), model_id: f.get('model_id'), display_name: f.get('display_name'), max_tokens: parseInt(f.get('max_tokens')), cost_per_1k_input: parseFloat(f.get('cost_per_1k_input')), cost_per_1k_output: parseFloat(f.get('cost_per_1k_output')) })
+        });
+        toast('Model created');
+        closeModal();
+        loadModels();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+async function submitAgent(e) {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    let tools = [];
+    try { tools = JSON.parse(f.get('tools') || '[]'); } catch { toast('Invalid JSON in tools', 'error'); return; }
+    try {
+        await api('/ono/agents', {
+            method: 'POST',
+            body: JSON.stringify({ name: f.get('name'), display_name: f.get('display_name'), system_prompt: f.get('system_prompt'), description: f.get('description') || null, model_id: f.get('model_id') || null, tools })
+        });
+        toast('Agent created');
+        closeModal();
+        loadAgents();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+async function submitAutomation(e) {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    let triggerConfig, effects, conditions;
+    try { triggerConfig = JSON.parse(f.get('trigger_config')); } catch { toast('Invalid JSON in trigger config', 'error'); return; }
+    try { effects = JSON.parse(f.get('effects') || '[]'); } catch { toast('Invalid JSON in effects', 'error'); return; }
+    try { conditions = JSON.parse(f.get('conditions') || '[]'); } catch { toast('Invalid JSON in conditions', 'error'); return; }
+    try {
+        await api('/ono/automations', {
+            method: 'POST',
+            body: JSON.stringify({ name: f.get('name'), display_name: f.get('display_name'), trigger_type: f.get('trigger_type'), trigger_config: triggerConfig, effects, description: f.get('description') || null, conditions })
+        });
+        toast('Automation created');
+        closeModal();
+        loadAutomations();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
+
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => navigate(item.dataset.page));
+});
+
+function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarBackdrop').classList.remove('open');
+}
+
+document.getElementById('hamburgerBtn').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarBackdrop').classList.toggle('open');
+});
+document.getElementById('sidebarBackdrop').addEventListener('click', closeSidebar);
+
+window.addEventListener('hashchange', () => {
+    const hash = window.location.hash.slice(1);
+    if (hash && PAGES[hash]) navigate(hash);
+});
+
+function init() {
+    const hash = window.location.hash.slice(1);
+    if (hash && PAGES[hash]) navigate(hash);
+    else navigate('overview');
+    checkHealth();
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+    refreshInterval = setInterval(() => {
+        checkHealth();
+        const currentHash = window.location.hash.slice(1) || 'overview';
+        if (currentHash === 'overview') loadOverview();
+        if (currentHash === 'tdac-dashboard') loadDashboard();
+    }, 30000);
+}
+
+init();
+</script>
+</body>
+</html>

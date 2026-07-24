@@ -67,6 +67,11 @@ def _render_framework_report(
     status_color = '#10b981' if fw_status == 'compliant' else '#f59e0b' if fw_status == 'partial' else '#ef4444'
     status_label = fw_status.upper().replace('_', ' ')
 
+    unique_plugins = set()
+    for c in controls:
+        unique_plugins.update(c.get('plugins', []))
+    plugin_count = len(unique_plugins)
+
     controls_html = ''
     for c in controls:
         ctrl_status = c['status']
@@ -337,7 +342,7 @@ def _render_framework_report(
     <div class="report-body">
         <div class="section">
             <h2>Scope</h2>
-            <p>This report covers the assessment of {fw_name} technical controls as implemented on the Alien Inc production infrastructure (Hetzner dedicated server, nginx/1.22.1, Python/3.11, Cloudflare CDN). The assessment was performed by Centra's automated compliance scanner using {total_tested // len([f for f in report_data.get('frameworks', {})] or [1])} security plugins across ports 443 (HTTPS) and 22 (SSH).</p>
+            <p>This report covers the assessment of {fw_name} technical controls as implemented on the Alien Inc production infrastructure (Hetzner dedicated server, nginx/1.22.1, Python/3.11, Cloudflare CDN). The assessment was performed by Centra's automated compliance scanner using {plugin_count} security plugins across ports 443 (HTTPS) and 22 (SSH).</p>
         </div>
 
         <div class="section">

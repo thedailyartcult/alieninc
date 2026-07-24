@@ -167,19 +167,21 @@ class ScanEngine:
                         )
 
                     for result in results:
+                        all_findings.append(result)
+
+                        severity = result.severity or plugin.severity_from_cvss(result.cvss_score)
+                        status = 'fail' if result.vulnerable else 'pass'
+
+                        await self.db.add_finding(
+                            scan_id, company_id, plugin.PLUGIN_ID,
+                            plugin.NAME, plugin.FAMILY, result.cvss_score,
+                            result.target, result.port, severity,
+                            result.description, result.solution,
+                            result.references, result.evidence,
+                            status=status
+                        )
+
                         if result.vulnerable:
-                            all_findings.append(result)
-
-                            severity = result.severity or plugin.severity_from_cvss(result.cvss_score)
-
-                            await self.db.add_finding(
-                                scan_id, company_id, plugin.PLUGIN_ID,
-                                plugin.NAME, plugin.FAMILY, result.cvss_score,
-                                result.target, result.port, severity,
-                                result.description, result.solution,
-                                result.references, result.evidence
-                            )
-
                             await self._emit(scan_id, {
                                 'type': 'finding',
                                 'plugin_id': plugin.PLUGIN_ID,

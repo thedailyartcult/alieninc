@@ -56,6 +56,7 @@ class Database:
                 target TEXT DEFAULT '',
                 port INTEGER DEFAULT 0,
                 severity TEXT DEFAULT 'info',
+                status TEXT DEFAULT 'fail',
                 description TEXT DEFAULT '',
                 solution TEXT DEFAULT '',
                 reference_urls TEXT DEFAULT '[]',
@@ -75,6 +76,10 @@ class Database:
                 FOREIGN KEY (scan_id) REFERENCES scans(id)
             );
         ''')
+        try:
+            await self._db.execute('ALTER TABLE findings ADD COLUMN status TEXT DEFAULT "fail"')
+        except Exception:
+            pass
         await self._db.commit()
 
     async def ensure_company(self, cid: str, name: str):
@@ -165,14 +170,14 @@ class Database:
     async def add_finding(self, scan_id: str, company_id: str, plugin_id: int,
                           plugin_name: str, family: str, cvss: float, target: str,
                           port: int, severity: str, description: str, solution: str,
-                          references: list[str], evidence: str):
+                          references: list[str], evidence: str, status: str = 'fail'):
         await self._db.execute(
             '''INSERT INTO findings
                (scan_id, company_id, plugin_id, plugin_name, family, cvss_score,
-                target, port, severity, description, solution, reference_urls, evidence)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+                target, port, severity, status, description, solution, reference_urls, evidence)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
             (scan_id, company_id, plugin_id, plugin_name, family, cvss,
-             target, port, severity, description, solution, json.dumps(references), evidence)
+             target, port, severity, status, description, solution, json.dumps(references), evidence)
         )
         await self._db.commit()
 

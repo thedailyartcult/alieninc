@@ -1092,6 +1092,10 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                 self._send_json({"error": "authentication required"}, 401)
                 return
             self._handle_panteon_api(self.path)
+        elif self.path == '/api/compliance/status' or self.path.startswith('/api/compliance/status?'):
+            self._handle_compliance_status()
+        elif self.path == '/api/compliance/report' or self.path.startswith('/api/compliance/report?'):
+            self._handle_compliance_report()
         elif self.path == '/console' or self.path.startswith('/console/'):
             auth = self._has_valid_secure_session() or self._has_valid_main_session()
             if not auth:
@@ -1481,6 +1485,27 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(body)
         except BrokenPipeError:
             pass
+
+    def _handle_compliance_status(self):
+        try:
+            sys.path.insert(0, os.path.join(ROOT, 'centra', 'engine'))
+            from compliance_report import get_compliance_status
+            status = get_compliance_status()
+            self._send_json(status)
+        except Exception as e:
+            self._send_json({"error": str(e)}, 500)
+
+    def _handle_compliance_report(self):
+        try:
+            sys.path.insert(0, os.path.join(ROOT, 'centra', 'engine'))
+            from compliance_report import load_latest_report
+            report = load_latest_report()
+            if report:
+                self._send_json(report)
+            else:
+                self._send_json({"error": "no report available"}, 404)
+        except Exception as e:
+            self._send_json({"error": str(e)}, 500)
 
     def _handle_panteon_api(self, path):
         sys.path.insert(0, os.path.join(ROOT, 'engine'))

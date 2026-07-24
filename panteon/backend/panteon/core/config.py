@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     admin_emails: Optional[str] = None
     editor_emails: Optional[str] = None
 
+    allowed_email_domains: str = "alieninc.tech"
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

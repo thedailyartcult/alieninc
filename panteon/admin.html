@@ -195,13 +195,17 @@
             <span>PANTE<span style="color:var(--cyan)">ON</span></span>
         </div>
         <div class="login-title">Admin Console</div>
-        <div class="login-sub">Enter your email to receive a secure login link</div>
+        <div class="login-sub">Sign in with your account</div>
         <form class="login-form" id="loginForm" onsubmit="return doLogin(event)">
             <div class="form-group">
                 <label class="form-label">Email</label>
                 <input type="email" id="loginEmail" autocomplete="email" placeholder="you@alieninc.tech" required>
             </div>
-            <button type="submit" class="login-btn" id="loginBtn">Send Login Link</button>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" id="loginPassword" autocomplete="current-password" placeholder="Enter your password" required>
+            </div>
+            <button type="submit" class="login-btn" id="loginBtn">Log In</button>
             <div class="login-error" id="loginError"></div>
             <div class="login-error" id="loginSuccess" style="color:var(--green)"></div>
         </form>
@@ -433,7 +437,7 @@
                     </div>
                     <div class="card">
                         <div class="card-title">API Endpoint</div>
-                        <div class="mono" style="margin-top:8px;font-size:12px">http://localhost:8000/api/v1/</div>
+                        <div class="mono" style="margin-top:8px;font-size:12px">/api/v1/</div>
                         <div class="card-sub" id="apiPingResult"></div>
                     </div>
                     <div class="card">
@@ -1088,7 +1092,7 @@ const SUPABASE_URL = 'https://frwjaixxlgthkgjtafhz.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyd2phaXh4bGd0aGtnanRhZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDUzNDQsImV4cCI6MjA5NDYyMTM0NH0.j2DKz__QMml4WplMYNmsQpTUw0qu-kZG7Md3qBEEdEc';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const API_BASE = 'http://localhost:8000/api/v1';
+const API_BASE = '/api/v1';
 let apiOnline = false;
 let objectTypeCache = [];
 let providerCache = [];
@@ -1134,23 +1138,24 @@ async function doLogin(e) {
     const err = document.getElementById('loginError');
     const success = document.getElementById('loginSuccess');
     btn.disabled = true;
-    btn.textContent = 'Sending...';
+    btn.textContent = 'Signing in...';
     err.textContent = '';
     success.textContent = '';
     try {
         const email = document.getElementById('loginEmail').value.trim();
-        const { error } = await supabaseClient.auth.signInWithOtp({
+        const password = document.getElementById('loginPassword').value;
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
             email: email,
-            options: { emailRedirectTo: window.location.origin + '/admin' }
+            password: password
         });
         if (error) throw new Error(error.message);
-        success.textContent = 'Check your inbox. A login link has been dispatched.';
+        success.textContent = 'Signed in successfully.';
         document.getElementById('loginForm').reset();
     } catch (ex) {
         err.textContent = ex.message;
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Send Login Link';
+        btn.textContent = 'Log In';
     }
     return false;
 }
@@ -1243,7 +1248,7 @@ async function checkHealth() {
         document.getElementById('apiStatusText').textContent = 'API Offline';
         document.getElementById('healthDot').classList.add('offline');
         document.getElementById('healthText').textContent = 'Offline';
-        document.getElementById('healthSub').textContent = 'Cannot reach API at localhost:8000';
+        document.getElementById('healthSub').textContent = 'Cannot reach API';
     }
 }
 

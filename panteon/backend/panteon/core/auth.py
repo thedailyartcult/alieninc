@@ -59,6 +59,11 @@ async def verify_supabase_token(token: str) -> Optional[SupabaseUser]:
             return None
         data = resp.json()
         email = data.get("email", "")
+        allowed_domains = [d.strip().lower() for d in (settings.allowed_email_domains or "").split(",") if d.strip()]
+        if allowed_domains and email:
+            domain = email.split("@", 1)[-1].lower() if "@" in email else ""
+            if not any(domain == d or domain.endswith("." + d) for d in allowed_domains):
+                return None
         return SupabaseUser(
             user_id=data["id"],
             email=email,

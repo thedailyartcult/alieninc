@@ -22,13 +22,13 @@
         .brand-logo__text { font-family: 'Instrument Sans Condensed', sans-serif; font-size: clamp(24px, 5vw, 29px); font-weight: 800; letter-spacing: -0.03em; color: #131920; line-height: 1; }
         .brand-logo__dot { height: 0.41em; width: 0.41em; margin-top: 0.48em; display: block; }
         .centra-mark { display: inline-block; width: 8px; height: 8px; background: var(--aliendot); border-radius: 1px; margin-left: 2px; vertical-align: baseline; }
-        .score-ring { width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(#10b981 0deg, #10b981 360deg, #eaecf0 360deg); display: flex; align-items: center; justify-content: center; position: relative; }
-        .score-ring::before { content: ''; width: 96px; height: 96px; border-radius: 50%; background: white; position: absolute; }
-        .score-ring span { position: relative; z-index: 1; font-family: 'Instrument Sans Condensed', sans-serif; font-weight: 800; font-size: 2rem; color: #101828; }
+        .score-fade { animation: scoreFade 0.6s ease-out both; }
+        @keyframes scoreFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
         .cert-badge { transition: all 0.15s ease; }
         .cert-badge:hover { border-color: #1e2124; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .plugin-grid-item { transition: all 0.15s ease; }
         .plugin-grid-item:hover { background: #f0fdf4; border-color: #10b981; }
+
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between">
@@ -138,7 +138,7 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div class="bg-white border border-[#d0d5dd] rounded-lg p-6 flex flex-col justify-between shadow-sm">
+            <div class="bg-white border border-[#d0d5dd] rounded-lg p-6 shadow-sm">
                 <div>
                     <div class="flex items-center gap-2 mb-4">
                         <span class="text-[#19256e]">
@@ -146,21 +146,17 @@
                         </span>
                         <h3 class="text-base font-semibold text-[#101828]">Overview</h3>
                     </div>
+                    <div class="score-fade mb-6 pb-4 border-b border-[#eaecf0]">
+                        <div class="text-xs font-medium text-gray-500 tracking-wide uppercase mb-1">Security Score</div>
+                        <div class="text-4xl font-bold text-[#101828] tracking-tight" id="scoreNumber">0</div>
+                        <div class="text-sm text-gray-500 mt-1">26/26 plugins passed</div>
+                        <div class="text-xs text-gray-400 mt-0.5">0 critical &middot; 0 high &middot; 0 medium</div>
+                        <div class="text-xs text-gray-400 mt-2" id="centraLastScan">Last scan: July 24, 2026</div>
+                    </div>
                     <div class="text-sm text-gray-600 space-y-4 leading-relaxed font-body">
                         <p>Centra is the security and vulnerability scanning division of <strong>Alien Inc</strong>, a parent operating group connecting seven independent companies across cybersecurity, cultural preservation, digital media, capital allocation, crisis management, legal services, and AI consulting.</p>
                         <p>Centra continuously audits all Alien Inc properties against CIS NGINX, DISA STIG, PCI-DSS, OWASP ASVS, NIST 800-53, and NIST CSF 2.0. Our 26-plugin scanner runs automated checks across the full ecosystem, verifying infrastructure hardening, data protection, privacy compliance, and accessibility standards.</p>
                         <p>Security remains the cornerstone of our product development, company culture, and internal operations. This portal provides transparent, real-time evidence of our security posture.</p>
-                    </div>
-                </div>
-                <div class="mt-6 pt-4 border-t border-[#eaecf0] flex items-center gap-4">
-                    <div class="score-ring">
-                        <span>100</span>
-                    </div>
-                    <div>
-                        <div class="text-xs font-semibold uppercase tracking-wider text-[#4ca30d] mb-1">Security Score</div>
-                        <div class="text-sm text-gray-600">26/26 plugins passed</div>
-                        <div class="text-sm text-gray-600">0 critical &middot; 0 high &middot; 0 medium</div>
-                        <div class="text-xs text-gray-400 mt-1">Last scan: July 24, 2026</div>
                     </div>
                 </div>
             </div>
@@ -172,7 +168,104 @@
                     </span>
                     <h3 class="text-base font-semibold text-[#101828]">Compliance</h3>
                 </div>
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="complianceBadges"></div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="complianceBadges">
+                    <div class="cert-badge flex flex-col items-center text-center p-2 rounded-lg border border-[#eaecf0] bg-white">
+                        <div class="h-14 flex items-center justify-center mb-2">
+                            <img alt="SOC 2 Type 2" width="56" height="56" class="max-h-12 object-contain" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/soc.png" loading="lazy">
+                        </div>
+                        <div class="flex items-center gap-1 text-[11px] font-medium text-[#101828]">
+                            <span class="text-[#4ca30d]">&#10003;</span> SOC 2 Type 2
+                        </div>
+                    </div>
+                    <div class="cert-badge flex flex-col items-center text-center p-2 rounded-lg border border-[#eaecf0] bg-white">
+                        <div class="h-14 flex items-center justify-center mb-2">
+                            <img alt="ISO 27001" width="56" height="56" class="max-h-12 object-contain" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/schellman/iso27001-certified.png" loading="lazy">
+                        </div>
+                        <div class="flex items-center gap-1 text-[11px] font-medium text-[#101828]">
+                            <span class="text-[#4ca30d]">&#10003;</span> ISO 27001
+                        </div>
+                    </div>
+                    <div class="cert-badge flex flex-col items-center text-center p-2 rounded-lg border border-[#eaecf0] bg-white">
+                        <div class="h-14 flex items-center justify-center mb-2">
+                            <img alt="GDPR" width="56" height="56" class="max-h-12 object-contain" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/gdpr.svg" loading="lazy">
+                        </div>
+                        <div class="flex items-center gap-1 text-[11px] font-medium text-[#101828]">
+                            <span class="text-[#4ca30d]">&#10003;</span> GDPR
+                        </div>
+                    </div>
+                    <div class="cert-badge flex flex-col items-center text-center p-2 rounded-lg border border-[#eaecf0] bg-white">
+                        <div class="h-14 flex items-center justify-center mb-2">
+                            <img alt="HIPAA" width="56" height="56" class="max-h-12 object-contain" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/hipaa.svg" loading="lazy">
+                        </div>
+                        <div class="flex items-center gap-1 text-[11px] font-medium text-[#101828]">
+                            <span class="text-[#4ca30d]">&#10003;</span> HIPAA
+                        </div>
+                    </div>
+                    <div class="cert-badge flex flex-col items-center text-center p-2 rounded-lg border border-[#eaecf0] bg-white">
+                        <div class="h-14 flex items-center justify-center mb-2">
+                            <img alt="CCPA" width="56" height="56" class="max-h-12 object-contain" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/ccpa.svg" loading="lazy">
+                        </div>
+                        <div class="flex items-center gap-1 text-[11px] font-medium text-[#101828]">
+                            <span class="text-[#4ca30d]">&#10003;</span> CCPA
+                        </div>
+                    </div>
+                    <div class="cert-badge flex flex-col items-center text-center p-2 rounded-lg border border-[#eaecf0] bg-white">
+                        <div class="h-14 flex items-center justify-center mb-2">
+                            <img alt="VPAT" width="56" height="56" class="max-h-12 object-contain" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/vpat.png" loading="lazy">
+                        </div>
+                        <div class="flex items-center gap-1 text-[11px] font-medium text-[#101828]">
+                            <span class="text-[#4ca30d]">&#10003;</span> VPAT
+                        </div>
+                    </div>
+                    <div class="cert-badge flex flex-col items-center text-center p-2 rounded-lg border border-[#eaecf0] bg-white">
+                        <div class="h-14 flex items-center justify-center mb-2">
+                            <img alt="AWS Qualified" width="56" height="56" class="max-h-12 object-contain" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/aws_qualified_software.svg" loading="lazy">
+                        </div>
+                        <div class="flex items-center gap-1 text-[11px] font-medium text-[#101828]">
+                            <span class="text-[#4ca30d]">&#10003;</span> AWS Qualified
+                        </div>
+                    </div>
+                    <div class="cert-badge flex flex-col items-center text-center p-2 rounded-lg border border-[#eaecf0] bg-white">
+                        <div class="h-14 flex items-center justify-center mb-2">
+                            <img alt="CMMC Certified" width="56" height="56" class="max-h-12 object-contain" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/cmmc_certification.png" loading="lazy">
+                        </div>
+                        <div class="flex items-center gap-1 text-[11px] font-medium text-[#101828]">
+                            <span class="text-[#4ca30d]">&#10003;</span> CMMC Certified
+                        </div>
+                    </div>
+                    <div class="cert-badge flex flex-col items-center text-center p-2 rounded-lg border border-[#eaecf0] bg-white">
+                        <div class="h-14 flex items-center justify-center mb-2">
+                            <img alt="CSA STAR" width="56" height="56" class="max-h-12 object-contain" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/csastar.svg" loading="lazy">
+                        </div>
+                        <div class="flex items-center gap-1 text-[11px] font-medium text-[#101828]">
+                            <span class="text-[#4ca30d]">&#10003;</span> CSA STAR
+                        </div>
+                    </div>
+                    <div class="cert-badge flex flex-col items-center text-center p-2 rounded-lg border border-[#eaecf0] bg-white">
+                        <div class="h-14 flex items-center justify-center mb-2">
+                            <img alt="FedRAMP High" width="56" height="56" class="max-h-12 object-contain" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/fedramp.png" loading="lazy">
+                        </div>
+                        <div class="flex items-center gap-1 text-[11px] font-medium text-[#101828]">
+                            <span class="text-[#4ca30d]">&#10003;</span> FedRAMP High
+                        </div>
+                    </div>
+                    <div class="cert-badge flex flex-col items-center text-center p-2 rounded-lg border border-[#eaecf0] bg-white">
+                        <div class="h-14 flex items-center justify-center mb-2">
+                            <img alt="SOX" width="56" height="56" class="max-h-12 object-contain" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/sox.webp" loading="lazy">
+                        </div>
+                        <div class="flex items-center gap-1 text-[11px] font-medium text-[#101828]">
+                            <span class="text-[#4ca30d]">&#10003;</span> SOX
+                        </div>
+                    </div>
+                    <div class="cert-badge flex flex-col items-center text-center p-2 rounded-lg border border-[#eaecf0] bg-white">
+                        <div class="h-14 flex items-center justify-center mb-2">
+                            <img alt="TISAX" width="56" height="56" class="max-h-12 object-contain" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/tisax.png" loading="lazy">
+                        </div>
+                        <div class="flex items-center gap-1 text-[11px] font-medium text-[#101828]">
+                            <span class="text-[#4ca30d]">&#10003;</span> TISAX
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -375,36 +468,6 @@
                         }
                     }
 
-                    if (eco.companies) {
-                        var badgesEl = document.getElementById('complianceBadges');
-                        if (badgesEl) {
-                            var frameworks = [
-                                ['AWS Qualified', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/aws_qualified_software.svg'],
-                                ['CCPA', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/ccpa.svg'],
-                                ['CMMC Certified', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/cmmc_certification.png'],
-                                ['CSA STAR', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/csastar.svg'],
-                                ['FedRAMP High', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/fedramp.png'],
-                                ['GDPR', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/gdpr.svg'],
-                                ['HIPAA', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/hipaa.svg'],
-                                ['ISO 27001', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/schellman/iso27001-certified.png'],
-                                ['SOC 2 Type 2', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/soc.png'],
-                                ['SOX', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/sox.webp'],
-                                ['TISAX', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/tisax.png'],
-                                ['VPAT', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/vpat.png']
-                            ];
-                            badgesEl.innerHTML = frameworks.map(function(fw) {
-                                return '<div class="cert-badge flex flex-col items-center text-center p-2 rounded-lg border border-[#eaecf0] cursor-pointer bg-white">' +
-                                    '<div class="h-14 flex items-center justify-center mb-2">' +
-                                        '<img alt="' + fw[0] + '" class="max-h-12 object-contain" src="' + fw[1] + '">' +
-                                    '</div>' +
-                                    '<div class="flex items-center gap-1 text-[11px] font-medium text-[#101828]">' +
-                                        '<span class="text-[#4ca30d]">&#10003;</span> ' + fw[0] +
-                                    '</div>' +
-                                '</div>';
-                            }).join('');
-                        }
-                    }
-
                     var companies = eco.companies || [];
                     var totalRevenue = 0;
                     var totalHeadcount = 0;
@@ -429,18 +492,32 @@
                         tsEl.textContent = 'Last scan: ' + d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                     }
                     if (report.overall_score !== undefined) {
-                        var scoreRing = document.querySelector('.score-ring span');
-                        if (scoreRing) scoreRing.textContent = report.overall_score;
-                        var pct = Math.max(0, Math.min(100, report.overall_score));
-                        var angle = (pct / 100) * 360;
-                        var ring = document.querySelector('.score-ring');
-                        if (ring) {
-                            ring.style.background = 'conic-gradient(#10b981 0deg, #10b981 ' + angle + 'deg, #eaecf0 ' + angle + 'deg)';
-                        }
+                        animateScore(Math.round(report.overall_score));
                     }
                 })
                 .catch(function() {});
         }
+
+        function animateScore(target) {
+            var el = document.getElementById('scoreNumber');
+            if (!el) return;
+            var start = 0;
+            var duration = 1000;
+            var startTime = null;
+            function step(ts) {
+                if (!startTime) startTime = ts;
+                var progress = Math.min((ts - startTime) / duration, 1);
+                var eased = 1 - Math.pow(1 - progress, 3);
+                el.textContent = Math.round(start + (target - start) * eased);
+                if (progress < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+        }
+
+        (function() {
+            var scoreEl = document.getElementById('scoreNumber');
+            if (scoreEl) animateScore(100);
+        })();
 
         var _pluginSearchTimer = null;
 

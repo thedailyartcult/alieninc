@@ -42,6 +42,13 @@ REPORTS_DIR = PROJECT_ROOT / 'trust' / 'reports'
 LATEST_REPORT = REPORTS_DIR / 'latest'
 SCAN_REUSE_MINUTES = 30
 
+NOT_RUNNING_SERVICES = {
+    1002: 'FTP (port 21 not running)',
+    1006: 'DNS (port 53 not running)',
+    1007: 'SMB (port 445 not running)',
+    1008: 'RDP (port 3389 not running)',
+}
+
 
 async def run_compliance_scan(company_id: str = 'alieninc', force: bool = False) -> dict:
     """
@@ -74,6 +81,7 @@ async def run_compliance_scan(company_id: str = 'alieninc', force: bool = False)
 
     targets = [
         {'host': '127.0.0.1', 'name': 'Alien Inc (HTTPS)', 'ports': [443]},
+        {'host': '127.0.0.1', 'name': 'Alien Inc (SSH)', 'ports': [22]},
     ]
 
     scan_id = await db.create_scan(company_id, 1, ['127.0.0.1'])
@@ -167,11 +175,18 @@ def _generate_report_from_scan(scan_id: str, plugins) -> dict:
     plugins_without_results = all_plugin_ids - plugins_with_results
 
     for pid in plugins_without_results:
-        passed_plugins[pid] = {
-            'vulnerable': False,
-            'evidence': 'Plugin did not execute on scanned ports — not verified by this scan',
-            'not_tested': True,
-        }
+        if pid in NOT_RUNNING_SERVICES:
+            passed_plugins[pid] = {
+                'vulnerable': False,
+                'evidence': f'Not applicable: {NOT_RUNNING_SERVICES[pid]} — service not exposed',
+                'not_applicable': True,
+            }
+        else:
+            passed_plugins[pid] = {
+                'vulnerable': False,
+                'evidence': 'Plugin did not execute on scanned ports — not verified by this scan',
+                'not_tested': True,
+            }
 
     scan_results = {**failed_plugins, **passed_plugins}
     conn.close()

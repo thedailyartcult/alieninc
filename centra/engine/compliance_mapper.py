@@ -296,11 +296,16 @@ def _evaluate_control(
     failing_plugins = []
     missing_plugins = []
     untested_plugins = []
+    na_plugins = []
 
     for pid in plugin_ids:
         result = scan_results.get(pid)
         if result is None:
             missing_plugins.append(pid)
+        elif result.get('not_applicable'):
+            na_plugins.append(pid)
+            if result.get('evidence'):
+                evidence.append(f'Plugin {pid}: {result["evidence"][:80]}')
         elif result.get('not_tested'):
             untested_plugins.append(pid)
             if result.get('evidence'):
@@ -318,11 +323,11 @@ def _evaluate_control(
         status = 'not_testable'
     elif failing_plugins:
         status = 'not_verified'
-    elif untested_plugins and not passing_plugins:
+    elif untested_plugins and not passing_plugins and not na_plugins:
         status = 'not_testable'
     elif untested_plugins:
         status = 'partial'
-    elif missing_plugins and not passing_plugins:
+    elif missing_plugins and not passing_plugins and not na_plugins:
         status = 'not_testable'
     elif missing_plugins:
         status = 'partial'
@@ -334,6 +339,10 @@ def _evaluate_control(
         notes = f'Failed plugins: {", ".join(str(p) for p in failing_plugins)}'
     elif untested_plugins:
         notes = f'Plugins not executed on scanned ports: {", ".join(str(p) for p in untested_plugins)}'
+    elif na_plugins and not passing_plugins:
+        notes = f'Not applicable — services not exposed: {", ".join(str(p) for p in na_plugins)}'
+    elif na_plugins:
+        notes = f'Services not exposed (N/A): {", ".join(str(p) for p in na_plugins)}'
     elif missing_plugins:
         notes = f'Missing plugins: {", ".join(str(p) for p in missing_plugins)}'
 

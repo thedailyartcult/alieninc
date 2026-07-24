@@ -27,6 +27,7 @@ PROJECT_ROOT = CENTRA_DIR.parent
 sys.path.insert(0, str(ENGINE_DIR))
 sys.path.insert(0, str(CENTRA_DIR))
 
+from report_generator import generate_framework_reports
 from compliance_mapper import (
     generate_compliance_report,
     get_framework_summary,
@@ -242,13 +243,15 @@ def _generate_report_from_scan(scan_id: str, plugins) -> dict:
 
 
 def _save_report(report_data: dict):
-    """Save report to disk — latest + timestamped archive."""
+    """Save report to disk — latest + timestamped archive + per-framework HTML."""
     latest_json = LATEST_REPORT.with_suffix('.json')
     latest_json.write_text(json.dumps(report_data, indent=2, default=str))
 
     ts = report_data['timestamp'].replace(':', '-').replace('.', '-')
     archive = REPORTS_DIR / f'compliance-{ts}.json'
     archive.write_text(json.dumps(report_data, indent=2, default=str))
+
+    generate_framework_reports(report_data)
 
     logger.info(f'Report saved: {latest_json}')
 

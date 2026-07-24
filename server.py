@@ -1206,6 +1206,13 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response(302)
             self.send_header('Location', '/')
             self.end_headers()
+        elif self.path.startswith('/trust/') and not self.path.startswith('/trust/reports/'):
+            host = self.headers.get('Host', '').split(':')[0].lower()
+            if host.endswith('.alieninc.tech') or host == 'alieninc.tech':
+                self.send_response(302)
+                self.send_header('Location', 'https://centra.alieninc.tech')
+                self.end_headers()
+                return
         else:
             if self._is_blocked_path(self.path):
                 self.send_error(404)

@@ -81,7 +81,7 @@ async def run_compliance_scan(company_id: str = 'alieninc', force: bool = False)
     engine = ScanEngine(db, manager, plugins)
 
     targets = [
-        {'host': '127.0.0.1', 'name': 'Alien Inc (HTTPS)', 'ports': [443]},
+        {'host': 'localhost', 'name': 'Alien Inc (Web)', 'ports': [8080]},
         {'host': '127.0.0.1', 'name': 'Alien Inc (SSH)', 'ports': [22]},
     ]
 

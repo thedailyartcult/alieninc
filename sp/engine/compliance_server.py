@@ -111,7 +111,7 @@ class ComplianceHandler(SimpleHTTPRequestHandler):
 
         # Serve static files
         if path == '/' or path == '/index.html':
-            self.serve_file(ENGINE_DIR.parent / 'compliance.html', 'text/html')
+            self.serve_file(ENGINE_DIR.parent.parent / 'trust' / 'index.html', 'text/html')
         elif path.startswith('/../') or path.startswith('/sp/'):
             rel = path.lstrip('/')
             full = BASE_DIR / rel

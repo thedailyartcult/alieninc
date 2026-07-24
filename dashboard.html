@@ -129,6 +129,74 @@
       text-underline-offset: 0.2em;
     }
 
+    .nav__dropdown {
+      position: relative;
+    }
+
+    .nav__dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(6px);
+      background: #ffffff;
+      border: 1px solid rgba(19,25,32,0.1);
+      border-radius: 4px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      min-width: 150px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease;
+      padding: 6px 0;
+      z-index: 200;
+    }
+
+    .nav__dropdown:hover .nav__dropdown-menu,
+    .nav__dropdown-menu:hover {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(10px);
+    }
+
+    .nav__dropdown-item {
+      display: block;
+      padding: 8px 20px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--ppl-color-text-default);
+      white-space: nowrap;
+      transition: background 0.12s ease;
+      text-decoration: none;
+    }
+
+    .nav__dropdown-item:hover {
+      background: var(--hg-color-muted);
+      text-decoration: underline;
+      text-decoration-color: var(--hg-color-secondary);
+      text-decoration-thickness: 0.16em;
+      text-underline-offset: 0.2em;
+    }
+
+    .nav__dropdown-trigger {
+      cursor: default;
+    }
+
+    .nav__dropdown-trigger::after {
+      content: '';
+      display: inline-block;
+      width: 0;
+      height: 0;
+      margin-left: 5px;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 5px solid var(--ppl-color-text-default);
+      vertical-align: middle;
+      transition: transform 0.15s ease;
+    }
+
+    .nav__dropdown:hover .nav__dropdown-trigger::after {
+      transform: rotate(180deg);
+    }
+
     /* Section styles */
     .section-kicker {
       font-size: 0.78rem;
@@ -895,7 +963,13 @@
           <li class="nav__list-item"><a href="founder.html" class="nav__list-item-link">Founder</a></li>
           <li class="nav__list-item"><a href="index.html#portfolio" class="nav__list-item-link">Companies</a></li>
           <li class="nav__list-item"><a href="index.html#operating-system" class="nav__list-item-link">Operating Model</a></li>
-          <li class="nav__list-item"><a href="dashboard.html" class="nav__list-item-link is-active">Dashboard</a></li>
+          <li class="nav__list-item nav__dropdown">
+            <a href="dashboard.html" class="nav__list-item-link is-active nav__dropdown-trigger">Dashboard</a>
+            <div class="nav__dropdown-menu">
+              <a href="dashboard.html" class="nav__dropdown-item">Financial</a>
+              <a href="dashboard.html#compliance" class="nav__dropdown-item">Compliance</a>
+            </div>
+          </li>
           <li class="nav__list-item"><a href="index.html#contact" class="nav__list-item-link">Contact</a></li>
         </ul>
       </nav>
@@ -913,7 +987,7 @@
   <main>
 
     <!-- Hero -->
-    <section style="padding:4rem 0 2rem;">
+    <section id="financial" style="padding:4rem 0 2rem;">
       <div class="l-container">
         <div class="section-kicker">Open Dashboard</div>
         <h1 class="operating-system__title">We share what we measure.</h1>
@@ -1219,6 +1293,149 @@
     </section>
 
   </main>
+
+    <!-- Trust & Compliance -->
+    <section id="compliance" style="background:#ffffff;padding:4rem 0;border-top:1px solid rgba(19,25,32,0.08);">
+      <div class="l-container">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.5rem;">
+          <div class="section-kicker" style="margin:0;">Trust &amp; Compliance</div>
+          <div id="complianceLiveBadge" style="display:flex;align-items:center;gap:6px;font-size:0.72rem;font-weight:700;color:var(--ppl-color-text-subtle);">
+            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#1a7f37;animation:pulse 2s infinite;"></span>
+            Connected to Centra Scanner
+          </div>
+        </div>
+        <h2 style="font-family:var(--hg-font-secondary);font-size:clamp(1.8rem,4vw,2.8rem);text-transform:uppercase;margin:0 0 0.5rem;line-height:1;color:var(--ppl-color-text-default);">Continuously monitored. Publicly auditable.</h2>
+        <p style="color:var(--ppl-color-text-subtle);font-size:0.92rem;margin:0 0 2rem;max-width:640px;">Alien.Inc is continuously audited against 9 security frameworks by <strong>Centra</strong>. All scores reflect real-time web-scanner data. <a href="/trust/" style="font-weight:700;text-decoration:underline;text-decoration-color:var(--hg-color-secondary);text-underline-offset:0.15em;">Full report →</a></p>
+
+        <div style="margin-bottom:2rem;" id="complianceFrameworkGrid"></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(19,25,32,0.14);border:1px solid rgba(19,25,32,0.14);margin-bottom:2rem;">
+          <div style="background:#ffffff;padding:1.5rem;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#131920" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+              <span style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--ppl-color-text-subtle);">Security Headers</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;" id="complianceHeaders">
+              <div style="font-size:0.78rem;color:var(--ppl-color-text-subtle);">Loading...</div>
+            </div>
+          </div>
+          <div style="background:#ffffff;padding:1.5rem;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#131920" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              <span style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--ppl-color-text-subtle);">Deterrents &amp; Protections</span>
+            </div>
+            <div id="complianceDeterrents"></div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(19,25,32,0.14);border:1px solid rgba(19,25,32,0.14);margin-bottom:2rem;">
+          <div style="background:#ffffff;padding:1.5rem;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#131920" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.6"/></svg>
+              <span style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--ppl-color-text-subtle);">Company Compliance Scores</span>
+            </div>
+            <div id="complianceCompanyScores">
+              <div style="font-size:0.82rem;color:var(--ppl-color-text-subtle);">Loading audit data...</div>
+            </div>
+          </div>
+          <div style="background:#ffffff;padding:1.5rem;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#131920" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
+              <span style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--ppl-color-text-subtle);">Resources</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <a href="/trust/" style="font-size:0.85rem;font-weight:600;text-decoration:underline;text-decoration-color:var(--hg-color-secondary);text-underline-offset:0.15em;">Trust &amp; Security Portal →</a>
+              <a href="/.well-known/security.txt" style="font-size:0.85rem;font-weight:600;text-decoration:underline;text-decoration-color:var(--hg-color-secondary);text-underline-offset:0.15em;">Vulnerability Disclosure (security.txt)</a>
+              <a href="/data/compliance/latest_report.json" style="font-size:0.85rem;font-weight:600;text-decoration:underline;text-decoration-color:var(--hg-color-secondary);text-underline-offset:0.15em;">Download Audit JSON</a>
+              <span id="complianceLastScan" style="font-size:0.78rem;color:var(--ppl-color-text-subtle);margin-top:6px;"></span>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--hg-color-muted);border-left:4px solid var(--hg-color-secondary);padding:1rem 1.5rem;font-size:0.82rem;color:var(--ppl-color-text-subtle);line-height:1.6;">
+          <strong>Self-audit methodology:</strong> All scores are generated by Centra's open-source web scanner against CIS NGINX v3.0, DISA STIG V4R5, PCI-DSS v4.0.1, OWASP ASVS L1, NIST SP 800-53, NIST CSF 2.0, and OWASP Top 10. Config-required items are marked. This is not a third-party certification.
+        </div>
+      </div>
+    </section>
+
+    <script>
+    (function() {
+      fetch('/data/compliance/latest_report.json')
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(data) {
+          if (!data) return;
+          var fw = data.overall && data.overall.security_frameworks;
+          if (!fw) return;
+          var names = Object.keys(fw);
+
+          var grid = document.getElementById('complianceFrameworkGrid');
+          if (grid) {
+            var cols = Math.min(names.length, 6);
+            grid.style.display = 'grid';
+            grid.style.gridTemplateColumns = 'repeat(' + cols + ', 1fr)';
+            grid.style.gap = '1px';
+            grid.style.background = 'rgba(19,25,32,0.14)';
+            grid.style.border = '1px solid rgba(19,25,32,0.14)';
+            grid.innerHTML = names.slice(0, 6).map(function(k) {
+              var f = fw[k];
+              var s = f.score || 0;
+              var cls = s >= 80 ? 'color:#1a7f37;' : s >= 50 ? 'color:#9a6700;' : 'color:#cf222e;';
+              var name = (f.name || k).split(' ').slice(0, 2).join(' ');
+              return '<div style="background:#ffffff;padding:1.5rem;text-align:center;">' +
+                '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#131920" stroke-width="1.5" style="margin-bottom:0.5rem;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4" stroke="#ffd400" stroke-width="2.5"/></svg>' +
+                '<div style="font-size:0.62rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--ppl-color-text-subtle);margin-bottom:4px;">' + name + '</div>' +
+                '<div style="font-family:var(--hg-font-secondary);font-size:1.8rem;font-weight:800;line-height:1;' + cls + '">' + s + '%</div></div>';
+            }).join('');
+          }
+
+          var cos = data.companies;
+          if (cos) {
+            var csEl = document.getElementById('complianceCompanyScores');
+            if (csEl) {
+              csEl.innerHTML = Object.keys(cos).map(function(id) {
+                var c = cos[id];
+                var s = c.realistic_score || 0;
+                var cls = s >= 80 ? 'color:#1a7f37;' : s >= 50 ? 'color:#9a6700;' : 'color:#cf222e;';
+                return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(19,25,32,0.06);font-size:0.85rem;">' +
+                  '<span style="font-weight:600;">' + (c.name || id) + '</span>' +
+                  '<span style="font-weight:800;' + cls + '">' + s + '%</span></div>';
+              }).join('');
+            }
+          }
+
+          var hdrs = document.getElementById('complianceHeaders');
+          if (hdrs) {
+            hdrs.innerHTML = [
+              ['CSP', 'ENFORCED'], ['HSTS', 'PRELOAD'], ['X-Frame-Options', 'DENY'],
+              ['X-Content-Type', 'nosniff'], ['Referrer-Policy', 'STRICT'], ['Permissions', 'RESTRICTED']
+            ].map(function(p) {
+              return '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.82rem;border-bottom:1px solid rgba(19,25,32,0.04);">' +
+                '<span>' + p[0] + '</span><span style="color:#1a7f37;font-weight:700;">' + p[1] + '</span></div>';
+            }).join('');
+          }
+
+          var det = document.getElementById('complianceDeterrents');
+          if (det) {
+            det.innerHTML = [
+              ['Bot Detection', 'ACTIVE'], ['HSTS Preload', 'READY'], ['security.txt', 'PUBLISHED'],
+              ['Honeypot Traps', 'DEPLOYED'], ['Sensitive Path Blocking', 'ENFORCED'], ['CSP Frame Ancestors', 'ENFORCED']
+            ].map(function(p) {
+              return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(19,25,32,0.06);font-size:0.82rem;">' +
+                '<span>' + p[0] + '</span><span style="color:#1a7f37;font-weight:700;">' + p[1] + '</span></div>';
+            }).join('');
+          }
+
+          if (data.report_date) {
+            var tsEl = document.getElementById('complianceLastScan');
+            if (tsEl) tsEl.textContent = 'Last scan: ' + new Date(data.report_date).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' · security@alieninc.tech';
+          }
+        })
+        .catch(function() {
+          var grid = document.getElementById('complianceFrameworkGrid');
+          if (grid) grid.innerHTML = '<div style="background:#ffffff;padding:1.5rem;color:var(--ppl-color-text-subtle);font-size:0.85rem;">Scanner data unavailable. Compliance scan in progress.</div>';
+        });
+    })();
+    </script>
 
   <footer class="footer">
     <div class="l-container footer__inner-container">

@@ -173,7 +173,7 @@ def _check_public_files():
     base = Path(__file__).parent.parent.parent.parent.parent  # alieninc root
     return {
         "security_txt": (base / ".well-known" / "security.txt").exists(),
-        "compliance_page": (base / "compliance.html").exists(),
+        "compliance_page": (base / "trust" / "index.html").exists(),
         "report_json": (base / "data" / "compliance" / "latest_report.json").exists(),
     }
 

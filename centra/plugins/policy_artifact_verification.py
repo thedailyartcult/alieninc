@@ -80,10 +80,10 @@ class PolicyArtifactVerification(NaslPlugin):
             'required_content': ['cookie'],
             'framework': 'GDPR Art.5, ePrivacy Directive',
         },
-        '/compliance.html': {
-            'name': 'Compliance Statement',
+        '/trust/': {
+            'name': 'Compliance Statement (Trust Portal)',
             'required_content': ['compliance', 'audit'],
-            'framework': 'SOC 2, ISO 27001, FedRAMP',
+            'framework': 'SOC 2, ISO 27001, FedRAMP, GDPR, CCPA',
         },
         '/terms.html': {
             'name': 'Terms of Service',

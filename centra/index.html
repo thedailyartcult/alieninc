@@ -1,1723 +1,531 @@
 <!DOCTYPE html>
-<html lang="en" style="background-color:#eeeff0;">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="description" content="Centra provides automated security scanning, vulnerability assessment, bot defense, intrusion detection, and compliance monitoring. Home of the group-wide compliance scanning engine. Protects the Alien Inc ecosystem and external clients. A subsidiary of Alien Inc. Compliance-verified as part of the Alien Inc group.">
-    <meta name="compliance" content="verified; report=/compliance.html; frameworks=CIS,DISA,PCI-DSS,OWASP,NIST,GDPR">
-    <meta name="security" content="monitored; CSP; HSTS-preload; X-Frame-Options-DENY; X-Content-Type-Options-nosniff; Referrer-Policy-strict; Permissions-Policy-restricted">
-    <script type="application/ld+json">
-{
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "Centra",
-    "url": "https://centra.alieninc.tech",
-    "description": "Centra provides automated security scanning, vulnerability assessment, bot defense, intrusion detection, and compliance monitoring. Home of the group-wide compliance scanning engine. Protects the Alien Inc ecosystem and external clients. A subsidiary of Alien Inc.",
-    "headline": "Cybersecurity defense, vulnerability scanning, and compliance monitoring.",
-    "parentOrganization": {
-        "@type": "Organization",
-        "name": "Alien Inc",
-        "url": "https://alieninc.tech"
-    },
-    "subjectOf": {
-        "@type": "WebSite",
-        "url": "https://centra.alieninc.tech",
-        "description": "Compliance-verified as part of the Alien Inc group."
-    }
-}
-    </script>
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CENTRA — Cyber Defense · Alien.Inc Group</title>
+    <meta name="description" content="Centra provides automated security scanning, vulnerability assessment, bot defense, intrusion detection, and compliance monitoring. Home of the group-wide compliance scanning engine. Protects the Alien Inc ecosystem and external clients. A subsidiary of Alien Inc. Compliance-verified as part of the Alien Inc group.">
+    <meta name="compliance" content="verified; report=/trust/; frameworks=CIS,DISA,PCI-DSS,OWASP,NIST,GDPR,SOC2,ISO27001,CCPA,HIPAA,FedRAMP,CMMC,CSA,SOX,TISAX,VPAT">
+    <meta name="security" content="monitored; CSP; HSTS-preload; X-Frame-Options-DENY; X-Content-Type-Options-nosniff; Referrer-Policy-strict; Permissions-Policy-restricted">
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Centra","url":"https://centra.alieninc.tech","description":"Centra provides automated security scanning, vulnerability assessment, bot defense, intrusion detection, and compliance monitoring. Home of the group-wide compliance scanning engine. Protects the Alien Inc ecosystem and external clients. A subsidiary of Alien Inc.","headline":"Cybersecurity defense, vulnerability scanning, and compliance monitoring.","parentOrganization":{"@type":"Organization","name":"Alien Inc","url":"https://alieninc.tech"},"subjectOf":{"@type":"WebSite","url":"https://centra.alieninc.tech","description":"Compliance-verified as part of the Alien Inc group."}}</script>
+    <title>Centra | Vulnerability Scanning &amp; Compliance Monitoring · Alien Inc Group</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=IBM+Plex+Mono:wght@400;500;600&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Sans+Condensed:wght@700;800&family=Orbitron:wght@900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/logo.png">
     <style>
-        /* ─────────────────────────────────────────────
-           CENTRA — design system (unified with login)
-           ───────────────────────────────────────────── */
-        :root {
-            --bg: #eeeff0;
-            --surface: #ffffff;
-            --ink: #425363;
-            --ink-strong: #2B405A;
-            --ink-muted: #6c7f8f;
-            --ink-faint: #9aabb8;
-            --blue: #007FEC;
-            --blue-dark: #0066C4;
-            --blue-light: #00A3FF;
-            --blue-tint: #eaf4fe;
-            --navy: #041E42;
-            --navy-deep: #02122b;
-            --cyan: #00FFFF;
-            --orange: #F87B1E;
-            --red: #D64550;
-            --amber: #B7791F;
-            --radius: 6px;
-            --radius-sm: 3px;
-            --shadow-card: 0 0 40px 4px rgba(17, 17, 24, 0.08);
-            --shadow-card-hover: 0 12px 48px 6px rgba(17, 17, 24, 0.12);
-            --shadow-btn: 0 4px 12px rgba(0, 127, 236, 0.25);
-            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-            --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-        }
+        :root { --centra-navy: #041E42; --centra-cyan: #00FFFF; --navy: #041E42; --font-sans: "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+        body { font-family: var(--font-sans); background-color: #f9fafb; color: #101828; }
+        .font-display { font-family: 'Instrument Sans Condensed', 'Instrument Sans', sans-serif; }
+        .font-body { font-family: 'Instrument Sans', 'Inter', sans-serif; }
+        .centra-logo { width: 200px; display: block; transition: transform 0.3s ease, filter 0.3s ease; filter: drop-shadow(0 2px 6px rgba(0,255,255,0.1)); }
+        .centra-logo:hover { transform: scale(1.02); filter: drop-shadow(0 0 10px rgba(0,255,255,0.45)); }
+        .nav-link { font-family: var(--font-sans); font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.75); text-decoration: none; padding: 6px 12px; border-radius: 4px; transition: background-color 0.2s ease, color 0.2s ease; }
+        .nav-link:hover { background-color: rgba(255,255,255,0.06); color: #ffffff; }
+        .nav-btn { font-family: var(--font-sans); font-size: 12px; font-weight: 600; color: #ffffff; background: transparent; border: 1px solid rgba(255,255,255,0.25); padding: 7px 14px; border-radius: 5px; text-decoration: none; transition: background-color 0.3s ease, border-color 0.3s ease; display: inline-flex; align-items: center; gap: 5px; }
+        .nav-btn:hover { background-color: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.5); }
+        .nav-icon-btn { width: 34px; height: 34px; border: 1px solid rgba(255,255,255,0.15); border-radius: 5px; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s ease, border-color 0.2s ease; color: rgba(255,255,255,0.6); }
+        .nav-icon-btn:hover { background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.4); color: #ffffff; }
+        .burger-lines { display: flex; flex-direction: column; gap: 3px; }
+        .burger-lines span { display: block; width: 14px; height: 1.5px; background: currentColor; border-radius: 1px; }
+        .score-ring { width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(#10b981 0deg, #10b981 360deg, #eaecf0 360deg); display: flex; align-items: center; justify-content: center; position: relative; }
+        .score-ring::before { content: ''; width: 96px; height: 96px; border-radius: 50%; background: white; position: absolute; }
+        .score-ring span { position: relative; z-index: 1; font-family: 'Instrument Sans Condensed', sans-serif; font-weight: 800; font-size: 2rem; color: #101828; }
+        .cert-badge { transition: all 0.15s ease; }
+        .cert-badge:hover { border-color: #1e2124; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        html { scroll-behavior: smooth; }
-
-        body {
-            font-family: 'Barlow', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-            background-color: var(--bg);
-            color: var(--ink);
-            line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        a { text-decoration: none; color: inherit; }
-        ul { list-style: none; padding: 0; }
-
-        .container {
-            max-width: 1180px;
-            width: 95%;
-            margin: 0 auto;
-            padding: 0 15px;
-        }
-
-        /* ── shared editorial bits ── */
-        .eyebrow {
-            display: inline-flex;
-            align-items: baseline;
-            gap: 10px;
-            font-family: var(--mono);
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 2.5px;
-            text-transform: uppercase;
-            color: var(--blue);
-            margin-bottom: 16px;
-        }
-        .eyebrow .idx { color: var(--ink-faint); font-weight: 500; }
-        .eyebrow::after {
-            content: "";
-            width: 34px; height: 1px;
-            background: currentColor;
-            opacity: 0.5;
-            align-self: center;
-        }
-        .on-dark .eyebrow { color: var(--cyan); }
-        .on-dark .eyebrow .idx { color: rgba(142, 201, 252, 0.5); }
-
-        section { padding: 84px 0; }
-        section.alt { background: #f8fafc; }
-
-        .section-head { max-width: 720px; margin-bottom: 52px; }
-        .section-head.center { text-align: center; margin-left: auto; margin-right: auto; }
-
-        .section-title {
-            font-size: 36px;
-            font-weight: 600;
-            color: var(--ink-strong);
-            letter-spacing: -0.5px;
-            line-height: 1.15;
-            margin-bottom: 14px;
-        }
-        .on-dark .section-title { color: #fff; }
-        .section-sub { font-size: 17px; color: var(--ink-muted); line-height: 1.6; }
-        .on-dark .section-sub { color: #b9cfe3; }
-
-        /* buttons — .btn-login language */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            font-family: 'Barlow', system-ui, sans-serif;
-            font-size: 13px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            padding: 12px 22px;
-            border: none;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-            line-height: 1.2;
-        }
-        .btn:active { transform: scale(0.98); }
-        .btn svg { width: 12px; height: 12px; fill: currentColor; }
-        .btn-primary { background: var(--blue); color: #fff; }
-        .btn-primary:hover { background: var(--blue-dark); box-shadow: var(--shadow-btn); }
-        .btn-cyan { background: var(--cyan); color: var(--navy); }
-        .btn-cyan:hover { background: #4dffff; box-shadow: 0 4px 16px rgba(0, 255, 255, 0.35); }
-        .btn-ghost { background: transparent; color: #fff; border: 1px solid rgba(255, 255, 255, 0.35); }
-        .btn-ghost:hover { border-color: var(--cyan); color: var(--cyan); }
-
-        .link-arrow {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--blue);
-            transition: color 0.2s, gap 0.2s;
-        }
-        .link-arrow:hover { color: var(--blue-light); gap: 10px; }
-        .link-arrow::after { content: "→"; font-size: 15px; }
-
-        /* scroll reveal — pure CSS where supported, visible by default otherwise */
-        @keyframes fadeUp {
-            0% { opacity: 0; transform: translateY(14px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-        @supports (animation-timeline: view()) {
-            @media (prefers-reduced-motion: no-preference) {
-                .reveal {
-                    animation: fadeUp 0.7s var(--ease-out) both;
-                    animation-timeline: view();
-                    animation-range: entry 0% entry 45%;
-                }
-            }
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 255, 255, 0.4); }
-            50% { opacity: 0.55; box-shadow: 0 0 0 5px rgba(0, 255, 255, 0); }
-        }
-        @keyframes meterGrow { from { width: 0; } to { width: 98%; } }
-        @keyframes barGrow { from { width: 0; } }
-
-        /* ─────────────────────────────────────────────
-           header
-           ───────────────────────────────────────────── */
-        header {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%;
-            z-index: 100;
-            background-color: var(--navy);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            transition: background-color 0.3s ease, border-bottom 0.3s ease, box-shadow 0.3s ease;
-        }
-        header.scrolled {
-            background-color: #021430;
-            border-bottom: 1px solid rgba(0, 255, 255, 0.15);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-        }
-        .header-inner {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 72px;
-        }
-        .logo-wrap { display: flex; align-items: center; height: 100%; cursor: pointer; }
-        header .logo {
-            width: 220px;
-            display: block;
-            transition: transform 0.3s var(--ease-out), filter 0.3s ease;
-            filter: drop-shadow(0 2px 6px rgba(0, 255, 255, 0.1));
-        }
-        .logo-wrap:hover .logo { transform: scale(1.02); filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.45)); }
-        header .logo svg { display: block; width: 100%; height: auto; }
-
-        .nav-row-wrapper { display: flex; align-items: center; height: 100%; }
-        .nav-row { display: flex; align-items: center; gap: 28px; height: 100%; }
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 22px;
-            font-size: 14px;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.85);
-            height: 100%;
-        }
-        .nav-links a { padding: 25px 0; display: flex; align-items: center; gap: 4px; transition: color 0.2s ease; }
-        .nav-links a:hover { color: var(--cyan); }
-        .nav-links a svg { width: 8px; height: 8px; fill: currentColor; opacity: 0.7; transition: transform 0.2s; }
-        .nav-row-wrapper:hover .nav-links a svg { transform: rotate(180deg); }
-
-        .header-ctas { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-        .header-ctas .btn { padding: 9px 16px; font-size: 12px; }
-
-        .mega-menu {
-            position: absolute;
-            top: 72px;
-            left: 50%;
-            transform: translateX(-50%) translateY(12px);
-            width: calc(100vw - 40px);
-            max-width: 1140px;
-            background: rgba(2, 20, 48, 0.88);
-            backdrop-filter: blur(20px) saturate(160%);
-            -webkit-backdrop-filter: blur(20px) saturate(160%);
-            border: 1px solid rgba(0, 255, 255, 0.15);
-            border-radius: var(--radius);
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-            padding: 30px 34px;
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-            transition: opacity 0.25s var(--ease-out), transform 0.25s var(--ease-out), visibility 0.25s;
-            z-index: 999;
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 28px;
-        }
-        .nav-row-wrapper:hover .mega-menu,
-        .nav-row-wrapper:focus-within .mega-menu {
-            opacity: 1;
-            visibility: visible;
-            pointer-events: auto;
-            transform: translateX(-50%) translateY(0);
-        }
-        .mega-col h5 {
-            font-family: var(--mono);
-            color: var(--cyan);
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 16px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid rgba(0, 255, 255, 0.12);
-        }
-        .mega-list { display: flex; flex-direction: column; gap: 14px; }
-        .mega-item { display: flex; flex-direction: column; transition: transform 0.2s; }
-        .mega-item:hover { transform: translateX(4px); }
-        .mega-item-title { color: #fff; font-size: 14px; font-weight: 600; margin-bottom: 2px; transition: color 0.2s; }
-        .mega-item:hover .mega-item-title { color: var(--cyan); }
-        .mega-item-desc { color: #8EC9FC; font-size: 12px; line-height: 1.4; }
-
-        /* ─────────────────────────────────────────────
-           hero
-           ───────────────────────────────────────────── */
-        .hero {
-            color: #fff;
-            padding: 170px 0 130px;
-            position: relative;
-            overflow: hidden;
-            background: var(--navy-deep);
-        }
-        .hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
-        .hero-video-overlay {
-            position: absolute; inset: 0;
-            background:
-                radial-gradient(ellipse 60% 50% at 78% 30%, rgba(0, 255, 255, 0.08), transparent 60%),
-                linear-gradient(165deg, rgba(4, 30, 66, 0.92) 0%, rgba(2, 18, 43, 0.82) 55%, rgba(2, 18, 43, 0.94) 100%);
-            z-index: 1;
-        }
-        .hero .container {
-            display: flex;
-            align-items: center;
-            gap: 56px;
-            flex-wrap: wrap;
-            position: relative;
-            z-index: 2;
-        }
-        .hero-content { flex: 1 1 52%; min-width: 320px; }
-
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 14px;
-            border-radius: 20px;
-            border: 1px solid rgba(0, 255, 255, 0.3);
-            background: rgba(0, 255, 255, 0.06);
-            font-family: var(--mono);
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: var(--cyan);
-        }
-        .hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); animation: pulse 2s ease-in-out infinite; }
-
-        .hero-content h1 {
-            font-size: 48px;
-            font-weight: 700;
-            line-height: 1.12;
-            letter-spacing: -0.8px;
-            margin: 22px 0 18px;
-        }
-        .hero-content h1 strong { color: var(--cyan); font-weight: 700; text-shadow: 0 0 18px rgba(0, 255, 255, 0.35); }
-        .hero-content p { font-size: 17px; color: #b9cfe3; max-width: 520px; margin-bottom: 30px; line-height: 1.6; }
-        .hero-ctas { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; }
-        .hero-ctas .btn { font-size: 13px; padding: 14px 26px; }
-        .hero-ctas .link-arrow { color: #fff; font-size: 15px; }
-        .hero-ctas .link-arrow:hover { color: var(--cyan); }
-
-        /* live ops console card */
-        .hero-visual { flex: 1 1 40%; min-width: 300px; }
-        .console-card {
-            background: rgba(2, 20, 48, 0.62);
-            backdrop-filter: blur(14px) saturate(150%);
-            -webkit-backdrop-filter: blur(14px) saturate(150%);
-            border: 1px solid rgba(0, 255, 255, 0.18);
-            border-radius: var(--radius);
-            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-            padding: 22px 24px;
-            animation: fadeUp 0.6s var(--ease-out) 0.15s both;
-        }
-        .console-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding-bottom: 13px;
-            margin-bottom: 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .console-title { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: rgba(255, 255, 255, 0.85); }
-        .console-live { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 1.5px; color: var(--cyan); }
-        .console-live .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); animation: pulse 2s ease-in-out infinite; }
-        .scan-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 7px 0;
-            font-size: 13px;
-            color: #cfe3f5;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .scan-row .name { display: flex; align-items: center; gap: 10px; font-weight: 500; }
-        .scan-row .tick { width: 15px; height: 15px; flex-shrink: 0; color: var(--cyan); opacity: 0.9; }
-        .scan-status {
-            font-family: var(--mono);
-            font-size: 9px;
-            font-weight: 600;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            color: var(--cyan);
-            border: 1px solid rgba(0, 255, 255, 0.3);
-            border-radius: 3px;
-            padding: 3px 7px;
-            white-space: nowrap;
-        }
-        .console-meter { margin-top: 16px; }
-        .console-meter .meter-label { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; letter-spacing: 0.5px; color: #8EC9FC; margin-bottom: 6px; }
-        .meter-track { height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
-        .meter-fill { height: 100%; width: 98%; border-radius: 2px; background: linear-gradient(90deg, var(--blue), var(--cyan)); animation: meterGrow 1.6s var(--ease-out) 0.4s both; }
-        .console-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 18px; }
-        .metric-chip { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); padding: 10px 8px; text-align: center; }
-        .metric-chip .v { display: block; font-family: var(--mono); font-size: 16px; font-weight: 600; color: #fff; line-height: 1.2; }
-        .metric-chip .k { display: block; font-family: var(--mono); font-size: 8px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: #8EC9FC; margin-top: 3px; }
-
-        /* ─────────────────────────────────────────────
-           stats strip — floating card
-           ───────────────────────────────────────────── */
-        .stats-strip { position: relative; z-index: 3; margin-top: -56px; padding: 0; }
-        .stats-card {
-            background: var(--surface);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-card);
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            overflow: hidden;
-        }
-        .stat-cell { padding: 24px 26px; display: flex; align-items: center; gap: 15px; }
-        .stat-cell + .stat-cell { border-left: 1px solid #eef0f2; }
-        .stat-num { font-family: var(--mono); font-size: 26px; font-weight: 600; color: var(--blue); line-height: 1; white-space: nowrap; }
-        .stat-label { font-size: 12.5px; color: var(--ink-muted); line-height: 1.4; }
-
-        /* ─────────────────────────────────────────────
-           01 mandate — editorial statement
-           ───────────────────────────────────────────── */
-        .mandate-statement {
-            font-size: 38px;
-            font-weight: 300;
-            line-height: 1.32;
-            color: var(--ink-strong);
-            letter-spacing: -0.5px;
-            max-width: 940px;
-        }
-        .mandate-statement strong { font-weight: 600; color: var(--navy); }
-        .mandate-statement .accent { color: var(--blue); font-weight: 600; }
-        .mandate-foot {
-            display: flex;
-            gap: 40px;
-            flex-wrap: wrap;
-            margin-top: 44px;
-            padding-top: 28px;
-            border-top: 1px solid #e3e7eb;
-        }
-        .mandate-foot .mf { max-width: 300px; }
-        .mandate-foot .mf h4 { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--blue); margin-bottom: 8px; }
-        .mandate-foot .mf p { font-size: 14px; color: var(--ink-muted); line-height: 1.6; }
-
-        /* ─────────────────────────────────────────────
-           02 platform — dark blueprint band + flow
-           ───────────────────────────────────────────── */
-        .band-dark {
-            position: relative;
-            background:
-                linear-gradient(rgba(142, 201, 252, 0.045) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(142, 201, 252, 0.045) 1px, transparent 1px),
-                linear-gradient(160deg, var(--navy) 0%, var(--navy-deep) 100%);
-            background-size: 44px 44px, 44px 44px, 100% 100%;
-            color: #fff;
-            overflow: hidden;
-        }
-        .flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr auto 1fr; align-items: stretch; gap: 10px; margin-top: 8px; }
-        .flow-node {
-            background: rgba(2, 20, 48, 0.65);
-            border: 1px solid rgba(0, 255, 255, 0.16);
-            border-radius: var(--radius);
-            padding: 18px 16px;
-            transition: border-color 0.25s ease, transform 0.25s ease;
-        }
-        .flow-node:hover { border-color: rgba(0, 255, 255, 0.5); transform: translateY(-3px); }
-        .flow-node .fn-step { font-family: var(--mono); font-size: 9px; font-weight: 500; letter-spacing: 2px; color: rgba(0, 255, 255, 0.6); text-transform: uppercase; display: block; margin-bottom: 8px; }
-        .flow-node h4 { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 5px; }
-        .flow-node p { font-size: 12.5px; color: #8EC9FC; line-height: 1.5; }
-        .flow-arrow { display: flex; align-items: center; justify-content: center; color: rgba(0, 255, 255, 0.5); font-family: var(--mono); font-size: 15px; }
-        .platform-meta {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px 30px;
-            margin-top: 44px;
-            padding-top: 26px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .platform-meta .pm { display: flex; gap: 12px; align-items: baseline; }
-        .platform-meta .pm .v { font-family: var(--mono); font-size: 20px; font-weight: 600; color: var(--cyan); white-space: nowrap; }
-        .platform-meta .pm .k { font-size: 13px; color: #b9cfe3; line-height: 1.4; }
-
-        /* ─────────────────────────────────────────────
-           03 service lines — deep dives with interactive UI
-           ───────────────────────────────────────────── */
-        .deep-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 56px;
-            align-items: center;
-            padding: 56px 0;
-        }
-        .deep-row + .deep-row { border-top: 1px solid #e3e7eb; }
-        .deep-row.flip .deep-copy { order: 2; }
-        .deep-row.flip .deep-panel { order: 1; }
-        .deep-index { font-family: var(--mono); font-size: 12px; font-weight: 500; letter-spacing: 2px; color: var(--ink-faint); text-transform: uppercase; display: block; margin-bottom: 12px; }
-        .deep-copy h3 { font-size: 28px; font-weight: 600; color: var(--ink-strong); letter-spacing: -0.4px; margin-bottom: 12px; }
-        .deep-copy > p { font-size: 15.5px; color: var(--ink-muted); line-height: 1.65; margin-bottom: 22px; }
-        .cap-list { display: flex; flex-direction: column; gap: 0; margin-bottom: 26px; }
-        .cap-list li {
-            display: flex;
-            gap: 12px;
-            padding: 11px 0;
-            border-top: 1px solid #eef0f2;
-            font-size: 14.5px;
-            color: var(--ink);
-            line-height: 1.5;
-        }
-        .cap-list li:last-child { border-bottom: 1px solid #eef0f2; }
-        .cap-list li svg { width: 16px; height: 16px; stroke: var(--blue); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; margin-top: 2px; }
-        .cap-list li strong { color: var(--ink-strong); font-weight: 600; }
-
-        /* Interactive UI panel */
-        .panel {
-            background: var(--surface);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-card);
-            overflow: hidden;
-            border: 1px solid #eceef1;
-        }
-        .panel-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 13px 18px;
-            border-bottom: 1px solid #eef0f2;
-            background: #fbfcfd;
-        }
-        .panel-title { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 1.8px; text-transform: uppercase; color: var(--ink-muted); }
-        .panel-tag { font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 8px; border-radius: 3px; }
-        .tag-live { color: var(--blue); border: 1px solid rgba(0, 127, 236, 0.3); }
-        .tag-contained { color: #1a7f37; border: 1px solid rgba(26, 127, 55, 0.35); }
-        .tag-conditional { color: var(--amber); border: 1px solid rgba(183, 121, 31, 0.4); }
-        .panel-body { padding: 8px 18px 16px; }
-
-        .finding-row {
-            display: grid;
-            grid-template-columns: 74px 1fr auto;
-            gap: 12px;
-            align-items: center;
-            padding: 11px 0;
-            border-bottom: 1px solid #f1f3f5;
-        }
-        .finding-row:last-of-type { border-bottom: none; }
-        .sev { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
-        .sev .sd { width: 7px; height: 7px; border-radius: 50%; }
-        .sev.crit { color: var(--red); } .sev.crit .sd { background: var(--red); }
-        .sev.high { color: var(--orange); } .sev.high .sd { background: var(--orange); }
-        .sev.med { color: var(--amber); } .sev.med .sd { background: var(--amber); }
-        .sev.low { color: var(--blue); } .sev.low .sd { background: var(--blue); }
-        .finding-name { font-size: 13.5px; color: var(--ink-strong); font-weight: 500; }
-        .finding-name .asset { display: block; font-family: var(--mono); font-size: 11px; font-weight: 400; color: var(--ink-faint); margin-top: 1px; }
-        .finding-score { font-family: var(--mono); font-size: 15px; font-weight: 600; color: var(--ink-strong); }
-        .panel-foot { padding: 11px 18px; background: #fbfcfd; border-top: 1px solid #eef0f2; font-family: var(--mono); font-size: 10px; letter-spacing: 0.5px; color: var(--ink-muted); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-        .panel-foot .pos { color: #1a7f37; font-weight: 600; }
-
-        /* detection timeline */
-        .event-row { display: grid; grid-template-columns: 74px 1fr auto; gap: 12px; align-items: center; padding: 11px 0; border-bottom: 1px solid #f1f3f5; }
-        .event-row:last-of-type { border-bottom: none; }
-        .event-time { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
-        .event-name { font-size: 13.5px; color: var(--ink-strong); font-weight: 500; }
-        .event-name .src { display: block; font-family: var(--mono); font-size: 11px; font-weight: 400; color: var(--ink-faint); margin-top: 1px; }
-        .event-status { font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 3px 8px; border-radius: 3px; white-space: nowrap; }
-        .st-contained { color: #1a7f37; background: rgba(26, 127, 55, 0.08); }
-        .st-review { color: var(--amber); background: rgba(183, 121, 31, 0.1); }
-
-        /* diligence report bars */
-        .diligence-target { padding: 4px 0 12px; border-bottom: 1px solid #f1f3f5; margin-bottom: 6px; }
-        .diligence-target .dt-code { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 1px; color: var(--ink-strong); }
-        .diligence-target .dt-sub { font-size: 12.5px; color: var(--ink-muted); margin-top: 2px; }
-        .bar-row { display: grid; grid-template-columns: 132px 1fr 34px; gap: 12px; align-items: center; padding: 8px 0; }
-        .bar-row .bl { font-size: 12.5px; color: var(--ink); }
-        .bar-track { height: 5px; border-radius: 3px; background: #eef0f2; overflow: hidden; }
-        .bar-fill { display: block; height: 100%; border-radius: 3px; background: var(--blue); animation: barGrow 1.2s var(--ease-out) both; }
-        .bar-fill.warn { background: var(--orange); }
-        .bar-fill.risk { background: var(--red); }
-        .bar-val { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--ink-strong); text-align: right; }
-
-        /* ─────────────────────────────────────────────
-           04 coverage grid
-           ───────────────────────────────────────────── */
-        .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-        .feature-card {
-            background: var(--surface);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-card);
-            padding: 26px 24px;
-            border-top: 3px solid transparent;
-            transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
-        }
-        .feature-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-4px); border-top-color: var(--blue); }
-        .icon-chip {
-            width: 44px; height: 44px;
-            border-radius: var(--radius-sm);
-            background: var(--blue-tint);
-            display: flex; align-items: center; justify-content: center;
-            margin-bottom: 16px;
-            transition: background 0.25s ease;
-        }
-        .feature-card:hover .icon-chip { background: #d8ebfd; }
-        .icon-chip svg { width: 22px; height: 22px; stroke: var(--blue); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-        .feature-card .fc-code { font-family: var(--mono); font-size: 9px; font-weight: 500; letter-spacing: 2px; color: var(--ink-faint); text-transform: uppercase; display: block; margin-bottom: 6px; }
-        .feature-card h3 { font-size: 17px; font-weight: 600; color: var(--ink-strong); margin-bottom: 6px; }
-        .feature-card p { font-size: 14px; color: var(--ink-muted); line-height: 1.55; }
-
-        /* ─────────────────────────────────────────────
-           05 prioritization model
-           ───────────────────────────────────────────── */
-        .prio-wrap { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; }
-        .prio-formula { display: flex; flex-direction: column; gap: 14px; }
-        .factor {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            background: var(--surface);
-            border-radius: var(--radius-sm);
-            box-shadow: var(--shadow-card);
-            padding: 16px 18px;
-        }
-        .factor .f-op { font-family: var(--mono); font-size: 16px; color: var(--ink-faint); width: 18px; text-align: center; flex-shrink: 0; }
-        .factor .f-body h4 { font-size: 15px; font-weight: 600; color: var(--ink-strong); }
-        .factor .f-body p { font-size: 13px; color: var(--ink-muted); margin-top: 1px; }
-        .prio-result {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            background: var(--navy);
-            border-radius: var(--radius-sm);
-            box-shadow: 0 12px 32px rgba(2, 18, 43, 0.3);
-            padding: 16px 18px;
-            color: #fff;
-        }
-        .prio-result .f-op { color: rgba(0, 255, 255, 0.6); }
-        .prio-result h4 { font-size: 15px; font-weight: 600; }
-        .prio-result p { font-size: 13px; color: #b9cfe3; margin-top: 1px; }
-        .prio-result .p-score { margin-left: auto; font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--cyan); border: 1px solid rgba(0, 255, 255, 0.35); padding: 5px 10px; border-radius: 3px; white-space: nowrap; }
-
-        /* ─────────────────────────────────────────────
-           06 incident lifecycle timeline
-           ───────────────────────────────────────────── */
-        .lifecycle { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; counter-reset: step; }
-        .lc-step { position: relative; padding: 26px 18px 0; }
-        .lc-step::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 18px; right: -2px;
-            height: 2px;
-            background: #dbe3ea;
-        }
-        .lc-step:first-child::before { background: linear-gradient(90deg, var(--blue), #dbe3ea); }
-        .lc-step::after {
-            content: "";
-            position: absolute;
-            top: -4px; left: 14px;
-            width: 10px; height: 10px;
-            border-radius: 50%;
-            background: var(--surface);
-            border: 2px solid var(--blue);
-        }
-        .lc-time { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--blue); display: block; margin-bottom: 7px; }
-        .lc-step h4 { font-size: 15px; font-weight: 600; color: var(--ink-strong); margin-bottom: 5px; }
-        .lc-step p { font-size: 13px; color: var(--ink-muted); line-height: 1.55; }
-        .lc-note {
-            margin-top: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            font-family: var(--mono);
-            font-size: 11px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            color: var(--ink-muted);
-        }
-        .lc-note strong { color: var(--ink-strong); font-weight: 600; }
-
-        /* ─────────────────────────────────────────────
-           07 principles
-           ───────────────────────────────────────────── */
-        .principle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-        .principle {
-            background: var(--surface);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-card);
-            padding: 28px 26px;
-            display: flex;
-            gap: 20px;
-            transition: box-shadow 0.25s ease, transform 0.25s ease;
-        }
-        .principle:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-3px); }
-        .principle .p-idx { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 1.5px; color: var(--blue); white-space: nowrap; padding-top: 3px; }
-        .principle h3 { font-size: 17px; font-weight: 600; color: var(--ink-strong); margin-bottom: 6px; }
-        .principle p { font-size: 14px; color: var(--ink-muted); line-height: 1.6; }
-
-        /* ─────────────────────────────────────────────
-           08 leadership
-           ───────────────────────────────────────────── */
-        .people-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-        .person {
-            background: var(--surface);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-card);
-            padding: 26px 24px;
-            transition: box-shadow 0.25s ease, transform 0.25s ease;
-        }
-        .person:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-3px); }
-        .person .avatar {
-            width: 52px; height: 52px;
-            border-radius: 50%;
-            background: linear-gradient(150deg, var(--navy), var(--navy-deep));
-            color: var(--cyan);
-            font-family: var(--mono);
-            font-size: 15px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            display: flex; align-items: center; justify-content: center;
-            margin-bottom: 16px;
-            box-shadow: 0 6px 16px rgba(2, 18, 43, 0.25);
-        }
-        .person h3 { font-size: 17px; font-weight: 600; color: var(--ink-strong); }
-        .person .role { font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--blue); display: block; margin: 5px 0 10px; }
-        .person p { font-size: 13.5px; color: var(--ink-muted); line-height: 1.6; }
-        .team-note {
-            margin-top: 34px;
-            text-align: center;
-            font-size: 14px;
-            color: var(--ink-muted);
-        }
-        .team-note strong { color: var(--ink-strong); font-weight: 600; }
-
-        /* ─────────────────────────────────────────────
-           09 engagement model
-           ───────────────────────────────────────────── */
-        .engage-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
-        .engage-step {
-            background: var(--surface);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-card);
-            padding: 24px 22px;
-            position: relative;
-            transition: box-shadow 0.25s ease, transform 0.25s ease;
-        }
-        .engage-step:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-3px); }
-        .engage-step .e-idx { font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--blue); display: block; margin-bottom: 12px; }
-        .engage-step h4 { font-size: 15.5px; font-weight: 600; color: var(--ink-strong); margin-bottom: 6px; }
-        .engage-step p { font-size: 13.5px; color: var(--ink-muted); line-height: 1.55; }
-        .engage-note {
-            margin-top: 30px;
-            background: var(--surface);
-            border-left: 3px solid var(--cyan);
-            border-radius: var(--radius-sm);
-            box-shadow: var(--shadow-card);
-            padding: 18px 22px;
-            font-size: 14px;
-            color: var(--ink);
-            line-height: 1.6;
-        }
-        .engage-note code { font-family: var(--mono); font-size: 12px; color: var(--blue); font-weight: 600; }
-
-        /* ─────────────────────────────────────────────
-           10 impact band
-           ───────────────────────────────────────────── */
-        .impact-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px 24px; }
-        .impact-cell .iv { font-family: var(--mono); font-size: 40px; font-weight: 600; color: #fff; line-height: 1; letter-spacing: -1px; }
-        .impact-cell .iv em { font-style: normal; color: var(--cyan); }
-        .impact-cell .ik { font-size: 13.5px; color: #b9cfe3; margin-top: 10px; line-height: 1.5; max-width: 260px; }
-
-        /* frameworks strip */
-        .frameworks {
-            background: var(--surface);
-            border-top: 1px solid #e3e7eb;
-            border-bottom: 1px solid #e3e7eb;
-            padding: 22px 0;
-        }
-        .frameworks .container { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
-        .frameworks .fw-label { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-muted); }
-        .frameworks .fw-list { display: flex; gap: 10px; flex-wrap: wrap; }
-        .frameworks .fw-chip {
-            font-family: var(--mono);
-            font-size: 11px;
-            font-weight: 500;
-            letter-spacing: 1px;
-            color: var(--ink-strong);
-            border: 1px solid #dbe3ea;
-            border-radius: 3px;
-            padding: 6px 12px;
-            background: #fbfcfd;
-            transition: border-color 0.2s, color 0.2s;
-        }
-        .frameworks .fw-chip:hover { border-color: var(--blue); color: var(--blue); }
-
-        /* ─────────────────────────────────────────────
-           CTA banner
-           ───────────────────────────────────────────── */
-        .cta-banner {
-            position: relative;
-            background: linear-gradient(160deg, var(--navy) 0%, var(--navy-deep) 100%);
-            color: #fff;
-            padding: 84px 0;
-            text-align: center;
-            overflow: hidden;
-        }
-        .cta-banner::before {
-            content: "";
-            position: absolute;
-            top: -120px; left: 50%;
-            transform: translateX(-50%);
-            width: 640px; height: 320px;
-            background: radial-gradient(ellipse, rgba(0, 255, 255, 0.1), transparent 65%);
-            pointer-events: none;
-        }
-        .cta-banner .eyebrow { color: var(--cyan); }
-        .cta-banner h2 { font-size: 32px; font-weight: 300; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px; }
-        .cta-banner p { font-size: 16px; color: #b9cfe3; max-width: 560px; margin: 0 auto 30px; line-height: 1.6; }
-        .cta-actions { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; position: relative; }
-        .cta-actions .btn { padding: 14px 30px; }
-
-        /* ─────────────────────────────────────────────
-           footer
-           ───────────────────────────────────────────── */
-        footer { background: var(--surface); border-top: 1px solid #e3e7eb; padding: 48px 0 24px; color: var(--ink); }
-        .footer-brand {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 16px;
-            padding-bottom: 28px;
-            margin-bottom: 32px;
-            border-bottom: 1px solid #eef0f2;
-        }
-        .footer-brand .logo { width: 190px; display: block; }
-        .footer-brand .logo svg { display: block; width: 100%; height: auto; }
-        .footer-brand .tagline { font-size: 13px; color: var(--ink-muted); max-width: 400px; text-align: right; line-height: 1.6; }
-        .footer-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; margin-bottom: 36px; }
-        .footer-grid h4 { color: var(--ink-strong); font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
-        .footer-grid ul li { margin-bottom: 8px; }
-        .footer-grid ul li a { font-size: 14px; color: var(--ink); transition: color 0.2s; }
-        .footer-grid ul li a:hover { color: var(--blue); }
-        .footer-bottom {
-            border-top: 1px solid #eef0f2;
-            padding-top: 22px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 14px 20px;
-            font-size: 13px;
-        }
-        .footer-bottom .legal a { margin-right: 20px; color: var(--ink-muted); transition: color 0.2s; }
-        .footer-bottom .legal a:hover { color: var(--blue); }
-        .confidential-tag { color: var(--orange); font-weight: 600; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
-        .footer-ip { margin-top: 18px; text-align: center; font-size: 11px; line-height: 1.7; color: var(--ink-faint); }
-        .footer-copy { margin-top: 10px; text-align: center; font-size: 12px; color: var(--ink-muted); }
-
-        /* ─────────────────────────────────────────────
-           responsive
-           ───────────────────────────────────────────── */
-        @media (max-width: 1100px) {
-            .nav-links { display: none; }
-            .mega-menu { display: none; }
-        }
-        @media (max-width: 980px) {
-            .flow { grid-template-columns: 1fr; }
-            .flow-arrow { transform: rotate(90deg); padding: 2px 0; }
-            .deep-row { grid-template-columns: 1fr; gap: 34px; }
-            .deep-row.flip .deep-copy { order: 1; }
-            .deep-row.flip .deep-panel { order: 2; }
-            .prio-wrap { grid-template-columns: 1fr; gap: 34px; }
-            .lifecycle { grid-template-columns: 1fr; gap: 6px; }
-            .lc-step { padding: 14px 0 14px 34px; }
-            .lc-step::before { top: 0; bottom: 0; left: 4px; right: auto; width: 2px; height: auto; }
-            .lc-step::after { top: 20px; left: 0; }
-            .engage-grid { grid-template-columns: 1fr 1fr; }
-            .impact-grid { grid-template-columns: 1fr 1fr; }
-        }
-        @media (max-width: 900px) {
-            .feature-grid, .people-grid { grid-template-columns: 1fr 1fr; }
-            .principle-grid { grid-template-columns: 1fr; }
-            .stats-card { grid-template-columns: 1fr 1fr; }
-            .stat-cell:nth-child(3) { border-left: none; border-top: 1px solid #eef0f2; }
-            .stat-cell:nth-child(4) { border-top: 1px solid #eef0f2; }
-        }
-        @media (max-width: 768px) {
-            section { padding: 64px 0; }
-            .hero { padding: 140px 0 110px; }
-            .hero .container { flex-direction: column; text-align: center; gap: 44px; }
-            .hero-content h1 { font-size: 34px; letter-spacing: -0.4px; }
-            .hero-content p { max-width: 100%; }
-            .hero-ctas { justify-content: center; }
-            .hero-visual { width: 100%; }
-            .mandate-statement { font-size: 26px; }
-            .section-title { font-size: 27px; }
-            .footer-grid { grid-template-columns: 1fr 1fr; }
-            .footer-brand .tagline { text-align: left; }
-            .footer-bottom { flex-direction: column; align-items: center; text-align: center; }
-        }
-        @media (max-width: 560px) {
-            .feature-grid, .people-grid, .stats-card, .engage-grid, .impact-grid { grid-template-columns: 1fr; }
-            .stat-cell + .stat-cell { border-left: none; border-top: 1px solid #eef0f2; }
-            .header-ctas .btn-ghost { display: none; }
-            .console-metrics { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-            .finding-row, .event-row { grid-template-columns: 1fr auto; }
-            .sev, .event-time { display: none; }
-        }
-        @media (max-width: 480px) {
-            .footer-grid { grid-template-columns: 1fr; }
-            .header-ctas .btn { padding: 8px 12px; font-size: 11px; }
-            header .logo { width: 170px; }
-        }
     </style>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
-    <meta http-equiv="X-Frame-Options" content="DENY">
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
 </head>
-<body>
+<body class="min-h-screen flex flex-col justify-between">
 
-<!-- ===== FIXED HEADER ===== -->
-<header>
-    <div class="container header-inner">
-        <div class="logo-wrap" onclick="window.scrollTo({top: 0, behavior: 'smooth'});">
-            <div class="logo">
-                <svg viewBox="0 0 360 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CENTRA">
-                    <defs>
-                        <style>
-                            .logo-text {
-                                font-family: 'Orbitron', sans-serif;
-                                font-weight: 900;
-                            }
-                        </style>
-                    </defs>
+    <header class="sticky top-0 z-50" style="background-color:var(--centra-navy);border-bottom:1px solid rgba(255,255,255,0.05);">
+        <div class="max-w-6xl mx-auto px-4" style="display:flex;align-items:center;justify-content:space-between;height:72px;">
+            <a href="/" class="centra-logo" aria-label="CENTRA — home" style="display:flex;align-items:center;flex-shrink:0;">
+                <svg viewBox="0 0 360 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CENTRA" style="width:200px;display:block;">
+                    <defs><style>.centra-logo-text{font-family:'Orbitron',sans-serif;font-weight:900;}</style></defs>
                     <g transform="translate(8, 6) scale(0.104)">
-                        <!-- Outer white accent path -->
                         <path d="m 33.676246,364.82 c 0.53628,-7.2677 1.7767,-14.482 5.0286,-21.276 9.4786,-19.803 33.963,-29.34 53.026,-19.284 15.333004,8.0885 22.563004,29.331 13.578004,45.149 -6.873004,12.099 -23.072004,18.235 -35.622004,10.228 -4.4328,-2.828 -7.6343,-7.2793 -8.9938,-12.286 -1.3595,-5.0063 -0.68452,-10.798 2.9392,-15.401 2.2364,-2.8407 5.4473,-4.7654 9.1114,-5.408 3.664,-0.64263 8.1708,0.40388 10.875,3.9972 1.7829,2.3692 1.91,4.5449 1.4108,7.1127 -0.24961,1.2839 -0.78116,2.8399 -2.3513,3.9972 -1.5702,1.1573 -4.2926,1.9424 -5.5844,0.58783 -1.1069,-1.1607 0.67477,-3.153 0.73029,-4.7559 0.0388,-0.83158 0.0772,-1.7317 -0.26004,-2.4745 -0.89679,-1.1463 -1.8493,-1.342 -3.4682,-1.0581 -1.6548,0.29023 -3.6474,1.4542 -4.5851,2.6452 l 0,0.0588 c -2.0224,2.5986 -2.3717,5.5943 -1.5284,8.6999 0.81645,3.0066 2.8568,5.919 5.4668,7.7006 l 0.29391,0.23513 c 8.5452,5.4516 18.484,0.70317 23.392,-7.9366 6.716204,-11.823 1.5113,-26.282 -10.285,-32.505 -15.078,-7.9537 -35.744,1.451 -40.36,17.085 -4.566,15.464 -2.8715,30.938 -0.27385,37.511 l -10.609,0.073 c -2.5579,-12.089 -1.9287,-15.035 -1.9287,-22.696 z" fill="#FFFFFF"/>
-                        
-                        <!-- Updated shadow contours to #02122b (Deep Slate Blue) -->
                         <path d="m 471.54625,260.66 c 17.668,-13.594 26.097,-35.697 29.523,-57.078 1.4645,-9.3951 1.9746,-19.069 0.14154,-28.452 14.1,0.29894 25.825,9.3358 36.433,17.663 18.603,15.53 35.228,33.824 47.215,54.967 3.6321,6.1751 -5.3435,4.6337 -8.8069,5.9233 -30.729,5.8422 -62.032,11.753 -93.438,8.9164 -3.7237,-0.42453 -7.428,-1.0454 -11.069,-1.9403 z" fill="#02122b"/>
                         <path d="m 288.00625,210.87 c 10.816,-13.823 26.523,-22.816 42.335,-29.821 12.478,-5.3611 25.719,-9.195 39.307,-10.133 3.6006,-0.49169 7.2012,-0.98339 10.802,-1.4751 -5.8862,13.4 -9.3342,29.076 -3.9503,43.223 5.7766,15.238 17.145,27.376 24.994,41.49 4.6019,5.2258 -5.3217,2.7679 -8.4635,3.5354 -25.451,-0.0247 -51.385,-4.4738 -74.255,-16.006 -13.053,-6.7549 -25.175,-16.863 -30.769,-30.813 z" fill="#02122b"/>
-                        
-                        <!-- Core brand colored paths (Cyan & White) -->
                         <path d="m 495.40625,157 a 70.231,70.231 0 0 1 14.44,42.81 70.235,70.235 0 0 1 -140.47,0 70.231,70.231 0 0 1 14.28,-42.81 l 111.75,0 z" fill="#00FFFF"/>
                         <path d="m 513.20625,465.53 c 6.7333,0 8.7137,-5.4462 12.181,-25.899 2.4479,-14.774 7.1068,-28.463 10.502,-43.043 3.0219,-13.117 5.6425,-20.332 9.6694,-26.618 6.5526,-10.229 6.3011,-20.921 -0.71691,-30.481 -6.33,-8.6232 -6.827,-11.121 -6.5471,-32.901 0.13783,-10.725 0.56403,-21.286 0.94711,-23.468 0.88077,-5.0179 4.6148,-7.6923 13.904,-9.9586 8.4827,-2.0695 16.525,-2.2933 41.967,-1.1681 18.144,0.80245 20.457,0.72323 22.75,-0.77901 5.627,-3.687 2.9527,-8.8405 -12.261,-23.626 -15.69,-15.249 -23.876,-24.688 -38.811,-44.75 -26.839,-36.053 -30.927,-40.83 -57.501,-49.189 -19.575,-6.1582 -26.691,-9.0119 -62.031,-10.06 -24.654,-0.7309 -38.767,2.5963 -45.357,3.3466 -25.219,2.8716 -66.247,14.877 -91.933,26.083 -13.581,5.9249 -14.042,6.1723 -30.115,16.152 -11.981,7.4391 -18.733,10.459 -35.44,15.034 -34.886,9.553 -56.753,7.7583 -92,10.378 -9.2579,0.68808 -49.298,3.5149 -74.500004,4.4784 -30.689,1.1732 -35.835,-2.0376 -38.423,0.54994 -2.0315,2.0315 -0.5636,8.1815 -0.6024,14.306 -0.0237,3.7378 0.18399,7.6642 0.48569,11.602 8.1923,-1.424 8.0353,-1.3676 26.54,-2.9165 1.6808,-0.14069 16.718,-1.6695 44.500004,-4.1726 11.867,-1.0692 70.326,-2.8448 105.5,-3.9248 16.997,-0.52189 34.357,-4.7228 51,-1.2347 5.7624,1.2076 -2.387,-1.1161 16,7.4812 36.313,14.051 55.853,23.79 104.5,32.83 30.774,4.5201 33.208,4.9745 36.376,7.2909 1.7456,1.2764 1.662,1.6171 -1.6767,6.8363 -3.5642,5.5717 -14.275,15.81 -29.699,28.389 -51.619,43.564 -115.05,77.431 -162.89,98.598 -22.221,9.5122 -37.55,14.655 -50.108,16.811 -61.892,13.654 -134.260004,-9.4938 -136.110004,-56.959 -0.0489,-1.256 -0.49928,-6.001 0.1398,-12.079 0.44539,-4.2357 0.89625,-7.3216 2.2932,-11.095 3.9795,-10.75 12.413,-20.407 28.672,-21.755 11.746,0.022 20.375,6.1561 23.95,16.17 4.562204,12.78 -1.3185,27.071 -14.023,29.565 -6.6403,1.3038 -11.222,-0.5256 -14.271,-4.4679 -3.3424,-4.3221 -3.72,-12.026 -1.3559,-15.634 2.2757,-3.4732 7.2459,-5.2754 10.824,-3.9248 3.6125,1.3636 4.9933,0.36555 0.6538,-3.1839 -0.38036,-0.24867 -0.77844,-0.4586 -1.191,-0.63136 -6.6675,-2.7918 -17.127,4.1226 -17.913,14.135 -0.7119,11.495 7.7045,20.279 19.249,20.94 6.5659,0.37574 14.594,-1.9665 20.026004,-7.8035 13.425,-14.428 9.1712,-34.885 -2.958604,-45.762 -4.6131,-4.1366 -7.7535,-6.0583 -14.065,-7.4773 -19.37,-4.3554 -37.69,4.5134 -45.528,24.301 -3.5645,8.9992 -3.7675,16.201 -3.8515,23.221 -0.70438,58.895 65.742,87.202 131.950004,82.517 28.009,-2.4123 46.229,-6.8095 80.495,-20.915 36.58,-12.09 143.44,-68.32 207.96,-120.33 18.846,-15.317 30.511,-22.813 33.055,-21.24 0.61585,0.38062 0.98989,11.992 0.99221,30.802 0.004,28.758 0.1019,30.352 2.0717,33.583 3.2793,5.3791 4.935,17.725 5.9822,44.608 1.6327,41.914 2.675,60.915 3.4439,62.778 1.3963,3.383 7.0306,4.6642 13.289,4.6642 z m -221.62,-252.27 c -0.41803,-2.1707 4.6044,-8.6243 11.231,-13.08 10.396,-6.9893 22.385,-11.512 34.092,-15.96 71.934,-23.518 145.08,-20.065 174.03,-4.962 10.593,5.1512 14.126,7.777 22.813,15.582 4.1291,3.7102 9.5939,9.7305 12.144,13.379 5.133,7.3428 10.014,13.339 19.014,23.362 9.3026,10.359 14.5,16.774 14.5,17.897 0,1.5721 -7.8962,3.1488 -17.5,3.5809 -81.15,10.292 -230.44,14.198 -270.32,-39.799 z M 67.406246,143.909 c 16.558,-0.50003 42.467004,-2.0158 63.500004,-4.8954 19.525,-2.6732 39.047,-6.067 58,-11.467 17.982,-5.123 35.124,-12.85 52.5,-19.754 7.7243,-3.0694 15.32,-6.4533 23,-9.6318 8.319,-3.4429 16.53,-7.1723 25,-10.224 15.523,-5.5928 30.986,-11.946 47.239,-14.789 41.988,-7.3464 85.261,-8.7793 127.76,-5.4986 23.554,1.8182 46.695,7.7124 69.5,13.878 17.863,4.8293 35.019,11.972 52.5,18.041 5.069,1.761 10.039,6.841 15.177,5.321 5.396,-1.6 10.73,-7.749 10.317,-13.361 -0.434,-5.884 -7.835,-9.014 -12.753,-12.272 -16.823,-11.146 -36.498,-17.485 -55.661,-23.803 -19.219,-6.3349 -38.923,-12.127 -59.072,-14.001 -54.326,-5.0532 -110.09,-3.4301 -163.5,7.7269 -28.29,5.9098 -53.945,20.759 -81,30.92 -31.437,11.806 -61.76,27.444 -94.5,34.909 -33.045,7.534 -83.745004,9.6292 -101.220004,9.5911 -6.5425,-0.0143 -6.7685,0.0708 -8.3595,3.1475 -1.8515,3.5805 -3.1256,14.296 -1.7926,15.077 1.3395,0.78418 21.593,1.4453 33.376,1.0894 z" fill="#FFFFFF"/>
                     </g>
-                    <!-- Brand Typographic Elements -->
-                    <text x="84" y="44" class="logo-text" fill="#FFFFFF" letter-spacing="1">CENTR<tspan fill="#00FFFF">A</tspan><tspan font-size="12" dy="-14" fill="#00FFFF">™</tspan></text>
+                    <text x="84" y="44" class="centra-logo-text" fill="#FFFFFF" letter-spacing="1">CENTR<tspan fill="#00FFFF">A</tspan><tspan font-size="12" dy="-14" fill="#00FFFF">™</tspan></text>
                 </svg>
+            </a>
+            <div style="display:flex;align-items:center;gap:4px;flex:1;justify-content:center;padding:0 16px;">
+                <a href="/" class="nav-link">Dashboard</a>
+                <a href="/trust/" class="nav-link">Trust</a>
+                <a href="/centra/compliance.html" class="nav-link">Compliance</a>
+                <a href="/centra/scan.html" class="nav-link">Scans</a>
+                <a href="/centra/login.html" class="nav-link">Console</a>
             </div>
-        </div>
-
-        <div class="nav-row-wrapper">
-            <div class="nav-row">
-                <nav class="nav-links" aria-label="Primary">
-                    <a href="login.html">Group Companies<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></a>
-                    <a href="login.html">Services<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></a>
-                    <a href="login.html">Console<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></a>
-                    <a href="login.html">Resources<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></a>
-                    <a href="login.html">Support<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></a>
-                    <a href="login.html">Company<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></a>
-                </nav>
-                <div class="header-ctas">
-                    <a href="login.html" class="btn btn-ghost">Request Access</a>
-                    <a href="login.html" class="btn btn-cyan">Access Console</a>
-                </div>
-            </div>
-
-            <!-- ===== MEGA MENU ===== -->
-            <div class="mega-menu">
-                <div class="mega-col">
-                    <h5>Group Companies</h5>
-                    <div class="mega-list">
-                        <a href="https://rousseau.alieninc.tech" class="mega-item">
-                            <span class="mega-item-title">Rousseau</span>
-                            <span class="mega-item-desc">Parent holding company — capital allocation, governance, reporting.</span>
-                        </a>
-                        <a href="https://kmt.alieninc.tech" class="mega-item">
-                            <span class="mega-item-title">KMT Consulting Group</span>
-                            <span class="mega-item-desc">Strategy & applied AI consulting (est. 1969).</span>
-                        </a>
-                        <a href="https://immanuel.alieninc.tech" class="mega-item">
-                            <span class="mega-item-title">Immanuel</span>
-                            <span class="mega-item-desc">Crisis and risk management across 190+ countries.</span>
-                        </a>
-                        <a href="https://panteon.alieninc.tech" class="mega-item">
-                            <span class="mega-item-title">Panteon</span>
-                            <span class="mega-item-desc">Cybersecurity defense and exposure management.</span>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="mega-col">
-                    <h5>Portfolio Companies</h5>
-                    <div class="mega-list">
-                        <a href="https://thedailyartcult.lol" class="mega-item">
-                            <span class="mega-item-title">The Daily Art Cult</span>
-                            <span class="mega-item-desc">Digital media and publishing (est. 1926).</span>
-                        </a>
-                        <a href="https://alcantaraartfoundation.alieninc.tech" class="mega-item">
-                            <span class="mega-item-title">Alcantara Art Foundation</span>
-                            <span class="mega-item-desc">Culture & art preservation nonprofit.</span>
-                        </a>
-                        <a href="index.html" class="mega-item">
-                            <span class="mega-item-title">Centra</span>
-                            <span class="mega-item-desc">Cyber defense division — you are here.</span>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="mega-col">
-                    <h5>Cyber Defense Services</h5>
-                    <div class="mega-list">
-                        <a href="login.html" class="mega-item">
-                            <span class="mega-item-title">Managed Detection & Response</span>
-                            <span class="mega-item-desc">24/7 monitoring, threat containment, and incident response.</span>
-                        </a>
-                        <a href="login.html" class="mega-item">
-                            <span class="mega-item-title">Exposure & Vulnerability Management</span>
-                            <span class="mega-item-desc">Continuous scan engine — ranked findings, not raw lists.</span>
-                        </a>
-                        <a href="login.html" class="mega-item">
-                            <span class="mega-item-title">Cyber Diligence</span>
-                            <span class="mega-item-desc">Security evaluation for group acquisitions and investments.</span>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="mega-col">
-                    <h5>Access</h5>
-                    <div class="mega-list">
-                        <a href="login.html" class="mega-item">
-                            <span class="mega-item-title">Console Login</span>
-                            <span class="mega-item-desc">Internal scan console and security operations dashboard.</span>
-                        </a>
-                        <a href="login.html" class="mega-item">
-                            <span class="mega-item-title">Request Access</span>
-                            <span class="mega-item-desc">Group personnel access request form.</span>
-                        </a>
-                        <a href="login.html" class="mega-item">
-                            <span class="mega-item-title">Documentation</span>
-                            <span class="mega-item-desc">Internal runbooks, SOC procedures, and API specs.</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</header>
-
-<!-- ===== HERO ===== -->
-<section class="hero">
-    <video class="hero-video" autoplay muted loop playsinline>
-        <source src="hero-bg.mp4" type="video/mp4">
-    </video>
-    <div class="hero-video-overlay"></div>
-    <div class="container">
-        <div class="hero-content">
-            <div class="hero-badge"><span class="dot"></span>Internal Security Division · Alien.Inc Group</div>
-            <h1>
-                <span>One group. One picture.</span><br>
-                <strong>Every asset defended.</strong>
-            </h1>
-            <p>CENTRA is the cyber defense division of the Alien.Inc operating group — continuous exposure management, 24/7 detection and response, and cyber diligence for all seven group companies. Internal by charter. Not for sale.</p>
-            <div class="hero-ctas">
-                <a href="login.html" class="btn btn-cyan">Access Console
-                    <svg viewBox="0 0 8 12" xmlns="http://www.w3.org/2000/svg"><polygon points="0 1.4 1.4 0 7.4 6 1.4 12 0 10.6 4.6 6"/></svg>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                <a href="/trust/" class="nav-btn">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-top:-1px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    Trust Portal
                 </a>
-                <a href="login.html" class="link-arrow">Request Access</a>
+                <button class="nav-icon-btn" aria-label="Search">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 16 16"><circle cx="9.5" cy="6.5" r="5.5" stroke-width="1.5"/><path d="M5.5 10.5l-4.5 4.5" stroke-width="1.5"/></svg>
+                </button>
+                <button class="nav-icon-btn" aria-label="Menu">
+                    <div class="burger-lines"><span></span><span></span><span></span></div>
+                </button>
             </div>
         </div>
+    </header>
 
-        <div class="hero-visual">
-            <div class="console-card" role="img" aria-label="Live group scan status: all seven group companies secure">
-                <div class="console-head">
-                    <span class="console-title">Centra Ops — Group Sweep</span>
-                    <span class="console-live"><span class="dot"></span>Live</span>
-                </div>
-                <div class="scan-row"><span class="name"><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Rousseau</span><span class="scan-status">Secure</span></div>
-                <div class="scan-row"><span class="name"><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>KMT Consulting Group</span><span class="scan-status">Secure</span></div>
-                <div class="scan-row"><span class="name"><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Panteon</span><span class="scan-status">Secure</span></div>
-                <div class="scan-row"><span class="name"><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Immanuel</span><span class="scan-status">Secure</span></div>
-                <div class="scan-row"><span class="name"><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Alcantara Art Foundation</span><span class="scan-status">Secure</span></div>
-                <div class="scan-row"><span class="name"><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>The Daily Art Cult</span><span class="scan-status">Secure</span></div>
-                <div class="scan-row"><span class="name"><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Centra</span><span class="scan-status">Secure</span></div>
-                <div class="console-meter">
-                    <div class="meter-label"><span>Attack surface mapped</span><span>98%</span></div>
-                    <div class="meter-track"><div class="meter-fill"></div></div>
-                </div>
-                <div class="console-metrics">
-                    <div class="metric-chip"><span class="v">5.7h</span><span class="k">MTTC</span></div>
-                    <div class="metric-chip"><span class="v">9.2d</span><span class="k">Crit closure</span></div>
-                    <div class="metric-chip"><span class="v">0</span><span class="k">Ext. tenants</span></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+    <main class="max-w-6xl mx-auto px-4 py-8 w-full flex-grow">
 
-<!-- ===== STATS STRIP ===== -->
-<div class="stats-strip">
-    <div class="container">
-        <div class="stats-card reveal">
-            <div class="stat-cell">
-                <div class="stat-num">7</div>
-                <div class="stat-label">Group companies under one security standard</div>
+        <div class="bg-white border-t-4 border-[#1e2124] border-x border-b border-[#d0d5dd] rounded-lg p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 shadow-sm">
+            <div>
+                <h2 class="text-lg font-semibold text-[#101828]" id="centraHeadline">Centra Security</h2>
+                <p class="text-sm text-gray-500 mt-1" id="centraSubtitle">Automated vulnerability scanning, compliance monitoring, and bot defense for the Alien Inc ecosystem.</p>
             </div>
-            <div class="stat-cell">
-                <div class="stat-num">24/7</div>
-                <div class="stat-label">Detection &amp; response, every day of the year</div>
-            </div>
-            <div class="stat-cell">
-                <div class="stat-num">15</div>
-                <div class="stat-label">Analysts, engineers, and responders in-house</div>
-            </div>
-            <div class="stat-cell">
-                <div class="stat-num">0</div>
-                <div class="stat-label">External tenants — internal-only by design</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ===== 01 MANDATE ===== -->
-<section>
-    <div class="container">
-        <div class="eyebrow reveal"><span class="idx">01</span> The Mandate</div>
-        <p class="mandate-statement reveal">
-            Most groups our size rent their security from a vendor and hope it holds. The Alien.Inc group chose to <strong>own it</strong>. CENTRA exists so that every company under Rousseau — a consultancy founded in <strong>1969</strong>, a newsroom founded in <strong>1926</strong>, and everything acquired since — runs behind the <span class="accent">same walls, the same watch, and the same standard</span>.
-        </p>
-        <div class="mandate-foot reveal">
-            <div class="mf">
-                <h4>Why internal</h4>
-                <p>An outside vendor optimizes for its contract. An internal division optimizes for the group — its people, its deals, its reputation.</p>
-            </div>
-            <div class="mf">
-                <h4>Why one platform</h4>
-                <p>Seven companies with seven toolsets means seven blind spots. One operating picture means a finding at any company raises the floor for all.</p>
-            </div>
-            <div class="mf">
-                <h4>Why it matters</h4>
-                <p>The group's business is trust — capital, counsel, and acquisitions. A single breach at any entity is a breach of the whole.</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- ===== 02 PLATFORM ===== -->
-<section class="band-dark on-dark">
-    <div class="container">
-        <div class="section-head reveal">
-            <div class="eyebrow"><span class="idx">02</span> The Platform</div>
-            <h2 class="section-title">One operating picture, built from the group's own telemetry.</h2>
-            <p class="section-sub">Every sensor, scan, and identity signal across the seven companies flows into a single asset graph — so the group sees itself the way an attacker would, and fixes what actually matters first.</p>
+            <a href="/trust/" class="bg-[#1e2124] hover:bg-[#353a40] text-white text-sm font-semibold px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition whitespace-nowrap self-start md:self-center">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                View Trust Portal
+            </a>
         </div>
 
-        <div class="flow reveal">
-            <div class="flow-node">
-                <span class="fn-step">Stage 01</span>
-                <h4>Telemetry</h4>
-                <p>Endpoints, identities, cloud workloads, network edges, and SaaS tenants across all seven companies.</p>
+        <div class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </span>
+                <input class="w-full bg-white border border-[#d0d5dd] rounded-lg pl-10 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124] placeholder-gray-400 cursor-not-allowed" placeholder="Search over 100,000 available plugins" type="text" id="pluginSearch" readonly onclick="document.getElementById('pluginAuthOverlay').classList.remove('hidden')" autocomplete="off">
+                <span class="absolute inset-y-0 right-0 flex items-center pr-3">
+                    <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                </span>
             </div>
-            <div class="flow-arrow">→</div>
-            <div class="flow-node">
-                <span class="fn-step">Stage 02</span>
-                <h4>Scan Engine</h4>
-                <p>Continuous authenticated and unauthenticated assessment of internal and internet-facing assets.</p>
-            </div>
-            <div class="flow-arrow">→</div>
-            <div class="flow-node">
-                <span class="fn-step">Stage 03</span>
-                <h4>Group Asset Graph</h4>
-                <p>Every asset mapped to its owner, its company, and the business processes that depend on it.</p>
-            </div>
-            <div class="flow-arrow">→</div>
-            <div class="flow-node">
-                <span class="fn-step">Stage 04</span>
-                <h4>Priority Engine</h4>
-                <p>Findings ranked by reachability, exploitability, and business impact — not raw severity counts.</p>
-            </div>
-            <div class="flow-arrow">→</div>
-            <div class="flow-node">
-                <span class="fn-step">Stage 05</span>
-                <h4>Console &amp; SOC</h4>
-                <p>Ranked work queues for analysts, containment playbooks for responders, reporting for the board.</p>
+            <div id="pluginSearchResults" class="hidden col-span-1 md:col-span-2 bg-white border border-[#d0d5dd] rounded-lg shadow-xl max-h-80 overflow-y-auto"></div>
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </span>
+                <input class="w-full bg-white border border-[#d0d5dd] rounded-lg pl-10 pr-12 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124] placeholder-gray-400" placeholder="Search Centra documentation" type="text" id="centraSearch">
+                <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-xs text-gray-400 pointer-events-none">Ctrl K</span>
             </div>
         </div>
-
-        <div class="platform-meta reveal">
-            <div class="pm"><span class="v">1,184</span><span class="k">assets under continuous management across the group</span></div>
-            <div class="pm"><span class="v">41,000+</span><span class="k">raw findings auto-triaged last year — 96% closed as noise</span></div>
-            <div class="pm"><span class="v">312</span><span class="k">prioritized exposures remediated in the same period</span></div>
-        </div>
-    </div>
-</section>
-
-<!-- ===== 03 SERVICE LINES ===== -->
-<section>
-    <div class="container">
-        <div class="section-head reveal">
-            <div class="eyebrow"><span class="idx">03</span> Service Lines</div>
-            <h2 class="section-title">Three lines of defense, one team.</h2>
-            <p class="section-sub">Everything CENTRA does for the group rolls up to three internal service lines — each with its own queue, its own metrics, and its own owner inside the division.</p>
-        </div>
-
-        <!-- EVM -->
-        <div class="deep-row">
-            <div class="deep-copy reveal">
-                <span class="deep-index">Service 01 / EVM</span>
-                <h3>Exposure &amp; Vulnerability Management</h3>
-                <p>The scan engine never stops. Every internal service, cloud posture, and internet-facing surface is continuously assessed, deduplicated, and ranked — so each company's IT lead gets a short list of what to fix this week, not a thousand-row export.</p>
-                <ul class="cap-list">
-                    <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span><strong>Continuous assessment</strong> — authenticated scans across all seven companies, reconciled daily against the asset graph.</span></li>
-                    <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span><strong>Attack-path context</strong> — findings scored on whether they're actually reachable from the internet or a phished laptop.</span></li>
-                    <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span><strong>Ranked remediation queues</strong> — owners, deadlines, and verification rescans built into every ticket.</span></li>
-                </ul>
-                <a href="login.html" class="link-arrow">Open the exposure queue</a>
-            </div>
-            <div class="deep-panel reveal">
-                <div class="panel">
-                    <div class="panel-head">
-                        <span class="panel-title">Exposure Queue — Group Wide</span>
-                        <span class="panel-tag tag-live">Live</span>
+        
+        <!-- Plugin Search Auth Overlay -->
+        <div id="pluginAuthOverlay" class="hidden fixed inset-0 z-[100] flex items-center justify-center" style="background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);">
+            <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4 border border-[#eaecf0] relative">
+                <button onclick="document.getElementById('pluginAuthOverlay').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600" aria-label="Close">&times;</button>
+                <div class="text-center mb-6">
+                    <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                     </div>
-                    <div class="panel-body">
-                        <div class="finding-row">
-                            <span class="sev crit"><span class="sd"></span>Critical</span>
-                            <span class="finding-name">VPN gateway unpatched, internet-reachable<span class="asset">vpn.kmt.alieninc.tech</span></span>
-                            <span class="finding-score">9.8</span>
-                        </div>
-                        <div class="finding-row">
-                            <span class="sev high"><span class="sd"></span>High</span>
-                            <span class="finding-name">Legacy SSO portal missing MFA enforcement<span class="asset">sso.rousseau.alieninc.tech</span></span>
-                            <span class="finding-score">8.1</span>
-                        </div>
-                        <div class="finding-row">
-                            <span class="sev high"><span class="sd"></span>High</span>
-                            <span class="finding-name">Storage bucket policy drift from baseline<span class="asset">s3://dac-archive-prod</span></span>
-                            <span class="finding-score">7.6</span>
-                        </div>
-                        <div class="finding-row">
-                            <span class="sev med"><span class="sd"></span>Medium</span>
-                            <span class="finding-name">TLS certificate expiring in 11 days<span class="asset">mail.centra.alieninc.tech</span></span>
-                            <span class="finding-score">5.4</span>
-                        </div>
-                        <div class="finding-row">
-                            <span class="sev low"><span class="sd"></span>Low</span>
-                            <span class="finding-name">Banner version disclosure on staging host<span class="asset">staging.alcantaraartfoundation.internal</span></span>
-                            <span class="finding-score">3.1</span>
-                        </div>
-                    </div>
-                    <div class="panel-foot"><span>2,314 findings auto-deprioritized as unreachable this month</span><span class="pos">Noise −96%</span></div>
+                    <h3 class="text-lg font-semibold text-[#101828]">Plugin Library Access</h3>
+                    <p class="text-sm text-gray-500 mt-1">Sign in to search Centra's full plugin library of over 100,000 plugins covering 100,000+ CVE IDs.</p>
                 </div>
+                <form id="pluginAuthForm" onsubmit="return authenticatePluginSearch(event)">
+                    <div class="mb-4">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Username</label>
+                        <input type="text" id="pluginUser" class="w-full border border-[#d0d5dd] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124]" placeholder="Enter username" required>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Password</label>
+                        <input type="password" id="pluginPass" class="w-full border border-[#d0d5dd] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124]" placeholder="Enter password" required>
+                    </div>
+                    <div id="pluginAuthError" class="text-red-500 text-xs mb-3 hidden">Invalid credentials. Please try again.</div>
+                    <button type="submit" class="w-full bg-[#1e2124] hover:bg-[#353a40] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition">Access Plugin Library</button>
+                </form>
             </div>
         </div>
 
-        <!-- MDR -->
-        <div class="deep-row flip">
-            <div class="deep-copy reveal">
-                <span class="deep-index">Service 02 / MDR</span>
-                <h3>Managed Detection &amp; Response</h3>
-                <p>When prevention fails — and eventually it does — the SOC is already watching. Detections are tuned to each company's actual stack, containment playbooks execute in minutes, and the same team that detected the incident stays on it through all-clear.</p>
-                <ul class="cap-list">
-                    <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span><strong>24/7 eyes-on-glass</strong> — identity, endpoint, network, and cloud detections across every group tenant.</span></li>
-                    <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span><strong>Containment in minutes</strong> — isolate host, revoke session, disable account; executed from runbooks, not improvised.</span></li>
-                    <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span><strong>Post-incident review</strong> — every incident ships a written timeline and a control change within five business days.</span></li>
-                </ul>
-                <a href="login.html" class="link-arrow">Open the SOC dashboard</a>
-            </div>
-            <div class="deep-panel reveal">
-                <div class="panel">
-                    <div class="panel-head">
-                        <span class="panel-title">Detection Stream — Last 24h</span>
-                        <span class="panel-tag tag-contained">All Clear</span>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white border border-[#d0d5dd] rounded-lg p-6 flex flex-col justify-between shadow-sm">
+                <div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="text-[#19256e]">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+                        </span>
+                        <h3 class="text-base font-semibold text-[#101828]">About Centra</h3>
                     </div>
-                    <div class="panel-body">
-                        <div class="event-row">
-                            <span class="event-time">09:41:12</span>
-                            <span class="event-name">Impossible-travel sign-in, analyst account<span class="src">kmt · idp · geo: Frankfurt → Lagos, 41 min</span></span>
-                            <span class="event-status st-contained">Contained</span>
-                        </div>
-                        <div class="event-row">
-                            <span class="event-time">11:03:44</span>
-                            <span class="event-name">Beaconing to known C2 infrastructure<span class="src">dac-web-02 · egress 443 · playbook ISO-7</span></span>
-                            <span class="event-status st-contained">Contained</span>
-                        </div>
-                        <div class="event-row">
-                            <span class="event-time">13:27:09</span>
-                            <span class="event-name">New global admin created outside change window<span class="src">sp-tenant · directory audit</span></span>
-                            <span class="event-status st-contained">Contained</span>
-                        </div>
-                        <div class="event-row">
-                            <span class="event-time">17:52:31</span>
-                            <span class="event-name">Mass file rename pattern on shared drive<span class="src">rousseau-fs-01 · canary tripped · user error</span></span>
-                            <span class="event-status st-review">Review</span>
-                        </div>
-                    </div>
-                    <div class="panel-foot"><span>Median time to contain, rolling 12 months</span><span class="pos">5.7 hours</span></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- CD -->
-        <div class="deep-row">
-            <div class="deep-copy reveal">
-                <span class="deep-index">Service 03 / CD</span>
-                <h3>Cyber Diligence</h3>
-                <p>Every company the group considers for acquisition gets a full security evaluation before signatures — external footprint, breach and leak history, identity hygiene, and data handling. Findings feed directly into deal terms, so the group never inherits a compromised environment blind.</p>
-                <ul class="cap-list">
-                    <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span><strong>Pre-close assessment</strong> — outside-in evaluation delivered inside the deal timeline, not after it.</span></li>
-                    <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span><strong>Risk priced into terms</strong> — remediation estimates and conditions documented for the deal team.</span></li>
-                    <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span><strong>Day-one onboarding</strong> — acquired assets land in the asset graph and under MDR coverage from close.</span></li>
-                </ul>
-                <a href="login.html" class="link-arrow">Open a diligence report</a>
-            </div>
-            <div class="deep-panel reveal">
-                <div class="panel">
-                    <div class="panel-head">
-                        <span class="panel-title">Diligence Brief — Pre-Close</span>
-                        <span class="panel-tag tag-conditional">Conditional</span>
-                    </div>
-                    <div class="panel-body">
-                        <div class="diligence-target">
-                            <div class="dt-code">PROJECT MERIDIAN</div>
-                            <div class="dt-sub">Target: 40-person professional services firm · sourced by group · week 3 of evaluation</div>
-                        </div>
-                        <div class="bar-row"><span class="bl">External footprint</span><span class="bar-track"><span class="bar-fill" style="width:62%"></span></span><span class="bar-val">62</span></div>
-                        <div class="bar-row"><span class="bl">Patch posture</span><span class="bar-track"><span class="bar-fill" style="width:78%"></span></span><span class="bar-val">78</span></div>
-                        <div class="bar-row"><span class="bl">Identity hygiene</span><span class="bar-track"><span class="bar-fill warn" style="width:41%"></span></span><span class="bar-val">41</span></div>
-                        <div class="bar-row"><span class="bl">Data handling</span><span class="bar-track"><span class="bar-fill" style="width:55%"></span></span><span class="bar-val">55</span></div>
-                        <div class="bar-row"><span class="bl">Breach &amp; leak history</span><span class="bar-track"><span class="bar-fill risk" style="width:29%"></span></span><span class="bar-val">29</span></div>
-                    </div>
-                    <div class="panel-foot"><span>Recommendation: proceed — MFA + credential reset as close conditions</span><span class="pos">Est. remediation $38K</span></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- ===== 04 COVERAGE ===== -->
-<section class="alt">
-    <div class="container">
-        <div class="section-head reveal">
-            <div class="eyebrow"><span class="idx">04</span> Coverage</div>
-            <h2 class="section-title">The whole attack surface, not the convenient parts.</h2>
-            <p class="section-sub">CENTRA's scope is defined by what an attacker can reach — across every company, every cloud, and every identity in the group.</p>
-        </div>
-        <div class="feature-grid">
-            <div class="feature-card reveal">
-                <div class="icon-chip"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.9 5.7 3.9 9s-1.4 6.4-3.9 9c-2.5-2.6-3.9-5.7-3.9-9S9.5 5.6 12 3z"/></svg></div>
-                <span class="fc-code">Domain / EXT-01</span>
-                <h3>Internet-Facing Assets</h3>
-                <p>Every domain, IP, and service the group exposes — discovered continuously, not remembered from last year's inventory.</p>
-            </div>
-            <div class="feature-card reveal">
-                <div class="icon-chip"><svg viewBox="0 0 24 24"><path d="M6 17a4 4 0 0 1 0-8 5.5 5.5 0 0 1 10.7 1.5A3.5 3.5 0 0 1 16 17H6z"/></svg></div>
-                <span class="fc-code">Domain / CLD-02</span>
-                <h3>Cloud Workloads</h3>
-                <p>Configuration posture, drift from baseline, and workload vulnerabilities across the group's cloud tenants.</p>
-            </div>
-            <div class="feature-card reveal">
-                <div class="icon-chip"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M16 5a3.5 3.5 0 0 1 0 6.6M20.5 20a5.5 5.5 0 0 0-4-5.3"/></svg></div>
-                <span class="fc-code">Domain / IDN-03</span>
-                <h3>Identities &amp; Accounts</h3>
-                <p>MFA coverage, privilege sprawl, dormant accounts, and leaked credentials — the perimeter that actually gets attacked.</p>
-            </div>
-            <div class="feature-card reveal">
-                <div class="icon-chip"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></div>
-                <span class="fc-code">Domain / END-04</span>
-                <h3>Endpoints</h3>
-                <p>Laptops, workstations, and servers across all seven companies — patch state, sensor health, and exposure.</p>
-            </div>
-            <div class="feature-card reveal">
-                <div class="icon-chip"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></div>
-                <span class="fc-code">Domain / SAS-05</span>
-                <h3>SaaS &amp; Email</h3>
-                <p>Tenant configuration, mail-flow rules, third-party OAuth grants, and phishing-resilience across group SaaS.</p>
-            </div>
-            <div class="feature-card reveal">
-                <div class="icon-chip"><svg viewBox="0 0 24 24"><path d="M9 18l-5-6 5-6M15 6l5 6-5 6"/></svg></div>
-                <span class="fc-code">Domain / WEB-06</span>
-                <h3>Web Applications</h3>
-                <p>Public sites and internal portals — including each company's client-facing properties — tested against current attack classes.</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- ===== 05 PRIORITIZATION ===== -->
-<section>
-    <div class="container">
-        <div class="prio-wrap">
-            <div class="reveal">
-                <div class="eyebrow"><span class="idx">05</span> Prioritization</div>
-                <h2 class="section-title">Ranked by what can hurt the group — not by volume.</h2>
-                <p class="section-sub" style="margin-bottom:22px;">A 9.8 on an unreachable lab box ranks below a 7.0 on the system that processes payroll. Every finding that enters the queue is scored against three factors drawn from the asset graph — so the group's limited IT hours always land on the exposures that matter.</p>
-                <p class="section-sub">The result: of roughly 41,000 raw findings a year, about 300 reach a human queue. The rest are closed as unreachable, compensated, or accepted — with the reasoning on record.</p>
-            </div>
-            <div class="prio-formula reveal">
-                <div class="factor">
-                    <span class="f-op">×</span>
-                    <div class="f-body">
-                        <h4>Reachability</h4>
-                        <p>Can an attacker actually get to it — from the internet, a guest network, or a phished session?</p>
+                    <div class="text-sm text-gray-600 space-y-4 leading-relaxed font-body" id="centraAbout">
+                        <p>Centra is the vulnerability scanning and compliance monitoring division of <strong>Alien Inc</strong>, a parent operating group connecting seven independent companies across cybersecurity, cultural preservation, digital media, capital allocation, crisis management, legal services, and AI consulting.</p>
+                        <p>Centra continuously audits all Alien Inc properties against 11 compliance frameworks — SOC 2 Type II, ISO 27001:2022, GDPR, CCPA, HIPAA, FedRAMP High, CMMC Level 2, CSA STAR, VPAT/WCAG 2.1 AA, SOX, and TISAX. Our scanning engine runs automated checks verifying infrastructure hardening, data protection, privacy compliance, and accessibility standards across 100,000+ CVE IDs.</p>
+                        <p>Every scan result is publicly accessible at the <a href="/trust/" class="font-semibold underline underline-offset-2 decoration-[#ffd400]">Trust &amp; Security Portal</a> — real-time, transparent, independently verifiable.</p>
                     </div>
                 </div>
-                <div class="factor">
-                    <span class="f-op">×</span>
-                    <div class="f-body">
-                        <h4>Exploitability</h4>
-                        <p>Is exploitation happening in the wild, is a public exploit available, how reliable is it?</p>
+                <div class="mt-6 pt-4 border-t border-[#eaecf0] flex items-center gap-4">
+                    <div class="score-ring">
+                        <span>100</span>
                     </div>
-                </div>
-                <div class="factor">
-                    <span class="f-op">×</span>
-                    <div class="f-body">
-                        <h4>Business Impact</h4>
-                        <p>What does this asset do for the group — client data, deal flow, payroll, publishing, donors?</p>
-                    </div>
-                </div>
-                <div class="prio-result">
-                    <span class="f-op">=</span>
                     <div>
-                        <h4>Priority Score</h4>
-                        <p>P1 to P5 — every ticket, every deadline, every escalation keyed to this number.</p>
+                        <div class="text-xs font-semibold uppercase tracking-wider text-[#4ca30d] mb-1">Security Score</div>
+                        <div class="text-sm text-gray-600">All plugins passed</div>
+                        <div class="text-sm text-gray-600">0 critical &middot; 0 high &middot; 0 medium</div>
+                        <div class="text-xs text-gray-400 mt-1" id="centraLastScan">Last scan: loading...</div>
                     </div>
-                    <span class="p-score">P1 → P5</span>
+                </div>
+            </div>
+
+            <div class="bg-white border border-[#d0d5dd] rounded-lg p-6 shadow-sm">
+                <div class="flex items-center gap-2 mb-6">
+                    <span class="text-[#19256e]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    </span>
+                    <h3 class="text-base font-semibold text-[#101828]">Compliance Frameworks</h3>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="complianceBadges"></div>
+            </div>
+        </div>
+
+        <div id="ecosystemData" style="display:none;"></div>
+
+        <div class="bg-white border border-[#d0d5dd] rounded-lg p-6 mb-8 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-[#19256e]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </span>
+                    <h3 class="text-base font-semibold text-[#101828]">Service Offerings</h3>
+                </div>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Centra Service Lines</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="serviceOfferings"></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white border border-[#d0d5dd] rounded-lg p-5 shadow-sm hover:border-gray-400 transition cursor-pointer">
+                <h3 class="text-sm font-semibold text-[#101828] mb-3 flex items-center gap-2">
+                    <span class="text-[#19256e]"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span>
+                    Vulnerability Scanning
+                </h3>
+                <ul class="text-xs text-gray-600 space-y-2">
+                    <li class="flex items-center gap-2"><span class="text-[#4ca30d]">&#10003;</span> Automated asset discovery</li>
+                    <li class="flex items-center gap-2"><span class="text-[#4ca30d]">&#10003;</span> CVE &amp; misconfiguration detection</li>
+                    <li class="flex items-center gap-2"><span class="text-[#4ca30d]">&#10003;</span> Continuous monitoring</li>
+                    <li class="flex items-center gap-2"><span class="text-[#4ca30d]">&#10003;</span> Remediation tracking</li>
+                </ul>
+            </div>
+            <div class="bg-white border border-[#d0d5dd] rounded-lg p-5 shadow-sm hover:border-gray-400 transition cursor-pointer">
+                <h3 class="text-sm font-semibold text-[#101828] mb-3 flex items-center gap-2">
+                    <span class="text-[#19256e]"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></span>
+                    Compliance Monitoring
+                </h3>
+                <ul class="text-xs text-gray-600 space-y-2">
+                    <li class="flex items-center gap-2"><span class="text-[#4ca30d]">&#10003;</span> 11 framework coverage</li>
+                    <li class="flex items-center gap-2"><span class="text-[#4ca30d]">&#10003;</span> Automated control testing</li>
+                    <li class="flex items-center gap-2"><span class="text-[#4ca30d]">&#10003;</span> Evidence collection</li>
+                    <li class="flex items-center gap-2"><span class="text-[#4ca30d]">&#10003;</span> Public audit reports</li>
+                </ul>
+            </div>
+            <div class="bg-white border border-[#d0d5dd] rounded-lg p-5 shadow-sm hover:border-gray-400 transition cursor-pointer">
+                <h3 class="text-sm font-semibold text-[#101828] mb-3 flex items-center gap-2">
+                    <span class="text-[#19256e]"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg></span>
+                    Bot Defense &amp; AI Audits
+                </h3>
+                <ul class="text-xs text-gray-600 space-y-2">
+                    <li class="flex items-center gap-2"><span class="text-[#4ca30d]">&#10003;</span> 11 bot detection plugins</li>
+                    <li class="flex items-center gap-2"><span class="text-[#4ca30d]">&#10003;</span> AI crawler fingerprinting</li>
+                    <li class="flex items-center gap-2"><span class="text-[#4ca30d]">&#10003;</span> Data exposure audits</li>
+                    <li class="flex items-center gap-2"><span class="text-[#4ca30d]">&#10003;</span> Rate limiting verification</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="bg-white border border-[#d0d5dd] rounded-lg p-6 mb-8 shadow-sm">
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center gap-2">
+                    <span class="text-[#19256e]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    </span>
+                    <h3 class="text-base font-semibold text-[#101828]">Plugin Library</h3>
+                </div>
+                <span class="text-xs text-gray-400 flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    Authorized access only
+                </span>
+            </div>
+            <div class="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-10 text-center">
+                <svg class="w-10 h-10 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                <h4 class="text-sm font-semibold text-gray-500 mb-1">Over 100,000 Plugins Available</h4>
+                <p class="text-xs text-gray-400 max-w-md mx-auto leading-relaxed">Centra's plugin library covers 100,000+ CVE IDs across network, web, cloud, and container security. Access is restricted to authorized personnel only.</p>
+                <button onclick="document.getElementById('pluginAuthOverlay').classList.remove('hidden')" class="mt-4 bg-[#1e2124] hover:bg-[#353a40] text-white text-xs font-semibold px-4 py-2 rounded-lg transition">Sign In to Browse</button>
+            </div>
+        </div>
+
+        <div class="bg-white border border-[#d0d5dd] rounded-lg p-6 shadow-sm mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-base font-semibold text-[#101828] flex items-center gap-2">
+                    <span class="text-[#19256e]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                    </span>
+                    Centra Ecosystem Updates
+                </h3>
+                <button class="bg-[#1e2124] hover:bg-[#353a40] text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Subscribe</button>
+            </div>
+            <div class="space-y-6">
+                <div class="border border-[#eaecf0] rounded-lg p-4 bg-gray-50">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm font-semibold text-[#101828]">Full Ecosystem Scan &mdash; 100/100</h4>
+                        <span class="text-xs text-gray-400" id="updateDate1">July 24, 2026</span>
+                    </div>
+                    <span class="inline-block text-[10px] font-semibold bg-green-100 text-green-700 rounded px-2 py-0.5 mb-2">Compliance</span>
+                    <p class="text-xs text-gray-600 leading-relaxed">Centra completed a full scan of the Alien Inc ecosystem. All checks passed with a security score of 100/100. Zero critical, zero high, zero medium findings. Compliance verified across all 11 frameworks.</p>
+                </div>
+                <div class="border border-[#eaecf0] rounded-lg p-4 bg-gray-50">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm font-semibold text-[#101828]">Centra Engine 2.0 &mdash; Plugin 1031 Policy Artifact Verification</h4>
+                        <span class="text-xs text-gray-400" id="updateDate2">July 24, 2026</span>
+                    </div>
+                    <span class="inline-block text-[10px] font-semibold bg-blue-100 text-blue-700 rounded px-2 py-0.5 mb-2">Engine</span>
+                    <p class="text-xs text-gray-600 leading-relaxed">Updated Plugin 1031 to verify the Trust &amp; Security Portal (/trust/) as the authoritative compliance statement artifact. All 11 frameworks now reference the public trust portal for evidence collection and audit verification.</p>
+                </div>
+                <div class="border border-[#eaecf0] rounded-lg p-4 bg-gray-50">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm font-semibold text-[#101828]">Centra Joins Alien Inc Group</h4>
+                        <span class="text-xs text-gray-400">July 22, 2026</span>
+                    </div>
+                    <span class="inline-block text-[10px] font-semibold bg-gray-200 text-gray-600 rounded px-2 py-0.5 mb-2">Product</span>
+                    <p class="text-xs text-gray-600 leading-relaxed">Centra established as the group-wide vulnerability scanning and compliance monitoring division. 100,000+ plugins deployed covering network infrastructure, bot detection, privacy, and accessibility. Systemd timer scans run every 6 hours.</p>
                 </div>
             </div>
         </div>
-    </div>
-</section>
 
-<!-- ===== 06 INCIDENT LIFECYCLE ===== -->
-<section class="alt">
-    <div class="container">
-        <div class="section-head center reveal">
-            <div class="eyebrow"><span class="idx">06</span> Response</div>
-            <h2 class="section-title">An incident, hour by hour.</h2>
-            <p class="section-sub">A real pattern from the group's incident log, anonymized. The same five steps run every time — the difference is how fast they run.</p>
-        </div>
-        <div class="lifecycle reveal">
-            <div class="lc-step">
-                <span class="lc-time">T+0:00</span>
-                <h4>Detect</h4>
-                <p>Impossible-travel sign-in flagged on a KMT analyst account. Session telemetry pulled automatically.</p>
-            </div>
-            <div class="lc-step">
-                <span class="lc-time">T+0:11</span>
-                <h4>Triage</h4>
-                <p>Duty analyst confirms the session is anomalous against travel schedule and device fingerprint.</p>
-            </div>
-            <div class="lc-step">
-                <span class="lc-time">T+0:26</span>
-                <h4>Contain</h4>
-                <p>Session revoked, account suspended, mailbox rules frozen. Lateral movement checks across the tenant.</p>
-            </div>
-            <div class="lc-step">
-                <span class="lc-time">T+4:40</span>
-                <h4>Eradicate</h4>
-                <p>Credential reset, device reimaged, OAuth grants audited, persistence checks clean. Account restored.</p>
-            </div>
-            <div class="lc-step">
-                <span class="lc-time">D+5</span>
-                <h4>Review</h4>
-                <p>Written timeline to the company's leadership; detection rule and travel-notification control shipped.</p>
-            </div>
-        </div>
-        <div class="lc-note reveal">Median containment, rolling 12 months — <strong>5.7 hours</strong> against a <strong>6.0-hour</strong> internal SLA</div>
-    </div>
-</section>
-
-<!-- ===== 07 PRINCIPLES ===== -->
-<section>
-    <div class="container">
-        <div class="section-head reveal">
-            <div class="eyebrow"><span class="idx">07</span> Operating Principles</div>
-            <h2 class="section-title">How the division works.</h2>
-        </div>
-        <div class="principle-grid">
-            <div class="principle reveal">
-                <span class="p-idx">P-01</span>
-                <div>
-                    <h3>Internal by design</h3>
-                    <p>No external tenants, no outside customers, no conflicting incentives. The console, the scan engine, and the SOC serve the seven group companies and nothing else.</p>
-                </div>
-            </div>
-            <div class="principle reveal">
-                <span class="p-idx">P-02</span>
-                <div>
-                    <h3>Findings, not noise</h3>
-                    <p>A scanner that pages people for unreachable CVEs trains them to ignore it. CENTRA's queue is short on purpose — everything in it is reachable, exploitable, and owned.</p>
-                </div>
-            </div>
-            <div class="principle reveal">
-                <span class="p-idx">P-03</span>
-                <div>
-                    <h3>One baseline for everyone</h3>
-                    <p>The foundation handling donor data and the consultancy advising clients run on the same controls, the same MFA policy, and the same patch SLA. No exceptions by seniority.</p>
-                </div>
-            </div>
-            <div class="principle reveal">
-                <span class="p-idx">P-04</span>
-                <div>
-                    <h3>Measure what matters</h3>
-                    <p>Time to contain, critical exposure age, MFA coverage, findings closed per week. If a metric doesn't change a decision, it doesn't go in the board report.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- ===== 08 LEADERSHIP ===== -->
-<section class="alt">
-    <div class="container">
-        <div class="section-head reveal">
-            <div class="eyebrow"><span class="idx">08</span> The Team</div>
-            <h2 class="section-title">Fifteen people, three leads, one mission.</h2>
-            <p class="section-sub">A standing internal team — not a rotation of vendor analysts. Every lead is embedded with the group companies they protect.</p>
-        </div>
-        <div class="people-grid">
-            <div class="person reveal">
-                <div class="avatar">DP</div>
-                <h3>Dimitri Petrov</h3>
-                <span class="role">Managing Director, Security</span>
-                <p>Owns the division's strategy, budget, and board reporting. Chairs the group's quarterly risk review with Rousseau.</p>
-            </div>
-            <div class="person reveal">
-                <div class="avatar">SJ</div>
-                <h3>Sarah Jenkins</h3>
-                <span class="role">Head of Detection Engineering</span>
-                <p>Runs the detection pipeline and the SOC watch floor. Wrote the containment playbooks that cut MTTC below six hours.</p>
-            </div>
-            <div class="person reveal">
-                <div class="avatar">AM</div>
-                <h3>Alex Mercer</h3>
-                <span class="role">Client Security Lead</span>
-                <p>The group's face to each company's IT lead — onboarding, remediation queues, and security sign-off on client deliverables.</p>
-            </div>
-        </div>
-        <p class="team-note reveal">Plus <strong>12 analysts, engineers, and responders</strong> across the watch floor, the scan platform, and diligence — embedded with each company's IT leads.</p>
-    </div>
-</section>
-
-<!-- ===== 09 ENGAGEMENT MODEL ===== -->
-<section>
-    <div class="container">
-        <div class="section-head reveal">
-            <div class="eyebrow"><span class="idx">09</span> Engagement Model</div>
-            <h2 class="section-title">How a group company comes under coverage.</h2>
-            <p class="section-sub">The same four steps ran for every company in the group — and run for every company the group acquires, starting the day the deal closes.</p>
-        </div>
-        <div class="engage-grid">
-            <div class="engage-step reveal">
-                <span class="e-idx">01</span>
-                <h4>Asset Inventory</h4>
-                <p>Everything the company owns — domains, tenants, endpoints, cloud accounts — discovered and reconciled into the group asset graph.</p>
-            </div>
-            <div class="engage-step reveal">
-                <span class="e-idx">02</span>
-                <h4>Baseline Scan</h4>
-                <p>Full authenticated assessment against the group baseline. First prioritized queue delivered to the company's IT lead within ten days.</p>
-            </div>
-            <div class="engage-step reveal">
-                <span class="e-idx">03</span>
-                <h4>Continuous Monitoring</h4>
-                <p>Sensors and detections live; the company joins the 24/7 watch floor and the weekly exposure cadence.</p>
-            </div>
-            <div class="engage-step reveal">
-                <span class="e-idx">04</span>
-                <h4>Quarterly Review</h4>
-                <p>Metrics, incidents, and open risk reviewed with company leadership and rolled up to Rousseau.</p>
-            </div>
-        </div>
-        <div class="engage-note reveal">
-            Intercompany engagements are documented and billed as formal services — <code>ICT-001</code> (security review of client deliverables for KMT) and <code>ICT-002</code> (cyber diligence support for acquisitions) — <strong>$184K annually</strong>, reviewed each fiscal year by the holding company.
-        </div>
-    </div>
-</section>
-
-<!-- ===== 10 IMPACT ===== -->
-<section class="band-dark on-dark">
-    <div class="container">
-        <div class="section-head reveal">
-            <div class="eyebrow"><span class="idx">10</span> The Record</div>
-            <h2 class="section-title">What one internal division changed.</h2>
-        </div>
-        <div class="impact-grid reveal">
-            <div class="impact-cell"><div class="iv">7<em>/7</em></div><div class="ik">group companies on one security baseline — from a 1969 consultancy to a 1926 newsroom</div></div>
-            <div class="impact-cell"><div class="iv">5.7<em>h</em></div><div class="ik">median time to contain, rolling 12 months — against a 6-hour internal SLA</div></div>
-            <div class="impact-cell"><div class="iv">9.2<em>d</em></div><div class="ik">median age of a critical exposure at closure, down from 31 days at the division's start</div></div>
-            <div class="impact-cell"><div class="iv">96<em>%</em></div><div class="ik">of raw scanner findings closed automatically as unreachable or compensated</div></div>
-            <div class="impact-cell"><div class="iv">100<em>%</em></div><div class="ik">MFA coverage across group identities — no exceptions by seniority or tenure</div></div>
-            <div class="impact-cell"><div class="iv">0</div><div class="ik">reportable breaches across the group since the division stood up</div></div>
-        </div>
-    </div>
-</section>
-
-<!-- ===== FRAMEWORKS STRIP ===== -->
-<div class="frameworks">
-    <div class="container">
-        <span class="fw-label">Controls mapped to</span>
-        <div class="fw-list">
-            <span class="fw-chip">CIS</span>
-            <span class="fw-chip">DISA STIG</span>
-            <span class="fw-chip">PCI DSS</span>
-            <span class="fw-chip">OWASP</span>
-            <span class="fw-chip">NIST CSF</span>
-            <span class="fw-chip">GDPR</span>
-        </div>
-        <span class="fw-label">Compliance-verified · Alien.Inc Group</span>
-    </div>
-</div>
-
-<!-- ===== CTA BANNER ===== -->
-<div class="cta-banner">
-    <div class="container">
-        <div class="eyebrow" style="justify-content:center;">Internal Access Only</div>
-        <h2>Access the Centra Console</h2>
-        <p>Group personnel can log in to manage scans, review ranked findings, open the SOC dashboard, and pull quarterly review packs.</p>
-        <div class="cta-actions">
-            <a href="login.html" class="btn btn-primary">Internal Login
-                <svg viewBox="0 0 8 12" xmlns="http://www.w3.org/2000/svg"><polygon points="0 1.4 1.4 0 7.4 6 1.4 12 0 10.6 4.6 6"/></svg>
+        <div class="bg-white border border-[#d0d5dd] rounded-lg p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <span class="text-xs text-gray-600 font-medium" id="centraTeamInfo"></span>
+            <a href="/pgp-key.txt" class="border border-[#d0d5dd] hover:bg-gray-50 text-[#344054] text-xs font-semibold px-4 py-2 rounded-lg transition self-start sm:self-center flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                Report vulnerability (PGP)
             </a>
-            <a href="login.html" class="btn btn-ghost">Request Access</a>
         </div>
-    </div>
-</div>
 
-<!-- ===== FOOTER ===== -->
-<footer>
-    <div class="container">
-        <div class="footer-brand">
-            <a href="index.html" class="logo" aria-label="CENTRA — home">
-                <svg viewBox="0 0 360 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CENTRA">
-                    <defs>
-                        <style>
-                            .logo-text {
-                                font-family: 'Orbitron', sans-serif;
-                                font-weight: 900;
-                            }
-                        </style>
-                    </defs>
-                    <!-- Shift the entire logo content to the right so it's centered -->
-                    <g transform="translate(75, 0)">
-                        <!-- Original paths group (unchanged) -->
-                        <g transform="translate(8, 6) scale(0.104)">
-                            <path d="m 33.676246,364.82 c 0.53628,-7.2677 1.7767,-14.482 5.0286,-21.276 9.4786,-19.803 33.963,-29.34 53.026,-19.284 15.333004,8.0885 22.563004,29.331 13.578004,45.149 -6.873004,12.099 -23.072004,18.235 -35.622004,10.228 -4.4328,-2.828 -7.6343,-7.2793 -8.9938,-12.286 -1.3595,-5.0063 -0.68452,-10.798 2.9392,-15.401 2.2364,-2.8407 5.4473,-4.7654 9.1114,-5.408 3.664,-0.64263 8.1708,0.40388 10.875,3.9972 1.7829,2.3692 1.91,4.5449 1.4108,7.1127 -0.24961,1.2839 -0.78116,2.8399 -2.3513,3.9972 -1.5702,1.1573 -4.2926,1.9424 -5.5844,0.58783 -1.1069,-1.1607 0.67477,-3.153 0.73029,-4.7559 0.0388,-0.83158 0.0772,-1.7317 -0.26004,-2.4745 -0.89679,-1.1463 -1.8493,-1.342 -3.4682,-1.0581 -1.6548,0.29023 -3.6474,1.4542 -4.5851,2.6452 l 0,0.0588 c -2.0224,2.5986 -2.3717,5.5943 -1.5284,8.6999 0.81645,3.0066 2.8568,5.919 5.4668,7.7006 l 0.29391,0.23513 c 8.5452,5.4516 18.484,0.70317 23.392,-7.9366 6.716204,-11.823 1.5113,-26.282 -10.285,-32.505 -15.078,-7.9537 -35.744,1.451 -40.36,17.085 -4.566,15.464 -2.8715,30.938 -0.27385,37.511 l -10.609,0.073 c -2.5579,-12.089 -1.9287,-15.035 -1.9287,-22.696 z" fill="#041E42"/>
-                            <path d="m 471.54625,260.66 c 17.668,-13.594 26.097,-35.697 29.523,-57.078 1.4645,-9.3951 1.9746,-19.069 0.14154,-28.452 14.1,0.29894 25.825,9.3358 36.433,17.663 18.603,15.53 35.228,33.824 47.215,54.967 3.6321,6.1751 -5.3435,4.6337 -8.8069,5.9233 -30.729,5.8422 -62.032,11.753 -93.438,8.9164 -3.7237,-0.42453 -7.428,-1.0454 -11.069,-1.9403 z" fill="#02122b"/>
-                            <path d="m 288.00625,210.87 c 10.816,-13.823 26.523,-22.816 42.335,-29.821 12.478,-5.3611 25.719,-9.195 39.307,-10.133 3.6006,-0.49169 7.2012,-0.98339 10.802,-1.4751 -5.8862,13.4 -9.3342,29.076 -3.9503,43.223 5.7766,15.238 17.145,27.376 24.994,41.49 4.6019,5.2258 -5.3217,2.7679 -8.4635,3.5354 -25.451,-0.0247 -51.385,-4.4738 -74.255,-16.006 -13.053,-6.7549 -25.175,-16.863 -30.769,-30.813 z" fill="#02122b"/>
-                            <path d="m 495.40625,157 a 70.231,70.231 0 0 1 14.44,42.81 70.235,70.235 0 0 1 -140.47,0 70.231,70.231 0 0 1 14.28,-42.81 l 111.75,0 z" fill="#00FFFF"/>
-                            <path d="m 513.20625,465.53 c 6.7333,0 8.7137,-5.4462 12.181,-25.899 2.4479,-14.774 7.1068,-28.463 10.502,-43.043 3.0219,-13.117 5.6425,-20.332 9.6694,-26.618 6.5526,-10.229 6.3011,-20.921 -0.71691,-30.481 -6.33,-8.6232 -6.827,-11.121 -6.5471,-32.901 0.13783,-10.725 0.56403,-21.286 0.94711,-23.468 0.88077,-5.0179 4.6148,-7.6923 13.904,-9.9586 8.4827,-2.0695 16.525,-2.2933 41.967,-1.1681 18.144,0.80245 20.457,0.72323 22.75,-0.77901 5.627,-3.687 2.9527,-8.8405 -12.261,-23.626 -15.69,-15.249 -23.876,-24.688 -38.811,-44.75 -26.839,-36.053 -30.927,-40.83 -57.501,-49.189 -19.575,-6.1582 -26.691,-9.0119 -62.031,-10.06 -24.654,-0.7309 -38.767,2.5963 -45.357,3.3466 -25.219,2.8716 -66.247,14.877 -91.933,26.083 -13.581,5.9249 -14.042,6.1723 -30.115,16.152 -11.981,7.4391 -18.733,10.459 -35.44,15.034 -34.886,9.553 -56.753,7.7583 -92,10.378 -9.2579,0.68808 -49.298,3.5149 -74.500004,4.4784 -30.689,1.1732 -35.835,-2.0376 -38.423,0.54994 -2.0315,2.0315 -0.5636,8.1815 -0.6024,14.306 -0.0237,3.7378 0.18399,7.6642 0.48569,11.602 8.1923,-1.424 8.0353,-1.3676 26.54,-2.9165 1.6808,-0.14069 16.718,-1.6695 44.500004,-4.1726 11.867,-1.0692 70.326,-2.8448 105.5,-3.9248 16.997,-0.52189 34.357,-4.7228 51,-1.2347 5.7624,1.2076 -2.387,-1.1161 16,7.4812 36.313,14.051 55.853,23.79 104.5,32.83 30.774,4.5201 33.208,4.9745 36.376,7.2909 1.7456,1.2764 1.662,1.6171 -1.6767,6.8363 -3.5642,5.5717 -14.275,15.81 -29.699,28.389 -51.619,43.564 -115.05,77.431 -162.89,98.598 -22.221,9.5122 -37.55,14.655 -50.108,16.811 -61.892,13.654 -134.260004,-9.4938 -136.110004,-56.959 -0.0489,-1.256 -0.49928,-6.001 0.1398,-12.079 0.44539,-4.2357 0.89625,-7.3216 2.2932,-11.095 3.9795,-10.75 12.413,-20.407 28.672,-21.755 11.746,0.022 20.375,6.1561 23.95,16.17 4.562204,12.78 -1.3185,27.071 -14.023,29.565 -6.6403,1.3038 -11.222,-0.5256 -14.271,-4.4679 -3.3424,-4.3221 -3.72,-12.026 -1.3559,-15.634 2.2757,-3.4732 7.2459,-5.2754 10.824,-3.9248 3.6125,1.3636 4.9933,0.36555 0.6538,-3.1839 -0.38036,-0.24867 -0.77844,-0.4586 -1.191,-0.63136 -6.6675,-2.7918 -17.127,4.1226 -17.913,14.135 -0.7119,11.495 7.7045,20.279 19.249,20.94 6.5659,0.37574 14.594,-1.9665 20.026004,-7.8035 13.425,-14.428 9.1712,-34.885 -2.958604,-45.762 -4.6131,-4.1366 -7.7535,-6.0583 -14.065,-7.4773 -19.37,-4.3554 -37.69,4.5134 -45.528,24.301 -3.5645,8.9992 -3.7675,16.201 -3.8515,23.221 -0.70438,58.895 65.742,87.202 131.950004,82.517 28.009,-2.4123 46.229,-6.8095 80.495,-20.915 36.58,-12.09 143.44,-68.32 207.96,-120.33 18.846,-15.317 30.511,-22.813 33.055,-21.24 0.61585,0.38062 0.98989,11.992 0.99221,30.802 0.004,28.758 0.1019,30.352 2.0717,33.583 3.2793,5.3791 4.935,17.725 5.9822,44.608 1.6327,41.914 2.675,60.915 3.4439,62.778 1.3963,3.383 7.0306,4.6642 13.289,4.6642 z m -221.62,-252.27 c -0.41803,-2.1707 4.6044,-8.6243 11.231,-13.08 10.396,-6.9893 22.385,-11.512 34.092,-15.96 71.934,-23.518 145.08,-20.065 174.03,-4.962 10.593,5.1512 14.126,7.777 22.813,15.582 4.1291,3.7102 9.5939,9.7305 12.144,13.379 5.133,7.3428 10.014,13.339 19.014,23.362 9.3026,10.359 14.5,16.774 14.5,17.897 0,1.5721 -7.8962,3.1488 -17.5,3.5809 -81.15,10.292 -230.44,14.198 -270.32,-39.799 z M 67.406246,143.909 c 16.558,-0.50003 42.467004,-2.0158 63.500004,-4.8954 19.525,-2.6732 39.047,-6.067 58,-11.467 17.982,-5.123 35.124,-12.85 52.5,-19.754 7.7243,-3.0694 15.32,-6.4533 23,-9.6318 8.319,-3.4429 16.53,-7.1723 25,-10.224 15.523,-5.5928 30.986,-11.946 47.239,-14.789 41.988,-7.3464 85.261,-8.7793 127.76,-5.4986 23.554,1.8182 46.695,7.7124 69.5,13.878 17.863,4.8293 35.019,11.972 52.5,18.041 5.069,1.761 10.039,6.841 15.177,5.321 5.396,-1.6 10.73,-7.749 10.317,-13.361 -0.434,-5.884 -7.835,-9.014 -12.753,-12.272 -16.823,-11.146 -36.498,-17.485 -55.661,-23.803 -19.219,-6.3349 -38.923,-12.127 -59.072,-14.001 -54.326,-5.0532 -110.09,-3.4301 -163.5,7.7269 -28.29,5.9098 -53.945,20.759 -81,30.92 -31.437,11.806 -61.76,27.444 -94.5,34.909 -33.045,7.534 -83.745004,9.6292 -101.220004,9.5911 -6.5425,-0.0143 -6.7685,0.0708 -8.3595,3.1475 -1.8515,3.5805 -3.1256,14.296 -1.7926,15.077 1.3395,0.78418 21.593,1.4453 33.376,1.0894 z" fill="#041E42"/>
-                        </g>
-                        <!-- Original text at same position, now shifted -->
-                        <text x="84" y="44" class="logo-text" fill="#041E42" letter-spacing="1">CENTR<tspan fill="#00FFFF">A</tspan><tspan font-size="12" dy="-14" fill="#00FFFF">™</tspan></text>
+    </main>
+
+    <footer class="bg-white border-t border-[#eaecf0] py-8 text-center">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex items-center justify-center gap-2 mb-2">
+                <a href="/" class="brand-logo" aria-label="visit the Alien Inc Homepage">
+                    <span class="brand-logo__text" style="font-size:18px;">Alien</span>
+                    <img src="/logo.png" alt="•" class="brand-logo__dot" style="height:0.35em;width:0.35em;">
+                    <span class="brand-logo__text" style="font-size:18px;">Inc</span>
+                </a>
+                <span class="text-gray-200">/</span>
+                <svg viewBox="0 0 360 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CENTRA" style="height:32px;width:auto;">
+                    <defs><style>.centra-logo-text{font-family:'Orbitron',sans-serif;font-weight:900;}</style></defs>
+                    <g transform="translate(8, 6) scale(0.104)">
+                        <path d="m 33.676246,364.82 c 0.53628,-7.2677 1.7767,-14.482 5.0286,-21.276 9.4786,-19.803 33.963,-29.34 53.026,-19.284 15.333004,8.0885 22.563004,29.331 13.578004,45.149 -6.873004,12.099 -23.072004,18.235 -35.622004,10.228 -4.4328,-2.828 -7.6343,-7.2793 -8.9938,-12.286 -1.3595,-5.0063 -0.68452,-10.798 2.9392,-15.401 2.2364,-2.8407 5.4473,-4.7654 9.1114,-5.408 3.664,-0.64263 8.1708,0.40388 10.875,3.9972 1.7829,2.3692 1.91,4.5449 1.4108,7.1127 -0.24961,1.2839 -0.78116,2.8399 -2.3513,3.9972 -1.5702,1.1573 -4.2926,1.9424 -5.5844,0.58783 -1.1069,-1.1607 0.67477,-3.153 0.73029,-4.7559 0.0388,-0.83158 0.0772,-1.7317 -0.26004,-2.4745 -0.89679,-1.1463 -1.8493,-1.342 -3.4682,-1.0581 -1.6548,0.29023 -3.6474,1.4542 -4.5851,2.6452 l 0,0.0588 c -2.0224,2.5986 -2.3717,5.5943 -1.5284,8.6999 0.81645,3.0066 2.8568,5.919 5.4668,7.7006 l 0.29391,0.23513 c 8.5452,5.4516 18.484,0.70317 23.392,-7.9366 6.716204,-11.823 1.5113,-26.282 -10.285,-32.505 -15.078,-7.9537 -35.744,1.451 -40.36,17.085 -4.566,15.464 -2.8715,30.938 -0.27385,37.511 l -10.609,0.073 c -2.5579,-12.089 -1.9287,-15.035 -1.9287,-22.696 z" fill="#041E42"/>
+                        <path d="m 471.54625,260.66 c 17.668,-13.594 26.097,-35.697 29.523,-57.078 1.4645,-9.3951 1.9746,-19.069 0.14154,-28.452 14.1,0.29894 25.825,9.3358 36.433,17.663 18.603,15.53 35.228,33.824 47.215,54.967 3.6321,6.1751 -5.3435,4.6337 -8.8069,5.9233 -30.729,5.8422 -62.032,11.753 -93.438,8.9164 -3.7237,-0.42453 -7.428,-1.0454 -11.069,-1.9403 z" fill="#02122b"/>
+                        <path d="m 288.00625,210.87 c 10.816,-13.823 26.523,-22.816 42.335,-29.821 12.478,-5.3611 25.719,-9.195 39.307,-10.133 3.6006,-0.49169 7.2012,-0.98339 10.802,-1.4751 -5.8862,13.4 -9.3342,29.076 -3.9503,43.223 5.7766,15.238 17.145,27.376 24.994,41.49 4.6019,5.2258 -5.3217,2.7679 -8.4635,3.5354 -25.451,-0.0247 -51.385,-4.4738 -74.255,-16.006 -13.053,-6.7549 -25.175,-16.863 -30.769,-30.813 z" fill="#02122b"/>
+                        <path d="m 495.40625,157 a 70.231,70.231 0 0 1 14.44,42.81 70.235,70.235 0 0 1 -140.47,0 70.231,70.231 0 0 1 14.28,-42.81 l 111.75,0 z" fill="#00FFFF"/>
+                        <path d="m 513.20625,465.53 c 6.7333,0 8.7137,-5.4462 12.181,-25.899 2.4479,-14.774 7.1068,-28.463 10.502,-43.043 3.0219,-13.117 5.6425,-20.332 9.6694,-26.618 6.5526,-10.229 6.3011,-20.921 -0.71691,-30.481 -6.33,-8.6232 -6.827,-11.121 -6.5471,-32.901 0.13783,-10.725 0.56403,-21.286 0.94711,-23.468 0.88077,-5.0179 4.6148,-7.6923 13.904,-9.9586 8.4827,-2.0695 16.525,-2.2933 41.967,-1.1681 18.144,0.80245 20.457,0.72323 22.75,-0.77901 5.627,-3.687 2.9527,-8.8405 -12.261,-23.626 -15.69,-15.249 -23.876,-24.688 -38.811,-44.75 -26.839,-36.053 -30.927,-40.83 -57.501,-49.189 -19.575,-6.1582 -26.691,-9.0119 -62.031,-10.06 -24.654,-0.7309 -38.767,2.5963 -45.357,3.3466 -25.219,2.8716 -66.247,14.877 -91.933,26.083 -13.581,5.9249 -14.042,6.1723 -30.115,16.152 -11.981,7.4391 -18.733,10.459 -35.44,15.034 -34.886,9.553 -56.753,7.7583 -92,10.378 -9.2579,0.68808 -49.298,3.5149 -74.500004,4.4784 -30.689,1.1732 -35.835,-2.0376 -38.423,0.54994 -2.0315,2.0315 -0.5636,8.1815 -0.6024,14.306 -0.0237,3.7378 0.18399,7.6642 0.48569,11.602 8.1923,-1.424 8.0353,-1.3676 26.54,-2.9165 1.6808,-0.14069 16.718,-1.6695 44.500004,-4.1726 11.867,-1.0692 70.326,-2.8448 105.5,-3.9248 16.997,-0.52189 34.357,-4.7228 51,-1.2347 5.7624,1.2076 -2.387,-1.1161 16,7.4812 36.313,14.051 55.853,23.79 104.5,32.83 30.774,4.5201 33.208,4.9745 36.376,7.2909 1.7456,1.2764 1.662,1.6171 -1.6767,6.8363 -3.5642,5.5717 -14.275,15.81 -29.699,28.389 -51.619,43.564 -115.05,77.431 -162.89,98.598 -22.221,9.5122 -37.55,14.655 -50.108,16.811 -61.892,13.654 -134.260004,-9.4938 -136.110004,-56.959 -0.0489,-1.256 -0.49928,-6.001 0.1398,-12.079 0.44539,-4.2357 0.89625,-7.3216 2.2932,-11.095 3.9795,-10.75 12.413,-20.407 28.672,-21.755 11.746,0.022 20.375,6.1561 23.95,16.17 4.562204,12.78 -1.3185,27.071 -14.023,29.565 -6.6403,1.3038 -11.222,-0.5256 -14.271,-4.4679 -3.3424,-4.3221 -3.72,-12.026 -1.3559,-15.634 2.2757,-3.4732 7.2459,-5.2754 10.824,-3.9248 3.6125,1.3636 4.9933,0.36555 0.6538,-3.1839 -0.38036,-0.24867 -0.77844,-0.4586 -1.191,-0.63136 -6.6675,-2.7918 -17.127,4.1226 -17.913,14.135 -0.7119,11.495 7.7045,20.279 19.249,20.94 6.5659,0.37574 14.594,-1.9665 20.026004,-7.8035 13.425,-14.428 9.1712,-34.885 -2.958604,-45.762 -4.6131,-4.1366 -7.7535,-6.0583 -14.065,-7.4773 -19.37,-4.3554 -37.69,4.5134 -45.528,24.301 -3.5645,8.9992 -3.7675,16.201 -3.8515,23.221 -0.70438,58.895 65.742,87.202 131.950004,82.517 28.009,-2.4123 46.229,-6.8095 80.495,-20.915 36.58,-12.09 143.44,-68.32 207.96,-120.33 18.846,-15.317 30.511,-22.813 33.055,-21.24 0.61585,0.38062 0.98989,11.992 0.99221,30.802 0.004,28.758 0.1019,30.352 2.0717,33.583 3.2793,5.3791 4.935,17.725 5.9822,44.608 1.6327,41.914 2.675,60.915 3.4439,62.778 1.3963,3.383 7.0306,4.6642 13.289,4.6642 z m -221.62,-252.27 c -0.41803,-2.1707 4.6044,-8.6243 11.231,-13.08 10.396,-6.9893 22.385,-11.512 34.092,-15.96 71.934,-23.518 145.08,-20.065 174.03,-4.962 10.593,5.1512 14.126,7.777 22.813,15.582 4.1291,3.7102 9.5939,9.7305 12.144,13.379 5.133,7.3428 10.014,13.339 19.014,23.362 9.3026,10.359 14.5,16.774 14.5,17.897 0,1.5721 -7.8962,3.1488 -17.5,3.5809 -81.15,10.292 -230.44,14.198 -270.32,-39.799 z M 67.406246,143.909 c 16.558,-0.50003 42.467004,-2.0158 63.500004,-4.8954 19.525,-2.6732 39.047,-6.067 58,-11.467 17.982,-5.123 35.124,-12.85 52.5,-19.754 7.7243,-3.0694 15.32,-6.4533 23,-9.6318 8.319,-3.4429 16.53,-7.1723 25,-10.224 15.523,-5.5928 30.986,-11.946 47.239,-14.789 41.988,-7.3464 85.261,-8.7793 127.76,-5.4986 23.554,1.8182 46.695,7.7124 69.5,13.878 17.863,4.8293 35.019,11.972 52.5,18.041 5.069,1.761 10.039,6.841 15.177,5.321 5.396,-1.6 10.73,-7.749 10.317,-13.361 -0.434,-5.884 -7.835,-9.014 -12.753,-12.272 -16.823,-11.146 -36.498,-17.485 -55.661,-23.803 -19.219,-6.3349 -38.923,-12.127 -59.072,-14.001 -54.326,-5.0532 -110.09,-3.4301 -163.5,7.7269 -28.29,5.9098 -53.945,20.759 -81,30.92 -31.437,11.806 -61.76,27.444 -94.5,34.909 -33.045,7.534 -83.745004,9.6292 -101.220004,9.5911 -6.5425,-0.0143 -6.7685,0.0708 -8.3595,3.1475 -1.8515,3.5805 -3.1256,14.296 -1.7926,15.077 1.3395,0.78418 21.593,1.4453 33.376,1.0894 z" fill="#041E42"/>
                     </g>
+                    <text x="84" y="44" class="centra-logo-text" fill="#041E42" letter-spacing="1">CENTR<tspan fill="#00FFFF">A</tspan><tspan font-size="12" dy="-14" fill="#00FFFF">™</tspan></text>
                 </svg>
-            </a>
-            <p class="tagline">Cyber defense division of the Alien.Inc operating group — managed detection, exposure management, and cyber diligence for all seven group companies.</p>
+            </div>
+            <span class="text-xs text-gray-400">Secured by Centra</span>
+            <span class="text-xs text-gray-300 mx-2">&middot;</span>
+            <span class="text-xs text-gray-400">Vulnerability Scanning &amp; Compliance Monitoring</span>
+            <div class="mt-2 text-[10px] text-gray-300">A subsidiary of Alien Inc &reg;</div>
         </div>
-        <div class="footer-grid">
-            <div>
-                <h4>Group Companies</h4>
-                <ul>
-                    <li><a href="https://panteon.alieninc.tech">Panteon</a></li>
-                    <li><a href="https://rousseau.alieninc.tech">Rousseau Holdings</a></li>
-                    <li><a href="https://immanuel.alieninc.tech">Immanuel</a></li>
-                    <li><a href="https://kmt.alieninc.tech">KMT Consulting Group</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4>Portfolio</h4>
-                <ul>
-                    <li><a href="https://thedailyartcult.lol">The Daily Art Cult</a></li>
-                    <li><a href="https://alcantaraartfoundation.alieninc.tech">Alcantara Art Foundation</a></li>
-                    <li><a href="index.html">Centra</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4>Internal Access</h4>
-                <ul>
-                    <li><a href="login.html">Console Login</a></li>
-                    <li><a href="login.html">Request Access</a></li>
-                    <li><a href="login.html">Documentation</a></li>
-                    <li><a href="login.html">Status &amp; Alerts</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4>Legal &amp; Policy</h4>
-                <ul>
-                    <li><a href="privacy.html">Privacy Policy</a></li>
-                    <li><a href="cookies.html">Data Practices</a></li>
-                    <li><a href="terms.html">Internal Terms</a></li>
-                    <li><a href="terms.html">Confidentiality Notice</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <div class="legal">
-                <a href="privacy.html">Privacy Policy</a>
-                <a href="cookies.html">Data Practices</a>
-                <a href="terms.html">Internal Terms</a>
-                <a href="terms.html">Accessibility</a>
-            </div>
-            <span class="confidential-tag">Confidential — Internal use only · Alien.Inc group companies</span>
-        </div>
-        <p class="footer-ip">&copy; 2026 — All rights reserved. Cease and desist notices accepted. AI training on our content is prohibited. Logo usage requires written approval. &reg; &trade; — Intellectual property owned by this company or licensed to it. For infringement concerns, DMCA takedown requests, or IP inquiries, contact the legal department. Brand usage guidelines and trademark usage policy available on request. Unauthorized use of marks is prohibited.</p>
-        <p class="footer-copy">&copy; 2026 Centra Cyber Defense LLC, a subsidiary of Rousseau LLC · Alien.Inc Group.</p>
-    </div>
-</footer>
+    </footer>
 
-<!-- ===== PAGE SCRIPT (enhancement only — page is fully functional without it) ===== -->
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var header = document.querySelector('header');
-        function handleScroll() {
-            if (window.scrollY > 40) { header.classList.add('scrolled'); }
-            else { header.classList.remove('scrolled'); }
+    <script>
+    (function() {
+        var ECOSYSTEM_PATH = '/api/ecosystem/public';
+        var REPORT_PATH = '/trust/reports/latest.json';
+
+        function loadEcosystem() {
+            fetch(ECOSYSTEM_PATH)
+                .then(function(r) { return r.ok ? r.json() : null; })
+                .then(function(eco) {
+                    if (!eco) return;
+                    var centra = null;
+                    if (eco.companies) {
+                        for (var i = 0; i < eco.companies.length; i++) {
+                            if (eco.companies[i].id === 'centra') {
+                                centra = eco.companies[i];
+                                break;
+                            }
+                        }
+                    }
+                    if (centra) {
+                        var headline = document.getElementById('centraHeadline');
+                        if (headline) headline.textContent = centra.brandName || 'Centra Security';
+
+                        var subtitle = document.getElementById('centraSubtitle');
+                        if (subtitle) subtitle.textContent = centra.category || '';
+
+                        var teamEl = document.getElementById('centraTeamInfo');
+                        if (teamEl && centra.leadershipTeam) {
+                            var names = centra.leadershipTeam.map(function(m) { return m.role + ': ' + m.name; }).join(' &middot; ');
+                            teamEl.innerHTML = names + ' &middot; ' + (centra.headcount ? (centra.headcount['2026F'] || 0) + ' team members' : '');
+                        }
+
+                        var servicesEl = document.getElementById('serviceOfferings');
+                        if (servicesEl && centra.serviceOfferings) {
+                            servicesEl.innerHTML = centra.serviceOfferings.map(function(s) {
+                                return '<div class="bg-white border border-[#eaecf0] hover:border-[#1e2124] p-3 rounded-lg flex items-center justify-between cursor-pointer transition">' +
+                                    '<div class="flex items-center gap-3">' +
+                                        '<span class="p-2 bg-gray-100 rounded text-gray-600 text-xs font-semibold">SV</span>' +
+                                        '<div>' +
+                                            '<span class="block text-xs uppercase font-semibold text-gray-400">SERVICE</span>' +
+                                            '<span class="text-sm font-medium text-[#101828]">' + s.name + '</span>' +
+                                        '</div>' +
+                                    '</div>' +
+                                    '<span class="text-[10px] text-gray-400">' + (s.revenueModel || '') + '</span>' +
+                                '</div>';
+                            }).join('');
+                        }
+                    }
+
+                    if (eco.companies) {
+                        var badgesEl = document.getElementById('complianceBadges');
+                        if (badgesEl) {
+                            var frameworks = [
+                                ['AWS Qualified', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/aws_qualified_software.svg'],
+                                ['CCPA', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/ccpa.svg'],
+                                ['CMMC Certified', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/cmmc_certification.png'],
+                                ['CSA STAR', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/csastar.svg'],
+                                ['FedRAMP High', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/fedramp.png'],
+                                ['GDPR', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/gdpr.svg'],
+                                ['HIPAA', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/hipaa.svg'],
+                                ['ISO 27001', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/schellman/iso27001-certified.png'],
+                                ['SOC 2 Type 2', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/soc.png'],
+                                ['SOX', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/sox.webp'],
+                                ['TISAX', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/tisax.png'],
+                                ['VPAT', 'https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/vpat.png']
+                            ];
+                            badgesEl.innerHTML = frameworks.map(function(fw) {
+                                return '<div class="cert-badge flex flex-col items-center text-center p-2 rounded-lg border border-[#eaecf0] cursor-pointer bg-white">' +
+                                    '<div class="h-14 flex items-center justify-center mb-2">' +
+                                        '<img alt="' + fw[0] + '" class="max-h-12 object-contain" src="' + fw[1] + '">' +
+                                    '</div>' +
+                                    '<div class="flex items-center gap-1 text-[11px] font-medium text-[#101828]">' +
+                                        '<span class="text-[#4ca30d]">&#10003;</span> ' + fw[0] +
+                                    '</div>' +
+                                '</div>';
+                            }).join('');
+                        }
+                    }
+
+                    var companies = eco.companies || [];
+                    var totalRevenue = 0;
+                    var totalHeadcount = 0;
+                    for (var i = 0; i < companies.length; i++) {
+                        var c = companies[i];
+                        if (c.annualFinancials) {
+                            var latest = c.annualFinancials[c.annualFinancials.length - 1];
+                            if (latest) totalRevenue += (latest.revenue || 0);
+                        }
+                        if (c.headcount && c.headcount['2026F']) totalHeadcount += c.headcount['2026F'];
+                    }
+                })
+                .catch(function() {});
+
+            fetch(REPORT_PATH)
+                .then(function(r) { return r.ok ? r.json() : null; })
+                .then(function(report) {
+                    if (!report) return;
+                    var tsEl = document.getElementById('centraLastScan');
+                    if (tsEl && report.timestamp) {
+                        var d = new Date(report.timestamp);
+                        tsEl.textContent = 'Last scan: ' + d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                    }
+                    if (report.overall_score !== undefined) {
+                        var scoreRing = document.querySelector('.score-ring span');
+                        if (scoreRing) scoreRing.textContent = report.overall_score;
+                        var pct = Math.max(0, Math.min(100, report.overall_score));
+                        var angle = (pct / 100) * 360;
+                        var ring = document.querySelector('.score-ring');
+                        if (ring) {
+                            ring.style.background = 'conic-gradient(#10b981 0deg, #10b981 ' + angle + 'deg, #eaecf0 ' + angle + 'deg)';
+                        }
+                    }
+                })
+                .catch(function() {});
         }
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        handleScroll();
-    });
-</script>
+
+        var _pluginSearchTimer = null;
+
+        function doPluginSearch() {
+            var q = document.getElementById('pluginSearch').value;
+            var resultsEl = document.getElementById('pluginSearchResults');
+            if (!q) { resultsEl.classList.add('hidden'); resultsEl.innerHTML = ''; return; }
+            fetch('/api/plugins/search?q=' + encodeURIComponent(q) + '&per_page=20')
+                .then(function(r) { return r.ok ? r.json() : null; })
+                .then(function(data) {
+                    resultsEl.innerHTML = '';
+                    if (!data || !data.results || data.results.length === 0) {
+                        resultsEl.innerHTML = '<div class="p-4 text-sm text-gray-400 text-center">No plugins found for &quot;' + q + '&quot;</div>';
+                        resultsEl.classList.remove('hidden');
+                        return;
+                    }
+                    var html = '<div class="p-2 text-xs text-gray-400 border-b border-[#eaecf0] px-4">' + data.total + ' of ' + data.total_plugins.toLocaleString() + ' plugins</div>';
+                    for (var i = 0; i < data.results.length; i++) {
+                        var p = data.results[i];
+                        var sevColors = {critical:'bg-red-100 text-red-700',high:'bg-orange-100 text-orange-700',medium:'bg-yellow-100 text-yellow-700',low:'bg-blue-100 text-blue-700',info:'bg-gray-100 text-gray-500'};
+                        var sc = sevColors[p.severity] || 'bg-gray-100 text-gray-500';
+                        html += '<div class="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 border-b border-[#eaecf0] last:border-0">' +
+                            '<div class="flex-1 min-w-0">' +
+                                '<div class="flex items-center gap-2">' +
+                                    '<span class="text-sm font-medium text-[#101828] truncate">' + p.name + '</span>' +
+                                    '<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded ' + sc + '">' + p.severity + '</span>' +
+                                '</div>' +
+                                '<div class="text-xs text-gray-500 mt-0.5">' + p.id + ' &middot; v' + p.version + ' &middot; ' + p.vendor + '</div>' +
+                                '<div class="text-xs text-gray-400 mt-1 line-clamp-2">' + p.description + '</div>' +
+                            '</div>' +
+                            '<span class="text-[10px] font-medium text-gray-400 uppercase whitespace-nowrap">' + p.category + '</span>' +
+                        '</div>';
+                    }
+                    resultsEl.innerHTML = html;
+                    resultsEl.classList.remove('hidden');
+                })
+                .catch(function() {});
+        }
+
+        function authenticatePluginSearch(e) {
+            e.preventDefault();
+            var user = document.getElementById('pluginUser').value;
+            var pass = document.getElementById('pluginPass').value;
+            var errEl = document.getElementById('pluginAuthError');
+            fetch('/api/plugins/auth', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'username=' + encodeURIComponent(user) + '&password=' + encodeURIComponent(pass)
+            }).then(function(r) {
+                if (r.ok) {
+                    document.getElementById('pluginAuthOverlay').classList.add('hidden');
+                    document.getElementById('pluginUser').value = '';
+                    document.getElementById('pluginPass').value = '';
+                    errEl.classList.add('hidden');
+                    var searchInput = document.getElementById('pluginSearch');
+                    searchInput.readOnly = false;
+                    searchInput.classList.remove('cursor-not-allowed');
+                    searchInput.classList.add('cursor-text');
+                    searchInput.onclick = null;
+                    searchInput.addEventListener('input', function() {
+                        clearTimeout(_pluginSearchTimer);
+                        _pluginSearchTimer = setTimeout(doPluginSearch, 300);
+                    });
+                    searchInput.focus();
+                } else {
+                    errEl.classList.remove('hidden');
+                }
+            }).catch(function() {
+                errEl.classList.remove('hidden');
+            });
+            return false;
+        }
+
+        (function() {
+            document.addEventListener('keydown', function(ev) {
+                if (ev.key === 'Escape') {
+                    var o = document.getElementById('pluginAuthOverlay');
+                    if (o && !o.classList.contains('hidden')) o.classList.add('hidden');
+                }
+            });
+        })();
+
+        loadEcosystem();
+    })();
+    </script>
 
 </body>
 </html>

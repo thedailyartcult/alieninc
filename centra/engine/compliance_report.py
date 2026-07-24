@@ -1,0 +1,288 @@
+"""
+Centra Compliance Report Generator
+====================================
+Runs a full compliance assessment and generates structured reports.
+
+Produces:
+  - Per-framework control status reports
+  - Evidence artifacts for each verified control
+  - Summary dashboard data
+  - JSON report for API consumption
+"""
+import json
+import os
+import sys
+import asyncio
+import time
+import logging
+import sqlite3
+from pathlib import Path
+from datetime import datetime, timezone
+
+logger = logging.getLogger('centra.compliance')
+
+ENGINE_DIR = Path(__file__).parent
+CENTRA_DIR = ENGINE_DIR.parent
+PROJECT_ROOT = CENTRA_DIR.parent
+sys.path.insert(0, str(ENGINE_DIR))
+sys.path.insert(0, str(CENTRA_DIR))
+
+from compliance_mapper import (
+    generate_compliance_report,
+    get_framework_summary,
+    CONTROLS,
+)
+from plugins.plugin_loader import load_all_plugins
+from database import Database
+from ws_manager import ConnectionManager
+from engine import ScanEngine
+
+
+REPORTS_DIR = PROJECT_ROOT / 'trust' / 'reports'
+LATEST_REPORT = REPORTS_DIR / 'latest'
+SCAN_REUSE_MINUTES = 30
+
+
+async def run_compliance_scan(company_id: str = 'alieninc', force: bool = False) -> dict:
+    """
+    Run a full compliance scan and generate reports.
+
+    Args:
+        company_id: Company to scan
+        force: If True, always run a new scan even if a recent one exists
+
+    Returns:
+        dict with scan_id, timestamp, framework_summary, and overall_score
+    """
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    plugins = load_all_plugins(Path(CENTRA_DIR / 'plugins'))
+    _validate_plugin_ids(plugins)
+
+    if not force:
+        existing = _find_recent_scan(company_id, SCAN_REUSE_MINUTES)
+        if existing:
+            logger.info(f'Reusing recent scan {existing} (within {SCAN_REUSE_MINUTES}min)')
+            return _generate_report_from_scan(existing, plugins)
+
+    db = Database(ENGINE_DIR / 'centra.db')
+    await db.init()
+    await db.ensure_company(company_id, 'Alien Inc')
+
+    manager = ConnectionManager()
+    engine = ScanEngine(db, manager, plugins)
+
+    targets = [
+        {'host': '127.0.0.1', 'name': 'Alien Inc (HTTPS)', 'ports': [443]},
+    ]
+
+    scan_id = await db.create_scan(company_id, 1, ['127.0.0.1'])
+    logger.info(f'Starting compliance scan: {scan_id}')
+
+    await engine.run_scan(scan_id, company_id, 1, targets)
+
+    result = _generate_report_from_scan(scan_id, plugins)
+    logger.info(
+        f'Compliance scan complete: {scan_id} | '
+        f'Score: {result["overall_score"]}% | '
+        f'Controls: {result["total_controls_verified"]}/{result["total_controls_tested"]} verified'
+    )
+
+    return result
+
+
+def _validate_plugin_ids(plugins):
+    """Validate that all plugin IDs referenced in the mapper actually exist."""
+    actual_ids = {p.PLUGIN_ID for p in plugins}
+    mapper_ids = set()
+    for fw_data in CONTROLS.values():
+        for ctrl_name, pids in fw_data['controls'].values():
+            mapper_ids.update(pids)
+
+    missing = mapper_ids - actual_ids
+    if missing:
+        logger.warning(f'Compliance mapper references plugins that do not exist: {sorted(missing)}')
+
+    unused = actual_ids - mapper_ids
+    if unused:
+        logger.info(f'Plugins not mapped to any compliance control: {sorted(unused)}')
+
+
+def _find_recent_scan(company_id: str, within_minutes: int) -> str | None:
+    """Check if a recent scan exists for the company."""
+    db_path = ENGINE_DIR / 'centra.db'
+    if not db_path.exists():
+        return None
+
+    conn = sqlite3.connect(str(db_path))
+    cur = conn.cursor()
+    cutoff = time.time() - (within_minutes * 60)
+    cur.execute(
+        'SELECT id FROM scans WHERE company_id=? AND status=? AND created_at>? '
+        'ORDER BY created_at DESC LIMIT 1',
+        (company_id, 'completed', cutoff)
+    )
+    row = cur.fetchone()
+    conn.close()
+    return row[0] if row else None
+
+
+def _generate_report_from_scan(scan_id: str, plugins) -> dict:
+    """Generate compliance report from an existing scan's findings."""
+    db_path = ENGINE_DIR / 'centra.db'
+    conn = sqlite3.connect(str(db_path))
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    cur.execute(
+        'SELECT plugin_id, plugin_name, severity, description, evidence, status '
+        'FROM findings WHERE scan_id=?',
+        (scan_id,)
+    )
+    findings = cur.fetchall()
+
+    failed_plugins = {}
+    passed_plugins = {}
+
+    for row in findings:
+        pid = row['plugin_id']
+        status = row['status'] if 'status' in row.keys() else ('fail' if row['severity'] != 'info' else 'pass')
+        
+        if status == 'fail':
+            failed_plugins[pid] = {
+                'vulnerable': True,
+                'severity': row['severity'],
+                'evidence': row['evidence'],
+                'description': row['description'],
+            }
+        else:
+            passed_plugins[pid] = {
+                'vulnerable': False,
+                'evidence': row['evidence'] or 'All checks passed',
+                'description': row['description'] or 'No issues detected',
+            }
+
+    all_plugin_ids = {p.PLUGIN_ID for p in plugins}
+    plugins_with_results = set(failed_plugins.keys()) | set(passed_plugins.keys())
+    plugins_without_results = all_plugin_ids - plugins_with_results
+
+    for pid in plugins_without_results:
+        passed_plugins[pid] = {
+            'vulnerable': False,
+            'evidence': 'Plugin did not execute on scanned ports — not verified by this scan',
+            'not_tested': True,
+        }
+
+    scan_results = {**failed_plugins, **passed_plugins}
+    conn.close()
+
+    reports = generate_compliance_report(scan_results)
+    summary = get_framework_summary(reports)
+
+    total_verified = sum(r.verified for r in reports)
+    total_controls = sum(len(r.controls) for r in reports)
+    overall_score = round(total_verified / total_controls * 100, 1) if total_controls > 0 else 0
+
+    timestamp = datetime.now(timezone.utc).isoformat()
+
+    report_data = {
+        'scan_id': scan_id,
+        'timestamp': timestamp,
+        'overall_score': overall_score,
+        'total_controls_verified': total_verified,
+        'total_controls_tested': total_controls,
+        'framework_summary': summary,
+        'frameworks': {},
+    }
+
+    for r in reports:
+        report_data['frameworks'][r.framework_id] = {
+            'name': r.framework_name,
+            'score': r.score,
+            'status': summary[r.framework_id]['status'],
+            'controls': [
+                {
+                    'control_id': c.control_id,
+                    'control_name': c.control_name,
+                    'status': c.status,
+                    'plugins': c.plugins,
+                    'evidence': c.evidence,
+                    'notes': c.notes,
+                }
+                for c in r.controls
+            ],
+        }
+
+    _save_report(report_data)
+
+    return {
+        'scan_id': scan_id,
+        'timestamp': timestamp,
+        'overall_score': overall_score,
+        'total_controls_verified': total_verified,
+        'total_controls_tested': total_controls,
+        'framework_summary': summary,
+    }
+
+
+def _save_report(report_data: dict):
+    """Save report to disk — latest + timestamped archive."""
+    latest_json = LATEST_REPORT.with_suffix('.json')
+    latest_json.write_text(json.dumps(report_data, indent=2, default=str))
+
+    ts = report_data['timestamp'].replace(':', '-').replace('.', '-')
+    archive = REPORTS_DIR / f'compliance-{ts}.json'
+    archive.write_text(json.dumps(report_data, indent=2, default=str))
+
+    logger.info(f'Report saved: {latest_json}')
+
+
+def load_latest_report() -> dict | None:
+    """Load the most recent compliance report."""
+    latest = LATEST_REPORT.with_suffix('.json')
+    if latest.exists():
+        return json.loads(latest.read_text())
+    return None
+
+
+def get_compliance_status() -> dict:
+    """Get a lightweight compliance status (for dashboard rendering)."""
+    report = load_latest_report()
+    if not report:
+        return {
+            'status': 'no_data',
+            'message': 'No compliance scan has been run yet.',
+        }
+
+    frameworks = []
+    for fw_id, fw_data in report['framework_summary'].items():
+        frameworks.append({
+            'id': fw_id,
+            'name': fw_data['name'],
+            'score': fw_data['score'],
+            'status': fw_data['status'],
+            'verified': fw_data['verified'],
+            'total': fw_data['total_controls'],
+        })
+
+    frameworks.sort(key=lambda f: f['score'], reverse=True)
+
+    return {
+        'status': 'active',
+        'scan_id': report['scan_id'],
+        'timestamp': report['timestamp'],
+        'overall_score': report['overall_score'],
+        'controls_verified': report['total_controls_verified'],
+        'controls_tested': report['total_controls_tested'],
+        'frameworks': frameworks,
+    }
+
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+
+    async def main():
+        result = await run_compliance_scan(force=True)
+        print(json.dumps(result, indent=2))
+
+    asyncio.run(main())

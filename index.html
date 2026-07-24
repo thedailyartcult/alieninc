@@ -772,6 +772,8 @@
 </head>
 
 <body>
+  <a href="#main-content" class="skip-nav" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;padding:10px 20px;background:#3b82f6;color:#fff;text-decoration:none;font-weight:600;">Skip to main content</a>
+  <main id="main-content" role="main">
 
   <div id="container">
     
@@ -1071,6 +1073,12 @@
              <li><a href="#operating-system" class="footer__corporate-link">Operating Model</a></li>
              <li><a href="#foundation" class="footer__corporate-link">Foundation</a></li>
              <li><a href="#sitemap" class="footer__corporate-link">Sitemap</a></li>
+             <li><a href="privacy.html" class="footer__corporate-link">Privacy Policy</a></li>
+             <li><a href="cookies.html" class="footer__corporate-link">Cookie-Policy</a></li>
+             <li><a href="#do-not-sell" class="footer__corporate-link" id="do-not-sell-link">Your Privacy Choices</a></li>
+             <li><a href="#data-request" class="footer__corporate-link" id="data-request-link">Access My Data</a></li>
+             <li><a href="#data-deletion" class="footer__corporate-link" id="data-deletion-link">Delete My Data</a></li>
+             <li><a href="compliance.html" class="footer__corporate-link">Compliance</a></li>
            </ul>
          </div>
 
@@ -1104,11 +1112,11 @@
       <form method="POST" action="/api/login" class="eco-login-form">
         <div class="eco-login-form__field">
           <label for="eco-user">Email</label>
-          <input type="email" name="user" id="eco-user" autocomplete="email" required>
+          <input type="email" name="user" id="eco-user" autocomplete="email" required aria-label="Email address">
         </div>
         <div class="eco-login-form__field">
           <label for="eco-pass">Password</label>
-          <input type="password" name="password" id="eco-pass" autocomplete="current-password" required>
+          <input type="password" name="password" id="eco-pass" autocomplete="current-password" required aria-label="Password">
         </div>
         <div class="eco-login-form__error" style="display:none;color:#ef4444;font-size:0.8rem;margin-bottom:0.6rem;"></div>
         <button type="submit" class="eco-login-form__btn">Log in</button>
@@ -1175,6 +1183,43 @@
       var overlay = document.getElementById('ecosystem-login-overlay');
       if (overlay && overlay.style.display !== 'none') overlay.style.display = 'none';
       EcosystemRender.bindAll(data);
+    });
+  })();
+  </script>
+
+  <!-- Cookie Consent Banner (GDPR/CCPA/ePrivacy) -->
+  <div id="cookie-consent-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1a1a2e;color:#fff;padding:20px;z-index:9999;box-shadow:0 -4px 12px rgba(0,0,0,0.3);">
+    <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:15px;">
+      <div style="flex:1;min-width:300px;">
+        <strong style="font-size:16px;">Your Privacy Matters</strong>
+        <p style="margin:8px 0 0 0;font-size:14px;line-height:1.5;">
+          We use cookies to enhance your experience and analyze site traffic. By continuing, you agree to our 
+          <a href="privacy.html" style="color:#3b82f6;text-decoration:underline;">Privacy Policy</a> and 
+          <a href="cookies.html" style="color:#3b82f6;text-decoration:underline;">Cookie Policy</a>.
+          California residents: <a href="#do-not-sell" style="color:#3b82f6;text-decoration:underline;">Do Not Sell My Info</a>.
+        </p>
+      </div>
+      <div style="display:flex;gap:10px;flex-shrink:0;">
+        <button id="cookie-reject-btn" style="padding:10px 20px;background:transparent;border:1px solid #fff;color:#fff;border-radius:6px;cursor:pointer;font-size:14px;">Reject</button>
+        <button id="cookie-accept-btn" style="padding:10px 20px;background:#3b82f6;border:none;color:#fff;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;">Accept All</button>
+      </div>
+    </div>
+  </div>
+  <script>
+  (function() {
+    var banner = document.getElementById('cookie-consent-banner');
+    var acceptBtn = document.getElementById('cookie-accept-btn');
+    var rejectBtn = document.getElementById('cookie-reject-btn');
+    if (!localStorage.getItem('cookie-consent')) {
+      banner.style.display = 'block';
+    }
+    acceptBtn.addEventListener('click', function() {
+      localStorage.setItem('cookie-consent', 'accepted');
+      banner.style.display = 'none';
+    });
+    rejectBtn.addEventListener('click', function() {
+      localStorage.setItem('cookie-consent', 'rejected');
+      banner.style.display = 'none';
     });
   })();
   </script>

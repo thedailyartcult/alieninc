@@ -12,7 +12,7 @@ Real references:
   Nessus Plugin 10151 — Web Server HTTP Header Information Disclosure
   Nessus Plugin 48204 — Apache Tomcat Default Error Page Information Disclosure
 """
-import asyncio, re
+import asyncio, re, ssl
 
 from plugins import NaslPlugin, PluginResult
 
@@ -57,16 +57,27 @@ class BotErrorDisclosure(NaslPlugin):
 
     async def _send_raw(self, target, port, method, path, ua, timeout=8):
         try:
-            reader, writer = await asyncio.wait_for(
-                asyncio.open_connection(target, port), timeout=timeout
-            )
+            host_header = target
+            if target in ('127.0.0.1', 'localhost', '::1'):
+                host_header = 'alieninc.tech'
+            if port == 443:
+                ssl_ctx = ssl.create_default_context()
+                ssl_ctx.check_hostname = False
+                ssl_ctx.verify_mode = ssl.CERT_NONE
+                reader, writer = await asyncio.wait_for(
+                    asyncio.open_connection(target, port, ssl=ssl_ctx), timeout=timeout
+                )
+            else:
+                reader, writer = await asyncio.wait_for(
+                    asyncio.open_connection(target, port), timeout=timeout
+                )
         except Exception:
             return ('ERROR', {}, '')
 
         try:
             req = (
                 f'{method} {path} HTTP/1.1\r\n'
-                f'Host: {target}\r\n'
+                f'Host: {host_header}\r\n'
                 f'User-Agent: {ua}\r\n'
                 f'Connection: close\r\n'
                 f'\r\n'
@@ -130,6 +141,10 @@ class BotErrorDisclosure(NaslPlugin):
                     continue
 
                 # Check response headers for technology disclosure
+                # Skip checks for 400 responses (nginx early rejection for malformed requests)
+                if '400' in status:
+                    await asyncio.sleep(0.05)
+                    continue
                 server_val = headers.get('server', '')
                 # Only flag real technology servers, not custom/anonymized names
                 real_servers = r'(?:Apache|nginx|IIS|Tomcat|Jetty|Gunicorn|uWSGI|' \

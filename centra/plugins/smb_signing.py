@@ -30,6 +30,8 @@ class SmbSigning(NaslPlugin):
     PORTS = [445, 139]
 
     async def check_target(self, target: str, port: int | None = 445) -> list[PluginResult]:
+        if port not in (445, 139):
+            return []
         port = port or 445
 
         try:

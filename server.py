@@ -45,6 +45,10 @@ SUBDOMAIN_ROOTS = {
 _cache = {'data': None, 'ts': 0, 'lock': threading.Lock()}
 CACHE_TTL = 21600  # 6 hours
 
+_rate_limit = {'attempts': {}, 'lock': threading.Lock()}
+RATE_LIMIT_MAX = 10
+RATE_LIMIT_WINDOW = 60
+
 COMPANIES = [
     {'ticker': 'BRK-B',    'name': 'Berkshire Hathaway', 'industry': 'Conglomerate',                'hq': 'Omaha, Nebraska',     'founded': 1969, 'note': 'Diversified conglomerate — closest model'},
     {'ticker': '005930.KS', 'name': 'Samsung Electronics', 'industry': 'Technology / Electronics',   'hq': 'Suwon, South Korea',  'founded': 1938, 'note': 'Largest Korean chaebol'},
@@ -691,6 +695,8 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-Type', 'text/html; charset=utf-8')
         self.send_header('Content-Length', str(len(body)))
+        if self.path in ('/pxpadmin/bin/authform.cgi', '/api/login'):
+            self._add_rate_limit_headers()
         self.end_headers()
         sys.stderr.write('[BOT] %s — %s (%s)\n' % (
             self.address_string(), self.path, label,
@@ -826,6 +832,26 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_POST(self):
         path = self.path.split('?', 1)[0].split('#', 1)[0]
+        auth_paths = ('/pxpadmin/bin/authform.cgi', '/api/login')
+        if path in auth_paths:
+            ip = self.client_address[0] if self.client_address else 'unknown'
+            now = time.time()
+            with _rate_limit['lock']:
+                if ip not in _rate_limit['attempts']:
+                    _rate_limit['attempts'][ip] = []
+                _rate_limit['attempts'][ip] = [t for t in _rate_limit['attempts'][ip] if now - t < RATE_LIMIT_WINDOW]
+                count = len(_rate_limit['attempts'][ip])
+                if count >= RATE_LIMIT_MAX:
+                    self.send_response(429)
+                    self.send_header('Content-Type', 'application/json')
+                    self.send_header('X-RateLimit-Limit', str(RATE_LIMIT_MAX))
+                    self.send_header('X-RateLimit-Remaining', '0')
+                    self.send_header('X-RateLimit-Reset', str(int(now + RATE_LIMIT_WINDOW)))
+                    self.send_header('Retry-After', str(RATE_LIMIT_WINDOW))
+                    self.end_headers()
+                    self.wfile.write(b'{"error":"rate limit exceeded"}')
+                    return
+                _rate_limit['attempts'][ip].append(now)
         if path == '/pxpadmin/bin/authform.cgi':
             self._handle_secure_auth()
             return
@@ -929,13 +955,13 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         except Exception:
             form = {}
         user = (form.get('user', [''])[0] or '').strip()
-        password = form.get('password', [''])[0] or ''
-        # Optional post-auth redirect; default to root (safe for any host).
+        password = (form.get('password', [''])[0] or '')
         default_redirect = '/'
         redirect = _safe_redirect(form.get('next', [''])[0]) or default_redirect
         if verify_secure_credentials(user, password):
             token = _issue_secure_session(user)
             self.send_response(302)
+            self._add_rate_limit_headers()
             self.send_header('Location', redirect)
             domain = self.headers.get('Host', '').split(':')[0].lower()
             base_domain = '.alieninc.tech'
@@ -1299,11 +1325,49 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         except Exception as e:
             self._send_json({"error": str(e)}, 500)
 
+    def _check_rate_limit(self):
+        ip = self.client_address[0] if self.client_address else 'unknown'
+        now = time.time()
+        with _rate_limit['lock']:
+            if ip not in _rate_limit['attempts']:
+                _rate_limit['attempts'][ip] = []
+            _rate_limit['attempts'][ip] = [t for t in _rate_limit['attempts'][ip] if now - t < RATE_LIMIT_WINDOW]
+            count = len(_rate_limit['attempts'][ip])
+            _rate_limit['attempts'][ip].append(now)
+            remaining = max(0, RATE_LIMIT_MAX - count - 1)
+            self.send_header('X-RateLimit-Limit', str(RATE_LIMIT_MAX))
+            self.send_header('X-RateLimit-Remaining', str(remaining))
+            self.send_header('X-RateLimit-Reset', str(int(now + RATE_LIMIT_WINDOW)))
+            if count >= RATE_LIMIT_MAX:
+                self.send_header('Retry-After', str(RATE_LIMIT_WINDOW))
+                return False
+        return True
+
+    def _add_rate_limit_headers(self):
+        ip = self.client_address[0] if self.client_address else 'unknown'
+        now = time.time()
+        with _rate_limit['lock']:
+            attempts = _rate_limit['attempts'].get(ip, [])
+            remaining = max(0, RATE_LIMIT_MAX - len(attempts))
+        self.send_header('X-RateLimit-Limit', str(RATE_LIMIT_MAX))
+        self.send_header('X-RateLimit-Remaining', str(remaining))
+        self.send_header('X-RateLimit-Reset', str(int(now + RATE_LIMIT_WINDOW)))
+
     def _send_json(self, obj, status=200):
         body = json.dumps(obj, default=str).encode('utf-8')
         self.send_response(status)
         self.send_header('Content-Type', 'application/json; charset=utf-8')
         self.send_header('Content-Length', str(len(body)))
+        path = self.path.split('?', 1)[0].split('#', 1)[0]
+        if path in ('/pxpadmin/bin/authform.cgi', '/api/login'):
+            ip = self.client_address[0] if self.client_address else 'unknown'
+            now = time.time()
+            with _rate_limit['lock']:
+                attempts = _rate_limit['attempts'].get(ip, [])
+                remaining = max(0, RATE_LIMIT_MAX - len(attempts))
+            self.send_header('X-RateLimit-Limit', str(RATE_LIMIT_MAX))
+            self.send_header('X-RateLimit-Remaining', str(remaining))
+            self.send_header('X-RateLimit-Reset', str(int(now + RATE_LIMIT_WINDOW)))
         self.end_headers()
         try:
             self.wfile.write(body)

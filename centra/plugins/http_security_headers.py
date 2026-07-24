@@ -5,6 +5,7 @@ Checks for missing critical HTTP security headers.
 Real CVEs: CVE-2024-38856 (clickjacking), CVE-2023-44487 (HTTP/2 rapid reset)
 """
 import asyncio
+import ssl
 
 from plugins import NaslPlugin, PluginResult
 
@@ -45,11 +46,32 @@ class HttpSecurityHeaders(NaslPlugin):
 
         try:
             scheme = 'https' if port == 443 else 'http'
-            reader, writer = await asyncio.wait_for(
-                asyncio.open_connection(target, port), timeout=5
-            )
+            if port == 443:
 
-            req = f'GET / HTTP/1.1\r\nHost: {target}\r\nUser-Agent: Centra/1.0\r\nConnection: close\r\n\r\n'
+                ssl_context = ssl.create_default_context()
+
+                ssl_context.check_hostname = False
+
+                ssl_context.verify_mode = ssl.CERT_NONE
+
+                reader, writer = await asyncio.wait_for(
+
+                    asyncio.open_connection(target, port, ssl=ssl_context), timeout=5
+
+                )
+
+            else:
+
+                reader, writer = await asyncio.wait_for(
+
+                    asyncio.open_connection(target, port), timeout=5
+
+                )
+
+            host_header = target
+            if target in ('127.0.0.1', 'localhost', '::1'):
+                host_header = 'alieninc.tech'
+            req = f'GET / HTTP/1.1\r\nHost: {host_header}\r\nUser-Agent: Centra/1.0\r\nConnection: close\r\n\r\n'
             writer.write(req.encode())
             await writer.drain()
 

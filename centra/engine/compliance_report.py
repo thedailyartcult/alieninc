@@ -229,6 +229,7 @@ def _generate_report_from_scan(scan_id: str, plugins) -> dict:
         }
 
     _save_report(report_data)
+    _detect_drift(report_data)
 
     return {
         'scan_id': scan_id,
@@ -250,6 +251,65 @@ def _save_report(report_data: dict):
     archive.write_text(json.dumps(report_data, indent=2, default=str))
 
     logger.info(f'Report saved: {latest_json}')
+
+
+def _detect_drift(new_report: dict):
+    """Compare new report with previous reports and log any regressions."""
+    prev_report = _get_previous_report(new_report['scan_id'])
+    if not prev_report:
+        logger.info('No previous report found — baseline established')
+        return
+
+    old_score = prev_report.get('overall_score', 0)
+    new_score = new_report.get('overall_score', 0)
+
+    if new_score < old_score:
+        logger.warning(f'DRIFT DETECTED: Score dropped from {old_score}% to {new_score}%')
+        _log_control_regressions(prev_report, new_report)
+    elif new_score > old_score:
+        logger.info(f'Score improved from {old_score}% to {new_score}%')
+    else:
+        logger.info(f'Score stable at {new_score}%')
+
+
+def _get_previous_report(current_scan_id: str) -> dict | None:
+    """Find the most recent report before the current scan."""
+    reports = sorted(REPORTS_DIR.glob('compliance-*.json'), reverse=True)
+    for report_file in reports:
+        try:
+            data = json.loads(report_file.read_text())
+            if data.get('scan_id') != current_scan_id:
+                return data
+        except (json.JSONDecodeError, KeyError):
+            continue
+    return None
+
+
+def _log_control_regressions(old_report: dict, new_report: dict):
+    """Log individual controls that regressed between reports."""
+    old_frameworks = old_report.get('frameworks', {})
+    new_frameworks = new_report.get('frameworks', {})
+
+    for fw_id in old_frameworks:
+        if fw_id not in new_frameworks:
+            continue
+
+        old_controls = {c['control_id']: c for c in old_frameworks[fw_id].get('controls', [])}
+        new_controls = {c['control_id']: c for c in new_frameworks[fw_id].get('controls', [])}
+
+        for ctrl_id, old_ctrl in old_controls.items():
+            if ctrl_id not in new_controls:
+                continue
+
+            new_ctrl = new_controls[ctrl_id]
+            old_status = old_ctrl.get('status', '')
+            new_status = new_ctrl.get('status', '')
+
+            if old_status == 'verified' and new_status != 'verified':
+                logger.warning(
+                    f'REGRESSION: {fw_id}/{ctrl_id} "{old_ctrl.get("control_name", "")}" '
+                    f'changed from {old_status} to {new_status}'
+                )
 
 
 def load_latest_report() -> dict | None:

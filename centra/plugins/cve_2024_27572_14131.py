@@ -1,0 +1,59 @@
+import asyncio
+from plugins import NaslPlugin, PluginResult
+
+
+class Cve202427572Plugin(NaslPlugin):
+    PLUGIN_ID = 14131
+    NAME = "CVE-2024-27572"
+    DESCRIPTION = "LBT T300-T390 v2.2.1.8 were discovered to contain a stack overflow via the ApCliSsid parameter in the updateCurAPlist function. This vulnerability allows attackers to cause a Denial of Service (DoS) v"
+    SOLUTION = "Apply vendor patch for CVE-2024-27572. Upgrade to latest version."
+    CVSS_SCORE = 7.5
+    SEVERITY = "High"
+    FAMILY = "General Vulnerability"
+    CVE = ['CVE-2024-27572']
+    PORTS = [80, 443, 8080, 8443]
+
+    async def check_target(self, target: str, port: int | None = None) -> list[PluginResult]:
+        results = []
+        for p in ([port] if port else self.PORTS):
+            try:
+                reader, writer = await asyncio.wait_for(
+                    asyncio.open_connection(target, p), timeout=5
+                )
+                request = (
+                    f"GET / HTTP/1.1\\r\\n"
+                    f"Host: {target}:{p}\\r\\n"
+                    f"User-Agent: CentraScanner/1.0\\r\\n"
+                    f"Accept: */*\\r\\n"
+                    f"Connection: close\\r\\n\\r\\n"
+                )
+                writer.write(request.encode())
+                await writer.drain()
+                resp = await asyncio.wait_for(reader.read(4096), timeout=5)
+                writer.close()
+                await writer.wait_closed()
+                body = resp.decode("utf-8", errors="replace")
+                if "HTTP/1.1 200" in body or "HTTP/1.1 401" in body or "HTTP/1.1 403" in body:
+                    results.append(PluginResult(
+                        vulnerable=True, target=target, port=p,
+                        cvss_score=self.CVSS_SCORE, severity=self.SEVERITY,
+                        description=self.DESCRIPTION,
+                        solution=self.SOLUTION,
+                        evidence=f"Path accessible: /",
+                        references=self.CVE if self.CVE else []
+                    ))
+                else:
+                    results.append(PluginResult(
+                        vulnerable=False, target=target, port=p,
+                        cvss_score=0, severity="Info",
+                        description="Not detected",
+                        solution="", evidence="", references=[]
+                    ))
+            except Exception:
+                results.append(PluginResult(
+                    vulnerable=False, target=target, port=p,
+                    cvss_score=0, severity="Info",
+                    description="Could not connect",
+                    solution="", evidence="", references=[]
+                ))
+        return results

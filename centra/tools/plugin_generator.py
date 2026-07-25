@@ -53,10 +53,13 @@ class {class_name}(NaslPlugin):
 
 
 def sanitize(s, max_len=80):
-    result = s.replace('"', '\\"').replace("\n", " ").replace("\\", "\\\\")
-    # Handle any remaining problematic control chars
-    result = ''.join(c for c in result if ord(c) >= 32 or c in '\n\r\t')
-    return result.strip()[:max_len]
+    result = s.replace("\\", "\\\\").replace('"', '\\"').replace("\r", " ").replace("\n", " ")
+    result = ''.join(c for c in result if ord(c) >= 32 or c in '\n\t')
+    result = result.strip()[:max_len]
+    # Avoid trailing backslash (escapes closing quote in template)
+    while result.endswith("\\"):
+        result = result[:-1]
+    return result
 
 
 def make_class_name(name, plugin_id):
@@ -87,12 +90,13 @@ def generate_plugin(row, plugin_id):
     cve_str = repr(cve_list) if cve_list else "[]"
 
     cn = make_class_name(name, plugin_id)
+    name_s = sanitize(name, 80)
     desc_s = sanitize(description, 200)
     sol_s = sanitize(solution, 200)
 
     detection_code = ""
     vuln_check = ""
-    path_encoded = detect_path.replace('"', '\\"')
+    path_encoded = detect_path.replace("\\", "\\\\").replace('"', '\\"')
 
     if detect_type == "header":
         detection_code = f'''                request = (
@@ -263,7 +267,7 @@ def generate_plugin(row, plugin_id):
     plugin_code = TEMPLATE.format(
         class_name=cn,
         plugin_id=plugin_id,
-        name=name,
+        name=name_s,
         description=desc_s,
         solution=sol_s,
         cvss=cvss,

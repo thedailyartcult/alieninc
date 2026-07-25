@@ -959,22 +959,34 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response(401)
             self._send_json({'ok': False, 'error': 'Invalid credentials'})
 
-    PLUGIN_CATEGORIES = ['network', 'web', 'cloud', 'container', 'compliance', 'bot-detection', 'privacy', 'accessibility']
-    PLUGIN_SEVERITIES = ['critical', 'high', 'medium', 'low', 'info']
-    PLUGIN_VENDORS = ['Centra', 'Alien Inc', 'CrowdStrike', 'Tenable', 'Rapid7', 'Qualys', 'Snyk', 'Wiz', 'Aqua', 'Palo Alto']
-
     def _generate_plugins(self, query, page, per_page):
+        try:
+            import importlib
+            engine_path = os.path.join(os.path.dirname(__file__), 'centra/engine')
+            if engine_path not in sys.path:
+                sys.path.insert(0, engine_path)
+            from plugin_registry import search_plugins, init_db
+            init_db()
+            return search_plugins(query=query or '', page=page, per_page=per_page)
+        except Exception as exc:
+            sys.stderr.write('[plugin-registry] WARNING: fell back to static generation (%s)\n' % exc)
+            return self._generate_plugins_static(query, page, per_page)
+
+    def _generate_plugins_static(self, query, page, per_page):
         q = query.lower().strip() if query else ''
-        total = 100000
+        total = 275000
         results = []
         seen = set()
+        CATEGORIES = ['network', 'web', 'cloud', 'container', 'bot-defense', 'compliance', 'database', 'identity', 'ai', 'iot', 'email']
+        SEVERITIES = ['critical', 'high', 'medium', 'low', 'info']
+        VENDORS = ['Centra Research', 'Alien Inc', 'Centra']
         for i in range(1, total + 1):
-            cat = self.PLUGIN_CATEGORIES[(i - 1) % len(self.PLUGIN_CATEGORIES)]
-            sev = self.PLUGIN_SEVERITIES[(i - 1) % len(self.PLUGIN_SEVERITIES)]
-            vendor = self.PLUGIN_VENDORS[(i - 1) % len(self.PLUGIN_VENDORS)]
-            pid = 'CENTRA-%s-%04d' % (cat.upper().replace('-', ''), i)
+            cat = CATEGORIES[(i - 1) % len(CATEGORIES)]
+            sev = SEVERITIES[(i - 1) % len(SEVERITIES)]
+            vendor = VENDORS[(i - 1) % len(VENDORS)]
+            pid = 'CENTRA-%s-%06d' % (cat.upper().replace('-', ''), i)
             name = '%s %s Plugin %d' % (vendor, cat.title(), i)
-            desc = 'Scans and validates %s configurations for compliance and vulnerability identification. Covers CVE-%d-%04d and related threat vectors.' % (cat, 2020 + (i % 6), i % 9999)
+            desc = 'Scans and validates %s configurations for compliance and vulnerability identification.' % cat
             if q and q not in pid.lower() and q not in name.lower() and q not in desc.lower():
                 continue
             if pid in seen:
@@ -1016,11 +1028,11 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         except (ValueError, TypeError):
             per_page = 20
         data = self._generate_plugins(query, page, per_page)
-        self.send_response(200)
         self._send_json(data)
 
-    def _send_json(self, data):
+    def _send_json(self, data, status=200):
         body = json.dumps(data).encode('utf-8')
+        self.send_response(status)
         self.send_header('Content-Type', 'application/json; charset=utf-8')
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()

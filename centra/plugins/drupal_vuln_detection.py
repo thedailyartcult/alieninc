@@ -1,28 +1,23 @@
 import asyncio
+import re
 from plugins import NaslPlugin, PluginResult
 
 
-class SourceMapExposurePlugin(NaslPlugin):
-    PLUGIN_ID = 1382
-    NAME = "Source Map File Exposure Detection"
-    DESCRIPTION = "Detects exposed JavaScript source map files (.js.map) that can reveal the original source code, including comments and internal logic, to attackers."
-    SOLUTION = "Remove source map files from production deployments. Configure web server to deny access to .map files."
-    CVSS_SCORE = 5.3
-    SEVERITY = "Medium"
-    FAMILY = "Information Gathering"
-    CVE = []
-    PORTS = [80, 443, 8080, 8443]
+class DrupalVulnDetectionPlugin(NaslPlugin):
+    PLUGIN_ID = 1358
+    NAME = "Drupal Core Vulnerability Detection"
+    DESCRIPTION = "Detects Drupal CMS installations and version. Checks for known vulnerable versions including CVE-2019-6340 (REST RCE), CVE-2020-13671 (XSS), and CVE-2022-25295 (access bypass)."
+    SOLUTION = "Upgrade Drupal to the latest security release. Apply Drupal security advisories immediately."
+    CVSS_SCORE = 8.1
+    SEVERITY = "High"
+    FAMILY = "Web Application"
+    CVE = ["CVE-2019-6340", "CVE-2020-13671", "CVE-2022-25295"]
+    PORTS = [80, 443, 8080]
 
     async def check_target(self, target: str, port: int | None = None) -> list[PluginResult]:
         results = []
-        map_paths = [
-            "/app.js.map", "/main.js.map", "/bundle.js.map",
-            "/vendor.js.map", "/scripts.js.map", "/application.js.map",
-            "/css/app.css.map", "/style.css.map",
-            "/js/app.js.map", "/js/main.js.map",
-        ]
         for p in ([port] if port else self.PORTS):
-            for path in map_paths:
+            for path in ["/", "/core/CHANGELOG.txt", "/CHANGELOG.txt", "/node/1", "/user/login"]:
                 try:
                     reader, writer = await asyncio.wait_for(
                         asyncio.open_connection(target, p), timeout=5
@@ -40,14 +35,16 @@ class SourceMapExposurePlugin(NaslPlugin):
                     writer.close()
                     await writer.wait_closed()
                     body = resp.decode("utf-8", errors="replace")
-                    if "HTTP/1.1 200" in body and ('"sources"' in body or '"mappings"' in body or '"version"' in body):
+                    if "Drupal" in body or "drupal" in body.lower() or "SESS" in body:
+                        m = re.search(r'Drupal\s*(\d+\.\d+[.\d]*)', body)
+                        version = m.group(1) if m else "unknown"
                         results.append(PluginResult(
                             vulnerable=True, target=target, port=p,
                             cvss_score=self.CVSS_SCORE, severity=self.SEVERITY,
-                            description=f"{self.DESCRIPTION} Source map exposed at {path} on port {p}",
+                            description=f"{self.DESCRIPTION} Drupal {version} on port {p}",
                             solution=self.SOLUTION,
-                            evidence=f"Source map accessible: {path} ({len(body)} bytes)",
-                            references=["https://owasp.org/www-project-web-security-testing-guide/"]
+                            evidence=f"Drupal {version} detected via {path}",
+                            references=[f"https://nvd.nist.gov/vuln/detail/{cve}" for cve in self.CVE]
                         ))
                         break
                 except Exception:
@@ -56,7 +53,7 @@ class SourceMapExposurePlugin(NaslPlugin):
                 results.append(PluginResult(
                     vulnerable=False, target=target, port=p,
                     cvss_score=0, severity="Info",
-                    description=f"No source maps on port {p}",
+                    description=f"No Drupal detected on port {p}",
                     solution="", evidence="", references=[]
                 ))
         return results

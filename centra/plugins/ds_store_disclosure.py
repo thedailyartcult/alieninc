@@ -2,27 +2,21 @@ import asyncio
 from plugins import NaslPlugin, PluginResult
 
 
-class SourceMapExposurePlugin(NaslPlugin):
-    PLUGIN_ID = 1382
-    NAME = "Source Map File Exposure Detection"
-    DESCRIPTION = "Detects exposed JavaScript source map files (.js.map) that can reveal the original source code, including comments and internal logic, to attackers."
-    SOLUTION = "Remove source map files from production deployments. Configure web server to deny access to .map files."
+class DsStoreDisclosurePlugin(NaslPlugin):
+    PLUGIN_ID = 1364
+    NAME = ".DS_Store File Information Disclosure"
+    DESCRIPTION = "Detects exposed .DS_Store files on web servers that can leak directory structure, file names, and metadata about the web application, aiding attackers in reconnaissance."
+    SOLUTION = "Configure web server to block .DS_Store files. Add '~$' and '.DS_Store' to deny lists. Remove all .DS_Store files from production."
     CVSS_SCORE = 5.3
     SEVERITY = "Medium"
-    FAMILY = "Information Gathering"
+    FAMILY = "Web Security"
     CVE = []
-    PORTS = [80, 443, 8080, 8443]
+    PORTS = [80, 443, 8080]
 
     async def check_target(self, target: str, port: int | None = None) -> list[PluginResult]:
         results = []
-        map_paths = [
-            "/app.js.map", "/main.js.map", "/bundle.js.map",
-            "/vendor.js.map", "/scripts.js.map", "/application.js.map",
-            "/css/app.css.map", "/style.css.map",
-            "/js/app.js.map", "/js/main.js.map",
-        ]
         for p in ([port] if port else self.PORTS):
-            for path in map_paths:
+            for path in ["/.DS_Store", "/.ds_store", "/images/.DS_Store", "/css/.DS_Store", "/js/.DS_Store"]:
                 try:
                     reader, writer = await asyncio.wait_for(
                         asyncio.open_connection(target, p), timeout=5
@@ -40,13 +34,13 @@ class SourceMapExposurePlugin(NaslPlugin):
                     writer.close()
                     await writer.wait_closed()
                     body = resp.decode("utf-8", errors="replace")
-                    if "HTTP/1.1 200" in body and ('"sources"' in body or '"mappings"' in body or '"version"' in body):
+                    if "HTTP/1.1 200" in body and len(body) > 100:
                         results.append(PluginResult(
                             vulnerable=True, target=target, port=p,
                             cvss_score=self.CVSS_SCORE, severity=self.SEVERITY,
-                            description=f"{self.DESCRIPTION} Source map exposed at {path} on port {p}",
+                            description=f"{self.DESCRIPTION} .DS_Store exposed at {path} on port {p}",
                             solution=self.SOLUTION,
-                            evidence=f"Source map accessible: {path} ({len(body)} bytes)",
+                            evidence=f".DS_Store file accessible at {path} ({len(body)} bytes)",
                             references=["https://owasp.org/www-project-web-security-testing-guide/"]
                         ))
                         break
@@ -56,7 +50,7 @@ class SourceMapExposurePlugin(NaslPlugin):
                 results.append(PluginResult(
                     vulnerable=False, target=target, port=p,
                     cvss_score=0, severity="Info",
-                    description=f"No source maps on port {p}",
+                    description=f"No .DS_Store exposure on port {p}",
                     solution="", evidence="", references=[]
                 ))
         return results

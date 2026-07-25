@@ -2,27 +2,25 @@ import asyncio
 from plugins import NaslPlugin, PluginResult
 
 
-class SourceMapExposurePlugin(NaslPlugin):
-    PLUGIN_ID = 1382
-    NAME = "Source Map File Exposure Detection"
-    DESCRIPTION = "Detects exposed JavaScript source map files (.js.map) that can reveal the original source code, including comments and internal logic, to attackers."
-    SOLUTION = "Remove source map files from production deployments. Configure web server to deny access to .map files."
-    CVSS_SCORE = 5.3
-    SEVERITY = "Medium"
-    FAMILY = "Information Gathering"
-    CVE = []
-    PORTS = [80, 443, 8080, 8443]
+class JbossWebConsolePlugin(NaslPlugin):
+    PLUGIN_ID = 1362
+    NAME = "JBoss Web Console Exposure Detection"
+    DESCRIPTION = "Detects exposed JBoss/WildFly web consoles (jmx-console, admin-console, web-console) that allow unauthenticated access to management interfaces, potentially leading to full server compromise."
+    SOLUTION = "Restrict JBoss console access, remove consoles in production, or configure strong authentication."
+    CVSS_SCORE = 8.0
+    SEVERITY = "High"
+    FAMILY = "Web Servers"
+    CVE = ["CVE-2020-10770"]
+    PORTS = [80, 443, 8080, 8443, 9990, 9993]
 
     async def check_target(self, target: str, port: int | None = None) -> list[PluginResult]:
         results = []
-        map_paths = [
-            "/app.js.map", "/main.js.map", "/bundle.js.map",
-            "/vendor.js.map", "/scripts.js.map", "/application.js.map",
-            "/css/app.css.map", "/style.css.map",
-            "/js/app.js.map", "/js/main.js.map",
+        jboss_paths = [
+            "/jmx-console/", "/admin-console/", "/web-console/",
+            "/management/", "/console/", "/management/console",
         ]
         for p in ([port] if port else self.PORTS):
-            for path in map_paths:
+            for path in jboss_paths:
                 try:
                     reader, writer = await asyncio.wait_for(
                         asyncio.open_connection(target, p), timeout=5
@@ -40,14 +38,14 @@ class SourceMapExposurePlugin(NaslPlugin):
                     writer.close()
                     await writer.wait_closed()
                     body = resp.decode("utf-8", errors="replace")
-                    if "HTTP/1.1 200" in body and ('"sources"' in body or '"mappings"' in body or '"version"' in body):
+                    if "HTTP/1.1 200" in body and ("JBoss" in body or "WildFly" in body or "JMX" in body or "Management Console" in body):
                         results.append(PluginResult(
                             vulnerable=True, target=target, port=p,
                             cvss_score=self.CVSS_SCORE, severity=self.SEVERITY,
-                            description=f"{self.DESCRIPTION} Source map exposed at {path} on port {p}",
+                            description=f"{self.DESCRIPTION} JBoss console at {path} on port {p}",
                             solution=self.SOLUTION,
-                            evidence=f"Source map accessible: {path} ({len(body)} bytes)",
-                            references=["https://owasp.org/www-project-web-security-testing-guide/"]
+                            evidence=f"JBoss console accessible: {path}",
+                            references=[f"https://nvd.nist.gov/vuln/detail/{self.CVE[0]}"]
                         ))
                         break
                 except Exception:
@@ -56,7 +54,7 @@ class SourceMapExposurePlugin(NaslPlugin):
                 results.append(PluginResult(
                     vulnerable=False, target=target, port=p,
                     cvss_score=0, severity="Info",
-                    description=f"No source maps on port {p}",
+                    description=f"No JBoss console on port {p}",
                     solution="", evidence="", references=[]
                 ))
         return results

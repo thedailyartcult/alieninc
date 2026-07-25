@@ -1,28 +1,24 @@
 import asyncio
+import re
 from plugins import NaslPlugin, PluginResult
 
 
-class SourceMapExposurePlugin(NaslPlugin):
-    PLUGIN_ID = 1382
-    NAME = "Source Map File Exposure Detection"
-    DESCRIPTION = "Detects exposed JavaScript source map files (.js.map) that can reveal the original source code, including comments and internal logic, to attackers."
-    SOLUTION = "Remove source map files from production deployments. Configure web server to deny access to .map files."
-    CVSS_SCORE = 5.3
-    SEVERITY = "Medium"
+class EmailAddressDisclosurePlugin(NaslPlugin):
+    PLUGIN_ID = 1380
+    NAME = "Email Address Disclosure in Source"
+    DESCRIPTION = "Detects email addresses disclosed in web page source code that can be harvested for spam, phishing, or social engineering attacks against the organization."
+    SOLUTION = "Remove plain email addresses from HTML source. Use contact forms instead of mailto: links. Obfuscate email addresses using JavaScript or image-based methods."
+    CVSS_SCORE = 3.7
+    SEVERITY = "Low"
     FAMILY = "Information Gathering"
     CVE = []
-    PORTS = [80, 443, 8080, 8443]
+    PORTS = [80, 443, 8080]
 
     async def check_target(self, target: str, port: int | None = None) -> list[PluginResult]:
         results = []
-        map_paths = [
-            "/app.js.map", "/main.js.map", "/bundle.js.map",
-            "/vendor.js.map", "/scripts.js.map", "/application.js.map",
-            "/css/app.css.map", "/style.css.map",
-            "/js/app.js.map", "/js/main.js.map",
-        ]
+        email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
         for p in ([port] if port else self.PORTS):
-            for path in map_paths:
+            for path in ["/", "/contact", "/about", "/team", "/contact-us"]:
                 try:
                     reader, writer = await asyncio.wait_for(
                         asyncio.open_connection(target, p), timeout=5
@@ -40,13 +36,16 @@ class SourceMapExposurePlugin(NaslPlugin):
                     writer.close()
                     await writer.wait_closed()
                     body = resp.decode("utf-8", errors="replace")
-                    if "HTTP/1.1 200" in body and ('"sources"' in body or '"mappings"' in body or '"version"' in body):
+                    emails = re.findall(email_pattern, body)
+                    skip_domains = ["example.com", "domain.com", "yourdomain.com"]
+                    real_emails = [e for e in emails if not any(s in e for s in skip_domains)]
+                    if real_emails:
                         results.append(PluginResult(
                             vulnerable=True, target=target, port=p,
                             cvss_score=self.CVSS_SCORE, severity=self.SEVERITY,
-                            description=f"{self.DESCRIPTION} Source map exposed at {path} on port {p}",
+                            description=f"{self.DESCRIPTION} {len(real_emails)} email(s) found on port {p}",
                             solution=self.SOLUTION,
-                            evidence=f"Source map accessible: {path} ({len(body)} bytes)",
+                            evidence=f"Emails found: {', '.join(real_emails[:10])}",
                             references=["https://owasp.org/www-project-web-security-testing-guide/"]
                         ))
                         break
@@ -56,7 +55,7 @@ class SourceMapExposurePlugin(NaslPlugin):
                 results.append(PluginResult(
                     vulnerable=False, target=target, port=p,
                     cvss_score=0, severity="Info",
-                    description=f"No source maps on port {p}",
+                    description=f"No emails disclosed on port {p}",
                     solution="", evidence="", references=[]
                 ))
         return results

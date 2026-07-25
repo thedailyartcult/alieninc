@@ -1,28 +1,23 @@
 import asyncio
+import re
 from plugins import NaslPlugin, PluginResult
 
 
-class SourceMapExposurePlugin(NaslPlugin):
-    PLUGIN_ID = 1382
-    NAME = "Source Map File Exposure Detection"
-    DESCRIPTION = "Detects exposed JavaScript source map files (.js.map) that can reveal the original source code, including comments and internal logic, to attackers."
-    SOLUTION = "Remove source map files from production deployments. Configure web server to deny access to .map files."
-    CVSS_SCORE = 5.3
-    SEVERITY = "Medium"
-    FAMILY = "Information Gathering"
-    CVE = []
-    PORTS = [80, 443, 8080, 8443]
+class MagentoVulnCheckPlugin(NaslPlugin):
+    PLUGIN_ID = 1359
+    NAME = "Magento Version Vulnerability Check"
+    DESCRIPTION = "Detects Adobe Commerce/Magento installations and version. Identifies potentially vulnerable versions for CVEs including CVE-2024-20720 (RCE), CVE-2024-20718 (XSS), and CVE-2024-20712 (path traversal)."
+    SOLUTION = "Upgrade Adobe Commerce/Magento to the latest version. Apply APSB security patches from Adobe."
+    CVSS_SCORE = 9.8
+    SEVERITY = "Critical"
+    FAMILY = "Web Application"
+    CVE = ["CVE-2024-20720", "CVE-2024-20718", "CVE-2024-20712"]
+    PORTS = [80, 443, 8080]
 
     async def check_target(self, target: str, port: int | None = None) -> list[PluginResult]:
         results = []
-        map_paths = [
-            "/app.js.map", "/main.js.map", "/bundle.js.map",
-            "/vendor.js.map", "/scripts.js.map", "/application.js.map",
-            "/css/app.css.map", "/style.css.map",
-            "/js/app.js.map", "/js/main.js.map",
-        ]
         for p in ([port] if port else self.PORTS):
-            for path in map_paths:
+            for path in ["/", "/static/version/", "/magento_version", "/health_check.php"]:
                 try:
                     reader, writer = await asyncio.wait_for(
                         asyncio.open_connection(target, p), timeout=5
@@ -40,14 +35,16 @@ class SourceMapExposurePlugin(NaslPlugin):
                     writer.close()
                     await writer.wait_closed()
                     body = resp.decode("utf-8", errors="replace")
-                    if "HTTP/1.1 200" in body and ('"sources"' in body or '"mappings"' in body or '"version"' in body):
+                    if "Magento" in body or "magento" in body.lower() or "X-Magento" in body:
+                        m = re.search(r'Magento\s*(?:Commerce|Open\sSource)?\s*(\d+\.\d+[.\d]*)', body)
+                        version = m.group(1) if m else "unknown"
                         results.append(PluginResult(
                             vulnerable=True, target=target, port=p,
                             cvss_score=self.CVSS_SCORE, severity=self.SEVERITY,
-                            description=f"{self.DESCRIPTION} Source map exposed at {path} on port {p}",
+                            description=f"{self.DESCRIPTION} Magento {version} on port {p}",
                             solution=self.SOLUTION,
-                            evidence=f"Source map accessible: {path} ({len(body)} bytes)",
-                            references=["https://owasp.org/www-project-web-security-testing-guide/"]
+                            evidence=f"Magento {version} detected via {path}",
+                            references=[f"https://nvd.nist.gov/vuln/detail/{cve}" for cve in self.CVE]
                         ))
                         break
                 except Exception:
@@ -56,7 +53,7 @@ class SourceMapExposurePlugin(NaslPlugin):
                 results.append(PluginResult(
                     vulnerable=False, target=target, port=p,
                     cvss_score=0, severity="Info",
-                    description=f"No source maps on port {p}",
+                    description=f"No Magento detected on port {p}",
                     solution="", evidence="", references=[]
                 ))
         return results

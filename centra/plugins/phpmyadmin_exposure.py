@@ -2,27 +2,26 @@ import asyncio
 from plugins import NaslPlugin, PluginResult
 
 
-class SourceMapExposurePlugin(NaslPlugin):
-    PLUGIN_ID = 1382
-    NAME = "Source Map File Exposure Detection"
-    DESCRIPTION = "Detects exposed JavaScript source map files (.js.map) that can reveal the original source code, including comments and internal logic, to attackers."
-    SOLUTION = "Remove source map files from production deployments. Configure web server to deny access to .map files."
-    CVSS_SCORE = 5.3
-    SEVERITY = "Medium"
-    FAMILY = "Information Gathering"
-    CVE = []
+class PhpmyadminExposurePlugin(NaslPlugin):
+    PLUGIN_ID = 1360
+    NAME = "phpMyAdmin Exposure Detection"
+    DESCRIPTION = "Detects exposed phpMyAdmin interfaces which can allow attackers to execute arbitrary SQL queries and potentially gain access to the underlying database server."
+    SOLUTION = "Restrict phpMyAdmin access to specific IP addresses, use authentication, or remove it from production servers entirely."
+    CVSS_SCORE = 7.5
+    SEVERITY = "High"
+    FAMILY = "Web Security"
+    CVE = ["CVE-2023-25713"]
     PORTS = [80, 443, 8080, 8443]
 
     async def check_target(self, target: str, port: int | None = None) -> list[PluginResult]:
         results = []
-        map_paths = [
-            "/app.js.map", "/main.js.map", "/bundle.js.map",
-            "/vendor.js.map", "/scripts.js.map", "/application.js.map",
-            "/css/app.css.map", "/style.css.map",
-            "/js/app.js.map", "/js/main.js.map",
+        pma_paths = [
+            "/phpmyadmin/", "/phpMyAdmin/", "/pma/", "/PMA/",
+            "/phpmyadmin/index.php", "/phpmyadmin/login.php",
+            "/phpmyadmin/scripts/setup.php",
         ]
         for p in ([port] if port else self.PORTS):
-            for path in map_paths:
+            for path in pma_paths:
                 try:
                     reader, writer = await asyncio.wait_for(
                         asyncio.open_connection(target, p), timeout=5
@@ -40,14 +39,14 @@ class SourceMapExposurePlugin(NaslPlugin):
                     writer.close()
                     await writer.wait_closed()
                     body = resp.decode("utf-8", errors="replace")
-                    if "HTTP/1.1 200" in body and ('"sources"' in body or '"mappings"' in body or '"version"' in body):
+                    if "HTTP/1.1 200" in body and ("phpMyAdmin" in body or "pma_" in body or "PMA_" in body or "theme_left.css" in body):
                         results.append(PluginResult(
                             vulnerable=True, target=target, port=p,
                             cvss_score=self.CVSS_SCORE, severity=self.SEVERITY,
-                            description=f"{self.DESCRIPTION} Source map exposed at {path} on port {p}",
+                            description=f"{self.DESCRIPTION} phpMyAdmin accessible at {path} on port {p}",
                             solution=self.SOLUTION,
-                            evidence=f"Source map accessible: {path} ({len(body)} bytes)",
-                            references=["https://owasp.org/www-project-web-security-testing-guide/"]
+                            evidence=f"phpMyAdmin login accessible via {path}",
+                            references=[f"https://nvd.nist.gov/vuln/detail/{self.CVE[0]}"]
                         ))
                         break
                 except Exception:
@@ -56,7 +55,7 @@ class SourceMapExposurePlugin(NaslPlugin):
                 results.append(PluginResult(
                     vulnerable=False, target=target, port=p,
                     cvss_score=0, severity="Info",
-                    description=f"No source maps on port {p}",
+                    description=f"No phpMyAdmin on port {p}",
                     solution="", evidence="", references=[]
                 ))
         return results

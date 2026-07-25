@@ -14,6 +14,7 @@ from pathlib import Path
 
 
 TEMPLATE = '''import asyncio
+{ssl_import}
 from plugins import NaslPlugin, PluginResult
 
 
@@ -33,7 +34,7 @@ class {class_name}(NaslPlugin):
         for p in ([port] if port else self.PORTS):
             try:
                 reader, writer = await asyncio.wait_for(
-                    asyncio.open_connection(target, p), timeout=5
+                    asyncio.open_connection(target, p{ssl_args}), timeout=5
                 )
 {detection_code}
                 resp = await asyncio.wait_for(reader.read({read_size}), timeout=5)
@@ -83,6 +84,14 @@ def generate_plugin(row, plugin_id):
     detect_indicator = row.get("indicator", "")
     detect_header = row.get("header", "")
     read_size = row.get("read_size", "4096")
+    use_ssl = row.get("ssl", "false").lower() == "true"
+
+    if use_ssl:
+        ssl_import = "import ssl"
+        ssl_args = ', ssl=ssl.create_default_context()'
+    else:
+        ssl_import = ""
+        ssl_args = ""
 
     cve_list = []
     if cve:
@@ -100,15 +109,16 @@ def generate_plugin(row, plugin_id):
 
     if detect_type == "header":
         detection_code = f'''                request = (
-                    f"GET / HTTP/1.1\\\\r\\\\n"
-                    f"Host: {{target}}:{{p}}\\\\r\\\\n"
-                    f"User-Agent: CentraScanner/1.0\\\\r\\\\n"
-                    f"Accept: */*\\\\r\\\\n"
-                    f"Connection: close\\\\r\\\\n\\\\r\\\\n"
+                    f"GET / HTTP/1.1\\r\\n"
+                    f"Host: {{target}}\\r\\n"
+                    f"User-Agent: CentraScanner/1.0\\r\\n"
+                    f"Accept: */*\\r\\n"
+                    f"Connection: close\\r\\n\\r\\n"
                 )
                 writer.write(request.encode())
-                await writer.drain()'''
-        vuln_check = f'''                headers_lower = body.lower()
+                await writer.drain()
+                headers_resp = await asyncio.wait_for(reader.readuntil(b"\\r\\n\\r\\n"), timeout=5)'''
+        vuln_check = f'''                headers_lower = headers_resp.decode("utf-8", errors="replace").lower()
                 has_header = "{detect_header.lower()}" in headers_lower
                 if {f'not has_header' if row.get('negate', 'false').lower() == 'true' else 'has_header'}:
                     results.append(PluginResult(
@@ -129,16 +139,16 @@ def generate_plugin(row, plugin_id):
 
     elif detect_type == "cookie":
         detection_code = f'''                request = (
-                    f"GET / HTTP/1.1\\\\r\\\\n"
-                    f"Host: {{target}}:{{p}}\\\\r\\\\n"
-                    f"User-Agent: CentraScanner/1.0\\\\r\\\\n"
-                    f"Accept: */*\\\\r\\\\n"
-                    f"Connection: close\\\\r\\\\n\\\\r\\\\n"
+                    f"GET / HTTP/1.1\\r\\n"
+                    f"Host: {{target}}\\r\\n"
+                    f"User-Agent: CentraScanner/1.0\\r\\n"
+                    f"Accept: */*\\r\\n"
+                    f"Connection: close\\r\\n\\r\\n"
                 )
                 writer.write(request.encode())
                 await writer.drain()'''
         vuln_check = f'''                found_cookies = []
-                for line in body.split("\\\\r\\\\n"):
+                for line in body.split("\\r\\n"):
                     if "set-cookie" in line.lower():
                         found_cookies.append(line)
                 missing_flags = []
@@ -192,11 +202,11 @@ def generate_plugin(row, plugin_id):
     elif detect_type == "method":
         method = row.get("method", "OPTIONS")
         detection_code = f'''                request = (
-                    f"{method} / HTTP/1.1\\\\r\\\\n"
-                    f"Host: {{target}}:{{p}}\\\\r\\\\n"
-                    f"User-Agent: CentraScanner/1.0\\\\r\\\\n"
-                    f"Accept: */*\\\\r\\\\n"
-                    f"Connection: close\\\\r\\\\n\\\\r\\\\n"
+                    f"{method} / HTTP/1.1\\r\\n"
+                    f"Host: {{target}}\\r\\n"
+                    f"User-Agent: CentraScanner/1.0\\r\\n"
+                    f"Accept: */*\\r\\n"
+                    f"Connection: close\\r\\n\\r\\n"
                 )
                 writer.write(request.encode())
                 await writer.drain()'''
@@ -220,11 +230,11 @@ def generate_plugin(row, plugin_id):
     else:
         # Default: path check
         detection_code = f'''                request = (
-                    f"GET {path_encoded} HTTP/1.1\\\\r\\\\n"
-                    f"Host: {{target}}:{{p}}\\\\r\\\\n"
-                    f"User-Agent: CentraScanner/1.0\\\\r\\\\n"
-                    f"Accept: */*\\\\r\\\\n"
-                    f"Connection: close\\\\r\\\\n\\\\r\\\\n"
+                    f"GET {path_encoded} HTTP/1.1\\r\\n"
+                    f"Host: {{target}}\\r\\n"
+                    f"User-Agent: CentraScanner/1.0\\r\\n"
+                    f"Accept: */*\\r\\n"
+                    f"Connection: close\\r\\n\\r\\n"
                 )
                 writer.write(request.encode())
                 await writer.drain()'''
@@ -278,6 +288,8 @@ def generate_plugin(row, plugin_id):
         detection_code=detection_code,
         vuln_check=vuln_check,
         read_size=read_size,
+        ssl_import=ssl_import,
+        ssl_args=ssl_args,
     )
     return plugin_code
 

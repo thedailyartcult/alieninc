@@ -593,10 +593,18 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         words = list(filter(None, words))
 
         SHARED_ROOT_PATHS = {'trust', 'logo.png', 'pgp-key.txt', 'data'}
+        root = self._get_host_root()
         if words and words[0] in SHARED_ROOT_PATHS:
-            root = ROOT
-        else:
-            root = self._get_host_root()
+            sub_root = root
+            filepath = sub_root
+            for word in words:
+                if os.path.dirname(word) or word in (os.curdir, os.pardir):
+                    continue
+                filepath = os.path.join(filepath, word)
+            if trailing_slash:
+                filepath += '/'
+            if not os.path.exists(filepath):
+                root = ROOT
 
         # /moderation/ is ONLY accessible via secure.alieninc.tech (its files live
         # under secure/moderation/ and resolve naturally from the secure subdomain root).

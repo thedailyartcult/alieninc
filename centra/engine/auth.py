@@ -10,7 +10,7 @@ SECRET_KEY = os.environ.get('HS_SECRET', 'centra-engine-2026-alieninc-secret-key
 ALGORITHM = 'HS256'
 TOKEN_EXPIRY_HOURS = 24
 
-pwd_ctx = CryptContext(schemes=['bcrypt'], deprecated='auto')
+pwd_ctx = CryptContext(schemes=['pbkdf2_sha256'], deprecated='auto')
 
 db_ref = None
 

@@ -889,11 +889,11 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             self._handle_plugin_auth()
             return
         if path == '/api/plugins/search':
-            auth = self._has_valid_secure_session() or self._has_valid_main_session()
-            if not auth:
-                self._send_json({"error": "authentication required"}, 401)
-                return
             self._handle_plugin_search()
+            return
+        m = re.match(r'^/api/plugins/(\d+)$', path)
+        if m:
+            self._handle_plugin_detail(int(m.group(1)))
             return
         self.send_error(404)
 
@@ -959,76 +959,149 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response(401)
             self._send_json({'ok': False, 'error': 'Invalid credentials'})
 
-    def _generate_plugins(self, query, page, per_page):
-        try:
-            import importlib
-            engine_path = os.path.join(os.path.dirname(__file__), 'centra/engine')
-            if engine_path not in sys.path:
-                sys.path.insert(0, engine_path)
-            from plugin_registry import search_plugins, init_db
-            init_db()
-            return search_plugins(query=query or '', page=page, per_page=per_page)
-        except Exception as exc:
-            sys.stderr.write('[plugin-registry] WARNING: fell back to static generation (%s)\n' % exc)
-            return self._generate_plugins_static(query, page, per_page)
+    _plugin_db = {'conn': None, 'lock': threading.Lock()}
 
-    def _generate_plugins_static(self, query, page, per_page):
-        q = query.lower().strip() if query else ''
-        total = 275000
-        results = []
-        seen = set()
-        CATEGORIES = ['network', 'web', 'cloud', 'container', 'bot-defense', 'compliance', 'database', 'identity', 'ai', 'iot', 'email']
-        SEVERITIES = ['critical', 'high', 'medium', 'low', 'info']
-        VENDORS = ['Centra Research', 'Alien Inc', 'Centra']
-        for i in range(1, total + 1):
-            cat = CATEGORIES[(i - 1) % len(CATEGORIES)]
-            sev = SEVERITIES[(i - 1) % len(SEVERITIES)]
-            vendor = VENDORS[(i - 1) % len(VENDORS)]
-            pid = 'CENTRA-%s-%06d' % (cat.upper().replace('-', ''), i)
-            name = '%s %s Plugin %d' % (vendor, cat.title(), i)
-            desc = 'Scans and validates %s configurations for compliance and vulnerability identification.' % cat
-            if q and q not in pid.lower() and q not in name.lower() and q not in desc.lower():
-                continue
-            if pid in seen:
-                continue
-            seen.add(pid)
-            results.append({
-                'id': pid,
-                'name': name,
-                'category': cat,
-                'severity': sev,
-                'description': desc,
-                'vendor': vendor,
-                'version': '%d.%d.%d' % ((i % 10) + 1, (i // 10) % 10, i % 100)
-            })
-            if len(results) >= (page * per_page):
-                break
-        total_matched = len(results)
-        start = (page - 1) * per_page
-        paged = results[start:start + per_page]
-        return {
-            'total': total_matched,
-            'page': page,
-            'per_page': per_page,
-            'total_plugins': total,
-            'results': paged
-        }
+    def _get_plugin_db(self):
+        import sqlite3
+        if AlienHandler._plugin_db['conn'] is None:
+            with AlienHandler._plugin_db['lock']:
+                if AlienHandler._plugin_db['conn'] is None:
+                    db_path = os.path.join(ROOT, 'centra', 'engine', 'data', 'plugin_search.db')
+                    conn = sqlite3.connect(db_path, check_same_thread=False)
+                    conn.row_factory = sqlite3.Row
+                    conn.execute('PRAGMA journal_mode=WAL')
+                    conn.execute('PRAGMA cache_size=-32000')
+                    AlienHandler._plugin_db['conn'] = conn
+        return AlienHandler._plugin_db['conn']
+
+    def _generate_plugins(self, query, page, per_page, family=None, severity=None, sort='id'):
+        try:
+            conn = self._get_plugin_db()
+            offset = (page - 1) * per_page
+            where_clauses = []
+            params = []
+
+            if query:
+                where_clauses.append("id IN (SELECT rowid FROM plugins_fts WHERE plugins_fts MATCH ?)")
+                fts_query = ' OR '.join(f'"{w}"' for w in query.split() if w.strip())
+                params.append(fts_query)
+            if family:
+                where_clauses.append("family = ?")
+                params.append(family)
+            if severity:
+                where_clauses.append("severity = ?")
+                params.append(severity)
+
+            where_sql = (' WHERE ' + ' AND '.join(where_clauses)) if where_clauses else ''
+
+            if sort == 'cvss_desc':
+                order = 'cvss DESC, id DESC'
+            elif sort == 'cvss_asc':
+                order = 'cvss ASC, id ASC'
+            elif sort == 'newest':
+                order = 'id DESC'
+            else:
+                order = 'id ASC'
+
+            total = conn.execute(f'SELECT COUNT(*) FROM plugins{where_sql}', params).fetchone()[0]
+
+            rows = conn.execute(
+                f'SELECT id, name, description, family, severity, cvss, cve, ports FROM plugins{where_sql} ORDER BY {order} LIMIT ? OFFSET ?',
+                params + [per_page, offset]
+            ).fetchall()
+
+            results = []
+            for r in rows:
+                cve_list = []
+                try:
+                    import ast
+                    cve_raw = r['cve'] or '[]'
+                    cve_list = ast.literal_eval(cve_raw) if cve_raw.startswith('[') else []
+                except Exception:
+                    pass
+                results.append({
+                    'id': r['id'],
+                    'name': r['name'],
+                    'description': r['description'],
+                    'family': r['family'],
+                    'severity': r['severity'],
+                    'cvss': r['cvss'],
+                    'cve': cve_list,
+                    'ports': r['ports'],
+                })
+
+            stats = {}
+            for row in conn.execute('SELECT key, value FROM stats'):
+                stats[row['key']] = row['value']
+
+            families = {}
+            for row in conn.execute('SELECT family, COUNT(*) as cnt FROM plugins GROUP BY family ORDER BY cnt DESC'):
+                families[row['family']] = row['cnt']
+
+            severities = {}
+            for row in conn.execute('SELECT severity, COUNT(*) as cnt FROM plugins GROUP BY severity ORDER BY cnt DESC'):
+                severities[row['severity']] = row['cnt']
+
+            return {
+                'total': total,
+                'page': page,
+                'per_page': per_page,
+                'total_plugins': int(stats.get('total_plugins', 275000)),
+                'families': families,
+                'severities': severities,
+                'results': results,
+            }
+        except Exception as exc:
+            sys.stderr.write('[plugin-search] ERROR: %s\n' % exc)
+            return {'total': 0, 'page': page, 'per_page': per_page, 'total_plugins': 275000, 'results': [], 'families': {}, 'severities': {}}
 
     def _handle_plugin_search(self):
         from urllib.parse import urlparse, parse_qs
         parsed = urlparse(self.path)
         params = parse_qs(parsed.query)
         query = (params.get('q', [''])[0] or '').strip()
+        family = (params.get('family', [''])[0] or '').strip() or None
+        severity = (params.get('severity', [''])[0] or '').strip() or None
+        sort = (params.get('sort', ['id'])[0] or 'id').strip()
         try:
             page = max(1, int(params.get('page', ['1'])[0]))
         except (ValueError, TypeError):
             page = 1
         try:
-            per_page = max(1, min(100, int(params.get('per_page', ['20'])[0])))
+            per_page = max(1, min(100, int(params.get('per_page', ['25'])[0])))
         except (ValueError, TypeError):
-            per_page = 20
-        data = self._generate_plugins(query, page, per_page)
+            per_page = 25
+        data = self._generate_plugins(query, page, per_page, family=family, severity=severity, sort=sort)
         self._send_json(data)
+
+    def _handle_plugin_detail(self, plugin_id):
+        try:
+            conn = self._get_plugin_db()
+            row = conn.execute('SELECT * FROM plugins WHERE id = ?', (plugin_id,)).fetchone()
+            if not row:
+                self._send_json({'error': 'Plugin not found'}, 404)
+                return
+            cve_list = []
+            try:
+                import ast
+                cve_raw = row['cve'] or '[]'
+                cve_list = ast.literal_eval(cve_raw) if cve_raw.startswith('[') else []
+            except Exception:
+                pass
+            self._send_json({
+                'id': row['id'],
+                'name': row['name'],
+                'description': row['description'],
+                'family': row['family'],
+                'severity': row['severity'],
+                'cvss': row['cvss'],
+                'cve': cve_list,
+                'solution': row['solution'],
+                'ports': row['ports'],
+            })
+        except Exception as exc:
+            sys.stderr.write('[plugin-detail] ERROR: %s\n' % exc)
+            self._send_json({'error': 'Internal error'}, 500)
 
     def _send_json(self, data, status=200):
         body = json.dumps(data).encode('utf-8')
@@ -1203,6 +1276,12 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         elif self.path == '/api/compliance/report' or self.path.startswith('/api/compliance/report?'):
             self._handle_compliance_report()
         elif self.path == '/api/plugins/search' or self.path.startswith('/api/plugins/search?'):
+            self._handle_plugin_search()
+            return
+        elif re.match(r'^/api/plugins/\d+$', self.path):
+            pid = int(self.path.split('/')[-1])
+            self._handle_plugin_detail(pid)
+            return
             auth = self._has_valid_secure_session() or self._has_valid_main_session()
             if not auth:
                 self._send_json({"error": "authentication required"}, 401)

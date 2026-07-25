@@ -97,9 +97,9 @@
                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </span>
                 <!-- PLACEHOLDER: 275K plugins / 680K+ CVEs — threat deterrence numbers. Replace with actual count as plugins ship. -->
-                <input class="w-full bg-white border border-[#d0d5dd] rounded-lg pl-10 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124] placeholder-gray-400 cursor-not-allowed" placeholder="Search over 275,000 available plugins" type="text" id="pluginSearch" readonly onclick="document.getElementById('pluginAuthOverlay').classList.remove('hidden')" autocomplete="off">
+                <input class="w-full bg-white border border-[#d0d5dd] rounded-lg pl-10 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124] placeholder-gray-400" placeholder="Search over 275,000 available plugins" type="text" id="pluginSearch" autocomplete="off" onkeydown="if(event.key==='Enter'){window.location='/centra/plugins.html?q='+encodeURIComponent(this.value)}">
                 <span class="absolute inset-y-0 right-0 flex items-center pr-3">
-                    <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    <svg class="w-4 h-4 text-[#1e2124]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </span>
             </div>
             <div id="pluginSearchResults" class="hidden col-span-1 md:col-span-2 bg-white border border-[#d0d5dd] rounded-lg shadow-xl max-h-80 overflow-y-auto"></div>
@@ -120,22 +120,11 @@
                     <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
                         <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                     </div>
-                    <h3 class="text-lg font-semibold text-[#101828]">Plugin Library Access</h3>
-                    <!-- PLACEHOLDER: 275K plugins / 680K+ CVEs — threat deterrence. Update when actual plugin inventory is published. -->
-                    <p class="text-sm text-gray-500 mt-1">Sign in to search Centra's full plugin library of over 275,000 plugins covering 680,000+ CVE IDs.</p>
+                    <h3 class="text-lg font-semibold text-[#101828]">Plugin Library</h3>
+                    <p class="text-sm text-gray-500 mt-1">Centra's plugin library contains over 275,000 detection plugins covering CVEs from 2017&ndash;2026. Search by CVE ID, vendor, or vulnerability type.</p>
                 </div>
-                <form id="pluginAuthForm" onsubmit="return authenticatePluginSearch(event)">
-                    <div class="mb-4">
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Username</label>
-                        <input type="text" id="pluginUser" class="w-full border border-[#d0d5dd] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124]" placeholder="Enter username" required>
-                    </div>
-                    <div class="mb-6">
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Password</label>
-                        <input type="password" id="pluginPass" class="w-full border border-[#d0d5dd] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124]" placeholder="Enter password" required>
-                    </div>
-                    <div id="pluginAuthError" class="text-red-500 text-xs mb-3 hidden">Invalid credentials. Please try again.</div>
-                    <button type="submit" class="w-full bg-[#1e2124] hover:bg-[#353a40] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition">Access Plugin Library</button>
-                </form>
+                <a href="/centra/plugins.html" class="w-full bg-[#1e2124] hover:bg-[#353a40] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition text-center block">Browse Plugin Library</a>
+                <button onclick="document.getElementById('pluginAuthOverlay').classList.add('hidden')" class="w-full mt-2 text-sm text-gray-500 hover:text-gray-700 py-2 transition">Cancel</button>
             </div>
         </div>
 
@@ -157,7 +146,7 @@
                     </div>
                     <div class="text-sm text-gray-600 space-y-4 leading-relaxed font-body">
                         <p>Centra is the security and vulnerability scanning division of <strong>Alien Inc</strong>, a parent operating group connecting seven independent companies across cybersecurity, cultural preservation, digital media, capital allocation, crisis management, legal services, and AI consulting.</p>
-                        <p>Centra continuously audits all Alien Inc properties against CIS NGINX, DISA STIG, PCI-DSS, OWASP ASVS, NIST 800-53, and NIST CSF 2.0. Our 26-plugin scanner runs automated checks across the full ecosystem, verifying infrastructure hardening, data protection, privacy compliance, and accessibility standards.</p>
+                        <p>Centra continuously audits all Alien Inc properties against CIS NGINX, DISA STIG, PCI-DSS, OWASP ASVS, NIST 800-53, and NIST CSF 2.0. Our plugin library of over <strong>275,000 detection plugins</strong> covers CVEs from 2017 through 2026, generated from NVD data with CVSS v3 scoring across 50 vulnerability families.</p>
                         <p>Security remains the cornerstone of our product development, company culture, and internal operations. This portal provides transparent, real-time evidence of our security posture.</p>
                     </div>
                 </div>

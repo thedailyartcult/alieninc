@@ -182,9 +182,17 @@ def convert_nvd_to_csv(nvd_items, output_csv, max_rows=None, start_index=0):
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Convert NVD JSON feeds to Centra plugin CSV")
+    parser.add_argument("--start-index", type=int, default=0, help="Skip first N CVEs")
+    parser.add_argument("--max-rows", type=int, default=5000, help="Max rows to output")
+    parser.add_argument("--batch-num", type=int, default=6, help="Batch number for output naming")
+    parser.add_argument("--start-id", type=int, default=7667, help="Starting plugin ID")
+    args = parser.parse_args()
+
     years = ['2024', '2025', '2026']
     input_dir = Path('/tmp/opencode')
-    output_csv = Path('/tmp/opencode/batch5_nvd_plugins.csv')
+    output_csv = Path(f'/tmp/opencode/batch{args.batch_num}_nvd_plugins.csv')
 
     all_items = []
     for year in years:
@@ -206,8 +214,10 @@ def main():
             filtered.append(item)
     print(f"With CVSS v3: {len(filtered)}")
 
-    total = convert_nvd_to_csv(filtered, output_csv, max_rows=5000)
-    print(f"\nBatch 5: {total} plugins (IDs 2667–{2666 + total})")
+    total = convert_nvd_to_csv(filtered, output_csv, max_rows=args.max_rows, start_index=args.start_index)
+    start_id = args.start_id
+    print(f"\nBatch {args.batch_num}: {total} plugins (IDs {start_id}–{start_id + total - 1})")
+    print(f"Next batch start_index: {args.start_index + total}")
 
 
 if __name__ == '__main__':

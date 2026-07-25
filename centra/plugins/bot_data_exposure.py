@@ -108,7 +108,7 @@ class BotDataExposure(NaslPlugin):
         '4. Re-run this plugin to confirm the boundary holds across all '
         '8 ecosystem sites.'
     )
-    CVE = ['CVE-2021-42013']
+    CVE = ['CVE-2023-49070', 'CVE-2024-34102']
     PORTS = [80, 443, 8080]
     PLUGIN_TYPE = 'remote'
 

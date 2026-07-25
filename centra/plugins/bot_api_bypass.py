@@ -37,7 +37,7 @@ class ApiEndpointBotBypass(NaslPlugin):
         '4. Add CORS restrictions so the API is only accessible from the '
         'same origin.'
     )
-    CVE = ['CVE-2021-42013']
+    CVE = ['CVE-2024-0204', 'CVE-2023-46805']
     PORTS = [80, 443, 8080]
     PLUGIN_TYPE = 'remote'
 

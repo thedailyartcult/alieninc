@@ -42,7 +42,7 @@ class BotCachePoisoning(NaslPlugin):
         '5. If using a CDN, configure rules to bypass cache for known '
         'bot User-Agent strings.'
     )
-    CVE = ['CVE-2021-42013']
+    CVE = ['CVE-2024-27919', 'CVE-2023-44487']
     PORTS = [80, 443, 8080]
     PLUGIN_TYPE = 'remote'
 

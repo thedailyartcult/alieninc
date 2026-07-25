@@ -119,10 +119,17 @@ class ScanEngine:
                 if cancel.is_set():
                     break
 
-                host = target if isinstance(target, str) else target.get('host', target)
-                port_list = [None]
-                if isinstance(target, dict) and 'ports' in target:
-                    port_list = target['ports']
+                if isinstance(target, str):
+                    if ':' in target:
+                        parts = target.rsplit(':', 1)
+                        host = parts[0]
+                        port_list = [int(parts[1])]
+                    else:
+                        host = target
+                        port_list = [None]
+                else:
+                    host = target.get('host', target)
+                    port_list = target.get('ports', [None])
 
                 for port in port_list:
                     if cancel.is_set():

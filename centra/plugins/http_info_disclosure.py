@@ -83,7 +83,8 @@ class HttpInfoDisclosure(NaslPlugin):
                 if 'basic' in auth_header.lower():
                     disclosures.append('Basic authentication scheme detected')
 
-            body = response.split(b'\r\n\r\n')[1:].decode('utf-8', errors='ignore')[:2000]
+            body_parts = response.split(b'\r\n\r\n', 1)
+            body = body_parts[1].decode('utf-8', errors='ignore')[:2000] if len(body_parts) > 1 else ''
             error_patterns = [
                 'stack trace', 'traceback', 'exception in', 'syntax error',
                 'uncaught exception', 'debug mode', 'development server',

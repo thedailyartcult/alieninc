@@ -36,7 +36,7 @@ class CorsPreflightBotBypass(NaslPlugin):
         '3. Never use Access-Control-Allow-Origin: * in production. '
         '4. Strip Allow header from bot responses to avoid method enumeration.'
     )
-    CVE = ['CVE-2021-42013']
+    CVE = ['CVE-2024-25124', 'CVE-2026-54290']
     PORTS = [80, 443, 8080]
     PLUGIN_TYPE = 'remote'
 

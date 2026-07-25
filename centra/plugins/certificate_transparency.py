@@ -68,10 +68,6 @@ class CertificateTransparency(NaslPlugin):
             ctx.verify_mode = ssl.CERT_NONE
             ctx.set_ciphers('DEFAULT:@SECLEVEL=1')
 
-            reader, writer = await asyncio.wait_for(
-                asyncio.open_connection(target, port), timeout=10
-            )
-
             ssl_reader, ssl_writer = await asyncio.wait_for(
                 asyncio.open_connection(target, port, ssl=ctx), timeout=10
             )

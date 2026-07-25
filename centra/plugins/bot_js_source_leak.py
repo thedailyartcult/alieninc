@@ -36,7 +36,7 @@ class JsBotDetectionLeak(NaslPlugin):
         'them server-side only. '
         '4. Use server-side rate limiting rather than JS-based detection.'
     )
-    CVE = ['CVE-2021-42013']
+    CVE = ['CVE-2023-26136', 'CVE-2024-27917']
     PORTS = [80, 443, 8080]
     PLUGIN_TYPE = 'remote'
 

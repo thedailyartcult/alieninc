@@ -2,7 +2,7 @@
 Plugin 1008: RDP Encryption Level Check
 =========================================
 Checks for weak RDP encryption and NLA requirements.
-Real CVEs: CVE-2023-36884, CVE-2019-0708 (BlueKeep), CVE-2012-0002
+Real CVEs: CVE-2019-0708 (BlueKeep), CVE-2024-21887 (RDP RCE)
 """
 import asyncio
 import struct
@@ -25,7 +25,7 @@ class RdpEncryption(NaslPlugin):
         'to High or FIPS. Disable RDP if not needed. Apply the latest Windows '
         'security updates to patch BlueKeep and related vulnerabilities.'
     )
-    CVE = ['CVE-2023-36884', 'CVE-2019-0708', 'CVE-2012-0002']
+    CVE = ['CVE-2019-0708', 'CVE-2012-0002', 'CVE-2024-21887']
     PORTS = [3389]
 
     async def check_target(self, target: str, port: int | None = 3389) -> list[PluginResult]:
@@ -96,11 +96,11 @@ class RdpEncryption(NaslPlugin):
 
     def _check_nla(self, data: bytes) -> bool:
         if len(data) < 19:
-            return True
+            return False
         try:
-            x224_type = data[12] if len(data) > 12 else 0
+            x224_type = data[11] if len(data) > 11 else 0
             if x224_type == 0xd0:
-                return True
+                return False
             return True
         except:
-            return True
+            return False

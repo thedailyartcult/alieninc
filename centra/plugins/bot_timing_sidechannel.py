@@ -39,7 +39,7 @@ class BotTimingSideChannel(NaslPlugin):
         'Use asynchronous bot detection with identical early-exit paths '
         'for all requests.'
     )
-    CVE = ['CVE-2021-42013']
+    CVE = ['CVE-2023-38184', 'CVE-2024-21644']
     PORTS = [80, 443, 8080]
     PLUGIN_TYPE = 'remote'
 

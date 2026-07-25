@@ -134,8 +134,12 @@ class NaslPlugin(ABC):
         """Safe wrapper around check_target with error handling."""
         try:
             if self.PLUGIN_TYPE == 'summary':
-                return await self.check_target(target, port, scan_context)
-            return await self.check_target(target, port)
+                result = await self.check_target(target, port, scan_context)
+            else:
+                result = await self.check_target(target, port)
+            if isinstance(result, PluginResult):
+                return [result]
+            return result or []
         except Exception as e:
             return [PluginResult(
                 vulnerable=False,

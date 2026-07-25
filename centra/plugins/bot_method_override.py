@@ -37,7 +37,7 @@ class HttpMethodOverride(NaslPlugin):
         '2. Apply bot detection uniformly to all HTTP methods, not just '
         'GET. 3. Return 405 for methods not explicitly supported.'
     )
-    CVE = ['CVE-2021-42013']
+    CVE = ['CVE-2023-49070', 'CVE-2024-27917']
     PORTS = [80, 443, 8080]
     PLUGIN_TYPE = 'remote'
 

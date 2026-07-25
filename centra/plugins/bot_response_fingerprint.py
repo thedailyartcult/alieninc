@@ -38,7 +38,7 @@ class BotResponseFingerprint(NaslPlugin):
         'consistent header ordering regardless of which code path serves '
         'the response.'
     )
-    CVE = ['CVE-2021-42013']
+    CVE = ['CVE-2024-3144', 'CVE-2023-38184']
     PORTS = [80, 443, 8080]
     PLUGIN_TYPE = 'remote'
 

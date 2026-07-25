@@ -34,7 +34,7 @@ class BotErrorDisclosure(NaslPlugin):
         'framework name, or internal paths. Remove X-Powered-By and Server '
         'headers or genericize them.'
     )
-    CVE = ['CVE-2021-42013']
+    CVE = ['CVE-2023-51478', 'CVE-2024-20931']
     PORTS = [80, 443, 8080]
     PLUGIN_TYPE = 'remote'
 

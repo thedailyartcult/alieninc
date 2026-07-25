@@ -2,7 +2,7 @@
 Plugin 1002: Anonymous FTP Access Check
 ========================================
 Detects FTP servers allowing anonymous login.
-Real CVEs: CVE-2019-5400, CVE-2017-17382, CVE-2014-2968
+Real CVEs: CVE-2019-5400 (FTP bypass), CVE-2014-2968 (FTP proxy)
 """
 import asyncio
 
@@ -23,7 +23,7 @@ class AnonymousFtp(NaslPlugin):
         'authentication instead. If anonymous access is required, restrict it '
         'to a read-only chroot directory with no sensitive data.'
     )
-    CVE = ['CVE-2019-5400', 'CVE-2017-17382']
+    CVE = ['CVE-2019-5400', 'CVE-2014-2968']
     PORTS = [21]
 
     async def check_target(self, target: str, port: int | None = 21) -> list[PluginResult]:

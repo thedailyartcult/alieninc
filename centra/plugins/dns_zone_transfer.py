@@ -74,8 +74,12 @@ class DnsZoneTransfer(NaslPlugin):
 
     def _build_axfr_query(self, domain: str) -> bytes:
         header = struct.pack('!HHHHHH', 0x1234, 0x0000, 1, 0, 0, 0)
-        question = b'\x07default\x04bind\x00\x00\xfc\x00\x01'
-        return header + question
+        qname = b''
+        for label in domain.strip('.').split('.'):
+            qname += bytes([len(label)]) + label.encode()
+        qname += b'\x00'
+        qtype_axfr = struct.pack('!HH', 252, 1)
+        return header + qname + qtype_axfr
 
     def _parse_axfr(self, data: bytes) -> list:
         return []

@@ -2,16 +2,16 @@ import asyncio
 from plugins import NaslPlugin, PluginResult
 
 
-class JwtAlgorithmConfusionPlugin(NaslPlugin):
-    PLUGIN_ID = 1317
-    NAME = "JWT Algorithm Confusion Check"
-    DESCRIPTION = "Tests for JWT algorithm confusion vulnerabilities where the server accepts 'none' algorithm or algorithm switching attacks (RS256->HS256), allowing signature bypass and token forgery."
-    SOLUTION = "Always validate the JWT algorithm on the server side. Enforce a strict allowlist of acceptable algorithms. Reject 'none' algorithm tokens."
-    CVSS_SCORE = 8.2
-    SEVERITY = "High"
-    FAMILY = "API Security"
-    CVE = ["CVE-2016-5431"]
-    PORTS = [80, 443, 8080, 8443, 3000]
+class JenkinsCliFileReadPlugin(NaslPlugin):
+    PLUGIN_ID = 1297
+    NAME = "Jenkins CLI Arbitrary File Read"
+    DESCRIPTION = "Jenkins <= 2.441, LTS <= 2.426.3 contains an arbitrary file read vulnerability in the CLI command parser that allows unauthenticated attackers to read arbitrary files from the file system."
+    SOLUTION = "Upgrade Jenkins to version 2.442 or LTS 2.426.4 or later."
+    CVSS_SCORE = 9.8
+    SEVERITY = "Critical"
+    FAMILY = "Web Servers"
+    CVE = ["CVE-2024-23897"]
+    PORTS = [80, 443, 8080, 8443]
 
     async def check_target(self, target: str, port: int | None = None) -> list[PluginResult]:
         results = []
@@ -21,11 +21,10 @@ class JwtAlgorithmConfusionPlugin(NaslPlugin):
                     asyncio.open_connection(target, p), timeout=5
                 )
                 request = (
-                    f"GET /api/health HTTP/1.1\r\n"
+                    f"GET /cli?remoting=false HTTP/1.1\r\n"
                     f"Host: {target}:{p}\r\n"
-                    f"Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTUxNjIzOTAyMn0.\r\n"
                     f"User-Agent: CentraScanner/1.0\r\n"
-                    f"Accept: application/json\r\n"
+                    f"Accept: */*\r\n"
                     f"Connection: close\r\n\r\n"
                 )
                 writer.write(request.encode())
@@ -34,27 +33,27 @@ class JwtAlgorithmConfusionPlugin(NaslPlugin):
                 writer.close()
                 await writer.wait_closed()
                 body = resp.decode("utf-8", errors="replace")
-                if "HTTP/1.1 200" in body:
+                if "HTTP/1.1 200" in body and ("Jenkins-CLI" in body or "CLI" in body):
                     results.append(PluginResult(
                         vulnerable=True, target=target, port=p,
                         cvss_score=self.CVSS_SCORE, severity=self.SEVERITY,
-                        description=f"{self.DESCRIPTION} JWT 'none' algorithm accepted on port {p}",
+                        description=f"{self.DESCRIPTION} Jenkins CLI endpoint exposed on port {p}",
                         solution=self.SOLUTION,
-                        evidence=f"'none' algorithm JWT token accepted: {body[:300]}",
+                        evidence=f"Jenkins CLI endpoint accessible: {body[:500]}",
                         references=[f"https://nvd.nist.gov/vuln/detail/{self.CVE[0]}"]
                     ))
                 else:
                     results.append(PluginResult(
                         vulnerable=False, target=target, port=p,
                         cvss_score=0, severity="Info",
-                        description=f"JWT algorithm validation enforced on port {p}",
+                        description="Target not vulnerable to Jenkins CLI file read",
                         solution="", evidence="", references=[]
                     ))
             except Exception:
                 results.append(PluginResult(
                     vulnerable=False, target=target, port=p,
                     cvss_score=0, severity="Info",
-                    description=f"Could not connect to port {p}",
+                    description="Could not connect to target",
                     solution="", evidence="", references=[]
                 ))
         return results

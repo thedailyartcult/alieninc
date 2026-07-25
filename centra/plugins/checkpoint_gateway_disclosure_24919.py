@@ -2,16 +2,16 @@ import asyncio
 from plugins import NaslPlugin, PluginResult
 
 
-class JwtAlgorithmConfusionPlugin(NaslPlugin):
-    PLUGIN_ID = 1317
-    NAME = "JWT Algorithm Confusion Check"
-    DESCRIPTION = "Tests for JWT algorithm confusion vulnerabilities where the server accepts 'none' algorithm or algorithm switching attacks (RS256->HS256), allowing signature bypass and token forgery."
-    SOLUTION = "Always validate the JWT algorithm on the server side. Enforce a strict allowlist of acceptable algorithms. Reject 'none' algorithm tokens."
-    CVSS_SCORE = 8.2
+class CheckPointDisclosure24919Plugin(NaslPlugin):
+    PLUGIN_ID = 1302
+    NAME = "Check Point Security Gateway Info Disclosure"
+    DESCRIPTION = "Check Point Security Gateway versions before R81.20 (May 2024) contain an information disclosure vulnerability in the IPSec VPN component that allows an unauthenticated attacker to read sensitive information."
+    SOLUTION = "Upgrade Check Point Security Gateway to R81.20 or later. Apply Check Point security advisory sk182336."
+    CVSS_SCORE = 8.6
     SEVERITY = "High"
-    FAMILY = "API Security"
-    CVE = ["CVE-2016-5431"]
-    PORTS = [80, 443, 8080, 8443, 3000]
+    FAMILY = "Network Devices"
+    CVE = ["CVE-2024-24919"]
+    PORTS = [443, 8443, 500, 4500]
 
     async def check_target(self, target: str, port: int | None = None) -> list[PluginResult]:
         results = []
@@ -21,11 +21,10 @@ class JwtAlgorithmConfusionPlugin(NaslPlugin):
                     asyncio.open_connection(target, p), timeout=5
                 )
                 request = (
-                    f"GET /api/health HTTP/1.1\r\n"
+                    f"GET / HTTP/1.1\r\n"
                     f"Host: {target}:{p}\r\n"
-                    f"Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTUxNjIzOTAyMn0.\r\n"
                     f"User-Agent: CentraScanner/1.0\r\n"
-                    f"Accept: application/json\r\n"
+                    f"Accept: */*\r\n"
                     f"Connection: close\r\n\r\n"
                 )
                 writer.write(request.encode())
@@ -34,27 +33,27 @@ class JwtAlgorithmConfusionPlugin(NaslPlugin):
                 writer.close()
                 await writer.wait_closed()
                 body = resp.decode("utf-8", errors="replace")
-                if "HTTP/1.1 200" in body:
+                if "Check Point" in body or "CPChe" in body or "SG" in body:
                     results.append(PluginResult(
                         vulnerable=True, target=target, port=p,
                         cvss_score=self.CVSS_SCORE, severity=self.SEVERITY,
-                        description=f"{self.DESCRIPTION} JWT 'none' algorithm accepted on port {p}",
+                        description=f"{self.DESCRIPTION} Check Point Gateway detected on port {p}",
                         solution=self.SOLUTION,
-                        evidence=f"'none' algorithm JWT token accepted: {body[:300]}",
+                        evidence=f"Check Point banner: {body[:300]}",
                         references=[f"https://nvd.nist.gov/vuln/detail/{self.CVE[0]}"]
                     ))
                 else:
                     results.append(PluginResult(
                         vulnerable=False, target=target, port=p,
                         cvss_score=0, severity="Info",
-                        description=f"JWT algorithm validation enforced on port {p}",
+                        description="Target not running Check Point Gateway",
                         solution="", evidence="", references=[]
                     ))
             except Exception:
                 results.append(PluginResult(
                     vulnerable=False, target=target, port=p,
                     cvss_score=0, severity="Info",
-                    description=f"Could not connect to port {p}",
+                    description="Could not connect to target",
                     solution="", evidence="", references=[]
                 ))
         return results

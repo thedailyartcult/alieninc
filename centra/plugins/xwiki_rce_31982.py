@@ -2,16 +2,16 @@ import asyncio
 from plugins import NaslPlugin, PluginResult
 
 
-class JwtAlgorithmConfusionPlugin(NaslPlugin):
-    PLUGIN_ID = 1317
-    NAME = "JWT Algorithm Confusion Check"
-    DESCRIPTION = "Tests for JWT algorithm confusion vulnerabilities where the server accepts 'none' algorithm or algorithm switching attacks (RS256->HS256), allowing signature bypass and token forgery."
-    SOLUTION = "Always validate the JWT algorithm on the server side. Enforce a strict allowlist of acceptable algorithms. Reject 'none' algorithm tokens."
-    CVSS_SCORE = 8.2
-    SEVERITY = "High"
-    FAMILY = "API Security"
-    CVE = ["CVE-2016-5431"]
-    PORTS = [80, 443, 8080, 8443, 3000]
+class XWikiRce31982Plugin(NaslPlugin):
+    PLUGIN_ID = 1301
+    NAME = "XWiki RCE (CVE-2024-31982)"
+    DESCRIPTION = "XWiki < 14.10.21, 15.0-15.5.4, 15.6-15.10.1 contains a template injection vulnerability in the document rendering that allows an authenticated user with edit rights to execute arbitrary code."
+    SOLUTION = "Upgrade XWiki to version 14.10.21, 15.5.5, or 15.10.2 or later."
+    CVSS_SCORE = 9.8
+    SEVERITY = "Critical"
+    FAMILY = "Web Application"
+    CVE = ["CVE-2024-31982"]
+    PORTS = [80, 443, 8080, 8443]
 
     async def check_target(self, target: str, port: int | None = None) -> list[PluginResult]:
         results = []
@@ -21,40 +21,39 @@ class JwtAlgorithmConfusionPlugin(NaslPlugin):
                     asyncio.open_connection(target, p), timeout=5
                 )
                 request = (
-                    f"GET /api/health HTTP/1.1\r\n"
+                    f"GET /xwiki/bin/view/Main/WebHome HTTP/1.1\r\n"
                     f"Host: {target}:{p}\r\n"
-                    f"Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTUxNjIzOTAyMn0.\r\n"
                     f"User-Agent: CentraScanner/1.0\r\n"
-                    f"Accept: application/json\r\n"
+                    f"Accept: */*\r\n"
                     f"Connection: close\r\n\r\n"
                 )
                 writer.write(request.encode())
                 await writer.drain()
-                resp = await asyncio.wait_for(reader.read(4096), timeout=5)
+                resp = await asyncio.wait_for(reader.read(8192), timeout=5)
                 writer.close()
                 await writer.wait_closed()
                 body = resp.decode("utf-8", errors="replace")
-                if "HTTP/1.1 200" in body:
+                if "HTTP/1.1 200" in body and ("XWiki" in body or "xwiki" in body):
                     results.append(PluginResult(
                         vulnerable=True, target=target, port=p,
                         cvss_score=self.CVSS_SCORE, severity=self.SEVERITY,
-                        description=f"{self.DESCRIPTION} JWT 'none' algorithm accepted on port {p}",
+                        description=f"{self.DESCRIPTION} XWiki instance detected on port {p}",
                         solution=self.SOLUTION,
-                        evidence=f"'none' algorithm JWT token accepted: {body[:300]}",
+                        evidence=f"XWiki main page accessible: {body[:300]}",
                         references=[f"https://nvd.nist.gov/vuln/detail/{self.CVE[0]}"]
                     ))
                 else:
                     results.append(PluginResult(
                         vulnerable=False, target=target, port=p,
                         cvss_score=0, severity="Info",
-                        description=f"JWT algorithm validation enforced on port {p}",
+                        description="Target not running XWiki",
                         solution="", evidence="", references=[]
                     ))
             except Exception:
                 results.append(PluginResult(
                     vulnerable=False, target=target, port=p,
                     cvss_score=0, severity="Info",
-                    description=f"Could not connect to port {p}",
+                    description="Could not connect to target",
                     solution="", evidence="", references=[]
                 ))
         return results

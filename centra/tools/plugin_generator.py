@@ -53,7 +53,10 @@ class {class_name}(NaslPlugin):
 
 
 def sanitize(s, max_len=80):
-    return s.replace('"', '\\"').replace("\n", " ").strip()[:max_len]
+    result = s.replace('"', '\\"').replace("\n", " ").replace("\\", "\\\\")
+    # Handle any remaining problematic control chars
+    result = ''.join(c for c in result if ord(c) >= 32 or c in '\n\r\t')
+    return result.strip()[:max_len]
 
 
 def make_class_name(name, plugin_id):

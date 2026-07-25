@@ -1108,6 +1108,65 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             sys.stderr.write('[plugin-detail] ERROR: %s\n' % exc)
             self._send_json({'error': 'Internal error'}, 500)
 
+    _plugins_page_cache = {'html': None, 'mtime': 0}
+
+    def _serve_plugins_page(self):
+        try:
+            html_path = os.path.join(ROOT, 'centra', 'plugins.html')
+            mtime = os.path.getmtime(html_path)
+
+            if AlienHandler._plugins_page_cache['html'] is None or AlienHandler._plugins_page_cache['mtime'] != mtime:
+                with open(html_path, 'r', encoding='utf-8') as f:
+                    template = f.read()
+
+                conn = self._get_plugin_db()
+                stats = {}
+                for row in conn.execute('SELECT key, value FROM stats'):
+                    stats[row['key']] = row['value']
+                families = {}
+                for row in conn.execute('SELECT family, COUNT(*) as cnt FROM plugins GROUP BY family ORDER BY cnt DESC'):
+                    families[row['family']] = row['cnt']
+                severities = {}
+                for row in conn.execute('SELECT severity, COUNT(*) as cnt FROM plugins GROUP BY severity ORDER BY cnt DESC'):
+                    severities[row['severity']] = row['cnt']
+
+                import ast
+                recent = []
+                for row in conn.execute('SELECT id, name, description, family, severity, cvss, cve, ports FROM plugins ORDER BY id DESC LIMIT 50'):
+                    cve_list = []
+                    try:
+                        cve_raw = row['cve'] or '[]'
+                        cve_list = ast.literal_eval(cve_raw) if cve_raw.startswith('[') else []
+                    except Exception:
+                        pass
+                    recent.append({
+                        'id': row['id'], 'name': row['name'], 'description': row['description'],
+                        'family': row['family'], 'severity': row['severity'], 'cvss': row['cvss'],
+                        'cve': cve_list, 'ports': row['ports'],
+                    })
+
+                initial = json.dumps({
+                    'total_plugins': int(stats.get('total_plugins', 275000)),
+                    'families': families,
+                    'severities': severities,
+                    'recent': recent,
+                }, separators=(',', ':'))
+
+                html = template.replace('{%INITIAL_DATA%}', initial)
+                AlienHandler._plugins_page_cache['html'] = html
+                AlienHandler._plugins_page_cache['mtime'] = mtime
+
+            body = AlienHandler._plugins_page_cache['html'].encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.send_header('Content-Length', str(len(body)))
+            self.send_header('Cache-Control', 'public, max-age=60')
+            self.end_headers()
+            self.wfile.write(body)
+        except Exception as exc:
+            sys.stderr.write('[plugins-page] ERROR: %s\n' % exc)
+            self.send_error(500)
+
     def _send_json(self, data, status=200):
         body = json.dumps(data).encode('utf-8')
         self.send_response(status)
@@ -1287,11 +1346,9 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             pid = int(self.path.split('/')[-1])
             self._handle_plugin_detail(pid)
             return
-            auth = self._has_valid_secure_session() or self._has_valid_main_session()
-            if not auth:
-                self._send_json({"error": "authentication required"}, 401)
-                return
-            self._handle_plugin_search()
+        elif self.path == '/plugins.html' or self.path.startswith('/plugins.html?'):
+            self._serve_plugins_page()
+            return
         elif self.path == '/console' or self.path.startswith('/console/'):
             auth = self._has_valid_secure_session() or self._has_valid_main_session()
             if not auth:

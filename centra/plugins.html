@@ -11,409 +11,449 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Sans+Condensed:wght@700;800&family=Orbitron:wght@900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="/logo.png">
     <style>
-        :root { --aliendot: #ffd400; }
-        body { font-family: 'Inter', sans-serif; background-color: #f9fafb; color: #101828; }
-        .font-display { font-family: 'Instrument Sans Condensed', 'Instrument Sans', sans-serif; }
-        .font-body { font-family: 'Instrument Sans', 'Inter', sans-serif; }
-        .brand-logo { display: flex; align-items: center; gap: 0.12rem; text-decoration: none; }
-        .brand-logo__text { font-family: 'Instrument Sans Condensed', sans-serif; font-size: clamp(24px, 5vw, 29px); font-weight: 800; letter-spacing: -0.03em; color: #131920; line-height: 1; }
-        .brand-logo__dot { height: 0.41em; width: 0.41em; margin-top: 0.48em; display: block; }
-        .centra-mark { display: inline-block; width: 8px; height: 8px; background: var(--aliendot); border-radius: 1px; margin-left: 2px; vertical-align: baseline; }
+        :root{--aliendot:#ffd400;--bg:#f9fafb;--surface:#fff;--border:#eaecf0;--border-strong:#d0d5dd;--text:#101828;--text-secondary:#475467;--text-muted:#98a2b3;--accent:#1e2124;--accent-hover:#353a40;--focus:#b2ddff}
+        *{box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);margin:0;min-height:100vh;display:flex;flex-direction:column}
+        .font-body{font-family:'Instrument Sans','Inter',sans-serif}
+        .brand-logo{display:flex;align-items:center;gap:.12rem;text-decoration:none}
+        .brand-logo__text{font-family:'Instrument Sans Condensed',sans-serif;font-size:clamp(24px,5vw,29px);font-weight:800;letter-spacing:-.03em;color:#131920;line-height:1}
+        .brand-logo__dot{height:.41em;width:.41em;margin-top:.48em;display:block}
 
-        .severity-critical { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-        .severity-high { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
-        .severity-medium { background: #fefce8; color: #854d0e; border: 1px solid #fef08a; }
-        .severity-low { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-        .severity-info { background: #f0f9ff; color: #075985; border: 1px solid #bae6fd; }
+        .sev{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;line-height:1.4}
+        .sev::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+        .sev-critical{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}.sev-critical::before{background:#ef4444}
+        .sev-high{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}.sev-high::before{background:#f97316}
+        .sev-medium{background:#fefce8;color:#854d0e;border:1px solid #fef08a}.sev-medium::before{background:#eab308}
+        .sev-low{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}.sev-low::before{background:#22c55e}
+        .sev-info{background:#f0f9ff;color:#075985;border:1px solid #bae6fd}.sev-info::before{background:#3b82f6}
 
-        .result-row { transition: background 0.1s ease; }
-        .result-row:hover { background: #f8fafc; }
+        .chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:500;padding:5px 12px;border-radius:20px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text-secondary);cursor:pointer;transition:all .12s ease;white-space:nowrap;user-select:none}
+        .chip:hover{background:#f3f4f6;border-color:#9ca3af}
+        .chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+        .chip .count{color:var(--text-muted);font-weight:400;font-size:11px}
+        .chip.active .count{color:rgba(255,255,255,.6)}
 
-        .stat-card { transition: all 0.15s ease; }
-        .stat-card:hover { border-color: #1e2124; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .row{display:grid;grid-template-columns:80px 1fr 180px 70px 100px;gap:12px;align-items:center;padding:12px 20px;border-bottom:1px solid #f2f4f7;cursor:pointer;transition:background .08s ease}
+        .row:hover{background:#f8fafc}
+        @media(max-width:768px){.row{grid-template-columns:60px 1fr 70px;gap:8px;padding:10px 14px}.row .r-family,.row .r-cvss{display:none}}
 
-        .family-chip { transition: all 0.1s ease; cursor: pointer; }
-        .family-chip:hover { background: #f3f4f6; border-color: #9ca3af; }
-        .family-chip.active { background: #1e2124; color: white; border-color: #1e2124; }
+        .row-id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:var(--text-secondary)}
+        .row-name{font-size:13px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .row-desc{font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
+        .row-family{font-size:12px;color:var(--text-secondary)}
+        .row-cvss{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+        .row-sev{display:flex;justify-content:flex-end}
 
-        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
-        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .loader{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .5s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
 
-        .page-btn { transition: all 0.1s ease; }
-        .page-btn:hover:not(:disabled) { background: #f3f4f6; border-color: #9ca3af; }
-        .page-btn.active { background: #1e2124; color: white; border-color: #1e2124; }
-        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .skeleton{background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:4px}
+        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+        .stat{transition:all .12s ease}.stat:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.05)}
+
+        .kbd{display:inline-flex;align-items:center;padding:1px 5px;font-size:10px;font-family:ui-monospace,monospace;color:var(--text-muted);background:#f9fafb;border:1px solid var(--border);border-radius:3px;line-height:1.6}
+
+        #results{min-height:400px}
+        .sentinel{height:1px}
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body>
 
     <header class="bg-white border-b border-[#eaecf0] sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <a href="/" class="brand-logo" aria-label="Alien Inc Homepage">
-                    <span class="brand-logo__text">Alien</span>
-                    <img src="/logo.png" alt="" class="brand-logo__dot">
-                    <span class="brand-logo__text">Inc</span>
+                <a href="/" class="brand-logo"><span class="brand-logo__text">Alien</span><img src="/logo.png" alt="" class="brand-logo__dot"><span class="brand-logo__text">Inc</span></a>
+                <span class="text-gray-200">/</span>
+                <a href="/" class="flex items-center gap-2">
+                    <svg viewBox="0 0 360 64" xmlns="http://www.w3.org/2000/svg" style="height:24px;width:auto"><text x="8" y="44" fill="#131920" letter-spacing="1" font-size="48" font-weight="900" font-family="Orbitron,sans-serif">CENTR<tspan fill="#00FFFF">A</tspan></text></svg>
                 </a>
-                <span class="text-gray-200 text-lg">/</span>
-                <a href="/" class="flex items-center gap-2" aria-label="Centra home">
-                    <svg viewBox="0 0 360 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CENTRA" style="height:28px;width:auto;">
-                        <defs><style>.cl{font-family:'Orbitron',sans-serif;font-weight:900}</style></defs>
-                        <text x="8" y="44" class="cl" fill="#131920" letter-spacing="1" font-size="48">CENTR<tspan fill="#00FFFF">A</tspan></text>
-                    </svg>
-                </a>
-                <span class="text-gray-200 text-lg">|</span>
-                <h1 class="text-sm font-medium text-[#475467]">Plugin Library</h1>
+                <span class="text-gray-200">|</span>
+                <span class="text-sm font-medium text-[#475467]">Plugin Library</span>
             </div>
-            <div class="flex items-center gap-3">
-                <a href="/" class="text-sm text-[#475467] hover:text-[#1e2124] font-medium transition">Portal</a>
-                <a href="/scan.html" class="text-sm text-[#475467] hover:text-[#1e2124] font-medium transition">Scan Console</a>
+            <div class="flex items-center gap-4 text-sm">
+                <a href="/" class="text-[#475467] hover:text-[#1e2124] font-medium transition hidden sm:block">Portal</a>
+                <a href="/scan.html" class="text-[#475467] hover:text-[#1e2124] font-medium transition hidden sm:block">Scan</a>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-8 w-full flex-grow">
+    <main class="max-w-7xl mx-auto px-4 py-6 w-full flex-grow">
 
-        <div class="bg-white border-t-4 border-[#1e2124] border-x border-b border-[#d0d5dd] rounded-lg p-6 mb-6 shadow-sm">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h2 class="text-xl font-semibold text-[#101828]">Centra Plugin Library</h2>
-                    <p class="text-sm text-gray-500 mt-1">Vulnerability detection plugins generated from NVD data (2017&ndash;2026). Covering CVEs across all major software vendors and platforms.</p>
-                </div>
-                <div class="flex items-center gap-2 text-xs text-gray-500">
-                    <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                    <span>All plugins operational</span>
-                </div>
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-5">
+            <div>
+                <h2 class="text-lg font-semibold text-[#101828]">Vulnerability Plugins</h2>
+                <p class="text-sm text-[#475467] mt-0.5">NVD-sourced detection plugins, 2017&ndash;2026</p>
             </div>
+            <div class="flex items-center gap-2 text-xs text-[#475467]" id="liveCount"></div>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6" id="statsCards">
-            <div class="stat-card bg-white border border-[#d0d5dd] rounded-lg p-4 text-center">
-                <div class="text-2xl font-bold text-[#101828]" id="statTotal">&mdash;</div>
-                <div class="text-xs text-gray-500 mt-1">Total Plugins</div>
-            </div>
-            <div class="stat-card bg-white border border-[#d0d5dd] rounded-lg p-4 text-center">
-                <div class="text-2xl font-bold text-[#991b1b]" id="statCritical">&mdash;</div>
-                <div class="text-xs text-gray-500 mt-1">Critical</div>
-            </div>
-            <div class="stat-card bg-white border border-[#d0d5dd] rounded-lg p-4 text-center">
-                <div class="text-2xl font-bold text-[#9a3412]" id="statHigh">&mdash;</div>
-                <div class="text-xs text-gray-500 mt-1">High</div>
-            </div>
-            <div class="stat-card bg-white border border-[#d0d5dd] rounded-lg p-4 text-center">
-                <div class="text-2xl font-bold text-[#854d0e]" id="statMedium">&mdash;</div>
-                <div class="text-xs text-gray-500 mt-1">Medium</div>
-            </div>
-            <div class="stat-card bg-white border border-[#d0d5dd] rounded-lg p-4 text-center">
-                <div class="text-2xl font-bold text-[#166534]" id="statFamilies">&mdash;</div>
-                <div class="text-xs text-gray-500 mt-1">Families</div>
-            </div>
-        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-5" id="stats"></div>
 
-        <div class="bg-white border border-[#d0d5dd] rounded-lg shadow-sm mb-6">
-            <div class="p-4 border-b border-[#eaecf0]">
-                <div class="flex flex-col md:flex-row gap-3">
-                    <div class="flex-1 relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        </span>
-                        <input type="text" id="searchInput" class="w-full bg-white border border-[#d0d5dd] rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124] placeholder-gray-400" placeholder="Search by CVE ID, plugin name, or keyword..." autocomplete="off">
-                    </div>
-                    <div class="flex gap-2">
-                        <select id="severityFilter" class="border border-[#d0d5dd] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124] bg-white text-[#344054]">
-                            <option value="">All Severities</option>
-                            <option value="Critical">Critical</option>
-                            <option value="High">High</option>
-                            <option value="Medium">Medium</option>
-                            <option value="Low">Low</option>
-                            <option value="Info">Info</option>
-                        </select>
-                        <select id="sortSelect" class="border border-[#d0d5dd] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124] bg-white text-[#344054]">
-                            <option value="id">ID Ascending</option>
-                            <option value="newest">Newest First</option>
-                            <option value="cvss_desc">CVSS High to Low</option>
-                            <option value="cvss_asc">CVSS Low to High</option>
-                        </select>
+        <div class="bg-white border border-[#d0d5dd] rounded-lg shadow-sm overflow-hidden">
+            <div class="p-3 border-b border-[#eaecf0] flex flex-col sm:flex-row gap-2.5">
+                <div class="flex-1 relative">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#98a2b3]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input type="text" id="q" class="w-full border border-[#d0d5dd] rounded-lg pl-9 pr-16 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124] placeholder-[#98a2b3]" placeholder="Search CVE, vendor, keyword..." autocomplete="off" autofocus>
+                    <div class="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                        <span id="clearBtn" class="hidden text-[#98a2b3] hover:text-[#475467] cursor-pointer text-xs font-medium">Clear</span>
+                        <span class="kbd">/</span>
                     </div>
                 </div>
-            </div>
-
-            <div class="px-4 py-3 border-b border-[#eaecf0] bg-gray-50/50">
-                <div class="flex items-center gap-2 overflow-x-auto pb-1" id="familyChips">
-                    <button class="family-chip active text-xs font-medium px-3 py-1.5 rounded-full border border-[#d0d5dd] whitespace-nowrap" data-family="">All</button>
+                <div class="flex gap-2">
+                    <select id="sev" class="border border-[#d0d5dd] rounded-lg px-3 py-2.5 text-sm bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124]">
+                        <option value="">All Severities</option>
+                        <option value="Critical">Critical</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                    <select id="sort" class="border border-[#d0d5dd] rounded-lg px-3 py-2.5 text-sm bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124]">
+                        <option value="newest">Newest</option>
+                        <option value="cvss_desc">CVSS ↓</option>
+                        <option value="cvss_asc">CVSS ↑</option>
+                        <option value="id">ID ↑</option>
+                    </select>
                 </div>
             </div>
 
-            <div class="px-4 py-2 border-b border-[#eaecf0] flex items-center justify-between text-xs text-gray-500">
-                <span id="resultCount">Loading...</span>
-                <span id="pageInfo"></span>
+            <div class="px-3 py-2.5 border-b border-[#eaecf0] bg-[#fcfcfd] overflow-x-auto" id="families"></div>
+
+            <div class="px-4 py-2 border-b border-[#f2f4f7] flex items-center justify-between text-xs text-[#475467]" id="resultMeta">
+                <span id="resultInfo">Loading...</span>
             </div>
 
-            <div id="resultsContainer">
-                <div class="p-8 text-center">
-                    <div class="skeleton h-4 w-48 mx-auto rounded mb-3"></div>
-                    <div class="skeleton h-4 w-96 mx-auto rounded mb-3"></div>
-                    <div class="skeleton h-4 w-64 mx-auto rounded"></div>
-                </div>
-            </div>
+            <div id="results"></div>
 
-            <div class="px-4 py-3 border-t border-[#eaecf0] flex items-center justify-between">
-                <div class="text-xs text-gray-500" id="paginationInfo"></div>
-                <div class="flex items-center gap-1" id="paginationButtons"></div>
+            <div id="loadMore" class="hidden p-4 text-center">
+                <div class="loader mx-auto"></div>
             </div>
+            <div id="endMessage" class="hidden p-4 text-center text-xs text-[#98a2b3]">All plugins loaded</div>
         </div>
-
     </main>
 
-    <footer class="bg-white border-t border-[#eaecf0] py-6 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div class="flex items-center gap-2 text-xs text-gray-500">
-                <span>&copy; 2026 Centra &mdash; A subsidiary of Alien Inc</span>
-            </div>
-            <div class="flex items-center gap-4 text-xs text-gray-500">
+    <footer class="bg-white border-t border-[#eaecf0] py-5 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <span class="text-xs text-[#475467]">&copy; 2026 Centra &mdash; Alien Inc</span>
+            <div class="flex gap-4 text-xs text-[#475467]">
                 <a href="/" class="hover:text-[#1e2124] transition">Portal</a>
-                <a href="/scan.html" class="hover:text-[#1e2124] transition">Scan Console</a>
-                <a href="/trust/" class="hover:text-[#1e2124] transition">Trust Center</a>
+                <a href="/scan.html" class="hover:text-[#1e2124] transition">Scan</a>
+                <a href="/trust/" class="hover:text-[#1e2124] transition">Trust</a>
             </div>
         </div>
     </footer>
 
-    <div id="pluginModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center" style="background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);">
-        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[85vh] overflow-y-auto border border-[#eaecf0]">
-            <div class="sticky top-0 bg-white border-b border-[#eaecf0] px-6 py-4 flex items-center justify-between rounded-t-xl">
-                <h3 class="text-lg font-semibold text-[#101828]" id="modalTitle">Plugin Details</h3>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none" aria-label="Close">&times;</button>
+    <div id="modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center" style="background:rgba(0,0,0,.45);backdrop-filter:blur(4px)">
+        <div class="bg-white rounded-xl shadow-2xl max-w-xl w-full mx-4 max-h-[80vh] overflow-y-auto border border-[#eaecf0]">
+            <div class="sticky top-0 bg-white border-b border-[#eaecf0] px-5 py-3.5 flex items-center justify-between rounded-t-xl z-10">
+                <h3 class="text-sm font-semibold text-[#101828]" id="mTitle"></h3>
+                <button onclick="closeModal()" class="text-[#98a2b3] hover:text-[#475467] text-xl leading-none w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 transition">&times;</button>
             </div>
-            <div class="px-6 py-5" id="modalBody"></div>
+            <div class="px-5 py-4" id="mBody"></div>
         </div>
     </div>
 
+    <script id="initialData" type="application/json">{%INITIAL_DATA%}</script>
+
     <script>
-    const PER_PAGE = 25;
-    let currentPage = 1;
-    let currentFamily = '';
-    let currentSeverity = '';
-    let currentSort = 'id';
-    let searchTimeout = null;
+    (function(){
+        const PER_PAGE = 50;
+        const $ = id => document.getElementById(id);
+        const initial = JSON.parse($('initialData').textContent);
 
-    async function fetchPlugins() {
-        const q = document.getElementById('searchInput').value.trim();
-        const params = new URLSearchParams({
-            page: currentPage,
-            per_page: PER_PAGE,
-            sort: currentSort,
-        });
-        if (q) params.set('q', q);
-        if (currentFamily) params.set('family', currentFamily);
-        if (currentSeverity) params.set('severity', currentSeverity);
+        let state = { q:'', family:'', severity:'', sort:'newest', page:1, total:0, totalPlugins:initial.total_plugins, loading:false, hasMore:true };
+        let cache = {};
+        let debounceTimer = null;
 
-        const res = await fetch('/api/plugins/search?' + params.toString());
-        if (!res.ok) throw new Error('API error');
-        return res.json();
-    }
-
-    function severityBadge(sev) {
-        const cls = {
-            'Critical': 'severity-critical',
-            'High': 'severity-high',
-            'Medium': 'severity-medium',
-            'Low': 'severity-low',
-            'Info': 'severity-info',
-        }[sev] || 'severity-info';
-        return '<span class="inline-block text-xs font-semibold px-2 py-0.5 rounded ' + cls + '">' + (sev || 'Unknown') + '</span>';
-    }
-
-    function cvssColor(score) {
-        if (score >= 9.0) return '#991b1b';
-        if (score >= 7.0) return '#9a3412';
-        if (score >= 4.0) return '#854d0e';
-        if (score >= 0.1) return '#166534';
-        return '#475467';
-    }
-
-    function renderResults(data) {
-        const container = document.getElementById('resultsContainer');
-        if (!data.results || data.results.length === 0) {
-            container.innerHTML = '<div class="p-12 text-center text-gray-500"><svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p class="text-sm">No plugins found matching your criteria.</p></div>';
-            return;
-        }
-
-        let html = '<table class="w-full"><thead><tr class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-[#eaecf0]"><th class="px-4 py-3 w-20">ID</th><th class="px-4 py-3">Name</th><th class="px-4 py-3 w-40">Family</th><th class="px-4 py-3 w-24">CVSS</th><th class="px-4 py-3 w-24">Severity</th></tr></thead><tbody>';
-
-        for (const p of data.results) {
-            const cveStr = p.cve && p.cve.length > 0 ? p.cve[0] : '';
-            const displayName = p.name || cveStr || 'Plugin ' + p.id;
-            html += '<tr class="result-row border-b border-[#f2f4f7] cursor-pointer" onclick="showPlugin(' + p.id + ')">'
-                + '<td class="px-4 py-3 text-sm font-mono text-[#475467]">' + p.id + '</td>'
-                + '<td class="px-4 py-3"><div class="text-sm font-medium text-[#101828] truncate max-w-md">' + escapeHtml(displayName) + '</div>'
-                + (p.description ? '<div class="text-xs text-gray-500 truncate max-w-md mt-0.5">' + escapeHtml(p.description.substring(0, 120)) + '</div>' : '')
-                + '</td>'
-                + '<td class="px-4 py-3 text-sm text-[#475467]">' + escapeHtml(p.family) + '</td>'
-                + '<td class="px-4 py-3 text-sm font-semibold" style="color:' + cvssColor(p.cvss) + '">' + p.cvss.toFixed(1) + '</td>'
-                + '<td class="px-4 py-3">' + severityBadge(p.severity) + '</td>'
-                + '</tr>';
-        }
-        html += '</tbody></table>';
-        container.innerHTML = html;
-    }
-
-    function renderPagination(data) {
-        const totalPages = Math.ceil(data.total / PER_PAGE);
-        const info = document.getElementById('paginationInfo');
-        const buttons = document.getElementById('paginationButtons');
-        const resultCount = document.getElementById('resultCount');
-        const pageInfo = document.getElementById('pageInfo');
-
-        resultCount.textContent = data.total.toLocaleString() + ' plugin' + (data.total !== 1 ? 's' : '') + ' found';
-        pageInfo.textContent = 'Page ' + currentPage + ' of ' + totalPages.toLocaleString();
-
-        if (totalPages <= 1) {
-            info.textContent = '';
-            buttons.innerHTML = '';
-            return;
-        }
-
-        const start = (currentPage - 1) * PER_PAGE + 1;
-        const end = Math.min(currentPage * PER_PAGE, data.total);
-        info.textContent = 'Showing ' + start.toLocaleString() + '-' + end.toLocaleString() + ' of ' + data.total.toLocaleString();
-
-        let btns = '';
-        btns += '<button class="page-btn border border-[#d0d5dd] rounded px-2.5 py-1.5 text-xs font-medium" onclick="goPage(' + (currentPage - 1) + ')"' + (currentPage <= 1 ? ' disabled' : '') + '>&laquo;</button>';
-
-        let pages = [];
-        if (totalPages <= 7) {
-            for (let i = 1; i <= totalPages; i++) pages.push(i);
-        } else {
-            pages.push(1);
-            if (currentPage > 3) pages.push('...');
-            for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) pages.push(i);
-            if (currentPage < totalPages - 2) pages.push('...');
-            pages.push(totalPages);
-        }
-        for (const p of pages) {
-            if (p === '...') {
-                btns += '<span class="px-1 text-gray-400 text-xs">&hellip;</span>';
+        function init() {
+            restoreState();
+            renderStats();
+            renderFamilies();
+            if (state.q || state.family || state.severity) {
+                fetchPage(true);
             } else {
-                btns += '<button class="page-btn border border-[#d0d5dd] rounded px-2.5 py-1.5 text-xs font-medium' + (p === currentPage ? ' active' : '') + '" onclick="goPage(' + p + ')">' + p + '</button>';
+                renderInitial();
             }
+            bind();
         }
 
-        btns += '<button class="page-btn border border-[#d0d5dd] rounded px-2.5 py-1.5 text-xs font-medium" onclick="goPage(' + (currentPage + 1) + ')"' + (currentPage >= totalPages ? ' disabled' : '') + '>&raquo;</button>';
-        buttons.innerHTML = btns;
-    }
-
-    function renderFamilyChips(families) {
-        const container = document.getElementById('familyChips');
-        let html = '<button class="family-chip text-xs font-medium px-3 py-1.5 rounded-full border whitespace-nowrap ' + (currentFamily === '' ? 'active bg-[#1e2124] text-white border-[#1e2124]' : 'border-[#d0d5dd]') + '" data-family="" onclick="setFamily(\'\')">All</button>';
-        const sorted = Object.entries(families).sort((a, b) => b[1] - a[1]);
-        for (const [fam, count] of sorted) {
-            const isActive = currentFamily === fam;
-            html += '<button class="family-chip text-xs font-medium px-3 py-1.5 rounded-full border whitespace-nowrap ' + (isActive ? 'active bg-[#1e2124] text-white border-[#1e2124]' : 'border-[#d0d5dd]') + '" data-family="' + escapeHtml(fam) + '" onclick="setFamily(\'' + escapeJs(fam) + '\')">' + escapeHtml(fam) + ' <span class="text-gray-400 ml-1">' + count.toLocaleString() + '</span></button>';
+        function restoreState() {
+            const p = new URLSearchParams(location.search);
+            if (p.get('q')) state.q = p.get('q');
+            if (p.get('family')) state.family = p.get('family');
+            if (p.get('severity')) state.severity = p.get('severity');
+            if (p.get('sort')) state.sort = p.get('sort');
+            $('q').value = state.q;
+            $('sev').value = state.severity;
+            $('sort').value = state.sort;
+            if (state.q) $('clearBtn').classList.remove('hidden');
+            if (state.family) highlightFamily(state.family);
         }
-        container.innerHTML = html;
-    }
 
-    function updateStats(data) {
-        document.getElementById('statTotal').textContent = (data.total_plugins || 275000).toLocaleString();
-        const sevs = data.severities || {};
-        document.getElementById('statCritical').textContent = (sevs['Critical'] || 0).toLocaleString();
-        document.getElementById('statHigh').textContent = (sevs['High'] || 0).toLocaleString();
-        document.getElementById('statMedium').textContent = (sevs['Medium'] || 0).toLocaleString();
-        const fams = data.families || {};
-        document.getElementById('statFamilies').textContent = Object.keys(fams).length;
-    }
+        function pushState() {
+            const p = new URLSearchParams();
+            if (state.q) p.set('q', state.q);
+            if (state.family) p.set('family', state.family);
+            if (state.severity) p.set('severity', state.severity);
+            if (state.sort && state.sort !== 'newest') p.set('sort', state.sort);
+            const qs = p.toString();
+            history.replaceState(null, '', qs ? '?' + qs : location.pathname);
+        }
 
-    async function loadPage() {
-        try {
-            const data = await fetchPlugins();
-            renderResults(data);
-            renderPagination(data);
-            updateStats(data);
-            if (document.getElementById('familyChips').children.length <= 1) {
-                renderFamilyChips(data.families || {});
+        function renderStats() {
+            const s = initial.severities;
+            $('stats').innerHTML = [
+                stat(initial.total_plugins.toLocaleString(), 'Total Plugins', '#101828'),
+                stat((s.Critical||0).toLocaleString(), 'Critical', '#991b1b'),
+                stat((s.High||0).toLocaleString(), 'High', '#9a3412'),
+                stat((s.Medium||0).toLocaleString(), 'Medium', '#854d0e'),
+                stat(Object.keys(initial.families).length, 'Families', '#101828'),
+            ].join('');
+        }
+
+        function stat(val, label, color) {
+            return '<div class="stat bg-white border border-[#d0d5dd] rounded-lg p-3 text-center cursor-default"><div class="text-xl font-bold" style="color:'+color+'">'+val+'</div><div class="text-[11px] text-[#475467] mt-0.5">'+label+'</div></div>';
+        }
+
+        function renderFamilies() {
+            const sorted = Object.entries(initial.families).sort((a,b) => b[1]-a[1]).slice(0, 20);
+            let html = '<button class="chip'+(state.family===''?' active':'')+'" data-f="">All <span class="count">'+initial.total_plugins.toLocaleString()+'</span></button>';
+            for (const [f,c] of sorted) {
+                const active = state.family === f ? ' active' : '';
+                html += '<button class="chip'+active+'" data-f="'+esc(f)+'">'+esc(f)+' <span class="count">'+c.toLocaleString()+'</span></button>';
             }
-        } catch (err) {
-            document.getElementById('resultsContainer').innerHTML = '<div class="p-8 text-center text-red-500 text-sm">Failed to load plugins. Please try again.</div>';
+            $('families').innerHTML = html;
         }
-    }
 
-    function goPage(p) {
-        currentPage = p;
-        loadPage();
-        window.scrollTo({ top: 300, behavior: 'smooth' });
-    }
-
-    function setFamily(fam) {
-        currentFamily = fam;
-        currentPage = 1;
-        document.querySelectorAll('.family-chip').forEach(el => {
-            const isActive = el.dataset.family === fam;
-            el.className = 'family-chip text-xs font-medium px-3 py-1.5 rounded-full border whitespace-nowrap ' + (isActive ? 'active bg-[#1e2124] text-white border-[#1e2124]' : 'border-[#d0d5dd]');
-        });
-        loadPage();
-    }
-
-    async function showPlugin(id) {
-        const modal = document.getElementById('pluginModal');
-        const body = document.getElementById('modalBody');
-        const title = document.getElementById('modalTitle');
-        modal.classList.remove('hidden');
-        title.textContent = 'Loading...';
-        body.innerHTML = '<div class="p-8 text-center"><div class="skeleton h-4 w-48 mx-auto rounded mb-3"></div><div class="skeleton h-4 w-96 mx-auto rounded"></div></div>';
-
-        try {
-            const res = await fetch('/api/plugins/' + id);
-            const p = await res.json();
-            if (p.error) { body.innerHTML = '<p class="text-red-500">' + p.error + '</p>'; return; }
-
-            title.textContent = 'Plugin ' + p.id;
-            const cveList = (p.cve && p.cve.length > 0) ? p.cve.map(c => '<a href="https://nvd.nist.gov/vuln/detail/' + c + '" target="_blank" rel="noopener" class="text-blue-600 hover:underline font-mono text-sm">' + c + '</a>').join(', ') : '<span class="text-gray-400">None</span>';
-
-            body.innerHTML = ''
-                + '<div class="flex items-center gap-3 mb-4">'
-                + '<span class="text-3xl font-bold" style="color:' + cvssColor(p.cvss) + '">' + p.cvss.toFixed(1) + '</span>'
-                + severityBadge(p.severity)
-                + '</div>'
-                + '<h4 class="text-base font-semibold text-[#101828] mb-2">' + escapeHtml(p.name || 'Plugin ' + p.id) + '</h4>'
-                + '<p class="text-sm text-gray-600 mb-5 leading-relaxed">' + escapeHtml(p.description || 'No description available.') + '</p>'
-                + '<div class="grid grid-cols-2 gap-4 text-sm">'
-                + '<div><span class="text-gray-500 text-xs font-medium uppercase tracking-wider">Family</span><div class="mt-1 text-[#101828]">' + escapeHtml(p.family) + '</div></div>'
-                + '<div><span class="text-gray-500 text-xs font-medium uppercase tracking-wider">Ports</span><div class="mt-1 text-[#101828] font-mono text-xs">' + escapeHtml(p.ports || 'N/A') + '</div></div>'
-                + '<div class="col-span-2"><span class="text-gray-500 text-xs font-medium uppercase tracking-wider">CVE References</span><div class="mt-1">' + cveList + '</div></div>'
-                + (p.solution ? '<div class="col-span-2"><span class="text-gray-500 text-xs font-medium uppercase tracking-wider">Solution</span><div class="mt-1 text-[#101828]">' + escapeHtml(p.solution) + '</div></div>' : '')
-                + '</div>';
-        } catch (err) {
-            body.innerHTML = '<p class="text-red-500">Failed to load plugin details.</p>';
+        function highlightFamily(f) {
+            document.querySelectorAll('#families .chip').forEach(el => {
+                el.classList.toggle('active', el.dataset.f === f);
+            });
         }
-    }
 
-    function closeModal() { document.getElementById('pluginModal').classList.add('hidden'); }
+        function renderInitial() {
+            state.totalPlugins = initial.total_plugins;
+            const items = initial.recent;
+            $('resultInfo').textContent = initial.total_plugins.toLocaleString() + ' plugins — showing newest';
+            renderRows(items, false);
+            state.hasMore = true;
+            state.page = 1;
+            state.total = initial.total_plugins;
+            $('liveCount').innerHTML = '<svg class="w-3.5 h-3.5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg><span>Live</span>';
+        }
 
-    function escapeHtml(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-    function escapeJs(s) { return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+        function renderRows(items, append) {
+            const el = $('results');
+            let html = append ? el.innerHTML : '';
+            for (const p of items) {
+                const name = p.name || (p.cve && p.cve[0]) || 'Plugin ' + p.id;
+                html += '<div class="row" onclick="showPlugin('+p.id+')">'
+                    + '<div class="row-id">'+p.id+'</div>'
+                    + '<div class="min-w-0"><div class="row-name">'+esc(name)+'</div>'
+                    + (p.description ? '<div class="row-desc">'+esc(p.description.substring(0,100))+'</div>' : '')
+                    + '</div>'
+                    + '<div class="row-family">'+esc(p.family)+'</div>'
+                    + '<div class="row-cvss" style="color:'+cvssColor(p.cvss)+'">'+p.cvss.toFixed(1)+'</div>'
+                    + '<div class="row-sev">'+sevBadge(p.severity)+'</div>'
+                    + '</div>';
+            }
+            el.innerHTML = html;
+        }
 
-    document.getElementById('searchInput').addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(function() { currentPage = 1; loadPage(); }, 300);
-    });
-    document.getElementById('severityFilter').addEventListener('change', function() {
-        currentSeverity = this.value;
-        currentPage = 1;
-        loadPage();
-    });
-    document.getElementById('sortSelect').addEventListener('change', function() {
-        currentSort = this.value;
-        currentPage = 1;
-        loadPage();
-    });
-    document.getElementById('pluginModal').addEventListener('click', function(e) {
-        if (e.target === this) closeModal();
-    });
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') closeModal();
-    });
+        function renderSkeleton(n) {
+            let html = '';
+            for (let i = 0; i < n; i++) {
+                html += '<div class="row" style="cursor:default"><div class="skeleton h-4 w-12"></div><div><div class="skeleton h-4 w-64 mb-1.5"></div><div class="skeleton h-3 w-48"></div></div><div class="skeleton h-4 w-24"></div><div class="skeleton h-4 w-10"></div><div class="skeleton h-5 w-14 rounded-full"></div></div>';
+            }
+            $('results').innerHTML = html;
+        }
 
-    loadPage();
+        async function fetchPage(reset) {
+            if (state.loading) return;
+            if (!reset && !state.hasMore) return;
+
+            if (reset) {
+                state.page = 1;
+                state.hasMore = true;
+                cache = {};
+                renderSkeleton(8);
+            } else {
+                $('loadMore').classList.remove('hidden');
+            }
+
+            state.loading = true;
+            const key = state.q+'|'+state.family+'|'+state.severity+'|'+state.sort+'|'+state.page;
+
+            try {
+                let data;
+                if (cache[key]) {
+                    data = cache[key];
+                } else {
+                    const params = new URLSearchParams({ page: state.page, per_page: PER_PAGE, sort: state.sort });
+                    if (state.q) params.set('q', state.q);
+                    if (state.family) params.set('family', state.family);
+                    if (state.severity) params.set('severity', state.severity);
+                    const res = await fetch('/api/plugins/search?' + params);
+                    data = await res.json();
+                    cache[key] = data;
+                }
+
+                state.total = data.total;
+                state.totalPlugins = data.total_plugins || state.totalPlugins;
+
+                const start = (state.page - 1) * PER_PAGE + 1;
+                const end = Math.min(state.page * PER_PAGE, data.total);
+                $('resultInfo').textContent = data.total.toLocaleString() + ' result' + (data.total !== 1 ? 's' : '') + ' — showing ' + start.toLocaleString() + '–' + end.toLocaleString();
+
+                renderRows(data.results, !reset);
+
+                state.hasMore = end < data.total;
+                $('loadMore').classList.add('hidden');
+                $('endMessage').classList.toggle('hidden', state.hasMore);
+
+                if (data.families && !reset) renderFamilies();
+
+            } catch (err) {
+                $('resultInfo').textContent = 'Search failed — retrying...';
+                setTimeout(() => fetchPage(reset), 1000);
+            }
+
+            state.loading = false;
+            pushState();
+        }
+
+        function bind() {
+            $('q').addEventListener('input', function() {
+                const v = this.value.trim();
+                $('clearBtn').classList.toggle('hidden', !v);
+                if (v === state.q) return;
+                state.q = v;
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => fetchPage(true), 100);
+            });
+
+            $('clearBtn').addEventListener('click', function() {
+                $('q').value = '';
+                state.q = '';
+                this.classList.add('hidden');
+                fetchPage(true);
+                $('q').focus();
+            });
+
+            $('sev').addEventListener('change', function() {
+                state.severity = this.value;
+                fetchPage(true);
+            });
+
+            $('sort').addEventListener('change', function() {
+                state.sort = this.value;
+                fetchPage(true);
+            });
+
+            $('families').addEventListener('click', function(e) {
+                const chip = e.target.closest('.chip');
+                if (!chip) return;
+                state.family = chip.dataset.f;
+                document.querySelectorAll('#families .chip').forEach(el => el.classList.toggle('active', el.dataset.f === state.family));
+                fetchPage(true);
+            });
+
+            const sentinel = document.createElement('div');
+            sentinel.className = 'sentinel';
+            $('results').parentNode.insertBefore(sentinel, $('loadMore'));
+
+            const io = new IntersectionObserver(entries => {
+                if (entries[0].isIntersecting && state.hasMore && !state.loading) {
+                    state.page++;
+                    fetchPage(false);
+                }
+            }, { rootMargin: '200px' });
+            io.observe(sentinel);
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === '/' && document.activeElement !== $('q')) {
+                    e.preventDefault();
+                    $('q').focus();
+                    $('q').select();
+                }
+                if (e.key === 'Escape') {
+                    closeModal();
+                    $('q').blur();
+                }
+            });
+
+            $('modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+
+            window.addEventListener('popstate', function() {
+                const p = new URLSearchParams(location.search);
+                state.q = p.get('q') || '';
+                state.family = p.get('family') || '';
+                state.severity = p.get('severity') || '';
+                state.sort = p.get('sort') || 'newest';
+                $('q').value = state.q;
+                $('sev').value = state.severity;
+                $('sort').value = state.sort;
+                $('clearBtn').classList.toggle('hidden', !state.q);
+                highlightFamily(state.family);
+                fetchPage(true);
+            });
+        }
+
+        window.showPlugin = async function(id) {
+            const m = $('modal');
+            m.classList.remove('hidden');
+            $('mTitle').textContent = 'Plugin ' + id;
+            $('mBody').innerHTML = '<div class="py-8"><div class="skeleton h-6 w-32 mx-auto mb-3"></div><div class="skeleton h-4 w-full mb-2"></div><div class="skeleton h-4 w-3/4"></div></div>';
+
+            try {
+                const key = 'detail_' + id;
+                let d;
+                if (cache[key]) { d = cache[key]; }
+                else {
+                    const res = await fetch('/api/plugins/' + id);
+                    d = await res.json();
+                    cache[key] = d;
+                }
+                if (d.error) { $('mBody').innerHTML = '<p class="text-red-500 text-sm">'+d.error+'</p>'; return; }
+
+                $('mTitle').textContent = 'Plugin ' + d.id;
+                const cves = (d.cve && d.cve.length) ? d.cve.map(c => '<a href="https://nvd.nist.gov/vuln/detail/'+c+'" target="_blank" rel="noopener" class="text-blue-600 hover:underline font-mono text-sm">'+c+'</a>').join(', ') : '<span class="text-[#98a2b3]">None</span>';
+
+                $('mBody').innerHTML = ''
+                    + '<div class="flex items-center gap-3 mb-4">'
+                    + '<span class="text-3xl font-bold" style="color:'+cvssColor(d.cvss)+'">'+d.cvss.toFixed(1)+'</span>'
+                    + sevBadge(d.severity)
+                    + '</div>'
+                    + '<h4 class="text-base font-semibold text-[#101828] mb-1.5">'+esc(d.name || 'Plugin '+d.id)+'</h4>'
+                    + '<p class="text-sm text-[#475467] mb-5 leading-relaxed">'+esc(d.description || 'No description available.')+'</p>'
+                    + '<div class="grid grid-cols-2 gap-y-4 gap-x-6 text-sm border-t border-[#eaecf0] pt-4">'
+                    + '<div><div class="text-[11px] font-medium text-[#98a2b3] uppercase tracking-wider mb-1">Family</div><div class="text-[#101828]">'+esc(d.family)+'</div></div>'
+                    + '<div><div class="text-[11px] font-medium text-[#98a2b3] uppercase tracking-wider mb-1">Ports</div><div class="text-[#101828] font-mono text-xs">'+esc(d.ports||'N/A')+'</div></div>'
+                    + '<div class="col-span-2"><div class="text-[11px] font-medium text-[#98a2b3] uppercase tracking-wider mb-1">CVE References</div><div>'+cves+'</div></div>'
+                    + (d.solution ? '<div class="col-span-2"><div class="text-[11px] font-medium text-[#98a2b3] uppercase tracking-wider mb-1">Solution</div><div class="text-[#101828]">'+esc(d.solution)+'</div></div>' : '')
+                    + '</div>';
+            } catch(e) {
+                $('mBody').innerHTML = '<p class="text-red-500 text-sm">Failed to load.</p>';
+            }
+        };
+
+        window.closeModal = function(){ $('modal').classList.add('hidden'); };
+
+        function sevBadge(s) {
+            const cls = {Critical:'sev-critical',High:'sev-high',Medium:'sev-medium',Low:'sev-low',Info:'sev-info'}[s] || 'sev-info';
+            return '<span class="sev '+cls+'">'+(s||'?')+'</span>';
+        }
+        function cvssColor(v) {
+            if (v >= 9) return '#991b1b';
+            if (v >= 7) return '#9a3412';
+            if (v >= 4) return '#854d0e';
+            if (v >= .1) return '#166534';
+            return '#475467';
+        }
+        function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+        init();
+    })();
     </script>
 </body>
 </html>

@@ -383,14 +383,11 @@ class CCTVResponse(BaseModel):
 @router.get("/cctv", response_model=CCTVResponse)
 async def get_cctv_cameras(
     region: Optional[str] = Query(None, description="Filter by region (uk, us, europe, asia, australia)"),
-    lat: Optional[float] = Query(None, description="Latitude for proximity search"),
-    lng: Optional[float] = Query(None, description="Longitude for proximity search"),
-    radius: Optional[float] = Query(None, description="Radius in km for proximity search"),
     user: SupabaseUser = Depends(get_current_user)
 ):
     """
     Get worldwide CCTV traffic cameras.
-    Supports filtering by region or proximity to coordinates.
+    Supports filtering by region.
     """
     global _cctv_cache
     
@@ -425,28 +422,6 @@ async def get_cctv_cameras(
                                 ))
             except Exception as e:
                 print(f"Warning: TfL cameras failed: {e}")
-
-            # US: WSDOT Washington State
-            try:
-                async with httpx.AsyncClient(timeout=5.0) as client:
-                    response = await client.get('https://data.wsdot.wa.gov/log/public/cameras.json')
-                    if response.status_code == 200:
-                        data = response.json()
-                        for cam in (data or [])[:50]:
-                            loc = cam.get('CameraLocation', {})
-                            if loc.get('Latitude') and loc.get('Longitude') and cam.get('ImageURL'):
-                                cameras.append(CCTVCamera(
-                                    id=f"wsdot-{cam.get('CameraID')}",
-                                    lat=loc['Latitude'],
-                                    lng=loc['Longitude'],
-                                    name=cam.get('Title', 'WSDOT Camera'),
-                                    city='Washington',
-                                    country='US',
-                                    feed_url=cam['ImageURL'],
-                                    source='WSDOT'
-                                ))
-            except Exception as e:
-                print(f"Warning: WSDOT cameras failed: {e}")
 
             # US: Caltrans California
             try:
@@ -490,19 +465,6 @@ async def get_cctv_cameras(
                 cameras = [c for c in cameras if c.country in ['JP', 'HK', 'TW']]
             elif region_lower == 'australia':
                 cameras = [c for c in cameras if c.country == 'AU']
-
-        # Filter by proximity if coordinates provided
-        if lat is not None and lng is not None and radius is not None:
-            import math
-            def distance(lat1, lon1, lat2, lon2):
-                R = 6371
-                dlat = math.radians(lat2 - lat1)
-                dlon = math.radians(lon2 - lon1)
-                a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
-                c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-                return R * c
-            
-            cameras = [c for c in cameras if distance(lat, lng, c.lat, c.lng) <= radius]
 
         return CCTVResponse(
             total=len(cameras),

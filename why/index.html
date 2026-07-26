@@ -10,7 +10,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
-    <!-- Custom Canvas Map (no external dependencies) -->
+    <!-- MapLibre GL -->
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 
     <style>
         /* Retro Terminal Styling Rules mapped to the declassified WH design */
@@ -486,7 +488,7 @@
             color: #4ade80;
         }
 
-        /* Network Map (Custom Canvas) */
+        /* Network Map (MapLibre GL) */
         .aliens-network-map {
             position: relative;
             height: 600px;
@@ -497,10 +499,9 @@
             background: #000;
             box-shadow: 0 0 24px rgba(34, 211, 238, 0.15) inset;
         }
-        #aliens-network-map-canvas {
-            width: 100%;
+        #aliens-network-map {
             height: 100%;
-            display: block;
+            width: 100%;
         }
         .aliens-map-hint {
             position: absolute;
@@ -512,24 +513,37 @@
             pointer-events: none;
             z-index: 5;
         }
-        .aliens-map-tooltip {
-            position: absolute;
-            background: #000;
-            color: #4ade80;
-            border: 1px solid #22d3ee;
-            border-radius: 4px;
-            padding: 8px 12px;
-            font-family: 'VT323', 'Courier New', Courier, monospace;
+        .maplibregl-ctrl-attrib {
+            background: rgba(0,0,0,0.7) !important;
+            color: rgba(74, 222, 128, 0.6) !important;
+        }
+        .maplibregl-ctrl-attrib a { color: rgba(34, 211, 238, 0.8) !important; }
+        .maplibregl-ctrl-group {
+            background: #000 !important;
+            border: 1px solid rgba(74, 222, 128, 0.4) !important;
+        }
+        .maplibregl-ctrl-group button {
+            background: #000 !important;
+        }
+        .aliens-node-marker {
+            width: 14px; height: 14px;
+            background: #4ade80;
+            border: 2px solid #22d3ee;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #22d3ee, 0 0 20px rgba(34, 211, 238, 0.6);
+            cursor: pointer;
+        }
+        .maplibregl-popup-content {
+            background: #000 !important;
+            color: #4ade80 !important;
+            border: 1px solid #22d3ee !important;
+            border-radius: 4px !important;
+            font-family: 'VT323', 'Courier New', Courier, monospace !important;
             font-size: 1.15rem;
-            pointer-events: none;
-            z-index: 10;
-            white-space: nowrap;
-            box-shadow: 0 0 15px rgba(34, 211, 238, 0.5);
         }
-        .aliens-map-tooltip strong {
-            color: #22d3ee;
-            letter-spacing: 1px;
-        }
+        .maplibregl-popup-content strong { color: #22d3ee; letter-spacing: 1px; }
+        .maplibregl-popup-tip { border-top-color: #22d3ee !important; border-bottom-color: #22d3ee !important; }
+        .maplibregl-popup-close-button { color: #4ade80 !important; }
 
         /* Responsiveness for small displays */
         @media screen and (max-width: 1200px){
@@ -621,7 +635,7 @@
         </section>
 
         <!-- Interactive Map Coordinates Visualization Section -->
-        <section id="map-section" class="aliens-map-section section">
+        <section id="map-section" class="aliens-map-section">
             <div class="aliens-map-inner">
                 <div class="aliens-map-label-wrap">
                     <span class="aliens-clearance-badge">TOP SECRET RECORDS</span>
@@ -629,10 +643,10 @@
                 <h2 class="aliens-map-title neon-cyan" style="letter-spacing: 8px; margin-bottom: 1rem;">COORDINATES</h2>
                 <h3 class="aliens-map-title neon-cyan" style="font-size: 1.85rem; letter-spacing: 4px; margin-bottom: 3rem;">ALIEN.INC NETWORK MAP • LIVE</h3>
                 
-                <!-- ALIEN.INC Network Map (Custom Canvas — no external dependencies) -->
+                <!-- ALIEN.INC Network Map (MapLibre GL) -->
                 <div class="aliens-network-map">
-                    <canvas id="aliens-network-map-canvas"></canvas>
-                    <div class="aliens-map-hint">DRAG: PAN &nbsp;•&nbsp; SCROLL: ZOOM &nbsp;•&nbsp; HOVER NODES</div>
+                    <div id="aliens-network-map"></div>
+                    <div class="aliens-map-hint">DRAG: PAN &nbsp;•&nbsp; SCROLL: ZOOM &nbsp;•&nbsp; CLICK NODES</div>
                 </div>
 
                 <p style="font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.6; margin-top: 3rem; text-align: center; max-width: 48rem; margin-left: auto; margin-right: auto;">
@@ -696,295 +710,57 @@
             { name: "ALCANTARA ART FOUNDATION", detail: "Charity & gallery — NCC Cultural District", lat: 15.3100, lng: 120.5700 },
         ];
 
-        let mapInitialized = false;
-
         function initNetworkMap() {
-            if (mapInitialized) return;
-            mapInitialized = true;
+            const mapEl = document.getElementById('aliens-network-map');
+            if (!mapEl || typeof maplibregl === 'undefined') return;
 
-            const canvas = document.getElementById('aliens-network-map-canvas');
-            if (!canvas) return;
-
-            const ctx = canvas.getContext('2d');
-            const container = canvas.parentElement;
-            let tooltip = null;
-            let hoveredNode = null;
-            let animFrame = 0;
-
-            let viewCenterLng = 120.65;
-            let viewCenterLat = 14.95;
-            let viewScale = 1.0;
-            let isDragging = false;
-            let dragStartX = 0, dragStartY = 0;
-            let dragStartLng = 0, dragStartLat = 0;
-
-            const resize = () => {
-                canvas.width = container.clientWidth;
-                canvas.height = container.clientHeight;
-            };
-            resize();
-            window.addEventListener('resize', resize);
-
-            const baseLngRange = 1.1;
-            const baseLatRange = 1.1;
-
-            const project = (lat, lng) => {
-                const lngRange = baseLngRange / viewScale;
-                const latRange = baseLatRange / viewScale;
-                const minLng = viewCenterLng - lngRange / 2;
-                const maxLng = viewCenterLng + lngRange / 2;
-                const minLat = viewCenterLat - latRange / 2;
-                const maxLat = viewCenterLat + latRange / 2;
-                const x = ((lng - minLng) / (maxLng - minLng)) * canvas.width;
-                const y = canvas.height - ((lat - minLat) / (maxLat - minLat)) * canvas.height;
-                return { x, y };
-            };
-
-            const unproject = (px, py) => {
-                const lngRange = baseLngRange / viewScale;
-                const latRange = baseLatRange / viewScale;
-                const minLng = viewCenterLng - lngRange / 2;
-                const minLat = viewCenterLat - latRange / 2;
-                const lng = minLng + (px / canvas.width) * lngRange;
-                const lat = minLat + ((canvas.height - py) / canvas.height) * latRange;
-                return { lat, lng };
-            };
-
-            const luzonOutline = [
-                [13.8, 121.0], [14.0, 121.2], [14.2, 121.3], [14.4, 121.2],
-                [14.5, 121.0], [14.6, 121.1], [14.8, 121.15], [15.0, 121.1],
-                [15.2, 121.0], [15.4, 120.9], [15.6, 120.7], [15.7, 120.5],
-                [15.6, 120.3], [15.4, 120.2], [15.2, 120.15], [15.0, 120.1],
-                [14.8, 120.2], [14.6, 120.3], [14.4, 120.4], [14.2, 120.5],
-                [14.0, 120.7], [13.9, 120.85], [13.8, 121.0]
-            ];
-
-            const manilaBay = [
-                [14.3, 120.85], [14.4, 120.75], [14.55, 120.7], [14.65, 120.75],
-                [14.7, 120.85], [14.6, 120.95], [14.45, 120.95], [14.3, 120.85]
-            ];
-
-            const lagunaLake = [
-                [14.25, 121.15], [14.35, 121.05], [14.45, 121.1], [14.5, 121.2],
-                [14.4, 121.3], [14.3, 121.25], [14.25, 121.15]
-            ];
-
-            const draw = () => {
-                animFrame++;
-                ctx.fillStyle = '#000000';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                ctx.strokeStyle = 'rgba(74, 222, 128, 0.06)';
-                ctx.lineWidth = 1;
-                const gridSpacing = 40 * viewScale;
-                const clampedGrid = Math.max(20, Math.min(80, gridSpacing));
-                for (let i = 0; i < canvas.width; i += clampedGrid) {
-                    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
-                }
-                for (let i = 0; i < canvas.height; i += clampedGrid) {
-                    ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
-                }
-
-                ctx.fillStyle = 'rgba(10, 46, 26, 0.7)';
-                ctx.strokeStyle = '#4ade80';
-                ctx.lineWidth = 2;
-                ctx.shadowBlur = 8;
-                ctx.shadowColor = 'rgba(74, 222, 128, 0.4)';
-                ctx.beginPath();
-                luzonOutline.forEach(([lat, lng], i) => {
-                    const p = project(lat, lng);
-                    if (i === 0) ctx.moveTo(p.x, p.y);
-                    else ctx.lineTo(p.x, p.y);
-                });
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-                ctx.shadowBlur = 0;
-
-                ctx.fillStyle = 'rgba(0, 15, 8, 0.8)';
-                ctx.strokeStyle = 'rgba(74, 222, 128, 0.4)';
-                ctx.lineWidth = 1;
-                [manilaBay, lagunaLake].forEach(shape => {
-                    ctx.beginPath();
-                    shape.forEach(([lat, lng], i) => {
-                        const p = project(lat, lng);
-                        if (i === 0) ctx.moveTo(p.x, p.y);
-                        else ctx.lineTo(p.x, p.y);
-                    });
-                    ctx.closePath();
-                    ctx.fill();
-                    ctx.stroke();
-                });
-
-                ctx.strokeStyle = 'rgba(74, 222, 128, 0.15)';
-                ctx.lineWidth = 1;
-                ctx.setLineDash([4, 6]);
-                for (let i = 0; i < aliensNetworkNodes.length; i++) {
-                    for (let j = i + 1; j < aliensNetworkNodes.length; j++) {
-                        const p1 = project(aliensNetworkNodes[i].lat, aliensNetworkNodes[i].lng);
-                        const p2 = project(aliensNetworkNodes[j].lat, aliensNetworkNodes[j].lng);
-                        ctx.beginPath();
-                        ctx.moveTo(p1.x, p1.y);
-                        ctx.lineTo(p2.x, p2.y);
-                        ctx.stroke();
-                    }
-                }
-                ctx.setLineDash([]);
-
-                const pulse = Math.sin(animFrame * 0.06) * 0.4 + 0.6;
-
-                aliensNetworkNodes.forEach((node, i) => {
-                    const p = project(node.lat, node.lng);
-                    if (p.x < -50 || p.x > canvas.width + 50 || p.y < -50 || p.y > canvas.height + 50) return;
-                    const isHovered = hoveredNode === i;
-                    const radius = isHovered ? 10 : 7;
-
-                    ctx.shadowBlur = 25 * pulse;
-                    ctx.shadowColor = '#22d3ee';
-                    ctx.fillStyle = '#4ade80';
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    ctx.shadowBlur = 0;
-                    ctx.strokeStyle = '#22d3ee';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-
-                    ctx.strokeStyle = `rgba(34, 211, 238, ${0.3 * pulse})`;
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, radius + 6 + 3 * pulse, 0, Math.PI * 2);
-                    ctx.stroke();
-
-                    ctx.fillStyle = '#4ade80';
-                    ctx.font = `${Math.max(11, 14 * viewScale)}px "VT323", monospace`;
-                    ctx.textAlign = 'center';
-                    ctx.shadowBlur = 4;
-                    ctx.shadowColor = '#000';
-                    ctx.fillText(node.name, p.x, p.y - radius - 8);
-                    ctx.shadowBlur = 0;
-                });
-
-                requestAnimationFrame(draw);
-            };
-
-            canvas.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                dragStartX = e.clientX;
-                dragStartY = e.clientY;
-                dragStartLng = viewCenterLng;
-                dragStartLat = viewCenterLat;
-                canvas.style.cursor = 'grabbing';
+            const map = new maplibregl.Map({
+                container: 'aliens-network-map',
+                style: {
+                    version: 8,
+                    sources: {
+                        countries: {
+                            type: 'vector',
+                            url: 'https://demotiles.maplibre.org/tiles/tiles.json',
+                        },
+                    },
+                    layers: [
+                        { id: 'bg', type: 'background', paint: { 'background-color': '#000000' } },
+                        {
+                            id: 'land', type: 'fill', source: 'countries', 'source-layer': 'countries',
+                            paint: { 'fill-color': '#0a2e1a', 'fill-opacity': 0.9 },
+                        },
+                        {
+                            id: 'borders', type: 'line', source: 'countries', 'source-layer': 'countries',
+                            paint: { 'line-color': '#4ade80', 'line-width': 0.6, 'line-opacity': 0.5 },
+                        },
+                    ],
+                },
+                center: [120.9, 15.0],
+                zoom: 8.5,
+                pitch: 20,
+                attributionControl: { compact: true },
             });
 
-            window.addEventListener('mousemove', (e) => {
-                if (isDragging) {
-                    const dx = e.clientX - dragStartX;
-                    const dy = e.clientY - dragStartY;
-                    const lngRange = baseLngRange / viewScale;
-                    const latRange = baseLatRange / viewScale;
-                    viewCenterLng = dragStartLng - (dx / canvas.width) * lngRange;
-                    viewCenterLat = dragStartLat + (dy / canvas.height) * latRange;
-                    return;
-                }
+            map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
 
-                const rect = canvas.getBoundingClientRect();
-                const mx = e.clientX - rect.left;
-                const my = e.clientY - rect.top;
+            const bounds = new maplibregl.LngLatBounds();
+            aliensNetworkNodes.forEach(node => {
+                const el = document.createElement('div');
+                el.className = 'aliens-node-marker';
 
-                if (mx < 0 || mx > canvas.width || my < 0 || my > canvas.height) {
-                    hoveredNode = null;
-                    if (tooltip) tooltip.style.display = 'none';
-                    return;
-                }
+                new maplibregl.Marker({ element: el })
+                    .setLngLat([node.lng, node.lat])
+                    .setPopup(
+                        new maplibregl.Popup({ offset: 16 })
+                            .setHTML(`<strong>${node.name}</strong><br>${node.detail}`)
+                    )
+                    .addTo(map);
 
-                hoveredNode = null;
-                aliensNetworkNodes.forEach((node, i) => {
-                    const p = project(node.lat, node.lng);
-                    const dist = Math.hypot(mx - p.x, my - p.y);
-                    if (dist < 18) hoveredNode = i;
-                });
-
-                if (hoveredNode !== null) {
-                    const node = aliensNetworkNodes[hoveredNode];
-                    const p = project(node.lat, node.lng);
-                    if (!tooltip) {
-                        tooltip = document.createElement('div');
-                        tooltip.className = 'aliens-map-tooltip';
-                        container.appendChild(tooltip);
-                    }
-                    tooltip.innerHTML = `<strong>${node.name}</strong><br>${node.detail}`;
-                    tooltip.style.display = 'block';
-                    tooltip.style.left = Math.min(p.x + 15, canvas.width - 200) + 'px';
-                    tooltip.style.top = (p.y - 15) + 'px';
-                    canvas.style.cursor = 'pointer';
-                } else {
-                    if (tooltip) tooltip.style.display = 'none';
-                    canvas.style.cursor = 'grab';
-                }
+                bounds.extend([node.lng, node.lat]);
             });
 
-            window.addEventListener('mouseup', () => {
-                isDragging = false;
-                canvas.style.cursor = hoveredNode !== null ? 'pointer' : 'grab';
-            });
-
-            canvas.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-                viewScale = Math.max(0.5, Math.min(8, viewScale * zoomFactor));
-            }, { passive: false });
-
-            let lastTouchDist = 0;
-            let lastTouchX = 0, lastTouchY = 0;
-
-            canvas.addEventListener('touchstart', (e) => {
-                if (e.touches.length === 1) {
-                    isDragging = true;
-                    dragStartX = e.touches[0].clientX;
-                    dragStartY = e.touches[0].clientY;
-                    dragStartLng = viewCenterLng;
-                    dragStartLat = viewCenterLat;
-                } else if (e.touches.length === 2) {
-                    isDragging = false;
-                    lastTouchDist = Math.hypot(
-                        e.touches[0].clientX - e.touches[1].clientX,
-                        e.touches[0].clientY - e.touches[1].clientY
-                    );
-                }
-                e.preventDefault();
-            }, { passive: false });
-
-            canvas.addEventListener('touchmove', (e) => {
-                if (e.touches.length === 1 && isDragging) {
-                    const dx = e.touches[0].clientX - dragStartX;
-                    const dy = e.touches[0].clientY - dragStartY;
-                    const lngRange = baseLngRange / viewScale;
-                    const latRange = baseLatRange / viewScale;
-                    viewCenterLng = dragStartLng - (dx / canvas.width) * lngRange;
-                    viewCenterLat = dragStartLat + (dy / canvas.height) * latRange;
-                } else if (e.touches.length === 2) {
-                    const dist = Math.hypot(
-                        e.touches[0].clientX - e.touches[1].clientX,
-                        e.touches[0].clientY - e.touches[1].clientY
-                    );
-                    if (lastTouchDist > 0) {
-                        const scale = dist / lastTouchDist;
-                        viewScale = Math.max(0.5, Math.min(8, viewScale * scale));
-                    }
-                    lastTouchDist = dist;
-                }
-                e.preventDefault();
-            }, { passive: false });
-
-            canvas.addEventListener('touchend', () => {
-                isDragging = false;
-                lastTouchDist = 0;
-            });
-
-            canvas.style.cursor = 'grab';
-            draw();
+            map.fitBounds(bounds, { padding: 60, maxZoom: 10 });
         }
 
         // Starfield Canvas Renderer
@@ -1071,7 +847,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             setTimeout(typeParagraph, 800);
-            setTimeout(initNetworkMap, 2000);
+            initNetworkMap();
         });
 
         // Split-Flap board animation sequence
@@ -1176,11 +952,6 @@
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('visible');
-                    if (entry.target.id === 'map-section') {
-                        setTimeout(() => {
-                            initNetworkMap();
-                        }, 1100);
-                    }
                 }
             });
         }, { threshold: 0.1 });

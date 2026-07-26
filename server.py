@@ -490,7 +490,7 @@ def fetch_competitor_data():
 
 
 SECURITY_HEADERS = {
-    'Content-Security-Policy': "default-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://www.britishmuseum.org https://www.metmuseum.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://www.britishmuseum.org https://cdn.tailwindcss.com https://unpkg.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.britishmuseum.org https://cdn.tailwindcss.com https://unpkg.com https://consent.cookiebot.com; connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
+    'Content-Security-Policy': "default-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://www.britishmuseum.org https://www.metmuseum.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://www.britishmuseum.org https://cdn.tailwindcss.com https://unpkg.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.britishmuseum.org https://cdn.tailwindcss.com https://unpkg.com https://consent.cookiebot.com; connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://demotiles.maplibre.org; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
     'X-Frame-Options': 'DENY',
     'X-Content-Type-Options': 'nosniff',
     'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',

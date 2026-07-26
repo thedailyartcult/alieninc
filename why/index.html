@@ -825,7 +825,6 @@
         function typeParagraph() {
             if (currentPara >= paragraphs.length) {
                 document.getElementById('rest-of-page').style.opacity = '1';
-                if (networkMap) networkMap.resize();
                 initSplitFlaps();
                 return;
             }
@@ -856,7 +855,6 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             setTimeout(typeParagraph, 800);
-            initNetworkMap();
         });
 
         // Split-Flap board animation sequence
@@ -961,8 +959,10 @@
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('visible');
-                    if (entry.target.id === 'map-section' && networkMap) {
-                        networkMap.resize();
+                    if (entry.target.id === 'map-section' && !networkMap) {
+                        setTimeout(() => {
+                            initNetworkMap();
+                        }, 1100);
                     }
                 }
             });

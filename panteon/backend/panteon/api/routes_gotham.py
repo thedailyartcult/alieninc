@@ -4,6 +4,7 @@ Gotham Intelligence - OSINT and sanctions screening routes.
 from datetime import datetime
 from typing import Optional, List
 import httpx
+import time
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
@@ -11,6 +12,13 @@ from panteon.core.auth import SupabaseUser, get_current_user
 from panteon.core.sanctions import sanctions_cache, SanctionEntry
 
 router = APIRouter(prefix="/gotham", tags=["Gotham Intelligence"])
+
+# CCTV Camera Cache (5 minutes)
+_cctv_cache = {
+    "cameras": [],
+    "fetched_at": 0,
+    "ttl": 300  # 5 minutes
+}
 
 
 class SanctionsSearchRequest(BaseModel):
@@ -384,79 +392,91 @@ async def get_cctv_cameras(
     Get worldwide CCTV traffic cameras.
     Supports filtering by region or proximity to coordinates.
     """
+    global _cctv_cache
+    
     try:
-        cameras = []
+        # Check cache first
+        now = time.time()
+        if _cctv_cache["cameras"] and (now - _cctv_cache["fetched_at"]) < _cctv_cache["ttl"]:
+            cameras = _cctv_cache["cameras"]
+        else:
+            # Fetch from external APIs
+            cameras = []
+            
+            # UK: Transport for London JamCams
+            try:
+                async with httpx.AsyncClient(timeout=5.0) as client:
+                    response = await client.get('https://api.tfl.gov.uk/Place/Type/JamCam')
+                    if response.status_code == 200:
+                        data = response.json()
+                        for cam in (data or [])[:50]:
+                            img_prop = next((p for p in cam.get('additionalProperties', []) if p.get('key') == 'imageUrl'), None)
+                            cam_id = cam.get('id', '').replace('JamCams_', '')
+                            if cam.get('lat') and cam.get('lon'):
+                                cameras.append(CCTVCamera(
+                                    id=f"tfl-{cam.get('id')}",
+                                    lat=cam['lat'],
+                                    lng=cam['lon'],
+                                    name=cam.get('commonName', 'London JamCam'),
+                                    city='London',
+                                    country='UK',
+                                    feed_url=img_prop.get('value') if img_prop else f"https://s3-eu-west-1.amazonaws.com/jamcams.tfl.gov.uk/{cam_id}.jpg",
+                                    source='TfL'
+                                ))
+            except Exception as e:
+                print(f"Warning: TfL cameras failed: {e}")
+
+            # US: WSDOT Washington State
+            try:
+                async with httpx.AsyncClient(timeout=5.0) as client:
+                    response = await client.get('https://data.wsdot.wa.gov/log/public/cameras.json')
+                    if response.status_code == 200:
+                        data = response.json()
+                        for cam in (data or [])[:50]:
+                            loc = cam.get('CameraLocation', {})
+                            if loc.get('Latitude') and loc.get('Longitude') and cam.get('ImageURL'):
+                                cameras.append(CCTVCamera(
+                                    id=f"wsdot-{cam.get('CameraID')}",
+                                    lat=loc['Latitude'],
+                                    lng=loc['Longitude'],
+                                    name=cam.get('Title', 'WSDOT Camera'),
+                                    city='Washington',
+                                    country='US',
+                                    feed_url=cam['ImageURL'],
+                                    source='WSDOT'
+                                ))
+            except Exception as e:
+                print(f"Warning: WSDOT cameras failed: {e}")
+
+            # US: Caltrans California
+            try:
+                async with httpx.AsyncClient(timeout=5.0) as client:
+                    response = await client.get(
+                        'https://caltrans-gis.dot.ca.gov/arcgis/rest/services/CHhighway/CCTV/FeatureServer/0/query',
+                        params={'where': '1=1', 'outFields': '*', 'f': 'json'}
+                    )
+                    if response.status_code == 200:
+                        data = response.json()
+                        for feature in (data.get('features') or [])[:50]:
+                            attrs = feature.get('attributes', {})
+                            if attrs.get('latitude') and attrs.get('longitude') and attrs.get('currentImageURL'):
+                                cameras.append(CCTVCamera(
+                                    id=f"cal-{attrs.get('OBJECTID')}",
+                                    lat=attrs['latitude'],
+                                    lng=attrs['longitude'],
+                                    name=attrs.get('locationName', 'Caltrans'),
+                                    city=attrs.get('nearbyPlace') or attrs.get('county') or 'California',
+                                    country='US',
+                                    feed_url=attrs['currentImageURL'],
+                                    source='Caltrans'
+                                ))
+            except Exception as e:
+                print(f"Warning: Caltrans cameras failed: {e}")
+
+            # Cache the results
+            _cctv_cache["cameras"] = cameras
+            _cctv_cache["fetched_at"] = now
         
-        # UK: Transport for London JamCams
-        try:
-            async with httpx.AsyncClient(timeout=8.0) as client:
-                response = await client.get('https://api.tfl.gov.uk/Place/Type/JamCam')
-                if response.status_code == 200:
-                    data = response.json()
-                    for cam in (data or [])[:100]:  # Limit to 100 cameras
-                        img_prop = next((p for p in cam.get('additionalProperties', []) if p.get('key') == 'imageUrl'), None)
-                        cam_id = cam.get('id', '').replace('JamCams_', '')
-                        if cam.get('lat') and cam.get('lon'):
-                            cameras.append(CCTVCamera(
-                                id=f"tfl-{cam.get('id')}",
-                                lat=cam['lat'],
-                                lng=cam['lon'],
-                                name=cam.get('commonName', 'London JamCam'),
-                                city='London',
-                                country='UK',
-                                feed_url=img_prop.get('value') if img_prop else f"https://s3-eu-west-1.amazonaws.com/jamcams.tfl.gov.uk/{cam_id}.jpg",
-                                source='TfL'
-                            ))
-        except Exception as e:
-            print(f"Warning: TfL cameras failed: {e}")
-
-        # US: WSDOT Washington State
-        try:
-            async with httpx.AsyncClient(timeout=8.0) as client:
-                response = await client.get('https://data.wsdot.wa.gov/log/public/cameras.json')
-                if response.status_code == 200:
-                    data = response.json()
-                    for cam in (data or [])[:100]:  # Limit to 100 cameras
-                        loc = cam.get('CameraLocation', {})
-                        if loc.get('Latitude') and loc.get('Longitude') and cam.get('ImageURL'):
-                            cameras.append(CCTVCamera(
-                                id=f"wsdot-{cam.get('CameraID')}",
-                                lat=loc['Latitude'],
-                                lng=loc['Longitude'],
-                                name=cam.get('Title', 'WSDOT Camera'),
-                                city='Washington',
-                                country='US',
-                                feed_url=cam['ImageURL'],
-                                source='WSDOT'
-                            ))
-        except Exception as e:
-            print(f"Warning: WSDOT cameras failed: {e}")
-
-        # US: Caltrans California
-        try:
-            async with httpx.AsyncClient(timeout=8.0) as client:
-                response = await client.get(
-                    'https://caltrans-gis.dot.ca.gov/arcgis/rest/services/CHhighway/CCTV/FeatureServer/0/query',
-                    params={'where': '1=1', 'outFields': '*', 'f': 'json'}
-                )
-                if response.status_code == 200:
-                    data = response.json()
-                    for feature in (data.get('features') or [])[:100]:  # Limit to 100 cameras
-                        attrs = feature.get('attributes', {})
-                        if attrs.get('latitude') and attrs.get('longitude') and attrs.get('currentImageURL'):
-                            cameras.append(CCTVCamera(
-                                id=f"cal-{attrs.get('OBJECTID')}",
-                                lat=attrs['latitude'],
-                                lng=attrs['longitude'],
-                                name=attrs.get('locationName', 'Caltrans'),
-                                city=attrs.get('nearbyPlace') or attrs.get('county') or 'California',
-                                country='US',
-                                feed_url=attrs['currentImageURL'],
-                                source='Caltrans'
-                            ))
-        except Exception as e:
-            print(f"Warning: Caltrans cameras failed: {e}")
-
         # Filter by region if specified
         if region:
             region_lower = region.lower()
@@ -475,7 +495,7 @@ async def get_cctv_cameras(
         if lat is not None and lng is not None and radius is not None:
             import math
             def distance(lat1, lon1, lat2, lon2):
-                R = 6371  # Earth radius in km
+                R = 6371
                 dlat = math.radians(lat2 - lat1)
                 dlon = math.radians(lon2 - lon1)
                 a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
@@ -484,9 +504,6 @@ async def get_cctv_cameras(
             
             cameras = [c for c in cameras if distance(lat, lng, c.lat, c.lng) <= radius]
 
-        # Return at most 200 cameras to avoid timeout
-        cameras = cameras[:200]
-
         return CCTVResponse(
             total=len(cameras),
             cameras=cameras,
@@ -494,7 +511,6 @@ async def get_cctv_cameras(
         )
     except Exception as e:
         print(f"Error in CCTV endpoint: {e}")
-        # Return empty list instead of 503
         return CCTVResponse(
             total=0,
             cameras=[],

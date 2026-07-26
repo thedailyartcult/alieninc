@@ -1164,6 +1164,7 @@ async function doLogout() {
     await supabaseClient.auth.signOut();
     authToken = null;
     currentUser = null;
+    localStorage.removeItem('hs_session');
     document.getElementById('loginOverlay').classList.remove('hidden');
     document.getElementById('mainApp').style.display = 'none';
     if (refreshInterval) clearInterval(refreshInterval);
@@ -2834,6 +2835,37 @@ function init() {
         if (currentHash === 'tdac-dashboard') loadDashboard();
     }, 30000);
 }
+
+async function restoreSession() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+        return session;
+    }
+    const raw = localStorage.getItem('hs_session');
+    if (raw) {
+        try {
+            const stored = JSON.parse(raw);
+            if (stored.access_token && stored.refresh_token) {
+                const { data, error } = await supabaseClient.auth.setSession({
+                    access_token: stored.access_token,
+                    refresh_token: stored.refresh_token
+                });
+                if (!error && data.session) {
+                    return data.session;
+                }
+            }
+        } catch (e) {}
+    }
+    return null;
+}
+
+restoreSession().then(session => {
+    if (session) {
+        authToken = session.access_token;
+        currentUser = { email: session.user.email, id: session.user.id };
+        showApp(currentUser);
+    }
+});
 
 supabaseClient.auth.onAuthStateChange(async (event, session) => {
     if (session) {

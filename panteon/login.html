@@ -1,473 +1,281 @@
 <!DOCTYPE html>
-<html lang="en" style="background-color:#eeeff0;">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PANTEON — Login</title>
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <title>Panteon — Sign In</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* ── reset & base ── */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
 
-        body {
-            font-family: 'Barlow', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-            background-color: #eeeff0;
-            color: #425363;
-            min-height: 100vh;
+        :root {
+            --bg: #000000;
+            --bg-card: #0a0a0a;
+            --text: #ffffff;
+            --text-muted: #88898c;
+            --text-dim: #555555;
+            --accent: #DFF140;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.15);
+            --font-sans: "Inter", -apple-system, sans-serif;
+            --font-tech: "Space Grotesk", monospace;
+        }
+
+        html, body {
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-sans);
+            font-size: 14px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 24px;
-            margin: 0;
         }
 
         a {
+            color: inherit;
             text-decoration: none;
+        }
+
+        button {
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            background: none;
             color: inherit;
         }
 
-        /* ── main card ── */
         .login-container {
             width: 100%;
-            max-width: 400px;
-            background: #ffffff;
-            border-radius: 6px;
-            box-shadow: 0 0 40px 4px rgba(17, 17, 24, 0.08);
-            padding: 36px 28px 28px;
-            transition: box-shadow 0.3s ease;
+            max-width: 380px;
+            animation: fadeIn 0.4s ease;
         }
 
-        .login-container:hover {
-            box-shadow: 0 0 48px 6px rgba(17, 17, 24, 0.12);
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ── header / logo ── */
-        .login-header {
+        .logo-wrap {
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            margin-bottom: 28px;
-            width: 100%;
+            margin-bottom: 48px;
         }
 
-        .login-logo {
-            display: block;
-            width: 100%;
-            max-width: 280px;
+        .logo-wrap svg {
+            width: 180px;
             height: auto;
-            margin: 0 auto;
-            transition: filter 0.3s ease;
+            color: var(--text);
         }
 
-        .login-logo svg {
-            display: block;
-            width: 100%;
-            height: auto;
+        .login-title {
+            font-size: 20px;
+            font-weight: 500;
+            text-align: center;
+            margin-bottom: 8px;
+            letter-spacing: -0.01em;
         }
 
-        .login-logo:hover {
-            filter: drop-shadow(0 0 14px rgba(0, 255, 255, 0.35));
-        }
-
-        .login-subhead {
-            font-size: 14px;
-            font-weight: 400;
-            color: #6c7f8f;
-            margin-top: 6px;
-            letter-spacing: 0.2px;
-        }
-
-        /* ── form ── */
-        .login-form {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+        .login-sub {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 32px;
         }
 
         .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+            margin-bottom: 16px;
         }
 
-        .input-wrap {
-            position: relative;
-            border-radius: 3px;
-            border: 1px solid #f1f1f1;
-            background: #f1f1f1;
-            transition: border-color 0.3s ease, background 0.3s ease;
-        }
-
-        .input-wrap:focus-within {
-            border-color: #a0a0a0;
-            background: #ffffff;
-        }
-
-        .input-wrap .input-icon {
-            position: absolute;
-            top: 50%;
-            left: 14px;
-            transform: translateY(-50%);
-            width: 14px;
-            height: 14px;
-            color: #888888;
-            pointer-events: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .input-wrap .input-icon svg {
-            width: 100%;
-            height: 100%;
-            fill: #888888;
-        }
-
-        .input-wrap input {
-            font-family: 'Barlow', system-ui, sans-serif;
-            font-size: 13px;
-            padding: 10px 14px 10px 40px;
-            width: 100%;
-            border: none;
-            background: transparent;
-            color: rgba(0, 0, 0, 0.87);
-            outline: none;
-            height: 40px;
-            border-radius: 3px;
-        }
-
-        .input-wrap input::placeholder {
-            color: #9aabb8;
-            font-weight: 400;
-        }
-
-        .password-toggle {
-            position: absolute;
-            top: 50%;
-            right: 12px;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 4px;
-            color: #888888;
-            transition: color 0.2s;
-            line-height: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .password-toggle:hover {
-            color: #333333;
-        }
-
-        .password-toggle svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .form-actions {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 8px 16px;
-            margin-top: 4px;
-        }
-
-        .form-actions .remember {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            font-weight: 400;
-            color: rgba(0, 0, 0, 0.54);
-            cursor: pointer;
-        }
-
-        .form-actions .remember input[type="checkbox"] {
-            width: 14px;
-            height: 14px;
-            accent-color: #007FEC;
-            cursor: pointer;
-            margin: 0;
-        }
-
-        .forgot-link {
-            font-size: 13px;
+        .form-label {
+            display: block;
+            font-size: 11px;
             font-weight: 500;
-            color: #007FEC;
-            transition: color 0.2s;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            font-family: var(--font-tech);
         }
 
-        .forgot-link:hover {
-            color: #00A3FF;
-            text-decoration: underline;
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 14px;
+            font-family: var(--font-sans);
+            color: var(--text);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.2s, background 0.2s;
         }
 
-        .btn-login {
-            font-family: 'Barlow', system-ui, sans-serif;
+        .form-input:focus {
+            border-color: var(--accent);
+            background: #111;
+        }
+
+        .form-input::placeholder {
+            color: var(--text-dim);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 13px 24px;
             font-size: 14px;
             font-weight: 600;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            padding: 14px 24px;
+            font-family: var(--font-sans);
+            background: var(--accent);
+            color: #000;
             border: none;
-            border-radius: 3px;
-            background: #007FEC;
-            color: #ffffff;
+            border-radius: 6px;
             cursor: pointer;
-            transition: background 0.2s ease, box-shadow 0.2s ease;
-            width: 100%;
-            margin-top: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            margin-top: 8px;
+            transition: opacity 0.2s, transform 0.1s;
+            letter-spacing: 0.02em;
         }
 
-        .btn-login:hover {
-            background: #0066C4;
-            box-shadow: 0 4px 12px rgba(0, 127, 236, 0.25);
+        .login-btn:hover {
+            opacity: 0.9;
         }
 
-        .btn-login:active {
-            transform: scale(0.98);
+        .login-btn:active {
+            transform: scale(0.99);
         }
 
-        .btn-login svg {
-            width: 12px;
-            height: 12px;
-            fill: currentColor;
+        .login-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
-        .alt-actions {
+        .error-msg {
+            font-size: 12px;
+            color: #f87171;
+            margin-top: 12px;
+            min-height: 18px;
             text-align: center;
-            margin-top: 18px;
-            font-size: 13px;
-            color: rgba(0, 0, 0, 0.54);
+        }
+
+        .success-msg {
+            font-size: 12px;
+            color: var(--accent);
+            margin-top: 12px;
+            min-height: 18px;
+            text-align: center;
+        }
+
+        .footer-note {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-align: center;
+            margin-top: 40px;
             line-height: 1.6;
         }
 
-        .alt-actions a {
-            font-weight: 500;
-            color: #007FEC;
-            transition: color 0.2s;
+        .footer-note a {
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1px;
+            transition: color 0.2s, border-color 0.2s;
         }
 
-        .alt-actions a:hover {
-            color: #00A3FF;
-            text-decoration: underline;
+        .footer-note a:hover {
+            color: var(--text);
+            border-color: var(--border-hover);
         }
 
-        .legal-disclaimer {
-            font-size: 11px;
-            color: rgba(0, 0, 0, 0.54);
-            text-align: center;
-            margin-top: 24px;
-            line-height: 1.6;
-            border-top: 1px solid #eef0f2;
-            padding-top: 20px;
-        }
-
-        .legal-disclaimer a {
-            color: #007FEC;
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-
-        .legal-disclaimer a:hover {
-            color: #00A3FF;
-            text-decoration: underline;
-        }
-
-        .login-footer-note {
-            font-size: 11px;
-            color: rgba(0, 0, 0, 0.40);
-            text-align: center;
-            margin-top: 16px;
-            letter-spacing: 0.2px;
-        }
-
-        .login-footer-note strong {
-            color: #2B405A;
-            font-weight: 600;
-        }
-
-        /* ── responsive ── */
         @media (max-width: 480px) {
             body {
                 padding: 16px;
             }
 
-            .login-container {
-                padding: 24px 18px 20px;
+            .logo-wrap svg {
+                width: 140px;
             }
 
-            .login-logo {
-                max-width: 200px;
+            .login-title {
+                font-size: 18px;
             }
-
-            .form-actions {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .btn-login {
-                font-size: 13px;
-                padding: 13px 20px;
-            }
-        }
-
-        /* ── fade-in ── */
-        @keyframes fadeUp {
-            0% {
-                opacity: 0;
-                transform: translateY(12px);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .login-container {
-            animation: fadeUp 0.4s cubic-bezier(0.3, 0, 0, 1.4) both;
         }
     </style>
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; connect-src 'self' https://*.supabase.co">
-    <meta http-equiv="X-Frame-Options" content="DENY">
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
 </head>
 <body>
 
-    <div class="login-container" role="main" aria-label="Login panel">
+    <svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden">
+        <defs>
+            <filter id="panteon-brush" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.23" numOctaves="4" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="0.85" xChannelSelector="R" yChannelSelector="B"/></filter>
+            <mask id="panteon-roll"><rect width="100" height="100" fill="white"/><path d="M16 60 C20 58 24 59 27 63" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round"/></mask>
+            <g id="panteon-lockup" fill="currentColor"><g filter="url(#panteon-brush)"><path d="M63 19 C57 19 54 23 54 29 L54 55 C54 59 56 62 60 64 L46 64 C42 64 40 66 40 68 C41 70 44 70 48 70 L65 70 C69 70 72 67 72 63 L72 29 C72 23 69 19 63 19 Z"/><circle cx="20" cy="64" r="7" mask="url(#panteon-roll)"/></g><text x="82" y="67" fill="currentColor" font-family="Inter, Arial, sans-serif" font-size="40" font-weight="500" letter-spacing="1.5">PANTEON</text></g>
+        </defs>
+    </svg>
 
-        <!-- ─── HEADER / LOGO (centered with shift) ─── -->
-        <div class="login-header">
-            <a href="/" class="login-logo" aria-label="PANTEON — return to home">
-                <svg viewBox="0 0 295 100" role="img" aria-label="PANTEON" style="width:100%;max-width:280px;height:auto;fill:#111213">
-                    <defs>
-                        <filter id="panteon-brush" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.23" numOctaves="4" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="0.85" xChannelSelector="R" yChannelSelector="B"/></filter>
-                        <mask id="panteon-roll"><rect width="100" height="100" fill="white"/><path d="M16 60 C20 58 24 59 27 63" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round"/></mask>
-                    </defs>
-                    <g filter="url(#panteon-brush)"><path d="M63 19 C57 19 54 23 54 29 L54 55 C54 59 56 62 60 64 L46 64 C42 64 40 66 40 68 C41 70 44 70 48 70 L65 70 C69 70 72 67 72 63 L72 29 C72 23 69 19 63 19 Z"/><circle cx="20" cy="64" r="7" mask="url(#panteon-roll)"/></g>
-                    <text x="82" y="67" fill="#111213" font-family="Inter, Arial, sans-serif" font-size="40" font-weight="500" letter-spacing="1.5">PANTEON</text>
-                </svg>
-            </a>
-            <p class="login-subhead">Sign in to your account</p>
+    <div class="login-container">
+        <div class="logo-wrap">
+            <svg viewBox="0 0 295 100" role="img" aria-label="Panteon"><use href="#panteon-lockup"/></svg>
         </div>
 
-        <!-- ─── LOGIN FORM ─── -->
-        <form class="login-form" id="authForm" action="#" method="post" autocomplete="off" novalidate>
-            <!-- email -->
+        <h1 class="login-title">Admin Console</h1>
+        <p class="login-sub">Sign in to access your dashboard</p>
+
+        <form id="loginForm" autocomplete="off">
             <div class="form-group">
-                <div class="input-wrap">
-                    <span class="input-icon" aria-hidden="true">
-                        <svg viewBox="0 0 32 26" xmlns="http://www.w3.org/2000/svg">
-                            <g fill="none" fill-rule="evenodd"><g fill="#888888"><path d="M30 23c0 .55-.45 1-1 1H3c-.55 0-1-.45-1-1V3c0-.55.45-1 1-1h26c.55 0 1 .45 1 1v20zm0-23H2C.9 0 0 .89 0 2v22c0 1.1.9 2 2 2h28c1.1 0 2-.9 2-2V2c0-1.11-.9-2-2-2zm-8 6h4v4h-4V6zm-2 6h8V4h-8v8zM0 16h14v-2H0v2zm0 4h14v-2H0v2z"/></g></g>
-                        </svg>
-                    </span>
-                    <input type="email" id="email" name="email" placeholder="Email Address" required autofocus>
-                </div>
+                <label class="form-label" for="email">Email</label>
+                <input type="email" id="email" class="form-input" placeholder="you@alieninc.tech" required autofocus autocomplete="email">
             </div>
-
-            <!-- password -->
             <div class="form-group">
-                <div class="input-wrap">
-                    <span class="input-icon" aria-hidden="true">
-                        <svg viewBox="0 0 13 16" xmlns="http://www.w3.org/2000/svg">
-                            <g fill="none" fill-rule="evenodd"><g fill="#888888"><path d="M11 15.998H2c-1.104 0-2-.896-2-1.999V7.999c0-1.104.896-2 2-2v-1.5C2 2.015 4.015 0 6.5 0S11 2.015 11 4.499V5.999c1.104 0 2 .896 2 2v7.999c0 1.104-.896 1.999-2 1.999zM10 4.499C10 2.566 8.433 1 6.5 1S3 2.566 3 4.499V5.998h7V4.499zm2 3.5c0-.553-.448-1-1-1H2c-.553 0-1 .447-1 1v6c0 .552.447.999 1 .999h9c.552 0 1-.447 1-.999V7.999zm-5.5 5c-.276 0-.5-.224-.5-.5V9.498c0-.275.224-.499.5-.499s.5.224.5.499V12.5c0 .276-.224.5-.5.5z"/></g></g>
-                        </svg>
-                    </span>
-                    <input type="password" id="password" name="password" placeholder="Password" required>
-                    <button type="button" class="password-toggle" id="togglePassword" aria-label="Toggle password visibility">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z">
-                            <circle cx="12" cy="12" r="3">
-                        </svg>
-                    </button>
-                </div>
+                <label class="form-label" for="password">Password</label>
+                <input type="password" id="password" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
             </div>
-
-            <!-- actions -->
-            <div class="form-actions">
-                <label class="remember">
-                    <input type="checkbox" name="remember" checked>
-                    Remember me
-                </label>
-                <a href="../cookies.html" class="forgot-link">Create or reset password</a>
-            </div>
-
-            <!-- submit -->
-            <button type="submit" class="btn-login" id="authBtn">
-                Log In
-                <svg viewBox="0 0 8 12" xmlns="http://www.w3.org/2000/svg">
-                    <polygon points="0 1.4 1.4 0 7.4 6 1.4 12 0 10.6 4.6 6" fill="currentColor">
-                </svg>
-            </button>
-
-            <!-- alt actions -->
-            <div class="alt-actions">
-                Need access? <a href="mailto:admin@alieninc.tech">Request from admin</a>
-            </div>
+            <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
+            <div class="error-msg" id="errorMsg"></div>
+            <div class="success-msg" id="successMsg"></div>
         </form>
 
-        <!-- ─── LEGAL ─── -->
-        <div class="legal-disclaimer">
-            By signing in, you agree to our
-            <a href="cookies.html">Terms of Use</a> and
-            <a href="privacy.html">Privacy Policy</a>.
-        </div>
-
-        <div class="login-footer-note">
-            <strong>PANTEON</strong> — a subsidiary of Rousseau LLC · Alien.Inc Group
-        </div>
-
+        <p class="footer-note">
+            Need access? <a href="mailto:admin@alieninc.tech">Contact admin</a>
+        </p>
     </div>
 
-    <!-- ─── AUTH ─── -->
     <script>
         var SUPABASE_URL = 'https://frwjaixxlgthkgjtafhz.supabase.co';
         var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyd2phaXh4bGd0aGtnanRhZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDUzNDQsImV4cCI6MjA5NDYyMTM0NH0.j2DKz__QMml4WplMYNmsQpTUw0qu-kZG7Md3qBEEdEc';
 
         document.addEventListener('DOMContentLoaded', function() {
-            var toggle = document.getElementById('togglePassword');
-            var passwordField = document.getElementById('password');
-            var loginForm = document.querySelector('.login-form');
-            var loginBtn = document.querySelector('.btn-login');
+            var form = document.getElementById('loginForm');
+            var btn = document.getElementById('loginBtn');
+            var errorMsg = document.getElementById('errorMsg');
+            var successMsg = document.getElementById('successMsg');
             var emailInput = document.getElementById('email');
+            var passwordInput = document.getElementById('password');
 
-            toggle.addEventListener('click', function() {
-                var type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordField.setAttribute('type', type);
-            });
-
-            loginForm.addEventListener('submit', function(e) {
+            form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 var email = emailInput.value.trim();
-                var password = passwordField.value;
+                var password = passwordInput.value;
 
                 if (!email || !password) {
-                    alert('Please enter email and password');
+                    errorMsg.textContent = 'Please enter email and password';
                     return;
                 }
 
-                loginBtn.disabled = true;
-                loginBtn.textContent = 'Signing in...';
+                btn.disabled = true;
+                btn.textContent = 'Signing in...';
+                errorMsg.textContent = '';
+                successMsg.textContent = '';
 
                 fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
                     method: 'POST',
@@ -480,9 +288,9 @@
                 .then(function(resp) { return resp.json().then(function(data) { return { ok: resp.ok, data: data }; }); })
                 .then(function(result) {
                     if (!result.ok) {
-                        alert('Authentication failed: ' + (result.data.error_description || result.data.msg || 'Invalid credentials'));
-                        loginBtn.disabled = false;
-                        loginBtn.textContent = 'Log In';
+                        errorMsg.textContent = result.data.error_description || result.data.msg || 'Invalid credentials';
+                        btn.disabled = false;
+                        btn.textContent = 'Sign In';
                         return;
                     }
                     localStorage.setItem('hs_session', JSON.stringify({
@@ -492,12 +300,15 @@
                         refresh_token: result.data.refresh_token,
                         company_id: 'alieninc'
                     }));
-                    window.location.href = 'admin.html';
+                    successMsg.textContent = 'Signed in successfully.';
+                    setTimeout(function() {
+                        window.location.href = 'admin.html';
+                    }, 500);
                 })
                 .catch(function(err) {
-                    alert('Login error: ' + err.message);
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = 'Log In';
+                    errorMsg.textContent = 'Login error: ' + err.message;
+                    btn.disabled = false;
+                    btn.textContent = 'Sign In';
                 });
             });
         });

@@ -2358,26 +2358,73 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
     }
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    const buildTacticalCams = (elementId, startIdx) => {
-        const grid = document.getElementById(elementId);
-        if (!grid) return;
-        let cameraHtml = '';
-        for (let i = 0; i < 25; i++) {
-            const camIndex = startIdx + i;
-            const paddedIndex = String(camIndex).padStart(2, '0');
-            const isTrackingCam = [2, 3, 7, 8, 13, 27, 28, 34, 40].includes(camIndex);
-            const boxW = 18 + Math.floor(Math.random() * 20);
-            const boxH = 18 + Math.floor(Math.random() * 20);
-            const boxTop = 15 + Math.floor(Math.random() * 45);
-            const boxLeft = 15 + Math.floor(Math.random() * 45);
-            const scanDelay = (Math.random() * 3).toFixed(1);
-            cameraHtml += '<div class="camera-box" title="View Stream CAM ' + paddedIndex + '"><div class="camera-feed-mock"></div><div class="camera-feed-vector"></div>' + (isTrackingCam ? '<div class="camera-target-box" style="width: ' + boxW + '%; height: ' + boxH + '%; top: ' + boxTop + '%; left: ' + boxLeft + '%; animation-delay: ' + scanDelay + 's;"></div>' : '') + '<div class="camera-scanline" style="animation-delay: ' + scanDelay + 's;"></div><span class="camera-label">CAM ' + paddedIndex + '</span></div>';
+document.addEventListener('DOMContentLoaded', async () => {
+    const loadCCTVCameras = async () => {
+        try {
+            const response = await api('/gotham/cctv');
+            const cameras = response.cameras || [];
+            
+            // Split cameras into two groups (A and B)
+            const halfPoint = Math.ceil(cameras.length / 2);
+            const groupA = cameras.slice(0, halfPoint).slice(0, 25);
+            const groupB = cameras.slice(halfPoint, halfPoint + 25);
+            
+            const buildCameraGrid = (elementId, cameraList, startIdx) => {
+                const grid = document.getElementById(elementId);
+                if (!grid) return;
+                
+                if (cameraList.length === 0) {
+                    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">No cameras available for this region</div>';
+                    return;
+                }
+                
+                let cameraHtml = '';
+                cameraList.forEach((cam, idx) => {
+                    const camIndex = startIdx + idx;
+                    const paddedIndex = String(camIndex).padStart(2, '0');
+                    const isTrackingCam = idx % 3 === 0; // Every 3rd camera shows tracking
+                    const boxW = 18 + Math.floor(Math.random() * 20);
+                    const boxH = 18 + Math.floor(Math.random() * 20);
+                    const boxTop = 15 + Math.floor(Math.random() * 45);
+                    const boxLeft = 15 + Math.floor(Math.random() * 45);
+                    const scanDelay = (Math.random() * 3).toFixed(1);
+                    
+                    cameraHtml += `
+                        <div class="camera-box" title="${cam.name} - ${cam.city}, ${cam.country} (${cam.source})">
+                            <img src="${cam.feed_url}" style="width:100%;height:100%;object-fit:cover;opacity:0.6;" onerror="this.style.display='none';this.parentElement.querySelector('.camera-feed-mock').style.opacity='0.5';" />
+                            <div class="camera-feed-vector"></div>
+                            ${isTrackingCam ? `<div class="camera-target-box" style="width: ${boxW}%; height: ${boxH}%; top: ${boxTop}%; left: ${boxLeft}%; animation-delay: ${scanDelay}s;"></div>` : ''}
+                            <div class="camera-scanline" style="animation-delay: ${scanDelay}s;"></div>
+                            <span class="camera-label">CAM ${paddedIndex} · ${cam.city || cam.country}</span>
+                        </div>
+                    `;
+                });
+                grid.innerHTML = cameraHtml;
+            };
+            
+            buildCameraGrid('camera-grid-a', groupA, 1);
+            buildCameraGrid('camera-grid-b', groupB, 26);
+            
+            // Update camera group headers with count
+            const headerA = document.querySelector('#camera-grid-a')?.closest('.camera-group-container')?.querySelector('.camera-group-header span:first-child');
+            const headerB = document.querySelector('#camera-grid-b')?.closest('.camera-group-container')?.querySelector('.camera-group-header span:first-child');
+            if (headerA) headerA.textContent = `Camera Group A (${groupA.length})`;
+            if (headerB) headerB.textContent = `Camera Group B (${groupB.length})`;
+            
+        } catch (e) {
+            console.error('Failed to load CCTV cameras:', e);
+            const gridA = document.getElementById('camera-grid-a');
+            const gridB = document.getElementById('camera-grid-b');
+            if (gridA) gridA.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Failed to load cameras: ' + e.message + '</div>';
+            if (gridB) gridB.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Failed to load cameras: ' + e.message + '</div>';
         }
-        grid.innerHTML = cameraHtml;
     };
-    buildTacticalCams('camera-grid-a', 1);
-    buildTacticalCams('camera-grid-b', 26);
+    
+    // Load cameras on page load
+    loadCCTVCameras();
+    
+    // Refresh every 5 minutes
+    setInterval(loadCCTVCameras, 5 * 60 * 1000);
 });
 
 // OSINT Intelligence Functions

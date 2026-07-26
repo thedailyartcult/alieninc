@@ -353,3 +353,170 @@ async def health_check():
             "error": str(e),
             "timestamp": datetime.utcnow().isoformat()
         }
+
+
+class CCTVCamera(BaseModel):
+    id: str
+    lat: float
+    lng: float
+    name: str
+    city: Optional[str] = None
+    country: str
+    feed_url: str
+    source: str
+
+
+class CCTVResponse(BaseModel):
+    total: int
+    cameras: List[CCTVCamera]
+    timestamp: str
+
+
+@router.get("/cctv", response_model=CCTVResponse)
+async def get_cctv_cameras(
+    region: Optional[str] = Query(None, description="Filter by region (uk, us-east, us-west, europe, asia, etc.)"),
+    lat: Optional[float] = Query(None, description="Latitude for proximity search"),
+    lng: Optional[float] = Query(None, description="Longitude for proximity search"),
+    radius: Optional[float] = Query(None, description="Radius in km for proximity search"),
+    user: SupabaseUser = Depends(get_current_user)
+):
+    """
+    Get worldwide CCTV traffic cameras.
+    Supports filtering by region or proximity to coordinates.
+    """
+    try:
+        cameras = []
+        
+        # UK: Transport for London JamCams
+        try:
+            async with httpx.AsyncClient(timeout=12.0) as client:
+                response = await client.get('https://api.tfl.gov.uk/Place/Type/JamCam')
+                if response.status_code == 200:
+                    data = response.json()
+                    for cam in (data or []):
+                        img_prop = next((p for p in cam.get('additionalProperties', []) if p.get('key') == 'imageUrl'), None)
+                        cam_id = cam.get('id', '').replace('JamCams_', '')
+                        if cam.get('lat') and cam.get('lon'):
+                            cameras.append(CCTVCamera(
+                                id=f"tfl-{cam.get('id')}",
+                                lat=cam['lat'],
+                                lng=cam['lon'],
+                                name=cam.get('commonName', 'London JamCam'),
+                                city='London',
+                                country='UK',
+                                feed_url=img_prop.get('value') if img_prop else f"https://s3-eu-west-1.amazonaws.com/jamcams.tfl.gov.uk/{cam_id}.jpg",
+                                source='TfL'
+                            ))
+        except Exception as e:
+            print(f"Warning: TfL cameras failed: {e}")
+
+        # US: WSDOT Washington State
+        try:
+            async with httpx.AsyncClient(timeout=12.0) as client:
+                response = await client.get('https://data.wsdot.wa.gov/log/public/cameras.json')
+                if response.status_code == 200:
+                    data = response.json()
+                    for cam in (data or []):
+                        loc = cam.get('CameraLocation', {})
+                        if loc.get('Latitude') and loc.get('Longitude') and cam.get('ImageURL'):
+                            cameras.append(CCTVCamera(
+                                id=f"wsdot-{cam.get('CameraID')}",
+                                lat=loc['Latitude'],
+                                lng=loc['Longitude'],
+                                name=cam.get('Title', 'WSDOT Camera'),
+                                city='Washington',
+                                country='US',
+                                feed_url=cam['ImageURL'],
+                                source='WSDOT'
+                            ))
+        except Exception as e:
+            print(f"Warning: WSDOT cameras failed: {e}")
+
+        # US: Caltrans California
+        try:
+            async with httpx.AsyncClient(timeout=12.0) as client:
+                response = await client.get(
+                    'https://caltrans-gis.dot.ca.gov/arcgis/rest/services/CHhighway/CCTV/FeatureServer/0/query',
+                    params={'where': '1=1', 'outFields': '*', 'f': 'json'}
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    for feature in (data.get('features') or []):
+                        attrs = feature.get('attributes', {})
+                        if attrs.get('latitude') and attrs.get('longitude') and attrs.get('currentImageURL'):
+                            cameras.append(CCTVCamera(
+                                id=f"cal-{attrs.get('OBJECTID')}",
+                                lat=attrs['latitude'],
+                                lng=attrs['longitude'],
+                                name=attrs.get('locationName', 'Caltrans'),
+                                city=attrs.get('nearbyPlace') or attrs.get('county') or 'California',
+                                country='US',
+                                feed_url=attrs['currentImageURL'],
+                                source='Caltrans'
+                            ))
+        except Exception as e:
+            print(f"Warning: Caltrans cameras failed: {e}")
+
+        # Bulgaria
+        try:
+            async with httpx.AsyncClient(timeout=12.0) as client:
+                response = await client.get('https://api.bgtraffic.com/v1/cameras')
+                if response.status_code == 200:
+                    data = response.json()
+                    for cam in (data or []):
+                        if cam.get('lat') and cam.get('lng') and cam.get('url'):
+                            cameras.append(CCTVCamera(
+                                id=f"bg-{cam.get('id')}",
+                                lat=cam['lat'],
+                                lng=cam['lng'],
+                                name=cam.get('name', 'Bulgaria Camera'),
+                                city=cam.get('city'),
+                                country='BG',
+                                feed_url=cam['url'],
+                                source='BGTraffic'
+                            ))
+        except Exception as e:
+            print(f"Warning: Bulgaria cameras failed: {e}")
+
+        # Greece
+        try:
+            async with httpx.AsyncClient(timeout=12.0) as client:
+                response = await client.get('https://traffic.attika.gr.gr/traffic-cameras')
+                if response.status_code == 200:
+                    # Parse HTML for camera data - simplified
+                    pass
+        except Exception as e:
+            print(f"Warning: Greece cameras failed: {e}")
+
+        # Filter by region if specified
+        if region:
+            region_lower = region.lower()
+            if region_lower == 'uk':
+                cameras = [c for c in cameras if c.country == 'UK']
+            elif region_lower == 'us' or region_lower == 'us-east' or region_lower == 'us-west':
+                cameras = [c for c in cameras if c.country == 'US']
+            elif region_lower == 'europe':
+                cameras = [c for c in cameras if c.country in ['UK', 'BG', 'GR', 'RS', 'MK', 'RO', 'TR', 'IT', 'CZ', 'SK', 'DE', 'FR', 'ES', 'PL', 'CH', 'FI', 'IS']]
+            elif region_lower == 'asia':
+                cameras = [c for c in cameras if c.country in ['JP', 'HK', 'TW']]
+
+        # Filter by proximity if coordinates provided
+        if lat is not None and lng is not None and radius is not None:
+            import math
+            def distance(lat1, lon1, lat2, lon2):
+                R = 6371  # Earth radius in km
+                dlat = math.radians(lat2 - lat1)
+                dlon = math.radians(lon2 - lon1)
+                a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
+                c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+                return R * c
+            
+            cameras = [c for c in cameras if distance(lat, lng, c.lat, c.lng) <= radius]
+
+        return CCTVResponse(
+            total=len(cameras),
+            cameras=cameras,
+            timestamp=datetime.utcnow().isoformat()
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"CCTV lookup failed: {str(e)}")

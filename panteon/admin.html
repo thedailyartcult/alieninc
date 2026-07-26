@@ -1023,83 +1023,85 @@
                 </div>
 
                 <div class="page" id="page-gotham-dashboard">
-                    <div class="grid grid-4" style="margin-bottom:16px" id="gothamKpiCards"></div>
-                    <div class="grid grid-2">
-                        <div class="card">
-                            <div class="card-header"><span class="card-title">Active Investigations</span></div>
-                            <div id="gothamInvestigationsList"><div class="empty-state">Loading...</div></div>
+                    <div class="card" style="margin-bottom:16px">
+                        <div class="card-header">
+                            <span class="card-title">OSINT Intelligence Toolkit</span>
+                            <button class="btn btn-sm" onclick="document.getElementById('osintQuery').focus()">New Lookup</button>
                         </div>
-                        <div class="card">
-                            <div class="card-header"><span class="card-title">Pattern Alerts</span></div>
-                            <div id="gothamAlertsList"><div class="empty-state">Loading...</div></div>
+                        <div style="display:flex;gap:12px;margin-bottom:16px">
+                            <input type="text" id="osintQuery" placeholder="Enter IP address, domain, or entity name for sanctions screening..." style="flex:1;padding:12px 16px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;outline:none">
+                            <button class="btn btn-primary" onclick="performOSINTLookup()">Analyze</button>
                         </div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">
+                            Accepts: IPv4 addresses (8.8.8.8), domains (example.com), or entity names for OFAC sanctions screening
+                        </div>
+                        <div id="osintResults"></div>
                     </div>
-                    <div class="card" style="margin-top:16px">
-                        <div class="card-header"><span class="card-title">Top Risk Countries</span></div>
-                        <div id="gothamRiskCountries"><div class="empty-state">Loading...</div></div>
+                    <div class="grid grid-3">
+                        <div class="card">
+                            <div class="card-title">Sanctions Database</div>
+                            <div class="card-value" id="sanctionsCount">--</div>
+                            <div class="card-sub">OFAC SDN entries indexed</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title">Last Updated</div>
+                            <div class="card-value" style="font-size:16px" id="sanctionsUpdated">--</div>
+                            <div class="card-sub">24-hour cache refresh</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title">Status</div>
+                            <div class="card-value" style="font-size:16px;color:var(--green)" id="sanctionsStatus">--</div>
+                            <div class="card-sub">Intelligence services</div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="page" id="page-gotham-investigations">
-                    <div class="card" style="margin-bottom:16px">
+                    <div class="card">
                         <div class="card-header">
-                            <span class="card-title">Investigations</span>
+                            <span class="card-title">Sanctions Screening</span>
+                        </div>
+                        <div style="margin-bottom:16px">
+                            <input type="text" id="sanctionsQuery" placeholder="Search OFAC SDN list (min 4 characters)..." style="width:100%;padding:12px 16px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;outline:none;margin-bottom:8px">
                             <div style="display:flex;gap:8px">
-                                <select id="invStatusFilter" onchange="loadGothamInvestigations()" style="width:auto;padding:4px 8px;font-size:10px">
-                                    <option value="">All Statuses</option>
-                                    <option value="open">Open</option>
-                                    <option value="in_progress">In Progress</option>
-                                    <option value="closed">Closed</option>
+                                <select id="sanctionsSchema" style="width:auto;padding:8px 12px;font-size:12px">
+                                    <option value="">All Types</option>
+                                    <option value="Person">Person</option>
+                                    <option value="Organization">Organization</option>
+                                    <option value="Company">Company</option>
+                                    <option value="Vessel">Vessel</option>
+                                    <option value="Airplane">Airplane</option>
                                 </select>
-                                <button class="btn btn-sm" onclick="loadGothamInvestigations()">Refresh</button>
+                                <button class="btn btn-primary btn-sm" onclick="searchSanctions()">Search</button>
                             </div>
                         </div>
-                        <div class="table-wrap">
-                            <table><thead><tr><th>Case #</th><th>Title</th><th>Status</th><th>Priority</th><th>Classification</th><th>Findings</th><th>Analysts</th><th>Created</th></tr></thead>
-                            <tbody id="investigationsBody"><tr><td colspan="8"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
-                        </div>
-                    </div>
-                    <div class="card" id="investigationDetail" style="display:none">
-                        <div class="card-header"><span class="card-title" id="invDetailTitle">Investigation Detail</span><button class="btn btn-sm" onclick="document.getElementById('investigationDetail').style.display='none'">Close</button></div>
-                        <div id="invDetailContent"></div>
+                        <div id="sanctionsResults"><div class="empty-state">Enter a query to search the OFAC SDN sanctions list</div></div>
                     </div>
                 </div>
 
                 <div class="page" id="page-gotham-threatmap">
-                    <div class="card" style="margin-bottom:16px">
-                        <div class="card-header">
-                            <span class="card-title">Global Threat Map</span>
-                            <button class="btn btn-sm" onclick="loadGothamThreatMap()">Refresh</button>
-                        </div>
-                        <div id="threatMapCanvas" style="width:100%;height:500px;background:var(--bg-input);border-radius:4px;position:relative;overflow:hidden">
-                            <svg id="threatMapSvg" style="width:100%;height:100%"></svg>
-                        </div>
-                    </div>
                     <div class="card">
-                        <div class="card-header"><span class="card-title">Country Risk Scores</span></div>
-                        <div class="table-wrap">
-                            <table><thead><tr><th>Country</th><th>Overall Risk</th><th>Security</th><th>Political</th><th>Health</th><th>Events (90d)</th></tr></thead>
-                            <tbody id="countryRiskBody"><tr><td colspan="6"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
+                        <div class="card-header">
+                            <span class="card-title">IP Intelligence</span>
                         </div>
+                        <div style="margin-bottom:16px">
+                            <input type="text" id="ipQuery" placeholder="Enter IP address (e.g., 8.8.8.8)..." style="width:100%;padding:12px 16px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;outline:none;margin-bottom:8px">
+                            <button class="btn btn-primary btn-sm" onclick="lookupIP()">Lookup IP</button>
+                        </div>
+                        <div id="ipResults"><div class="empty-state">Enter an IP address to retrieve geolocation, reputation, and sanctions data</div></div>
                     </div>
                 </div>
 
                 <div class="page" id="page-gotham-entities">
-                    <div class="card" style="margin-bottom:16px">
-                        <div class="card-header">
-                            <span class="card-title">Threat Entities</span>
-                            <button class="btn btn-sm" onclick="loadGothamEntities()">Refresh</button>
-                        </div>
-                        <div class="table-wrap">
-                            <table><thead><tr><th>Name</th><th>Type</th><th>Threat Level</th><th>Risk Score</th><th>Aliases</th><th>Connections</th><th>Last Seen</th></tr></thead>
-                            <tbody id="entitiesBody"><tr><td colspan="7"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
-                        </div>
-                    </div>
                     <div class="card">
-                        <div class="card-header"><span class="card-title">Entity Graph</span></div>
-                        <div id="entityGraphCanvas" style="width:100%;height:400px;background:var(--bg-input);border-radius:4px;overflow:hidden">
-                            <svg id="entityGraphSvg" style="width:100%;height:100%"></svg>
+                        <div class="card-header">
+                            <span class="card-title">Domain Intelligence (WHOIS/RDAP)</span>
                         </div>
+                        <div style="margin-bottom:16px">
+                            <input type="text" id="domainQuery" placeholder="Enter domain (e.g., example.com)..." style="width:100%;padding:12px 16px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;outline:none;margin-bottom:8px">
+                            <button class="btn btn-primary btn-sm" onclick="lookupDomain()">Lookup Domain</button>
+                        </div>
+                        <div id="domainResults"><div class="empty-state">Enter a domain to retrieve registration data, security headers, and sanctions screening</div></div>
                     </div>
                 </div>
 
@@ -1516,10 +1518,10 @@ function loadPageData(page) {
         case 'group-catalog': loadServiceCatalog(); break;
         case 'group-billing': loadBilling(); break;
         case 'group-holdings': loadHoldings(); break;
-        case 'gotham-dashboard': loadGothamDashboard(); break;
-        case 'gotham-investigations': loadGothamInvestigations(); break;
-        case 'gotham-threatmap': loadGothamThreatMap(); break;
-        case 'gotham-entities': loadGothamEntities(); break;
+        case 'gotham-dashboard': loadOSINTDashboard(); break;
+        case 'gotham-investigations': break;
+        case 'gotham-threatmap': break;
+        case 'gotham-entities': break;
         case 'contour-dashboards': loadContourDashboards(); break;
         case 'contour-schedules': loadContourSchedules(); break;
         case 'contour-quality': loadDQViolations(); break;
@@ -2377,6 +2379,201 @@ document.addEventListener('DOMContentLoaded', () => {
     buildTacticalCams('camera-grid-a', 1);
     buildTacticalCams('camera-grid-b', 26);
 });
+
+// OSINT Intelligence Functions
+async function loadOSINTDashboard() {
+    try {
+        const health = await api('/gotham/health');
+        document.getElementById('sanctionsCount').textContent = health.sanctions_index_size.toLocaleString();
+        document.getElementById('sanctionsUpdated').textContent = new Date(health.timestamp).toLocaleString();
+        document.getElementById('sanctionsStatus').textContent = health.status.toUpperCase();
+    } catch (e) {
+        document.getElementById('sanctionsStatus').textContent = 'ERROR';
+        document.getElementById('sanctionsStatus').style.color = 'var(--red)';
+    }
+}
+
+async function performOSINTLookup() {
+    const query = document.getElementById('osintQuery').value.trim();
+    if (!query) return;
+
+    const resultsDiv = document.getElementById('osintResults');
+    resultsDiv.innerHTML = '<div class="empty-state"><span class="loading"></span> Analyzing...</div>';
+
+    try {
+        let result;
+        const isIP = /^(\d{1,3}\.){3}\d{1,3}$/.test(query);
+        const isDomain = /^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(query);
+
+        if (isIP) {
+            result = await api(`/gotham/ip?ip=${encodeURIComponent(query)}`);
+            resultsDiv.innerHTML = renderIPResult(result);
+        } else if (isDomain) {
+            result = await api(`/gotham/whois?domain=${encodeURIComponent(query)}`);
+            resultsDiv.innerHTML = renderDomainResult(result);
+        } else {
+            result = await api(`/gotham/sanctions?query=${encodeURIComponent(query)}&limit=10`);
+            resultsDiv.innerHTML = renderSanctionsResult(result);
+        }
+    } catch (e) {
+        resultsDiv.innerHTML = `<div class="empty-state" style="color:var(--red)">Error: ${e.message}</div>`;
+    }
+}
+
+function renderIPResult(data) {
+    let html = '<div style="display:grid;gap:16px">';
+    
+    if (data.sanctions_match && data.sanctions_match.hits.length > 0) {
+        html += '<div style="background:rgba(244,63,94,0.1);border:1px solid var(--red);padding:16px;border-radius:8px">';
+        html += '<div style="font-weight:600;color:var(--red);margin-bottom:8px">⚠ SANCTIONS MATCH DETECTED</div>';
+        data.sanctions_match.hits.forEach(hit => {
+            html += `<div style="font-size:12px;color:var(--text);margin-bottom:4px">Matched: ${hit.matched_value}</div>`;
+            hit.entries.forEach(entry => {
+                html += `<div style="padding:8px;background:var(--bg);border-radius:4px;margin-top:4px;font-size:11px">`;
+                html += `<div style="font-weight:500">${entry.name}</div>`;
+                html += `<div style="color:var(--text-muted)">${entry.schema} · ${entry.countries.join(', ')}</div>`;
+                html += `</div>`;
+            });
+        });
+        html += '</div>';
+    }
+
+    if (data.geo) {
+        html += '<div class="grid grid-3">';
+        html += `<div class="card"><div class="card-title">Country</div><div style="font-size:14px;font-weight:500;margin-top:4px">${data.geo.country || '--'}</div></div>`;
+        html += `<div class="card"><div class="card-title">City</div><div style="font-size:14px;font-weight:500;margin-top:4px">${data.geo.city || '--'}</div></div>`;
+        html += `<div class="card"><div class="card-title">ISP</div><div style="font-size:14px;font-weight:500;margin-top:4px">${data.geo.isp || '--'}</div></div>`;
+        html += '</div>';
+    }
+
+    if (data.reputation) {
+        html += '<div class="card"><div class="card-title">Reputation</div>';
+        html += '<div style="display:flex;gap:8px;margin-top:8px">';
+        if (data.reputation.is_proxy) html += '<span class="tag tag-red">Proxy</span>';
+        if (data.reputation.is_hosting) html += '<span class="tag tag-amber">Hosting</span>';
+        if (data.reputation.is_mobile) html += '<span class="tag">Mobile</span>';
+        html += `<span class="tag ${data.reputation.risk_level === 'HIGH' ? 'tag-red' : data.reputation.risk_level === 'MEDIUM' ? 'tag-amber' : ''}">${data.reputation.risk_level} Risk</span>`;
+        html += '</div></div>';
+    }
+
+    html += '</div>';
+    return html;
+}
+
+function renderDomainResult(data) {
+    let html = '<div style="display:grid;gap:16px">';
+    
+    if (data.sanctions_match && data.sanctions_match.hits.length > 0) {
+        html += '<div style="background:rgba(244,63,94,0.1);border:1px solid var(--red);padding:16px;border-radius:8px">';
+        html += '<div style="font-weight:600;color:var(--red);margin-bottom:8px">⚠ SANCTIONS MATCH DETECTED</div>';
+        data.sanctions_match.hits.forEach(hit => {
+            html += `<div style="font-size:12px;color:var(--text);margin-bottom:4px">Matched: ${hit.matched_value}</div>`;
+        });
+        html += '</div>';
+    }
+
+    if (data.rdap) {
+        html += '<div class="card"><div class="card-title">Registration Data</div>';
+        html += '<div style="display:grid;gap:8px;margin-top:8px;font-size:12px">';
+        if (data.registration) html += `<div><span style="color:var(--text-muted)">Registered:</span> ${new Date(data.registration).toLocaleDateString()}</div>`;
+        if (data.expiration) html += `<div><span style="color:var(--text-muted)">Expires:</span> ${new Date(data.expiration).toLocaleDateString()}</div>`;
+        if (data.rdap.entities && data.rdap.entities.length > 0) {
+            html += '<div style="margin-top:8px"><span style="color:var(--text-muted)">Entities:</span></div>';
+            data.rdap.entities.forEach(ent => {
+                html += `<div style="padding:6px;background:var(--bg);border-radius:4px;margin-top:4px">${ent.name || ent.org || '--'} ${ent.roles ? '(' + ent.roles.join(', ') + ')' : ''}</div>`;
+            });
+        }
+        html += '</div></div>';
+    }
+
+    if (data.security_score) {
+        const gradeColor = data.security_score.grade === 'A' ? 'var(--green)' : data.security_score.grade === 'B' ? 'var(--cyan)' : data.security_score.grade === 'C' ? 'var(--amber)' : 'var(--red)';
+        html += '<div class="card"><div class="card-title">Security Score</div>';
+        html += `<div style="display:flex;align-items:center;gap:12px;margin-top:8px">`;
+        html += `<div style="font-size:32px;font-weight:700;color:${gradeColor}">${data.security_score.grade}</div>`;
+        html += `<div><div style="font-size:14px;font-weight:500">${data.security_score.score}/${data.security_score.max}</div><div style="font-size:11px;color:var(--text-muted)">Security headers implemented</div></div>`;
+        html += '</div></div>';
+    }
+
+    html += '</div>';
+    return html;
+}
+
+function renderSanctionsResult(data) {
+    if (!data.matches || data.matches.length === 0) {
+        return '<div class="empty-state">No matches found</div>';
+    }
+
+    let html = '<div style="display:grid;gap:8px">';
+    html += `<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">${data.total} match${data.total !== 1 ? 'es' : ''} found</div>`;
+    
+    data.matches.forEach(match => {
+        html += '<div style="padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:6px">';
+        html += `<div style="font-weight:500;font-size:13px">${match.name}</div>`;
+        html += `<div style="font-size:11px;color:var(--text-muted);margin-top:4px">${match.schema} · ${match.countries.join(', ')}</div>`;
+        html += `<div style="font-size:11px;color:var(--text-dim);margin-top:4px">${match.sanctions}</div>`;
+        if (match.aliases && match.aliases.length > 0) {
+            html += `<div style="font-size:10px;color:var(--text-dim);margin-top:4px">Aliases: ${match.aliases.slice(0, 3).join(', ')}${match.aliases.length > 3 ? '...' : ''}</div>`;
+        }
+        html += '</div>';
+    });
+    
+    html += '</div>';
+    return html;
+}
+
+async function searchSanctions() {
+    const query = document.getElementById('sanctionsQuery').value.trim();
+    const schema = document.getElementById('sanctionsSchema').value;
+    const resultsDiv = document.getElementById('sanctionsResults');
+    
+    if (!query || query.length < 4) {
+        resultsDiv.innerHTML = '<div class="empty-state" style="color:var(--amber)">Query must be at least 4 characters</div>';
+        return;
+    }
+
+    resultsDiv.innerHTML = '<div class="empty-state"><span class="loading"></span> Searching...</div>';
+
+    try {
+        const url = `/gotham/sanctions?query=${encodeURIComponent(query)}&limit=50${schema ? `&schema=${schema}` : ''}`;
+        const data = await api(url);
+        resultsDiv.innerHTML = renderSanctionsResult(data);
+    } catch (e) {
+        resultsDiv.innerHTML = `<div class="empty-state" style="color:var(--red)">Error: ${e.message}</div>`;
+    }
+}
+
+async function lookupIP() {
+    const query = document.getElementById('ipQuery').value.trim();
+    const resultsDiv = document.getElementById('ipResults');
+    
+    if (!query) return;
+
+    resultsDiv.innerHTML = '<div class="empty-state"><span class="loading"></span> Looking up...</div>';
+
+    try {
+        const data = await api(`/gotham/ip?ip=${encodeURIComponent(query)}`);
+        resultsDiv.innerHTML = renderIPResult(data);
+    } catch (e) {
+        resultsDiv.innerHTML = `<div class="empty-state" style="color:var(--red)">Error: ${e.message}</div>`;
+    }
+}
+
+async function lookupDomain() {
+    const query = document.getElementById('domainQuery').value.trim();
+    const resultsDiv = document.getElementById('domainResults');
+    
+    if (!query) return;
+
+    resultsDiv.innerHTML = '<div class="empty-state"><span class="loading"></span> Looking up...</div>';
+
+    try {
+        const data = await api(`/gotham/whois?domain=${encodeURIComponent(query)}`);
+        resultsDiv.innerHTML = renderDomainResult(data);
+    } catch (e) {
+        resultsDiv.innerHTML = `<div class="empty-state" style="color:var(--red)">Error: ${e.message}</div>`;
+    }
+}
 </script>
 
 </body>

@@ -1,383 +1,355 @@
-import uuid
+"""
+Gotham Intelligence - OSINT and sanctions screening routes.
+"""
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
 
-from panteon.core.database import get_db
 from panteon.core.auth import SupabaseUser, get_current_user
-from panteon.gotham.service import GothamService
+from panteon.core.sanctions import sanctions_cache, SanctionEntry
 
 router = APIRouter(prefix="/gotham", tags=["Gotham Intelligence"])
 
 
-class InvestigationCreate(BaseModel):
-    title: str
-    description: Optional[str] = None
-    classification: str = "confidential"
-    workspace_id: Optional[str] = None
-    priority: str = "medium"
-    tags: Optional[list[str]] = None
+class SanctionsSearchRequest(BaseModel):
+    query: str
+    schema: Optional[str] = None
+    limit: int = 25
 
 
-class InvestigationUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    status: Optional[str] = None
-    priority: Optional[str] = None
-    tags: Optional[list[str]] = None
+class SanctionsMatch(BaseModel):
+    matched_value: str
+    entries: List[dict]
 
 
-class FindingCreate(BaseModel):
-    investigation_id: str
-    title: str
-    summary: Optional[str] = None
-    analysis: Optional[str] = None
-    confidence: float = 0.0
-    finding_type: str = "observation"
-    classification: str = "confidential"
-    linked_entities: Optional[list] = None
-    linked_objects: Optional[list] = None
+class SanctionsResponse(BaseModel):
+    query: str
+    schema: Optional[str]
+    total: int
+    matches: List[dict]
+    source: str
+    timestamp: str
 
 
-class EvidenceCreate(BaseModel):
-    finding_id: str
-    evidence_type: str
-    source: Optional[str] = None
-    content: Optional[str] = None
-    classification: str = "confidential"
-    metadata: Optional[dict] = None
-
-
-class ThreatEntityCreate(BaseModel):
-    name: str
-    entity_type: str = "person"
-    aliases: Optional[list[str]] = None
-    description: Optional[str] = None
-    threat_level: str = "low"
-    workspace_id: Optional[str] = None
-    attributes: Optional[dict] = None
-    classification: str = "confidential"
-
-
-class EntityLink(BaseModel):
-    source_id: str
-    target_id: str
-    connection_type: str = "related"
-    weight: float = 1.0
-
-
-class GeoEventCreate(BaseModel):
-    title: str
-    event_type: str
-    occurred_at: datetime
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+class IPGeoInfo(BaseModel):
     country: Optional[str] = None
+    country_code: Optional[str] = None
     region: Optional[str] = None
-    severity: str = "moderate"
-    description: Optional[str] = None
-    threat_entity_id: Optional[str] = None
-    workspace_id: Optional[str] = None
-    investigation_id: Optional[str] = None
+    city: Optional[str] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    timezone: Optional[str] = None
+    isp: Optional[str] = None
+    org: Optional[str] = None
+    as_number: Optional[str] = None
+    as_name: Optional[str] = None
+    is_mobile: Optional[bool] = None
+    is_proxy: Optional[bool] = None
+    is_hosting: Optional[bool] = None
 
 
-# ================================================================
-# INVESTIGATIONS
-# ================================================================
+class IPReputation(BaseModel):
+    is_proxy: bool
+    is_hosting: bool
+    is_mobile: bool
+    risk_level: str
 
-@router.get("/dashboard")
-async def gotham_dashboard(
-    workspace_id: Optional[str] = None,
-    _user: SupabaseUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+
+class IPResponse(BaseModel):
+    ip: str
+    geo: Optional[IPGeoInfo] = None
+    reputation: Optional[IPReputation] = None
+    sanctions_match: Optional[dict] = None
+    timestamp: str
+
+
+class WHOISEntity(BaseModel):
+    handle: Optional[str] = None
+    roles: Optional[List[str]] = None
+    name: Optional[str] = None
+    org: Optional[str] = None
+
+
+class RDAPInfo(BaseModel):
+    handle: Optional[str] = None
+    name: Optional[str] = None
+    status: Optional[List[str]] = None
+    events: Optional[List[dict]] = None
+    nameservers: Optional[List[str]] = None
+    entities: Optional[List[WHOISEntity]] = None
+
+
+class HTTPInfo(BaseModel):
+    status: Optional[int] = None
+    headers: Optional[dict] = None
+    redirected: Optional[bool] = None
+    final_url: Optional[str] = None
+
+
+class SecurityScore(BaseModel):
+    score: int
+    max: int
+    grade: str
+
+
+class WHOISResponse(BaseModel):
+    domain: str
+    rdap: Optional[RDAPInfo] = None
+    registration: Optional[str] = None
+    expiration: Optional[str] = None
+    last_changed: Optional[str] = None
+    http: Optional[HTTPInfo] = None
+    security_score: Optional[SecurityScore] = None
+    sanctions_match: Optional[dict] = None
+    timestamp: str
+
+
+@router.get("/sanctions", response_model=SanctionsResponse)
+async def search_sanctions(
+    query: str = Query(..., min_length=4, description="Search query"),
+    schema: Optional[str] = Query(None, description="Filter by entity schema"),
+    limit: int = Query(25, ge=1, le=100, description="Max results"),
+    user: SupabaseUser = Depends(get_current_user)
 ):
-    svc = GothamService(db)
-    return await svc.get_dashboard_stats(workspace_id)
+    """
+    Search OFAC SDN sanctions list.
+    Returns entities matching the query with aliases and program details.
+    """
+    try:
+        matches = await sanctions_cache.search(query, schema=schema, limit=limit)
+        return SanctionsResponse(
+            query=query,
+            schema=schema,
+            total=len(matches),
+            matches=[m.to_dict() for m in matches],
+            source="OpenSanctions / US OFAC SDN",
+            timestamp=datetime.utcnow().isoformat()
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Sanctions lookup failed: {str(e)}")
 
 
-@router.post("/investigations")
-async def create_investigation(
-    data: InvestigationCreate,
-    _user: SupabaseUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+@router.get("/ip", response_model=IPResponse)
+async def lookup_ip(
+    ip: str = Query(..., description="IP address to lookup"),
+    user: SupabaseUser = Depends(get_current_user)
 ):
-    svc = GothamService(db)
-    inv = await svc.create_investigation(
-        title=data.title,
-        description=data.description,
-        classification=data.classification,
-        workspace_id=data.workspace_id,
-        created_by=_user.email,
-        priority=data.priority,
-        tags=data.tags,
-    )
-    return {"id": str(inv.id), "case_number": inv.case_number, "status": inv.status}
+    """
+    Lookup IP geolocation, reputation, and check against sanctions list.
+    """
+    import re
+    
+    # Validate IP format
+    ipv4_pattern = r'^(\d{1,3}\.){3}\d{1,3}$'
+    ipv6_pattern = r'^[0-9a-fA-F:]+$'
+    if not (re.match(ipv4_pattern, ip) or re.match(ipv6_pattern, ip)):
+        raise HTTPException(status_code=400, detail="Invalid IP format")
+
+    result = {"ip": ip, "timestamp": datetime.utcnow().isoformat()}
+
+    # 1. Geolocation via ip-api.com (free, no key)
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(
+                f"http://ip-api.com/json/{ip}",
+                params={
+                    "fields": "status,message,continent,country,countryCode,region,regionName,"
+                             "city,zip,lat,lon,timezone,isp,org,as,asname,mobile,proxy,hosting,query"
+                }
+            )
+            if response.status_code == 200:
+                geo = response.json()
+                if geo.get("status") == "success":
+                    result["geo"] = IPGeoInfo(
+                        country=geo.get("country"),
+                        country_code=geo.get("countryCode"),
+                        region=geo.get("regionName"),
+                        city=geo.get("city"),
+                        lat=geo.get("lat"),
+                        lon=geo.get("lon"),
+                        timezone=geo.get("timezone"),
+                        isp=geo.get("isp"),
+                        org=geo.get("org"),
+                        as_number=geo.get("as"),
+                        as_name=geo.get("asname"),
+                        is_mobile=geo.get("mobile"),
+                        is_proxy=geo.get("proxy"),
+                        is_hosting=geo.get("hosting"),
+                    )
+    except Exception as e:
+        print(f"Warning: IP geolocation failed: {e}")
+
+    # 2. Reputation assessment
+    if "geo" in result:
+        geo = result["geo"]
+        result["reputation"] = IPReputation(
+            is_proxy=geo.is_proxy or False,
+            is_hosting=geo.is_hosting or False,
+            is_mobile=geo.is_mobile or False,
+            risk_level="HIGH" if geo.is_proxy else "MEDIUM" if geo.is_hosting else "LOW"
+        )
+
+    # 3. OFAC SDN cross-check on ASN/ISP/org
+    try:
+        candidates = set()
+        if result.get("geo") and result["geo"].org:
+            candidates.add(result["geo"].org)
+        if result.get("geo") and result["geo"].isp:
+            candidates.add(result["geo"].isp)
+        if result.get("geo") and result["geo"].as_name:
+            candidates.add(result["geo"].as_name)
+
+        hits = []
+        for value in candidates:
+            entries = await sanctions_cache.match_exact(value)
+            if entries:
+                hits.append({
+                    "matched_value": value,
+                    "entries": [e.to_dict() for e in entries]
+                })
+
+        result["sanctions_match"] = {"source": "OFAC SDN", "hits": hits} if hits else None
+    except Exception as e:
+        print(f"Warning: Sanctions cross-check failed: {e}")
+        result["sanctions_match"] = None
+
+    return IPResponse(**result)
 
 
-@router.get("/investigations")
-async def list_investigations(
-    workspace_id: Optional[str] = None,
-    status: Optional[str] = None,
-    limit: int = Query(default=50, le=200),
-    _user: SupabaseUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+@router.get("/whois", response_model=WHOISResponse)
+async def lookup_whois(
+    domain: str = Query(..., description="Domain to lookup"),
+    user: SupabaseUser = Depends(get_current_user)
 ):
-    svc = GothamService(db)
-    return await svc.list_investigations(workspace_id, status, limit)
+    """
+    Lookup domain WHOIS/RDAP info, HTTP headers, and check against sanctions list.
+    """
+    import re
+    
+    # Validate domain format
+    if not re.match(r'^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', domain):
+        raise HTTPException(status_code=400, detail="Invalid domain format")
+
+    result = {"domain": domain, "timestamp": datetime.utcnow().isoformat()}
+
+    # 1. RDAP lookup (free, standardized)
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            response = await client.get(
+                f"https://rdap.org/domain/{domain}",
+                headers={"Accept": "application/json"}
+            )
+            if response.status_code == 200:
+                data = response.json()
+                entities = []
+                for e in data.get("entities", []):
+                    vcard = e.get("vcardArray", [None, []])[1] if e.get("vcardArray") else []
+                    name = next((v[3] for v in vcard if v[0] == "fn"), None)
+                    org = next((v[3] for v in vcard if v[0] == "org"), None)
+                    if name or org:
+                        entities.append(WHOISEntity(
+                            handle=e.get("handle"),
+                            roles=e.get("roles"),
+                            name=name,
+                            org=org
+                        ))
+
+                result["rdap"] = RDAPInfo(
+                    handle=data.get("handle"),
+                    name=data.get("ldhName"),
+                    status=data.get("status"),
+                    events=[{"action": e.get("eventAction"), "date": e.get("eventDate")} 
+                            for e in data.get("events", [])],
+                    nameservers=[ns.get("ldhName") for ns in data.get("nameservers", [])],
+                    entities=entities
+                )
+
+                # Extract key dates
+                events = result["rdap"].events or []
+                result["registration"] = next((e["date"] for e in events if e["action"] == "registration"), None)
+                result["expiration"] = next((e["date"] for e in events if e["action"] == "expiration"), None)
+                result["last_changed"] = next((e["date"] for e in events if e["action"] == "last changed"), None)
+    except Exception as e:
+        print(f"Warning: RDAP lookup failed: {e}")
+
+    # 2. HTTP headers for security scoring
+    try:
+        async with httpx.AsyncClient(timeout=5.0, follow_redirects=True) as client:
+            response = await client.head(f"https://{domain}")
+            headers = {}
+            for h in ["server", "x-powered-by", "x-frame-options", "strict-transport-security",
+                      "content-security-policy", "x-content-type-options", "x-xss-protection",
+                      "referrer-policy", "permissions-policy"]:
+                if h in response.headers:
+                    headers[h] = response.headers[h]
+
+            result["http"] = HTTPInfo(
+                status=response.status_code,
+                headers=headers,
+                redirected=response.history[0].status_code in (301, 302) if response.history else False,
+                final_url=str(response.url)
+            )
+
+            # Security score
+            score = 0
+            if headers.get("strict-transport-security"):
+                score += 2
+            if headers.get("content-security-policy"):
+                score += 2
+            if headers.get("x-frame-options"):
+                score += 1
+            if headers.get("x-content-type-options"):
+                score += 1
+            if headers.get("referrer-policy"):
+                score += 1
+
+            grade = "A" if score >= 5 else "B" if score >= 3 else "C" if score >= 1 else "F"
+            result["security_score"] = SecurityScore(score=score, max=7, grade=grade)
+    except Exception as e:
+        print(f"Warning: HTTP headers check failed: {e}")
+
+    # 3. OFAC SDN cross-check on RDAP entities
+    try:
+        candidates = set()
+        if result.get("rdap") and result["rdap"].entities:
+            for ent in result["rdap"].entities:
+                if ent.name:
+                    candidates.add(ent.name)
+                if ent.org:
+                    candidates.add(ent.org)
+
+        hits = []
+        for value in candidates:
+            entries = await sanctions_cache.match_exact(value)
+            if entries:
+                hits.append({
+                    "matched_value": value,
+                    "entries": [e.to_dict() for e in entries]
+                })
+
+        result["sanctions_match"] = {"source": "OFAC SDN", "hits": hits} if hits else None
+    except Exception as e:
+        print(f"Warning: Sanctions cross-check failed: {e}")
+        result["sanctions_match"] = None
+
+    return WHOISResponse(**result)
 
 
-@router.get("/investigations/{investigation_id}")
-async def get_investigation(
-    investigation_id: str,
-    _user: SupabaseUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    svc = GothamService(db)
-    result = await svc.get_investigation(investigation_id)
-    if not result:
-        raise HTTPException(status_code=404, detail="Investigation not found")
-    return result
-
-
-@router.patch("/investigations/{investigation_id}")
-async def update_investigation(
-    investigation_id: str,
-    data: InvestigationUpdate,
-    _user: SupabaseUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    svc = GothamService(db)
-    updates = {k: v for k, v in data.model_dump().items() if v is not None}
-    result = await svc.update_investigation(investigation_id, updates, _user.email)
-    if not result:
-        raise HTTPException(status_code=404, detail="Investigation not found")
-    return {"id": str(result.id), "status": result.status, "case_number": result.case_number}
-
-
-@router.post("/investigations/{investigation_id}/assign")
-async def assign_analyst(
-    investigation_id: str,
-    analyst_email: str = Query(...),
-    _user: SupabaseUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    svc = GothamService(db)
-    ok = await svc.assign_analyst(investigation_id, analyst_email)
-    if not ok:
-        raise HTTPException(status_code=404, detail="Investigation not found")
-    return {"assigned": True, "analyst": analyst_email}
-
-
-# ================================================================
-# FINDINGS & EVIDENCE
-# ================================================================
-
-@router.post("/findings")
-async def create_finding(
-    data: FindingCreate,
-    _user: SupabaseUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    svc = GothamService(db)
-    finding = await svc.create_finding(
-        investigation_id=data.investigation_id,
-        title=data.title,
-        summary=data.summary,
-        analysis=data.analysis,
-        confidence=data.confidence,
-        finding_type=data.finding_type,
-        classification=data.classification,
-        linked_entities=data.linked_entities,
-        linked_objects=data.linked_objects,
-        created_by=_user.email,
-    )
-    return {"id": str(finding.id), "title": finding.title}
-
-
-@router.post("/evidence")
-async def add_evidence(
-    data: EvidenceCreate,
-    _user: SupabaseUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    svc = GothamService(db)
-    evidence = await svc.add_evidence(
-        finding_id=data.finding_id,
-        evidence_type=data.evidence_type,
-        source=data.source,
-        content=data.content,
-        classification=data.classification,
-        metadata=data.metadata,
-    )
-    return {"id": str(evidence.id), "evidence_type": evidence.evidence_type}
-
-
-# ================================================================
-# GRAPH ANALYSIS
-# ================================================================
-
-@router.get("/graph/analyze")
-async def analyze_graph(
-    entity_id: Optional[str] = None,
-    workspace_id: Optional[str] = None,
-    depth: int = Query(default=2, ge=1, le=5),
-    _user: SupabaseUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    svc = GothamService(db)
-    return await svc.analyze_entity_graph(entity_id, workspace_id, depth)
-
-
-# ================================================================
-# THREAT ENTITIES
-# ================================================================
-
-@router.post("/entities")
-async def create_threat_entity(
-    data: ThreatEntityCreate,
-    _user: SupabaseUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    svc = GothamService(db)
-    entity = await svc.create_threat_entity(
-        name=data.name,
-        entity_type=data.entity_type,
-        aliases=data.aliases,
-        description=data.description,
-        threat_level=data.threat_level,
-        workspace_id=data.workspace_id,
-        attributes=data.attributes,
-        classification=data.classification,
-    )
-    return {"id": str(entity.id), "name": entity.name, "risk_score": entity.risk_score}
-
-
-@router.get("/entities")
-async def list_threat_entities(
-    workspace_id: Optional[str] = None,
-    threat_level: Optional[str] = None,
-    entity_type: Optional[str] = None,
-    min_risk_score: Optional[float] = None,
-    limit: int = Query(default=100, le=500),
-    _user: SupabaseUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    svc = GothamService(db)
-    return await svc.list_threat_entities(workspace_id, threat_level, entity_type, min_risk_score, limit)
-
-
-@router.post("/entities/link")
-async def link_entities(
-    data: EntityLink,
-    _user: SupabaseUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    svc = GothamService(db)
-    ok = await svc.link_entities(data.source_id, data.target_id, data.connection_type, data.weight)
-    if not ok:
-        raise HTTPException(status_code=404, detail="Source entity not found")
-    return {"linked": True}
-
-
-# ================================================================
-# GEOSPATIAL
-# ================================================================
-
-@router.post("/geo-events")
-async def create_geo_event(
-    data: GeoEventCreate,
-    _user: SupabaseUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    svc = GothamService(db)
-    event = await svc.create_geo_event(
-        title=data.title,
-        event_type=data.event_type,
-        occurred_at=data.occurred_at,
-        latitude=data.latitude,
-        longitude=data.longitude,
-        country=data.country,
-        region=data.region,
-        severity=data.severity,
-        description=data.description,
-        threat_entity_id=data.threat_entity_id,
-        workspace_id=data.workspace_id,
-        investigation_id=data.investigation_id,
-    )
-    return {"id": str(event.id), "title": event.title}
-
-
-@router.get("/geo-events")
-async def get_geo_events(
-    workspace_id: Optional[str] = None,
-    country: Optional[str] = None,
-    event_type: Optional[str] = None,
-    severity: Optional[str] = None,
-    days_back: int = Query(default=30, le=365),
-    limit: int = Query(default=200, le=1000),
-    _user: SupabaseUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    svc = GothamService(db)
-    return await svc.get_geo_events(workspace_id, country, event_type, severity, days_back, limit)
-
-
-@router.get("/country-risk")
-async def get_country_risk(
-    country: Optional[str] = None,
-    _user: SupabaseUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    svc = GothamService(db)
-    return await svc.get_country_risk(country)
-
-
-@router.post("/country-risk/compute")
-async def compute_country_risk(
-    _user: SupabaseUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    svc = GothamService(db)
-    return await svc.compute_country_risk_from_events()
-
-
-# ================================================================
-# PATTERN DETECTION / ALERTS
-# ================================================================
-
-@router.post("/detect-anomalies")
-async def detect_anomalies(
-    workspace_id: Optional[str] = None,
-    _user: SupabaseUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    svc = GothamService(db)
-    alerts = await svc.detect_anomalies(workspace_id)
-    return {"alerts_generated": len(alerts), "alerts": alerts}
-
-
-@router.get("/alerts")
-async def get_alerts(
-    workspace_id: Optional[str] = None,
-    severity: Optional[str] = None,
-    limit: int = Query(default=50, le=200),
-    _user: SupabaseUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    svc = GothamService(db)
-    return await svc.get_active_alerts(workspace_id, severity, limit)
-
-
-@router.post("/alerts/{alert_id}/acknowledge")
-async def acknowledge_alert(
-    alert_id: str,
-    _user: SupabaseUser = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    svc = GothamService(db)
-    ok = await svc.acknowledge_alert(alert_id, _user.email)
-    if not ok:
-        raise HTTPException(status_code=404, detail="Alert not found")
-    return {"acknowledged": True}
+@router.get("/health")
+async def health_check():
+    """Health check endpoint for Gotham intelligence services."""
+    try:
+        size = await sanctions_cache.index_size()
+        return {
+            "status": "healthy",
+            "sanctions_index_size": size,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "degraded",
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }

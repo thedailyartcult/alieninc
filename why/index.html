@@ -651,7 +651,7 @@
                 </div>
 
                 <p style="font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.6; margin-top: 3rem; text-align: center; max-width: 48rem; margin-left: auto; margin-right: auto;">
-                    Every subsidiary under ALIEN.INC operates as its own signal — distinct, self-contained, transmitting from its own coordinates. This is where they broadcast from.
+                    Every subsidiary under ALIEN.INC operates as its own signal — distinct, self-contained, transmitting from a strategic node within the Luzon Economic Corridor. This is where they broadcast from.
                 </p>
 
                 <!-- CTA Action Link styled exactly to declassified visual specifications -->
@@ -702,16 +702,16 @@
     <script>
         // ── ALIEN.INC Network Map Data ─────────────────────────────────
         const aliensNetworkNodes = [
-            { name: "ALIEN.INC",              detail: "Origin node — Manila",         lat: 14.5995, lng: 120.9842 },
-            { name: "THE DAILY ART CULT",      detail: "Publishing / audio",           lat: 40.7128, lng: -74.0060 },
-            { name: "HAWKSIGHT",               detail: "Exposure & defense monitoring", lat: 51.5072, lng: -0.1276 },
-            { name: "KMT 184.05",              detail: "Management consulting",         lat: 1.3521,  lng: 103.8198 },
-            { name: "ROUSSEAU",           detail: "Capital allocation",            lat: 47.3769, lng: 8.5417 },
-            { name: "CENTRA",                  detail: "Vulnerability scanning & compliance", lat: 52.5200, lng: 13.4050 },
-            { name: "ALCANTARA ART FOUNDATION", detail: "Charity & gallery museum",     lat: 41.9028, lng: 12.4964 },
-            { name: "CENTRA",                  detail: "Vulnerability scanning & compliance", lat: 52.5200, lng: 13.4050 },
-            // coordinates
+            { name: "ALIEN.INC",              detail: "Origin — BGC, Taguig",                lat: 14.5500, lng: 121.0500 },
+            { name: "KMT 184.05",              detail: "Management consulting — Golden Node, NCC", lat: 15.3377, lng: 120.5429 },
+            { name: "ROUSSEAU",                detail: "Capital allocation — Makati CBD",      lat: 14.5560, lng: 121.0190 },
+            { name: "CENTRA",                  detail: "Vulnerability scanning — Clark Freeport",     lat: 15.1761, lng: 120.5518 },
+            { name: "HAWKSIGHT",               detail: "Exposure & defense — Subic Bay Freeport",    lat: 14.8250, lng: 120.2833 },
+            { name: "THE DAILY ART CULT",      detail: "Publishing / media — Clark Global City",     lat: 15.1400, lng: 120.5800 },
+            { name: "ALCANTARA ART FOUNDATION", detail: "Charity & gallery — NCC Cultural District", lat: 15.3100, lng: 120.5700 },
         ];
+
+        let networkMap = null;
 
         function initNetworkMap() {
             const mapEl = document.getElementById('aliens-network-map');
@@ -722,50 +722,53 @@
                 style: {
                     version: 8,
                     sources: {
-                        countries: {
-                            type: 'vector',
-                            url: 'https://demotiles.maplibre.org/tiles/tiles.json',
+                        carto: {
+                            type: 'raster',
+                            tiles: [
+                                'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+                                'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+                                'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+                                'https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+                            ],
+                            tileSize: 256,
+                            attribution: '© <a href="https://carto.com/">CARTO</a>',
                         },
                     },
                     layers: [
-                        { id: 'bg', type: 'background', paint: { 'background-color': '#000000' } },
-                        {
-                            id: 'land', type: 'fill', source: 'countries', 'source-layer': 'countries',
-                            paint: { 'fill-color': '#0a2e1a', 'fill-opacity': 0.9 },
-                        },
-                        {
-                            id: 'borders', type: 'line', source: 'countries', 'source-layer': 'countries',
-                            paint: { 'line-color': '#4ade80', 'line-width': 0.6, 'line-opacity': 0.5 },
-                        },
+                        { id: 'carto-bg', type: 'raster', source: 'carto' },
                     ],
                 },
-                center: [20, 15],   // world view, not zoomed into one cluster
-                zoom: 1.3,
-                pitch: 20,
+                center: [120.9, 15.0],
+                zoom: 8.5,
+                pitch: 0,
                 attributionControl: { compact: true },
-                // dragRotate (right-click/two-finger drag to rotate+tilt) and
-                // dragPan (left-click drag to pan) are both on by default —
-                // no extra wiring needed, unlike the earlier Leaflet version.
+                maxBounds: [[116.0, 10.0], [127.0, 20.0]],
             });
+
+            networkMap = map;
 
             map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
 
+            const bounds = new maplibregl.LngLatBounds();
+            aliensNetworkNodes.forEach(node => {
+                const el = document.createElement('div');
+                el.className = 'aliens-node-marker';
+
+                new maplibregl.Marker({ element: el })
+                    .setLngLat([node.lng, node.lat])
+                    .setPopup(
+                        new maplibregl.Popup({ offset: 16 })
+                            .setHTML(`<strong>${node.name}</strong><br>${node.detail}`)
+                    )
+                    .addTo(map);
+
+                bounds.extend([node.lng, node.lat]);
+            });
+
+            map.fitBounds(bounds, { padding: 60, maxZoom: 10 });
+
             map.on('load', () => {
-                const bounds = new maplibregl.LngLatBounds();
-                aliensNetworkNodes.forEach(node => {
-                    const el = document.createElement('div');
-                    el.className = 'aliens-node-marker';
-
-                    new maplibregl.Marker({ element: el })
-                        .setLngLat([node.lng, node.lat])
-                        .setPopup(
-                            new maplibregl.Popup({ offset: 16 })
-                                .setHTML(`<strong>${node.name}</strong><br>${node.detail}`)
-                        )
-                        .addTo(map);
-
-                    bounds.extend([node.lng, node.lat]);
-                });
+                map.resize();
             });
         }
 
@@ -823,6 +826,7 @@
         function typeParagraph() {
             if (currentPara >= paragraphs.length) {
                 document.getElementById('rest-of-page').style.opacity = '1';
+                if (networkMap) networkMap.resize();
                 initSplitFlaps();
                 return;
             }
@@ -955,8 +959,13 @@
 
         // Scroll reveal controller
         const sectionObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => { 
-                if (entry.isIntersecting) entry.target.classList.add('visible'); 
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    if (entry.target.id === 'map-section' && networkMap) {
+                        networkMap.resize();
+                    }
+                }
             });
         }, { threshold: 0.1 });
         

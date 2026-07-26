@@ -2364,10 +2364,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             const response = await api('/gotham/cctv');
             const cameras = response.cameras || [];
             
-            // Split cameras into two groups (A and B)
-            const halfPoint = Math.ceil(cameras.length / 2);
-            const groupA = cameras.slice(0, halfPoint).slice(0, 25);
-            const groupB = cameras.slice(halfPoint, halfPoint + 25);
+            // Group cameras by region/country
+            const groups = {
+                'UK': cameras.filter(c => c.country === 'UK'),
+                'US': cameras.filter(c => c.country === 'US'),
+                'Europe': cameras.filter(c => ['BG', 'GR', 'RS', 'MK', 'RO', 'TR', 'IT', 'CZ', 'SK', 'DE', 'FR', 'ES', 'PL', 'CH', 'FI', 'IS'].includes(c.country)),
+                'Asia': cameras.filter(c => ['JP', 'HK', 'TW'].includes(c.country)),
+                'Australia': cameras.filter(c => c.country === 'AU')
+            };
+            
+            // Get the two largest groups for Group A and Group B
+            const sortedGroups = Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
+            const groupA = sortedGroups[0] ? sortedGroups[0][1].slice(0, 25) : [];
+            const groupB = sortedGroups[1] ? sortedGroups[1][1].slice(0, 25) : [];
+            const groupAName = sortedGroups[0] ? sortedGroups[0][0] : 'Region A';
+            const groupBName = sortedGroups[1] ? sortedGroups[1][0] : 'Region B';
             
             const buildCameraGrid = (elementId, cameraList, startIdx) => {
                 const grid = document.getElementById(elementId);
@@ -2405,11 +2416,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             buildCameraGrid('camera-grid-a', groupA, 1);
             buildCameraGrid('camera-grid-b', groupB, 26);
             
-            // Update camera group headers with count
+            // Update camera group headers with region name and count
             const headerA = document.querySelector('#camera-grid-a')?.closest('.camera-group-container')?.querySelector('.camera-group-header span:first-child');
             const headerB = document.querySelector('#camera-grid-b')?.closest('.camera-group-container')?.querySelector('.camera-group-header span:first-child');
-            if (headerA) headerA.textContent = `Camera Group A (${groupA.length})`;
-            if (headerB) headerB.textContent = `Camera Group B (${groupB.length})`;
+            if (headerA) headerA.textContent = `Camera Group ${groupAName} (${groupA.length})`;
+            if (headerB) headerB.textContent = `Camera Group ${groupBName} (${groupB.length})`;
             
         } catch (e) {
             console.error('Failed to load CCTV cameras:', e);

@@ -10,9 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
-    <!-- MapLibre GL (replaces the Flourish/whitehouse.gov embed; native right-drag rotate/tilt) -->
-    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
-    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <!-- Custom Canvas Map (no external dependencies) -->
 
     <style>
         /* Retro Terminal Styling Rules mapped to the declassified WH design */
@@ -488,7 +486,7 @@
             color: #4ade80;
         }
 
-        /* Network Map (MapLibre GL) — replaces the Flourish/whitehouse.gov embed */
+        /* Network Map (Custom Canvas) */
         .aliens-network-map {
             position: relative;
             height: 600px;
@@ -499,9 +497,10 @@
             background: #000;
             box-shadow: 0 0 24px rgba(34, 211, 238, 0.15) inset;
         }
-        #aliens-network-map {
-            height: 100%;
+        #aliens-network-map-canvas {
             width: 100%;
+            height: 100%;
+            display: block;
         }
         .aliens-map-hint {
             position: absolute;
@@ -513,37 +512,24 @@
             pointer-events: none;
             z-index: 5;
         }
-        .maplibregl-ctrl-attrib {
-            background: rgba(0,0,0,0.7) !important;
-            color: rgba(74, 222, 128, 0.6) !important;
-        }
-        .maplibregl-ctrl-attrib a { color: rgba(34, 211, 238, 0.8) !important; }
-        .maplibregl-ctrl-group {
-            background: #000 !important;
-            border: 1px solid rgba(74, 222, 128, 0.4) !important;
-        }
-        .maplibregl-ctrl-group button {
-            background: #000 !important;
-        }
-        .aliens-node-marker {
-            width: 14px; height: 14px;
-            background: #4ade80;
-            border: 2px solid #22d3ee;
-            border-radius: 50%;
-            box-shadow: 0 0 10px #22d3ee, 0 0 20px rgba(34, 211, 238, 0.6);
-            cursor: pointer;
-        }
-        .maplibregl-popup-content {
-            background: #000 !important;
-            color: #4ade80 !important;
-            border: 1px solid #22d3ee !important;
-            border-radius: 4px !important;
-            font-family: 'VT323', 'Courier New', Courier, monospace !important;
+        .aliens-map-tooltip {
+            position: absolute;
+            background: #000;
+            color: #4ade80;
+            border: 1px solid #22d3ee;
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-family: 'VT323', 'Courier New', Courier, monospace;
             font-size: 1.15rem;
+            pointer-events: none;
+            z-index: 10;
+            white-space: nowrap;
+            box-shadow: 0 0 15px rgba(34, 211, 238, 0.5);
         }
-        .maplibregl-popup-content strong { color: #22d3ee; letter-spacing: 1px; }
-        .maplibregl-popup-tip { border-top-color: #22d3ee !important; border-bottom-color: #22d3ee !important; }
-        .maplibregl-popup-close-button { color: #4ade80 !important; }
+        .aliens-map-tooltip strong {
+            color: #22d3ee;
+            letter-spacing: 1px;
+        }
 
         /* Responsiveness for small displays */
         @media screen and (max-width: 1200px){
@@ -643,10 +629,10 @@
                 <h2 class="aliens-map-title neon-cyan" style="letter-spacing: 8px; margin-bottom: 1rem;">COORDINATES</h2>
                 <h3 class="aliens-map-title neon-cyan" style="font-size: 1.85rem; letter-spacing: 4px; margin-bottom: 3rem;">ALIEN.INC NETWORK MAP • LIVE</h3>
                 
-                <!-- ALIEN.INC Network Map (MapLibre GL, self-hosted data — no third-party embed) -->
+                <!-- ALIEN.INC Network Map (Custom Canvas — no external dependencies) -->
                 <div class="aliens-network-map">
-                    <div id="aliens-network-map"></div>
-                    <div class="aliens-map-hint">LEFT-DRAG: PAN &nbsp;•&nbsp; RIGHT-DRAG: ROTATE/TILT &nbsp;•&nbsp; SCROLL: ZOOM</div>
+                    <canvas id="aliens-network-map-canvas"></canvas>
+                    <div class="aliens-map-hint">HOVER NODES FOR DETAILS</div>
                 </div>
 
                 <p style="font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.6; margin-top: 3rem; text-align: center; max-width: 48rem; margin-left: auto; margin-right: auto;">
@@ -710,65 +696,168 @@
             { name: "ALCANTARA ART FOUNDATION", detail: "Charity & gallery — NCC Cultural District", lat: 15.3100, lng: 120.5700 },
         ];
 
-        let networkMap = null;
+        let mapInitialized = false;
 
         function initNetworkMap() {
-            const mapEl = document.getElementById('aliens-network-map');
-            if (!mapEl || typeof maplibregl === 'undefined') return;
+            if (mapInitialized) return;
+            mapInitialized = true;
 
-            const map = new maplibregl.Map({
-                container: 'aliens-network-map',
-                style: {
-                    version: 8,
-                    sources: {
-                        countries: {
-                            type: 'vector',
-                            url: 'https://demotiles.maplibre.org/tiles/tiles.json',
-                        },
-                    },
-                    layers: [
-                        { id: 'bg', type: 'background', paint: { 'background-color': '#000000' } },
-                        {
-                            id: 'land', type: 'fill', source: 'countries', 'source-layer': 'countries',
-                            paint: { 'fill-color': '#0a2e1a', 'fill-opacity': 0.9 },
-                        },
-                        {
-                            id: 'borders', type: 'line', source: 'countries', 'source-layer': 'countries',
-                            paint: { 'line-color': '#4ade80', 'line-width': 0.6, 'line-opacity': 0.5 },
-                        },
-                    ],
-                },
-                center: [120.9, 15.0],
-                zoom: 8.5,
-                pitch: 20,
-                attributionControl: { compact: true },
+            const canvas = document.getElementById('aliens-network-map-canvas');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const container = canvas.parentElement;
+            let tooltip = null;
+            let hoveredNode = null;
+            let animFrame = 0;
+
+            const resize = () => {
+                canvas.width = container.clientWidth;
+                canvas.height = container.clientHeight;
+            };
+            resize();
+            window.addEventListener('resize', resize);
+
+            const minLat = 14.4, maxLat = 15.5;
+            const minLng = 120.1, maxLng = 121.2;
+
+            const project = (lat, lng) => {
+                const x = ((lng - minLng) / (maxLng - minLng)) * canvas.width;
+                const y = canvas.height - ((lat - minLat) / (maxLat - minLat)) * canvas.height;
+                return { x, y };
+            };
+
+            const luzonOutline = [
+                [14.5, 120.9], [14.6, 121.0], [14.8, 121.1], [15.0, 121.0],
+                [15.2, 120.9], [15.4, 120.8], [15.5, 120.6], [15.4, 120.4],
+                [15.2, 120.3], [15.0, 120.2], [14.8, 120.3], [14.6, 120.5],
+                [14.5, 120.7], [14.5, 120.9]
+            ];
+
+            const draw = () => {
+                animFrame++;
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.strokeStyle = 'rgba(74, 222, 128, 0.1)';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < canvas.width; i += 40) {
+                    ctx.beginPath();
+                    ctx.moveTo(i, 0);
+                    ctx.lineTo(i, canvas.height);
+                    ctx.stroke();
+                }
+                for (let i = 0; i < canvas.height; i += 40) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, i);
+                    ctx.lineTo(canvas.width, i);
+                    ctx.stroke();
+                }
+
+                ctx.fillStyle = 'rgba(10, 46, 26, 0.6)';
+                ctx.strokeStyle = '#4ade80';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                luzonOutline.forEach(([lat, lng], i) => {
+                    const p = project(lat, lng);
+                    if (i === 0) ctx.moveTo(p.x, p.y);
+                    else ctx.lineTo(p.x, p.y);
+                });
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                const pulse = Math.sin(animFrame * 0.05) * 0.3 + 0.7;
+
+                aliensNetworkNodes.forEach((node, i) => {
+                    const p = project(node.lat, node.lng);
+                    const isHovered = hoveredNode === i;
+                    const radius = isHovered ? 10 : 7;
+
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#22d3ee';
+                    ctx.fillStyle = '#4ade80';
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = '#22d3ee';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    ctx.shadowBlur = 30 * pulse;
+                    ctx.shadowColor = 'rgba(34, 211, 238, 0.8)';
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, radius + 3, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+
+                    ctx.fillStyle = '#4ade80';
+                    ctx.font = '14px "VT323", monospace';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(node.name, p.x, p.y - 18);
+                });
+
+                ctx.strokeStyle = 'rgba(74, 222, 128, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([5, 5]);
+                for (let i = 0; i < aliensNetworkNodes.length; i++) {
+                    for (let j = i + 1; j < aliensNetworkNodes.length; j++) {
+                        const p1 = project(aliensNetworkNodes[i].lat, aliensNetworkNodes[i].lng);
+                        const p2 = project(aliensNetworkNodes[j].lat, aliensNetworkNodes[j].lng);
+                        const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+                        if (dist < 200) {
+                            ctx.beginPath();
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                ctx.setLineDash([]);
+
+                requestAnimationFrame(draw);
+            };
+
+            const handleMouse = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+
+                hoveredNode = null;
+                aliensNetworkNodes.forEach((node, i) => {
+                    const p = project(node.lat, node.lng);
+                    const dist = Math.hypot(mx - p.x, my - p.y);
+                    if (dist < 15) hoveredNode = i;
+                });
+
+                if (hoveredNode !== null) {
+                    const node = aliensNetworkNodes[hoveredNode];
+                    const p = project(node.lat, node.lng);
+                    if (!tooltip) {
+                        tooltip = document.createElement('div');
+                        tooltip.className = 'aliens-map-tooltip';
+                        container.appendChild(tooltip);
+                    }
+                    tooltip.innerHTML = `<strong>${node.name}</strong><br>${node.detail}`;
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = (p.x + 15) + 'px';
+                    tooltip.style.top = (p.y - 15) + 'px';
+                    canvas.style.cursor = 'pointer';
+                } else {
+                    if (tooltip) tooltip.style.display = 'none';
+                    canvas.style.cursor = 'default';
+                }
+            };
+
+            canvas.addEventListener('mousemove', handleMouse);
+            canvas.addEventListener('mouseleave', () => {
+                hoveredNode = null;
+                if (tooltip) tooltip.style.display = 'none';
             });
 
-            networkMap = map;
-
-            map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
-
-            const bounds = new maplibregl.LngLatBounds();
-            aliensNetworkNodes.forEach(node => {
-                const el = document.createElement('div');
-                el.className = 'aliens-node-marker';
-
-                new maplibregl.Marker({ element: el })
-                    .setLngLat([node.lng, node.lat])
-                    .setPopup(
-                        new maplibregl.Popup({ offset: 16 })
-                            .setHTML(`<strong>${node.name}</strong><br>${node.detail}`)
-                    )
-                    .addTo(map);
-
-                bounds.extend([node.lng, node.lat]);
-            });
-
-            map.fitBounds(bounds, { padding: 60, maxZoom: 10 });
-
-            map.on('load', () => {
-                map.resize();
-            });
+            draw();
         }
 
         // Starfield Canvas Renderer
@@ -855,6 +944,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             setTimeout(typeParagraph, 800);
+            setTimeout(initNetworkMap, 2000);
         });
 
         // Split-Flap board animation sequence
@@ -959,7 +1049,7 @@
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('visible');
-                    if (entry.target.id === 'map-section' && !networkMap) {
+                    if (entry.target.id === 'map-section') {
                         setTimeout(() => {
                             initNetworkMap();
                         }, 1100);

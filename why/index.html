@@ -525,7 +525,7 @@
         .maplibregl-ctrl-group button {
             background: #000 !important;
         }
-        .maplibregl-ctrl-icon { filter: invert(1) hue-rotate(90deg); }
+        .maplibregl-ctrl-icon { filter: invert(1) sepia(1) saturate(5) hue-rotate(100deg); }
         .aliens-node-marker {
             width: 14px; height: 14px;
             background: #4ade80;
@@ -713,31 +713,120 @@
 
         let networkMap = null;
 
-        function initNetworkMap() {
+        function greenifyStyle(style) {
+            style.background = '#000000';
+            style.layers = style.layers.map(layer => {
+                const id = (layer.id || '').toLowerCase();
+                const type = layer.type;
+                const p = layer.paint || {};
+
+                if (type === 'background') {
+                    layer.paint = { ...p, 'background-color': '#000000' };
+                    return layer;
+                }
+
+                if (id.includes('water') || id.includes('ocean') || id.includes('sea')) {
+                    if (type === 'fill') layer.paint = { ...p, 'fill-color': '#001a0d' };
+                    else if (type === 'line') layer.paint = { ...p, 'line-color': '#003322' };
+                    return layer;
+                }
+
+                if (id.includes('land') || id.includes('ground')) {
+                    if (type === 'fill') layer.paint = { ...p, 'fill-color': '#0a1a0a', 'fill-opacity': 1 };
+                    else if (type === 'line') layer.paint = { ...p, 'line-color': '#0d260d' };
+                    return layer;
+                }
+
+                if (id.includes('road') || id.includes('highway') || id.includes('street') || id.includes('path')) {
+                    if (type === 'line') {
+                        const isMajor = id.includes('motorway') || id.includes('trunk') || id.includes('primary') || id.includes('highway');
+                        const isMinor = id.includes('minor') || id.includes('service') || id.includes('path') || id.includes('track');
+                        layer.paint = {
+                            ...p,
+                            'line-color': isMajor ? '#1a4a1a' : isMinor ? '#0a1f0a' : '#0d2d0d',
+                            'line-opacity': 0.8,
+                        };
+                    }
+                    return layer;
+                }
+
+                if (id.includes('building')) {
+                    if (type === 'fill') layer.paint = { ...p, 'fill-color': '#0d1a0d', 'fill-opacity': 0.8 };
+                    else if (type === 'line') layer.paint = { ...p, 'line-color': '#1a331a', 'line-opacity': 0.5 };
+                    return layer;
+                }
+
+                if (id.includes('boundary') || id.includes('border')) {
+                    if (type === 'line') layer.paint = { ...p, 'line-color': '#1a4a1a', 'line-opacity': 0.6 };
+                    return layer;
+                }
+
+                if (id.includes('place') || id.includes('label') || id.includes('name')) {
+                    if (type === 'symbol') {
+                        layer.paint = {
+                            ...p,
+                            'text-color': '#4ade80',
+                            'text-halo-color': '#000000',
+                            'text-halo-width': 1.5,
+                        };
+                    }
+                    return layer;
+                }
+
+                if (id.includes('poi') || id.includes('icon')) {
+                    if (type === 'symbol') layer.paint = { ...p, 'text-color': '#22d3ee', 'icon-color': '#22d3ee' };
+                    return layer;
+                }
+
+                if (type === 'fill') layer.paint = { ...p, 'fill-color': '#0a1a0a', 'fill-opacity': 0.6 };
+                else if (type === 'line') layer.paint = { ...p, 'line-color': '#0d2d0d', 'line-opacity': 0.5 };
+                else if (type === 'symbol') layer.paint = { ...p, 'text-color': '#4ade80' };
+
+                return layer;
+            });
+            return style;
+        }
+
+        function createFallbackStyle() {
+            return {
+                version: 8,
+                sources: {
+                    ofm: {
+                        type: 'vector',
+                        url: 'https://tiles.openfreemap.org/planet',
+                        attribution: '© <a href="https://openfreemap.org">OpenFreeMap</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                    },
+                },
+                layers: [
+                    { id: 'bg', type: 'background', paint: { 'background-color': '#000000' } },
+                    { id: 'water-fill', type: 'fill', source: 'ofm', 'source-layer': 'water', paint: { 'fill-color': '#001a0d' } },
+                    { id: 'land-fill', type: 'fill', source: 'ofm', 'source-layer': 'landcover', paint: { 'fill-color': '#0a1a0a' } },
+                    { id: 'boundary', type: 'line', source: 'ofm', 'source-layer': 'boundary', paint: { 'line-color': '#1a4a1a', 'line-opacity': 0.6 } },
+                    { id: 'roads', type: 'line', source: 'ofm', 'source-layer': 'transportation', paint: { 'line-color': '#0d2d0d', 'line-opacity': 0.7 } },
+                    { id: 'places', type: 'symbol', source: 'ofm', 'source-layer': 'place',
+                        layout: { 'text-field': '{name:en}', 'text-size': 12 },
+                        paint: { 'text-color': '#4ade80', 'text-halo-color': '#000000', 'text-halo-width': 1.5 },
+                    },
+                ],
+            };
+        }
+
+        async function initNetworkMap() {
             const mapEl = document.getElementById('aliens-network-map');
             if (!mapEl || typeof maplibregl === 'undefined') return;
 
+            let style;
+            try {
+                const res = await fetch('https://tiles.openfreemap.org/styles/liberty');
+                if (!res.ok) throw new Error('style fetch failed');
+                style = greenifyStyle(await res.json());
+            } catch {
+                style = createFallbackStyle();
+            }
+
             const map = new maplibregl.Map({
                 container: 'aliens-network-map',
-                style: {
-                    version: 8,
-                    sources: {
-                        carto: {
-                            type: 'raster',
-                            tiles: [
-                                'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-                                'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-                                'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-                                'https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-                            ],
-                            tileSize: 256,
-                            attribution: '© <a href="https://carto.com/">CARTO</a>',
-                        },
-                    },
-                    layers: [
-                        { id: 'carto-bg', type: 'raster', source: 'carto' },
-                    ],
-                },
+                style: style,
                 center: [120.9, 15.0],
                 zoom: 8.5,
                 pitch: 0,

@@ -721,24 +721,27 @@
                 style: {
                     version: 8,
                     sources: {
-                        stamen: {
-                            type: 'raster',
-                            tiles: [
-                                'https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}.png',
-                            ],
-                            tileSize: 256,
-                            attribution: '© <a href="https://stadiamaps.com/">Stadia Maps</a> © <a href="https://stamen.com/">Stamen Design</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                        countries: {
+                            type: 'vector',
+                            url: 'https://demotiles.maplibre.org/tiles/tiles.json',
                         },
                     },
                     layers: [
-                        { id: 'stamen-bg', type: 'raster', source: 'stamen' },
+                        { id: 'bg', type: 'background', paint: { 'background-color': '#000000' } },
+                        {
+                            id: 'land', type: 'fill', source: 'countries', 'source-layer': 'countries',
+                            paint: { 'fill-color': '#0a2e1a', 'fill-opacity': 0.9 },
+                        },
+                        {
+                            id: 'borders', type: 'line', source: 'countries', 'source-layer': 'countries',
+                            paint: { 'line-color': '#4ade80', 'line-width': 0.6, 'line-opacity': 0.5 },
+                        },
                     ],
                 },
                 center: [120.9, 15.0],
                 zoom: 8.5,
-                pitch: 0,
+                pitch: 20,
                 attributionControl: { compact: true },
-                maxBounds: [[116.0, 10.0], [127.0, 20.0]],
             });
 
             networkMap = map;

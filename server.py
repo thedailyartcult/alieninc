@@ -42,6 +42,12 @@ SUBDOMAIN_ROOTS = {
     'secure':           os.path.join(ROOT, 'secure'),
 }
 
+# Pre-add engine paths to sys.path once so per-request imports don't mutate it
+for _p in [os.path.join(ROOT, 'engine'), os.path.join(ROOT, 'db'),
+           os.path.join(ROOT, 'centra', 'engine')]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 _cache = {'data': None, 'ts': 0, 'lock': threading.Lock()}
 CACHE_TTL = 21600  # 6 hours
 
@@ -87,6 +93,7 @@ BOT_PATTERNS = [
     r'claudebot', r'google-extended', r'bytespider',
     r'omgilibot', r'facebookbot', r'petalbot',
 ]
+_BOT_RE = re.compile('|'.join(BOT_PATTERNS), re.IGNORECASE)
 
 
 # ── Secure gate ─────────────────────────────────────────────
@@ -133,65 +140,30 @@ def _load_gate_page():
 def is_bot(user_agent):
     if not user_agent:
         return False
-    ua = user_agent.lower()
-    for pattern in BOT_PATTERNS:
-        if re.search(pattern, ua):
-            return True
-    return False
+    return bool(_BOT_RE.search(user_agent))
+
+
+_SANITIZE_RE = [
+    (re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b'), 'Private — login required'),
+    (re.compile(r'(?:\+?\d{1,3}[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}'), 'Private — login required'),
+    (re.compile(r'\$\s*[\d,]+(?:\.\d+)?\s*[KMBT]?(?:illion|illion)?'), 'Private — login required'),
+    (re.compile(r'€\s*[\d,]+(?:\.\d+)?'), 'Private — login required'),
+    (re.compile(r'£\s*[\d,]+(?:\.\d+)?'), 'Private — login required'),
+    (re.compile(r'<script[^>]*src=["\'](?:data/)?ecosystem-data\.js["\'][^>]*>'), '<!-- ecosystem-data.js removed -->'),
+    (re.compile(r'<script[^>]*src=["\'](?:data/)?ecosystem-render\.js["\'][^>]*>'), '<!-- ecosystem-render.js removed -->'),
+    (re.compile(r'EcosystemData\.init\([^)]*\)'), '/* Private — login required */'),
+    (re.compile(r'EcosystemRender\.bindAll\([^)]*\)'), '/* Private — login required */'),
+    (re.compile(r'EcosystemData\.onChange\([^)]*\)'), '/* Private — login required */'),
+    (re.compile(r'var\s+ECOSYSTEM_DATA\s*=\s*\{[^}]*\}'), 'var ECOSYSTEM_DATA = null'),
+    (re.compile(r'var\s+ECOSYSTEM_DATA\s*=\s*[^;]+;'), 'var ECOSYSTEM_DATA = null;'),
+]
 
 
 def _sanitize_html_for_bots(html):
     """Strip sensitive data from HTML served to bot user agents."""
-    sanitized = html
-    sanitized = re.sub(
-        r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b',
-        'Private — login required', sanitized
-    )
-    sanitized = re.sub(
-        r'(?:\+?\d{1,3}[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}',
-        'Private — login required', sanitized
-    )
-    sanitized = re.sub(
-        r'\$\s*[\d,]+(?:\.\d+)?\s*[KMBT]?(?:illion|illion)?',
-        'Private — login required', sanitized
-    )
-    sanitized = re.sub(
-        r'€\s*[\d,]+(?:\.\d+)?',
-        'Private — login required', sanitized
-    )
-    sanitized = re.sub(
-        r'£\s*[\d,]+(?:\.\d+)?',
-        'Private — login required', sanitized
-    )
-    sanitized = re.sub(
-        r'<script[^>]*src=["\'](?:data/)?ecosystem-data\.js["\'][^>]*>',
-        '<!-- ecosystem-data.js removed -->', sanitized
-    )
-    sanitized = re.sub(
-        r'<script[^>]*src=["\'](?:data/)?ecosystem-render\.js["\'][^>]*>',
-        '<!-- ecosystem-render.js removed -->', sanitized
-    )
-    sanitized = re.sub(
-        r'EcosystemData\.init\([^)]*\)',
-        '/* Private — login required */', sanitized
-    )
-    sanitized = re.sub(
-        r'EcosystemRender\.bindAll\([^)]*\)',
-        '/* Private — login required */', sanitized
-    )
-    sanitized = re.sub(
-        r'EcosystemData\.onChange\([^)]*\)',
-        '/* Private — login required */', sanitized
-    )
-    sanitized = re.sub(
-        r'var\s+ECOSYSTEM_DATA\s*=\s*\{[^}]*\}',
-        'var ECOSYSTEM_DATA = null', sanitized
-    )
-    sanitized = re.sub(
-        r'var\s+ECOSYSTEM_DATA\s*=\s*[^;]+;',
-        'var ECOSYSTEM_DATA = null;', sanitized
-    )
-    return sanitized
+    for pat, repl in _SANITIZE_RE:
+        html = pat.sub(repl, html)
+    return html
 
 
 # ── Secure gate authentication ──────────────────────────────
@@ -232,8 +204,6 @@ def _get_ecosystem_from_db():
         if not os.path.isfile(ECOSYSTEM_DB_PATH):
             return None
         if 'engine' not in _engine_cache:
-            sys.path.insert(0, os.path.join(ROOT, 'engine'))
-            sys.path.insert(0, os.path.join(ROOT, 'db'))
             from ecosystem_engine import EcosystemEngine
             _engine_cache['engine'] = EcosystemEngine(db_path=ECOSYSTEM_DB_PATH)
         engine = _engine_cache['engine']
@@ -548,6 +518,8 @@ def fetch_prices():
 class AlienHandler(http.server.SimpleHTTPRequestHandler):
     server_version = 'AlienInc'
     sys_version = ''
+    _html_cache = {}  # {(path, mtime): bytes}
+    _sanitized_cache = {}  # {(path, mtime): bytes}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=ROOT, **kwargs)
@@ -628,54 +600,22 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
     def _is_localhost(self):
         return self.client_address and self.client_address[0] in ('127.0.0.1', '::1', 'localhost')
 
+    _BLOCKED_PATH_RES = [re.compile(p, re.IGNORECASE) for p in [
+        r'\.git/', r'\.git$', r'\.backups/', r'\.bak$', r'\.bak\.',
+        r'\.backup$', r'\.backup\.', r'\.old$', r'\.old\.', r'\.swp$',
+        r'\.db$', r'\.db-shm$', r'\.db-wal$', r'\.db-lock$', r'\.sqlite$',
+        r'\.sql$', r'\.md$', r'\.edpb-wat/', r'\.aider\.', r'\.angular/',
+        r'\.py$', r'\.ts$', r'\.env', r'\.DS_Store$', r'Thumbs\.db$',
+        r'\.idea/', r'\.vscode/', r'wp-admin/', r'wp-content/', r'wp-login',
+        r'xmlrpc', r'phpmyadmin', r'server-status', r'server-info',
+        r'\.ssh/', r'\.aws/', r'actuator/', r'druid/', r'vendor/phpunit',
+        r'storage/logs', r'adminer', r'/console$',
+    ]]
+
     def _is_blocked_path(self, path):
-        blocked_patterns = [
-            r'\.git/',
-            r'\.git$',
-            r'\.backups/',
-            r'\.bak$',
-            r'\.bak\.',
-            r'\.backup$',
-            r'\.backup\.',
-            r'\.old$',
-            r'\.old\.',
-            r'\.swp$',
-            r'\.db$',
-            r'\.db-shm$',
-            r'\.db-wal$',
-            r'\.db-lock$',
-            r'\.sqlite$',
-            r'\.sql$',
-            r'\.md$',
-            r'\.edpb-wat/',
-            r'\.aider\.',
-            r'\.angular/',
-            r'\.py$',
-            r'\.ts$',
-            r'\.env',
-            r'\.DS_Store$',
-            r'Thumbs\.db$',
-            r'\.idea/',
-            r'\.vscode/',
-            r'wp-admin/',
-            r'wp-content/',
-            r'wp-login',
-            r'xmlrpc',
-            r'phpmyadmin',
-            r'server-status',
-            r'server-info',
-            r'\.ssh/',
-            r'\.aws/',
-            r'actuator/',
-            r'druid/',
-            r'vendor/phpunit',
-            r'storage/logs',
-            r'adminer',
-            r'/console$',
-        ]
         lower = path.lower()
-        for pattern in blocked_patterns:
-            if re.search(pattern, lower):
+        for pattern in self._BLOCKED_PATH_RES:
+            if pattern.search(lower):
                 return True
         return False
 
@@ -795,24 +735,24 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         path = path.split('?', 1)[0]
         return path == '/moderation' or path.startswith('/moderation/')
 
-    def _has_valid_secure_session(self):
+    def _get_cookie_token(self, cookie_name):
+        """Extract a token from the Cookie header by name. Parses once per call."""
         cookie = self.headers.get('Cookie', '')
-        token = None
+        if not cookie:
+            return None
+        target = cookie_name + '='
         for part in cookie.split(';'):
             part = part.strip()
-            if part.startswith(SECURE_SESSION_COOKIE + '='):
-                token = part.split('=', 1)[1]
-                break
+            if part.startswith(target):
+                return part.split('=', 1)[1]
+        return None
+
+    def _has_valid_secure_session(self):
+        token = self._get_cookie_token(SECURE_SESSION_COOKIE)
         return _check_secure_session(token)
 
     def _has_valid_main_session(self):
-        cookie = self.headers.get('Cookie', '')
-        token = None
-        for part in cookie.split(';'):
-            part = part.strip()
-            if part.startswith(MAIN_SESSION_COOKIE + '='):
-                token = part.split('=', 1)[1]
-                break
+        token = self._get_cookie_token(MAIN_SESSION_COOKIE)
         return _check_secure_session(token)
 
     def _is_ecosystem_data_path(self, path):
@@ -1475,12 +1415,24 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
     def _serve_html_with_ecosystem(self, fs_path):
         auth = self._has_valid_secure_session() or self._has_valid_main_session()
         try:
-            with open(fs_path, 'r', encoding='utf-8') as f:
-                html = f.read()
+            mtime = os.path.getmtime(fs_path)
         except OSError:
             self.send_error(404)
             return
-        html = self._embed_ecosystem_data(html, auth)
+        cache_key = (fs_path, mtime)
+        if cache_key in AlienHandler._html_cache:
+            raw_html = AlienHandler._html_cache[cache_key]
+        else:
+            try:
+                with open(fs_path, 'r', encoding='utf-8') as f:
+                    raw_html = f.read()
+            except OSError:
+                self.send_error(404)
+                return
+            AlienHandler._html_cache[cache_key] = raw_html
+            if len(AlienHandler._html_cache) > 50:
+                AlienHandler._html_cache.clear()
+        html = self._embed_ecosystem_data(raw_html, auth)
         body = html.encode('utf-8')
         self.send_response(200)
         self.send_header('Content-Type', 'text/html; charset=utf-8')
@@ -1495,13 +1447,25 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
     def _serve_sanitized_html(self, fs_path):
         """Serve HTML with sensitive data stripped for bot user agents."""
         try:
-            with open(fs_path, 'r', encoding='utf-8') as f:
-                html = f.read()
+            mtime = os.path.getmtime(fs_path)
         except OSError:
             self.send_error(404)
             return
-        html = _sanitize_html_for_bots(html)
-        body = html.encode('utf-8')
+        cache_key = (fs_path, mtime)
+        if cache_key in AlienHandler._sanitized_cache:
+            body = AlienHandler._sanitized_cache[cache_key]
+        else:
+            try:
+                with open(fs_path, 'r', encoding='utf-8') as f:
+                    html = f.read()
+            except OSError:
+                self.send_error(404)
+                return
+            html = _sanitize_html_for_bots(html)
+            body = html.encode('utf-8')
+            AlienHandler._sanitized_cache[cache_key] = body
+            if len(AlienHandler._sanitized_cache) > 50:
+                AlienHandler._sanitized_cache.clear()
         self.send_response(200)
         self.send_header('Content-Type', 'text/html; charset=utf-8')
         self.send_header('Content-Length', str(len(body)))
@@ -1545,7 +1509,6 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             if not os.path.isfile(ECOSYSTEM_DB_PATH):
                 self._send_json({"error": "ecosystem database not initialized"}, 404)
                 return
-            sys.path.insert(0, os.path.join(ROOT, 'engine'))
             from ecosystem_engine import EcosystemEngine
             engine = EcosystemEngine(db_path=ECOSYSTEM_DB_PATH)
             state = engine.get_state()
@@ -1572,7 +1535,6 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                 self._send_json({"error": "ecosystem database not initialized"}, 404)
                 return
 
-            sys.path.insert(0, os.path.join(ROOT, 'engine'))
             from ecosystem_engine import EcosystemEngine
             engine = EcosystemEngine(db_path=ECOSYSTEM_DB_PATH)
 
@@ -1664,7 +1626,6 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             ip = self.client_address[0] if self.client_address else 'unknown'
             ua = self.headers.get('User-Agent', '')
 
-            sys.path.insert(0, os.path.join(ROOT, 'engine'))
             import admin_ops
 
             if path == '/api/admin/clients':
@@ -1710,7 +1671,6 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
 
     def _serve_admin_state(self):
         try:
-            sys.path.insert(0, os.path.join(ROOT, 'engine'))
             import admin_ops
             state = admin_ops.get_admin_state()
             self._send_json(state)
@@ -1719,7 +1679,6 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
 
     def _serve_admin_audit(self):
         try:
-            sys.path.insert(0, os.path.join(ROOT, 'engine'))
             import admin_ops
             from urllib.parse import urlparse, parse_qs
             parsed = urlparse(self.path)
@@ -1756,7 +1715,6 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
 
     def _handle_compliance_status(self):
         try:
-            sys.path.insert(0, os.path.join(ROOT, 'centra', 'engine'))
             from compliance_report import get_compliance_status
             status = get_compliance_status()
             self._send_json(status)
@@ -1765,7 +1723,6 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
 
     def _handle_compliance_report(self):
         try:
-            sys.path.insert(0, os.path.join(ROOT, 'centra', 'engine'))
             from compliance_report import load_latest_report
             report = load_latest_report()
             if report:
@@ -1776,7 +1733,6 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             self._send_json({"error": str(e)}, 500)
 
     def _handle_panteon_api(self, path):
-        sys.path.insert(0, os.path.join(ROOT, 'engine'))
         from data_plumbing import get_sources, get_entity_summary, get_relationship_summary, search_entities, get_entity_detail, get_entity_history, get_ingestion_stats
         from ontology import get_ontology_graph, get_business_summary, detect_risk_patterns
         from action_engine import get_rules, get_action_history, get_channels, get_rule_detail
@@ -1881,7 +1837,6 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             self._send_json({"error": "invalid request"}, 400)
             return
 
-        sys.path.insert(0, os.path.join(ROOT, 'engine'))
         from data_plumbing import register_source, ingest_raw, ingest_batch, process_pending
         from ontology import enrich_entities, detect_cross_company_relationships, detect_risk_patterns
         from action_engine import evaluate_rules, initialize_rules, deploy_security_policy, toggle_rule, create_rule, update_rule, delete_rule, register_channel, delete_channel

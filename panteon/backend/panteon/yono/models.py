@@ -27,7 +27,7 @@ class LLMModel(Base):
     __tablename__ = "yono_llm_models"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
-    provider_id = Column(UUID_COL(), ForeignKey("ono_llm_providers.id"), nullable=False)
+    provider_id = Column(UUID_COL(), ForeignKey("yono_llm_providers.id"), nullable=False)
     model_id = Column(String(200), nullable=False)
     display_name = Column(String(200), nullable=False)
     capabilities = Column(JSONB, default=list)
@@ -50,7 +50,7 @@ class LLMExecution(Base):
     __tablename__ = "yono_llm_executions"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
-    model_id = Column(UUID_COL(), ForeignKey("ono_llm_models.id"), nullable=False)
+    model_id = Column(UUID_COL(), ForeignKey("yono_llm_models.id"), nullable=False)
     prompt = Column(Text, nullable=False)
     system_prompt = Column(Text)
     response = Column(Text)
@@ -81,7 +81,7 @@ class Agent(Base):
     display_name = Column(String(255), nullable=False)
     description = Column(Text)
     system_prompt = Column(Text, nullable=False)
-    model_id = Column(UUID_COL(), ForeignKey("ono_llm_models.id"))
+    model_id = Column(UUID_COL(), ForeignKey("yono_llm_models.id"))
     tools = Column(JSONB, default=list)
     memory_config = Column(JSONB, default=dict)
     max_iterations = Column(Integer, default=10)
@@ -97,7 +97,7 @@ class AgentSession(Base):
     __tablename__ = "yono_agent_sessions"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
-    agent_id = Column(UUID_COL(), ForeignKey("ono_agents.id"), nullable=False)
+    agent_id = Column(UUID_COL(), ForeignKey("yono_agents.id"), nullable=False)
     user_id = Column(String(255))
     messages = Column(JSONB, default=list)
     context = Column(JSONB, default=dict)
@@ -140,7 +140,7 @@ class AutomationExecution(Base):
     __tablename__ = "yono_automation_executions"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
-    automation_id = Column(UUID_COL(), ForeignKey("ono_automations.id"), nullable=False)
+    automation_id = Column(UUID_COL(), ForeignKey("yono_automations.id"), nullable=False)
     trigger_data = Column(JSONB, default=dict)
     status = Column(String(50), default="pending")
     result = Column(JSONB)
@@ -176,7 +176,7 @@ class EvaluationRun(Base):
     __tablename__ = "yono_evaluation_runs"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
-    evaluation_id = Column(UUID_COL(), ForeignKey("ono_evaluations.id"), nullable=False)
+    evaluation_id = Column(UUID_COL(), ForeignKey("yono_evaluations.id"), nullable=False)
     results = Column(JSONB, default=dict)
     overall_score = Column(Float)
     status = Column(String(50), default="pending")

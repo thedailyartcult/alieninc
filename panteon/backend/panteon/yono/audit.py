@@ -15,7 +15,7 @@ class YONOFunctionAuditLog:
     def __init__(self, log_dir: Optional[str] = None):
         self.log_dir = Path(log_dir or settings.ono_function_audit_dir)
         self.log_dir.mkdir(parents=True, exist_ok=True)
-        self.log_path = self.log_dir / "ono-functions-audit.jsonl"
+        self.log_path = self.log_dir / "yono-functions-audit.jsonl"
 
     def log_request(
         self,

@@ -1,0 +1,134 @@
+**Terranean**  
+*Developer Documentation — Core Concepts & Architecture*
+
+> **Note**: This documentation is dynamically generated against the current platform release. Functionality, object types, action schemas, and available operators may change with software pushes. Always reference the live schema and versioned API contracts in your Foundry environment.
+
+---
+
+### Overview
+
+Terranean is a dual-mode intelligence substrate built on the Panteon Philosophy. It exposes two complementary reasoning systems — **Eteology** and **Teliology** — that operate over the same underlying object graph, link types, and action framework.
+
+- **Eteology** performs continuous causal reconstruction and forensic analysis of the operational environment.
+- **Teliology** performs purpose/intent modeling and forward trajectory analysis of actors and systems.
+
+Both systems are first-class citizens of the Ontology: they read from and write to Ontology objects, participate in action types, support functions, and can be invoked via the Ontology SDK, REST/gRPC endpoints, and AIP workflows.
+
+---
+
+### Core Data Model
+
+Terranean extends the standard Ontology with a set of specialized object types and link types:
+
+| Object / Link Type              | Description |
+|--------------------------------|-------------|
+| `CausalNode`                   | Represents an event, state, decision, or observation that participates in a causal chain. |
+| `CausalEdge`                   | Directed, typed, weighted link between CausalNodes. Supports confidence, lag, and alternative-path metadata. |
+| `CausalGraph`                  | Versioned, queryable subgraph (or full graph snapshot) of CausalNodes + CausalEdges for a given scope and time window. |
+| `PurposeObject`                | Represents an inferred or declared goal / objective of an actor, organization, system, or process. |
+| `PurposeTrajectory`            | Projected future state sequence derived from one or more PurposeObjects under a given constraint set. |
+| `LeveragePoint`                | Actionable node or edge identified by Teliology as high-impact for altering a trajectory. |
+| `EteologyRun` / `TeliologyRun` | Execution records containing inputs, parameters, outputs, and provenance for auditability. |
+
+All objects support standard Ontology features: properties, links, actions, functions, dynamic security, and time-series attachment.
+
+---
+
+### Terranean Eteology
+
+**Purpose**: Reconstruct and maintain causal ancestry of the operational environment at scale.
+
+#### Key Capabilities (current release)
+
+- Continuous or on-demand causal graph construction from heterogeneous data sources (events, logs, sensor feeds, human reports, external intelligence).
+- Multi-hop causal path discovery with confidence scoring and alternative-history ranking.
+- Gap detection: surfaces missing CausalNodes or low-confidence edges that require additional collection or human adjudication.
+- Counterfactual analysis: given a CausalGraph, evaluate the effect of intervening on specific nodes/edges.
+- Forensic replay: reconstruct the state of the graph at any prior timestamp.
+- Integration with Ontology Action Types for automated or human-in-the-loop enrichment.
+
+#### Primary Interfaces
+
+- `EteologyService.reconstruct(scope, timeWindow, options)` → `CausalGraph`
+- `EteologyService.traceAncestry(nodeId, depth, filters)` → ranked list of causal paths
+- `EteologyService.counterfactual(graphId, interventions)` → projected graph deltas
+- Object-backed functions and AIP Logic functions for embedding causal queries inside larger workflows.
+
+#### Technical Notes
+
+- CausalEdge weights and confidence are maintained as first-class properties and can be updated by downstream models or human operators.
+- Graph materialization is incremental; full recomputation is available but expensive — prefer scoped or delta runs in production.
+- Provenance is recorded on every CausalNode and CausalEdge for audit and model-retraining loops.
+
+---
+
+### Terranean Teliology
+
+**Purpose**: Infer, represent, and project the purpose structures of actors and systems, then identify high-leverage interventions.
+
+#### Key Capabilities (current release)
+
+- Purpose inference from observed behavior, declared doctrine, resource allocation patterns, and communication artifacts.
+- Explicit PurposeObject declaration and versioning (human or machine authored).
+- Trajectory projection under configurable constraint sets (resource, temporal, doctrinal, environmental).
+- LeveragePoint identification: ranks nodes/edges by estimated impact on shifting a trajectory toward or away from a desired end-state.
+- Competitive purpose analysis: simultaneous modeling of multiple actors’ purpose structures and their interaction effects.
+- Closed-loop integration with Eteology (causal history informs purpose inference; purpose trajectories can be validated against emerging causal evidence).
+
+#### Primary Interfaces
+
+- `TeliologyService.inferPurposes(actorScope, evidenceWindow, options)` → set of `PurposeObject`
+- `TeliologyService.projectTrajectory(purposeIds, constraints, horizon)` → `PurposeTrajectory`
+- `TeliologyService.identifyLeverage(trajectoryId, objective)` → ranked `LeveragePoint`s
+- Support for batch and streaming modes; results written back as Ontology objects for downstream consumption.
+
+#### Technical Notes
+
+- PurposeObjects carry both structured goal representations and free-form rationales.
+- Trajectory projections are stochastic; confidence bands and scenario ensembles are available.
+- LeveragePoint scoring is extensible via custom functions registered in the Ontology.
+
+---
+
+### Cross-System Workflows
+
+Common production patterns:
+
+1. **Causal → Purpose loop**  
+   Eteology reconstructs recent causal structure → Teliology updates purpose models → new trajectories are generated → actions are proposed.
+
+2. **Purpose-guided collection**  
+   Teliology identifies high-value unknown nodes → Eteology (or external collectors) prioritizes filling those causal gaps.
+
+3. **Intervention simulation**  
+   Proposed actions are expressed as interventions on the CausalGraph and/or modifications to PurposeObjects; both systems evaluate second-order effects.
+
+All workflows are expressible as Ontology Action Types + Functions and can be orchestrated via AIP, Foundry Pipelines, or external orchestrators calling the Terranean APIs.
+
+---
+
+### Versioning & Dynamism
+
+- Object schemas, link types, and service method signatures are versioned.
+- Breaking changes are announced via the platform release notes and reflected in the live OpenAPI / Protobuf definitions.
+- Client libraries (Python, TypeScript, Java) are generated from the current schema; pin to a specific platform version in production environments.
+- Feature flags control experimental operators (e.g., new causal inference backends or purpose-embedding models).
+
+---
+
+### Getting Started
+
+1. Ensure your Ontology contains (or can materialize) the Terranean object types listed above.
+2. Grant appropriate roles for `EteologyService` and `TeliologyService` invocation.
+3. Consult the live API reference and example notebooks in your environment for the current method signatures and example payloads.
+4. Begin with scoped reconstructions and purpose inferences before scaling to continuous or theater-wide runs.
+
+For schema diffs, deprecation notices, and performance guidance specific to the current software push, see the auto-generated changelog linked in the documentation sidebar.
+
+---
+
+**Terranean**  
+Eteology — causal reconstruction  
+Teliology — purpose & trajectory modeling  
+
+Both systems are Ontology-native. Both are designed to be composed.

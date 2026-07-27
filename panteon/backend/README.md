@@ -5,7 +5,7 @@ Enterprise Data & AI Operating System.
 ## Architecture
 
 - **Spinal Craker** — Data platform (ontology engine, data integration, pipeline builder)
-- **ONO** — AI platform (LLM orchestration, agent framework, automation)
+- **YONO** — AI platform (LLM orchestration, agent framework, automation)
 
 ## Quick Start
 
@@ -51,19 +51,19 @@ uvicorn panteon.main:app --reload
 | `POST /api/v1/spinal-craker/action-types` | Create action type |
 | `POST /api/v1/spinal-craker/action-types/{id}/execute` | Execute action |
 
-### ONO (AI Platform)
+### YONO (AI Platform)
 
 | Endpoint | Description |
 |----------|-------------|
-| `POST /api/v1/ono/providers` | Add LLM provider |
-| `GET /api/v1/ono/providers` | List providers |
-| `POST /api/v1/ono/models` | Add LLM model |
-| `GET /api/v1/ono/models` | List models |
-| `POST /api/v1/ono/execute` | Execute LLM call |
-| `POST /api/v1/ono/agents` | Create AI agent |
-| `POST /api/v1/ono/agents/chat` | Chat with agent |
-| `POST /api/v1/ono/automations` | Create automation |
-| `POST /api/v1/ono/automations/{id}/trigger` | Trigger automation |
+| `POST /api/v1/yono/providers` | Add LLM provider |
+| `GET /api/v1/yono/providers` | List providers |
+| `POST /api/v1/yono/models` | Add LLM model |
+| `GET /api/v1/yono/models` | List models |
+| `POST /api/v1/yono/execute` | Execute LLM call |
+| `POST /api/v1/yono/agents` | Create AI agent |
+| `POST /api/v1/yono/agents/chat` | Chat with agent |
+| `POST /api/v1/yono/automations` | Create automation |
+| `POST /api/v1/yono/automations/{id}/trigger` | Trigger automation |
 
 ## TDAC Integration
 

@@ -7,7 +7,7 @@ from panteon.core.database import async_session, init_db
 from panteon.core.tenant import Tenant, TenantMetric
 from panteon.spinal_craker.models import ObjectType, Object, LinkType, Link
 from panteon.spinal_craker.service import OntologyService
-from panteon.ono.models import LLMProvider, LLMModel, Agent, Automation
+from panteon.yono.models import LLMProvider, LLMModel, Agent, Automation
 from panteon.integrations.tdac_automation import TDACDailyReflectionAutomation
 
 
@@ -251,7 +251,7 @@ async def seed():
             ]
             for a in agents:
                 db.add(a)
-            print("Seeded 3 ONO agents")
+            print("Seeded 3 YONO agents")
 
         automation_service = TDACDailyReflectionAutomation(db)
         existing_auto = await db.execute(select(Automation).where(Automation.name == "tdac_daily_reflection"))
@@ -292,7 +292,7 @@ async def seed():
         print(f"Gift Cards: {giftcard_count}")
         print(f"Game Sessions: {game_count}")
         print(f"LLM Providers: 3")
-        print(f"ONO Agents: 3")
+        print(f"YONO Agents: 3")
         print(f"Metric Events: {metric_count}")
 
 

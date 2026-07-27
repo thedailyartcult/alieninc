@@ -6,7 +6,7 @@
 | Platform | Palantir Equivalent | Status | What's Built |
 |----------|-------------------|--------|-------------|
 | **Spinal Craker** | Foundry | PARTIAL | Ontology CRUD, Pipeline Builder UI, Data Lineage |
-| **ONO** | AIP | PARTIAL | LLM providers/models, Agent framework, ONO Forge (no-code builder), Automation engine |
+| **YONO** | AIP | PARTIAL | LLM providers/models, Agent framework, YONO Forge (no-code builder), Automation engine |
 | **Apollo** | Apollo | PARTIAL | Environments, Services, Deployments, Fleet Status, Pipelines, Health Checks |
 | **Babel** | Babel | MARKETING ONLY | Landing page exists — no operational backend |
 
@@ -56,7 +56,7 @@ Currently: Marketing page only. No operational backend.
 | Full-text search across ontology | Search Index | HIGH (all) |
 | Ontology write-back / workflows | Write-backs | HIGH (TDAC, Immanuel) |
 
-### AIP / ONO — PARTIAL
+### AIP / YONO — PARTIAL
 
 | Feature | Palantir Name | Priority |
 |---------|--------------|----------|

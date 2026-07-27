@@ -3,8 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from panteon.core.database import get_db
 from panteon.core.auth import get_current_user
-from panteon.ono.service import LLMOrchestrator, AgentService, AutomationService
-from panteon.api.schemas_ono import (
+from panteon.yono.service import LLMOrchestrator, AgentService, AutomationService
+from panteon.api.schemas_yono import (
     LLMProviderCreate, LLMProviderResponse,
     LLMModelCreate, LLMModelResponse,
     LLMExecutionRequest, LLMExecutionResponse,
@@ -13,7 +13,7 @@ from panteon.api.schemas_ono import (
     AutomationCreate, AutomationResponse,
 )
 
-router = APIRouter(prefix="/ono", tags=["ONO"], dependencies=[Depends(get_current_user)])
+router = APIRouter(prefix="/yono", tags=["YONO"], dependencies=[Depends(get_current_user)])
 
 
 @router.post("/providers", response_model=LLMProviderResponse)
@@ -21,7 +21,7 @@ async def create_provider(
     data: LLMProviderCreate,
     db: AsyncSession = Depends(get_db),
 ):
-    from panteon.ono.models import LLMProvider
+    from panteon.yono.models import LLMProvider
     provider = LLMProvider(
         name=data.name,
         provider_type=data.provider_type,
@@ -43,7 +43,7 @@ async def create_model(
     data: LLMModelCreate,
     db: AsyncSession = Depends(get_db),
 ):
-    from panteon.ono.models import LLMModel
+    from panteon.yono.models import LLMModel
     model = LLMModel(
         provider_id=data.provider_id,
         model_id=data.model_id,

@@ -20,11 +20,11 @@ ENVS = [
 SERVICES = [
     {"name": "panteon-api", "display_name": "Panteon API", "desc": "Core platform API server", "lang": "python", "version": "0.14.2"},
     {"name": "spinal-craker-engine", "display_name": "Spinal Craker Engine", "desc": "Ontology engine and query processor", "lang": "python", "version": "0.11.0"},
-    {"name": "ono-orchestrator", "display_name": "ONO Orchestrator", "desc": "LLM routing and agent execution engine", "lang": "python", "version": "0.9.3"},
+    {"name": "yono-orchestrator", "display_name": "YONO Orchestrator", "desc": "LLM routing and agent execution engine", "lang": "python", "version": "0.9.3"},
     {"name": "apollo-agent", "display_name": "Apollo Agent", "desc": "Deployment agent for fleet management", "lang": "go", "version": "2.4.1"},
     {"name": "tdac-bridge", "display_name": "TDAC Bridge", "desc": "The Daily Art Cult integration connector", "lang": "python", "version": "0.3.0"},
     {"name": "admin-ui", "display_name": "Admin Dashboard", "desc": "Platform administration interface", "lang": "typescript", "version": "0.8.1"},
-    {"name": "ono-forge", "display_name": "ONO Forge", "desc": "No-code agent builder UI", "lang": "typescript", "version": "0.2.0"},
+    {"name": "yono-forge", "display_name": "YONO Forge", "desc": "No-code agent builder UI", "lang": "typescript", "version": "0.2.0"},
 ]
 
 

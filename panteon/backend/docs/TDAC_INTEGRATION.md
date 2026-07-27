@@ -1,6 +1,6 @@
 # TDAC-Panteon Integration
 
-The Daily Art Cult is the founding tenant of Panteon. This integration bridges TDAC's existing Supabase backend with Panteon's Spinal Craker ontology and ONO AI platform.
+The Daily Art Cult is the founding tenant of Panteon. This integration bridges TDAC's existing Supabase backend with Panteon's Spinal Craker ontology and YONO AI platform.
 
 ## Architecture
 
@@ -8,7 +8,7 @@ The Daily Art Cult is the founding tenant of Panteon. This integration bridges T
 ┌─────────────────┐         ┌──────────────────┐         ┌─────────────────┐
 │   TDAC Website  │         │   Panteon API    │         │   Supabase DB   │
 │  (thedailyart   │◄───────►│  (Spinal Craker  │◄───────►│  (TDAC Backend) │
-│   cult.lol)     │ webhooks│   + ONO)         │  sync   │                 │
+│   cult.lol)     │ webhooks│   + YONO)         │  sync   │                 │
 └─────────────────┘         └──────────────────┘         └─────────────────┘
 ```
 
@@ -57,10 +57,10 @@ TDAC reports real-time events to Panteon:
 | Gift card redeemed | `POST /api/v1/webhooks/tdac/giftcard-redeemed` |
 
 ### 4. Daily Reflection Automation
-ONO-powered pipeline for generating daily reflections:
+YONO-powered pipeline for generating daily reflections:
 
-1. **ONO Logic** → Compose reflection (Gemini)
-2. **ONO Voice** → Synthesize audio (Azure TTS)
+1. **YONO Logic** → Compose reflection (Gemini)
+2. **YONO Voice** → Synthesize audio (Azure TTS)
 3. **Webhook** → Deliver to TDAC patron library
 
 ```python

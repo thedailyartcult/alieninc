@@ -13,7 +13,7 @@ from panteon.core.security import (
 )
 from panteon.api.routes_auth import router as auth_router
 from panteon.api.routes_spinal_craker import router as spinal_craker_router
-from panteon.api.routes_ono import router as ono_router
+from panteon.api.routes_yono import router as yono_router
 from panteon.api.routes_tdac import router as tdac_router
 from panteon.api.routes_webhooks import router as webhooks_router
 from panteon.api.routes_apollo import router as apollo_router
@@ -59,7 +59,7 @@ app.add_middleware(
 
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(spinal_craker_router, prefix="/api/v1")
-app.include_router(ono_router, prefix="/api/v1")
+app.include_router(yono_router, prefix="/api/v1")
 app.include_router(apollo_router, prefix="/api/v1")
 app.include_router(tdac_router, prefix="/api/v1")
 app.include_router(webhooks_router, prefix="/api/v1")
@@ -84,7 +84,7 @@ async def root():
         "version": settings.app_version,
         "platforms": {
             "spinal_craker": "/api/v1/spinal-craker",
-            "ono": "/api/v1/ono",
+            "yono": "/api/v1/yono",
             "apollo": "/api/v1/apollo",
         },
     }
@@ -99,13 +99,13 @@ async def admin():
     return {"detail": "Admin dashboard not found"}
 
 
-@app.get("/ono-forge")
-@app.get("/ono-forge/")
-async def ono_forge():
-    forge_file = PANTEON_SITE / "ono-forge.html"
+@app.get("/yono-forge")
+@app.get("/yono-forge/")
+async def yono_forge():
+    forge_file = PANTEON_SITE / "yono-forge.html"
     if forge_file.exists():
         return FileResponse(forge_file)
-    return {"detail": "ONO Forge not found"}
+    return {"detail": "YONO Forge not found"}
 
 
 @app.get("/pipeline-builder")

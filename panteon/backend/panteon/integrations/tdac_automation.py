@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from panteon.ono.models import Automation, AutomationExecution
+from panteon.yono.models import Automation, AutomationExecution
 from panteon.core.config import settings
 import structlog
 import httpx

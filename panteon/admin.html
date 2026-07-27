@@ -479,16 +479,16 @@
                     </div>
                 </div>
                 <div class="nav-section">
-                    <div class="nav-section-title">ONO</div>
-                    <div class="nav-item" data-page="ono-providers">
+                    <div class="nav-section-title">YONO</div>
+                    <div class="nav-item" data-page="yono-providers">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12V6l6-4 6 4v6l-6 4z"/></svg>
                         LLM Providers
                     </div>
-                    <div class="nav-item" data-page="ono-agents">
+                    <div class="nav-item" data-page="yono-agents">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M3 14c0-2.8 2.2-5 5-5s5 2.2 5 5"/></svg>
                         Agents
                     </div>
-                    <div class="nav-item" data-page="ono-automations">
+                    <div class="nav-item" data-page="yono-automations">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 2.5l-3 8h4l-7 5 3-8h-4z"/></svg>
                         Automations
                     </div>
@@ -775,7 +775,7 @@
                             <div class="card"><div class="card-title">Object Types</div><div class="card-value" id="countObjTypes">--</div></div>
                             <div class="card"><div class="card-title">Objects</div><div class="card-value" id="countObjects">--</div></div>
                             <div class="card"><div class="card-title">LLM Providers</div><div class="card-value" id="countProviders">--</div></div>
-                            <div class="card"><div class="card-title">ONO Agents</div><div class="card-value" id="countAgents">--</div></div>
+                            <div class="card"><div class="card-title">YONO Agents</div><div class="card-value" id="countAgents">--</div></div>
                             <div class="card"><div class="card-title">Environments</div><div class="card-value" id="countEnvs">--</div></div>
                             <div class="card"><div class="card-title">Agents Online</div><div class="card-value" id="countFleetAgents">--</div></div>
                             <div class="card"><div class="card-title">Services</div><div class="card-value" id="countServices">--</div></div>
@@ -845,7 +845,7 @@
                     </div>
                 </div>
 
-                <div class="page" id="page-ono-providers">
+                <div class="page" id="page-yono-providers">
                     <div class="section">
                         <div class="section-header">
                             <span class="section-title">LLM Providers</span>
@@ -868,7 +868,7 @@
                     </div>
                 </div>
 
-                <div class="page" id="page-ono-agents">
+                <div class="page" id="page-yono-agents">
                     <div class="section">
                         <div class="section-header">
                             <span class="section-title">Agents</span>
@@ -881,7 +881,7 @@
                     </div>
                 </div>
 
-                <div class="page" id="page-ono-automations">
+                <div class="page" id="page-yono-automations">
                     <div class="section">
                         <div class="section-header">
                             <span class="section-title">Automations</span>
@@ -1506,9 +1506,9 @@ const PAGES = {
     'sc-types': 'Object Types',
     'sc-objects': 'Objects',
     'sc-links': 'Link Types',
-    'ono-providers': 'LLM Providers',
-    'ono-agents': 'Agents',
-    'ono-automations': 'Automations',
+    'yono-providers': 'LLM Providers',
+    'yono-agents': 'Agents',
+    'yono-automations': 'Automations',
     'tdac-resonance': 'Resonance Index',
     'tdac-metrics': 'Metrics',
     'tdac-dashboard': 'Dashboard',
@@ -1644,9 +1644,9 @@ function loadPageData(page) {
         case 'sc-types': loadObjectTypes(); loadActionTypes(); break;
         case 'sc-objects': loadObjectTypeFilter(); loadObjects(); break;
         case 'sc-links': loadLinkTypes(); break;
-        case 'ono-providers': loadProviders(); loadModels(); break;
-        case 'ono-agents': loadAgents(); break;
-        case 'ono-automations': loadAutomations(); break;
+        case 'yono-providers': loadProviders(); loadModels(); break;
+        case 'yono-agents': loadAgents(); break;
+        case 'yono-automations': loadAutomations(); break;
         case 'apollo-fleet': loadFleetStatus(); break;
         case 'apollo-environments': loadEnvironments(); break;
         case 'apollo-deployments': loadDeployments(); break;
@@ -1682,9 +1682,9 @@ function loadPageData(page) {
 async function loadOverview() {
     api('/spinal-craker/object-types').then(d => { document.getElementById('countObjTypes').textContent = d.length; }).catch(() => { document.getElementById('countObjTypes').textContent = '--'; });
     api('/spinal-craker/objects').then(d => { document.getElementById('countObjects').textContent = d.length; }).catch(() => {});
-    api('/ono/providers').then(d => { document.getElementById('countProviders').textContent = d.length; providerCache = d; }).catch(() => { document.getElementById('countProviders').textContent = '--'; });
-    api('/ono/agents').then(d => { document.getElementById('countAgents').textContent = d.length; }).catch(() => { document.getElementById('countAgents').textContent = '--'; });
-    api('/ono/automations?enabled_only=false').then(d => { document.getElementById('countAutomations').textContent = d.length; }).catch(() => { document.getElementById('countAutomations').textContent = '--'; });
+    api('/yono/providers').then(d => { document.getElementById('countProviders').textContent = d.length; providerCache = d; }).catch(() => { document.getElementById('countProviders').textContent = '--'; });
+    api('/yono/agents').then(d => { document.getElementById('countAgents').textContent = d.length; }).catch(() => { document.getElementById('countAgents').textContent = '--'; });
+    api('/yono/automations?enabled_only=false').then(d => { document.getElementById('countAutomations').textContent = d.length; }).catch(() => { document.getElementById('countAutomations').textContent = '--'; });
     api('/apollo/fleet-status').then(d => {
         document.getElementById('countEnvs').textContent = d.environments;
         document.getElementById('countFleetAgents').textContent = d.agents_online + '/' + d.agents_total;
@@ -1774,7 +1774,7 @@ async function loadLinkTypes() {
 
 async function loadProviders() {
     try {
-        const data = await api('/ono/providers');
+        const data = await api('/yono/providers');
         providerCache = data;
         const tb = document.getElementById('providersBody');
         if (!data.length) { tb.innerHTML = '<tr><td colspan="5"><div class="empty-state">No providers</div></td></tr>'; return; }
@@ -1784,7 +1784,7 @@ async function loadProviders() {
 
 async function loadModels() {
     try {
-        const data = await api('/ono/models');
+        const data = await api('/yono/models');
         const tb = document.getElementById('modelsBody');
         if (!data.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty-state">No models</div></td></tr>'; return; }
         tb.innerHTML = data.map(m => {
@@ -1796,7 +1796,7 @@ async function loadModels() {
 
 async function loadAgents() {
     try {
-        const data = await api('/ono/agents');
+        const data = await api('/yono/agents');
         const tb = document.getElementById('agentsBody');
         if (!data.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty-state">No agents</div></td></tr>'; return; }
         tb.innerHTML = data.map(a => '<tr><td class="mono">' + a.name + '</td><td>' + a.display_name + '</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (a.description || '--') + '</td><td class="mono" style="font-size:10px">' + (a.model_id ? truncate(String(a.model_id), 8) : '--') + '</td><td>' + (a.tools || []).length + '</td><td><span class="tag ' + (a.is_enabled ? 'tag-green' : 'tag-red') + '">' + (a.is_enabled ? 'Yes' : 'No') + '</span></td></tr>').join('');
@@ -1805,7 +1805,7 @@ async function loadAgents() {
 
 async function loadAutomations() {
     try {
-        const data = await api('/ono/automations?enabled_only=false');
+        const data = await api('/yono/automations?enabled_only=false');
         const tb = document.getElementById('automationsBody');
         if (!data.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty-state">No automations</div></td></tr>'; return; }
         tb.innerHTML = data.map(a => '<tr><td class="mono">' + a.name + '</td><td>' + a.display_name + '</td><td><span class="tag">' + a.trigger_type + '</span></td><td class="mono" style="font-size:10px">' + (a.effects || []).length + ' effects</td><td><span class="tag ' + (a.is_enabled ? 'tag-green' : 'tag-red') + '">' + (a.is_enabled ? 'Yes' : 'No') + '</span></td><td style="font-size:11px;color:var(--text-dim)">' + (a.last_triggered_at ? fmtDate(a.last_triggered_at) : 'Never') + '</td></tr>').join('');
@@ -2417,12 +2417,12 @@ function populateObjectTypeSelect() {
 function populateProviderSelect() {
     const sel = document.getElementById('modelProviderSelect');
     sel.innerHTML = providerCache.map(p => '<option value="' + p.id + '">' + p.name + '</option>').join('');
-    if (!providerCache.length) { api('/ono/providers').then(d => { providerCache = d; sel.innerHTML = d.map(p => '<option value="' + p.id + '">' + p.name + '</option>').join(''); }).catch(() => {}); }
+    if (!providerCache.length) { api('/yono/providers').then(d => { providerCache = d; sel.innerHTML = d.map(p => '<option value="' + p.id + '">' + p.name + '</option>').join(''); }).catch(() => {}); }
 }
 
 function populateModelSelect() {
     const sel = document.getElementById('agentModelSelect');
-    api('/ono/models').then(d => { sel.innerHTML = '<option value="">None</option>' + d.map(m => '<option value="' + m.id + '">' + m.display_name + ' (' + m.model_id + ')</option>').join(''); }).catch(() => {});
+    api('/yono/models').then(d => { sel.innerHTML = '<option value="">None</option>' + d.map(m => '<option value="' + m.id + '">' + m.display_name + ' (' + m.model_id + ')</option>').join(''); }).catch(() => {});
 }
 
 function populateTypeSelects() {
@@ -2439,13 +2439,13 @@ async function submitObject(e) { e.preventDefault(); const f = new FormData(e.ta
 
 async function submitLinkType(e) { e.preventDefault(); const f = new FormData(e.target); try { await api('/spinal-craker/link-types', { method: 'POST', body: JSON.stringify({ name: f.get('name'), display_name: f.get('display_name'), source_type_id: f.get('source_type_id'), target_type_id: f.get('target_type_id'), cardinality: f.get('cardinality'), description: f.get('description') || null }) }); toast('Link type created'); closeModal(); loadLinkTypes(); } catch (e) { toast(e.message, 'error'); } }
 
-async function submitProvider(e) { e.preventDefault(); const f = new FormData(e.target); try { await api('/ono/providers', { method: 'POST', body: JSON.stringify({ name: f.get('name'), provider_type: f.get('provider_type'), api_key: f.get('api_key') || null, base_url: f.get('base_url') || null }) }); toast('Provider created'); closeModal(); loadProviders(); } catch (e) { toast(e.message, 'error'); } }
+async function submitProvider(e) { e.preventDefault(); const f = new FormData(e.target); try { await api('/yono/providers', { method: 'POST', body: JSON.stringify({ name: f.get('name'), provider_type: f.get('provider_type'), api_key: f.get('api_key') || null, base_url: f.get('base_url') || null }) }); toast('Provider created'); closeModal(); loadProviders(); } catch (e) { toast(e.message, 'error'); } }
 
-async function submitModel(e) { e.preventDefault(); const f = new FormData(e.target); try { await api('/ono/models', { method: 'POST', body: JSON.stringify({ provider_id: f.get('provider_id'), model_id: f.get('model_id'), display_name: f.get('display_name'), max_tokens: parseInt(f.get('max_tokens')), cost_per_1k_input: parseFloat(f.get('cost_per_1k_input')), cost_per_1k_output: parseFloat(f.get('cost_per_1k_output')) }) }); toast('Model created'); closeModal(); loadModels(); } catch (e) { toast(e.message, 'error'); } }
+async function submitModel(e) { e.preventDefault(); const f = new FormData(e.target); try { await api('/yono/models', { method: 'POST', body: JSON.stringify({ provider_id: f.get('provider_id'), model_id: f.get('model_id'), display_name: f.get('display_name'), max_tokens: parseInt(f.get('max_tokens')), cost_per_1k_input: parseFloat(f.get('cost_per_1k_input')), cost_per_1k_output: parseFloat(f.get('cost_per_1k_output')) }) }); toast('Model created'); closeModal(); loadModels(); } catch (e) { toast(e.message, 'error'); } }
 
-async function submitAgent(e) { e.preventDefault(); const f = new FormData(e.target); let tools = []; try { tools = JSON.parse(f.get('tools') || '[]'); } catch { toast('Invalid JSON in tools', 'error'); return; } try { await api('/ono/agents', { method: 'POST', body: JSON.stringify({ name: f.get('name'), display_name: f.get('display_name'), system_prompt: f.get('system_prompt'), description: f.get('description') || null, model_id: f.get('model_id') || null, tools }) }); toast('Agent created'); closeModal(); loadAgents(); } catch (e) { toast(e.message, 'error'); } }
+async function submitAgent(e) { e.preventDefault(); const f = new FormData(e.target); let tools = []; try { tools = JSON.parse(f.get('tools') || '[]'); } catch { toast('Invalid JSON in tools', 'error'); return; } try { await api('/yono/agents', { method: 'POST', body: JSON.stringify({ name: f.get('name'), display_name: f.get('display_name'), system_prompt: f.get('system_prompt'), description: f.get('description') || null, model_id: f.get('model_id') || null, tools }) }); toast('Agent created'); closeModal(); loadAgents(); } catch (e) { toast(e.message, 'error'); } }
 
-async function submitAutomation(e) { e.preventDefault(); const f = new FormData(e.target); let triggerConfig, effects, conditions; try { triggerConfig = JSON.parse(f.get('trigger_config')); } catch { toast('Invalid JSON in trigger config', 'error'); return; } try { effects = JSON.parse(f.get('effects') || '[]'); } catch { toast('Invalid JSON in effects', 'error'); return; } try { conditions = JSON.parse(f.get('conditions') || '[]'); } catch { toast('Invalid JSON in conditions', 'error'); return; } try { await api('/ono/automations', { method: 'POST', body: JSON.stringify({ name: f.get('name'), display_name: f.get('display_name'), trigger_type: f.get('trigger_type'), trigger_config: triggerConfig, effects, description: f.get('description') || null, conditions }) }); toast('Automation created'); closeModal(); loadAutomations(); } catch (e) { toast(e.message, 'error'); } }
+async function submitAutomation(e) { e.preventDefault(); const f = new FormData(e.target); let triggerConfig, effects, conditions; try { triggerConfig = JSON.parse(f.get('trigger_config')); } catch { toast('Invalid JSON in trigger config', 'error'); return; } try { effects = JSON.parse(f.get('effects') || '[]'); } catch { toast('Invalid JSON in effects', 'error'); return; } try { conditions = JSON.parse(f.get('conditions') || '[]'); } catch { toast('Invalid JSON in conditions', 'error'); return; } try { await api('/yono/automations', { method: 'POST', body: JSON.stringify({ name: f.get('name'), display_name: f.get('display_name'), trigger_type: f.get('trigger_type'), trigger_config: triggerConfig, effects, description: f.get('description') || null, conditions }) }); toast('Automation created'); closeModal(); loadAutomations(); } catch (e) { toast(e.message, 'error'); } }
 
 const TERRANEAN_ENGINE = '/api/v1/terranean';
 

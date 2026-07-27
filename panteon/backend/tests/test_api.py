@@ -36,13 +36,13 @@ async def test_list_object_types(client):
 
 @pytest.mark.asyncio
 async def test_list_providers(client):
-    response = await client.get("/api/v1/ono/providers")
+    response = await client.get("/api/v1/yono/providers")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
 
 @pytest.mark.asyncio
 async def test_list_agents(client):
-    response = await client.get("/api/v1/ono/agents")
+    response = await client.get("/api/v1/yono/agents")
     assert response.status_code == 200
     assert isinstance(response.json(), list)

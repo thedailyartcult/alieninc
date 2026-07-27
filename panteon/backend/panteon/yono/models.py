@@ -8,7 +8,7 @@ from panteon.core.types import JSONB, UUID_COL
 
 
 class LLMProvider(Base):
-    __tablename__ = "ono_llm_providers"
+    __tablename__ = "yono_llm_providers"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String(100), nullable=False, unique=True)
@@ -20,11 +20,11 @@ class LLMProvider(Base):
 
     models = relationship("LLMModel", back_populates="provider", cascade="all, delete-orphan")
 
-    __table_args__ = (Index("ix_llm_providers_type", "provider_type"),)
+    __table_args__ = (Index("ix_yono_llm_providers_type", "provider_type"),)
 
 
 class LLMModel(Base):
-    __tablename__ = "ono_llm_models"
+    __tablename__ = "yono_llm_models"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
     provider_id = Column(UUID_COL(), ForeignKey("ono_llm_providers.id"), nullable=False)
@@ -41,13 +41,13 @@ class LLMModel(Base):
     executions = relationship("LLMExecution", back_populates="model")
 
     __table_args__ = (
-        Index("ix_llm_models_provider", "provider_id"),
-        Index("ix_llm_models_model_id", "model_id"),
+        Index("ix_yono_llm_models_provider", "provider_id"),
+        Index("ix_yono_llm_models_model_id", "model_id"),
     )
 
 
 class LLMExecution(Base):
-    __tablename__ = "ono_llm_executions"
+    __tablename__ = "yono_llm_executions"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
     model_id = Column(UUID_COL(), ForeignKey("ono_llm_models.id"), nullable=False)
@@ -67,14 +67,14 @@ class LLMExecution(Base):
     model = relationship("LLMModel", back_populates="executions")
 
     __table_args__ = (
-        Index("ix_llm_executions_model", "model_id"),
-        Index("ix_llm_executions_status", "status"),
-        Index("ix_llm_executions_created", "created_at"),
+        Index("ix_yono_llm_executions_model", "model_id"),
+        Index("ix_yono_llm_executions_status", "status"),
+        Index("ix_yono_llm_executions_created", "created_at"),
     )
 
 
 class Agent(Base):
-    __tablename__ = "ono_agents"
+    __tablename__ = "yono_agents"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String(255), nullable=False, unique=True)
@@ -90,11 +90,11 @@ class Agent(Base):
 
     sessions = relationship("AgentSession", back_populates="agent")
 
-    __table_args__ = (Index("ix_agents_model", "model_id"),)
+    __table_args__ = (Index("ix_yono_agents_model", "model_id"),)
 
 
 class AgentSession(Base):
-    __tablename__ = "ono_agent_sessions"
+    __tablename__ = "yono_agent_sessions"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
     agent_id = Column(UUID_COL(), ForeignKey("ono_agents.id"), nullable=False)
@@ -108,13 +108,13 @@ class AgentSession(Base):
     agent = relationship("Agent", back_populates="sessions")
 
     __table_args__ = (
-        Index("ix_agent_sessions_agent", "agent_id"),
-        Index("ix_agent_sessions_status", "status"),
+        Index("ix_yono_agent_sessions_agent", "agent_id"),
+        Index("ix_yono_agent_sessions_status", "status"),
     )
 
 
 class Automation(Base):
-    __tablename__ = "ono_automations"
+    __tablename__ = "yono_automations"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String(255), nullable=False, unique=True)
@@ -131,13 +131,13 @@ class Automation(Base):
     executions = relationship("AutomationExecution", back_populates="automation")
 
     __table_args__ = (
-        Index("ix_automations_trigger", "trigger_type"),
-        Index("ix_automations_enabled", "is_enabled"),
+        Index("ix_yono_automations_trigger", "trigger_type"),
+        Index("ix_yono_automations_enabled", "is_enabled"),
     )
 
 
 class AutomationExecution(Base):
-    __tablename__ = "ono_automation_executions"
+    __tablename__ = "yono_automation_executions"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
     automation_id = Column(UUID_COL(), ForeignKey("ono_automations.id"), nullable=False)
@@ -151,13 +151,13 @@ class AutomationExecution(Base):
     automation = relationship("Automation", back_populates="executions")
 
     __table_args__ = (
-        Index("ix_automation_executions_automation", "automation_id"),
-        Index("ix_automation_executions_status", "status"),
+        Index("ix_yono_automation_executions_automation", "automation_id"),
+        Index("ix_yono_automation_executions_status", "status"),
     )
 
 
 class Evaluation(Base):
-    __tablename__ = "ono_evaluations"
+    __tablename__ = "yono_evaluations"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String(255), nullable=False)
@@ -173,7 +173,7 @@ class Evaluation(Base):
 
 
 class EvaluationRun(Base):
-    __tablename__ = "ono_evaluation_runs"
+    __tablename__ = "yono_evaluation_runs"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
     evaluation_id = Column(UUID_COL(), ForeignKey("ono_evaluations.id"), nullable=False)
@@ -185,4 +185,4 @@ class EvaluationRun(Base):
 
     evaluation = relationship("Evaluation", back_populates="runs")
 
-    __table_args__ = (Index("ix_eval_runs_evaluation", "evaluation_id"),)
+    __table_args__ = (Index("ix_yono_eval_runs_evaluation", "evaluation_id"),)

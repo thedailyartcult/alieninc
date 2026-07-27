@@ -39,7 +39,7 @@ async def get_db() -> AsyncSession:
 
 async def init_db():
     from panteon.spinal_craker.models import ObjectType, Object, LinkType, Link, ActionType, ActionExecution, DataPipeline, DataPipelineRun
-    from panteon.ono.models import LLMProvider, LLMModel, LLMExecution, Agent, AgentSession, Automation, AutomationExecution, Evaluation, EvaluationRun
+    from panteon.yono.models import LLMProvider, LLMModel, LLMExecution, Agent, AgentSession, Automation, AutomationExecution, Evaluation, EvaluationRun
     from panteon.core.tenant import Tenant, TenantMetric, TenantWebhook
     from panteon.apollo.models import Environment, ApolloAgent, Service, Deployment, HealthCheck, Pipeline, PipelineRun
     from panteon.core.audit import AuditLog

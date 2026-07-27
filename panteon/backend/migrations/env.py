@@ -5,7 +5,7 @@ from alembic import context
 from panteon.core.database import Base
 from panteon.core.config import settings
 from panteon.spinal_craker.models import *
-from panteon.ono.models import *
+from panteon.yono.models import *
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)

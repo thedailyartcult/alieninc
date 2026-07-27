@@ -10,7 +10,7 @@ def _uid(val):
         return str(val)
     return val
 
-from panteon.ono.models import (
+from panteon.yono.models import (
     LLMProvider, LLMModel, LLMExecution, Agent, AgentSession,
     Automation, AutomationExecution
 )

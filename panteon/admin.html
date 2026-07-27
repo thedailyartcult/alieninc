@@ -338,6 +338,8 @@
         .page.active { display: block; opacity: 1; transform: translateY(0); }
 
         .camera-workspace-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        .camera-region-btn { border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-family: var(--font-tech); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; padding: 6px 14px; border-radius: 3px; cursor: pointer; transition: all 0.2s; }
+        .camera-region-btn:hover { border-color: var(--accent-cyan); color: var(--text); }
         .camera-group-container { background: #030304; border: 1px solid var(--border-color); border-radius: 4px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
         .camera-group-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(16, 10, 28, 0.8); border-bottom: 1px solid rgba(124, 58, 237, 0.2); font-size: 11px; font-family: var(--font-tech); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
         .camera-group-live { display: flex; align-items: center; gap: 6px; color: var(--green); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; }
@@ -579,6 +581,21 @@
                     </a>
                 </div>
                 <div class="nav-section">
+                    <div class="nav-section-title">Terranean Engine</div>
+                    <div class="nav-item" data-page="terranean-ingest">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h12M8 2v12"/><rect x="3" y="3" width="10" height="10" rx="1"/></svg>
+                        Event Ingestion
+                    </div>
+                    <div class="nav-item" data-page="terranean-causal">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="4" r="1.5"/><circle cx="12" cy="4" r="1.5"/><circle cx="8" cy="12" r="1.5"/><path d="M5 5l2 6M11 5l-2 6M5 4h6"/></svg>
+                        Causal Analysis
+                    </div>
+                    <div class="nav-item" data-page="terranean-purpose">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12l4-8 4 4 4-6"/><circle cx="14" cy="2" r="1"/></svg>
+                        Purpose Modeling
+                    </div>
+                </div>
+                <div class="nav-section">
                     <div class="nav-section-title">Group Operations</div>
                     <div class="nav-item" data-page="group-overview">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="4" r="2.5"/><circle cx="3" cy="12" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="13" cy="12" r="2"/><path d="M8 6.5v3M5.5 11L3.5 12M10.5 11l2 1"/></svg>
@@ -652,33 +669,49 @@
                         </div>
                     </div>
 
+                    <div class="card" style="margin-bottom:16px">
+                        <div class="card-header">
+                            <span class="card-title">Camera Feeds — Region Selector</span>
+                            <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">Select regions to load live traffic cameras</span>
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" id="cameraRegionButtons">
+                            <button class="btn btn-sm camera-region-btn" data-region="UK" onclick="toggleCameraRegion(this)">UK (TfL)</button>
+                            <button class="btn btn-sm camera-region-btn" data-region="US" onclick="toggleCameraRegion(this)">US (Caltrans)</button>
+                            <button class="btn btn-sm camera-region-btn" data-region="Europe" onclick="toggleCameraRegion(this)">Europe</button>
+                            <button class="btn btn-sm camera-region-btn" data-region="Asia" onclick="toggleCameraRegion(this)">Asia</button>
+                            <button class="btn btn-sm camera-region-btn" data-region="Australia" onclick="toggleCameraRegion(this)">Australia</button>
+                            <button class="btn btn-primary btn-sm" onclick="loadSelectedCameras()" style="margin-left:auto">Load Selected</button>
+                            <button class="btn btn-sm" onclick="clearCameras()" style="color:var(--text-muted)">Clear</button>
+                        </div>
+                        <div id="cameraLoadStatus" style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono)">No regions selected — cameras will not load until you choose</div>
+                    </div>
                     <div class="camera-workspace-panel">
                         <div class="camera-group-container">
                             <div class="camera-group-header">
-                                <span>Camera Group A</span>
-                                <span class="camera-group-live"><span class="status-dot"></span> LIVE</span>
+                                <span id="cameraGroupAHeader">Group A — Select a region</span>
+                                <span class="camera-group-live"><span class="status-dot" id="cameraGroupADot" style="background:var(--text-muted)"></span> <span id="cameraGroupAStatus">IDLE</span></span>
                             </div>
-                            <div class="camera-grid" id="camera-grid-a"></div>
+                            <div class="camera-grid" id="camera-grid-a"><div class="empty-state" style="grid-column:1/-1">Select a region above and click Load</div></div>
                             <div class="camera-controls-footer">
                                 <div class="footer-control-icons">
                                     <span class="control-icon">&#x229E;</span>
                                     <span class="control-icon">&#x229F;</span>
                                 </div>
-                                <span>All Streams (Group A)</span>
+                                <span id="cameraGroupAFooter">No streams loaded</span>
                             </div>
                         </div>
                         <div class="camera-group-container">
                             <div class="camera-group-header">
-                                <span>Camera Group B</span>
-                                <span class="camera-group-live"><span class="status-dot"></span> LIVE</span>
+                                <span id="cameraGroupBHeader">Group B — Select a region</span>
+                                <span class="camera-group-live"><span class="status-dot" id="cameraGroupBDot" style="background:var(--text-muted)"></span> <span id="cameraGroupBStatus">IDLE</span></span>
                             </div>
-                            <div class="camera-grid" id="camera-grid-b"></div>
+                            <div class="camera-grid" id="camera-grid-b"><div class="empty-state" style="grid-column:1/-1">Select a region above and click Load</div></div>
                             <div class="camera-controls-footer">
                                 <div class="footer-control-icons">
                                     <span class="control-icon">&#x229E;</span>
                                     <span class="control-icon">&#x229F;</span>
                                 </div>
-                                <span>All Streams (Group B)</span>
+                                <span id="cameraGroupBFooter">No streams loaded</span>
                             </div>
                         </div>
                     </div>
@@ -1105,6 +1138,117 @@
                     </div>
                 </div>
 
+                <div class="page" id="page-terranean-ingest">
+                    <div class="card" style="margin-bottom:16px">
+                        <div class="card-header">
+                            <span class="card-title">Terranean Engine — Event Ingestion</span>
+                            <div style="display:flex;gap:8px">
+                                <button class="btn btn-sm" onclick="checkTerraneanHealth()">Engine Health</button>
+                                <button class="btn btn-sm" onclick="resetTerranean()" style="color:var(--red)">Reset Engine</button>
+                            </div>
+                        </div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px">
+                            Feed forensic events into the dual-mode intelligence substrate. Events are stored in-memory and used for causal reconstruction and purpose inference.
+                        </div>
+                        <div style="margin-bottom:12px">
+                            <textarea id="terraneanEventInput" placeholder='[{"id":"e1","timestamp":"2026-01-01T10:00:00","actor":"alpha","action":"deploy","target":"sys-a","goal_hint":"expand_ops"}]' style="width:100%;min-height:120px;padding:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:var(--font-mono);resize:vertical;outline:none"></textarea>
+                        </div>
+                        <div style="display:flex;gap:8px">
+                            <button class="btn btn-primary" onclick="ingestTerraneanEvents()">Ingest Events</button>
+                            <button class="btn btn-sm" onclick="loadSampleEvents()">Load Sample Data</button>
+                        </div>
+                        <div id="terraneanIngestResult" style="margin-top:12px"></div>
+                    </div>
+                    <div class="grid grid-3">
+                        <div class="card">
+                            <div class="card-title">Events Ingested</div>
+                            <div class="card-value" id="terraneanEventCount">--</div>
+                            <div class="card-sub">Total events in engine</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title">Purposes Inferred</div>
+                            <div class="card-value" id="terraneanPurposeCount">--</div>
+                            <div class="card-sub">Active purpose objects</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title">Engine Status</div>
+                            <div class="card-value" style="font-size:14px" id="terraneanStatus">--</div>
+                            <div class="card-sub">Terranean Engine v1.0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page" id="page-terranean-causal">
+                    <div class="card" style="margin-bottom:16px">
+                        <div class="card-header">
+                            <span class="card-title">Eteology — Causal Reconstruction</span>
+                            <button class="btn btn-sm" onclick="reconstructCausalGraph()">Reconstruct Graph</button>
+                        </div>
+                        <div id="causalGraphStats"><div class="empty-state">Click Reconstruct Graph to build the causal model from ingested events</div></div>
+                    </div>
+                    <div class="card" style="margin-bottom:16px">
+                        <div class="card-header">
+                            <span class="card-title">Causal Graph Visualization</span>
+                            <button class="btn btn-sm" onclick="loadCausalGraph()">Refresh Graph</button>
+                        </div>
+                        <div id="causalGraphContainer" style="min-height:200px"><div class="empty-state">No graph data — reconstruct first</div></div>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="card-title">Root Cause Analysis</span>
+                            </div>
+                            <div style="margin-bottom:12px">
+                                <input type="text" id="rootCauseTarget" placeholder="Target event ID (e.g., e3)" style="width:100%;padding:10px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;outline:none;margin-bottom:8px">
+                                <button class="btn btn-primary btn-sm" onclick="findRootCause()">Find Root Causes</button>
+                            </div>
+                            <div id="rootCauseResults"><div class="empty-state">Enter a target event ID to trace causal ancestry</div></div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="card-title">Counterfactual Analysis</span>
+                            </div>
+                            <div style="margin-bottom:12px">
+                                <input type="text" id="counterfactualIds" placeholder="Event IDs to remove (comma-separated, e.g., e1,e2)" style="width:100%;padding:10px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;outline:none;margin-bottom:8px">
+                                <button class="btn btn-primary btn-sm" onclick="runCounterfactual()">Simulate Intervention</button>
+                            </div>
+                            <div id="counterfactualResults"><div class="empty-state">Enter event IDs to simulate removal and see downstream effects</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page" id="page-terranean-purpose">
+                    <div class="card" style="margin-bottom:16px">
+                        <div class="card-header">
+                            <span class="card-title">Teliology — Purpose & Trajectory Modeling</span>
+                            <button class="btn btn-sm" onclick="inferPurposes()">Infer Purposes</button>
+                        </div>
+                        <div id="purposeInferResults"><div class="empty-state">Click Infer Purposes to analyze actor behavior patterns and surface goal structures</div></div>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="card-title">Trajectory Projection</span>
+                            </div>
+                            <div style="margin-bottom:12px">
+                                <input type="number" id="trajectoryHorizon" placeholder="Horizon steps (default 10)" value="10" style="width:100%;padding:10px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;outline:none;margin-bottom:8px">
+                                <button class="btn btn-primary btn-sm" onclick="projectTrajectory()">Project Trajectories</button>
+                            </div>
+                            <div id="trajectoryResults"><div class="empty-state">Infer purposes first, then project forward trajectories</div></div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="card-title">Leverage Points</span>
+                            </div>
+                            <div style="margin-bottom:12px">
+                                <input type="text" id="leverageObjective" placeholder="Objective (e.g., disrupt_failure_chain)" style="width:100%;padding:10px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;outline:none;margin-bottom:8px">
+                                <button class="btn btn-primary btn-sm" onclick="findLeveragePoints()">Find Leverage Points</button>
+                            </div>
+                            <div id="leverageResults"><div class="empty-state">Define an objective to identify high-impact intervention points</div></div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="page" id="page-group-overview">
                     <div class="grid grid-4" style="margin-bottom:16px" id="groupKpiCards"></div>
                     <div class="card" style="margin-bottom:16px">
@@ -1383,6 +1527,9 @@ const PAGES = {
     'babel-investigations': 'Investigations',
     'babel-threatmap': 'Threat Map',
     'babel-entities': 'Threat Entities',
+    'terranean-ingest': 'Event Ingestion',
+    'terranean-causal': 'Causal Analysis',
+    'terranean-purpose': 'Purpose Modeling',
     'contour-dashboards': 'Dashboards',
     'contour-schedules': 'Pipeline Schedules',
     'contour-quality': 'Data Quality',
@@ -1522,6 +1669,9 @@ function loadPageData(page) {
         case 'babel-investigations': break;
         case 'babel-threatmap': break;
         case 'babel-entities': break;
+        case 'terranean-ingest': checkTerraneanHealth(); break;
+        case 'terranean-causal': break;
+        case 'terranean-purpose': break;
         case 'contour-dashboards': loadContourDashboards(); break;
         case 'contour-schedules': loadContourSchedules(); break;
         case 'contour-quality': loadDQViolations(); break;
@@ -2297,6 +2447,184 @@ async function submitAgent(e) { e.preventDefault(); const f = new FormData(e.tar
 
 async function submitAutomation(e) { e.preventDefault(); const f = new FormData(e.target); let triggerConfig, effects, conditions; try { triggerConfig = JSON.parse(f.get('trigger_config')); } catch { toast('Invalid JSON in trigger config', 'error'); return; } try { effects = JSON.parse(f.get('effects') || '[]'); } catch { toast('Invalid JSON in effects', 'error'); return; } try { conditions = JSON.parse(f.get('conditions') || '[]'); } catch { toast('Invalid JSON in conditions', 'error'); return; } try { await api('/ono/automations', { method: 'POST', body: JSON.stringify({ name: f.get('name'), display_name: f.get('display_name'), trigger_type: f.get('trigger_type'), trigger_config: triggerConfig, effects, description: f.get('description') || null, conditions }) }); toast('Automation created'); closeModal(); loadAutomations(); } catch (e) { toast(e.message, 'error'); } }
 
+const TERRANEAN_ENGINE = '/api/v1/terranean';
+
+async function terraneanApi(path, opts = {}) {
+    const url = API_BASE + '/terranean' + path;
+    const headers = { 'Content-Type': 'application/json', ...opts.headers };
+    if (!authToken) { const { data } = await supabaseClient.auth.getSession(); if (data.session) authToken = data.session.access_token; }
+    if (authToken) headers['Authorization'] = 'Bearer ' + authToken;
+    const res = await fetch(url, { headers, ...opts });
+    if (!res.ok) { const err = await res.json().catch(() => ({ detail: res.statusText })); throw new Error(err.detail || 'HTTP ' + res.status); }
+    return await res.json();
+}
+
+async function checkTerraneanHealth() {
+    try {
+        const h = await terraneanApi('/health');
+        document.getElementById('terraneanEventCount').textContent = h.events;
+        document.getElementById('terraneanPurposeCount').textContent = h.purposes;
+        document.getElementById('terraneanStatus').innerHTML = '<span style="color:var(--green)">' + h.status.toUpperCase() + '</span>';
+    } catch (e) {
+        document.getElementById('terraneanStatus').innerHTML = '<span style="color:var(--red)">OFFLINE</span>';
+        toast('Terranean Engine offline: ' + e.message, 'error');
+    }
+}
+
+async function resetTerranean() {
+    if (!confirm('Clear all Terranean Engine state (events, purposes, trajectories)?')) return;
+    try { await terraneanApi('/reset', { method: 'POST' }); toast('Engine state cleared'); checkTerraneanHealth(); } catch (e) { toast(e.message, 'error'); }
+}
+
+async function ingestTerraneanEvents() {
+    const input = document.getElementById('terraneanEventInput').value.trim();
+    if (!input) { toast('Enter events JSON', 'error'); return; }
+    try {
+        const events = JSON.parse(input);
+        const result = await terraneanApi('/ingest', { method: 'POST', body: JSON.stringify({ events: Array.isArray(events) ? events : [events] }) });
+        document.getElementById('terraneanIngestResult').innerHTML = '<div style="color:var(--green);font-size:12px;font-family:var(--font-mono)">Ingested ' + result.ingested + ' events (total: ' + result.total + ')</div>';
+        toast(result.ingested + ' events ingested');
+        checkTerraneanHealth();
+    } catch (e) { toast('Ingest failed: ' + e.message, 'error'); document.getElementById('terraneanIngestResult').innerHTML = '<div style="color:var(--red);font-size:12px">' + e.message + '</div>'; }
+}
+
+function loadSampleEvents() {
+    document.getElementById('terraneanEventInput').value = JSON.stringify([
+        {"id":"e1","timestamp":"2026-01-15T08:00:00","actor":"alpha_team","action":"deploy_infrastructure","target":"zone-east","goal_hint":"expand_ops"},
+        {"id":"e2","timestamp":"2026-01-15T08:30:00","actor":"alpha_team","action":"configure_network","target":"zone-east","goal_hint":"expand_ops"},
+        {"id":"e3","timestamp":"2026-01-15T09:00:00","actor":"zone-east","action":"service_degradation","target":null},
+        {"id":"e4","timestamp":"2026-01-15T09:15:00","actor":"beta_team","action":"investigate_alert","target":"zone-east","goal_hint":"restore_service"},
+        {"id":"e5","timestamp":"2026-01-15T09:30:00","actor":"beta_team","action":"apply_patch","target":"zone-east","goal_hint":"restore_service"},
+        {"id":"e6","timestamp":"2026-01-15T10:00:00","actor":"gamma_ops","action":"scale_resources","target":"zone-east","goal_hint":"prevent_recurrence"},
+        {"id":"e7","timestamp":"2026-01-15T10:30:00","actor":"zone-east","action":"recovery_complete","target":null},
+        {"id":"e8","timestamp":"2026-01-15T11:00:00","actor":"alpha_team","action":"deploy_monitoring","target":"zone-east","goal_hint":"expand_ops"}
+    ], null, 2);
+    toast('Sample events loaded — click Ingest to feed them');
+}
+
+async function reconstructCausalGraph() {
+    try {
+        const result = await terraneanApi('/reconstruct', { method: 'POST', body: JSON.stringify({}) });
+        document.getElementById('causalGraphStats').innerHTML = '<div class="grid grid-2" style="gap:12px"><div class="card" style="padding:12px"><div class="card-title">Nodes</div><div class="card-value">' + result.nodes + '</div><div class="card-sub">Causal events</div></div><div class="card" style="padding:12px"><div class="card-title">Edges</div><div class="card-value">' + result.edges + '</div><div class="card-sub">Causal links</div></div></div>';
+        toast('Causal graph reconstructed: ' + result.nodes + ' nodes, ' + result.edges + ' edges');
+    } catch (e) { toast('Reconstruct failed: ' + e.message, 'error'); }
+}
+
+async function loadCausalGraph() {
+    try {
+        const graph = await terraneanApi('/graph');
+        if (!graph.nodes.length) { document.getElementById('causalGraphContainer').innerHTML = '<div class="empty-state">No graph data — ingest events and reconstruct first</div>'; return; }
+        let html = '<div style="margin-bottom:12px;font-size:11px;color:var(--text-muted);font-family:var(--font-mono)">' + graph.nodes.length + ' nodes, ' + graph.edges.length + ' edges</div>';
+        html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">';
+        graph.nodes.forEach(n => { html += '<span class="tag" style="font-size:10px;padding:3px 8px">' + n.id + ' · ' + n.actor + ' · ' + n.action + '</span>'; });
+        html += '</div>';
+        html += '<div style="font-size:11px;font-family:var(--font-mono);color:var(--text-muted)"><strong style="color:var(--text)">Causal Edges:</strong></div>';
+        html += '<div style="display:flex;flex-direction:column;gap:4px;margin-top:8px">';
+        graph.edges.forEach(e => { html += '<div style="font-size:10px;font-family:var(--font-mono);padding:4px 8px;background:rgba(255,255,255,0.02);border-radius:3px"><span style="color:var(--accent-cyan)">' + e.source + '</span> → <span style="color:var(--accent-purple)">' + e.target + '</span> <span style="color:var(--text-dim)">(w:' + (e.weight||0).toFixed(1) + ' c:' + (e.confidence||0).toFixed(1) + ')</span></div>'; });
+        html += '</div>';
+        document.getElementById('causalGraphContainer').innerHTML = html;
+    } catch (e) { document.getElementById('causalGraphContainer').innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
+}
+
+async function findRootCause() {
+    const targetId = document.getElementById('rootCauseTarget').value.trim();
+    if (!targetId) { toast('Enter a target event ID', 'error'); return; }
+    try {
+        const result = await terraneanApi('/root-cause', { method: 'POST', body: JSON.stringify({ target_id: targetId, depth: 10 }) });
+        if (!result.root_causes.length) { document.getElementById('rootCauseResults').innerHTML = '<div class="empty-state">No root causes found for ' + targetId + '</div>'; return; }
+        let html = '<div style="display:flex;flex-direction:column;gap:8px">';
+        result.root_causes.forEach((rc, i) => {
+            html += '<div style="padding:10px;background:rgba(255,255,255,0.02);border-radius:4px;border-left:2px solid ' + (i === 0 ? 'var(--red)' : 'var(--amber)') + '">';
+            html += '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span class="mono" style="font-size:12px;font-weight:600">' + rc.node_id + '</span><span class="tag" style="font-size:9px">Score: ' + rc.score + '</span></div>';
+            html += '<div style="font-size:11px;color:var(--text-muted)">' + rc.actor + ' → ' + rc.action + '</div>';
+            html += '<div style="font-size:10px;color:var(--text-dim);margin-top:2px">' + rc.paths_found + ' causal paths found</div>';
+            html += '</div>';
+        });
+        html += '</div>';
+        document.getElementById('rootCauseResults').innerHTML = html;
+    } catch (e) { document.getElementById('rootCauseResults').innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
+}
+
+async function runCounterfactual() {
+    const ids = document.getElementById('counterfactualIds').value.trim();
+    if (!ids) { toast('Enter event IDs', 'error'); return; }
+    try {
+        const eventIds = ids.split(',').map(s => s.trim());
+        const result = await terraneanApi('/counterfactual', { method: 'POST', body: JSON.stringify({ event_ids: eventIds, intervention: 'remove' }) });
+        let html = '<div style="padding:10px;background:rgba(255,255,255,0.02);border-radius:4px">';
+        html += '<div style="font-size:12px;margin-bottom:8px"><strong>Intervention:</strong> <span class="mono">' + result.intervention + '</span></div>';
+        html += '<div style="font-size:12px;margin-bottom:4px"><strong>Removed:</strong> <span class="mono" style="color:var(--red)">' + result.events_removed.join(', ') + '</span></div>';
+        html += '<div style="font-size:12px;margin-bottom:4px"><strong>Downstream affected:</strong> <span class="mono" style="color:var(--amber)">' + result.downstream_affected + ' nodes</span></div>';
+        if (result.affected_nodes.length) html += '<div style="font-size:10px;color:var(--text-dim);margin-top:4px">Affected: ' + result.affected_nodes.join(', ') + '</div>';
+        html += '<div style="font-size:11px;margin-top:8px;color:' + (result.graph_intact ? 'var(--green)' : 'var(--red)') + '">Graph ' + (result.graph_intact ? 'remains acyclic' : 'has cycles') + '</div>';
+        html += '</div>';
+        document.getElementById('counterfactualResults').innerHTML = html;
+    } catch (e) { document.getElementById('counterfactualResults').innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
+}
+
+async function inferPurposes() {
+    try {
+        const result = await terraneanApi('/infer-purposes', { method: 'POST', body: JSON.stringify({}) });
+        if (!result.purposes.length) { document.getElementById('purposeInferResults').innerHTML = '<div class="empty-state">No purposes inferred — ingest events first</div>'; return; }
+        let html = '<div style="display:flex;flex-direction:column;gap:10px">';
+        result.purposes.forEach(p => {
+            html += '<div style="padding:12px;background:rgba(255,255,255,0.02);border-radius:4px;border-left:2px solid var(--accent-purple)">';
+            html += '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600;font-size:13px">' + p.actor + '</span><span class="tag" style="font-size:9px">Confidence: ' + (p.confidence * 100).toFixed(0) + '%</span></div>';
+            html += '<div style="font-size:12px;color:var(--accent-cyan);margin-bottom:4px">Goal: ' + p.inferred_goal + '</div>';
+            html += '<div style="font-size:11px;color:var(--text-muted)">Evidence: ' + p.evidence_count + ' events</div>';
+            if (p.action_patterns) { html += '<div style="font-size:10px;color:var(--text-dim);margin-top:4px">Actions: ' + Object.entries(p.action_patterns).map(([k,v]) => k + '(' + v + ')').join(', ') + '</div>'; }
+            if (p.target_focus) { const targets = Object.entries(p.target_focus); if (targets.length) html += '<div style="font-size:10px;color:var(--text-dim)">Targets: ' + targets.map(([k,v]) => k + '(' + v + ')').join(', ') + '</div>'; }
+            html += '</div>';
+        });
+        html += '</div>';
+        document.getElementById('purposeInferResults').innerHTML = html;
+        toast(result.purposes.length + ' purposes inferred');
+        checkTerraneanHealth();
+    } catch (e) { document.getElementById('purposeInferResults').innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
+}
+
+async function projectTrajectory() {
+    const horizon = parseInt(document.getElementById('trajectoryHorizon').value) || 10;
+    try {
+        const result = await terraneanApi('/project-trajectory', { method: 'POST', body: JSON.stringify({ horizon }) });
+        if (!result.trajectories.length) { document.getElementById('trajectoryResults').innerHTML = '<div class="empty-state">No trajectories — infer purposes first</div>'; return; }
+        let html = '<div style="display:flex;flex-direction:column;gap:10px">';
+        result.trajectories.forEach(t => {
+            html += '<div style="padding:10px;background:rgba(255,255,255,0.02);border-radius:4px">';
+            html += '<div style="font-size:12px;font-weight:600;margin-bottom:6px">' + t.actor + ' <span class="mono" style="font-size:10px;color:var(--text-dim)">(' + t.id + ')</span></div>';
+            html += '<div style="display:flex;gap:4px;flex-wrap:wrap">';
+            t.trajectory.forEach(s => {
+                const opacity = Math.max(0.3, s.confidence);
+                html += '<div style="padding:4px 8px;background:rgba(124,58,237,' + (opacity * 0.2) + ');border:1px solid rgba(124,58,237,' + opacity + ');border-radius:3px;font-size:9px;font-family:var(--font-mono)"><span style="color:var(--accent-purple)">S' + s.step + '</span> ' + s.projected_action + ' <span style="color:var(--text-dim)">' + (s.confidence * 100).toFixed(0) + '%</span></div>';
+            });
+            html += '</div></div>';
+        });
+        html += '</div>';
+        document.getElementById('trajectoryResults').innerHTML = html;
+    } catch (e) { document.getElementById('trajectoryResults').innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
+}
+
+async function findLeveragePoints() {
+    const objective = document.getElementById('leverageObjective').value.trim();
+    if (!objective) { toast('Enter an objective', 'error'); return; }
+    try {
+        const result = await terraneanApi('/leverage-points', { method: 'POST', body: JSON.stringify({ objective }) });
+        if (!result.leverage_points.length) { document.getElementById('leverageResults').innerHTML = '<div class="empty-state">No leverage points found</div>'; return; }
+        let html = '<div style="display:flex;flex-direction:column;gap:6px">';
+        result.leverage_points.slice(0, 10).forEach((lp, i) => {
+            const barWidth = Math.min(100, lp.score * 50);
+            html += '<div style="padding:8px;background:rgba(255,255,255,0.02);border-radius:3px">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span class="mono" style="font-size:11px">#' + (i+1) + ' ' + lp.node_id + '</span><span class="mono" style="font-size:10px;color:var(--accent-cyan)">Score: ' + lp.score + '</span></div>';
+            html += '<div style="font-size:10px;color:var(--text-muted);margin-bottom:4px">' + lp.actor + ' → ' + lp.action + '</div>';
+            html += '<div style="height:4px;background:rgba(255,255,255,0.04);border-radius:2px;overflow:hidden"><div style="width:' + barWidth + '%;height:100%;background:var(--accent-purple);border-radius:2px"></div></div>';
+            html += '<div style="font-size:9px;color:var(--text-dim);margin-top:2px">Betweenness: ' + lp.betweenness + ' · In: ' + lp.in_degree + ' · Out: ' + lp.out_degree + '</div>';
+            html += '</div>';
+        });
+        html += '</div>';
+        document.getElementById('leverageResults').innerHTML = html;
+    } catch (e) { document.getElementById('leverageResults').innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
+}
+
 document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
 
@@ -2359,50 +2687,91 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const loadCCTVCameras = async () => {
+    const selectedCameraRegions = new Set();
+
+    window.toggleCameraRegion = function(btn) {
+        const region = btn.dataset.region;
+        if (selectedCameraRegions.has(region)) {
+            selectedCameraRegions.delete(region);
+            btn.style.borderColor = '';
+            btn.style.color = '';
+        } else {
+            selectedCameraRegions.add(region);
+            btn.style.borderColor = 'var(--accent-cyan)';
+            btn.style.color = 'var(--accent-cyan)';
+        }
+        document.getElementById('cameraLoadStatus').textContent = selectedCameraRegions.size
+            ? 'Selected: ' + [...selectedCameraRegions].join(', ') + ' — click Load Selected'
+            : 'No regions selected — cameras will not load until you choose';
+    };
+
+    window.clearCameras = function() {
+        selectedCameraRegions.clear();
+        document.querySelectorAll('.camera-region-btn').forEach(b => { b.style.borderColor = ''; b.style.color = ''; });
+        document.getElementById('camera-grid-a').innerHTML = '<div class="empty-state" style="grid-column:1/-1">Select a region above and click Load</div>';
+        document.getElementById('camera-grid-b').innerHTML = '<div class="empty-state" style="grid-column:1/-1">Select a region above and click Load</div>';
+        document.getElementById('cameraGroupAHeader').textContent = 'Group A — Select a region';
+        document.getElementById('cameraGroupBHeader').textContent = 'Group B — Select a region';
+        document.getElementById('cameraGroupAStatus').textContent = 'IDLE';
+        document.getElementById('cameraGroupBStatus').textContent = 'IDLE';
+        document.getElementById('cameraGroupADot').style.background = 'var(--text-muted)';
+        document.getElementById('cameraGroupBDot').style.background = 'var(--text-muted)';
+        document.getElementById('cameraGroupAFooter').textContent = 'No streams loaded';
+        document.getElementById('cameraGroupBFooter').textContent = 'No streams loaded';
+        document.getElementById('cameraLoadStatus').textContent = 'Cleared — no regions selected';
+    };
+
+    window.loadSelectedCameras = async function() {
+        if (selectedCameraRegions.size === 0) {
+            document.getElementById('cameraLoadStatus').textContent = 'No regions selected — pick at least one region';
+            return;
+        }
+        const regions = [...selectedCameraRegions];
+        document.getElementById('cameraLoadStatus').textContent = 'Loading cameras from: ' + regions.join(', ') + '...';
+
         try {
             const response = await api('/babel/cctv');
             const cameras = response.cameras || [];
-            
-            // Group cameras by region/country
-            const groups = {
-                'UK': cameras.filter(c => c.country === 'UK'),
-                'US': cameras.filter(c => c.country === 'US'),
-                'Europe': cameras.filter(c => ['BG', 'GR', 'RS', 'MK', 'RO', 'TR', 'IT', 'CZ', 'SK', 'DE', 'FR', 'ES', 'PL', 'CH', 'FI', 'IS'].includes(c.country)),
-                'Asia': cameras.filter(c => ['JP', 'HK', 'TW'].includes(c.country)),
-                'Australia': cameras.filter(c => c.country === 'AU')
-            };
-            
-            // Get the two largest groups for Group A and Group B
-            const sortedGroups = Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
-            const groupA = sortedGroups[0] ? sortedGroups[0][1].slice(0, 25) : [];
-            const groupB = sortedGroups[1] ? sortedGroups[1][1].slice(0, 25) : [];
-            const groupAName = sortedGroups[0] ? sortedGroups[0][0] : 'Region A';
-            const groupBName = sortedGroups[1] ? sortedGroups[1][0] : 'Region B';
-            
-            const buildCameraGrid = (elementId, cameraList, startIdx) => {
+
+            const regionCountryMap = { 'UK': 'UK', 'US': 'US', 'Europe': ['BG','GR','RS','MK','RO','TR','IT','CZ','SK','DE','FR','ES','PL','CH','FI','IS'], 'Asia': ['JP','HK','TW'], 'Australia': 'AU' };
+
+            const filteredCameras = cameras.filter(c => {
+                return regions.some(r => {
+                    const mapping = regionCountryMap[r];
+                    if (Array.isArray(mapping)) return mapping.includes(c.country);
+                    return c.country === mapping;
+                });
+            });
+
+            const half = Math.ceil(filteredCameras.length / 2);
+            const groupA = filteredCameras.slice(0, half);
+            const groupB = filteredCameras.slice(half);
+
+            const buildCameraGrid = (elementId, cameraList, startIdx, headerId, statusId, dotId, footerId, regionLabel) => {
                 const grid = document.getElementById(elementId);
                 if (!grid) return;
-                
                 if (cameraList.length === 0) {
-                    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">No cameras available for this region</div>';
+                    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">No cameras found for selected regions</div>';
+                    document.getElementById(statusId).textContent = 'EMPTY';
+                    document.getElementById(dotId).style.background = 'var(--text-muted)';
+                    document.getElementById(headerId).textContent = regionLabel + ' — No cameras';
+                    document.getElementById(footerId).textContent = '0 streams';
                     return;
                 }
-                
                 let cameraHtml = '';
                 cameraList.forEach((cam, idx) => {
                     const camIndex = startIdx + idx;
                     const paddedIndex = String(camIndex).padStart(2, '0');
-                    const isTrackingCam = idx % 3 === 0; // Every 3rd camera shows tracking
+                    const isTrackingCam = idx % 3 === 0;
                     const boxW = 18 + Math.floor(Math.random() * 20);
                     const boxH = 18 + Math.floor(Math.random() * 20);
                     const boxTop = 15 + Math.floor(Math.random() * 45);
                     const boxLeft = 15 + Math.floor(Math.random() * 45);
                     const scanDelay = (Math.random() * 3).toFixed(1);
-                    
                     cameraHtml += `
                         <div class="camera-box" title="${cam.name} - ${cam.city}, ${cam.country} (${cam.source})">
                             <img src="${cam.feed_url}" style="width:100%;height:100%;object-fit:cover;opacity:0.6;" onerror="this.style.display='none';this.parentElement.querySelector('.camera-feed-mock').style.opacity='0.5';" />
+                            <div class="camera-feed-mock"></div>
                             <div class="camera-feed-vector"></div>
                             ${isTrackingCam ? `<div class="camera-target-box" style="width: ${boxW}%; height: ${boxH}%; top: ${boxTop}%; left: ${boxLeft}%; animation-delay: ${scanDelay}s;"></div>` : ''}
                             <div class="camera-scanline" style="animation-delay: ${scanDelay}s;"></div>
@@ -2411,31 +2780,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                     `;
                 });
                 grid.innerHTML = cameraHtml;
+                document.getElementById(statusId).textContent = 'LIVE';
+                document.getElementById(dotId).style.background = 'var(--green)';
+                document.getElementById(headerId).textContent = regionLabel + ' (' + cameraList.length + ')';
+                document.getElementById(footerId).textContent = cameraList.length + ' streams loaded';
             };
-            
-            buildCameraGrid('camera-grid-a', groupA, 1);
-            buildCameraGrid('camera-grid-b', groupB, 26);
-            
-            // Update camera group headers with region name and count
-            const headerA = document.querySelector('#camera-grid-a')?.closest('.camera-group-container')?.querySelector('.camera-group-header span:first-child');
-            const headerB = document.querySelector('#camera-grid-b')?.closest('.camera-group-container')?.querySelector('.camera-group-header span:first-child');
-            if (headerA) headerA.textContent = `Camera Group ${groupAName} (${groupA.length})`;
-            if (headerB) headerB.textContent = `Camera Group ${groupBName} (${groupB.length})`;
-            
+
+            const regionLabel = regions.join(' + ');
+            buildCameraGrid('camera-grid-a', groupA, 1, 'cameraGroupAHeader', 'cameraGroupAStatus', 'cameraGroupADot', 'cameraGroupAFooter', 'Group A — ' + regionLabel);
+            buildCameraGrid('camera-grid-b', groupB, half + 1, 'cameraGroupBHeader', 'cameraGroupBStatus', 'cameraGroupBDot', 'cameraGroupBFooter', 'Group B — ' + regionLabel);
+
+            document.getElementById('cameraLoadStatus').textContent = 'Loaded ' + filteredCameras.length + ' cameras from: ' + regions.join(', ') + ' — auto-refresh every 5 minutes';
         } catch (e) {
             console.error('Failed to load CCTV cameras:', e);
-            const gridA = document.getElementById('camera-grid-a');
-            const gridB = document.getElementById('camera-grid-b');
-            if (gridA) gridA.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Failed to load cameras: ' + e.message + '</div>';
-            if (gridB) gridB.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Failed to load cameras: ' + e.message + '</div>';
+            document.getElementById('cameraLoadStatus').textContent = 'Failed to load cameras: ' + e.message + ' — external API may be unreachable, try again';
+            document.getElementById('camera-grid-a').innerHTML = '<div class="empty-state" style="grid-column:1/-1">Failed: ' + e.message + '</div>';
+            document.getElementById('camera-grid-b').innerHTML = '<div class="empty-state" style="grid-column:1/-1">Failed: ' + e.message + '</div>';
         }
     };
-    
-    // Load cameras on page load
-    loadCCTVCameras();
-    
-    // Refresh every 5 minutes
-    setInterval(loadCCTVCameras, 5 * 60 * 1000);
+
+    setInterval(() => {
+        if (selectedCameraRegions.size > 0) loadSelectedCameras();
+    }, 5 * 60 * 1000);
 });
 
 // OSINT Intelligence Functions

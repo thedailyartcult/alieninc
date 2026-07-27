@@ -1,318 +1,723 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-Frame-Options" content="DENY">
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-    <title>Panteon — Sign In</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+<meta charset="utf-8">
+<title>Panteon — Secure Portal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+<meta name="theme-color" content="#ffffff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --p-bg:#ffffff;
+    --p-bg-header:#0a0a0b;
+    --p-accent:#DFF140;
+    --p-warn:#e65100;
+    --p-danger:#c62828;
+    --p-text:#111213;
+    --p-muted:#6b6d70;
+    --p-border:#d8d9dc;
+    --p-border-focus:#111213;
+    --font-sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif;
+    --font-tech:"Space Grotesk",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{height:100%;}
+  body{
+    background-color:var(--p-bg);
+    font-family:var(--font-sans);
+    color:var(--p-text);
+    min-height:100%;
+    display:flex;
+    flex-direction:column;
+    -webkit-font-smoothing:antialiased;
+  }
 
-        :root {
-            --bg: #000000;
-            --bg-card: #0a0a0a;
-            --text: #ffffff;
-            --text-muted: #88898c;
-            --text-dim: #555555;
-            --accent: #DFF140;
-            --border: rgba(255, 255, 255, 0.08);
-            --border-hover: rgba(255, 255, 255, 0.15);
-            --font-sans: "Inter", -apple-system, sans-serif;
-            --font-tech: "Space Grotesk", monospace;
-        }
+  header{
+    background:var(--p-bg-header);
+    padding:20px 24px 16px;
+    text-align:center;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+    flex-shrink:0;
+  }
+  header svg{width:150px;height:auto;color:#ffffff;display:block;margin:0 auto;}
+  header .subtitle{
+    display:block;
+    margin-top:8px;
+    font-size:.6rem;
+    font-weight:600;
+    letter-spacing:.3em;
+    text-transform:uppercase;
+    color:rgba(255,255,255,0.4);
+    font-family:var(--font-tech);
+  }
 
-        html, body {
-            height: 100%;
-            background: var(--bg);
-            color: var(--text);
-            font-family: var(--font-sans);
-            font-size: 14px;
-            line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-        }
+  .session-bar{
+    background:#f8f8f9;
+    border-bottom:1px solid #e9eaec;
+    padding:0 24px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    height:36px;
+    flex-shrink:0;
+  }
+  .session-bar .left{display:flex;align-items:center;gap:12px;}
+  .session-bar a{
+    display:inline-flex;align-items:center;gap:4px;
+    font-size:.72rem;font-family:var(--font-tech);font-weight:500;
+    color:var(--p-muted);text-decoration:none;letter-spacing:.03em;
+    text-transform:uppercase;transition:color .2s;
+  }
+  .session-bar a:hover{color:var(--p-text);}
+  .session-bar a svg{width:14px;height:14px;fill:currentColor;}
+  .session-bar .timer{
+    font-size:.7rem;font-family:var(--font-tech);font-weight:500;
+    color:var(--p-muted);letter-spacing:.04em;
+  }
+  .session-bar .timer strong{color:var(--p-text);font-weight:600;}
+  .progress-track{
+    height:2px;background:#e9eaec;flex-shrink:0;
+  }
+  .progress-fill{
+    height:100%;width:100%;
+    background:var(--p-bg-header);
+    transition:width 1s linear;
+  }
 
-        a {
-            color: inherit;
-            text-decoration: none;
-        }
+  main{
+    flex:1 1 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:40px 20px;
+  }
 
-        button {
-            font-family: inherit;
-            cursor: pointer;
-            border: none;
-            background: none;
-            color: inherit;
-        }
+  .card{
+    width:100%;
+    max-width:440px;
+    background:#ffffff;
+    border:1px solid var(--p-border);
+    border-radius:2px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.04);
+  }
 
-        .login-container {
-            width: 100%;
-            max-width: 380px;
-            animation: fadeIn 0.4s ease;
-        }
+  .card-header{
+    padding:28px 36px 0;
+    text-align:center;
+  }
+  .card-header h1{
+    font-family:var(--font-tech);
+    font-size:.82rem;
+    font-weight:600;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--p-text);
+    margin-bottom:4px;
+  }
+  .card-header p{
+    font-size:.82rem;
+    color:var(--p-muted);
+  }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+  .card-body{padding:28px 36px 20px;}
 
-        .logo-wrap {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 48px;
-        }
+  .restricted{
+    background:#fff3e0;
+    border-left:3px solid var(--p-warn);
+    padding:10px 14px;
+    margin-bottom:24px;
+    font-size:.8rem;
+    line-height:1.5;
+    color:#bf360c;
+  }
+  .restricted strong{font-weight:600;}
 
-        .logo-wrap svg {
-            width: 180px;
-            height: auto;
-            color: var(--text);
-        }
+  .callout-error{
+    display:none;
+    background:#ffebee;
+    border-left:3px solid var(--p-danger);
+    padding:10px 14px;
+    margin-bottom:20px;
+    font-size:.8rem;
+    line-height:1.5;
+    color:#b71c1c;
+  }
+  .callout-error.show{display:block;}
+  .callout-error .label{font-weight:600;display:block;margin-bottom:2px;}
 
-        .login-title {
-            font-size: 20px;
-            font-weight: 500;
-            text-align: center;
-            margin-bottom: 8px;
-            letter-spacing: -0.01em;
-        }
+  .callout-success{
+    display:none;
+    background:#e8f5e9;
+    border-left:3px solid #2e7d32;
+    padding:10px 14px;
+    margin-bottom:20px;
+    font-size:.8rem;
+    line-height:1.5;
+    color:#1b5e20;
+  }
+  .callout-success.show{display:block;}
 
-        .login-sub {
-            font-size: 13px;
-            color: var(--text-muted);
-            text-align: center;
-            margin-bottom: 32px;
-        }
+  .field{position:relative;margin-bottom:28px;}
+  .field label{
+    position:absolute;
+    left:30px;top:7px;
+    font-size:.9rem;
+    color:var(--p-muted);
+    pointer-events:none;
+    transition:all .15s ease;
+  }
+  .field.is-focused label,
+  .field.is-filled label{
+    top:-13px;
+    font-size:.68rem;
+    font-family:var(--font-tech);
+    font-weight:500;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    color:var(--p-text);
+  }
+  .field.is-focused label{color:var(--p-bg-header);}
+  .field-row{display:flex;align-items:center;}
+  .field-icon{
+    flex:0 0 26px;
+    color:var(--p-muted);
+    display:inline-flex;
+    align-items:center;
+  }
+  .field-icon svg{width:17px;height:17px;fill:currentColor;}
+  .field input{
+    flex:1;width:100%;
+    border:0;border-bottom:1px solid var(--p-border);
+    padding:7px 4px 6px;
+    font-size:.95rem;
+    font-family:var(--font-sans);
+    background:transparent;
+    color:var(--p-text);
+    outline:none;
+    transition:border-color .15s;
+  }
+  .field input:focus{border-bottom:2px solid var(--p-border-focus);padding-bottom:5px;}
+  .field .toggle-pw{
+    flex:0 0 auto;padding:4px;cursor:pointer;
+    color:var(--p-muted);background:none;border:none;
+    display:inline-flex;align-items:center;
+  }
+  .field .toggle-pw:hover{color:var(--p-text);}
+  .field .toggle-pw svg{width:18px;height:18px;fill:currentColor;}
 
-        .form-group {
-            margin-bottom: 16px;
-        }
+  .actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    margin-top:4px;
+  }
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;
+    border:0;border-radius:2px;
+    padding:9px 24px;
+    font-size:.78rem;font-weight:600;
+    font-family:var(--font-tech);
+    letter-spacing:.06em;text-transform:uppercase;
+    cursor:pointer;
+    transition:background .15s,box-shadow .15s,transform .1s;
+  }
+  .btn-cancel{
+    background:#f0f0f2;color:var(--p-text);
+    border:1px solid var(--p-border);
+  }
+  .btn-cancel:hover{background:#e6e6e9;}
+  .btn-submit{
+    position:relative;
+    background:var(--p-bg-header);color:#fff;
+    box-shadow:0 1px 4px rgba(0,0,0,.2);
+  }
+  .btn-submit:hover{background:#1a1a1c;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+  .btn-submit:active{transform:scale(0.98);}
+  .btn-submit[disabled]{opacity:.55;cursor:default;transform:none;}
+  .btn-submit.is-loading{color:transparent;}
+  .btn-submit.is-loading::after{
+    content:"";position:absolute;top:50%;left:50%;
+    width:14px;height:14px;margin:-7px 0 0 -7px;
+    border:2px solid rgba(255,255,255,.3);border-top-color:#fff;
+    border-radius:50%;animation:spin .6s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
 
-        .form-label {
-            display: block;
-            font-size: 11px;
-            font-weight: 500;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            color: var(--text-dim);
-            margin-bottom: 8px;
-            font-family: var(--font-tech);
-        }
+  .divider{border-top:1px solid #eee;margin:20px 0 14px;}
+  .meta-links{text-align:center;font-size:.78rem;color:var(--p-muted);}
+  .meta-links a{color:var(--p-text);font-weight:500;text-decoration:none;}
+  .meta-links a:hover{text-decoration:underline;}
 
-        .form-input {
-            width: 100%;
-            padding: 12px 16px;
-            font-size: 14px;
-            font-family: var(--font-sans);
-            color: var(--text);
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            outline: none;
-            transition: border-color 0.2s, background 0.2s;
-        }
+  footer{
+    flex-shrink:0;
+    background:#f8f8f9;
+    border-top:1px solid #e9eaec;
+    padding:16px 24px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:.72rem;
+    color:var(--p-muted);
+    font-family:var(--font-tech);
+    letter-spacing:.03em;
+  }
+  footer .classification{
+    font-weight:600;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--p-warn);
+    font-size:.65rem;
+  }
 
-        .form-input:focus {
-            border-color: var(--accent);
-            background: #111;
-        }
+  #notify{
+    position:fixed;right:16px;bottom:16px;z-index:9999;
+    min-width:240px;max-width:340px;
+    background:var(--p-danger);color:#fff;
+    border-radius:2px;box-shadow:0 4px 16px rgba(0,0,0,.2);
+    padding:12px 16px;font-size:.82rem;line-height:1.4;
+    opacity:0;transform:translateY(10px);
+    transition:opacity .2s,transform .2s;pointer-events:none;
+  }
+  #notify.show{opacity:1;transform:translateY(0);pointer-events:auto;}
+  #notify.success{background:#2e7d32;}
 
-        .form-input::placeholder {
-            color: var(--text-dim);
-        }
+  @media(max-width:540px){
+    header svg{width:120px;}
+    .card-header,.card-body{padding-left:24px;padding-right:24px;}
+    footer{flex-direction:column;gap:8px;text-align:center;}
+  }
 
-        .login-btn {
-            width: 100%;
-            padding: 13px 24px;
-            font-size: 14px;
-            font-weight: 600;
-            font-family: var(--font-sans);
-            background: var(--accent);
-            color: #000;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 8px;
-            transition: opacity 0.2s, transform 0.1s;
-            letter-spacing: 0.02em;
-        }
-
-        .login-btn:hover {
-            opacity: 0.9;
-        }
-
-        .login-btn:active {
-            transform: scale(0.99);
-        }
-
-        .login-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .error-msg {
-            font-size: 12px;
-            color: #f87171;
-            margin-top: 12px;
-            min-height: 18px;
-            text-align: center;
-        }
-
-        .success-msg {
-            font-size: 12px;
-            color: var(--accent);
-            margin-top: 12px;
-            min-height: 18px;
-            text-align: center;
-        }
-
-        .footer-note {
-            font-size: 11px;
-            color: var(--text-dim);
-            text-align: center;
-            margin-top: 40px;
-            line-height: 1.6;
-        }
-
-        .footer-note a {
-            color: var(--text-muted);
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1px;
-            transition: color 0.2s, border-color 0.2s;
-        }
-
-        .footer-note a:hover {
-            color: var(--text);
-            border-color: var(--border-hover);
-        }
-
-        @media (max-width: 480px) {
-            body {
-                padding: 16px;
-            }
-
-            .logo-wrap svg {
-                width: 140px;
-            }
-
-            .login-title {
-                font-size: 18px;
-            }
-        }
-    </style>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; connect-src 'self' https://*.supabase.co">
+  /* ── PANTEON SYSTEM COHESIVE THOM BROWNE BLINDS SHUTTER ANIMATION ── */
+  body.no-scroll {
+    overflow: hidden !important;
+  }
+  .blinds-container {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    animation-name: blind-fade-in-out;
+    z-index: 10000000000;
+    pointer-events: none;
+    animation-fill-mode: forwards;
+    animation-duration: 2s;
+  }
+  @keyframes blind-fade-in-out {
+    0% { opacity: 1;}
+    30% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  /* High-tech procedural scanner noise layer */
+  .blinds-container:after {
+    content: " ";
+    position: absolute;
+    left: 0; right: 0; bottom: 0; top: 0;
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAAAUVBMVEWFhYWDg4N3d3dtbW17e3t1dXWBgYGHh4d5eXlzc3OLi4ubm5uVlZWPj4+NjY19fX2JiYl/f39ra2uRkZGZmZlpaWmXl5dvb29xcXGTk5NnZ2c8TV1mAAAAG3RSTlNAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAvEOwtAAAFVklEQVR4XpWWB67c2BUFb3g557T/hRo9/WUMZHlgr4Bg8Z4qQgQJlHI4A8SzFVrapvmTF9O7dmYRFZ60YiBhJRCgh1FYhiLAmdvX0CzTOpNE77ME0Zty/nWWzchDtiqrmQDeuv3powQ5ta2eN0FY0InkqDD73lT9c9lEzwUNqgFHs9VQce3TVClFCQrSTfOiYkVJQBmpbq2L6iZavPnAPcoU0dSw0SUTqz/GtrGuXfbyyBniKykOWQWGqwwMA7QiYAxi+IlPdqo+hYHnUt5ZPfnsHJyNiDtnpJyayNBkF6cWoYGAMY92U2hXHF/C1M8uP/ZtYdiuj26UdAdQQSXQErwSOMzt/XWRWAz5GuSBIkwG1H3FabJ2OsUOUhGC6tK4EMtJO0ttC6IBD3kM0ve0tJwMdSfjZo+EEISaeTr9P3wYrGjXqyC1krcKdhMpxEnt5JetoulscpyzhXN5FRpuPHvbeQaKxFAEB6EN+cYN6xD7RYGpXpNndMmZgM5Dcs3YSNFDHUo2LGfZuukSWyUYirJAdYbF3MfqEKmjM+I2EfhA94iG3L7uKrR+GdWD73ydlIB+6hgref1QTlmgmbM3/LeX5GI1Ux1RWpgxpLuZ2+I+IjzZ8wqE4nilvQdkUdfhzI5QDWy+kw5Wgg2Ggto/bbJGwl1pNrE7RuOX7PeMRUERVaPpEs+yqeoSmuOlokqw49pgomjLeh7icHNlG19yjs6XXOMedYm5xH2YxpV2tc0Ro2jJfxC50ApuxGob7lMsxfTbeUv07TyYxpeLucEH1gNd4IKH2LAg5TdVhlCafZvpskfncCfx8pOhJzd76bJWeYFnFciwcYfubRc12Ip/ppIhA1/mSZ/RxjFDrJC5xifFjJpY2Xl5zXdguFqYyTR1zSp1Y9p+tktDYYSNflcxI0iyO4TPBdlRcpeqjK/piF5bklq77VSEaA+z8qmJTFzIWiitbnzR794USKBUaT0NTEsVjZqLaFVqJoPN9ODG70IPbfBHKK+/q/AWR0tJzYHRULOa4MP+W/HfGadZUbfw177G7j/OGbIs8TahLyynl4X4RinF793Oz+BU0saXtUHrVBFT/DnA3ctNPoGbs4hRIjTok8i+algT1lTHi4SxFvONKNrgQFAq2/gFnWMXgwffgYMJpiKYkmW3tTg3ZQ9Jq+f8XN+A5eeUKHWvJWJ2sgJ1Sop+wwhqFVijqWaJhwtD8MNlSBeWNNWTa5Z5kPZw5+LbVT99wqTdx29lMUH4OIG/D86ruKEauBjvH5xy6um/Sfj7ei6UUVk4AIl3MyD4MSSTOFgSwsH/QJWaQ5as7ZcmgBZkzjjU1UrQ74ci1gWBCSGHtuV1H2mhSnO3Wp/3fEV5a+4wz//6qy8JxjZsmxxy5+4w9CDNJY09T072iKG0EnOS0arEYgXqYnXcYHwjTtUNAcMelOd4xpkoqiTYICWFq0JSiPfPDQdnt+4/wuqcXY47QILbgAAAABJRU5ErkJoggling==);
+    animation: noiseAnim 0.5s 1 linear normal;
+  }
+  @keyframes noiseAnim {
+    0%   { background-position: 10px 200px; }
+    20%  { background-position: -50px 0; }
+    40%  { background-position: 100px -10px; }
+    60%  { background-position: 0 -150px; }
+    80%  { background-position: -100px -30px; }
+    100% { background-position: 160px -60px; }
+  }
+  .blinds-wrapper {
+    width: 100%;
+    height: 100%;
+    font-size: 0;
+    overflow: hidden;
+    perspective: 2000px;
+    opacity: 1; 
+  }
+  .blind-row, .blind-row:before, .cloth, .blinds-container {
+    animation-duration: 3s;
+    transition: ease all 0.5s;
+    animation-iteration-count: 1;
+  }
+  /* Dark tech-shutter panels matching Panteon values */
+  .blind-row {
+    height: 3.33%;
+    width: 100%;
+    display: inline-block;
+    box-shadow: 0px 3px 12px 0px rgba(0, 0, 0, 0.95);
+    margin-bottom: 0.2%;
+    transform: rotateX(20deg);
+    position: relative;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.6);
+    background: linear-gradient(90deg, #050506 0%, var(--p-bg-header, #0a0a0b) 31%, #111213 68%, #1a1b1d 84%, var(--p-bg-header, #0a0a0b) 100%);
+    animation-name: blind-rotation;
+  }
+  @keyframes blind-rotation {
+    from { transform: rotateX(20deg);}
+    to {transform: rotateX(-84deg);}
+  }
+  .blind-row:before {
+    content: " ";
+    position: absolute;
+    top: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.45);
+    height: 3.33%;
+    box-shadow: 0px 1px 12px rgba(0, 0, 0, 0.85);
+    animation-name: shadow-animation;
+  }
+  @keyframes shadow-animation {
+    from {height: 14%; box-shadow: 0px 1px 12px rgba(0,0,0,0.6);}
+    to { height: 80%; box-shadow: 0px 1px 30px rgba(0,0,0,0.95);}
+  }
+  .cloths-wrapper {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    z-index: 1;
+  }
+  /* Premium vertical ribbon with Panteon neon highlights */
+  .cloth {
+    height: 100%;
+    width: 2.7%;
+    max-width: 18vh;
+    background-color: var(--p-bg-header, #0a0a0b);
+    border-left: 2px solid var(--p-accent, #DFF140);
+    border-right: 2px solid var(--p-accent, #DFF140);
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    box-shadow: 0px 1px 15px rgba(0, 0, 0, 0.85);
+    animation-name: texture-animation;
+  }
+  @keyframes texture-animation {
+    from {background-position: top center;}
+    to { background-position: bottom center; }
+  }
+  .cloth:before {
+    content: " ";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(90deg, rgba(10,10,11,0.25) 0%, rgba(10,10,11,0.2) 26%, rgba(255,255,255,0.03) 50%, rgba(10,10,11,0.17) 78%, rgba(0,0,0,0.45) 100%);
+  }
+  .cloth:after {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 100%;
+    content: " ";
+    background: linear-gradient(90deg, rgba(0,0,0,0.3) 0%, rgba(20,20,22,0.15) 24%, rgba(0,0,0,0.2) 64%, rgba(255,255,255,0.02) 85%, rgba(10,10,11,0.15) 99%, rgba(10,10,11,0.15) 100%);
+  }
+  .cloth:first-child { left: 15%; }
+  .cloth:last-child  { right: 15%; }
+  .cloth-noise {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    opacity: 0.3;
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAAAUVBMVEWFhYWDg4N3d3dtbW17e3t1dXWBgYGHh4d5eXlzc3OLi4ubm5uVlZWPj4+NjY19fX2JiYl/f39ra2uRkZGZmZlpaWmXl5dvb29xcXGTk5NnZ2c8TV1mAAAAG3RSTlNAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAvEOwtAAAFVklEQVR4XpWWB67c2BUFb3g557T/hRo9/WUMZHlgr4Bg8Z4qQgQJlHI4A8SzFVrapvmTF9O7dmYRFZ60YiBhJRCgh1FYhiLAmdvX0CzTOpNE77ME0Zty/nWWzchDtiqrmQDeuv3powQ5ta2eN0FY0InkqDD73lT9c9lEzwUNqgFHs9VQce3TVClFCQrSTfOiYkVJQBmpbq2L6iZavPnAPcoU0dSw0SUTqz/GtrGuXfbyyBniKykOWQWGqwwMA7QiYAxi+IlPdqo+hYHnUt5ZPfnsHJyNiDtnpJyayNBkF6cWoYGAMY92U2hXHF/C1M8uP/ZtYdiuj26UdAdQQSXQErwSOMzt/XWRWAz5GuSBIkwG1H3FabJ2OsUOUhGC6tK4EMtJO0ttC6IBD3kM0ve0tJwMdSfjZo+EEISaeTr9P3wYrGjXqyC1krcKdhMpxEnt5JetoulscpyzhXN5FRpuPHvbeQaKxFAEB6EN+cYN6xD7RYGpXpNndMmZgM5Dcs3YSNFDHUo2LGfZuukSWyUYirJAdYbF3MfqEKmjM+I2EfhA94iG3L7uKrR+GdWD73ydlIB+6hgref1QTlmgmbM3/LeX5GI1Ux1RWpgxpLuZ2+I+IjzZ8wqE4nilvQdkUdfhzI5QDWy+kw5Wgg2Ggto/bbJGwl1pNrE7RuOX7PeMRUERVaPpEs+yqeoSmuOlokqw49pgomjLeh7icHNlG19yjs6XXOMedYm5xH2YxpV2tc0Ro2jJfxC50ApuxGob7lMsxfTbeUv07TyYxpeLucEH1gNd4IKH2LAg5TdVhlCafZvpskfncCfx8pOhJzd76bJWeYFnFciwcYfubRc12Ip/ppIhA1/mSZ/RxjFDrJC5xifFjJpY2Xl5zXdguFqYyTR1zSp1Y9p+tktDYYSNflcxI0iyO4TPBdlRcpeqjK/piF5bklq77VSEaA+z8qmJTFzIWiitbnzR794USKBUaT0NTEsVjZqLaFVqJoPN9ODG70IPbfBHKK+/q/AWR0tJzYHRULOa4MP+W/HfGadZUbfw177G7j/OGbIs8TahLyynl4X4RinF793Oz+BU0saXtUHrVBFT/DnA3ctNPoGbs4hRIjTok8i+algT1lTHi4SxFvONKNrgQFAq2/gFnWMXgwffgYMJpiKYkmW3tTg3ZQ9Jq+f8XN+A5eeUKHWvJWJ2sgJ1Sop+wwhqFVijqWaJhwtD8MNlSBeWNNWTa5Z5kPZw5+LbVT99wqTdx29lMUH4OIG/D86ruKEauBjvH5xy6um/Sfj7ei6UUVk4AIl3MyD4MSSTOFgSwsH/QJWaQ5as7ZcmgBZkzjjU1UrQ74ci1gWBCSGHtuV1H2mhSnO3Wp/3fEV5a+4wz//6qy8JxjZsmxxy5+4w9CDNJY09T072iKG0EnOS0arEYgXqYnXcYHwjTtUNAcMelOd4xpkoqiTYICWFq0JSiPfPDQdnt+4/wuqcXY47QILbgAAAABJRU5ErkJoggling==);
+  }
+</style>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; connect-src 'self' https://*.supabase.co">
 </head>
-<body>
+<body class="no-scroll">
 
-    <svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden">
-        <defs>
-            <filter id="panteon-brush" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.23" numOctaves="4" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="0.85" xChannelSelector="R" yChannelSelector="B"/></filter>
-            <mask id="panteon-roll"><rect width="100" height="100" fill="white"/><path d="M16 60 C20 58 24 59 27 63" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round"/></mask>
-            <g id="panteon-lockup" fill="currentColor"><g filter="url(#panteon-brush)"><path d="M63 19 C57 19 54 23 54 29 L54 55 C54 59 56 62 60 64 L46 64 C42 64 40 66 40 68 C41 70 44 70 48 70 L65 70 C69 70 72 67 72 63 L72 29 C72 23 69 19 63 19 Z"/><circle cx="20" cy="64" r="7" mask="url(#panteon-roll)"/></g><text x="82" y="67" fill="currentColor" font-family="Inter, Arial, sans-serif" font-size="40" font-weight="500" letter-spacing="1.5">PANTEON</text></g>
-        </defs>
-    </svg>
+<!-- DIRECT INTEGRATION: THOM BROWNE STYLE SHUTTER BLINDS (PANTEON CORE THEME) -->
+<div id="blinds-container" class="blinds-container" data-blinds-container="">
+  <div class="cloths-wrapper">
+    <div class="cloth"><div class="cloth-noise"></div></div>
+    <div class="cloth"><div class="cloth-noise"></div></div>
+  </div>
+  <div class="blinds-wrapper">
+    <div class="blind-row"></div><div class="blind-row"></div><div class="blind-row"></div>
+    <div class="blind-row"></div><div class="blind-row"></div><div class="blind-row"></div>
+    <div class="blind-row"></div><div class="blind-row"></div><div class="blind-row"></div>
+    <div class="blind-row"></div><div class="blind-row"></div><div class="blind-row"></div>
+    <div class="blind-row"></div><div class="blind-row"></div><div class="blind-row"></div>
+    <div class="blind-row"></div><div class="blind-row"></div><div class="blind-row"></div>
+    <div class="blind-row"></div><div class="blind-row"></div><div class="blind-row"></div>
+    <div class="blind-row"></div><div class="blind-row"></div><div class="blind-row"></div>
+    <div class="blind-row"></div><div class="blind-row"></div><div class="blind-row"></div>
+    <div class="blind-row"></div><div class="blind-row"></div><div class="blind-row"></div>
+  </div>
+</div>
 
-    <div class="login-container">
-        <div class="logo-wrap">
-            <svg viewBox="0 0 295 100" role="img" aria-label="Panteon"><use href="#panteon-lockup"/></svg>
+<svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden">
+    <defs>
+        <filter id="panteon-brush" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.23" numOctaves="4" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="0.85" xChannelSelector="R" yChannelSelector="B"/></filter>
+        <mask id="panteon-roll"><rect width="100" height="100" fill="white"/><path d="M16 60 C20 58 24 59 27 63" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round"/></mask>
+        <g id="panteon-lockup" fill="currentColor"><g filter="url(#panteon-brush)"><path d="M63 19 C57 19 54 23 54 29 L54 55 C54 59 56 62 60 64 L46 64 C42 64 40 66 40 68 C41 70 44 70 48 70 L65 70 C69 70 72 67 72 63 L72 29 C72 23 69 19 63 19 Z"/><circle cx="20" cy="64" r="7" mask="url(#panteon-roll)"/></g><text x="82" y="67" fill="currentColor" font-family="Inter, Arial, sans-serif" font-size="40" font-weight="500" letter-spacing="1.5">PANTEON</text></g>
+    </defs>
+</svg>
+
+<header>
+  <svg viewBox="0 0 295 100" role="img" aria-label="Panteon"><use href="#panteon-lockup"/></svg>
+  <span class="subtitle">Secure Portal</span>
+</header>
+
+<div class="session-bar">
+  <div class="left">
+    <a href="/" title="Return to Panteon">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      Return
+    </a>
+  </div>
+  <div class="timer">Session expires in <strong id="countdown">5:00</strong></div>
+</div>
+<div class="progress-track">
+  <div class="progress-fill" id="progressFill"></div>
+</div>
+
+<main>
+  <div class="card">
+    <div class="card-header">
+      <h1>Secure Portal</h1>
+      <p>Sign in to access your dashboard</p>
+    </div>
+    <div class="card-body">
+
+      <div class="restricted">
+        <strong>Authorized personnel only.</strong> This area is restricted to Panteon internal users. All access attempts are logged and monitored.
+      </div>
+
+      <div class="callout-error" id="errorCallout">
+        <span class="label">Authentication Failed</span>
+        <span id="errorText">Invalid credentials.</span>
+      </div>
+
+      <div class="callout-success" id="successCallout">
+        <strong>Authenticated.</strong> Redirecting to dashboard...
+      </div>
+
+      <form id="authForm" autocomplete="off">
+
+        <div class="field" id="fieldUser">
+          <label for="user">Email address</label>
+          <div class="field-row">
+            <span class="field-icon">
+              <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            </span>
+            <input type="email" id="user" name="user" tabindex="1" autocomplete="username" required autofocus>
+          </div>
         </div>
 
-        <h1 class="login-title">Admin Console</h1>
-        <p class="login-sub">Sign in to access your dashboard</p>
+        <div class="field" id="fieldPassword">
+          <label for="password">Password</label>
+          <div class="field-row">
+            <span class="field-icon">
+              <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM9 8V6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9z"/></svg>
+            </span>
+            <input type="password" id="password" name="password" tabindex="2" autocomplete="current-password">
+            <button type="button" class="toggle-pw" id="togglePw" aria-label="Show password"></button>
+          </div>
+        </div>
 
-        <form id="loginForm" autocomplete="off">
-            <div class="form-group">
-                <label class="form-label" for="email">Email</label>
-                <input type="email" id="email" class="form-input" placeholder="you@alieninc.tech" required autofocus autocomplete="email">
-            </div>
-            <div class="form-group">
-                <label class="form-label" for="password">Password</label>
-                <input type="password" id="password" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
-            </div>
-            <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
-            <div class="error-msg" id="errorMsg"></div>
-            <div class="success-msg" id="successMsg"></div>
-        </form>
+        <div class="actions">
+          <button type="button" class="btn btn-cancel" tabindex="21" onclick="window.location='/';">Cancel</button>
+          <button type="submit" class="btn btn-submit" id="submitBtn" tabindex="20">Sign In</button>
+        </div>
 
-        <p class="footer-note">
-            Need access? <a href="mailto:admin@alieninc.tech">Contact admin</a>
-        </p>
+        <div class="divider"></div>
+        <div class="meta-links">
+          Need access? <a href="mailto:admin@alieninc.tech">Contact administrator</a>
+        </div>
+
+      </form>
     </div>
+  </div>
+</main>
 
-    <script>
-        var SUPABASE_URL = 'https://frwjaixxlgthkgjtafhz.supabase.co';
-        var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyd2phaXh4bGd0aGtnanRhZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDUzNDQsImV4cCI6MjA5NDYyMTM0NH0.j2DKz__QMml4WplMYNmsQpTUw0qu-kZG7Md3qBEEdEc';
+<footer>
+  <span>&copy; 2026 Panteon Technologies Inc. All rights reserved.</span>
+  <span class="classification">Restricted Access</span>
+  <span>v2.0-PROMISED</span>
+</footer>
 
-        document.addEventListener('DOMContentLoaded', function() {
-            var form = document.getElementById('loginForm');
-            var btn = document.getElementById('loginBtn');
-            var errorMsg = document.getElementById('errorMsg');
-            var successMsg = document.getElementById('successMsg');
-            var emailInput = document.getElementById('email');
-            var passwordInput = document.getElementById('password');
+<div id="notify" role="alert"></div>
 
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                var email = emailInput.value.trim();
-                var password = passwordInput.value;
+<script>
+// Blinds & Scroll-Lock Lifecycle Handler
+window.addEventListener('DOMContentLoaded', function() {
+  var urlParams = new URLSearchParams(window.location.search);
+  var blinds = document.getElementById('blinds-container');
+  
+  if (urlParams.get('intro') === 'done') {
+    if (blinds) {
+      blinds.remove();
+    }
+    document.body.classList.remove('no-scroll');
+  } else {
+    setTimeout(function() {
+      document.body.classList.remove('no-scroll');
+      if (blinds) {
+        blinds.style.transition = 'opacity 0.8s ease';
+        blinds.style.opacity = '0';
+        setTimeout(function() { blinds.remove(); }, 800);
+      }
+    }, 3000);
+  }
+});
+</script>
 
-                if (!email || !password) {
-                    errorMsg.textContent = 'Please enter email and password';
-                    return;
-                }
+<script>
+'use strict';
 
-                btn.disabled = true;
-                btn.textContent = 'Signing in...';
-                errorMsg.textContent = '';
-                successMsg.textContent = '';
+var SUPABASE_URL = 'https://frwjaixxlgthkgjtafhz.supabase.co';
+var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyd2phaXh4bGd0aGtnanRhZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDUzNDQsImV4cCI6MjA5NDYyMTM0NH0.j2DKz__QMml4WplMYNmsQpTUw0qu-kZG7Md3qBEEdEc';
+var SESSION_TIMEOUT = 300;
+var SESSION_REDIRECT = '/';
 
-                fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
-                    method: 'POST',
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email: email, password: password })
-                })
-                .then(function(resp) { return resp.json().then(function(data) { return { ok: resp.ok, data: data }; }); })
-                .then(function(result) {
-                    if (!result.ok) {
-                        errorMsg.textContent = result.data.error_description || result.data.msg || 'Invalid credentials';
-                        btn.disabled = false;
-                        btn.textContent = 'Sign In';
-                        return;
-                    }
-                    localStorage.setItem('hs_session', JSON.stringify({
-                        username: result.data.user.email,
-                        user_id: result.data.user.id,
-                        access_token: result.data.access_token,
-                        refresh_token: result.data.refresh_token,
-                        company_id: 'alieninc'
-                    }));
-                    successMsg.textContent = 'Signed in successfully.';
-                    setTimeout(function() {
-                        window.location.href = '/admin';
-                    }, 500);
-                })
-                .catch(function(err) {
-                    errorMsg.textContent = 'Login error: ' + err.message;
-                    btn.disabled = false;
-                    btn.textContent = 'Sign In';
-                });
-            });
-        });
-    </script>
+var _toastTimer = null;
+function notify(msg, type) {
+  var el = document.getElementById('notify');
+  if (!el) { alert(msg); return; }
+  el.textContent = msg;
+  el.className = type === 'success' ? 'show success' : 'show';
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(function(){ el.className = ''; }, 4000);
+}
+
+(function(){
+  var EYE_OPEN = '<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>';
+  var EYE_CLOSED = '<svg viewBox="0 0 640 512"><path d="M320 400c-75.85 0-137.25-58.71-142.9-133.11L72.2 185.82c-13.79 17.3-26.48 35.59-36.72 55.59a32.35 32.35 0 0 0 0 29.19C89.71 376.41 197.07 448 320 448c26.91 0 52.87-4 77.89-10.46L346 397.39a144.13 144.13 0 0 1-26 2.61zm313.82 58.1l-110.55-85.44a331.25 331.25 0 0 0 81.25-102.07 32.35 32.35 0 0 0 0-29.19C550.29 135.59 442.93 64 320 64a308.15 308.15 0 0 0-147.32 37.7L45.46 3.37A16 16 0 0 0 23 6.18L3.37 31.45A16 16 0 0 0 6.18 53.9l588.36 454.73a16 16 0 0 0 22.46-2.81l19.64-25.27a16 16 0 0 0-2.82-22.45zM320 128c-17.67 0-32 14.33-32 32 0 3.29.5 6.47 1.4 9.45l45.52 71.85c-.46 1.45-.72 2.97-.72 4.55 0 17.67 14.33 32 32 32 12.3 0 22.84-6.95 28.19-17.11l45.54 71.89C476.36 365.5 507.7 384 544 384c3.59 0 7.16-.19 10.69-.55l-51.35-40.63C488.06 326.06 480 304.86 480 288c0-17.67 14.33-32 32-32s32 14.33 32 32c0 2.38-.26 4.7-.76 6.94l46.5 36.82c3.59-11.54 5.55-23.73 5.55-36.26-.01-70.59-57.26-128-127.29-167.5z"/></svg>';
+
+  function ready(fn){
+    if (document.readyState !== 'loading') fn();
+    else document.addEventListener('DOMContentLoaded', fn);
+  }
+
+  ready(function(){
+
+    var fields = document.querySelectorAll('.field input');
+    Array.prototype.forEach.call(fields, function(el){
+      var group = el.closest('.field');
+      var refresh = function(){
+        if (!group) return;
+        if (el.value.length > 0) group.classList.add('is-filled');
+        else group.classList.remove('is-filled');
+      };
+      refresh();
+      el.addEventListener('focus', function(){ if (group) group.classList.add('is-focused'); });
+      el.addEventListener('blur', function(){ if (group) group.classList.remove('is-focused'); refresh(); });
+      el.addEventListener('input', refresh);
+    });
+
+    var togglePw = document.getElementById('togglePw');
+    var pwd = document.getElementById('password');
+    if (togglePw && pwd) {
+      togglePw.innerHTML = EYE_CLOSED;
+      togglePw.addEventListener('click', function(ev){
+        ev.preventDefault();
+        var show = (pwd.type === 'password');
+        pwd.type = show ? 'text' : 'password';
+        togglePw.innerHTML = show ? EYE_OPEN : EYE_CLOSED;
+        togglePw.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+        pwd.focus();
+      });
+    }
+
+    var remaining = SESSION_TIMEOUT;
+    var countdownEl = document.getElementById('countdown');
+    var progressEl = document.getElementById('progressFill');
+    var timerInterval = setInterval(function(){
+      remaining--;
+      if (remaining <= 0) {
+        clearInterval(timerInterval);
+        countdownEl.textContent = '0:00';
+        progressEl.style.width = '0%';
+        notify('Session expired. Redirecting...');
+        setTimeout(function(){ window.location.href = SESSION_REDIRECT; }, 800);
+        return;
+      }
+      var mins = Math.floor(remaining / 60);
+      var secs = remaining % 60;
+      countdownEl.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+      progressEl.style.width = (remaining / SESSION_TIMEOUT * 100) + '%';
+      if (remaining <= 60) {
+        countdownEl.style.color = '#c62828';
+        progressEl.style.background = '#c62828';
+      } else if (remaining <= 120) {
+        countdownEl.style.color = '#e65100';
+        progressEl.style.background = '#e65100';
+      }
+    }, 1000);
+
+    var form = document.getElementById('authForm');
+    var submitBtn = document.getElementById('submitBtn');
+    var errorCallout = document.getElementById('errorCallout');
+    var errorText = document.getElementById('errorText');
+    var successCallout = document.getElementById('successCallout');
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var email = document.getElementById('user').value.trim();
+      var password = document.getElementById('password').value;
+
+      errorCallout.classList.remove('show');
+      successCallout.classList.remove('show');
+
+      if (!email || !password) {
+        notify('Enter your email and password.');
+        return;
+      }
+
+      submitBtn.classList.add('is-loading');
+      submitBtn.setAttribute('disabled', 'disabled');
+
+      fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email: email, password: password })
+      })
+      .then(function(resp) { return resp.json().then(function(data) { return { ok: resp.ok, data: data }; }); })
+      .then(function(result) {
+        submitBtn.classList.remove('is-loading');
+        submitBtn.removeAttribute('disabled');
+
+        if (!result.ok) {
+          var msg = result.data.error_description || result.data.msg || 'Invalid credentials.';
+          errorText.textContent = msg;
+          errorCallout.classList.add('show');
+          notify(msg);
+          return;
+        }
+
+        clearInterval(timerInterval);
+
+        localStorage.setItem('hs_session', JSON.stringify({
+          username: result.data.user.email,
+          user_id: result.data.user.id,
+          access_token: result.data.access_token,
+          refresh_token: result.data.refresh_token,
+          company_id: 'alieninc'
+        }));
+
+        successCallout.classList.add('show');
+        notify('Authenticated. Redirecting...', 'success');
+        setTimeout(function() {
+          window.location.href = '/admin';
+        }, 600);
+      })
+      .catch(function(err) {
+        submitBtn.classList.remove('is-loading');
+        submitBtn.removeAttribute('disabled');
+        errorText.textContent = 'Connection error: ' + err.message;
+        errorCallout.classList.add('show');
+        notify('Connection error: ' + err.message);
+      });
+    });
+
+    document.getElementById('user').focus();
+  });
+})();
+</script>
 
 </body>
 </html>

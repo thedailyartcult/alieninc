@@ -492,6 +492,18 @@
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 2.5l-3 8h4l-7 5 3-8h-4z"/></svg>
                         Automations
                     </div>
+                    <div class="nav-item" data-page="yono-functions">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h8M4 8h8M4 12h5"/><circle cx="12" cy="12" r="2"/></svg>
+                        Functions
+                    </div>
+                    <div class="nav-item" data-page="yono-executions">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1"/><path d="M5 5h6M5 8h6M5 11h3"/></svg>
+                        Executions
+                    </div>
+                    <div class="nav-item" data-page="yono-chat">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12v8H5l-3 3V3z"/></svg>
+                        Agent Chat
+                    </div>
                 </div>
                 <div class="nav-section">
                     <div class="nav-section-title">Apollo</div>
@@ -888,8 +900,69 @@
                             <button class="btn btn-primary btn-sm" onclick="openModal('modalAutomation')">+ Create Automation</button>
                         </div>
                         <div class="table-wrap">
-                            <table><thead><tr><th>Name</th><th>Display Name</th><th>Trigger</th><th>Effects</th><th>Enabled</th><th>Last Triggered</th></tr></thead>
-                            <tbody id="automationsBody"><tr><td colspan="6"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
+                            <table><thead><tr><th>Name</th><th>Display Name</th><th>Trigger</th><th>Effects</th><th>Enabled</th><th>Last Triggered</th><th></th></tr></thead>
+                            <tbody id="automationsBody"><tr><td colspan="7"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page" id="page-yono-functions">
+                    <div class="grid grid-3" style="margin-bottom:16px">
+                        <div class="card"><div class="card-title">Health Status</div><div class="card-value" id="funcHealth">--</div></div>
+                        <div class="card"><div class="card-title">Exec Mode</div><div class="card-value" id="funcExecMode">--</div></div>
+                        <div class="card"><div class="card-title">Model</div><div class="card-value" id="funcModel">--</div></div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">
+                            <span class="section-title">Execute Function</span>
+                        </div>
+                        <div class="card" style="margin-bottom:16px">
+                            <form onsubmit="executeYonoFunction(event)" style="display:flex;flex-direction:column;gap:12px">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                                    <div class="form-group" style="margin:0"><label class="form-label">Principal ID</label><input name="principal_id" required placeholder="e.g. analyst-42"></div>
+                                    <div class="form-group" style="margin:0"><label class="form-label">Request ID</label><input name="request_id" required placeholder="e.g. req-001"></div>
+                                </div>
+                                <div class="form-group" style="margin:0"><label class="form-label">Task Prompt</label><textarea name="task_prompt" required placeholder="Describe the task..." rows="3"></textarea></div>
+                                <div class="form-group" style="margin:0"><label class="form-label">Scoped Context (JSON, optional)</label><textarea name="scoped_context" placeholder='{"entities": [...], "region": "X"}' rows="2"></textarea></div>
+                                <button type="submit" class="btn btn-primary" style="align-self:flex-start">Execute</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <span class="section-title">Last Result</span>
+                        <div class="card" id="funcResult" style="margin-top:8px;display:none">
+                            <pre style="white-space:pre-wrap;word-break:break-word;font-size:13px;margin:0" id="funcResultContent"></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page" id="page-yono-executions">
+                    <div class="section">
+                        <div class="section-header">
+                            <span class="section-title">LLM Executions</span>
+                            <button class="btn btn-sm" onclick="loadExecutions()">Refresh</button>
+                        </div>
+                        <div class="table-wrap">
+                            <table><thead><tr><th>Status</th><th>Model</th><th>Prompt</th><th>Response</th><th>Tokens In/Out</th><th>Latency</th><th>Cost</th><th>Created</th></tr></thead>
+                            <tbody id="executionsBody"><tr><td colspan="8"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page" id="page-yono-chat">
+                    <div class="section">
+                        <div class="section-header">
+                            <span class="section-title">Agent Chat</span>
+                            <select id="chatAgentSelect" style="width:240px" onchange="resetChat()"></select>
+                        </div>
+                        <div class="card" style="margin-top:8px;display:flex;flex-direction:column;height:500px">
+                            <div id="chatMessages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px">
+                                <div class="empty-state">Select an agent and start chatting</div>
+                            </div>
+                            <form onsubmit="sendChatMessage(event)" style="display:flex;gap:8px;padding:12px;border-top:1px solid var(--border-light)">
+                                <input id="chatInput" name="message" required placeholder="Type a message..." style="flex:1">
+                                <button type="submit" class="btn btn-primary">Send</button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -1509,6 +1582,9 @@ const PAGES = {
     'yono-providers': 'LLM Providers',
     'yono-agents': 'Agents',
     'yono-automations': 'Automations',
+    'yono-functions': 'Functions',
+    'yono-executions': 'Executions',
+    'yono-chat': 'Agent Chat',
     'tdac-resonance': 'Resonance Index',
     'tdac-metrics': 'Metrics',
     'tdac-dashboard': 'Dashboard',
@@ -1647,6 +1723,9 @@ function loadPageData(page) {
         case 'yono-providers': loadProviders(); loadModels(); break;
         case 'yono-agents': loadAgents(); break;
         case 'yono-automations': loadAutomations(); break;
+        case 'yono-functions': loadFunctionsHealth(); break;
+        case 'yono-executions': loadExecutions(); break;
+        case 'yono-chat': loadChatAgents(); break;
         case 'apollo-fleet': loadFleetStatus(); break;
         case 'apollo-environments': loadEnvironments(); break;
         case 'apollo-deployments': loadDeployments(); break;
@@ -1807,9 +1886,92 @@ async function loadAutomations() {
     try {
         const data = await api('/yono/automations?enabled_only=false');
         const tb = document.getElementById('automationsBody');
-        if (!data.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty-state">No automations</div></td></tr>'; return; }
-        tb.innerHTML = data.map(a => '<tr><td class="mono">' + a.name + '</td><td>' + a.display_name + '</td><td><span class="tag">' + a.trigger_type + '</span></td><td class="mono" style="font-size:10px">' + (a.effects || []).length + ' effects</td><td><span class="tag ' + (a.is_enabled ? 'tag-green' : 'tag-red') + '">' + (a.is_enabled ? 'Yes' : 'No') + '</span></td><td style="font-size:11px;color:var(--text-dim)">' + (a.last_triggered_at ? fmtDate(a.last_triggered_at) : 'Never') + '</td></tr>').join('');
-    } catch (e) { document.getElementById('automationsBody').innerHTML = '<tr><td colspan="6"><div class="empty-state">Error: ' + e.message + '</div></td></tr>'; }
+        if (!data.length) { tb.innerHTML = '<tr><td colspan="7"><div class="empty-state">No automations</div></td></tr>'; return; }
+        tb.innerHTML = data.map(a => '<tr><td class="mono">' + a.name + '</td><td>' + a.display_name + '</td><td><span class="tag">' + a.trigger_type + '</span></td><td class="mono" style="font-size:10px">' + (a.effects || []).length + ' effects</td><td><span class="tag ' + (a.is_enabled ? 'tag-green' : 'tag-red') + '">' + (a.is_enabled ? 'Yes' : 'No') + '</span></td><td style="font-size:11px;color:var(--text-dim)">' + (a.last_triggered_at ? fmtDate(a.last_triggered_at) : 'Never') + '</td><td><button class="btn btn-sm" onclick="triggerAutomation(\'' + a.id + '\')">Trigger</button></td></tr>').join('');
+    } catch (e) { document.getElementById('automationsBody').innerHTML = '<tr><td colspan="7"><div class="empty-state">Error: ' + e.message + '</div></td></tr>'; }
+}
+
+async function triggerAutomation(id) {
+    try { await api('/yono/automations/' + id + '/trigger', { method: 'POST', body: JSON.stringify({}) }); toast('Automation triggered'); loadAutomations(); } catch (e) { toast(e.message, 'error'); }
+}
+
+async function loadFunctionsHealth() {
+    try {
+        const data = await api('/yono/functions/health');
+        document.getElementById('funcHealth').textContent = data.status || '--';
+        document.getElementById('funcExecMode').textContent = data.exec_mode || '--';
+        document.getElementById('funcModel').textContent = data.model || 'N/A';
+    } catch (e) {
+        document.getElementById('funcHealth').textContent = 'Offline';
+        document.getElementById('funcExecMode').textContent = '--';
+        document.getElementById('funcModel').textContent = '--';
+    }
+}
+
+async function executeYonoFunction(e) {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    let scopedContext = null;
+    const raw = f.get('scoped_context');
+    if (raw) { try { scopedContext = JSON.parse(raw); } catch { toast('Invalid JSON in scoped context', 'error'); return; } }
+    const body = { task_prompt: f.get('task_prompt'), principal_id: f.get('principal_id'), request_id: f.get('request_id'), scoped_context: scopedContext };
+    try {
+        const res = await api('/yono/functions/execute', { method: 'POST', body: JSON.stringify(body) });
+        const el = document.getElementById('funcResult');
+        el.style.display = 'block';
+        document.getElementById('funcResultContent').textContent = JSON.stringify(res, null, 2);
+        toast('Function executed');
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+async function loadExecutions() {
+    try {
+        const data = await api('/yono/executions');
+        const tb = document.getElementById('executionsBody');
+        if (!data.length) { tb.innerHTML = '<tr><td colspan="8"><div class="empty-state">No executions</div></td></tr>'; return; }
+        tb.innerHTML = data.map(ex => {
+            const statusClass = ex.status === 'completed' ? 'tag-green' : ex.status === 'failed' ? 'tag-red' : 'tag-amber';
+            const prompt = (ex.prompt || '').length > 60 ? ex.prompt.slice(0, 60) + '...' : ex.prompt;
+            const resp = (ex.response || '').length > 60 ? ex.response.slice(0, 60) + '...' : (ex.response || '--');
+            return '<tr><td><span class="tag ' + statusClass + '">' + ex.status + '</span></td><td class="mono" style="font-size:10px">' + truncate(String(ex.model_id), 8) + '</td><td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">' + prompt + '</td><td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">' + resp + '</td><td class="mono" style="font-size:11px">' + ex.tokens_input + ' / ' + ex.tokens_output + '</td><td class="mono" style="font-size:11px">' + (ex.latency_ms ? ex.latency_ms + 'ms' : '--') + '</td><td class="mono" style="font-size:11px">$' + (ex.cost || 0).toFixed(4) + '</td><td style="font-size:11px;color:var(--text-dim)">' + fmtDate(ex.created_at) + '</td></tr>';
+        }).join('');
+    } catch (e) { document.getElementById('executionsBody').innerHTML = '<tr><td colspan="8"><div class="empty-state">Error: ' + e.message + '</div></td></tr>'; }
+}
+
+let chatSessionId = null;
+
+async function loadChatAgents() {
+    try {
+        const data = await api('/yono/agents');
+        const sel = document.getElementById('chatAgentSelect');
+        sel.innerHTML = '<option value="">Select agent...</option>' + data.map(a => '<option value="' + a.id + '">' + a.display_name + '</option>').join('');
+    } catch {}
+}
+
+function resetChat() {
+    chatSessionId = null;
+    document.getElementById('chatMessages').innerHTML = '<div class="empty-state">Start chatting with the selected agent</div>';
+}
+
+async function sendChatMessage(e) {
+    e.preventDefault();
+    const agentId = document.getElementById('chatAgentSelect').value;
+    if (!agentId) { toast('Select an agent first', 'error'); return; }
+    const input = document.getElementById('chatInput');
+    const msg = input.value.trim();
+    if (!msg) return;
+    const msgs = document.getElementById('chatMessages');
+    msgs.innerHTML += '<div style="align-self:flex-end;background:var(--accent-cyan);color:#fff;padding:8px 14px;border-radius:12px;max-width:70%;font-size:14px">' + msg + '</div>';
+    input.value = '';
+    msgs.scrollTop = msgs.scrollHeight;
+    try {
+        const body = { agent_id: agentId, message: msg };
+        if (chatSessionId) body.session_id = chatSessionId;
+        const res = await api('/yono/agents/chat', { method: 'POST', body: JSON.stringify(body) });
+        chatSessionId = res.session_id;
+        msgs.innerHTML += '<div style="align-self:flex-start;background:var(--bg-light);border:1px solid var(--border-light);padding:8px 14px;border-radius:12px;max-width:70%;font-size:14px">' + (res.response || '--') + '</div>';
+        msgs.scrollTop = msgs.scrollHeight;
+    } catch (e) { msgs.innerHTML += '<div style="align-self:flex-start;color:var(--red);font-size:13px">Error: ' + e.message + '</div>'; }
 }
 
 async function loadFleetStatus() {

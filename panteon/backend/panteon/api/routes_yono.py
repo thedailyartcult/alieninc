@@ -87,6 +87,15 @@ async def execute_llm(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/executions", response_model=list[LLMExecutionResponse])
+async def list_executions(
+    limit: int = 50,
+    db: AsyncSession = Depends(get_db),
+):
+    service = LLMOrchestrator(db)
+    return await service.list_executions(limit)
+
+
 @router.post("/agents", response_model=AgentResponse)
 async def create_agent(
     data: AgentCreate,

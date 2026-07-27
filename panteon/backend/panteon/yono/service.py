@@ -95,6 +95,14 @@ class LLMOrchestrator:
 
         return execution
 
+    async def list_executions(self, limit: int = 50) -> list[LLMExecution]:
+        result = await self.db.execute(
+            select(LLMExecution)
+            .order_by(LLMExecution.created_at.desc())
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+
     async def _call_provider(
         self,
         model: LLMModel,

@@ -15,7 +15,7 @@ EVENT_SEVERITY = ("informational", "minor", "moderate", "major", "critical")
 
 
 class Investigation(Base):
-    __tablename__ = "gotham_investigations"
+    __tablename__ = "babel_investigations"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
     case_number = Column(String(50), nullable=False, unique=True, index=True)
@@ -38,17 +38,17 @@ class Investigation(Base):
     alerts = relationship("PatternAlert", back_populates="investigation")
 
     __table_args__ = (
-        Index("ix_gotham_investigations_status", "status"),
-        Index("ix_gotham_investigations_workspace", "workspace_id"),
-        Index("ix_gotham_investigations_classification", "classification"),
+        Index("ix_babel_investigations_status", "status"),
+        Index("ix_babel_investigations_workspace", "workspace_id"),
+        Index("ix_babel_investigations_classification", "classification"),
     )
 
 
 class Finding(Base):
-    __tablename__ = "gotham_findings"
+    __tablename__ = "babel_findings"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
-    investigation_id = Column(UUID_COL(), ForeignKey("gotham_investigations.id"), nullable=False, index=True)
+    investigation_id = Column(UUID_COL(), ForeignKey("babel_investigations.id"), nullable=False, index=True)
     title = Column(String(500), nullable=False)
     summary = Column(Text)
     analysis = Column(Text)
@@ -66,16 +66,16 @@ class Finding(Base):
     evidence_items = relationship("Evidence", back_populates="finding", cascade="all, delete-orphan")
 
     __table_args__ = (
-        Index("ix_gotham_findings_type", "finding_type"),
-        Index("ix_gotham_findings_status", "status"),
+        Index("ix_babel_findings_type", "finding_type"),
+        Index("ix_babel_findings_status", "status"),
     )
 
 
 class Evidence(Base):
-    __tablename__ = "gotham_evidence"
+    __tablename__ = "babel_evidence"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
-    finding_id = Column(UUID_COL(), ForeignKey("gotham_findings.id"), nullable=False, index=True)
+    finding_id = Column(UUID_COL(), ForeignKey("babel_findings.id"), nullable=False, index=True)
     evidence_type = Column(String(50), nullable=False)
     source = Column(String(500))
     content = Column(Text)
@@ -88,12 +88,12 @@ class Evidence(Base):
     finding = relationship("Finding", back_populates="evidence_items")
 
     __table_args__ = (
-        Index("ix_gotham_evidence_type", "evidence_type"),
+        Index("ix_babel_evidence_type", "evidence_type"),
     )
 
 
 class ThreatEntity(Base):
-    __tablename__ = "gotham_threat_entities"
+    __tablename__ = "babel_threat_entities"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
     entity_type = Column(String(50), nullable=False)
@@ -114,15 +114,15 @@ class ThreatEntity(Base):
     geo_events = relationship("GeoEvent", back_populates="threat_entity")
 
     __table_args__ = (
-        Index("ix_gotham_threat_entities_type", "entity_type"),
-        Index("ix_gotham_threat_entities_level", "threat_level"),
-        Index("ix_gotham_threat_entities_risk", "risk_score"),
-        Index("ix_gotham_threat_entities_workspace", "workspace_id"),
+        Index("ix_babel_threat_entities_type", "entity_type"),
+        Index("ix_babel_threat_entities_level", "threat_level"),
+        Index("ix_babel_threat_entities_risk", "risk_score"),
+        Index("ix_babel_threat_entities_workspace", "workspace_id"),
     )
 
 
 class GeoEvent(Base):
-    __tablename__ = "gotham_geo_events"
+    __tablename__ = "babel_geo_events"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
     title = Column(String(500), nullable=False)
@@ -133,9 +133,9 @@ class GeoEvent(Base):
     longitude = Column(Float)
     country = Column(String(100), index=True)
     region = Column(String(200))
-    threat_entity_id = Column(UUID_COL(), ForeignKey("gotham_threat_entities.id"), nullable=True, index=True)
+    threat_entity_id = Column(UUID_COL(), ForeignKey("babel_threat_entities.id"), nullable=True, index=True)
     workspace_id = Column(String(36), index=True)
-    investigation_id = Column(UUID_COL(), ForeignKey("gotham_investigations.id"), nullable=True)
+    investigation_id = Column(UUID_COL(), ForeignKey("babel_investigations.id"), nullable=True)
     occurred_at = Column(DateTime, nullable=False)
     metadata_json = Column("metadata_json", JSONB, default=dict)
     classification = Column(String(20), nullable=False, default="confidential")
@@ -144,16 +144,16 @@ class GeoEvent(Base):
     threat_entity = relationship("ThreatEntity", back_populates="geo_events")
 
     __table_args__ = (
-        Index("ix_gotham_geo_events_type", "event_type"),
-        Index("ix_gotham_geo_events_severity", "severity"),
-        Index("ix_gotham_geo_events_occurred", "occurred_at"),
-        Index("ix_gotham_geo_events_country", "country"),
-        Index("ix_gotham_geo_events_coords", "latitude", "longitude"),
+        Index("ix_babel_geo_events_type", "event_type"),
+        Index("ix_babel_geo_events_severity", "severity"),
+        Index("ix_babel_geo_events_occurred", "occurred_at"),
+        Index("ix_babel_geo_events_country", "country"),
+        Index("ix_babel_geo_events_coords", "latitude", "longitude"),
     )
 
 
 class PatternAlert(Base):
-    __tablename__ = "gotham_pattern_alerts"
+    __tablename__ = "babel_pattern_alerts"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
     alert_type = Column(String(50), nullable=False, index=True)
@@ -161,7 +161,7 @@ class PatternAlert(Base):
     description = Column(Text)
     severity = Column(String(20), nullable=False, default="moderate")
     confidence = Column(Float, default=0.0)
-    investigation_id = Column(UUID_COL(), ForeignKey("gotham_investigations.id"), nullable=True, index=True)
+    investigation_id = Column(UUID_COL(), ForeignKey("babel_investigations.id"), nullable=True, index=True)
     workspace_id = Column(String(36), index=True)
     triggered_by = Column(JSONB, default=dict)
     affected_entities = Column(JSONB, default=list)
@@ -175,17 +175,17 @@ class PatternAlert(Base):
     investigation = relationship("Investigation", back_populates="alerts")
 
     __table_args__ = (
-        Index("ix_gotham_alerts_type", "alert_type"),
-        Index("ix_gotham_alerts_severity", "severity"),
-        Index("ix_gotham_alerts_status", "status"),
+        Index("ix_babel_alerts_type", "alert_type"),
+        Index("ix_babel_alerts_severity", "severity"),
+        Index("ix_babel_alerts_status", "status"),
     )
 
 
 class TimelineEvent(Base):
-    __tablename__ = "gotham_timeline_events"
+    __tablename__ = "babel_timeline_events"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
-    investigation_id = Column(UUID_COL(), ForeignKey("gotham_investigations.id"), nullable=False, index=True)
+    investigation_id = Column(UUID_COL(), ForeignKey("babel_investigations.id"), nullable=False, index=True)
     title = Column(String(500), nullable=False)
     description = Column(Text)
     event_type = Column(String(50), default="note")
@@ -198,12 +198,12 @@ class TimelineEvent(Base):
     investigation = relationship("Investigation", back_populates="timeline_events")
 
     __table_args__ = (
-        Index("ix_gotham_timeline_occurred", "occurred_at"),
+        Index("ix_babel_timeline_occurred", "occurred_at"),
     )
 
 
 class CountryRiskProfile(Base):
-    __tablename__ = "gotham_country_risk_profiles"
+    __tablename__ = "babel_country_risk_profiles"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
     country = Column(String(100), nullable=False, unique=True, index=True)
@@ -221,5 +221,5 @@ class CountryRiskProfile(Base):
     notes = Column(Text)
 
     __table_args__ = (
-        Index("ix_gotham_country_risk_score", "overall_risk_score"),
+        Index("ix_babel_country_risk_score", "overall_risk_score"),
     )

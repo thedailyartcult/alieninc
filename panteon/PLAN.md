@@ -8,7 +8,7 @@
 | **Spinal Craker** | Foundry | PARTIAL | Ontology CRUD, Pipeline Builder UI, Data Lineage |
 | **ONO** | AIP | PARTIAL | LLM providers/models, Agent framework, ONO Forge (no-code builder), Automation engine |
 | **Apollo** | Apollo | PARTIAL | Environments, Services, Deployments, Fleet Status, Pipelines, Health Checks |
-| **Gotham** | Gotham | MARKETING ONLY | Landing page exists — no operational backend |
+| **Babel** | Babel | MARKETING ONLY | Landing page exists — no operational backend |
 
 ### Infrastructure Built
 - Supabase Auth (magic link OTP) + RBAC
@@ -25,12 +25,12 @@
 
 ## Gap Analysis — What Palantir Offers That We Don't
 
-### Gotham (Intelligence Platform) — BIGGEST GAP
+### Babel (Intelligence Platform) — BIGGEST GAP
 Currently: Marketing page only. No operational backend.
 
 | Feature | Palantir Name | Priority for Alien Inc |
 |---------|--------------|----------------------|
-| Intelligence investigation workspaces | Gotham Workspace | CRITICAL (Immanuel) |
+| Intelligence investigation workspaces | Babel Workspace | CRITICAL (Immanuel) |
 | Graph/network relationship analysis | Link Analysis | CRITICAL (Immanuel, Panteon) |
 | Geospatial threat mapping | Geo Analytics | CRITICAL (Immanuel — 193 countries) |
 | Pattern detection and anomaly scoring | Anomaly Engine | HIGH (Centra, Panteon) |
@@ -96,17 +96,17 @@ Currently: Marketing page only. No operational backend.
 
 ## Build Plan — 4 Phases
 
-### Phase 1: Gotham Intelligence Backend (CRITICAL)
+### Phase 1: Babel Intelligence Backend (CRITICAL)
 **Justification:** Immanuel operates across 193 countries with 210 analysts. They need intelligence analysis tools. Panteon needs graph analysis for threat detection. This is the biggest gap.
 
 **Build:**
-1. **Gotham Workspace model** — investigation cases, findings, evidence chains
+1. **Babel Workspace model** — investigation cases, findings, evidence chains
 2. **Graph analysis engine** — traverse ontology relationships, compute centrality, detect clusters
 3. **Geospatial module** — country/region risk scoring, threat mapping
 4. **Pattern detection** — anomaly scoring on ontology objects (deviation from norms)
 5. **Case management** — create/open/close investigations, assign analysts, timeline
-6. **Gotham API routes** — CRUD investigations, graph queries, geospatial queries, pattern alerts
-7. **Gotham admin UI** — investigation workspace, graph visualizer, risk map
+6. **Babel API routes** — CRUD investigations, graph queries, geospatial queries, pattern alerts
+7. **Babel admin UI** — investigation workspace, graph visualizer, risk map
 
 **Serves:** Immanuel (primary), Panteon (cyber threat intel), KMT (client risk), Rousseau (portfolio risk)
 
@@ -161,7 +161,7 @@ Currently: Marketing page only. No operational backend.
 
 | Phase | Backend Models | API Routes | UI Pages | Lines (est.) |
 |-------|---------------|------------|----------|-------------|
-| Phase 1: Gotham | ~8 models | ~15 endpoints | 3 pages | ~3,000 |
+| Phase 1: Babel | ~8 models | ~15 endpoints | 3 pages | ~3,000 |
 | Phase 2: Contour + Scheduler | ~6 models | ~12 endpoints | 4 pages | ~2,500 |
 | Phase 3: AIP Logic + RAG | ~7 models | ~14 endpoints | 4 pages | ~3,000 |
 | Phase 4: Edge + Observability | ~5 models | ~10 endpoints | 3 pages | ~2,000 |
@@ -187,7 +187,7 @@ This would bring Panteon from ~21,700 lines to ~32,200 lines — matching the sc
 
 ## Immediate Next Step
 
-**Phase 1: Gotham Intelligence Backend**
+**Phase 1: Babel Intelligence Backend**
 - Most impactful for the group's largest operational company (Immanuel, 42 headcount, 193 countries)
 - Biggest competitive gap (currently marketing page only)
 - Enables graph analysis across ALL company ontologies

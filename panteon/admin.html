@@ -556,20 +556,20 @@
                     </div>
                 </div>
                 <div class="nav-section">
-                    <div class="nav-section-title">Gotham Intelligence</div>
-                    <div class="nav-item" data-page="gotham-dashboard">
+                    <div class="nav-section-title">Babel Intelligence</div>
+                    <div class="nav-item" data-page="babel-dashboard">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2"/><path d="M8 2v2M8 12v2M2 8h2M12 8h2"/></svg>
                         Intelligence Dashboard
                     </div>
-                    <div class="nav-item" data-page="gotham-investigations">
+                    <div class="nav-item" data-page="babel-investigations">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="2" width="10" height="12" rx="1"/><path d="M6 5h4M6 8h4M6 11h2"/></svg>
                         Investigations
                     </div>
-                    <div class="nav-item" data-page="gotham-threatmap">
+                    <div class="nav-item" data-page="babel-threatmap">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c-2 2.5-2 5.5 0 6s2 3.5 0 6M8 2c2 2.5 2 5.5 0 6s-2 3.5 0 6"/></svg>
                         Threat Map
                     </div>
-                    <div class="nav-item" data-page="gotham-entities">
+                    <div class="nav-item" data-page="babel-entities">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="8" cy="12" r="2"/><path d="M5.5 5.5L7 10.5M10.5 5.5L9 10.5M6 4h4"/></svg>
                         Threat Entities
                     </div>
@@ -1022,7 +1022,7 @@
                     </div>
                 </div>
 
-                <div class="page" id="page-gotham-dashboard">
+                <div class="page" id="page-babel-dashboard">
                     <div class="card" style="margin-bottom:16px">
                         <div class="card-header">
                             <span class="card-title">OSINT Intelligence Toolkit</span>
@@ -1056,7 +1056,7 @@
                     </div>
                 </div>
 
-                <div class="page" id="page-gotham-investigations">
+                <div class="page" id="page-babel-investigations">
                     <div class="card">
                         <div class="card-header">
                             <span class="card-title">Sanctions Screening</span>
@@ -1079,7 +1079,7 @@
                     </div>
                 </div>
 
-                <div class="page" id="page-gotham-threatmap">
+                <div class="page" id="page-babel-threatmap">
                     <div class="card">
                         <div class="card-header">
                             <span class="card-title">IP Intelligence</span>
@@ -1092,7 +1092,7 @@
                     </div>
                 </div>
 
-                <div class="page" id="page-gotham-entities">
+                <div class="page" id="page-babel-entities">
                     <div class="card">
                         <div class="card-header">
                             <span class="card-title">Domain Intelligence (WHOIS/RDAP)</span>
@@ -1379,10 +1379,10 @@ const PAGES = {
     'group-catalog': 'Service Catalog',
     'group-billing': 'Billing',
     'group-holdings': 'Holdings & Capital',
-    'gotham-dashboard': 'Intelligence Dashboard',
-    'gotham-investigations': 'Investigations',
-    'gotham-threatmap': 'Threat Map',
-    'gotham-entities': 'Threat Entities',
+    'babel-dashboard': 'Intelligence Dashboard',
+    'babel-investigations': 'Investigations',
+    'babel-threatmap': 'Threat Map',
+    'babel-entities': 'Threat Entities',
     'contour-dashboards': 'Dashboards',
     'contour-schedules': 'Pipeline Schedules',
     'contour-quality': 'Data Quality',
@@ -1518,10 +1518,10 @@ function loadPageData(page) {
         case 'group-catalog': loadServiceCatalog(); break;
         case 'group-billing': loadBilling(); break;
         case 'group-holdings': loadHoldings(); break;
-        case 'gotham-dashboard': loadOSINTDashboard(); break;
-        case 'gotham-investigations': break;
-        case 'gotham-threatmap': break;
-        case 'gotham-entities': break;
+        case 'babel-dashboard': loadOSINTDashboard(); break;
+        case 'babel-investigations': break;
+        case 'babel-threatmap': break;
+        case 'babel-entities': break;
         case 'contour-dashboards': loadContourDashboards(); break;
         case 'contour-schedules': loadContourSchedules(); break;
         case 'contour-quality': loadDQViolations(); break;
@@ -2066,36 +2066,36 @@ async function loadHoldings() {
     } catch (e) { document.getElementById('holdingsKpis').innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
 }
 
-async function loadGothamDashboard() {
+async function loadBabelDashboard() {
     try {
-        const stats = await api('/gotham/dashboard');
+        const stats = await api('/babel/dashboard');
         const inv = stats.investigations;
-        document.getElementById('gothamKpiCards').innerHTML = '<div class="card"><div class="card-title">Open Investigations</div><div class="card-value">' + inv.open + '</div><div class="card-sub">' + inv.total + ' total</div></div><div class="card"><div class="card-title">Threat Entities</div><div class="card-value">' + stats.threat_entities.total + '</div><div class="card-sub" style="color:var(--red)">' + stats.threat_entities.critical + ' critical</div></div><div class="card"><div class="card-title">Active Alerts</div><div class="card-value" style="color:var(--amber)">' + stats.active_alerts + '</div><div class="card-sub">Pattern detections</div></div><div class="card"><div class="card-title">Events (24h)</div><div class="card-value">' + stats.geo_events_24h + '</div><div class="card-sub">Geo events</div></div>';
-        const invs = await api('/gotham/investigations?limit=10');
+        document.getElementById('babelKpiCards').innerHTML = '<div class="card"><div class="card-title">Open Investigations</div><div class="card-value">' + inv.open + '</div><div class="card-sub">' + inv.total + ' total</div></div><div class="card"><div class="card-title">Threat Entities</div><div class="card-value">' + stats.threat_entities.total + '</div><div class="card-sub" style="color:var(--red)">' + stats.threat_entities.critical + ' critical</div></div><div class="card"><div class="card-title">Active Alerts</div><div class="card-value" style="color:var(--amber)">' + stats.active_alerts + '</div><div class="card-sub">Pattern detections</div></div><div class="card"><div class="card-title">Events (24h)</div><div class="card-value">' + stats.geo_events_24h + '</div><div class="card-sub">Geo events</div></div>';
+        const invs = await api('/babel/investigations?limit=10');
         const statusColors = {open:'tag-green',in_progress:'tag',pending_review:'tag-amber',closed:'',archived:''};
-        document.getElementById('gothamInvestigationsList').innerHTML = invs.length ? invs.map(i => '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer" onclick="showInvestigationDetail(\'' + i.id + '\')"><div><div style="font-weight:500;font-size:12px">' + i.title + '</div><div style="font-size:10px;color:var(--text-dim)">' + i.case_number + '</div></div><div style="text-align:right"><span class="tag ' + (statusColors[i.status]||'') + '">' + i.status + '</span><div style="font-size:10px;color:var(--text-dim);margin-top:2px">' + i.finding_count + ' findings</div></div></div>').join('') : '<div class="empty-state">No investigations</div>';
-        const alerts = await api('/gotham/alerts?limit=10');
+        document.getElementById('babelInvestigationsList').innerHTML = invs.length ? invs.map(i => '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer" onclick="showInvestigationDetail(\'' + i.id + '\')"><div><div style="font-weight:500;font-size:12px">' + i.title + '</div><div style="font-size:10px;color:var(--text-dim)">' + i.case_number + '</div></div><div style="text-align:right"><span class="tag ' + (statusColors[i.status]||'') + '">' + i.status + '</span><div style="font-size:10px;color:var(--text-dim);margin-top:2px">' + i.finding_count + ' findings</div></div></div>').join('') : '<div class="empty-state">No investigations</div>';
+        const alerts = await api('/babel/alerts?limit=10');
         const sevColors = {critical:'tag-red',high:'tag-amber',moderate:'tag',low:''};
-        document.getElementById('gothamAlertsList').innerHTML = alerts.length ? alerts.map(a => '<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)"><div style="display:flex;justify-content:space-between"><span style="font-weight:500;font-size:12px">' + a.title + '</span><span class="tag ' + (sevColors[a.severity]||'') + '">' + a.severity + '</span></div><div style="font-size:10px;color:var(--text-muted);margin-top:2px">' + a.description + '</div><div style="font-size:9px;color:var(--text-dim);margin-top:2px">Confidence: ' + (a.confidence*100).toFixed(0) + '% \u00B7 ' + fmtTimeAgo(a.created_at) + '</div></div>').join('') : '<div class="empty-state">No active alerts</div>';
+        document.getElementById('babelAlertsList').innerHTML = alerts.length ? alerts.map(a => '<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)"><div style="display:flex;justify-content:space-between"><span style="font-weight:500;font-size:12px">' + a.title + '</span><span class="tag ' + (sevColors[a.severity]||'') + '">' + a.severity + '</span></div><div style="font-size:10px;color:var(--text-muted);margin-top:2px">' + a.description + '</div><div style="font-size:9px;color:var(--text-dim);margin-top:2px">Confidence: ' + (a.confidence*100).toFixed(0) + '% \u00B7 ' + fmtTimeAgo(a.created_at) + '</div></div>').join('') : '<div class="empty-state">No active alerts</div>';
         const riskCountries = stats.top_risk_countries || [];
         const maxRisk = Math.max(...riskCountries.map(c => c.overall_risk_score), 1);
-        document.getElementById('gothamRiskCountries').innerHTML = riskCountries.length ? riskCountries.map(c => '<div style="display:flex;align-items:center;gap:12px;padding:4px 0"><span style="width:100px;font-size:11px;text-align:right">' + c.country + '</span><div style="flex:1;height:14px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden"><div style="width:' + (c.overall_risk_score/maxRisk*100) + '%;height:100%;background:' + (c.overall_risk_score>5?'var(--red)':c.overall_risk_score>2?'var(--amber)':'var(--green)') + ';border-radius:3px;opacity:0.7"></div></div><span style="width:40px;font-size:11px;font-variant-numeric:tabular-nums;text-align:right">' + c.overall_risk_score.toFixed(1) + '</span></div>').join('') : '<div class="empty-state">No country risk data</div>';
-    } catch (e) { document.getElementById('gothamKpiCards').innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
+        document.getElementById('babelRiskCountries').innerHTML = riskCountries.length ? riskCountries.map(c => '<div style="display:flex;align-items:center;gap:12px;padding:4px 0"><span style="width:100px;font-size:11px;text-align:right">' + c.country + '</span><div style="flex:1;height:14px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden"><div style="width:' + (c.overall_risk_score/maxRisk*100) + '%;height:100%;background:' + (c.overall_risk_score>5?'var(--red)':c.overall_risk_score>2?'var(--amber)':'var(--green)') + ';border-radius:3px;opacity:0.7"></div></div><span style="width:40px;font-size:11px;font-variant-numeric:tabular-nums;text-align:right">' + c.overall_risk_score.toFixed(1) + '</span></div>').join('') : '<div class="empty-state">No country risk data</div>';
+    } catch (e) { document.getElementById('babelKpiCards').innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
 }
 
 async function showInvestigationDetail(invId) {
     try {
-        const inv = await api('/gotham/investigations/' + invId);
+        const inv = await api('/babel/investigations/' + invId);
         document.getElementById('invDetailTitle').textContent = inv.case_number + ' \u2014 ' + inv.title;
         document.getElementById('investigationDetail').style.display = '';
         document.getElementById('invDetailContent').innerHTML = '<div style="display:flex;gap:24px;margin-bottom:16px;font-size:11px"><div><span class="tag">' + inv.status + '</span> <span class="tag">' + inv.classification + '</span> <span class="tag">' + inv.priority + '</span></div><div style="color:var(--text-muted)">Created ' + fmtDate(inv.created_at) + '</div></div><div style="font-size:12px;margin-bottom:12px">' + (inv.description || 'No description') + '</div>' + (inv.findings && inv.findings.length ? '<div style="font-size:10px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Findings</div>' + inv.findings.map(f => '<div style="padding:10px;background:var(--bg-input);border-radius:4px;margin-bottom:8px;border-left:3px solid ' + (f.confidence > 0.7 ? 'var(--accent-cyan)' : f.confidence > 0.4 ? 'var(--amber)' : 'var(--text-dim)') + '"><div style="font-weight:500;font-size:12px">' + f.title + '</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">' + (f.summary || '') + '</div><div style="font-size:10px;color:var(--text-dim);margin-top:4px">Confidence: ' + (f.confidence*100).toFixed(0) + '% \u00B7 ' + f.finding_type + ' \u00B7 ' + f.status + '</div></div>').join('') : '');
     } catch (e) { toast('Error loading investigation: ' + e.message, 'error'); }
 }
 
-async function loadGothamInvestigations() {
+async function loadBabelInvestigations() {
     try {
         const statusFilter = document.getElementById('invStatusFilter').value;
-        const url = '/gotham/investigations?limit=50' + (statusFilter ? '&status=' + statusFilter : '');
+        const url = '/babel/investigations?limit=50' + (statusFilter ? '&status=' + statusFilter : '');
         const invs = await api(url);
         const statusColors = {open:'tag-green',in_progress:'tag',pending_review:'tag-amber',closed:'',archived:''};
         const prioColors = {high:'tag-red',medium:'tag-amber',low:'',critical:'tag-red'};
@@ -2103,9 +2103,9 @@ async function loadGothamInvestigations() {
     } catch (e) { document.getElementById('investigationsBody').innerHTML = '<tr><td colspan="8"><div class="empty-state">Error: ' + e.message + '</div></td></tr>'; }
 }
 
-async function loadGothamThreatMap() {
+async function loadBabelThreatMap() {
     try {
-        const [events, risk] = await Promise.all([api('/gotham/geo-events?days_back=90&limit=500'), api('/gotham/country-risk')]);
+        const [events, risk] = await Promise.all([api('/babel/geo-events?days_back=90&limit=500'), api('/babel/country-risk')]);
         const svg = document.getElementById('threatMapSvg');
         const W = svg.clientWidth || 900, H = svg.clientHeight || 500;
         function lonToX(lon) { return ((lon + 180) / 360) * W; }
@@ -2122,9 +2122,9 @@ async function loadGothamThreatMap() {
     } catch (e) { document.getElementById('threatMapCanvas').innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
 }
 
-async function loadGothamEntities() {
+async function loadBabelEntities() {
     try {
-        const [entities, graph] = await Promise.all([api('/gotham/entities?limit=100'), api('/gotham/graph/analyze')]);
+        const [entities, graph] = await Promise.all([api('/babel/entities?limit=100'), api('/babel/graph/analyze')]);
         const levelColors = {low:'',elevated:'tag-amber',high:'tag-red',critical:'tag-red',imminent:'tag-red'};
         document.getElementById('entitiesBody').innerHTML = entities.length ? entities.map(e => '<tr><td style="font-weight:500">' + e.name + '</td><td><span class="tag">' + e.entity_type + '</span></td><td><span class="tag ' + (levelColors[e.threat_level]||'') + '">' + e.threat_level + '</span></td><td style="font-variant-numeric:tabular-nums">' + e.risk_score.toFixed(1) + '</td><td style="font-size:10px">' + ((e.aliases||[]).join(', ') || '--') + '</td><td style="font-variant-numeric:tabular-nums">' + e.connection_count + '</td><td style="white-space:nowrap">' + (e.last_seen ? fmtDate(e.last_seen) : '--') + '</td></tr>').join('') : '<tr><td colspan="7"><div class="empty-state">No entities found</div></td></tr>';
         if (graph.nodes.length) {
@@ -2361,7 +2361,7 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
 document.addEventListener('DOMContentLoaded', async () => {
     const loadCCTVCameras = async () => {
         try {
-            const response = await api('/gotham/cctv');
+            const response = await api('/babel/cctv');
             const cameras = response.cameras || [];
             
             // Group cameras by region/country
@@ -2441,7 +2441,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // OSINT Intelligence Functions
 async function loadOSINTDashboard() {
     try {
-        const health = await api('/gotham/health');
+        const health = await api('/babel/health');
         document.getElementById('sanctionsCount').textContent = health.sanctions_index_size.toLocaleString();
         document.getElementById('sanctionsUpdated').textContent = new Date(health.timestamp).toLocaleString();
         document.getElementById('sanctionsStatus').textContent = health.status.toUpperCase();
@@ -2464,13 +2464,13 @@ async function performOSINTLookup() {
         const isDomain = /^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(query);
 
         if (isIP) {
-            result = await api(`/gotham/ip?ip=${encodeURIComponent(query)}`);
+            result = await api(`/babel/ip?ip=${encodeURIComponent(query)}`);
             resultsDiv.innerHTML = renderIPResult(result);
         } else if (isDomain) {
-            result = await api(`/gotham/whois?domain=${encodeURIComponent(query)}`);
+            result = await api(`/babel/whois?domain=${encodeURIComponent(query)}`);
             resultsDiv.innerHTML = renderDomainResult(result);
         } else {
-            result = await api(`/gotham/sanctions?query=${encodeURIComponent(query)}&limit=10`);
+            result = await api(`/babel/sanctions?query=${encodeURIComponent(query)}&limit=10`);
             resultsDiv.innerHTML = renderSanctionsResult(result);
         }
     } catch (e) {
@@ -2593,7 +2593,7 @@ async function searchSanctions() {
     resultsDiv.innerHTML = '<div class="empty-state"><span class="loading"></span> Searching...</div>';
 
     try {
-        const url = `/gotham/sanctions?query=${encodeURIComponent(query)}&limit=50${schema ? `&schema=${schema}` : ''}`;
+        const url = `/babel/sanctions?query=${encodeURIComponent(query)}&limit=50${schema ? `&schema=${schema}` : ''}`;
         const data = await api(url);
         resultsDiv.innerHTML = renderSanctionsResult(data);
     } catch (e) {
@@ -2610,7 +2610,7 @@ async function lookupIP() {
     resultsDiv.innerHTML = '<div class="empty-state"><span class="loading"></span> Looking up...</div>';
 
     try {
-        const data = await api(`/gotham/ip?ip=${encodeURIComponent(query)}`);
+        const data = await api(`/babel/ip?ip=${encodeURIComponent(query)}`);
         resultsDiv.innerHTML = renderIPResult(data);
     } catch (e) {
         resultsDiv.innerHTML = `<div class="empty-state" style="color:var(--red)">Error: ${e.message}</div>`;
@@ -2626,7 +2626,7 @@ async function lookupDomain() {
     resultsDiv.innerHTML = '<div class="empty-state"><span class="loading"></span> Looking up...</div>';
 
     try {
-        const data = await api(`/gotham/whois?domain=${encodeURIComponent(query)}`);
+        const data = await api(`/babel/whois?domain=${encodeURIComponent(query)}`);
         resultsDiv.innerHTML = renderDomainResult(data);
     } catch (e) {
         resultsDiv.innerHTML = `<div class="empty-state" style="color:var(--red)">Error: ${e.message}</div>`;

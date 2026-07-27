@@ -46,7 +46,7 @@ async def init_db():
     from panteon.core.apikeys import APIKey
     from panteon.core.lineage import LineageNode, LineageEdge, LineageEvent
     from panteon.core.workspace import Workspace, WorkspaceMembership
-    from panteon.gotham.models import Investigation, Finding, Evidence, ThreatEntity, GeoEvent, PatternAlert, TimelineEvent, CountryRiskProfile
+    from panteon.babel.models import Investigation, Finding, Evidence, ThreatEntity, GeoEvent, PatternAlert, TimelineEvent, CountryRiskProfile
     from panteon.contour.models import Dashboard, Chart, PipelineSchedule, PipelineScheduleRun, DataQualityRule, DataQualityViolation, SearchIndex
     from panteon.aip.models import Workflow, WorkflowRun, RagDocument, RagChunk, KnowledgeEntity, KnowledgeRelation, GuardPolicy, GuardEvent, Prompt, PromptVersion, PromptEvaluation
     async with engine.begin() as conn:

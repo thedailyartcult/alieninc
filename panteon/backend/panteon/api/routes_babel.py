@@ -1,5 +1,5 @@
 """
-Gotham Intelligence - OSINT and sanctions screening routes.
+Babel Intelligence - OSINT and sanctions screening routes.
 """
 from datetime import datetime
 from typing import Optional, List
@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from panteon.core.auth import SupabaseUser, get_current_user
 from panteon.core.sanctions import sanctions_cache, SanctionEntry
 
-router = APIRouter(prefix="/gotham", tags=["Gotham Intelligence"])
+router = APIRouter(prefix="/babel", tags=["Babel Intelligence"])
 
 # CCTV Camera Cache (5 minutes)
 _cctv_cache = {
@@ -347,7 +347,7 @@ async def lookup_whois(
 
 @router.get("/health")
 async def health_check():
-    """Health check endpoint for Gotham intelligence services."""
+    """Health check endpoint for Babel intelligence services."""
     try:
         size = await sanctions_cache.index_size()
         return {

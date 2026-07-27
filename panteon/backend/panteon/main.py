@@ -22,7 +22,7 @@ from panteon.api.routes_lineage import router as lineage_router
 from panteon.api.routes_monitoring import router as monitoring_router
 from panteon.api.routes_workspaces import router as workspaces_router
 from panteon.api.routes_group import router as group_router
-from panteon.api.routes_gotham import router as gotham_router
+from panteon.api.routes_babel import router as babel_router
 from panteon.api.routes_contour import router as contour_router
 from panteon.api.routes_aip import router as aip_router
 
@@ -67,7 +67,7 @@ app.include_router(lineage_router, prefix="/api/v1")
 app.include_router(monitoring_router, prefix="/api/v1")
 app.include_router(workspaces_router, prefix="/api/v1")
 app.include_router(group_router, prefix="/api/v1")
-app.include_router(gotham_router, prefix="/api/v1")
+app.include_router(babel_router, prefix="/api/v1")
 app.include_router(contour_router, prefix="/api/v1")
 app.include_router(aip_router, prefix="/api/v1")
 

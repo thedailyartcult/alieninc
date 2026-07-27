@@ -149,8 +149,8 @@ class ContourService:
             return await self._query_audit(chart, ds)
         elif source_type == "monitoring":
             return await self._query_monitoring(chart, ds)
-        elif source_type == "gotham":
-            return await self._query_gotham(chart, ds)
+        elif source_type == "babel":
+            return await self._query_babel(chart, ds)
         elif source_type == "group":
             return await self._query_group(chart, ds)
         else:
@@ -278,8 +278,8 @@ class ContourService:
 
         return {"data": [{"avg_latency_ms": avg_ms, "hours_back": hours}], "total": 1}
 
-    async def _query_gotham(self, chart: Chart, ds: dict) -> dict:
-        from panteon.gotham.models import Investigation, ThreatEntity, PatternAlert, GeoEvent
+    async def _query_babel(self, chart: Chart, ds: dict) -> dict:
+        from panteon.babel.models import Investigation, ThreatEntity, PatternAlert, GeoEvent
         stats = {}
         stats["open_investigations"] = (await self.db.execute(
             select(func.count(Investigation.id)).where(Investigation.status == "open")

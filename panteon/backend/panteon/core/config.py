@@ -37,6 +37,14 @@ class Settings(BaseSettings):
 
     allowed_email_domains: str = "alieninc.tech"
 
+    ono_function_shared_secret: Optional[str] = None
+    ono_function_exec_mode: str = "subprocess"
+    ono_function_executable: str = "opencode"
+    ono_function_model: Optional[str] = None
+    ono_function_timeout: int = 120
+    ono_function_rate_limit: int = 20
+    ono_function_audit_dir: str = "audit-logs"
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

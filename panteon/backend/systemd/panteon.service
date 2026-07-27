@@ -1,0 +1,28 @@
+[Unit]
+Description=Panteon — Enterprise Data & AI Operating System
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/alieninc/panteon/backend
+EnvironmentFile=/home/alieninc/panteon/backend/.env
+ExecStart=/usr/bin/python3 -m uvicorn panteon.main:app --host 0.0.0.0 --port 8000 --workers 2 --log-level info
+Restart=on-failure
+RestartSec=5
+StartLimitBurst=5
+StartLimitIntervalSec=60
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=panteon
+
+# Security hardening
+NoNewPrivileges=false
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/alieninc/panteon/backend/audit-logs
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

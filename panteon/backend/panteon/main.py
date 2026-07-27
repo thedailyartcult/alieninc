@@ -26,6 +26,7 @@ from panteon.api.routes_babel import router as babel_router
 from panteon.api.routes_contour import router as contour_router
 from panteon.api.routes_aip import router as aip_router
 from panteon.api.routes_terranean import router as terranean_router
+from panteon.api.routes_yono_functions import router as yono_functions_router
 
 PANTEON_SITE = Path(os.path.dirname(__file__)).parent.parent
 
@@ -72,6 +73,7 @@ app.include_router(babel_router, prefix="/api/v1")
 app.include_router(contour_router, prefix="/api/v1")
 app.include_router(aip_router, prefix="/api/v1")
 app.include_router(terranean_router, prefix="/api/v1")
+app.include_router(yono_functions_router, prefix="/api/v1")
 
 
 @app.get("/")

@@ -3,7 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import structlog
 
 from panteon.core.database import get_db
-from panteon.core.hmac_auth import require_spinal_craker_auth
+from panteon.core.hmac_auth import require_spinal_craker_auth, SIGNATURE_HEADER, TIMESTAMP_HEADER
+from panteon.core.auth import get_current_user
 from panteon.api.schemas_yono_functions import (
     YONOFunctionRequest,
     YONOFunctionResponse,
@@ -26,12 +27,12 @@ audit_log = YONOFunctionAuditLog()
 @router.post(
     "/execute",
     response_model=YONOFunctionResponse,
-    dependencies=[Depends(require_spinal_craker_auth)],
 )
 async def execute_function(
     data: YONOFunctionRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
+    _user: dict = Depends(get_current_user),
 ):
     if principal_rate_limiter.is_limited(data.principal_id):
         audit_log.log_rejection(

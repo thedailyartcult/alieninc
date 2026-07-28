@@ -208,8 +208,8 @@ async def seed():
             db.add(google)
             await db.flush()
             gemini = LLMModel(
-                provider_id=google.id, model_id="gemini-2.5-pro",
-                display_name="Gemini 2.5 Pro", capabilities=["text", "reasoning"],
+                provider_id=google.id, model_id="gemini-2.0-flash",
+                display_name="Gemini 2.0 Flash", capabilities=["text", "reasoning"],
                 max_tokens=8192, cost_per_1k_input=0.00125, cost_per_1k_output=0.005,
             )
             db.add(gemini)
@@ -236,17 +236,38 @@ async def seed():
             db.add(claude)
             print("Seeded LLM providers (Google, OpenAI, Anthropic)")
 
+        existing_opencode = await db.execute(select(LLMProvider).where(LLMProvider.name == "opencode"))
+        if not existing_opencode.scalar_one_or_none():
+            opencode_provider = LLMProvider(name="opencode", provider_type="opencode", is_enabled=True)
+            db.add(opencode_provider)
+            await db.flush()
+            opencode_model = LLMModel(
+                provider_id=opencode_provider.id, model_id="opencode-go/deepseek-v4-flash",
+                display_name="DeepSeek V4 Flash (opencode)", capabilities=["text"],
+                max_tokens=8192, cost_per_1k_input=0.0, cost_per_1k_output=0.0,
+            )
+            db.add(opencode_model)
+            print("Seeded opencode provider + big-pickle model")
+
+        opencode_model = (await db.execute(
+            select(LLMModel).where(LLMModel.model_id == "opencode-go/deepseek-v4-flash")
+        )).scalar_one_or_none()
+        default_model = opencode_model
+
         existing_agent = await db.execute(select(Agent).where(Agent.name == "listening-booth"))
         if not existing_agent.scalar_one_or_none():
             agents = [
                 Agent(name="listening-booth", display_name="The Listening Booth",
                       system_prompt="You are a philosophical guide. Help patrons discover reflections that speak to their current state of mind. Ask what they're grappling with, then recommend a publisher and topic.",
+                      model_id=default_model.id if default_model else None,
                       tools=["search_reflections", "recommend_publisher"]),
                 Agent(name="immortality-archivist", display_name="Immortality Archivist",
                       system_prompt="You help patrons build their philosophical archive. Ask deep questions about their beliefs, values, and the questions that keep them awake. Distill their answers into a living document.",
+                      model_id=default_model.id if default_model else None,
                       tools=["update_context", "generate_archive"]),
                 Agent(name="curator", display_name="The Curator",
                       system_prompt="You curate the daily painting and philosophy games. Select works that provoke thought and connect to philosophical themes. Explain why each piece matters.",
+                      model_id=default_model.id if default_model else None,
                       tools=["select_painting", "select_quote"]),
             ]
             for a in agents:

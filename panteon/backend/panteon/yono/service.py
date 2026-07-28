@@ -1,6 +1,11 @@
+import asyncio
+import json
+import os
 import time
 import uuid
 from typing import Optional, AsyncIterator
+
+OPENCODE_BIN = os.environ.get("OPENCODE_BIN", "/root/.opencode/bin/opencode")
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -103,6 +108,234 @@ class LLMOrchestrator:
         )
         return list(result.scalars().all())
 
+    async def execute_llm_with_tools(
+        self,
+        model_id: uuid.UUID,
+        messages: list[dict],
+        system_prompt: Optional[str] = None,
+        tools: Optional[list[dict]] = None,
+        created_by: Optional[str] = None,
+    ) -> dict:
+        """
+        Execute LLM with tool-calling support (Palantir AIP Query Layer).
+        
+        Returns dict with:
+        - content: str (text response if no tool calls)
+        - tool_calls: list[dict] (tool calls if LLM wants to invoke tools)
+        - tokens_input: int
+        - tokens_output: int
+        """
+        model = await self.get_model(model_id)
+        if not model:
+            raise ValueError(f"Model {model_id} not found")
+
+        provider = model.provider
+        provider_type = provider.provider_type
+
+        if provider_type == "google":
+            return await self._call_google_with_tools(model, messages, system_prompt, tools)
+        elif provider_type == "openai":
+            return await self._call_openai_with_tools(model, messages, system_prompt, tools)
+        elif provider_type == "anthropic":
+            return await self._call_anthropic_with_tools(model, messages, system_prompt, tools)
+        elif provider_type == "opencode":
+            return await self._call_opencode_with_tools(model, messages, system_prompt, tools)
+        else:
+            raise ValueError(f"Unsupported provider type: {provider_type}")
+
+    async def _call_google_with_tools(
+        self, model: LLMModel, messages: list[dict], system_prompt: Optional[str], tools: Optional[list]
+    ) -> dict:
+        import google.generativeai as genai
+        from google.generativeai.types import generation_types
+
+        genai.configure(api_key=settings.google_api_key)
+        gemini_model = genai.GenerativeModel(model.model_id)
+
+        # Convert messages to Gemini format
+        history = []
+        contents = []
+
+        # Build content from messages
+        for msg in messages:
+            role = "user" if msg["role"] == "user" else "model"
+            content = msg.get("content", "")
+            if not content and msg.get("tool_calls"):
+                content = "[Tool calls requested]"
+            if content:
+                contents.append({"role": role, "parts": [content]})
+
+        # Convert tools to Gemini format
+        gemini_tools = None
+        if tools:
+            def _strip_defaults(schema):
+                if isinstance(schema, dict):
+                    return {k: _strip_defaults(v) for k, v in schema.items() if k != "default"}
+                if isinstance(schema, list):
+                    return [_strip_defaults(item) for item in schema]
+                return schema
+
+            function_declarations = []
+            for tool in tools:
+                func_def = {
+                    "name": tool["name"],
+                    "description": tool["description"],
+                    "parameters": _strip_defaults(tool.get("parameters", {})),
+                }
+                function_declarations.append(func_def)
+            gemini_tools = [{"function_declarations": function_declarations}]
+
+        # Build generation config
+        gen_config = {}
+        if system_prompt:
+            # Gemini uses system_instruction for system prompts
+            gemini_model = genai.GenerativeModel(
+                model.model_id,
+                system_instruction=system_prompt,
+            )
+
+        try:
+            response = await gemini_model.generate_content_async(
+                contents,
+                tools=gemini_tools,
+                **gen_config,
+            )
+
+            # Parse response
+            content = ""
+            tool_calls = []
+
+            for part in response.parts:
+                if hasattr(part, "text") and part.text:
+                    content += part.text
+                elif hasattr(part, "function_call") and part.function_call:
+                    fc = part.function_call
+                    tool_calls.append({
+                        "id": f"call_{uuid.uuid4().hex[:8]}",
+                        "type": "function",
+                        "function": {
+                            "name": fc.name,
+                            "arguments": json.dumps(dict(fc.args)) if fc.args else "{}",
+                        },
+                    })
+
+            tokens_in = response.usage_metadata.prompt_token_count if response.usage_metadata else 0
+            tokens_out = response.usage_metadata.candidates_token_count if response.usage_metadata else 0
+
+            return {
+                "content": content,
+                "tool_calls": tool_calls,
+                "tokens_input": tokens_in,
+                "tokens_output": tokens_out,
+            }
+
+        except Exception as e:
+            return {
+                "content": f"Error: {str(e)}",
+                "tool_calls": [],
+                "tokens_input": 0,
+                "tokens_output": 0,
+            }
+
+    async def _call_openai_with_tools(
+        self, model: LLMModel, messages: list[dict], system_prompt: Optional[str], tools: Optional[list]
+    ) -> dict:
+        from openai import AsyncOpenAI
+
+        client = AsyncOpenAI(api_key=settings.openai_api_key)
+
+        # Build messages with system prompt
+        api_messages = []
+        if system_prompt:
+            api_messages.append({"role": "system", "content": system_prompt})
+        api_messages.extend(messages)
+
+        # Build tools for OpenAI format
+        api_tools = None
+        if tools:
+            api_tools = [{"type": "function", "function": t} for t in tools]
+
+        kwargs = {"model": model.model_id, "messages": api_messages}
+        if api_tools:
+            kwargs["tools"] = api_tools
+
+        response = await client.chat.completions.create(**kwargs)
+
+        choice = response.choices[0]
+        content = choice.message.content or ""
+        tool_calls = []
+
+        if choice.message.tool_calls:
+            for tc in choice.message.tool_calls:
+                tool_calls.append({
+                    "id": tc.id,
+                    "type": "function",
+                    "function": {
+                        "name": tc.function.name,
+                        "arguments": tc.function.arguments,
+                    },
+                })
+
+        return {
+            "content": content,
+            "tool_calls": tool_calls,
+            "tokens_input": response.usage.prompt_tokens,
+            "tokens_output": response.usage.completion_tokens,
+        }
+
+    async def _call_anthropic_with_tools(
+        self, model: LLMModel, messages: list[dict], system_prompt: Optional[str], tools: Optional[list]
+    ) -> dict:
+        from anthropic import AsyncAnthropic
+
+        client = AsyncAnthropic(api_key=settings.anthropic_api_key)
+
+        # Build tools for Anthropic format
+        api_tools = None
+        if tools:
+            api_tools = []
+            for t in tools:
+                api_tools.append({
+                    "name": t["name"],
+                    "description": t["description"],
+                    "input_schema": t.get("parameters", {}),
+                })
+
+        kwargs = {
+            "model": model.model_id,
+            "max_tokens": model.max_tokens,
+            "messages": messages,
+        }
+        if system_prompt:
+            kwargs["system"] = system_prompt
+        if api_tools:
+            kwargs["tools"] = api_tools
+
+        response = await client.messages.create(**kwargs)
+
+        content = ""
+        tool_calls = []
+
+        for block in response.content:
+            if block.type == "text":
+                content += block.text
+            elif block.type == "tool_use":
+                tool_calls.append({
+                    "id": block.id,
+                    "type": "function",
+                    "function": {
+                        "name": block.name,
+                        "arguments": json.dumps(block.input),
+                    },
+                })
+
+        return {
+            "content": content,
+            "tool_calls": tool_calls,
+            "tokens_input": response.usage.input_tokens,
+            "tokens_output": response.usage.output_tokens,
+        }
+
     async def _call_provider(
         self,
         model: LLMModel,
@@ -119,6 +352,8 @@ class LLMOrchestrator:
             return await self._call_anthropic(model, prompt, system_prompt, parameters)
         elif provider_type == "google":
             return await self._call_google(model, prompt, system_prompt, parameters)
+        elif provider_type == "opencode":
+            return await self._call_opencode(model, prompt, system_prompt, parameters)
         else:
             raise ValueError(f"Unsupported provider type: {provider_type}")
 
@@ -182,8 +417,106 @@ class LLMOrchestrator:
             "tokens_output": response.usage_metadata.candidates_token_count,
         }
 
+    async def _call_opencode(
+        self, model: LLMModel, prompt: str, system_prompt: Optional[str], parameters: Optional[dict]
+    ) -> dict:
+        import subprocess
+
+        full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
+        cmd = [OPENCODE_BIN, "run", full_prompt, "--model", model.model_id]
+
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=120)
+
+        if proc.returncode != 0:
+            raise RuntimeError(f"opencode failed: {stderr.decode().strip()[:500]}")
+
+        return {
+            "content": stdout.decode().strip(),
+            "tokens_input": 0,
+            "tokens_output": 0,
+        }
+
+    async def _call_opencode_with_tools(
+        self, model: LLMModel, messages: list[dict], system_prompt: Optional[str], tools: Optional[list]
+    ) -> dict:
+
+        tool_schema = ""
+        if tools:
+            tool_schema = "\n\nYou have access to the following tools. To use a tool, output EXACTLY this format on its own line (no other text around it):\n\n```tool_call\n{\"name\": \"tool_name\", \"args\": {\"arg1\": \"value1\"}}\n```\n\nAvailable tools:\n"
+            for t in tools:
+                tool_schema += f"- **{t['name']}**: {t.get('description', '')}\n"
+                if t.get("parameters", {}).get("properties"):
+                    tool_schema += f"  Parameters: {json.dumps(t['parameters']['properties'])}\n"
+
+        messages_text = ""
+        for msg in messages:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            if role == "tool":
+                tool_result = msg.get("content", "")
+                messages_text += f"\n[Tool Result]: {tool_result}\n"
+            elif role == "assistant" and msg.get("tool_calls"):
+                messages_text += f"\n[Assistant requested tools]\n"
+            elif content:
+                messages_text += f"\n[{role.capitalize()}]: {content}\n"
+
+        full_prompt = f"{system_prompt or ''}{tool_schema}\n\nConversation:\n{messages_text}\n\nRespond now."
+
+        cmd = [OPENCODE_BIN, "run", full_prompt, "--model", model.model_id]
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=120)
+
+        if proc.returncode != 0:
+            raise RuntimeError(f"opencode failed: {stderr.decode().strip()[:500]}")
+
+        response_text = stdout.decode().strip()
+
+        tool_calls = []
+        import re
+        for match in re.finditer(r"```tool_call\s*\n(\{.*?\})\s*\n```", response_text, re.DOTALL):
+            try:
+                tc = json.loads(match.group(1))
+                tool_calls.append({
+                    "id": f"call_{uuid.uuid4().hex[:8]}",
+                    "type": "function",
+                    "function": {
+                        "name": tc["name"],
+                        "arguments": json.dumps(tc.get("args", {})),
+                    },
+                })
+            except (json.JSONDecodeError, KeyError):
+                pass
+
+        clean_response = re.sub(r"```tool_call\s*\n\{.*?\}\s*\n```", "", response_text, flags=re.DOTALL).strip()
+
+        return {
+            "content": clean_response,
+            "tool_calls": tool_calls,
+            "tokens_input": 0,
+            "tokens_output": 0,
+        }
+
 
 class AgentService:
+    """
+    Palantir AIP-style agent service.
+    
+    Architecture:
+    1. Context Layer — deterministic ontology data injection
+    2. Query/Reasoning Layer — LLM with ontology tools
+    3. Action Layer — governed ontology mutations
+    4. Governance Layer — permission checks on every operation
+    5. Audit Layer — full lineage trail
+    """
     def __init__(self, db: AsyncSession):
         self.db = db
         self.llm = LLMOrchestrator(db)
@@ -196,6 +529,10 @@ class AgentService:
         model_id: Optional[uuid.UUID] = None,
         description: Optional[str] = None,
         tools: Optional[list] = None,
+        allowed_object_types: Optional[list] = None,
+        writable_object_types: Optional[list] = None,
+        allowed_actions: Optional[list] = None,
+        ontology_context_config: Optional[dict] = None,
     ) -> Agent:
         agent = Agent(
             name=name,
@@ -204,6 +541,10 @@ class AgentService:
             model_id=_uid(model_id),
             description=description,
             tools=tools or [],
+            allowed_object_types=allowed_object_types or [],
+            writable_object_types=writable_object_types or [],
+            allowed_actions=allowed_actions or [],
+            ontology_context_config=ontology_context_config or {},
         )
         self.db.add(agent)
         await self.db.flush()
@@ -228,32 +569,180 @@ class AgentService:
         user_id: Optional[str] = None,
         session_id: Optional[uuid.UUID] = None,
     ) -> dict:
+        """
+        Palantir AIP-style chat with ontology integration.
+        
+        Flow:
+        1. Load agent + session
+        2. Build ontology context (governed)
+        3. Build system prompt with context
+        4. Tool-calling loop: LLM reasons → calls tools → gets results → repeats
+        5. Final response with audit trail
+        """
         agent = await self.get_agent(agent_id)
         if not agent:
             raise ValueError(f"Agent {agent_id} not found")
 
         if session_id:
             session = await self._get_session(session_id)
+            if not session:
+                session = await self._create_session(agent_id, user_id)
         else:
             session = await self._create_session(agent_id, user_id)
 
-        session.messages.append({"role": "user", "content": message})
+        # ── Layer 1: Context Injection ────────────────────────────────
+        from panteon.yono.governance import GovernanceLayer
+        governance = GovernanceLayer(self.db, agent)
 
-        response = await self.llm.execute_llm(
-            model_id=agent.model_id,
-            prompt=message,
-            system_prompt=agent.system_prompt,
-            created_by=user_id,
-        )
+        ontology_context = await governance.build_context()
 
-        session.messages.append({"role": "assistant", "content": response.response})
+        # ── Build system prompt with ontology context ─────────────────
+        system_prompt = agent.system_prompt
+        if ontology_context:
+            system_prompt = f"{agent.system_prompt}\n\n{ontology_context}"
+
+        # ── Layer 2: Prepare tool-calling ─────────────────────────────
+        from panteon.yono.ontology_tools import get_tool_definitions, OntologyToolExecutor
+        tool_defs = governance.filter_tool_list(get_tool_definitions())
+        tool_executor = OntologyToolExecutor(self.db, agent.id)
+
+        # ── Build conversation history ────────────────────────────────
+        messages = []
+        if session.messages:
+            messages.extend(session.messages)
+        messages.append({"role": "user", "content": message})
+
+        # ── Layer 3: Tool-calling loop ────────────────────────────────
+        total_tokens_in = 0
+        total_tokens_out = 0
+        tool_calls_log = []
+        final_response = ""
+
+        for iteration in range(agent.max_iterations or 10):
+            # Call LLM with tools
+            llm_result = await self.llm.execute_llm_with_tools(
+                model_id=agent.model_id,
+                messages=messages,
+                system_prompt=system_prompt,
+                tools=tool_defs if tool_defs else None,
+                created_by=user_id,
+            )
+
+            total_tokens_in += llm_result.get("tokens_input", 0)
+            total_tokens_out += llm_result.get("tokens_output", 0)
+
+            # Check if LLM wants to call tools
+            tool_calls = llm_result.get("tool_calls", [])
+            if not tool_calls:
+                # No tool calls — this is the final response
+                final_response = llm_result.get("content", "")
+                messages.append({"role": "assistant", "content": final_response})
+                break
+
+            # Execute each tool call
+            messages.append({
+                "role": "assistant",
+                "content": llm_result.get("content", ""),
+                "tool_calls": tool_calls,
+            })
+
+            for tc in tool_calls:
+                tool_name = tc["function"]["name"]
+                try:
+                    args = json.loads(tc["function"]["arguments"])
+                except (json.JSONDecodeError, KeyError):
+                    args = {}
+
+                # Governance check
+                if tool_name in ("query_objects", "get_object", "get_object_links", "search_objects"):
+                    type_name = args.get("type_name", "")
+                    if type_name:
+                        verdict = governance.check_read(type_name)
+                        if not verdict.allowed:
+                            tool_result = {"error": verdict.reason}
+                            tool_calls_log.append({
+                                "tool": tool_name,
+                                "args": args,
+                                "denied": True,
+                                "reason": verdict.reason,
+                            })
+                            messages.append({
+                                "role": "tool",
+                                "tool_call_id": tc["id"],
+                                "content": json.dumps(tool_result),
+                            })
+                            continue
+
+                elif tool_name == "execute_action":
+                    action_name = args.get("action_name", "")
+                    if action_name:
+                        verdict = governance.check_action(action_name)
+                        if not verdict.allowed:
+                            tool_result = {"error": verdict.reason}
+                            tool_calls_log.append({
+                                "tool": tool_name,
+                                "args": args,
+                                "denied": True,
+                                "reason": verdict.reason,
+                            })
+                            messages.append({
+                                "role": "tool",
+                                "tool_call_id": tc["id"],
+                                "content": json.dumps(tool_result),
+                            })
+                            continue
+
+                # Execute tool
+                tool_result = await tool_executor.execute(tool_name, args)
+                tool_calls_log.append({
+                    "tool": tool_name,
+                    "args": args,
+                    "result_summary": str(tool_result)[:200],
+                })
+
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tc["id"],
+                    "content": json.dumps(tool_result),
+                })
+
+        # ── Layer 4: Persist session ──────────────────────────────────
+        session.messages = messages
         await self.db.flush()
+
+        # ── Layer 5: Audit trail ──────────────────────────────────────
+        # Log to lineage system (fire-and-forget)
+        try:
+            from panteon.core.lineage_service import LineageService
+            lineage = LineageService(self.db)
+            node = await lineage.get_or_create_node(
+                node_type="agent_session",
+                node_id=str(session.id),
+                name=f"Query Session: {agent.display_name}",
+                description=f"Chat session with {agent.display_name}",
+            )
+            await lineage.record_event(
+                node_id=node.id,
+                event_type="agent_chat",
+                actor=user_id,
+                details={
+                    "agent_id": str(agent.id),
+                    "agent_name": agent.name,
+                    "tool_calls": len(tool_calls_log),
+                    "tokens_in": total_tokens_in,
+                    "tokens_out": total_tokens_out,
+                },
+            )
+        except Exception:
+            pass  # Audit failures should not break chat
 
         return {
             "session_id": session.id,
-            "response": response.response,
-            "tokens_input": response.tokens_input,
-            "tokens_output": response.tokens_output,
+            "response": final_response,
+            "tokens_input": total_tokens_in,
+            "tokens_output": total_tokens_out,
+            "tool_calls": tool_calls_log,
+            "iterations": min(iteration + 1, agent.max_iterations or 10),
         }
 
     async def _create_session(self, agent_id: uuid.UUID, user_id: Optional[str]) -> AgentSession:

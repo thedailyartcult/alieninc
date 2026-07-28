@@ -88,6 +88,18 @@ class Agent(Base):
     is_enabled = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    # ── Ontology / AIP Governance Fields ──────────────────────────────
+    # Object types this agent can READ (empty = none)
+    allowed_object_types = Column(JSONB, default=list)
+    # Object types this agent can WRITE (empty = none)
+    writable_object_types = Column(JSONB, default=list)
+    # Action types this agent can execute (empty = none)
+    allowed_actions = Column(JSONB, default=list)
+    # Ontology context auto-injected into every prompt (e.g. {"type": "tdac_patron", "filters": {}})
+    ontology_context_config = Column(JSONB, default=dict)
+    # Maximum ontology objects to inject as context per query
+    max_context_objects = Column(Integer, default=20)
+
     sessions = relationship("AgentSession", back_populates="agent")
 
     __table_args__ = (Index("ix_yono_agents_model", "model_id"),)

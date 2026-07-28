@@ -109,6 +109,10 @@ async def create_agent(
         model_id=data.model_id,
         description=data.description,
         tools=data.tools,
+        allowed_object_types=data.allowed_object_types,
+        writable_object_types=data.writable_object_types,
+        allowed_actions=data.allowed_actions,
+        ontology_context_config=data.ontology_context_config,
     )
     return agent
 

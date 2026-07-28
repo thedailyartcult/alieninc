@@ -23,8 +23,29 @@ if is_sqlite:
                     return value
             return None
 
+    class SQLiteUUID(TypeDecorator):
+        impl = String(36)
+        cache_ok = True
+
+        def process_bind_param(self, value, dialect):
+            if value is None:
+                return None
+            if isinstance(value, uuid_lib.UUID):
+                return str(value)
+            return str(uuid_lib.UUID(str(value)))
+
+        def process_result_value(self, value, dialect):
+            if value is None:
+                return None
+            if isinstance(value, uuid_lib.UUID):
+                return value
+            try:
+                return uuid_lib.UUID(value)
+            except (ValueError, AttributeError):
+                return value
+
     def UUID_COL(as_uuid=True):
-        return String(36)
+        return SQLiteUUID()
 
 else:
     from sqlalchemy.dialects.postgresql import UUID, JSONB as PG_JSONB

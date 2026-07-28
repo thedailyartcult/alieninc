@@ -79,6 +79,11 @@ class AgentCreate(BaseModel):
     model_id: Optional[UUID] = None
     description: Optional[str] = None
     tools: Optional[list] = None
+    # ── AIP Governance Fields ─────────────────────────────────────────
+    allowed_object_types: Optional[list] = None
+    writable_object_types: Optional[list] = None
+    allowed_actions: Optional[list] = None
+    ontology_context_config: Optional[dict] = None
 
 
 class AgentResponse(BaseModel):
@@ -91,6 +96,11 @@ class AgentResponse(BaseModel):
     tools: list
     is_enabled: bool
     created_at: datetime
+    # ── AIP Governance Fields ─────────────────────────────────────────
+    allowed_object_types: list
+    writable_object_types: list
+    allowed_actions: list
+    ontology_context_config: dict
 
     class Config:
         from_attributes = True
@@ -107,6 +117,8 @@ class AgentChatResponse(BaseModel):
     response: str
     tokens_input: int
     tokens_output: int
+    tool_calls: Optional[list] = None
+    iterations: Optional[int] = None
 
 
 class AutomationCreate(BaseModel):

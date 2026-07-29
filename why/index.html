@@ -1519,39 +1519,22 @@
             const mapEl = document.getElementById('aliens-network-map');
             if (!mapEl || typeof maplibregl === 'undefined') return;
 
-            // Inline raster style — avoids CSP connect-src restrictions that block
-            // fetch() to tiles.openfreemap.org on the live site.
-            // Raster tiles load via <img> (covered by img-src: https:), not fetch().
-            const rasterStyle = {
-                version: 8,
-                sources: {
-                    'dark-raster': {
-                        type: 'raster',
-                        tiles: ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'],
-                        tileSize: 512,
-                        attribution: '© CARTO'
-                    }
-                },
-                layers: [
-                    { id: 'bg', type: 'background', paint: { 'background-color': '#000' } },
-                    { id: 'dark-raster-layer', type: 'raster', source: 'dark-raster', minzoom: 0, maxzoom: 22 }
-                ]
-            };
-
+            // Integrates OpenFreeMap Dark style to serve vector tiles natively
             activeMapInstance = new maplibregl.Map({
                 container: 'aliens-network-map',
-                style: rasterStyle,
+                style: 'https://tiles.openfreemap.org/styles/dark',
                 center: [120.7, 15.1],
                 zoom: 8.2,
-                pitch: 55,
+                pitch: 55, // Immersive 3D camera angle
                 bearing: -10,
                 attributionControl: { compact: true },
                 canvasContextAttributes: { antialias: true }
             });
 
+            // Initialize Synchronized Radar Minimap
             minimapInstance = new maplibregl.Map({
                 container: 'retro-compass-radar-map',
-                style: JSON.parse(JSON.stringify(rasterStyle)),
+                style: 'https://tiles.openfreemap.org/styles/dark',
                 center: [120.7, 15.1],
                 zoom: 4.8,
                 interactive: false,
@@ -1562,7 +1545,44 @@
 
             boundsInstance = new maplibregl.LngLatBounds();
 
+            // Setup layers after style is parsed
             activeMapInstance.on('style.load', () => {
+                // Adds cybernetic 3D building extrusions natively colored by height
+                activeMapInstance.addLayer({
+                    'id': '3d-buildings',
+                    'source': 'openmaptiles',
+                    'source-layer': 'building',
+                    'type': 'fill-extrusion',
+                    'minzoom': 13,
+                    'paint': {
+                        'fill-extrusion-color': [
+                            'interpolate',
+                            ['linear'],
+                            ['get', 'render_height'],
+                            0, '#062d18',      // Deep terminal dark-green base
+                            30, '#0f5132',     // Forest green
+                            100, '#198754',    // Muted cyber green
+                            250, '#4ade80',    // Bright cyber green glow
+                            500, '#22d3ee'     // Neon cyan sky-high peaks
+                        ],
+                        'fill-extrusion-height': [
+                            'interpolate',
+                            ['linear'],
+                            ['zoom'],
+                            13, 0,
+                            14, ['get', 'render_height']
+                        ],
+                        'fill-extrusion-base': [
+                            'case',
+                            ['>=', ['get', 'zoom'], 16],
+                            ['get', 'render_min_height'],
+                            0
+                        ],
+                        'fill-extrusion-opacity': 0.75
+                    }
+                });
+
+                // Add Luzon Railway geo-grid networks
                 activeMapInstance.addSource('luzon-railways', {
                     type: 'geojson',
                     data: luzonRailwaysGeoJSON
@@ -1593,6 +1613,7 @@
                     }
                 });
 
+                // Add Luzon Highway geo-grid networks
                 activeMapInstance.addSource('luzon-highways', {
                     type: 'geojson',
                     data: luzonHighwaysGeoJSON
@@ -1607,9 +1628,9 @@
                         'line-color': [
                             'match',
                             ['get', 'name'],
-                            'EDSA Corridor', '#ef4444',
-                            'North Luzon Expressway (NLEX)', '#f59e0b',
-                            'SCTEX Corridor', '#10b981',
+                            'EDSA Corridor', '#ef4444', // Hot Rose
+                            'North Luzon Expressway (NLEX)', '#f59e0b', // Amber
+                            'SCTEX Corridor', '#10b981', // Fluid Emerald
                             '#22d3ee'
                         ],
                         'line-width': 5,
@@ -1618,6 +1639,7 @@
                     }
                 });
 
+                // Generate fable District labels
                 fableDistricts.forEach(dist => {
                     const el = document.createElement('div');
                     el.className = 'retro-map-district-tag';
@@ -1630,6 +1652,7 @@
                     districtMarkers.push(marker);
                 });
 
+                // Hide district tags on zoomed out bounds to prevent cluttering
                 function updateDistrictLabels() {
                     const zoom = activeMapInstance.getZoom();
                     districtMarkers.forEach(m => {
@@ -1638,8 +1661,6 @@
                 }
                 activeMapInstance.on('zoom', updateDistrictLabels);
                 updateDistrictLabels();
-                activeMapInstance.resize();
-                if (minimapInstance) minimapInstance.resize();
             });
 
             // Monitor map centering to update HUD Sector name dynamically based on nearest LGU
@@ -1724,22 +1745,70 @@
                 if (activeMapInstance.getLayer('railways-neon-glow')) activeMapInstance.setLayoutProperty('railways-neon-glow', 'visibility', 'none');
                 if (activeMapInstance.getLayer('railways-core')) activeMapInstance.setLayoutProperty('railways-core', 'visibility', 'none');
                 if (activeMapInstance.getLayer('roads-neon-glow')) activeMapInstance.setLayoutProperty('roads-neon-glow', 'visibility', 'none');
+                
+                if (activeMapInstance.getLayer('3d-buildings')) {
+                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.75);
+                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-color', [
+                        'interpolate',
+                        ['linear'],
+                        ['get', 'render_height'],
+                        0, '#062d18',
+                        30, '#0f5132',
+                        100, '#198754',
+                        250, '#4ade80',
+                        500, '#22d3ee'
+                    ]);
+                }
             } else if (layerId === 'rail') {
                 if (activeMapInstance.getLayer('railways-neon-glow')) activeMapInstance.setLayoutProperty('railways-neon-glow', 'visibility', 'visible');
                 if (activeMapInstance.getLayer('railways-core')) activeMapInstance.setLayoutProperty('railways-core', 'visibility', 'visible');
                 if (activeMapInstance.getLayer('roads-neon-glow')) activeMapInstance.setLayoutProperty('roads-neon-glow', 'visibility', 'none');
+
+                if (activeMapInstance.getLayer('3d-buildings')) {
+                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.25);
+                }
             } else if (layerId === 'transit') {
                 if (activeMapInstance.getLayer('railways-neon-glow')) activeMapInstance.setLayoutProperty('railways-neon-glow', 'visibility', 'visible');
                 if (activeMapInstance.getLayer('railways-core')) activeMapInstance.setLayoutProperty('railways-core', 'visibility', 'visible');
                 if (activeMapInstance.getLayer('roads-neon-glow')) activeMapInstance.setLayoutProperty('roads-neon-glow', 'visibility', 'none');
+
+                if (activeMapInstance.getLayer('3d-buildings')) {
+                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.75);
+                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-color', [
+                        'interpolate',
+                        ['linear'],
+                        ['get', 'render_height'],
+                        0, '#0f5132',
+                        50, '#10b981',
+                        150, '#22d3ee',
+                        300, '#38bdf8'
+                    ]);
+                }
             } else if (layerId === 'road-congestion') {
                 if (activeMapInstance.getLayer('railways-neon-glow')) activeMapInstance.setLayoutProperty('railways-neon-glow', 'visibility', 'none');
                 if (activeMapInstance.getLayer('railways-core')) activeMapInstance.setLayoutProperty('railways-core', 'visibility', 'none');
                 if (activeMapInstance.getLayer('roads-neon-glow')) activeMapInstance.setLayoutProperty('roads-neon-glow', 'visibility', 'visible');
+
+                if (activeMapInstance.getLayer('3d-buildings')) {
+                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.35);
+                }
             } else if (layerId === 'density') {
                 if (activeMapInstance.getLayer('railways-neon-glow')) activeMapInstance.setLayoutProperty('railways-neon-glow', 'visibility', 'none');
                 if (activeMapInstance.getLayer('railways-core')) activeMapInstance.setLayoutProperty('railways-core', 'visibility', 'none');
                 if (activeMapInstance.getLayer('roads-neon-glow')) activeMapInstance.setLayoutProperty('roads-neon-glow', 'visibility', 'none');
+
+                if (activeMapInstance.getLayer('3d-buildings')) {
+                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.85);
+                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-color', [
+                        'interpolate',
+                        ['linear'],
+                        ['get', 'render_height'],
+                        0, '#4ade80',     // Low structural density
+                        50, '#f59e0b',    // Moderate density
+                        150, '#ef4444',   // High density (urban centers)
+                        300, '#22d3ee'    // Maximum concentration
+                    ]);
+                }
             }
         }
 
@@ -1938,8 +2007,6 @@
         function typeParagraph() {
             if (currentPara >= paragraphs.length) {
                 document.getElementById('rest-of-page').style.opacity = '1';
-                if (activeMapInstance) activeMapInstance.resize();
-                if (minimapInstance) minimapInstance.resize();
                 initSplitFlaps();
                 return;
             }

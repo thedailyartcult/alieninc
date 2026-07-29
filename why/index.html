@@ -1531,7 +1531,7 @@
                 canvasContextAttributes: { antialias: true }
             });
 
-            // Initialize Synchronized Radar Minimap
+            // Initialize Synchronized Radar Minimap (clone style to avoid shared object issues)
             minimapInstance = new maplibregl.Map({
                 container: 'retro-compass-radar-map',
                 style: 'https://tiles.openfreemap.org/styles/dark',
@@ -1661,6 +1661,8 @@
                 }
                 activeMapInstance.on('zoom', updateDistrictLabels);
                 updateDistrictLabels();
+                activeMapInstance.resize();
+                if (minimapInstance) minimapInstance.resize();
             });
 
             // Monitor map centering to update HUD Sector name dynamically based on nearest LGU
@@ -2007,6 +2009,8 @@
         function typeParagraph() {
             if (currentPara >= paragraphs.length) {
                 document.getElementById('rest-of-page').style.opacity = '1';
+                if (activeMapInstance) activeMapInstance.resize();
+                if (minimapInstance) minimapInstance.resize();
                 initSplitFlaps();
                 return;
             }

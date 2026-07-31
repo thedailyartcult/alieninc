@@ -1198,21 +1198,18 @@
                         <div id="hud-archive-meta" class="retro-map-hud-meta">AS OF —</div>
                     </div>
 
-                    <!-- Left side Drawer: Map Active Spectras (fable Layers Panel) -->
+                    <!-- Left side Drawer: Map Views -->
                     <div class="retro-map-hud-panel retro-map-deck">
-                        <div class="retro-map-deck-title">ACTIVE SPECTRA</div>
-                        <button onclick="toggleDataLayer('none')" id="layer-btn-none" class="retro-map-deck-btn active">DEFAULT</button>
-                        <button onclick="toggleDataLayer('rail')" id="layer-btn-rail" class="retro-map-deck-btn">RAIL GRID</button>
-                        <button onclick="toggleDataLayer('transit')" id="layer-btn-transit" class="retro-map-deck-btn">TRANSIT PROFILE</button>
-                        <button onclick="toggleDataLayer('road-congestion')" id="layer-btn-road-congestion" class="retro-map-deck-btn">ROAD CONGESTION</button>
-                        <button onclick="toggleDataLayer('density')" id="layer-btn-density" class="retro-map-deck-btn">STRUCTURAL DENSITY</button>
+                        <div class="retro-map-deck-title">MAP VIEWS</div>
+                        <button onclick="toggleDataLayer('default')" id="layer-btn-default" class="retro-map-deck-btn active">DEFAULT</button>
+                        <button onclick="toggleDataLayer('flow')" id="layer-btn-flow" class="retro-map-deck-btn">GRID FLOW</button>
                         
                         <!-- Spectral Legend -->
                         <div class="retro-map-legend">
                             <div class="retro-map-legend-bar"></div>
                             <div class="retro-map-legend-labels">
-                                <span id="retro-legend-low">BASE MAP</span>
-                                <span id="retro-legend-high">STRUCTURAL</span>
+                                <span id="retro-legend-low">LOW-RISE</span>
+                                <span id="retro-legend-high">HIGH-RISE</span>
                             </div>
                         </div>
                     </div>
@@ -1429,6 +1426,200 @@
         let boundsInstance = null;
         let districtMarkers = [];
         let searchMarkerInstance = null;
+
+        // Real building-height color ramp (meters, from OpenMapTiles render_height).
+        const BUILDING_HEIGHT_RAMP = [
+            'interpolate', ['linear'], ['get', 'render_height'],
+            0, '#062d18',      // Ground level
+            30, '#0f5132',     // Low-rise
+            100, '#198754',    // Mid-rise
+            250, '#4ade80',    // High-rise
+            500, '#22d3ee'     // Skyline peaks
+        ];
+
+        // --- GRID FLOW: animated pulses along real Luzon corridors that color buildings as they cross ---
+        const FLOW_DURATION_MS = 26000;
+        const FLOW_BUFFER_M = 160;
+        const FLOW_REVEAL_SCAN_MS = 100;
+
+        function flowDistanceM(a, b) {
+            const dx = (b[0] - a[0]) * 111320 * Math.cos((a[1] + b[1]) / 2 * Math.PI / 180);
+            const dy = (b[1] - a[1]) * 110540;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function flowSubstring(coords, segs, dist) {
+            const out = [coords[0]];
+            let remaining = dist;
+            for (let i = 0; i < segs.length; i++) {
+                if (remaining <= segs[i]) {
+                    const f = segs[i] === 0 ? 0 : remaining / segs[i];
+                    const a = coords[i], b = coords[i + 1];
+                    out.push([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]);
+                    return out;
+                }
+                out.push(coords[i + 1]);
+                remaining -= segs[i];
+            }
+            return out;
+        }
+
+        function flowOffsetChain(coords, w) {
+            const n = coords.length;
+            if (n < 2) return null;
+            const left = [], right = [];
+            for (let i = 0; i < n; i++) {
+                const a = coords[Math.max(0, i - 1)];
+                const b = coords[i];
+                const c = coords[Math.min(n - 1, i + 1)];
+                let dx = c[0] - a[0], dy = c[1] - a[1];
+                const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                dx /= len; dy /= len;
+                const nx = -dy, ny = dx;
+                left.push([b[0] + nx * w, b[1] + ny * w]);
+                right.push([b[0] - nx * w, b[1] - ny * w]);
+            }
+            const ring = left.concat(right.reverse());
+            ring.push(ring[0]);
+            return { type: 'Polygon', coordinates: [ring] };
+        }
+
+        function flowPointInPoly(pt, ring) {
+            let inside = false;
+            for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+                const xi = ring[i][0], yi = ring[i][1];
+                const xj = ring[j][0], yj = ring[j][1];
+                if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < ((xj - xi) * (pt[1] - yi)) / (yj - yi) + xi) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        }
+
+        let flowLinesCache = null;
+        let flowRunning = false;
+        let flowRafId = null;
+        let flowStartTs = 0;
+        let flowPrevPhase = 0;
+        let flowLastScan = 0;
+        const revealedBuildingIds = new Set();
+
+        function buildFlowLines() {
+            if (flowLinesCache) return flowLinesCache;
+            const features = [
+                ...luzonRailwaysGeoJSON.features.map(f => Object.assign({}, f, { properties: Object.assign({}, f.properties, { type: 'rail' }) })),
+                ...luzonHighwaysGeoJSON.features.map(f => Object.assign({}, f, { properties: Object.assign({}, f.properties, { type: 'road' }) }))
+            ];
+            flowLinesCache = features.map(f => {
+                const coords = f.geometry.coordinates;
+                const segs = [];
+                let len = 0;
+                for (let i = 0; i < coords.length - 1; i++) {
+                    const d = flowDistanceM(coords[i], coords[i + 1]);
+                    segs.push(d);
+                    len += d;
+                }
+                return { name: f.properties.name, type: f.properties.type, coords, segs, len };
+            });
+            return flowLinesCache;
+        }
+
+        function startFlow() {
+            if (flowRunning || !activeMapInstance) return;
+            if (!activeMapInstance.getLayer('flow-base')) return;
+            flowRunning = true;
+            flowStartTs = performance.now();
+            flowTick();
+        }
+
+        function stopFlow() {
+            flowRunning = false;
+            if (flowRafId) {
+                cancelAnimationFrame(flowRafId);
+                flowRafId = null;
+            }
+            clearRevealedBuildings();
+        }
+
+        function clearRevealedBuildings() {
+            if (!activeMapInstance || revealedBuildingIds.size === 0) return;
+            const ids = [...revealedBuildingIds];
+            revealedBuildingIds.clear();
+            ids.forEach(id => {
+                try {
+                    activeMapInstance.setFeatureState({ source: 'openmaptiles', sourceLayer: 'building', id }, { reveal: false });
+                } catch (e) { /* tile may have been evicted */ }
+            });
+        }
+
+        function flowTick() {
+            if (!flowRunning || !activeMapInstance) { flowRafId = null; return; }
+            const phase = ((performance.now() - flowStartTs) % FLOW_DURATION_MS) / FLOW_DURATION_MS;
+
+            if (activeMapInstance.getLayer('flow-dash')) {
+                activeMapInstance.setPaintProperty('flow-dash', 'line-dasharray', [2.4, 2.4, phase * 4.8]);
+            }
+
+            const lines = buildFlowLines();
+            const cometFeatures = [];
+            const polys = [];
+            const revealBuildings = activeMapInstance.getZoom() >= 13;
+
+            lines.forEach((line, i) => {
+                const p = (phase + i * 0.13) % 1;
+                const portion = flowSubstring(line.coords, line.segs, line.len * p);
+                cometFeatures.push({
+                    type: 'Feature',
+                    properties: { name: line.name },
+                    geometry: { type: 'LineString', coordinates: portion }
+                });
+                if (revealBuildings && portion.length >= 2) {
+                    const poly = flowOffsetChain(portion, FLOW_BUFFER_M / 110540);
+                    if (poly) polys.push(poly);
+                }
+            });
+
+            const cometSource = activeMapInstance.getSource('flow-comet-source');
+            if (cometSource) {
+                cometSource.setData({ type: 'FeatureCollection', features: cometFeatures });
+            }
+
+            // Reveal buildings as the pulse crosses them (feature-state opacity, throttled scan)
+            if (revealBuildings && polys.length) {
+                if (phase < flowPrevPhase) clearRevealedBuildings();
+                const now = performance.now();
+                if (now - flowLastScan > FLOW_REVEAL_SCAN_MS) {
+                    flowLastScan = now;
+                    const rings = polys.map(p => p.coordinates[0]);
+                    let feats = [];
+                    try {
+                        feats = activeMapInstance.querySourceFeatures('openmaptiles', { sourceLayer: 'building' });
+                    } catch (e) { feats = []; }
+                    feats.forEach(f => {
+                        if (f.id == null) return;
+                        if (revealedBuildingIds.has(f.id)) return;
+                        const g = f.geometry;
+                        let pt = null;
+                        if (g.type === 'Point') pt = g.coordinates;
+                        else if (g.type === 'Polygon' && g.coordinates[0] && g.coordinates[0][0]) pt = g.coordinates[0][0];
+                        else return;
+                        let matched = false;
+                        for (let k = 0; k < rings.length; k++) {
+                            if (flowPointInPoly(pt, rings[k])) { matched = true; break; }
+                        }
+                        if (matched) {
+                            revealedBuildingIds.add(f.id);
+                            try {
+                                activeMapInstance.setFeatureState({ source: 'openmaptiles', sourceLayer: 'building', id: f.id }, { reveal: true });
+                            } catch (e) { /* ignore */ }
+                        }
+                    });
+                }
+            }
+            flowPrevPhase = phase;
+
+            flowRafId = requestAnimationFrame(flowTick);
+        }
 
         // Applies real group numbers from the ecosystem source of truth to the HUD.
         function applyEcosystemSummary() {
@@ -1722,16 +1913,7 @@
                     'type': 'fill-extrusion',
                     'minzoom': 13,
                     'paint': {
-                        'fill-extrusion-color': [
-                            'interpolate',
-                            ['linear'],
-                            ['get', 'render_height'],
-                            0, '#062d18',      // Deep terminal dark-green base
-                            30, '#0f5132',     // Forest green
-                            100, '#198754',    // Muted cyber green
-                            250, '#4ade80',    // Bright cyber green glow
-                            500, '#22d3ee'     // Neon cyan sky-high peaks
-                        ],
+                        'fill-extrusion-color': BUILDING_HEIGHT_RAMP,
                         'fill-extrusion-height': [
                             'interpolate',
                             ['linear'],
@@ -1749,60 +1931,94 @@
                     }
                 });
 
-                // Add Luzon Railway geo-grid networks
-                activeMapInstance.addSource('luzon-railways', {
+                // Add Luzon corridor network (real rail + highway alignments) for the GRID FLOW view
+                const corridorFeatures = [
+                    ...luzonRailwaysGeoJSON.features.map(f => Object.assign({}, f, { properties: Object.assign({}, f.properties, { type: 'rail' }) })),
+                    ...luzonHighwaysGeoJSON.features.map(f => Object.assign({}, f, { properties: Object.assign({}, f.properties, { type: 'road' }) }))
+                ];
+                activeMapInstance.addSource('luzon-corridors', {
                     type: 'geojson',
-                    data: luzonRailwaysGeoJSON
+                    data: { type: 'FeatureCollection', features: corridorFeatures }
                 });
 
+                // Dim base corridor underlay (identity colors: rail = cyan, road = emerald)
                 activeMapInstance.addLayer({
-                    id: 'railways-neon-glow',
+                    id: 'flow-base',
                     type: 'line',
-                    source: 'luzon-railways',
+                    source: 'luzon-corridors',
                     layout: { 'line-cap': 'round', 'line-join': 'round', 'visibility': 'none' },
                     paint: {
-                        'line-color': '#22d3ee',
-                        'line-width': 6,
-                        'line-blur': 4,
-                        'line-opacity': 0.8
+                        'line-color': ['match', ['get', 'type'], 'rail', '#22d3ee', '#34d399'],
+                        'line-width': 3,
+                        'line-opacity': 0.22
                     }
                 });
 
+                // Flowing dashes marching along the network
                 activeMapInstance.addLayer({
-                    id: 'railways-core',
+                    id: 'flow-dash',
                     type: 'line',
-                    source: 'luzon-railways',
+                    source: 'luzon-corridors',
                     layout: { 'line-cap': 'round', 'line-join': 'round', 'visibility': 'none' },
                     paint: {
-                        'line-color': '#ffffff',
-                        'line-width': 2,
-                        'line-opacity': 0.95
+                        'line-color': ['match', ['get', 'type'], 'rail', '#22d3ee', '#34d399'],
+                        'line-width': 3,
+                        'line-opacity': 0.85,
+                        'line-dasharray': [2.4, 2.4, 0]
                     }
                 });
 
-                // Add Luzon Highway geo-grid networks
-                activeMapInstance.addSource('luzon-highways', {
+                // Traveling comet head (geometry rebuilt every frame up to the pulse position)
+                activeMapInstance.addSource('flow-comet-source', {
                     type: 'geojson',
-                    data: luzonHighwaysGeoJSON
+                    lineMetrics: true,
+                    data: { type: 'FeatureCollection', features: [] }
                 });
-
                 activeMapInstance.addLayer({
-                    id: 'roads-neon-glow',
+                    id: 'flow-comet',
                     type: 'line',
-                    source: 'luzon-highways',
+                    source: 'flow-comet-source',
                     layout: { 'line-cap': 'round', 'line-join': 'round', 'visibility': 'none' },
                     paint: {
-                        'line-color': [
-                            'match',
-                            ['get', 'name'],
-                            'EDSA Corridor', '#ef4444', // Hot Rose
-                            'North Luzon Expressway (NLEX)', '#f59e0b', // Amber
-                            'SCTEX Corridor', '#10b981', // Fluid Emerald
-                            '#22d3ee'
+                        'line-gradient': [
+                            'interpolate', ['linear'], ['line-progress'],
+                            0, 'rgba(103,232,249,0)',
+                            0.72, 'rgba(103,232,249,0)',
+                            0.84, 'rgba(34,211,238,0.9)',
+                            0.97, 'rgba(255,255,255,1)'
                         ],
-                        'line-width': 5,
-                        'line-blur': 2,
-                        'line-opacity': 0.85
+                        'line-width': 4,
+                        'line-opacity': 1
+                    }
+                });
+
+                // Buildings get their real height colors once the pulse crosses them (feature-state opacity)
+                activeMapInstance.addLayer({
+                    id: 'buildings-revealed',
+                    source: 'openmaptiles',
+                    'source-layer': 'building',
+                    type: 'fill-extrusion',
+                    minzoom: 13,
+                    layout: { 'visibility': 'none' },
+                    paint: {
+                        'fill-extrusion-color': [
+                            'case',
+                            ['==', ['feature-state', 'reveal'], true],
+                            BUILDING_HEIGHT_RAMP,
+                            'rgba(0,0,0,0)'
+                        ],
+                        'fill-extrusion-height': [
+                            'interpolate', ['linear'], ['zoom'],
+                            13, 0,
+                            14, ['get', 'render_height']
+                        ],
+                        'fill-extrusion-base': [
+                            'case',
+                            ['>=', ['get', 'zoom'], 16],
+                            ['get', 'render_min_height'],
+                            0
+                        ],
+                        'fill-extrusion-opacity': 0.92
                     }
                 });
 
@@ -1902,99 +2118,44 @@
             });
         }
 
-        // Active Spectrogram data layering toggle
-        function toggleDataLayer(layerId) {
+        // Map view toggle: DEFAULT shows height-colored buildings, GRID FLOW animates corridor pulses
+        function toggleDataLayer(mode) {
             if (!activeMapInstance) return;
 
+            const isFlow = mode === 'flow';
             document.querySelectorAll('.retro-map-deck-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            const activeBtn = document.getElementById(`layer-btn-${layerId}`);
+            const activeBtn = document.getElementById(`layer-btn-${mode}`);
             if (activeBtn) activeBtn.classList.add('active');
 
-            if (layerId === 'none') {
-                if (activeMapInstance.getLayer('railways-neon-glow')) activeMapInstance.setLayoutProperty('railways-neon-glow', 'visibility', 'none');
-                if (activeMapInstance.getLayer('railways-core')) activeMapInstance.setLayoutProperty('railways-core', 'visibility', 'none');
-                if (activeMapInstance.getLayer('roads-neon-glow')) activeMapInstance.setLayoutProperty('roads-neon-glow', 'visibility', 'none');
-                
+            const flowLayerIds = ['flow-base', 'flow-dash', 'flow-comet', 'buildings-revealed'];
+
+            if (isFlow) {
+                // Dim base buildings so pulses' height-color reveal pops
                 if (activeMapInstance.getLayer('3d-buildings')) {
+                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-color', '#0b1520');
+                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.55);
+                }
+                flowLayerIds.forEach(id => {
+                    if (activeMapInstance.getLayer(id)) activeMapInstance.setLayoutProperty(id, 'visibility', 'visible');
+                });
+                startFlow();
+            } else {
+                stopFlow();
+                if (activeMapInstance.getLayer('3d-buildings')) {
+                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-color', BUILDING_HEIGHT_RAMP);
                     activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.75);
-                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-color', [
-                        'interpolate',
-                        ['linear'],
-                        ['get', 'render_height'],
-                        0, '#062d18',
-                        30, '#0f5132',
-                        100, '#198754',
-                        250, '#4ade80',
-                        500, '#22d3ee'
-                    ]);
                 }
-            } else if (layerId === 'rail') {
-                if (activeMapInstance.getLayer('railways-neon-glow')) activeMapInstance.setLayoutProperty('railways-neon-glow', 'visibility', 'visible');
-                if (activeMapInstance.getLayer('railways-core')) activeMapInstance.setLayoutProperty('railways-core', 'visibility', 'visible');
-                if (activeMapInstance.getLayer('roads-neon-glow')) activeMapInstance.setLayoutProperty('roads-neon-glow', 'visibility', 'none');
-
-                if (activeMapInstance.getLayer('3d-buildings')) {
-                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.25);
-                }
-            } else if (layerId === 'transit') {
-                if (activeMapInstance.getLayer('railways-neon-glow')) activeMapInstance.setLayoutProperty('railways-neon-glow', 'visibility', 'visible');
-                if (activeMapInstance.getLayer('railways-core')) activeMapInstance.setLayoutProperty('railways-core', 'visibility', 'visible');
-                if (activeMapInstance.getLayer('roads-neon-glow')) activeMapInstance.setLayoutProperty('roads-neon-glow', 'visibility', 'none');
-
-                if (activeMapInstance.getLayer('3d-buildings')) {
-                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.75);
-                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-color', [
-                        'interpolate',
-                        ['linear'],
-                        ['get', 'render_height'],
-                        0, '#0f5132',
-                        50, '#10b981',
-                        150, '#22d3ee',
-                        300, '#38bdf8'
-                    ]);
-                }
-            } else if (layerId === 'road-congestion') {
-                if (activeMapInstance.getLayer('railways-neon-glow')) activeMapInstance.setLayoutProperty('railways-neon-glow', 'visibility', 'none');
-                if (activeMapInstance.getLayer('railways-core')) activeMapInstance.setLayoutProperty('railways-core', 'visibility', 'none');
-                if (activeMapInstance.getLayer('roads-neon-glow')) activeMapInstance.setLayoutProperty('roads-neon-glow', 'visibility', 'visible');
-
-                if (activeMapInstance.getLayer('3d-buildings')) {
-                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.35);
-                }
-            } else if (layerId === 'density') {
-                if (activeMapInstance.getLayer('railways-neon-glow')) activeMapInstance.setLayoutProperty('railways-neon-glow', 'visibility', 'none');
-                if (activeMapInstance.getLayer('railways-core')) activeMapInstance.setLayoutProperty('railways-core', 'visibility', 'none');
-                if (activeMapInstance.getLayer('roads-neon-glow')) activeMapInstance.setLayoutProperty('roads-neon-glow', 'visibility', 'none');
-
-                if (activeMapInstance.getLayer('3d-buildings')) {
-                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.85);
-                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-color', [
-                        'interpolate',
-                        ['linear'],
-                        ['get', 'render_height'],
-                        0, '#4ade80',     // Low structural density
-                        50, '#f59e0b',    // Moderate density
-                        150, '#ef4444',   // High density (urban centers)
-                        300, '#22d3ee'    // Maximum concentration
-                    ]);
-                }
+                flowLayerIds.forEach(id => {
+                    if (activeMapInstance.getLayer(id)) activeMapInstance.setLayoutProperty(id, 'visibility', 'none');
+                });
             }
 
-            // Spectral legend reflects the real meaning of the active layer
-            const legendPairs = {
-                'none': ['BASE MAP', 'STRUCTURAL'],
-                'rail': ['REGIONAL', 'CORE GRID'],
-                'transit': ['LOW-RISE', 'HIGH-RISE'],
-                'road-congestion': ['CLEAR', 'CONGESTED'],
-                'density': ['LOW DENSITY', 'MAX DENSITY']
-            };
-            const pair = legendPairs[layerId] || legendPairs['none'];
             const lowEl = document.getElementById('retro-legend-low');
             const highEl = document.getElementById('retro-legend-high');
-            if (lowEl) lowEl.textContent = pair[0];
-            if (highEl) highEl.textContent = pair[1];
+            if (lowEl) lowEl.textContent = 'LOW-RISE';
+            if (highEl) highEl.textContent = 'HIGH-RISE';
         }
 
         // Sector Preset action focusing

@@ -19,6 +19,27 @@ from schema import get_connection, DB_PATH
 
 SEED_SALT = "alieninc.ecosystem.v1"
 
+# Curated, public-safe network map data (nodes/districts/cities with PSA
+# census populations). Merged into every ecosystem payload. No financial data.
+_STATIC_NETWORK_MAP_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    'data', 'alieninc-ecosystem.json',
+)
+
+_network_map_cache = None
+
+def _get_static_network_map():
+    global _network_map_cache
+    if _network_map_cache is not None:
+        return _network_map_cache
+    try:
+        with open(_STATIC_NETWORK_MAP_PATH, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        _network_map_cache = data.get('networkMap')
+    except Exception:
+        _network_map_cache = None
+    return _network_map_cache
+
 _CLIENT_LOSS_REASONS = [
     "contract expired — not renewed",
     "lost to competitor bid",
@@ -671,7 +692,7 @@ class EcosystemEngine:
 
         conn.close()
 
-        return {
+        result = {
             "metadata": {
                 "asOf": self.sim_date.isoformat() if self.sim_date else datetime.now(timezone.utc).date().isoformat(),
                 "currency": "USD",
@@ -700,6 +721,10 @@ class EcosystemEngine:
             "riskMetrics": risk_metrics,
             "debtInstruments": debt_instruments,
         }
+        network_map = _get_static_network_map()
+        if network_map:
+            result["networkMap"] = network_map
+        return result
 
     def _get_risk_metrics(self, conn):
         row = conn.execute(

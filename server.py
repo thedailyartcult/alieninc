@@ -151,9 +151,8 @@ _SANITIZE_RE = [
     (re.compile(r'£\s*[\d,]+(?:\.\d+)?'), 'Private — login required'),
     (re.compile(r'<script[^>]*src=["\'](?:\.\./)?(?:data/)?ecosystem-data\.js(?:\?[^"\']*)?["\'][^>]*>'), '<!-- ecosystem-data.js removed -->'),
     (re.compile(r'<script[^>]*src=["\'](?:\.\./)?(?:data/)?ecosystem-render\.js(?:\?[^"\']*)?["\'][^>]*>'), '<!-- ecosystem-render.js removed -->'),
-    (re.compile(r'EcosystemData\.init\([^)]*\)'), '/* Private — login required */'),
-    (re.compile(r'EcosystemRender\.bindAll\([^)]*\)'), '/* Private — login required */'),
-    (re.compile(r'EcosystemData\.onChange\([^)]*\)'), '/* Private — login required */'),
+    (re.compile(r'Ecosystem(?:Data|Render)\.[A-Za-z0-9_]+\s*\('),
+     lambda m: '0&&' + m.group(0)),
     (re.compile(r'var\s+ECOSYSTEM_DATA\s*=\s*\{[^}]*\}'), 'var ECOSYSTEM_DATA = null'),
     (re.compile(r'var\s+ECOSYSTEM_DATA\s*=\s*[^;]+;'), 'var ECOSYSTEM_DATA = null;'),
 ]

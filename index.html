@@ -1411,6 +1411,20 @@
         box-shadow: 0 0 10px #4ade80, 0 0 20px rgba(74, 222, 128, 0.6);
     }
 
+    /* Search selection pin — always green so the searched company stands out */
+    .retro-map-search-marker .retro-map-marker-tag {
+        color: #4ade80;
+        border-color: #4ade80;
+        box-shadow: 0 0 12px rgba(74, 222, 128, 0.4);
+    }
+    .retro-map-search-marker .retro-map-marker-line {
+        background: rgba(74, 222, 128, 0.8);
+    }
+    .retro-map-search-marker .retro-map-marker-glow {
+        background: #4ade80;
+        box-shadow: 0 0 10px #4ade80, 0 0 24px rgba(74, 222, 128, 0.7);
+    }
+
     @keyframes retro-pulsing-marker {
         0%, 100% { transform: scale(1); opacity: 1; }
         50% { transform: scale(1.2); opacity: 0.8; }
@@ -2112,6 +2126,7 @@
   let minimapInstance = null;
   let boundsInstance = null;
   let districtMarkers = [];
+  let searchMarkerInstance = null;
 
   // Applies real group numbers from the ecosystem source of truth to the HUD.
   function applyEcosystemSummary() {
@@ -2256,6 +2271,8 @@
   }
 
   function openSearchResult(item) {
+      placeSearchMarker(item);
+
       if (item.type === 'node') {
           inspectNode(item.source, true);
           return;
@@ -2326,6 +2343,30 @@
       </div>`;
 
       return `<dl>${rows}</dl>${footer}`;
+  }
+
+  // Search selection pin: a company-style dot with the searched company's name.
+  function placeSearchMarker(item) {
+      if (!activeMapInstance) return;
+      if (searchMarkerInstance) searchMarkerInstance.remove();
+
+      const el = document.createElement('div');
+      el.className = 'retro-map-node-marker retro-map-search-marker';
+      el.innerHTML = `
+          <div class="retro-map-marker-tag">${item.name}</div>
+          <div class="retro-map-marker-line"></div>
+          <div class="retro-map-marker-glow"></div>`;
+
+      searchMarkerInstance = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+          .setLngLat([item.lng, item.lat])
+          .addTo(activeMapInstance);
+  }
+
+  function clearSearchMarker() {
+      if (searchMarkerInstance) {
+          searchMarkerInstance.remove();
+          searchMarkerInstance = null;
+      }
   }
 
   function initNetworkMap() {
@@ -2529,6 +2570,7 @@
           // Custom marker interaction triggers
           el.addEventListener('click', (e) => {
               e.stopPropagation();
+              clearSearchMarker();
               inspectNode(node);
           });
 
@@ -2678,6 +2720,7 @@
       });
       updateHUD("LUZON CORRIDOR", "MONITORING SYSTEM", "GRID ARRAY BOUNDS");
       toggleInspector(false);
+      clearSearchMarker();
   }
 
   // Company profile inspector (real data from the ecosystem source of truth)

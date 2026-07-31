@@ -618,31 +618,6 @@
             margin-top: 2px;
         }
 
-        .retro-map-hud-sync {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .retro-map-hud-sbar-outer {
-            width: 60px;
-            height: 6px;
-            background: rgba(34, 211, 238, 0.1);
-            border: 1px solid rgba(34, 211, 238, 0.3);
-            border-radius: 3px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .retro-map-hud-sbar-inner {
-            position: absolute;
-            left: 0; top: 0; bottom: 0;
-            background: #22d3ee;
-            border-radius: 3px;
-            width: 100%;
-            transition: width 0.5s ease;
-        }
-
         .retro-map-hud-right {
             position: absolute;
             top: 15px;
@@ -982,6 +957,23 @@
             font-size: 0.9rem;
         }
 
+        .retro-map-inspector-stack-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 0.78rem;
+            line-height: 1.35;
+        }
+        .retro-map-inspector-stack-row span {
+            color: #22d3ee;
+            white-space: nowrap;
+        }
+        .retro-map-inspector-stack-row em {
+            color: rgba(255, 255, 255, 0.75);
+            font-style: normal;
+            text-align: right;
+        }
+
         /* Spatial HTML Custom 3D Marker Nodes */
         .retro-map-node-marker {
             cursor: pointer;
@@ -1143,31 +1135,26 @@
                         <div id="retro-focus-stat2" class="retro-map-hud-meta">GRID AREA ACTIVE</div>
                     </div>
 
-                    <!-- HUD: Central Grid Sync Ribbon (fable top-center ribbon) -->
+                    <!-- HUD: Central Live Datafeed Ribbon (real group numbers from ecosystem JSON) -->
                     <div class="retro-map-hud-panel retro-map-hud-center">
-                        <div class="retro-map-hud-badge">MATRIX GRID</div>
+                        <div class="retro-map-hud-badge">LIVE DATAFEED</div>
                         <div class="retro-map-hud-divider"></div>
                         <div class="retro-map-hud-metric">
-                            <span id="hud-frequency" class="retro-map-hud-mval">184.05 MHZ</span>
-                            <span class="retro-map-hud-mlbl">FREQUENCY</span>
+                            <span id="hud-headcount" class="retro-map-hud-mval">—</span>
+                            <span class="retro-map-hud-mlbl">GROUP HEADCOUNT</span>
                         </div>
                         <div class="retro-map-hud-divider"></div>
                         <div class="retro-map-hud-metric">
-                            <div class="retro-map-hud-sync">
-                                <span id="hud-sync-lbl" class="retro-map-hud-mval">STABLE</span>
-                                <div class="retro-map-hud-sbar-outer">
-                                    <div id="hud-sync-bar" class="retro-map-hud-sbar-inner"></div>
-                                </div>
-                            </div>
-                            <span class="retro-map-hud-mlbl">GRID SYNC</span>
+                            <span id="hud-earliest" class="retro-map-hud-mval">—</span>
+                            <span class="retro-map-hud-mlbl">EARLIEST OPERATION</span>
                         </div>
                     </div>
 
-                    <!-- HUD: Signals Decrypted Card (fable top-right card) -->
+                    <!-- HUD: Database Status Card (real counts + as-of date from source of truth) -->
                     <div class="retro-map-hud-panel retro-map-hud-right">
                         <div class="retro-map-hud-kicker">DATABASE STATUS</div>
-                        <div id="hud-archive-count" class="retro-map-hud-heading">7/7 SIGNALS</div>
-                        <div class="retro-map-hud-meta">DECLASSIFIED</div>
+                        <div id="hud-archive-count" class="retro-map-hud-heading">— COMPANIES</div>
+                        <div id="hud-archive-meta" class="retro-map-hud-meta">AS OF —</div>
                     </div>
 
                     <!-- Left side Drawer: Map Active Spectras (fable Layers Panel) -->
@@ -1183,8 +1170,8 @@
                         <div class="retro-map-legend">
                             <div class="retro-map-legend-bar"></div>
                             <div class="retro-map-legend-labels">
-                                <span>0%</span>
-                                <span>100%</span>
+                                <span id="retro-legend-low">BASE MAP</span>
+                                <span id="retro-legend-high">STRUCTURAL</span>
                             </div>
                         </div>
                     </div>
@@ -1229,11 +1216,11 @@
                     <!-- Custom Terminal Inspector Sidebar Panel -->
                     <div id="node-inspector" class="retro-map-inspector closed">
                         <div class="retro-map-inspector-header">
-                            <h2 class="retro-map-inspector-title">NODE DECRYPTER</h2>
+                            <h2 class="retro-map-inspector-title">COMPANY PROFILE</h2>
                             <button onclick="toggleInspector(false)" class="retro-map-inspector-close">&times;</button>
                         </div>
                         <div id="inspector-content" class="retro-map-inspector-content">
-                            <p style="color: rgba(74, 222, 128, 0.6); text-align: center; margin-top: 15px;">SELECT A COORDINATE MARKER OR SECTOR PORT TO DECRYPT THE ACTIVE SIGNAL VECTOR STREAM.</p>
+                            <p style="color: rgba(74, 222, 128, 0.6); text-align: center; margin-top: 15px;">SELECT A NETWORK MARKER OR SECTOR TO VIEW ITS OPERATING PROFILE.</p>
                         </div>
                     </div>
 
@@ -1288,7 +1275,7 @@
     </div>
 
     <!-- Active scripts (Starfield + Typing Loop + Split Flaps mechanics + Network Map) -->
-    <script src="../data/network-map-data.js?v=2"></script>
+    <script src="../data/network-map-data.js?v=3"></script>
     <script>
         // ── ALIEN.INC Network Map Data ──────────────────────────────────
         // Node, district, and city data is loaded from the ecosystem JSON
@@ -1401,9 +1388,42 @@
         let boundsInstance = null;
         let districtMarkers = [];
 
+        // Applies real group numbers from the ecosystem source of truth to the HUD.
+        function applyEcosystemSummary() {
+            const summary = window.ecosystemSummary;
+            if (!summary) return;
+
+            const headcountEl = document.getElementById('hud-headcount');
+            if (headcountEl && typeof summary.groupHeadcount2026F === 'number') {
+                headcountEl.textContent = summary.groupHeadcount2026F.toLocaleString('en-US');
+            }
+
+            const earliestEl = document.getElementById('hud-earliest');
+            if (earliestEl && summary.earliestFounded) {
+                earliestEl.textContent = `EST. ${summary.earliestFounded}`;
+            }
+
+            const countEl = document.getElementById('hud-archive-count');
+            if (countEl && typeof summary.companyCount === 'number') {
+                countEl.textContent = `${summary.companyCount} COMPANIES`;
+            }
+
+            const metaEl = document.getElementById('hud-archive-meta');
+            if (metaEl && summary.asOf) {
+                metaEl.textContent = `AS OF ${summary.asOf}`;
+            }
+
+            const sectorsEl = document.getElementById('retro-focus-stat1-val');
+            if (sectorsEl && summary.nodeCount && sectorsEl.textContent.trim().indexOf('SECTORS') !== -1) {
+                sectorsEl.textContent = `${summary.nodeCount} SECTORS`;
+            }
+        }
+
         function initNetworkMap() {
             const mapEl = document.getElementById('aliens-network-map');
             if (!mapEl || typeof maplibregl === 'undefined') return;
+
+            applyEcosystemSummary();
 
             // Integrates OpenFreeMap Dark style to serve vector tiles natively
             activeMapInstance = new maplibregl.Map({
@@ -1579,8 +1599,9 @@
                     document.getElementById('retro-focus-stat1-lbl').textContent = "RESIDENTS";
                     document.getElementById('retro-focus-stat2').textContent = `CENSUS ${nearestLgu.censusYear || 2020}`;
                 } else {
+                    const sectors = (window.ecosystemSummary && window.ecosystemSummary.nodeCount) || 7;
                     document.getElementById('retro-focus-title').textContent = "LUZON CORRIDOR";
-                    document.getElementById('retro-focus-stat1-val').textContent = "7 SECTORS";
+                    document.getElementById('retro-focus-stat1-val').textContent = `${sectors} SECTORS`;
                     document.getElementById('retro-focus-stat1-lbl').textContent = "CONNECTED";
                     document.getElementById('retro-focus-stat2').textContent = "GRID AREA ACTIVE";
                 }
@@ -1698,6 +1719,20 @@
                     ]);
                 }
             }
+
+            // Spectral legend reflects the real meaning of the active layer
+            const legendPairs = {
+                'none': ['BASE MAP', 'STRUCTURAL'],
+                'rail': ['REGIONAL', 'CORE GRID'],
+                'transit': ['LOW-RISE', 'HIGH-RISE'],
+                'road-congestion': ['CLEAR', 'CONGESTED'],
+                'density': ['LOW DENSITY', 'MAX DENSITY']
+            };
+            const pair = legendPairs[layerId] || legendPairs['none'];
+            const lowEl = document.getElementById('retro-legend-low');
+            const highEl = document.getElementById('retro-legend-high');
+            if (lowEl) lowEl.textContent = pair[0];
+            if (highEl) highEl.textContent = pair[1];
         }
 
         // Sector Preset action focusing
@@ -1717,7 +1752,7 @@
             if (matchedNode) {
                 inspectNode(matchedNode, false); // Focus sector HUD update only
             } else {
-                updateHUD(sectorName, "SCANNING SECTOR", `COORDS: ${lngLat[1].toFixed(4)} / ${lngLat[0].toFixed(4)}`, "---", 100);
+                updateHUD(sectorName, "SCANNING SECTOR", `COORDS: ${lngLat[1].toFixed(4)} / ${lngLat[0].toFixed(4)}`);
             }
         }
 
@@ -1731,11 +1766,11 @@
                 bearing: -10,
                 duration: 2000
             });
-            updateHUD("LUZON CORRIDOR", "MONITORING SYSTEM", "GRID ARRAY BOUNDS", "184.05 MHz", 100);
+            updateHUD("LUZON CORRIDOR", "MONITORING SYSTEM", "GRID ARRAY BOUNDS");
             toggleInspector(false);
         }
 
-        // Dynamic Decryption inspector details loader
+        // Company profile inspector (real data from the ecosystem source of truth)
         function inspectNode(node, shouldFly = true) {
             if (shouldFly && activeMapInstance) {
                 activeMapInstance.flyTo({
@@ -1748,91 +1783,89 @@
             }
 
             // Update top sector HUD metrics dynamically
-            updateHUD(node.name, "GRID ACCESS GRANTED", `LAT/LNG: ${node.lat.toFixed(4)} / ${node.lng.toFixed(4)}`, node.frequency, node.sync);
+            updateHUD(node.name, "GRID ACCESS GRANTED", `LAT/LNG: ${node.lat.toFixed(4)} / ${node.lng.toFixed(4)}`);
 
-            // Display live deciphering visual animation
+            // Display loading state while the profile is assembled
             toggleInspector(true);
             const inspectorContent = document.getElementById('inspector-content');
-            inspectorContent.innerHTML = `<p style="color: #22d3ee; animation: aliens-blink 1s step-end infinite; text-align: center; margin-top: 20px;">[ DECRYPTING SECURE SECTOR FEED... ]</p>`;
+            inspectorContent.innerHTML = `<p style="color: #22d3ee; animation: aliens-blink 1s step-end infinite; text-align: center; margin-top: 20px;">[ RETRIEVING COMPANY PROFILE... ]</p>`;
 
             setTimeout(() => {
-                inspectorContent.innerHTML = `
-                    <dl>
-                        <div class="retro-map-inspector-row">
-                            <dt class="retro-map-inspector-dt">SECTOR LOCATION</dt>
-                            <dd class="retro-map-inspector-dd">${node.sector}</dd>
-                        </div>
-                        <div class="retro-map-inspector-row">
-                            <dt class="retro-map-inspector-dt">COORDINATES</dt>
-                            <dd class="retro-map-inspector-dd">${node.lat.toFixed(4)}N, ${node.lng.toFixed(4)}E</dd>
-                        </div>
-                        <div class="retro-map-inspector-row">
-                            <dt class="retro-map-inspector-dt">SIGNAL ROLE</dt>
-                            <dd class="retro-map-inspector-dd">${node.role}</dd>
-                        </div>
-                        <div class="retro-map-inspector-row">
-                            <dt class="retro-map-inspector-dt">FREQUENCY</dt>
-                            <dd class="retro-map-inspector-dd">${node.frequency}</dd>
-                        </div>
-                        <div class="retro-map-inspector-row">
-                            <dt class="retro-map-inspector-dt">ENCRYPTION</dt>
-                            <dd class="retro-map-inspector-dd">${node.encryption}</dd>
-                        </div>
-                        <div class="retro-map-inspector-row">
-                            <dt class="retro-map-inspector-dt">GRID STATUS</dt>
-                            <dd class="retro-map-inspector-dd">${node.sync}% SYNCED</dd>
-                        </div>
-                        <div class="retro-map-inspector-row">
-                            <dt class="retro-map-inspector-dt">RESIDENT BASE</dt>
-                            <dd class="retro-map-inspector-dd">${node.population ? Number(node.population).toLocaleString('en-US') : 'N/A'}${node.censusYear ? ' (' + node.censusYear + ' PSA CENSUS)' : ''}</dd>
-                        </div>
-                    </dl>
-                    <div class="retro-map-inspector-intel">
-                        <strong>INTELLIGENCE OVERLAY:</strong><br>
-                        ${node.intel}
-                    </div>
-                `;
+                inspectorContent.innerHTML = renderCompanyProfile(node);
             }, 550);
         }
 
+        // Builds the real company profile panel for a network node.
+        function renderCompanyProfile(node) {
+            const company = node.company;
+            const hc = company ? company.headcount : null;
+            const headcount2026 = (hc && typeof hc['2026F'] === 'number') ? Number(hc['2026F']).toLocaleString('en-US') : '—';
+            const headcountFt = (hc && typeof hc.fullTime === 'number') ? Number(hc.fullTime).toLocaleString('en-US') : '—';
+            const clients = (company && typeof company.clientCount === 'number') ? company.clientCount : '—';
+            const projects = (company && typeof company.activeProjectCount === 'number') ? company.activeProjectCount : '—';
+            const established = company ? (company.foundingDate || company.yearFounded || '—') : '—';
+            const category = company ? (company.category || '—') : 'Group headquarters';
+            const mission = company ? company.mission : null;
+
+            const stack = (node.techStack && node.techStack.length)
+                ? node.techStack.map(t => `<div class="retro-map-inspector-stack-row"><span>${t.name}</span><em>${t.role}</em></div>`).join('')
+                : '<div class="retro-map-inspector-stack-row"><span>Not yet ready to share</span></div>';
+
+            let rows = `
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">SECTOR LOCATION</dt>
+                    <dd class="retro-map-inspector-dd">${node.sector}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">COORDINATES</dt>
+                    <dd class="retro-map-inspector-dd">${node.lat.toFixed(4)}N, ${node.lng.toFixed(4)}E</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">CATEGORY</dt>
+                    <dd class="retro-map-inspector-dd">${category}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">ESTABLISHED</dt>
+                    <dd class="retro-map-inspector-dd">${established}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">HEADCOUNT 2026F</dt>
+                    <dd class="retro-map-inspector-dd">${headcount2026} (${headcountFt} FULL-TIME)</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">CLIENT COUNT</dt>
+                    <dd class="retro-map-inspector-dd">${clients}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">ACTIVE PROJECTS</dt>
+                    <dd class="retro-map-inspector-dd">${projects}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">TECH STACK</dt>
+                    <dd class="retro-map-inspector-dd">${stack}</dd>
+                </div>`;
+
+            let footer = '';
+            if (mission) {
+                footer = `<div class="retro-map-inspector-intel">
+                    <strong>MISSION:</strong><br>
+                    ${mission}
+                </div>`;
+            }
+
+            return `<dl>${rows}</dl>${footer}`;
+        }
+
         // Sector HUD values update utility
-        function updateHUD(name, status, telemetry, freq, sync) {
+        function updateHUD(name, status, telemetry) {
             const nameEl = document.getElementById('retro-focus-title');
             const statusEl = document.getElementById('retro-focus-stat1-lbl');
             const telemetryEl = document.getElementById('retro-focus-stat2');
-            const freqEl = document.getElementById('hud-frequency');
-            const syncBar = document.getElementById('hud-sync-bar');
-            const syncLbl = document.getElementById('hud-sync-lbl');
 
             if (nameEl) nameEl.textContent = name.toUpperCase();
             if (statusEl) statusEl.textContent = status;
             if (telemetryEl) telemetryEl.textContent = telemetry;
-            if (freqEl) freqEl.textContent = freq;
-            if (syncBar) syncBar.style.width = `${sync}%`;
-            if (syncLbl) {
-                if (sync === "---") syncLbl.textContent = "OFFLINE";
-                else if (sync >= 95) syncLbl.textContent = "SECURE";
-                else if (sync >= 90) syncLbl.textContent = "STABLE";
-                else syncLbl.textContent = "DEGRADED";
-            }
         }
-
-        // Background Telemetry Fluctuation animation loop for cyber realism
-        setInterval(() => {
-            const freqEl = document.getElementById('hud-frequency');
-            if (freqEl) {
-                const baseFreq = 184.05;
-                const dev = (Math.random() - 0.5) * 0.04;
-                freqEl.textContent = `${(baseFreq + dev).toFixed(2)} MHZ`;
-            }
-
-            const syncBar = document.getElementById('hud-sync-bar');
-            if (syncBar) {
-                const currentWidth = parseFloat(syncBar.style.width) || 95;
-                const newWidth = Math.max(90, Math.min(100, currentWidth + (Math.random() - 0.5) * 1.5));
-                syncBar.style.width = `${newWidth}%`;
-            }
-        }, 4000);
 
         // Show/Hide Right Terminal Inspector panel
         function toggleInspector(show) {

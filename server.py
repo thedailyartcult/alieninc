@@ -149,8 +149,8 @@ _SANITIZE_RE = [
     (re.compile(r'\$\s*[\d,]+(?:\.\d+)?\s*[KMBT]?(?:illion|illion)?'), 'Private — login required'),
     (re.compile(r'€\s*[\d,]+(?:\.\d+)?'), 'Private — login required'),
     (re.compile(r'£\s*[\d,]+(?:\.\d+)?'), 'Private — login required'),
-    (re.compile(r'<script[^>]*src=["\'](?:data/)?ecosystem-data\.js["\'][^>]*>'), '<!-- ecosystem-data.js removed -->'),
-    (re.compile(r'<script[^>]*src=["\'](?:data/)?ecosystem-render\.js["\'][^>]*>'), '<!-- ecosystem-render.js removed -->'),
+    (re.compile(r'<script[^>]*src=["\'](?:\.\./)?(?:data/)?ecosystem-data\.js(?:\?[^"\']*)?["\'][^>]*>'), '<!-- ecosystem-data.js removed -->'),
+    (re.compile(r'<script[^>]*src=["\'](?:\.\./)?(?:data/)?ecosystem-render\.js(?:\?[^"\']*)?["\'][^>]*>'), '<!-- ecosystem-render.js removed -->'),
     (re.compile(r'EcosystemData\.init\([^)]*\)'), '/* Private — login required */'),
     (re.compile(r'EcosystemRender\.bindAll\([^)]*\)'), '/* Private — login required */'),
     (re.compile(r'EcosystemData\.onChange\([^)]*\)'), '/* Private — login required */'),
@@ -1242,7 +1242,7 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                 self._serve_empty_json('prices')
                 return
             self._serve_prices()
-        elif self.path == '/api/ecosystem/public':
+        elif self.path == '/api/ecosystem/public' or self.path.startswith('/api/ecosystem/public?'):
             self._serve_ecosystem_api()
         elif self.path == '/api/ecosystem' or self.path.startswith('/api/ecosystem?'):
             auth = self._has_valid_secure_session() or self._has_valid_main_session()

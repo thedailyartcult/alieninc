@@ -27,25 +27,11 @@ var EcosystemData = (function () {
     _data = window.ECOSYSTEM_DATA;
   }
 
-  // Capture document.currentScript NOW, during synchronous IIFE execution.
-  // By the time resolveJsonUrl() is called from load() → init(), this will be null.
-  var _ownScriptEl = (typeof document !== 'undefined' && document.currentScript)
-    ? document.currentScript
-    : null;
+  // Direct file access to the ecosystem JSON is blocked by the server;
+  // the public payload is available via the ecosystem API endpoint.
+  var _jsonUrl = '/api/ecosystem/public';
 
   function resolveJsonUrl() {
-    if (_jsonUrl) return _jsonUrl;
-
-    // Strategy 1: Use the script tag's own src (most reliable — works from any directory)
-    if (_ownScriptEl && _ownScriptEl.src) {
-      var scriptDir = _ownScriptEl.src.replace(/\/[^\/]*$/, '/');
-      _jsonUrl = scriptDir + 'alieninc-ecosystem.json';
-      return _jsonUrl;
-    }
-
-    // Strategy 2: Try relative path from the page (works for file:// protocol)
-    var testUrl = 'data/alieninc-ecosystem.json';
-    _jsonUrl = testUrl;
     return _jsonUrl;
   }
 
@@ -54,7 +40,7 @@ var EcosystemData = (function () {
     if (_data) {
       return Promise.resolve(_data);
     }
-    var url = resolveJsonUrl() + '?t=' + Date.now();
+    var url = resolveJsonUrl();
     return window.fetch(url)
       .then(function (res) {
         if (!res.ok) throw new Error('HTTP ' + res.status + ' for ' + url);

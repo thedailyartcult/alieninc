@@ -112,6 +112,7 @@ var NetworkMapData = (function () {
           distanceKm = haversineKm(core.lat, core.lng, entry.lat, entry.lng);
         }
         directory.companies.push({
+          kind: entry.kind || 'company',
           name: entry.name,
           address: entry.address,
           district: entry.district || 'Bonifacio Global City',

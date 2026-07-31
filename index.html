@@ -2014,7 +2014,7 @@
 
 
   <!-- ALIEN.INC NETWORK MAP -->
-  <script src="data/network-map-data.js?v=4"></script>
+  <script src="data/network-map-data.js?v=5"></script>
   <script>
   // ── ALIEN.INC Network Map Data ──────────────────────────────────
   // Node, district, and city data is loaded from the ecosystem JSON
@@ -2155,18 +2155,19 @@
       const bgc = window.bgcDirectory;
       if (bgc && Array.isArray(bgc.companies)) {
           bgc.companies.forEach((entry) => {
-              index.push({
-                  type: 'directory',
-                  name: entry.name || '',
-                  address: entry.address || '',
-                  industry: entry.industry || '',
-                  lat: entry.lat,
-                  lng: entry.lng,
-                  distanceKm: entry.distanceKm,
-                  techStack: (entry.techStack || []).slice(),
-                  lastVerified: entry.lastVerified || '',
-                  source: entry
-              });
+                index.push({
+                    type: 'directory',
+                    kind: entry.kind || 'company',
+                    name: entry.name || '',
+                    address: entry.address || '',
+                    industry: entry.industry || '',
+                    lat: entry.lat,
+                    lng: entry.lng,
+                    distanceKm: entry.distanceKm,
+                    techStack: (entry.techStack || []).slice(),
+                    lastVerified: entry.lastVerified || '',
+                    source: entry
+                });
           });
       }
       (window.aliensNetworkNodes || []).forEach((node) => {
@@ -2248,24 +2249,30 @@
           return;
       }
 
-      top.forEach(({ item }) => {
-          const dist = (typeof item.distanceKm === 'number')
-              ? ` • ${item.distanceKm.toFixed(2)} KM FROM BGC CORE`
-              : '';
-          const stack = item.techStack.slice(0, 5).join(' / ');
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'retro-map-search-item';
-          btn.innerHTML = `
-              <div class="retro-map-search-item-title">${item.name}</div>
-              <div class="retro-map-search-item-sub">${item.address}${dist}</div>
-              <div class="retro-map-search-item-stack">${stack || 'Not yet ready to share'}</div>`;
-          btn.addEventListener('click', () => {
-              openSearchResult(item);
-              close();
+          top.forEach(({ item }) => {
+              const dist = (typeof item.distanceKm === 'number')
+                  ? ` • ${item.distanceKm.toFixed(2)} KM FROM BGC CORE`
+                  : '';
+              const kindTag = item.kind === 'landmark' ? 'LANDMARK • ' : '';
+              const stack = item.techStack.slice(0, 5).join(' / ');
+              const stackLine = stack
+                  ? stack
+                  : (item.kind === 'landmark'
+                      ? 'Iconic BGC landmark — no technology stack'
+                      : 'Not yet ready to share');
+              const btn = document.createElement('button');
+              btn.type = 'button';
+              btn.className = 'retro-map-search-item';
+              btn.innerHTML = `
+                  <div class="retro-map-search-item-title">${item.name}</div>
+                  <div class="retro-map-search-item-sub">${kindTag}${item.address}${dist}</div>
+                  <div class="retro-map-search-item-stack">${stackLine}</div>`;
+              btn.addEventListener('click', () => {
+                  openSearchResult(item);
+                  close();
+              });
+              resultsEl.appendChild(btn);
           });
-          resultsEl.appendChild(btn);
-      });
 
       resultsEl.classList.add('retro-map-search-open');
   }
@@ -2302,7 +2309,9 @@
   function renderDirectoryProfile(item) {
       const stack = (item.techStack && item.techStack.length)
           ? item.techStack.map((t) => `<div class="retro-map-inspector-stack-row"><span>${t}</span></div>`).join('')
-          : '<div class="retro-map-inspector-stack-row"><span>Not yet ready to share</span></div>';
+          : (item.kind === 'landmark'
+              ? '<div class="retro-map-inspector-stack-row"><span>Iconic BGC landmark — no technology stack</span></div>'
+              : '<div class="retro-map-inspector-stack-row"><span>Not yet ready to share</span></div>');
       const dist = (typeof item.distanceKm === 'number')
           ? `${item.distanceKm.toFixed(2)} KM FROM BGC CORE`
           : '—';
@@ -2339,7 +2348,7 @@
 
       const footer = `<div class="retro-map-inspector-intel">
           <strong>SOURCE:</strong><br>
-          BGC directory • curated against the ecosystem source of truth. Tech stacks are high-level public summaries.
+          BGC directory • curated against the ecosystem source of truth. Coordinates from OpenStreetMap building records; landmark entries carry no technology stack.
       </div>`;
 
       return `<dl>${rows}</dl>${footer}`;

@@ -33,7 +33,7 @@ WORKSPACES = [
     {
         "name": "Centra",
         "slug": "centra",
-        "description": "Vulnerability scanning engine. Feeds vulnerability data into Panteon defense operations.",
+        "description": "Vulnerability scanning engine. Feeds vulnerability data into Panteon automation platforms.",
         "domain": "centra.alieninc.tech",
         "workspace_type": "company",
         "parent_slug": "alien-inc",
@@ -73,9 +73,9 @@ WORKSPACES = [
 ]
 
 CROSS_COMPANY_FLOWS = [
-    {"from": "immanuel", "to": "panteon", "type": "risk_data", "description": "Real-time risk data feeds into Panteon cyber defense"},
+    {"from": "immanuel", "to": "panteon", "type": "risk_data", "description": "Real-time risk data feeds into Panteon automation platforms"},
     {"from": "immanuel", "to": "centra", "type": "risk_data", "description": "Risk data feeds into Centra vulnerability scanning"},
-    {"from": "centra", "to": "panteon", "type": "vulnerability_data", "description": "Vulnerability data feeds into Panteon defense operations"},
+    {"from": "centra", "to": "panteon", "type": "vulnerability_data", "description": "Vulnerability data feeds into Panteon automation platforms"},
     {"from": "kmt", "to": "rousseau-holdings", "type": "reports", "description": "Reports, media signals, deal flow feed capital allocation"},
     {"from": "alcantara", "to": "thedailyartcult", "type": "cultural_programming", "description": "Preservation work becomes cultural programming"},
 ]

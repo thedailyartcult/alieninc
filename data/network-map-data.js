@@ -13,6 +13,9 @@
  *   window.ecosystemSummary    — real group numbers derived from the data:
  *                                node/company counts, group headcount,
  *                                earliest founding year, data as-of date.
+ *   window.bgcDirectory        — BGC-area company directory from the same
+ *                                source of truth, each entry with a haversine
+ *                                distance (km) from the BGC Core.
  *
  * Data source order:
  *   1. window.ECOSYSTEM_DATA  — injected server-side (authenticated pages),
@@ -40,6 +43,7 @@ var NetworkMapData = (function () {
     window.fableDistricts = window.fableDistricts || [];
     window.fableLgus = window.fableLgus || [];
     window.ecosystemSummary = window.ecosystemSummary || null;
+    window.bgcDirectory = window.bgcDirectory || null;
   }
 
   // Public, non-financial fields of a company profile that the map may render.
@@ -62,6 +66,18 @@ var NetworkMapData = (function () {
     return out;
   }
 
+  // Great-circle distance in kilometres between two lat/lng points.
+  function haversineKm(lat1, lng1, lat2, lng2) {
+    var R = 6371;
+    var rad = function (d) { return d * Math.PI / 180; };
+    var dLat = rad(lat2 - lat1);
+    var dLng = rad(lng2 - lng1);
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(rad(lat1)) * Math.cos(rad(lat2)) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
   function extractNetworkMap(data) {
     var map = (data && data.networkMap) || null;
     if (!map) return;
@@ -77,12 +93,48 @@ var NetworkMapData = (function () {
       if (company && company.id) companiesById[company.id] = pickPublicCompany(company);
     });
 
+    var bgc = (data && data.bgcDirectory) || null;
+    var core = (bgc && bgc.metadata && bgc.metadata.core) || null;
+    window.bgcDirectory = null;
+    if (bgc) {
+      var directory = {
+        metadata: {
+          purpose: bgc.metadata && bgc.metadata.purpose,
+          core: core,
+          lastVerified: bgc.metadata && bgc.metadata.lastVerified,
+          note: bgc.metadata && bgc.metadata.note
+        },
+        companies: []
+      };
+      (bgc.companies || []).forEach(function (entry) {
+        var distanceKm = null;
+        if (core && typeof entry.lat === 'number' && typeof entry.lng === 'number') {
+          distanceKm = haversineKm(core.lat, core.lng, entry.lat, entry.lng);
+        }
+        directory.companies.push({
+          name: entry.name,
+          address: entry.address,
+          district: entry.district || 'Bonifacio Global City',
+          lat: entry.lat,
+          lng: entry.lng,
+          industry: entry.industry || '',
+          techStack: (entry.techStack || []).slice(),
+          lastVerified: entry.lastVerified || '',
+          distanceKm: distanceKm
+        });
+      });
+      window.bgcDirectory = directory;
+    }
+
     window.aliensNetworkNodes = (map.nodes || []).map(function (node) {
       var host = byName[String(node.city || '').toLowerCase()];
       if (host) {
         node.population = host.population;
         node.censusYear = host.censusYear || meta.censusYear || 2020;
         node.province = host.province || '';
+      }
+      if (core && typeof node.lat === 'number' && typeof node.lng === 'number') {
+        node.distanceKmToCore = haversineKm(core.lat, core.lng, node.lat, node.lng);
       }
       if (node.companyId && companiesById[node.companyId]) {
         node.company = companiesById[node.companyId];

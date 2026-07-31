@@ -565,57 +565,93 @@
             text-transform: uppercase;
         }
 
-        /* Center Grid Ribbon */
+        /* Center Search Bar */
         .retro-map-hud-center {
             position: absolute;
             top: 15px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            border-radius: 50px;
-            padding: 8px 24px;
+            width: 400px;
         }
         @media screen and (max-width: 900px) {
             .retro-map-hud-center { display: none; }
         }
 
-        .retro-map-hud-badge {
-            background: rgba(34, 211, 238, 0.15);
+        .retro-map-search {
+            display: block;
+            border-radius: 4px;
+            padding: 8px;
+        }
+
+        .retro-map-search-input {
+            width: 100%;
+            box-sizing: border-box;
+            background: #000;
             border: 1px solid rgba(34, 211, 238, 0.4);
-            color: #22d3ee;
-            border-radius: 20px;
-            padding: 2px 10px;
-            font-size: 0.75rem;
+            border-radius: 4px;
+            color: #e5e5e5;
+            font-family: 'VT323', Courier, monospace;
+            font-size: 0.95rem;
+            padding: 8px 10px;
+            outline: none;
+        }
+        .retro-map-search-input::placeholder {
+            color: rgba(34, 211, 238, 0.45);
+        }
+
+        .retro-map-search-results {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 8px;
+            right: 8px;
+            display: none;
+            max-height: 330px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid rgba(34, 211, 238, 0.35);
+            border-radius: 4px;
+        }
+        .retro-map-search-results.retro-map-search-open {
+            display: block;
+        }
+
+        .retro-map-search-item {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            border-bottom: 1px solid rgba(34, 211, 238, 0.12);
+            color: #d1d5db;
+            font-family: 'VT323', Courier, monospace;
+            padding: 8px 10px;
+            cursor: pointer;
+        }
+        .retro-map-search-item:last-child {
+            border-bottom: none;
+        }
+        .retro-map-search-item:hover {
+            background: rgba(34, 211, 238, 0.12);
+        }
+        .retro-map-search-item-title {
+            color: #ffffff;
+            font-size: 0.95rem;
+            text-transform: uppercase;
             letter-spacing: 1px;
-            font-weight: bold;
         }
-
-        .retro-map-hud-divider {
-            width: 1px;
-            height: 20px;
-            background: rgba(74, 222, 128, 0.2);
+        .retro-map-search-item-sub {
+            color: rgba(34, 211, 238, 0.7);
+            font-size: 0.8rem;
         }
-
-        .retro-map-hud-metric {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .retro-map-hud-mval {
-            font-size: 1.1rem;
+        .retro-map-search-item-stack {
             color: #4ade80;
-            line-height: 1;
+            font-size: 0.78rem;
         }
-
-        .retro-map-hud-mlbl {
-            font-size: 0.7rem;
-            color: rgba(74, 222, 128, 0.5);
-            letter-spacing: 1px;
-            margin-top: 2px;
+        .retro-map-search-empty {
+            padding: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
         }
 
         .retro-map-hud-right {
@@ -1135,19 +1171,10 @@
                         <div id="retro-focus-stat2" class="retro-map-hud-meta">GRID AREA ACTIVE</div>
                     </div>
 
-                    <!-- HUD: Central Live Datafeed Ribbon (real group numbers from ecosystem JSON) -->
-                    <div class="retro-map-hud-panel retro-map-hud-center">
-                        <div class="retro-map-hud-badge">LIVE DATAFEED</div>
-                        <div class="retro-map-hud-divider"></div>
-                        <div class="retro-map-hud-metric">
-                            <span id="hud-headcount" class="retro-map-hud-mval">—</span>
-                            <span class="retro-map-hud-mlbl">GROUP HEADCOUNT</span>
-                        </div>
-                        <div class="retro-map-hud-divider"></div>
-                        <div class="retro-map-hud-metric">
-                            <span id="hud-earliest" class="retro-map-hud-mval">—</span>
-                            <span class="retro-map-hud-mlbl">EARLIEST OPERATION</span>
-                        </div>
+                    <!-- HUD: Company search (BGC directory + group companies from the source of truth) -->
+                    <div class="retro-map-hud-panel retro-map-hud-center retro-map-search">
+                        <input id="retro-company-search" class="retro-map-search-input" type="text" autocomplete="off" spellcheck="false" placeholder="help me find the tech stack of this company" aria-label="Search BGC directory and group companies">
+                        <div id="retro-search-results" class="retro-map-search-results"></div>
                     </div>
 
                     <!-- HUD: Database Status Card (real counts + as-of date from source of truth) -->
@@ -1275,7 +1302,7 @@
     </div>
 
     <!-- Active scripts (Starfield + Typing Loop + Split Flaps mechanics + Network Map) -->
-    <script src="../data/network-map-data.js?v=3"></script>
+    <script src="../data/network-map-data.js?v=4"></script>
     <script>
         // ── ALIEN.INC Network Map Data ──────────────────────────────────
         // Node, district, and city data is loaded from the ecosystem JSON
@@ -1393,16 +1420,6 @@
             const summary = window.ecosystemSummary;
             if (!summary) return;
 
-            const headcountEl = document.getElementById('hud-headcount');
-            if (headcountEl && typeof summary.groupHeadcount2026F === 'number') {
-                headcountEl.textContent = summary.groupHeadcount2026F.toLocaleString('en-US');
-            }
-
-            const earliestEl = document.getElementById('hud-earliest');
-            if (earliestEl && summary.earliestFounded) {
-                earliestEl.textContent = `EST. ${summary.earliestFounded}`;
-            }
-
             const countEl = document.getElementById('hud-archive-count');
             if (countEl && typeof summary.companyCount === 'number') {
                 countEl.textContent = `${summary.companyCount} COMPANIES`;
@@ -1419,11 +1436,205 @@
             }
         }
 
+        // Company search: BGC directory entries + group network nodes, from the source of truth.
+        function buildSearchIndex() {
+            const index = [];
+            const bgc = window.bgcDirectory;
+            if (bgc && Array.isArray(bgc.companies)) {
+                bgc.companies.forEach((entry) => {
+                    index.push({
+                        type: 'directory',
+                        name: entry.name || '',
+                        address: entry.address || '',
+                        industry: entry.industry || '',
+                        lat: entry.lat,
+                        lng: entry.lng,
+                        distanceKm: entry.distanceKm,
+                        techStack: (entry.techStack || []).slice(),
+                        lastVerified: entry.lastVerified || '',
+                        source: entry
+                    });
+                });
+            }
+            (window.aliensNetworkNodes || []).forEach((node) => {
+                index.push({
+                    type: 'node',
+                    name: node.name || node.sector || '',
+                    address: node.city ? `${node.city}${node.sector ? ' • ' + node.sector : ''}` : (node.sector || ''),
+                    industry: node.sector || '',
+                    lat: node.lat,
+                    lng: node.lng,
+                    distanceKm: node.distanceKmToCore,
+                    techStack: (node.techStack || []).map((t) => (t && t.name) || String(t)),
+                    source: node
+                });
+            });
+            return index;
+        }
+
+        function initSearch() {
+            const input = document.getElementById('retro-company-search');
+            const resultsEl = document.getElementById('retro-search-results');
+            if (!input || !resultsEl) return;
+
+            const index = buildSearchIndex();
+            let debounceTimer = null;
+
+            const close = () => resultsEl.classList.remove('retro-map-search-open');
+
+            input.addEventListener('input', () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => renderSearchResults(index, input.value, resultsEl, close), 150);
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    close();
+                    input.blur();
+                }
+            });
+
+            resultsEl.addEventListener('pointerdown', (e) => e.preventDefault());
+
+            document.addEventListener('click', (e) => {
+                const panel = input.closest('.retro-map-search');
+                if (panel && panel.contains(e.target)) return;
+                close();
+            });
+        }
+
+        function renderSearchResults(index, query, resultsEl, close) {
+            const q = (query || '').trim().toLowerCase();
+            resultsEl.innerHTML = '';
+            if (!q) {
+                close();
+                return;
+            }
+
+            const tokens = q.split(/\s+/).filter(Boolean);
+            const matches = [];
+
+            index.forEach((item) => {
+                const haystack = `${item.name} ${item.industry} ${item.address} ${item.techStack.join(' ')}`.toLowerCase();
+                const allMatch = tokens.every((t) => haystack.indexOf(t) !== -1);
+                if (!allMatch) return;
+
+                const nameLower = item.name.toLowerCase();
+                const startsWith = nameLower.indexOf(tokens[0]) === 0 ? 0 : 1;
+                const distance = (typeof item.distanceKm === 'number') ? item.distanceKm : 9999;
+                matches.push({ item, score: startsWith, distance });
+            });
+
+            matches.sort((a, b) => (a.score - b.score) || (a.distance - b.distance));
+
+            const top = matches.slice(0, 8);
+            if (!top.length) {
+                resultsEl.innerHTML = `<div class="retro-map-search-empty">NO MATCHES — CHECK THE SOURCE OF TRUTH</div>`;
+                resultsEl.classList.add('retro-map-search-open');
+                return;
+            }
+
+            top.forEach(({ item }) => {
+                const dist = (typeof item.distanceKm === 'number')
+                    ? ` • ${item.distanceKm.toFixed(2)} KM FROM BGC CORE`
+                    : '';
+                const stack = item.techStack.slice(0, 5).join(' / ');
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'retro-map-search-item';
+                btn.innerHTML = `
+                    <div class="retro-map-search-item-title">${item.name}</div>
+                    <div class="retro-map-search-item-sub">${item.address}${dist}</div>
+                    <div class="retro-map-search-item-stack">${stack || 'Not yet ready to share'}</div>`;
+                btn.addEventListener('click', () => {
+                    openSearchResult(item);
+                    close();
+                });
+                resultsEl.appendChild(btn);
+            });
+
+            resultsEl.classList.add('retro-map-search-open');
+        }
+
+        function openSearchResult(item) {
+            if (item.type === 'node') {
+                inspectNode(item.source, true);
+                return;
+            }
+
+            if (!activeMapInstance) return;
+            activeMapInstance.flyTo({
+                center: [item.lng, item.lat],
+                zoom: 14.5,
+                pitch: 55,
+                bearing: 5,
+                duration: 2000
+            });
+
+            updateHUD(item.name, 'GRID ACCESS GRANTED', `LAT/LNG: ${item.lat.toFixed(4)} / ${item.lng.toFixed(4)}`);
+
+            toggleInspector(true);
+            const inspectorContent = document.getElementById('inspector-content');
+            inspectorContent.innerHTML = `<p style="color: #22d3ee; animation: aliens-blink 1s step-end infinite; text-align: center; margin-top: 20px;">[ RETRIEVING COMPANY PROFILE... ]</p>`;
+
+            setTimeout(() => {
+                inspectorContent.innerHTML = renderDirectoryProfile(item);
+            }, 550);
+        }
+
+        // Profile panel for a BGC directory entry (no group `company` record).
+        function renderDirectoryProfile(item) {
+            const stack = (item.techStack && item.techStack.length)
+                ? item.techStack.map((t) => `<div class="retro-map-inspector-stack-row"><span>${t}</span></div>`).join('')
+                : '<div class="retro-map-inspector-stack-row"><span>Not yet ready to share</span></div>';
+            const dist = (typeof item.distanceKm === 'number')
+                ? `${item.distanceKm.toFixed(2)} KM FROM BGC CORE`
+                : '—';
+
+            const rows = `
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">COMPANY NAME</dt>
+                    <dd class="retro-map-inspector-dd">${item.name}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">ADDRESS</dt>
+                    <dd class="retro-map-inspector-dd">${item.address}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">INDUSTRY</dt>
+                    <dd class="retro-map-inspector-dd">${item.industry || '—'}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">COORDINATES</dt>
+                    <dd class="retro-map-inspector-dd">${item.lat.toFixed(4)}N, ${item.lng.toFixed(4)}E</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">DISTANCE FROM BGC CORE</dt>
+                    <dd class="retro-map-inspector-dd">${dist}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">TECH STACK</dt>
+                    <dd class="retro-map-inspector-dd">${stack}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">LAST VERIFIED</dt>
+                    <dd class="retro-map-inspector-dd">${item.lastVerified || '—'}</dd>
+                </div>`;
+
+            const footer = `<div class="retro-map-inspector-intel">
+                <strong>SOURCE:</strong><br>
+                BGC directory • curated against the ecosystem source of truth. Tech stacks are high-level public summaries.
+            </div>`;
+
+            return `<dl>${rows}</dl>${footer}`;
+        }
+
         function initNetworkMap() {
             const mapEl = document.getElementById('aliens-network-map');
             if (!mapEl || typeof maplibregl === 'undefined') return;
 
             applyEcosystemSummary();
+            initSearch();
 
             // Integrates OpenFreeMap Dark style to serve vector tiles natively
             activeMapInstance = new maplibregl.Map({

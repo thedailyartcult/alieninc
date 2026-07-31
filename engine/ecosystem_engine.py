@@ -26,19 +26,24 @@ _STATIC_NETWORK_MAP_PATH = os.path.join(
     'data', 'alieninc-ecosystem.json',
 )
 
-_network_map_cache = None
+_static_data_cache = None
 
-def _get_static_network_map():
-    global _network_map_cache
-    if _network_map_cache is not None:
-        return _network_map_cache
+def _get_static_ecosystem():
+    global _static_data_cache
+    if _static_data_cache is not None:
+        return _static_data_cache
     try:
         with open(_STATIC_NETWORK_MAP_PATH, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        _network_map_cache = data.get('networkMap')
+            _static_data_cache = json.load(f)
     except Exception:
-        _network_map_cache = None
-    return _network_map_cache
+        _static_data_cache = {}
+    return _static_data_cache
+
+def _get_static_network_map():
+    return _get_static_ecosystem().get('networkMap')
+
+def _get_static_bgc_directory():
+    return _get_static_ecosystem().get('bgcDirectory')
 
 _CLIENT_LOSS_REASONS = [
     "contract expired — not renewed",
@@ -724,6 +729,9 @@ class EcosystemEngine:
         network_map = _get_static_network_map()
         if network_map:
             result["networkMap"] = network_map
+        bgc_directory = _get_static_bgc_directory()
+        if bgc_directory:
+            result["bgcDirectory"] = bgc_directory
         return result
 
     def _get_risk_metrics(self, conn):

@@ -14,7 +14,7 @@ const EcosystemIntegrator = (() => {
     codename: "Ecosystem",
     companies: {
       kmt: { name: "KMT Consulting Group", role: "strategy_ai_consulting" },
-      panteon: { name: "Panteon Cyber Defense", role: "cybersecurity" },
+      panteon: { name: "Panteon Technologies", role: "ai_automation_platforms" },
       centra: { name: "Centra Security", role: "vulnerability_scanning_compliance" },
       tdac: { name: "The Daily Art Cult", role: "media_publishing" },
       alcantara: { name: "Alcantara Art Foundation", role: "nonprofit_culture" },
@@ -74,9 +74,9 @@ const EcosystemIntegrator = (() => {
       
       // Map service line adjacencies
       const adjacencyMap = {
-        "kmt-strategy": ["kmt-ai", "kmt-ops", "panteon-mdr"],
-        "kmt-ai": ["kmt-strategy", "kmt-ops", "panteon-exposure"],
-        "kmt-ops": ["kmt-strategy", "kmt-pmi", "panteon-diligence"],
+        "kmt-strategy": ["kmt-ai", "kmt-ops", "panteon-platforms"],
+        "kmt-ai": ["kmt-strategy", "kmt-ops", "panteon-edgeai"],
+        "kmt-ops": ["kmt-strategy", "kmt-pmi", "panteon-integration"],
         "kmt-pmi": ["kmt-ops", "centra-vulnerability"]
       };
 

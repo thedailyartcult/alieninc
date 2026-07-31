@@ -437,22 +437,22 @@ const CortexWidget = (() => {
     var brandResponses = {
       panteon: {
         'vulnerability analysis': buildFromEco(function(eco) {
-          var hs = eco.companies.find(function(c){return c.id==='panteon';});
-          var kpis = hs.kpis2026F;
-          return 'Panteon managed detection and response maintains a mean-time-to-contain of ' + kpis.meanTimeToContainHours + ' hours with critical exposure closure in ' + kpis.criticalExposureClosureDays + ' days. Annual logo retention at ' + ((1 - kpis.annualLogoChurnRate) * 100).toFixed(1) + '% with ' + (kpis.netRevenueRetention * 100).toFixed(0) + '% net revenue retention. MRR: $' + (kpis.mrr/1000).toFixed(0) + 'K.';
-        }, 'Panteon delivers managed detection and response, exposure and vulnerability management, and cyber diligence for acquisitions across the Alien.Inc portfolio.'),
+          var pt = eco.companies.find(function(c){return c.id==='panteon';});
+          var kpis = pt.kpis2026F;
+          return 'Panteon AI-powered automation platforms deliver ontology-driven business operating systems with ' + kpis.platformUptimePct + ' uptime. Annual logo retention at ' + ((1 - kpis.annualLogoChurnRate) * 100).toFixed(1) + '% with ' + (kpis.netRevenueRetention * 100).toFixed(0) + '% net revenue retention. MRR: $' + (kpis.mrr/1000).toFixed(0) + 'K.';
+        }, 'Panteon delivers enterprise software and AI-powered automation platforms — ontology-driven operating systems, edge AI, and digital twins for the public, private, and nonprofit sectors.'),
         'attack surface assessment': buildFromEco(function(eco) {
-          var hs = eco.companies.find(function(c){return c.id==='panteon';});
-          return 'Panteon manages security across 7 Alien.Inc companies. Service lines: managed detection and response (56.8% of revenue), exposure and vulnerability management (28.4%), and cyber diligence for acquisitions (14.8%). Headcount: ' + hs.headcount['2026F'] + ' across ' + hs.headcount.fullTime + ' full-time and ' + hs.headcount.contractors + ' contractors.';
-        }, 'Panteon provides digital risk defense for the Alien.Inc group, reducing exposure across all portfolio companies.'),
+          var pt = eco.companies.find(function(c){return c.id==='panteon';});
+          return 'Panteon operates across the public, private, and nonprofit sectors. Service lines: enterprise automation platforms (56.8% of revenue), edge AI and digital twin deployment (28.4%), and data integration and managed automation services (14.8%). Headcount: ' + pt.headcount['2026F'] + ' across ' + pt.headcount.fullTime + ' full-time and ' + pt.headcount.contractors + ' contractors.';
+        }, 'Panteon builds the operating system for the next century — ontology-driven platforms, edge AI, and digital twin capabilities powering organizations across the Alien.Inc portfolio.'),
         'risk prioritization': buildFromEco(function(eco) {
-          var hs = eco.companies.find(function(c){return c.id==='panteon';});
-          var rev = hs.annualFinancials.find(function(f){return f.year===2026;});
-          return 'Panteon 2026F revenue: $' + (rev.revenue/1000000).toFixed(2) + 'M with EBITDA of $' + (rev.ebitda/1000).toFixed(0) + 'K. Operating costs: $' + (rev.operatingCosts/1000).toFixed(0) + 'K. Customer acquisition cost: $' + (kpis.avgCustomerCac/1000).toFixed(1) + 'K against lifetime value of $' + (kpis.avgCustomerLtv/1000).toFixed(0) + 'K.';
-        }, 'Panteon prioritizes security findings by exploitability and business impact across the Alien.Inc portfolio.'),
+          var pt = eco.companies.find(function(c){return c.id==='panteon';});
+          var rev = pt.annualFinancials.find(function(f){return f.year===2026;});
+          return 'Panteon 2026F revenue: $' + (rev.revenue/1000000).toFixed(2) + 'M with EBITDA of $' + (rev.ebitda/1000).toFixed(0) + 'K. Operating costs: $' + (rev.operatingCosts/1000).toFixed(0) + 'K.';
+        }, 'Panteon prioritizes automation and AI deployment across the Alien.Inc portfolio based on operational impact and scalability.'),
         'compliance gaps': buildFromEco(function(eco) {
-          return 'Panteon operates three service lines: managed detection and response, exposure and vulnerability management, and cyber diligence for acquisitions. All 16 staff are focused on reducing exposure across the Alien.Inc group.';
-        }, 'Panteon audits compliance posture across the Alien.Inc group against target security frameworks.')
+          return 'Panteon operates three service lines: enterprise automation platforms, edge AI and digital twin deployment, and data integration and managed automation services. All 16 staff are focused on building the operating system for the next century.';
+        }, 'Panteon audits and optimizes automation posture across the Alien.Inc group against target operational frameworks.')
       },
       centra: {
         'vulnerability scanning': buildFromEco(function(eco) {
@@ -595,7 +595,7 @@ const CortexWidget = (() => {
     };
     
     var brandDefault = {
-      panteon: 'Panteon delivers managed detection and response, exposure and vulnerability management, and cyber diligence for acquisitions. Headcount: 16 across 12 full-time and 4 contractors.',
+      panteon: 'Panteon delivers enterprise software and AI-powered automation platforms — ontology-driven operating systems, edge AI, and digital twins. Headcount: 16 across 12 full-time and 4 contractors.',
       centra: 'Centra delivers continuous vulnerability scanning, compliance monitoring, and bot defense across enterprise environments. Monitors CIS benchmarks, DISA STIG, and PCI-DSS compliance.',
       alcantaraartfoundation: 'Alcantara Art Foundation preserves cultural memory through conservation, digitization, education, and public access. 18,400 artifacts digitized to date.',
       alieninc: 'Alien.Inc operates 7 companies: KMT Consulting, Panteon, Centra, The Daily Art Cult, Alcantara Art Foundation, Immanuel, and Rousseau.',

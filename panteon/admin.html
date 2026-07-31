@@ -689,6 +689,17 @@
                     </a>
                 </div>
                 <div class="nav-section">
+                    <div class="nav-section-title">CMB</div>
+                    <div class="nav-item" data-page="cmb-dashboard">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5c2 2 2 9 0 11M8 2.5c-2 2-2 9 0 11M2.5 8h11M3.5 5.5c2 1 7 1 9 0M3.5 10.5c2-1 7-1 9 0"/></svg>
+                        Memory Dashboard
+                    </div>
+                    <div class="nav-item" data-page="cmb-status">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M5 7h6M5 9.5h4"/></svg>
+                        System Status
+                    </div>
+                </div>
+                <div class="nav-section">
                     <div class="nav-section-title">Terranean Engine</div>
                     <div class="nav-item" data-page="terranean-ingest">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h12M8 2v12"/><rect x="3" y="3" width="10" height="10" rx="1"/></svg>
@@ -1646,6 +1657,68 @@
                     </div>
                 </div>
 
+                <div class="page" id="page-cmb-dashboard">
+                    <div style="display:flex;flex-direction:column;height:calc(100vh - 68px)">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                            <div style="display:flex;align-items:center;gap:10px">
+                                <span class="status-dot" id="cmbEngineDot" style="background:var(--text-muted)"></span>
+                                <span style="font-family:var(--font-tech);font-size:12px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase" id="cmbEngineStatus">Checking engine...</span>
+                            </div>
+                            <div style="display:flex;gap:8px">
+                                <button class="btn btn-sm" onclick="reloadCMB()">Reload</button>
+                                <button class="btn btn-sm" onclick="openCMBExternal()" style="color:var(--text-muted)">Open Full &#x2197;</button>
+                            </div>
+                        </div>
+                        <iframe id="cmbFrame" style="flex:1;width:100%;border:1px solid var(--border-color);border-radius:4px;background:var(--bg-card)" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" title="CMB Memory Dashboard"></iframe>
+                    </div>
+                </div>
+
+                <div class="page" id="page-cmb-status">
+                    <div class="grid grid-4" style="margin-bottom:16px" id="cmbStatusCards">
+                        <div class="card" style="padding:12px 14px;border-left:2px solid var(--green)">
+                            <div class="card-title">Engine</div>
+                            <div class="card-value" id="cmbEngineHealth">--</div>
+                            <div class="card-sub">cmb-engine.service</div>
+                        </div>
+                        <div class="card" style="padding:12px 14px;border-left:2px solid var(--accent-purple)">
+                            <div class="card-title">Memories</div>
+                            <div class="card-value" id="cmbMemCount">--</div>
+                            <div class="card-sub">Stored facts</div>
+                        </div>
+                        <div class="card" style="padding:12px 14px;border-left:2px solid var(--accent-cyan)">
+                            <div class="card-title">MCP</div>
+                            <div class="card-value" id="cmbMcpStatus">--</div>
+                            <div class="card-sub">opencode connected</div>
+                        </div>
+                        <div class="card" style="padding:12px 14px;border-left:2px solid var(--accent-neon)">
+                            <div class="card-title">Workspaces</div>
+                            <div class="card-value" id="cmbWsCount">--</div>
+                            <div class="card-sub">Active scopes</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-2" style="margin-bottom:16px">
+                        <div class="card">
+                            <div class="card-header"><span class="card-title">Recent Memories</span></div>
+                            <div id="cmbRecentMemories" style="font-size:12px"><div class="empty-state"><span class="loading"></span></div></div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><span class="card-title">Active Sessions</span></div>
+                            <div id="cmbSessions" style="font-size:12px"><div class="empty-state"><span class="loading"></span></div></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Architecture</span></div>
+                        <div style="font-size:11px;font-family:var(--font-mono);color:var(--text-muted);line-height:1.8">
+                            <div><span style="color:var(--accent-cyan)">Engine</span> &nbsp; systemd cmb-engine.service &rarr; 127.0.0.1:8700 (loopback only)</div>
+                            <div><span style="color:var(--accent-cyan)">DB</span> &nbsp;&nbsp;&nbsp;&nbsp; /srv/cmb/data/cmb.db (SQLite WAL, owned by cmb user)</div>
+                            <div><span style="color:var(--accent-cyan)">Web</span> &nbsp;&nbsp;&nbsp; /srv/cmb/web/ &rarr; nginx /cmb/</div>
+                            <div><span style="color:var(--accent-cyan)">MCP</span> &nbsp;&nbsp;&nbsp; /srv/cmb/venv/bin/engraphis-mcp (stdio, shared DB)</div>
+                            <div><span style="color:var(--accent-cyan)">Auth</span> &nbsp;&nbsp; token-gated (CMB_API_TOKEN + browser session cookie)</div>
+                            <div><span style="color:var(--accent-cyan)">Model</span> all-MiniLM-L6-v2 (local embedder, dim 384)</div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
@@ -1670,6 +1743,8 @@ let providerCache = [];
 let refreshInterval = null;
 let authToken = null;
 let currentUser = null;
+const CMB_API_TOKEN = '-9nyL_p4uL5QkYUEZ0Xq8vdYJGfd_Ce649b6NjLFXxg';
+const CMB_BASE_URL = '/cmb/';
 
 const PAGES = {
     'overview': 'Overview',
@@ -1706,7 +1781,9 @@ const PAGES = {
     'contour-dashboards': 'Dashboards',
     'contour-schedules': 'Pipeline Schedules',
     'contour-quality': 'Data Quality',
-    'contour-search': 'Search'
+    'contour-search': 'Search',
+    'cmb-dashboard': 'Memory Dashboard',
+    'cmb-status': 'CMB System Status'
 };
 
 async function doLogout() {
@@ -1852,6 +1929,8 @@ function loadPageData(page) {
         case 'contour-schedules': loadContourSchedules(); break;
         case 'contour-quality': loadDQViolations(); break;
         case 'contour-search': document.getElementById('searchInput').focus(); break;
+        case 'cmb-dashboard': loadCMBDashboard(); break;
+        case 'cmb-status': loadCMBStatus(); break;
     }
 }
 
@@ -3296,6 +3375,113 @@ async function lookupDomain() {
         resultsDiv.innerHTML = renderDomainResult(data);
     } catch (e) {
         resultsDiv.innerHTML = `<div class="empty-state" style="color:var(--red)">Error: ${e.message}</div>`;
+    }
+}
+
+async function cmbApi(path) {
+    const res = await fetch('/api' + path, {
+        headers: { 'Authorization': 'Bearer ' + CMB_API_TOKEN, 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) throw new Error('CMB API ' + res.status);
+    return await res.json();
+}
+
+function loadCMBDashboard() {
+    const frame = document.getElementById('cmbFrame');
+    const dot = document.getElementById('cmbEngineDot');
+    const status = document.getElementById('cmbEngineStatus');
+
+    fetch('/api/health').then(r => r.json()).then(d => {
+        if (d.status === 'ok') {
+            dot.style.background = 'var(--green)';
+            status.textContent = 'Engine Online — v' + (d.engine || '2');
+        } else {
+            dot.style.background = 'var(--amber)';
+            status.textContent = 'Engine Degraded';
+        }
+    }).catch(() => {
+        dot.style.background = 'var(--red)';
+        status.textContent = 'Engine Offline';
+    });
+
+    if (!frame.src || frame.src === window.location.href) {
+        frame.src = CMB_BASE_URL + '#token=' + CMB_API_TOKEN;
+    }
+}
+
+function reloadCMB() {
+    const frame = document.getElementById('cmbFrame');
+    frame.src = CMB_BASE_URL + '#token=' + CMB_API_TOKEN + '&t=' + Date.now();
+}
+
+function openCMBExternal() {
+    window.open(CMB_BASE_URL + '#token=' + CMB_API_TOKEN, '_blank');
+}
+
+async function loadCMBStatus() {
+    try {
+        const health = await fetch('/api/health').then(r => r.json());
+        document.getElementById('cmbEngineHealth').textContent = health.status === 'ok' ? 'Online' : 'Degraded';
+        document.getElementById('cmbEngineHealth').style.color = health.status === 'ok' ? 'var(--green)' : 'var(--amber)';
+    } catch {
+        document.getElementById('cmbEngineHealth').textContent = 'Offline';
+        document.getElementById('cmbEngineHealth').style.color = 'var(--red)';
+    }
+
+    try {
+        const stats = await cmbApi('/stats');
+        document.getElementById('cmbMemCount').textContent = stats.memories || 0;
+        document.getElementById('cmbWsCount').textContent = stats.workspaces || 0;
+    } catch {
+        document.getElementById('cmbMemCount').textContent = '--';
+        document.getElementById('cmbWsCount').textContent = '--';
+    }
+
+    document.getElementById('cmbMcpStatus').textContent = 'Active';
+    document.getElementById('cmbMcpStatus').style.color = 'var(--green)';
+
+    try {
+        const mems = await cmbApi('/memories?limit=8');
+        const container = document.getElementById('cmbRecentMemories');
+        if (!mems.memories || mems.memories.length === 0) {
+            container.innerHTML = '<div class="empty-state">No memories stored yet</div>';
+        } else {
+            container.innerHTML = mems.memories.map(m => {
+                const t = fmtTimeAgo(new Date(m.valid_from * 1000).toISOString());
+                const typeColor = m.memory_type === 'semantic' ? 'var(--accent-purple)' : m.memory_type === 'procedural' ? 'var(--accent-cyan)' : 'var(--accent-neon)';
+                return `<div style="padding:8px 10px;border-bottom:1px solid var(--border-color)">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <span style="font-weight:500;font-size:12px">${m.title || '(untitled)'}</span>
+                        <span style="font-size:9px;padding:2px 6px;border-radius:2px;background:${typeColor}22;color:${typeColor};font-family:var(--font-mono);text-transform:uppercase">${m.memory_type}</span>
+                    </div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.content}</div>
+                    <div style="font-size:9px;color:var(--text-dim);margin-top:2px">${t} &middot; ${m.scope}</div>
+                </div>`;
+            }).join('');
+        }
+    } catch {
+        document.getElementById('cmbRecentMemories').innerHTML = '<div class="empty-state" style="color:var(--red)">Failed to load memories</div>';
+    }
+
+    try {
+        const ws = await cmbApi('/workspaces');
+        const container = document.getElementById('cmbSessions');
+        if (!ws.workspaces || ws.workspaces.length === 0) {
+            container.innerHTML = '<div class="empty-state">No workspaces</div>';
+        } else {
+            container.innerHTML = ws.workspaces.map(w => {
+                return `<div style="padding:8px 10px;border-bottom:1px solid var(--border-color)">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <span style="font-weight:500;font-size:12px">${w.name}</span>
+                        <span style="font-size:10px;color:var(--text-muted)">${w.memories} memories</span>
+                    </div>
+                    ${w.description ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px">${w.description}</div>` : ''}
+                    ${w.repos && w.repos.length > 0 ? `<div style="font-size:9px;color:var(--text-dim);margin-top:2px">repos: ${w.repos.join(', ')}</div>` : ''}
+                </div>`;
+            }).join('');
+        }
+    } catch {
+        document.getElementById('cmbSessions').innerHTML = '<div class="empty-state" style="color:var(--red)">Failed to load workspaces</div>';
     }
 }
 </script>

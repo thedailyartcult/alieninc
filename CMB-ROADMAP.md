@@ -518,7 +518,7 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | /srv/cmb/venv/bin/cmb-mc
 
 ```bash
 CMB_DB_PATH=/srv/cmb/data/cmb.db
-CMB_API_TOKEN=-9nyL_p4uL5QkYUEZ0Xq8vdYJGfd_Ce649b6NjLFXxg
+CMB_API_TOKEN=<from /srv/cmb/.env ENGRAPHIS_API_TOKEN>
 ```
 
 ### D. MCP Tools (31 total)

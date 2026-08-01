@@ -698,6 +698,14 @@
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M5 7h6M5 9.5h4"/></svg>
                         System Status
                     </div>
+                    <div class="nav-item" data-page="cmb-workspaces">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5l6-2 6 2M2 5v6l6 2 6-2V5M8 3v6"/><path d="M8 9v4"/></svg>
+                        Workspaces
+                    </div>
+                    <div class="nav-item" data-page="cmb-history">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 14V7l5-2 5 2v7M8 5v9"/><path d="M8 2.5V5"/></svg>
+                        Timeline
+                    </div>
                     <a href="cmb-product.html" class="nav-item" style="text-decoration:none;color:inherit">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 13V3l10 5-10 5z"/></svg>
                         Product Page
@@ -1727,6 +1735,49 @@
                     </div>
                 </div>
 
+                <div class="page" id="page-cmb-workspaces">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+                        <div>
+                            <div style="font-family:var(--font-tech);font-size:20px;font-weight:600">Workspaces</div>
+                            <div style="font-size:12px;color:var(--text-muted)">Tenant scopes for CMB memory — isolated by default, shareable on demand</div>
+                        </div>
+                        <button class="btn btn-sm" onclick="createCMBWorkspace()">+ New Workspace</button>
+                    </div>
+                    <div class="card" style="padding:14px 16px;margin-bottom:16px">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                            <div style="font-weight:600;font-size:13px">Token Savings</div>
+                            <div style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono)" id="cmbWsSavingsTotal"></div>
+                        </div>
+                        <div id="cmbWsSavings" style="display:flex;flex-direction:column;gap:10px"><span class="loading"></span></div>
+                    </div>
+                    <div class="grid grid-2" id="cmbWsGrid">
+                        <div class="empty-state" style="grid-column:1/-1"><span class="loading"></span></div>
+                    </div>
+                </div>
+
+                <div class="page" id="page-cmb-history">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+                        <div>
+                            <div style="font-family:var(--font-tech);font-size:20px;font-weight:600">Timeline</div>
+                            <div style="font-size:12px;color:var(--text-muted)">Bi-temporal history — what CMB believed, and when it changed</div>
+                        </div>
+                    </div>
+                    <div class="card" style="padding:14px 16px;margin-bottom:16px">
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+                            <input id="cmbHistQuery" type="text" placeholder="Query a fact, e.g. nginx config" style="flex:1;min-width:220px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px 12px;font-size:13px;outline:none" />
+                            <select id="cmbHistWs" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px 10px;font-size:13px;outline:none"></select>
+                            <button class="btn btn-sm" onclick="loadCMBHistory()">Search</button>
+                            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);cursor:pointer">
+                                <input type="checkbox" id="cmbHistWhy" style="accent-color:var(--cyan)" /> Show supersession (why)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title" id="cmbHistTitle">History</span></div>
+                        <div id="cmbHistory" style="font-size:12px"><div class="empty-state" style="padding:18px 0">Enter a query and press Search to see the versions of a fact.</div></div>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
@@ -1791,7 +1842,9 @@ const PAGES = {
     'contour-quality': 'Data Quality',
     'contour-search': 'Search',
     'cmb-dashboard': 'Memory Dashboard',
-    'cmb-status': 'CMB System Status'
+    'cmb-status': 'CMB System Status',
+    'cmb-workspaces': 'CMB Workspaces',
+    'cmb-history': 'CMB Timeline'
 };
 
 async function doLogout() {
@@ -1939,6 +1992,8 @@ function loadPageData(page) {
         case 'contour-search': document.getElementById('searchInput').focus(); break;
         case 'cmb-dashboard': loadCMBDashboard(); break;
         case 'cmb-status': loadCMBStatus(); break;
+        case 'cmb-workspaces': loadCMBWorkspaces(); loadCMBSavings(); break;
+        case 'cmb-history': loadCMBHistoryInit(); break;
     }
 }
 
@@ -3491,6 +3546,219 @@ async function loadCMBStatus() {
     } catch {
         document.getElementById('cmbSessions').innerHTML = '<div class="empty-state" style="color:var(--red)">Failed to load workspaces</div>';
     }
+}
+
+async function cmbApiPost(path, body) {
+    const res = await fetch('/api' + path, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + CMB_API_TOKEN, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error('CMB API ' + res.status);
+    return res.json();
+}
+
+async function loadCMBWorkspaces() {
+    const container = document.getElementById('cmbWsGrid');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><span class="loading"></span></div>';
+    try {
+        const ws = await cmbApi('/workspaces');
+        const list = ws.workspaces || [];
+        if (!list.length) {
+            container.innerHTML = '<div class="empty-state" style="grid-column:1/-1">No workspaces yet</div>';
+            return;
+        }
+        container.innerHTML = list.map(w => `
+            <div class="card" style="padding:14px 16px">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                    <div>
+                        <div style="font-weight:600;font-size:14px;color:var(--text)">${w.name}</div>
+                        ${w.description ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px">${w.description}</div>` : ''}
+                    </div>
+                    <span style="font-size:9px;padding:2px 8px;border-radius:3px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;color:${w.visibility === 'shared' ? 'var(--green)' : 'var(--text-muted)'};background:${w.visibility === 'shared' ? 'var(--green)' : 'var(--text-muted)'}18">${w.visibility}</span>
+                </div>
+                <div style="display:flex;gap:14px;margin:12px 0;font-size:11px;color:var(--text-muted);font-family:var(--font-mono)">
+                    <span>${w.memories || 0} memories</span>
+                    ${w.repos && w.repos.length ? `<span>repos: ${w.repos.join(', ')}</span>` : ''}
+                </div>
+                <div style="display:flex;gap:8px">
+                    <button class="btn btn-sm" onclick="cmbWsRename('${w.name}')">Rename</button>
+                    <button class="btn btn-sm" onclick="cmbWsDescribe('${w.name}')">Describe</button>
+                    <button class="btn btn-sm" onclick="cmbWsCopy('${w.name}')">Copy</button>
+                    <button class="btn btn-sm" style="color:var(--red)" onclick="cmbWsDelete('${w.name}')">Delete</button>
+                </div>
+            </div>`).join('');
+    } catch (e) {
+        container.innerHTML = `<div class="empty-state" style="grid-column:1/-1;color:var(--red)">Failed to load workspaces: ${e.message}</div>`;
+    }
+}
+
+async function loadCMBSavings() {
+    const box = document.getElementById('cmbWsSavings');
+    const total = document.getElementById('cmbWsSavingsTotal');
+    if (!box) return;
+    try {
+        const ws = await cmbApi('/workspaces');
+        const list = ws.workspaces || [];
+        const rows = [];
+        for (const w of list) {
+            try {
+                const s = await cmbApi('/context-savings?workspace=' + encodeURIComponent(w.name));
+                const tc = (s.by_token_counter || [])[0];
+                rows.push({
+                    name: w.name,
+                    src: tc ? tc.source_tokens : 0,
+                    ctx: tc ? tc.context_tokens : 0,
+                    saved: tc ? tc.saved_tokens : 0,
+                    ratio: tc && tc.source_tokens > 0 ? Math.round(tc.savings_ratio * 100) : 0
+                });
+            } catch (e) { rows.push({ name: w.name, src: 0, ctx: 0, saved: 0, ratio: 0 }); }
+        }
+        const totSrc = rows.reduce((a, r) => a + r.src, 0);
+        const totSaved = rows.reduce((a, r) => a + r.saved, 0);
+        const totRatio = totSrc > 0 ? Math.round(totSaved / totSrc * 100) : 0;
+        total.textContent = totSrc + ' tokens sourced · ' + totSaved + ' saved (' + totRatio + '%)';
+        if (!rows.length) {
+            box.innerHTML = '<div style="font-size:11px;color:var(--text-muted)">No savings data yet</div>';
+            return;
+        }
+        const max = Math.max.apply(null, rows.map(r => r.src));
+        box.innerHTML = rows.map(r => `
+            <div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;font-family:var(--font-mono);color:var(--text-muted);margin-bottom:4px">
+                    <span>${r.name}</span>
+                    <span>${r.src} → ${r.ctx} tokens · ${r.saved} saved · ${r.ratio}%</span>
+                </div>
+                <div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.06);overflow:hidden">
+                    <div style="height:100%;width:${max ? Math.max(2, Math.round(r.src / max * 100)) : 0}%;background:var(--cyan);opacity:.85"></div>
+                </div>
+            </div>`).join('');
+    } catch (e) {
+        box.innerHTML = `<div style="font-size:11px;color:var(--red)">Savings unavailable: ${e.message}</div>`;
+    }
+}
+
+function cmbHistFmt(ts) {
+    if (!ts) return 'now';
+    const d = new Date(ts * 1000);
+    return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0') + ' ' + String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0');
+}
+
+async function loadCMBHistoryInit() {
+    const sel = document.getElementById('cmbHistWs');
+    if (sel && !sel.options.length) {
+        try {
+            const ws = await cmbApi('/workspaces');
+            (ws.workspaces || []).forEach(w => {
+                const o = document.createElement('option');
+                o.value = w.name;
+                o.textContent = w.name;
+                sel.appendChild(o);
+            });
+            sel.value = 'alieninc';
+        } catch (e) {}
+    }
+    if (!document.getElementById('cmbHistQuery').value) {
+        document.getElementById('cmbHistQuery').value = 'branding policy';
+    }
+    loadCMBHistory();
+}
+
+async function loadCMBHistory() {
+    const box = document.getElementById('cmbHistory');
+    const title = document.getElementById('cmbHistTitle');
+    const q = document.getElementById('cmbHistQuery').value.trim();
+    const ws = document.getElementById('cmbHistWs').value;
+    const withWhy = document.getElementById('cmbHistWhy').checked;
+    if (!q) return;
+    box.innerHTML = '<div class="empty-state" style="padding:18px 0"><span class="loading"></span></div>';
+    title.textContent = 'History: ' + q;
+    try {
+        const tl = await cmbApi('/timeline?q=' + encodeURIComponent(q) + '&workspace=' + encodeURIComponent(ws) + '&limit=20');
+        const hist = tl.history || [];
+        if (!hist.length) {
+            box.innerHTML = '<div class="empty-state" style="padding:18px 0">No history found for "' + q + '" in ' + ws + '.</div>';
+            return;
+        }
+        const rows = hist.map(h => `
+            <div style="display:flex;gap:12px;padding:8px 0">
+                <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+                    <div style="width:10px;height:10px;border-radius:50%;background:${h.valid_to ? 'var(--amber)' : 'var(--cyan)'};margin-top:4px;flex-shrink:0"></div>
+                    <div style="width:2px;flex:1;background:var(--border);margin:4px 0"></div>
+                </div>
+                <div style="flex:1;padding-bottom:8px;border-bottom:1px solid var(--border)">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+                        <span style="font-weight:600;color:var(--text)">${h.title || '(untitled)'}</span>
+                        <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">${cmbHistFmt(h.valid_from)} → ${h.valid_to ? cmbHistFmt(h.valid_to) : '<b style="color:var(--green)">current</b>'}</span>
+                    </div>
+                    ${h.pinned ? '<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(240,173,78,.15);color:var(--amber);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em">pinned</span> ' : ''}
+                    ${h.claim_kind ? '<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:var(--accent-cyan)22;color:var(--accent-cyan);font-family:var(--font-mono)">' + h.claim_kind + '</span> ' : ''}
+                    <div style="margin-top:4px;color:var(--text-muted);line-height:1.5;white-space:pre-wrap">${(h.content || '').slice(0, 400)}${(h.content || '').length > 400 ? '…' : ''}</div>
+                </div>
+            </div>`).join('');
+        let extra = '';
+        if (withWhy) {
+            const why = await cmbApi('/why?q=' + encodeURIComponent(q) + '&workspace=' + encodeURIComponent(ws) + '&k=5');
+            const sup = why.supersedes || [];
+            if (sup.length) {
+                extra = `<div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--border)">
+                    <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;color:var(--amber);text-transform:uppercase;margin-bottom:6px">Superseded versions (why)</div>
+                    ${sup.map(s => `<div style="display:flex;gap:10px;align-items:baseline;padding:4px 0;color:var(--text-muted)"><span style="color:var(--amber);font-family:var(--font-mono);font-size:10px">${cmbHistFmt(s.valid_from)}</span><span>${s.title || '(untitled)'}</span></div>`).join('')}
+                </div>`;
+            }
+        }
+        box.innerHTML = rows + extra;
+    } catch (e) {
+        box.innerHTML = `<div class="empty-state" style="padding:18px 0;color:var(--red)">Timeline unavailable: ${e.message}</div>`;
+    }
+}
+
+async function createCMBWorkspace() {
+    const name = (prompt('New workspace name (lowercase, no spaces):') || '').trim();
+    if (!name) return;
+    try {
+        await cmbApiPost('/workspaces/create', { workspace: name, description: '', visibility: 'personal', confirmed: true });
+        toast('Workspace created: ' + name);
+        loadCMBWorkspaces();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+async function cmbWsRename(name) {
+    const newName = (prompt('New name for "' + name + '":', name) || '').trim();
+    if (!newName || newName === name) return;
+    try {
+        await cmbApiPost('/workspaces/rename', { workspace: name, new_name: newName });
+        toast('Renamed to ' + newName);
+        loadCMBWorkspaces();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+async function cmbWsDescribe(name) {
+    const desc = prompt('Description for "' + name + '":');
+    if (desc === null) return;
+    try {
+        await cmbApiPost('/workspaces/describe', { workspace: name, description: desc });
+        toast('Description updated');
+        loadCMBWorkspaces();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+async function cmbWsCopy(name) {
+    try {
+        await cmbApiPost('/workspaces/copy', { workspace: name });
+        toast('Workspace duplicated');
+        loadCMBWorkspaces();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+async function cmbWsDelete(name) {
+    if (!confirm('Delete workspace "' + name + '" and its memories? This cannot be undone.')) return;
+    try {
+        await cmbApiPost('/workspaces/delete', { workspace: name });
+        toast('Deleted ' + name);
+        loadCMBWorkspaces();
+    } catch (e) { toast(e.message, 'error'); }
 }
 </script>
 

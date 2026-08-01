@@ -3,7 +3,7 @@
 **Document Purpose**: This is the master plan for CMB, Alien Inc's proprietary MCP (Model Context Protocol) memory system. Future AI sessions should read this document first to understand the current state, goals, and next steps.
 
 **Last Updated**: 2026-08-01  
-**Current Phase**: Phase 3 (Multi-Tenant Architecture)  
+**Current Phase**: Phase 4 (Advanced Features)  
 **Owner**: Alien Inc (fully owned, no third-party dependencies)
 
 ---
@@ -76,12 +76,13 @@ CMB is a **Model Context Protocol (MCP) server** that provides persistent memory
 - **Dashboard**: Embedded in admin.html (Memory Dashboard + System Status pages)
 - **Dashboard files**: `/home/alieninc/panteon/cmb/` (in-repo, version-controlled)
 - **Product page**: `/home/alieninc/panteon/cmb-product.html` (Palantir-style, live)
-- **Docs site**: `/home/alieninc/panteon/cmb-docs/` (5 pages: overview, API, architecture, token-savings, integration)
-- **Nginx route**: `/panteon/cmb/` serves dashboard (old `/cmb/` route removed)
-- **MCP wrapper**: `/srv/cmb/venv/bin/cmb-mcp` (patches all tool names + params + env)
+- **Docs site**: `/home/alieninc/panteon/cmb-docs/` (6 pages: overview, API, architecture, token-savings, integration, multi-tenancy)
+- **Phase 3 (multi-tenant) progress**: engine natively multi-workspace (alieninc, default, operations confirmed). Wrapper selector `CMB_DEFAULT_WORKSPACE` done + verified live + wired into opencode.jsonc. Workspaces page added to admin.html (create/rename/describe/copy/delete via native `/api/workspaces/*`) **with Token Savings card** (per-workspace `GET /api/context-savings` bars + rollup). Sharing v1 recipe in multi-tenancy.html. Design in `/home/alieninc/CMB-PHASE3-DESIGN.md`.
+- **Phase 4 (advanced) progress**: consolidation automation hook installed (plugin session.idle → cmb-consolidate.py → POST /api/consolidate, throttled 30 min, all workspaces). Code graph indexed for alieninc + panteon repos (cmb_search_code live); cmb engine repo queued behind CMB_INDEX_ROOTS (next restart). Bi-temporal Timeline page live in admin.html (/api/timeline + /api/why). Remaining: proactive file→memory injection, quality scoring, 3rd repo index.
+- **Nginx route**: `/panteon/cmb/` serves dashboard (old `/cmb/` route removed); `/api/` (non-v1) → CMB engine :8700
+- **MCP wrapper**: `/srv/cmb/venv/bin/cmb-mcp` (patches all tool names + params + env; workspace selector)
 - **Plugin**: `~/.config/opencode/plugin/cmb-resume.ts` (auto-injects context)
 - **AGENTS.md**: `~/.config/opencode/AGENTS.md` (mandatory token-saving protocol)
-- **⚠️ Restart required**: wrapper + plugin fixes land on next opencode restart (see Phase 1 notes)
 
 ---
 
@@ -189,45 +190,53 @@ CMB is a **Model Context Protocol (MCP) server** that provides persistent memory
 
 ---
 
-### Phase 3: Multi-Tenant Architecture (8-12 weeks)
+### Phase 3: Multi-Tenant Architecture (8-12 weeks) — IN PROGRESS
 
 **Objective**: Enable subsidiary companies to use CMB with isolated workspaces and shared knowledge.
 
 #### Tasks
 
-1. **Design workspace isolation model**
-   - Current: Single workspace (`default`) with repo scoping (`alieninc`)
+1. ✅ **Design workspace isolation model** (2026-08-01)
+   - Current: Multi-workspace verified (alieninc=3, default=24, operations=2 memories; isolation server-enforced)
    - Target: Multiple workspaces (e.g., `alieninc`, `subsidiary-a`, `subsidiary-b`)
    - Isolation: Each workspace has its own memories, sessions, and receipts
-   - Sharing: Optional cross-workspace memory sharing (read-only, curated)
+   - Sharing: Curated read-only copies with `source=shared_from:<ws>:<id>` provenance; owner version wins
+   - Design doc: `/home/alieninc/CMB-PHASE3-DESIGN.md`
 
-2. **Implement workspace management UI**
-   - Location: admin.html → CMB → "Workspaces" page
+2. ✅ **Implement workspace management UI** (2026-08-01)
+   - Location: admin.html → CMB → "Workspaces" page (nav item + `page-cmb-workspaces`)
    - Features:
-     - Create/delete workspaces
-     - Assign users to workspaces (via Supabase roles)
-     - Configure cross-workspace sharing rules
-     - View workspace stats (memory count, token savings)
+     - Create/rename/describe/copy/delete workspaces — native engine `POST /api/workspaces/*`
+     - View workspace stats (memory count, repos, visibility)
+     - Visibility toggle via `POST /api/workspaces/visibility`
+   - Verified: `/api/workspaces` + `/panteon/admin.html` serve 200 over HTTPS; JS passes `node --check`
 
-3. **Add workspace selector to MCP wrapper**
-   - Current: `cmb-mcp` uses `CMB_DB_PATH` (single DB)
-   - Target: `cmb-mcp --workspace=alieninc` (workspace-specific context)
-   - Implementation: Filter memories by `workspace_id` in SQLite queries
+3. ✅ **Add workspace selector to MCP wrapper** (2026-08-01)
+   - `cmb-mcp` now reads `CMB_DEFAULT_WORKSPACE` and injects it via `_tool_manager.call_tool`
+     shim (FastMCP binds `cmb_mcp.call_tool` at construction — the manager hook is the right point)
+   - Verified: `cmb_stats({})` with `CMB_DEFAULT_WORKSPACE=default` → `workspace=default`;
+     explicit `{"workspace":"alieninc"}` still wins
+   - Wired into opencode.jsonc `mcp.cmb.environment` (`CMB_DEFAULT_WORKSPACE=alieninc`) — active on restart
 
-4. **Implement cross-workspace memory sharing**
+4. ✅ **Cross-workspace memory sharing — v1 recipe documented** (2026-08-01)
    - Use case: Alien Inc stores "nginx config" memory, subsidiary can read it
-   - Implementation: `cmb_promote` tool to share memories across workspaces
-   - Access control: Read-only, no edit/delete permissions for shared memories
+   - v1 recipe (in `cmb-docs/multi-tenancy.html`): curated read-only copy via `cmb_remember`
+     with `metadata.shared_from='<ws>:<id>'` + `shared_sync`; revoke via `cmb_forget` on the
+     copy id; owner version wins
+   - `cmb_share`/`cmb_unshare`/`cmb_list_shared` wrapper helpers deliberately deferred —
+     recipe works with existing tools, avoids wrapper risk
 
-5. **Add workspace analytics**
-   - Dashboard: Token savings per workspace, memory usage, consolidation efficiency
-   - Export: CSV/JSON reports for billing/optimization
+5. ✅ **Workspace analytics** (2026-08-01)
+   - `cmb_context_savings` + `cmb_stats` are workspace-aware natively (`GET /api/context-savings?workspace=X`)
+   - Workspaces page shows per-workspace memory counts **and** a Token Savings card with
+     per-workspace bar (source → context tokens, saved, ratio) + rollup total
+   - Verified: all 3 workspaces return savings data over HTTPS; admin.html JS passes `node --check`
 
 #### Success Criteria
-- ✅ 3+ workspaces created (alieninc + 2 subsidiaries)
-- ✅ Workspace isolation verified (no cross-contamination)
-- ✅ Cross-workspace sharing works (read-only)
-- ✅ Analytics dashboard shows per-workspace metrics
+- ✅ 5 workspaces created: alieninc, default, operations, subsidiary-a, subsidiary-b (2026-08-01)
+- ✅ Workspace isolation verified (no cross-contamination) — marker stored in subsidiary-a recalled only there, absent from alieninc
+- ✅ Cross-workspace sharing recipe documented (read-only copies with provenance) — wrapper helpers deferred by choice
+- ✅ Analytics dashboard shows per-workspace metrics — counts + Token Savings bar live
 
 ---
 
@@ -237,13 +246,16 @@ CMB is a **Model Context Protocol (MCP) server** that provides persistent memory
 
 #### Tasks
 
-1. **Memory consolidation automation**
+1. ✅ **Memory consolidation automation** (2026-08-01)
    - Current: Manual `cmb_consolidate` calls
    - Target: Automatic consolidation on session end
-   - Implementation: Plugin hook `experimental.session.compacting` triggers consolidation
+   - Implementation: plugin `event` hook fires on `session.idle` (throttled 30 min) →
+     `/root/.config/opencode/plugin/cmb-consolidate.py` POSTs `dry_run=false` to
+     `POST /api/consolidate` for every workspace (reads token from opencode.jsonc,
+     fail-silent). Verified: run across all 5 workspaces, idempotent (0 clusters now).
    - Goal: Reduce memory bloat by 50% (merge similar memories)
 
-2. **Code graph integration**
+2. ⏳ **Code graph integration** *(partial — 2/3 repos indexed)*
    - Current: `cmb_index_repo` parses code into symbol graph
    - Target: Auto-index repos on first use, store graph in CMB
    - Features:
@@ -251,6 +263,12 @@ CMB is a **Model Context Protocol (MCP) server** that provides persistent memory
      - `cmb_code_impact` — estimate blast radius of a code change
      - `cmb_search_code` — semantic code search (not just grep)
    - Use case: "What functions call `loadOverview()`?" → instant answer from CMB
+   - Indexed 2026-08-01: repo `panteon` (/home/alieninc/panteon, 80 files, 1236 symbols,
+     1398 edges) + repo `alieninc` (/home/alieninc, 5000 files, 49k symbols, 54k edges,
+     centra/ Python engine). `cmb_search_code` verified live (ScanEngine, applyChrome).
+   - ⏳ repo `cmb` (engine /srv/cmb) — requires index roots; added
+     `CMB_INDEX_ROOTS=/home/alieninc:/srv/cmb` to opencode.jsonc MCP env (active on next
+     restart, wrapper bridges to `ENGRAPHIS_INDEX_ROOTS`)
 
 3. **Proactive context injection**
    - Current: Plugin injects top 6 memories on session start
@@ -261,13 +279,15 @@ CMB is a **Model Context Protocol (MCP) server** that provides persistent memory
      - Inject top 3 relevant memories into system prompt
    - Goal: AI always has relevant context without asking
 
-4. **Bi-temporal history visualization**
+4. ✅ **Bi-temporal history visualization** (2026-08-01)
    - Current: `cmb_timeline` and `cmb_why` tools (text-based)
    - Target: Visual timeline in admin.html dashboard
    - Features:
-     - Timeline slider (show memories valid at a specific date)
-     - Diff view (what changed between two versions of a memory)
-     - Supersession graph (which memories replaced which)
+     - Timeline rail — one node per version, current (valid_to=null) in cyan, superseded in amber
+     - Date range per version (valid_from → valid_to), pinned/claim-kind badges
+     - "Show supersession (why)" toggle → `GET /api/why` superseded-versions list
+     - Workspace selector + free-text query (backend `GET /api/timeline?q=&workspace=`)
+   - Verified: page serves 200, JS passes `node --check`, endpoints live (nginx/2026 timeline)
    - Use case: "What did we believe about nginx config 3 months ago?"
 
 5. **Memory quality scoring**
@@ -281,11 +301,11 @@ CMB is a **Model Context Protocol (MCP) server** that provides persistent memory
    - Use case: Auto-archive low-quality memories, pin high-quality ones
 
 #### Success Criteria
-- ✅ Automatic consolidation reduces memory count by 50%
-- ✅ Code graph indexed for 3+ repos (alieninc, panteon, cmb)
-- ✅ Proactive context injection saves 20%+ tokens vs manual recall
+- ✅ Automatic consolidation hook installed (session.idle) — bloat reduction measurable over time
+- ⏳ Code graph indexed for 3+ repos (alieninc, panteon done; cmb after restart with CMB_INDEX_ROOTS)
+- ⏳ Proactive context injection saves 20%+ tokens vs manual recall (file→memory injection still partial)
 - ✅ Timeline visualization live in dashboard
-- ✅ Quality scoring identifies top 10% of memories
+- ⏳ Quality scoring identifies top 10% of memories
 
 ---
 

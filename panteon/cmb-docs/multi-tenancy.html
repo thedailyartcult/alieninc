@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMB Documentation — Multi-Tenancy &amp; Workspaces</title>
+    <meta name="description" content="CMB multi-tenancy — the workspace isolation model, CMB_DEFAULT_WORKSPACE selector, workspace management UI, and cross-workspace sharing.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+    <nav class="topnav">
+        <div class="brand"><b>CMB</b> <span>·</span> Cosmic Microwave Background <span>Docs</span></div>
+        <div class="links">
+            <a href="index.html">Overview</a>
+            <a href="api.html">API Reference</a>
+            <a href="architecture.html">Architecture</a>
+            <a href="token-savings.html">Token Savings</a>
+            <a href="integration.html">Integration</a>
+            <a href="multi-tenancy.html">Multi-Tenancy</a>
+            <a href="../cmb-product.html">Product</a>
+        </div>
+    </nav>
+
+    <div class="wrap">
+        <div class="kicker">Phase 3</div>
+        <h1>Multi-Tenancy &amp; Workspaces</h1>
+        <p>
+            CMB natively supports multiple workspaces — each is an isolated tenant with its
+            own memories, sessions, and receipts. Recall never crosses workspace boundaries,
+            so subsidiary companies can share the same deployment without shared context.
+        </p>
+
+        <h2>The Model</h2>
+        <ul>
+            <li><b>Tenant = workspace.</b> The trust boundary. Subsidiaries get their own
+                workspace (<code>alieninc</code>, <code>default</code>, <code>operations</code>, …).</li>
+            <li><b>Project = repo</b> inside a workspace. Optional refinement, not a boundary.</li>
+            <li><b>Isolation is server-enforced.</b> A workspace never sees another's memories.</li>
+            <li><b>Sharing = curated read-only copy.</b> A memory is materialized in the target
+                workspace with <code>source=shared_from:&lt;ws&gt;:&lt;id&gt;</code> provenance.
+                Owner's version always wins; copies are never mutated in place.</li>
+        </ul>
+
+        <div class="callout warn"><b>Sharing rule:</b> never share PII, secrets, or client data.
+        Share structural and decision knowledge only. Secrets (credentials, tokens) are hard-blocked.</div>
+
+        <h2>Sharing a Memory (v1 recipe)</h2>
+        <p>
+            Cross-workspace sharing is a <b>curated read-only copy</b> with provenance.
+            The source workspace keeps ownership; the target workspace gets a copy tagged
+            <code>shared_from</code>. Revoking = deleting the copy.
+        </p>
+        <h3>Share</h3>
+        <pre><code>cmb_remember(
+  workspace="&lt;target&gt;",
+  repo="&lt;target repo&gt;",
+  title="nginx config — shared from alieninc",
+  content="&lt;the memory content&gt;",
+  metadata={ "shared_from": "alieninc:&lt;source_memory_id&gt;", "shared_sync": true }
+)</code></pre>
+        <h3>Find shared copies</h3>
+        <pre><code>cmb_recall(query="nginx", workspace="&lt;target&gt;")
+# copies carry metadata.shared_from = "&lt;source_ws&gt;:&lt;id&gt;"</code></pre>
+        <h3>Revoke / update</h3>
+        <pre><code>cmb_forget(memory_id="&lt;copy_id&gt;", workspace="&lt;target&gt;")   # revoke
+# update: owner edits the source; re-share to push the new copy (owner version wins)</code></pre>
+
+        <h2>Default Workspace Selector</h2>
+        <p>
+            Every MCP connection can be pinned to a tenant via the
+            <code>CMB_DEFAULT_WORKSPACE</code> environment variable. The wrapper injects it as
+            the default <code>workspace</code> argument on any tool call that accepts one — an
+            explicit per-call <code>workspace</code> always wins.
+        </p>
+        <pre><code># opencode.jsonc → mcp.cmb.environment
+{
+  "CMB_DB_PATH": "/srv/cmb/data/cmb.db",
+  "CMB_API_TOKEN": "…",
+  "CMB_DEFAULT_WORKSPACE": "alieninc"
+}</code></pre>
+
+        <h2>Managing Workspaces</h2>
+        <p>From <b>admin → CMB → Workspaces</b> (admin.html) or the engine API directly:</p>
+        <table>
+            <tr><th>Endpoint</th><th>Purpose</th></tr>
+            <tr><td><code>GET /api/workspaces</code></td><td>List all workspaces (name, memories, description, visibility, repos).</td></tr>
+            <tr><td><code>POST /api/workspaces/create</code></td><td>Create <code>{workspace, description, visibility, confirmed}</code>.</td></tr>
+            <tr><td><code>POST /api/workspaces/rename</code></td><td><code>{workspace, new_name}</code></td></tr>
+            <tr><td><code>POST /api/workspaces/describe</code></td><td><code>{workspace, description}</code></td></tr>
+            <tr><td><code>POST /api/workspaces/visibility</code></td><td><code>{workspace, visibility, confirmed}</code> — personal/shared.</td></tr>
+            <tr><td><code>POST /api/workspaces/copy</code></td><td>Duplicate a workspace <code>{workspace, new_name?}</code>.</td></tr>
+            <tr><td><code>POST /api/workspaces/delete</code></td><td><code>{workspace}</code> — destroys the tenant and its memories.</td></tr>
+            <tr><td><code>POST /api/workspaces/merge</code></td><td><code>{source, target}</code> — merge one workspace into another.</td></tr>
+        </table>
+
+        <h2>Workspace-Aware Tools</h2>
+        <p>
+            Most <code>cmb_*</code> tools accept a <code>workspace</code> parameter:
+            <code>cmb_start_session</code>, <code>cmb_remember</code>, <code>cmb_recall*</code>,
+            <code>cmb_ingest</code>, <code>cmb_context_savings</code>, <code>cmb_stats</code>,
+            and the governance tools. When the wrapper selector is configured, callers never
+            need to repeat the workspace.
+        </p>
+
+        <h2>Deploying a Subsidiary</h2>
+        <ol>
+            <li>Create the tenant: <code>POST /api/workspaces/create</code> (e.g. <code>centra</code>).</li>
+            <li>Point that team's AI tool at CMB with <code>CMB_DEFAULT_WORKSPACE=centra</code>.</li>
+            <li>Verify isolation: <code>cmb_recall</code> from <code>centra</code> must never return
+                <code>alieninc</code> memories.</li>
+            <li>Share curated knowledge on demand (read-only copies with provenance).</li>
+        </ol>
+
+        <p class="muted">© 2026 Alien Inc · CMB — Cosmic Microwave Background</p>
+    </div>
+
+    <footer><a href="integration.html">← Integration</a> · <a href="../cmb-product.html">CMB Product Page</a></footer>
+</body>
+</html>

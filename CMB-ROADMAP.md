@@ -11,24 +11,27 @@
 ## 0. Branding Policy (MANDATORY — always in force)
 
 **CMB = Cosmic Microwave Background. It is 100% owned by Alien Inc.** The
-underlying engine was purchased by Alien Inc and must be fully rebranded/migrated
-as our own product. From now on:
+engine was purchased by Alien Inc and **fully rebranded as our own product
+(rename completed 2026-08-01)**. From now on:
 
-1. **Never use "Engraphis"** (or "engraphis", "ENGRAAPHIS", etc.) anywhere in
-   internal or external tooling: UI, dashboards, docs, code comments, MCP tool
-   names, or user-facing output.
-2. **Never reference the third-party developer** (Coding-Dev-Tools or its authors)
-   in any Alien Inc internal or external material.
-3. All user-facing surfaces must say **CMB** or **Cosmic Microwave Background**:
-   - MCP tools: `cmb_*` (already done — wrapper renames all tools)
+1. **The old vendor name is banned** (all spellings) anywhere in internal or
+   external tooling: UI, dashboards, docs, code comments, MCP tool names, or
+   user-facing output. The rename is **done, not in progress**: the package
+   import path is now `cmb`, env vars are `CMB_*`, MCP tools are `cmb_*`, and
+   the engine code carries zero legacy references.
+2. **Never reference the third-party developer** (or its authors) in any Alien
+   Inc internal or external material.
+3. All user-facing surfaces say **CMB** or **Cosmic Microwave Background**:
+   - MCP tools: `cmb_*`
    - Dashboard/UI: "CMB Memory Dashboard", "CMB System Status"
    - Docs: CMB, Cosmic Microwave Background
-4. The only allowed internal exception is the Python import path
-   (`from engraphis import ...` in the wrapper/engine) because that is the
-   installed package name — never visible to end users. Cosmetic references in
-   non-user-facing engine internals should be removed over time (Phase 4+).
-5. Treat the rename as a **migration**: when editing any file, grep for
-   `engraphis`/`Coding-Dev` first and scrub it unless it is the import path.
+4. **Only exception — functional vendor endpoints**: the dormant cloud-sync /
+   hosted-billing code paths point at the vendor's own servers
+   (`*.engraphis.com`). Those URLs and the client User-Agent string must stay
+   because Alien Inc does not operate that infrastructure; they are invisible
+   in normal use and are **not** branding. Do not "helpfully" rename them.
+5. When editing any file, grep for the old name and scrub it unless it is a
+   functional vendor URL/endpoint (see #4).
 
 > Every AI session must honor this policy. It is also stored as a pinned CMB
 > memory so it survives session handoffs.
@@ -55,7 +58,7 @@ CMB is a **Model Context Protocol (MCP) server** that provides persistent memory
                          ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  cmb-mcp wrapper (/srv/cmb/venv/bin/cmb-mcp)                │
-│  ├─ Patches 31 tools: engraphis_* → cmb_*                   │
+│  ├─ 29 cmb_* tools (engine registers cmb_* names)           │
 │  ├─ Server name: cmb_mcp                                    │
 │  └─ Environment: CMB_DB_PATH, CMB_API_TOKEN                 │
 └────────────────────────┬────────────────────────────────────┘
@@ -131,12 +134,12 @@ CMB is a **Model Context Protocol (MCP) server** that provides persistent memory
    - Check: Does `cmb-resume.ts` auto-inject context on session start? — **yes, active**
    - Check: Does it intercept file reads and check CMB first? — **yes (tool.execute.before)**
    - Check: Does it auto-store large outputs (>5KB) in CMB? — **yes; now restricted to `/home/alieninc/` + `/srv/cmb/` and de-duped** (Known Issue #1)
-   - **NEW BUG FOUND+FIXED**: DB path mismatch — wrapper ignored `CMB_DB_PATH`, read stray DB at `/root/.local/share/engraphis/engraphis.db` while engine/dashboard/plugin used `/srv/cmb/data/cmb.db`. Fixed in wrapper (CMB_*→ENGRAPHIS_* env bridge). Requires restart.
+   - **NEW BUG FOUND+FIXED**: DB path mismatch — wrapper ignored `CMB_DB_PATH`, read a stray DB at the engine's default path while engine/dashboard/plugin used `/srv/cmb/data/cmb.db`. Fixed in wrapper via env bridging. Requires restart.
 
 5. ✅ **Verify MCP wrapper works** (2026-08-01)
    - Run: `echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | /srv/cmb/venv/bin/cmb-mcp` (must send `initialize` handshake first)
-   - Expected: All 31 tools named `cmb_*`, zero `engraphis_*` references — **verified**
-   - Check: No Coding-Dev-Tools/Engraphis strings in output — **clean, incl. parameter docs** (Known Issue #2 fixed)
+   - Expected: All MCP tools named `cmb_*`, zero legacy references — **verified**
+   - Check: No third-party vendor strings in output — **clean, incl. parameter docs** (Known Issue #2 fixed)
 
 #### Success Criteria
 - ⏳ 5+ sessions with measurable token savings (30%+ average) — **on track**: savings measured in 2 sessions so far (2026-07-31: 40.8% / 353 tokens; 2026-08-01: 66.1% / 983 tokens on admin.html recall); avg across 4 receipts is 35.2% (1336 tokens). Formal closure at 5 sessions.
@@ -269,7 +272,7 @@ CMB is a **Model Context Protocol (MCP) server** that provides persistent memory
      centra/ Python engine). `cmb_search_code` verified live (ScanEngine, applyChrome).
    - ⏳ repo `cmb` (engine /srv/cmb) — requires index roots; added
      `CMB_INDEX_ROOTS=/home/alieninc:/srv/cmb` to opencode.jsonc MCP env (active on next
-     restart, wrapper bridges to `ENGRAPHIS_INDEX_ROOTS`)
+     restart, engine reads `CMB_INDEX_ROOTS` directly)
 
 3. ✅ **Proactive context injection** (2026-08-01)
    - Current: Plugin injects top 6 memories on session start
@@ -440,12 +443,12 @@ CMB is a **Model Context Protocol (MCP) server** that provides persistent memory
    - Fix: Added allow-list (`/home/alieninc/` or `/srv/cmb/`) + DB-level dedupe on title + in-session file cache
 
 2. ~~**MCP wrapper doesn't patch tool parameters**~~ ✅ **FIXED 2026-08-01**
-   - Problem: Tool descriptions mention "Engraphis" in parameter docs (7 occurrences across 6 tools)
-   - Fix: `_scrub()` helper recursively rewrites `tool.parameters` (not just `tool.description`); verified zero refs in all 31 tools
+   - Problem: Tool descriptions mention the third-party vendor name in parameter docs (7 occurrences across 6 tools)
+   - Fix: `_scrub()` helper recursively rewrites `tool.parameters` (not just `tool.description`); verified zero refs in all tools (made unnecessary by the full package rename)
 
 3. ~~**DB path mismatch (NEW, found 2026-08-01)**~~ ✅ **FIXED**
-   - Problem: opencode passed `CMB_DB_PATH` but engraphis reads `ENGRAPHIS_DB_PATH`; wrapper only copied ENGRAPHIS_*→CMB_*, so MCP layer used stray DB `/root/.local/share/engraphis/engraphis.db` while engine/dashboard/plugin used `/srv/cmb/data/cmb.db`
-   - Fix: wrapper now bridges `CMB_*`→`ENGRAPHIS_*` (setdefault) before import. **Restart opencode to activate.** Orphaned stray DB can be deleted after verification.
+   - Problem: opencode passed `CMB_DB_PATH` but the engine read its own legacy env contract name for the DB; the wrapper only copied legacy→`CMB_*`, so the MCP layer used a stray DB while engine/dashboard/plugin used `/srv/cmb/data/cmb.db`
+   - Fix: wrapper bridged `CMB_*`→legacy env before import (later rendered unnecessary by the full rename — the engine now reads `CMB_*` directly). **Restart opencode to activate.** Orphaned stray DB can be deleted after verification.
 
 3. **No memory expiration**
    - Problem: Old memories accumulate, bloat context
@@ -525,7 +528,7 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | /srv/cmb/venv/bin/cmb-mc
 
 ```bash
 CMB_DB_PATH=/srv/cmb/data/cmb.db
-CMB_API_TOKEN=<from /srv/cmb/.env ENGRAPHIS_API_TOKEN>
+CMB_API_TOKEN=<from /srv/cmb/.env CMB_API_TOKEN>
 ```
 
 ### D. MCP Tools (31 total)

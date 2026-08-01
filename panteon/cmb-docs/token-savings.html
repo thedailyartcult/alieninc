@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMB Documentation — Token Savings</title>
+    <meta name="description" content="How CMB reduces AI token usage — measured savings, the packed-context mechanism, and monitoring with cmb_context_savings.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+    <nav class="topnav">
+        <div class="brand"><b>CMB</b> <span>·</span> Cosmic Microwave Background <span>Docs</span></div>
+        <div class="links">
+            <a href="index.html">Overview</a>
+            <a href="api.html">API Reference</a>
+            <a href="architecture.html">Architecture</a>
+            <a href="token-savings.html">Token Savings</a>
+            <a href="integration.html">Integration</a>
+            <a href="../cmb-product.html">Product</a>
+        </div>
+    </nav>
+
+    <div class="wrap">
+        <div class="kicker">Economics</div>
+        <h1>How CMB Reduces Token Usage</h1>
+        <p>
+            The core problem: an AI agent re-reading the same files, docs, and transcripts every session
+            burns tokens on context it already has. CMB replaces that with <b>stored summaries recalled
+            under a hard token budget</b>.
+        </p>
+
+        <h2>The Mechanism</h2>
+        <ol>
+            <li><b>Store once.</b> Files, API structures, and decisions are distilled into durable memories.</li>
+            <li><b>Recall on demand.</b> <code>cmb_recall_context(query, token_budget=512)</code> packs only
+                the relevant memories into ≤512 tokens — instead of dumping a full file into context.</li>
+            <li><b>Hand off.</b> Session end writes a compact summary + open threads; the next session
+                starts with that context injected, not a full transcript resume.</li>
+        </ol>
+
+        <h2>Measured Results (Alien Inc, 2026)</h2>
+        <table>
+            <tr><th>Scenario</th><th>Tokens</th><th>Result</th></tr>
+            <tr><td>Re-reading admin.html structure</td><td>~1,500 source tokens</td><td rowspan="2">66% saved with CMB recall</td></tr>
+            <tr><td>cmb_recall_context → 512-token packed context</td><td>~504</td></tr>
+            <tr><td>Baseline session without CMB</td><td>full re-reads</td><td rowspan="2">40.8% saved (353 tokens)</td></tr>
+            <tr><td>cmb_recall_context vs raw re-read</td><td>865 → 512</td></tr>
+        </table>
+
+        <div class="callout good">
+            <b>Running average:</b> across measured recall receipts, CMB is tracking ~35% token savings,
+            with individual calls between 40–66%. The goal is 50–80% once recall-before-read discipline
+            is fully adopted on every session.
+        </div>
+
+        <h2>What Saves the Most</h2>
+        <ul>
+            <li><b>File-structure memories</b> — one 512-token recall replaces a multi-thousand-token file read.</li>
+            <li><b>Architecture decisions</b> — no re-litigating settled choices in later sessions.</li>
+            <li><b>Bug cause → fix pairs</b> — the fix is one recall away, not a re-investigation.</li>
+            <li><b>Session handoffs</b> — replace 450K-token transcript resumes with a compact summary.</li>
+        </ul>
+
+        <h2>Monitoring</h2>
+        <p>Every recall appends a content-free, hash-chained receipt. CMB aggregates them into a
+        savings report, so savings are measurable, not vibes.</p>
+        <pre><code>cmb_context_savings(workspace="alieninc", repo="backend")
+# → total saved tokens, savings ratio, per-operation breakdown</code></pre>
+
+        <h2>Rules of Thumb</h2>
+        <ul>
+            <li>Always use <code>cmb_recall_context</code> with the smallest sufficient budget.</li>
+            <li>Check CMB before reading any file (<code>tool.execute.before</code> does this automatically).</li>
+            <li>Store summaries, not full file contents.</li>
+            <li>Never store credentials, secrets, or raw logs.</li>
+        </ul>
+
+        <p class="muted">© 2026 Alien Inc · CMB — Cosmic Microwave Background</p>
+    </div>
+
+    <footer><a href="architecture.html">← Architecture</a> · <a href="integration.html">Next: Integration →</a></footer>
+</body>
+</html>

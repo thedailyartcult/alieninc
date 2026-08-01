@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMB Documentation — Architecture</title>
+    <meta name="description" content="CMB architecture — the Cosmic Microwave Background memory engine, MCP wrapper, plugin, and dashboard topology.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+    <nav class="topnav">
+        <div class="brand"><b>CMB</b> <span>·</span> Cosmic Microwave Background <span>Docs</span></div>
+        <div class="links">
+            <a href="index.html">Overview</a>
+            <a href="api.html">API Reference</a>
+            <a href="architecture.html">Architecture</a>
+            <a href="token-savings.html">Token Savings</a>
+            <a href="integration.html">Integration</a>
+            <a href="../cmb-product.html">Product</a>
+        </div>
+    </nav>
+
+    <div class="wrap">
+        <div class="kicker">Design</div>
+        <h1>Architecture</h1>
+        <p>CMB is a self-hosted, single-binary Python service. The agent never talks to the engine directly —
+        it goes through the MCP wrapper, which presents the branded <code>cmb_*</code> tool surface.</p>
+
+        <pre><code>┌──────────────────────────────────────────────────────────┐
+│  Any MCP-capable agent (opencode, Claude, Cursor, …)    │
+│  ├─ AGENTS.md — token-saving protocol                    │
+│  ├─ plugin cmb-resume.ts — auto-injects CMB context      │
+│  └─ MCP client → cmb-mcp wrapper (renames tools cmb_*)   │
+└──────────────────────────┬───────────────────────────────┘
+                           │ stdio (JSON-RPC)
+                           ▼
+┌──────────────────────────────────────────────────────────┐
+│  cmb-mcp wrapper  (/srv/cmb/venv/bin/cmb-mcp)           │
+│  ├─ 31 tools renamed: cmb_*                              │
+│  ├─ env bridge: CMB_* ↔ underlying config                │
+│  └─ schema scrub: no third-party refs in any description │
+└──────────────────────────┬───────────────────────────────┘
+                           │ in-process Python
+                           ▼
+┌──────────────────────────────────────────────────────────┐
+│  CMB Memory Engine (systemd: cmb-engine.service)         │
+│  ├─ loopback :8700 — no public exposure                  │
+│  ├─ embeddings: all-MiniLM-L6-v2 (384-dim)               │
+│  ├─ retrieval: semantic · lexical · graph (hybrid)       │
+│  └─ bi-temporal store + hash-chained receipts            │
+└──────────────────────────┬───────────────────────────────┘
+                           │ SQLite WAL
+                           ▼
+                /srv/cmb/data/cmb.db
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────────┐
+│  Dashboard  (nginx /panteon/cmb/ → admin.html)           │
+│  ├─ Memory Dashboard (search, timeline, graph)           │
+│  └─ System Status (engine health, counts, sessions)      │
+└──────────────────────────────────────────────────────────┘</code></pre>
+
+        <h2>Components</h2>
+        <table>
+            <tr><th>Component</th><th>Location</th></tr>
+            <tr><td>Engine</td><td><code>/srv/cmb/</code> · systemd <code>cmb-engine.service</code></td></tr>
+            <tr><td>Database</td><td><code>/srv/cmb/data/cmb.db</code> (SQLite, WAL)</td></tr>
+            <tr><td>MCP wrapper</td><td><code>/srv/cmb/venv/bin/cmb-mcp</code></td></tr>
+            <tr><td>Dashboard</td><td><code>/home/alieninc/panteon/cmb/</code></td></tr>
+            <tr><td>Product page</td><td><code>/home/alieninc/panteon/cmb-product.html</code></td></tr>
+            <tr><td>Documentation</td><td><code>/home/alieninc/panteon/cmb-docs/</code> (this site)</td></tr>
+        </table>
+
+        <h2>Data Model</h2>
+        <ul>
+            <li><b>Workspace</b> — top-level tenant (e.g. <code>alieninc</code>, subsidiaries).</li>
+            <li><b>Repo</b> — project scope inside a workspace.</li>
+            <li><b>Session</b> — groups memories + stores handoff (summary, open threads).</li>
+            <li><b>Memory</b> — the stored fact. Fields include <code>scope</code>, <code>mtype</code>,
+                <code>importance</code>, <code>valid_from/valid_to</code>, <code>provenance</code>,
+                <code>subject_key</code> (dedupe), <code>pinned</code>.</li>
+            <li><b>Receipt</b> — hash-chained, content-free audit record of every mutation.</li>
+        </ul>
+
+        <h2>Security</h2>
+        <ul>
+            <li>Engine binds loopback only — no public network exposure.</li>
+            <li>MCP calls authenticated via <code>CMB_API_TOKEN</code> (env-injected, never committed).</li>
+            <li>Dashboard gated behind nginx + token/browser-session auth.</li>
+            <li>Memory is scoped; recall never crosses workspace boundaries.</li>
+        </ul>
+
+        <div class="callout warn"><b>Restart note:</b> after changing the wrapper or plugin, restart the
+        agent (opencode) so the new MCP process and plugin load.</div>
+
+        <p class="muted">© 2026 Alien Inc · CMB — Cosmic Microwave Background</p>
+    </div>
+
+    <footer><a href="api.html">← API Reference</a> · <a href="token-savings.html">Next: Token Savings →</a></footer>
+</body>
+</html>

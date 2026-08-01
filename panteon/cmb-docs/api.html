@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMB Documentation — MCP API Reference</title>
+    <meta name="description" content="CMB MCP tool reference — all 31 cmb_* tools exposed by the Cosmic Microwave Background memory server.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+    <nav class="topnav">
+        <div class="brand"><b>CMB</b> <span>·</span> Cosmic Microwave Background <span>Docs</span></div>
+        <div class="links">
+            <a href="index.html">Overview</a>
+            <a href="api.html">API Reference</a>
+            <a href="architecture.html">Architecture</a>
+            <a href="token-savings.html">Token Savings</a>
+            <a href="integration.html">Integration</a>
+            <a href="../cmb-product.html">Product</a>
+        </div>
+    </nav>
+
+    <div class="wrap">
+        <div class="kicker">Reference</div>
+        <h1>MCP Tool Reference — 31 × <code>cmb_*</code></h1>
+        <p>
+            CMB exposes 31 tools over MCP (stdio). All tool names are prefixed <code>cmb_</code>.
+            Every tool accepts flat JSON parameters. The list below is grouped by function.
+        </p>
+
+        <h2>Store &amp; Recall</h2>
+        <table>
+            <tr><th>Tool</th><th>Purpose</th></tr>
+            <tr><td><code>cmb_remember</code></td><td>Store a durable fact (semantic/episodic/procedural).</td></tr>
+            <tr><td><code>cmb_recall</code></td><td>Retrieve relevant memories (full bodies).</td></tr>
+            <tr><td><code>cmb_recall_context</code></td><td>Retrieve memories packed into a hard token budget (recommended).</td></tr>
+            <tr><td><code>cmb_recall_grounded</code></td><td>Answer strictly from memory, with citations — or abstain.</td></tr>
+            <tr><td><code>cmb_answer</code></td><td>Backward-compatible alias for <code>cmb_recall_grounded</code>.</td></tr>
+            <tr><td><code>cmb_recall_proactive</code></td><td>High-importance memories with no query (session start).</td></tr>
+            <tr><td><code>cmb_proactive_context</code></td><td>Agent-ready context packet + suggested queries.</td></tr>
+            <tr><td><code>cmb_ingest</code></td><td>Store raw text; CMB extracts discrete facts.</td></tr>
+        </table>
+
+        <h2>Sessions</h2>
+        <table>
+            <tr><th>Tool</th><th>Purpose</th></tr>
+            <tr><td><code>cmb_start_session</code></td><td>Open a session; returns bootstrap handoff (prior summary/open threads).</td></tr>
+            <tr><td><code>cmb_end_session</code></td><td>Close with summary + open threads for cross-session resume.</td></tr>
+        </table>
+
+        <h2>Governance &amp; History</h2>
+        <table>
+            <tr><th>Tool</th><th>Purpose</th></tr>
+            <tr><td><code>cmb_correct</code></td><td>Replace a memory's content without losing history (supersede).</td></tr>
+            <tr><td><code>cmb_forget</code></td><td>Retire a memory (bi-temporal close, never hard-deleted).</td></tr>
+            <tr><td><code>cmb_pin</code></td><td>Exempt a memory from automatic decay/pruning.</td></tr>
+            <tr><td><code>cmb_link</code></td><td>Connect two memories with a relation label.</td></tr>
+            <tr><td><code>cmb_promote</code></td><td>Widen a memory's visibility (session → repo → workspace).</td></tr>
+            <tr><td><code>cmb_timeline</code></td><td>Every version of a fact, oldest first, with validity windows.</td></tr>
+            <tr><td><code>cmb_why</code></td><td>Why a fact is true — current answer + what it superseded.</td></tr>
+        </table>
+
+        <h2>Consolidation</h2>
+        <table>
+            <tr><th>Tool</th><th>Purpose</th></tr>
+            <tr><td><code>cmb_consolidate</code></td><td>Distill recurring episodic memories into one durable digest.</td></tr>
+            <tr><td><code>cmb_record_event</code></td><td>Append a lightweight episodic log entry.</td></tr>
+        </table>
+
+        <h2>Analytics &amp; Audit</h2>
+        <table>
+            <tr><th>Tool</th><th>Purpose</th></tr>
+            <tr><td><code>cmb_context_savings</code></td><td>Report token savings (per token-counter).</td></tr>
+            <tr><td><code>cmb_stats</code></td><td>Memory counts by type / workspace / session.</td></tr>
+            <tr><td><code>cmb_receipts</code></td><td>List hash-chained operation receipts.</td></tr>
+            <tr><td><code>cmb_verify_receipts</code></td><td>Verify receipt chain hashes + anchor.</td></tr>
+            <tr><td><code>cmb_export_receipts</code></td><td>Export full receipt payload + verification result.</td></tr>
+        </table>
+
+        <h2>Code Graph</h2>
+        <table>
+            <tr><th>Tool</th><th>Purpose</th></tr>
+            <tr><td><code>cmb_index_repo</code></td><td>Parse a repo into the code symbol graph.</td></tr>
+            <tr><td><code>cmb_search_code</code></td><td>Find symbols with their callers.</td></tr>
+            <tr><td><code>cmb_code_path</code></td><td>Shortest structural path between two symbols.</td></tr>
+            <tr><td><code>cmb_code_impact</code></td><td>Estimate blast radius of a change.</td></tr>
+            <tr><td><code>cmb_export_code_graph</code></td><td>Export graph JSON + Markdown report.</td></tr>
+        </table>
+
+        <h2>Schemas &amp; Updates</h2>
+        <table>
+            <tr><th>Tool</th><th>Purpose</th></tr>
+            <tr><td><code>cmb_ingest_postgres_schema</code></td><td>Convert Postgres tables/constraints into a schema memory + entity graph.</td></tr>
+            <tr><td><code>cmb_check_update</code></td><td>Report newer CMB release availability (disabled by default).</td></tr>
+        </table>
+
+        <div class="callout">
+            <b>Recommended path:</b> use <code>cmb_recall_context</code> with the smallest sufficient
+            <code>token_budget</code>. Reserve <code>cmb_recall</code> for when complete memory bodies are needed.
+        </div>
+
+        <p class="muted">© 2026 Alien Inc · CMB — Cosmic Microwave Background</p>
+    </div>
+
+    <footer><a href="index.html">← Overview</a> · <a href="architecture.html">Next: Architecture →</a></footer>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMB Documentation — Integration</title>
+    <meta name="description" content="Integrate CMB into any MCP-capable AI tool — MCP config, wrapper, plugins, AGENTS.md protocol, and dashboard wiring.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+    <nav class="topnav">
+        <div class="brand"><b>CMB</b> <span>·</span> Cosmic Microwave Background <span>Docs</span></div>
+        <div class="links">
+            <a href="index.html">Overview</a>
+            <a href="api.html">API Reference</a>
+            <a href="architecture.html">Architecture</a>
+            <a href="token-savings.html">Token Savings</a>
+            <a href="integration.html">Integration</a>
+            <a href="../cmb-product.html">Product</a>
+        </div>
+    </nav>
+
+    <div class="wrap">
+        <div class="kicker">Deployment</div>
+        <h1>Integrating CMB into an AI Tool</h1>
+        <p>
+            CMB speaks MCP over stdio, so any MCP-capable tool (opencode, Claude Code, Cursor, and others)
+            can use it. There are three layers of integration, from zero-effort to maximal savings.
+        </p>
+
+        <h2>1 · MCP Server (required)</h2>
+        <p>Point the tool's MCP config at the wrapper. The wrapper renames every tool to <code>cmb_*</code>
+        and bridges the environment:</p>
+        <pre><code># opencode.jsonc / .cursor/mcp.json etc.
+"mcp": {
+  "cmb": {
+    "type": "local",
+    "command": ["/srv/cmb/venv/bin/cmb-mcp"],
+    "enabled": true
+  }
+}</code></pre>
+        <p>The wrapper inherits <code>CMB_DB_PATH</code> and <code>CMB_API_TOKEN</code> from the environment.
+        Nothing is written into the config file.</p>
+
+        <h2>2 · Protocol File (recommended)</h2>
+        <p>Add the token-saving protocol to the tool's global instructions so every session enforces
+        recall-before-read discipline:</p>
+        <pre><code># AGENTS.md
+## CMB Token-Saving Protocol (MANDATORY)
+1. Before reading any file, cmb_recall_context(query, token_budget=512) first
+2. Store durable facts after reading large files (>100 lines)
+3. Use cmb_recall_context, not re-reads, for known files
+4. End sessions with cmb_end_session (summary + open_threads)
+5. If CMB already has the answer, USE IT — don't re-read the source</code></pre>
+
+        <h2>3 · Plugin (maximum savings)</h2>
+        <p>For opencode, the <code>cmb-resume</code> plugin enforces the protocol automatically:</p>
+        <ul>
+            <li>Injects the protocol into the system prompt.</li>
+            <li>Intercepts <code>tool.execute.before</code> — checks CMB before file reads.</li>
+            <li>Auto-stores large tool outputs (<code>tool.execute.after</code>).</li>
+            <li>Injects last-session context at startup.</li>
+        </ul>
+
+        <h2>Wiring the Dashboard</h2>
+        <p>The admin UI is served by nginx from the panteon webroot:</p>
+        <pre><code># /etc/nginx/…  location blocks
+location /panteon/cmb/        { root /home/alieninc/panteon; }
+location /panteon/cmb-docs/   { root /home/alieninc/panteon; }</code></pre>
+        <p>
+            <a href="../cmb-product.html">Product page</a> · <a href="index.html">Overview</a> ·
+            <a href="architecture.html">Architecture</a> · <a href="api.html">API Reference</a>
+        </p>
+
+        <h2>Verification</h2>
+        <pre><code># 1. Engine is up
+systemctl status cmb-engine
+# 2. MCP tools are visible (tool list should contain cmb_start_session, …)
+# 3. Round-trip a fact
+cmb_remember(content="Integration smoke test", workspace="alieninc")
+cmb_recall(query="integration smoke test", workspace="alieninc")
+# 4. Savings report
+cmb_context_savings(workspace="alieninc")</code></pre>
+
+        <div class="callout warn"><b>Restart</b> the AI tool after any config/plugin change so the new MCP
+        process and plugin load.</div>
+
+        <p class="muted">© 2026 Alien Inc · CMB — Cosmic Microwave Background</p>
+    </div>
+
+    <footer><a href="token-savings.html">← Token Savings</a> · <a href="../cmb-product.html">CMB Product Page</a></footer>
+</body>
+</html>

@@ -2,12 +2,38 @@
 
 **Document Purpose**: This is the master plan for CMB, Alien Inc's proprietary MCP (Model Context Protocol) memory system. Future AI sessions should read this document first to understand the current state, goals, and next steps.
 
-**Last Updated**: 2026-07-31  
-**Current Phase**: Phase 1 (Stabilize & Measure)  
+**Last Updated**: 2026-08-01  
+**Current Phase**: Phase 3 (Multi-Tenant Architecture)  
 **Owner**: Alien Inc (fully owned, no third-party dependencies)
 
 ---
 
+## 0. Branding Policy (MANDATORY — always in force)
+
+**CMB = Cosmic Microwave Background. It is 100% owned by Alien Inc.** The
+underlying engine was purchased by Alien Inc and must be fully rebranded/migrated
+as our own product. From now on:
+
+1. **Never use "Engraphis"** (or "engraphis", "ENGRAAPHIS", etc.) anywhere in
+   internal or external tooling: UI, dashboards, docs, code comments, MCP tool
+   names, or user-facing output.
+2. **Never reference the third-party developer** (Coding-Dev-Tools or its authors)
+   in any Alien Inc internal or external material.
+3. All user-facing surfaces must say **CMB** or **Cosmic Microwave Background**:
+   - MCP tools: `cmb_*` (already done — wrapper renames all tools)
+   - Dashboard/UI: "CMB Memory Dashboard", "CMB System Status"
+   - Docs: CMB, Cosmic Microwave Background
+4. The only allowed internal exception is the Python import path
+   (`from engraphis import ...` in the wrapper/engine) because that is the
+   installed package name — never visible to end users. Cosmetic references in
+   non-user-facing engine internals should be removed over time (Phase 4+).
+5. Treat the rename as a **migration**: when editing any file, grep for
+   `engraphis`/`Coding-Dev` first and scrub it unless it is the import path.
+
+> Every AI session must honor this policy. It is also stored as a pinned CMB
+> memory so it survives session handoffs.
+
+---
 ## 1. What is CMB?
 
 CMB is a **Model Context Protocol (MCP) server** that provides persistent memory for AI agents. It solves the core problem of AI token waste by:
@@ -44,16 +70,18 @@ CMB is a **Model Context Protocol (MCP) server** that provides persistent memory
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Current State (as of 2026-07-31)
+### Current State (as of 2026-08-01)
 
-- **Memories stored**: 9 (admin.html structure, nginx config, CMB deployment, stack architecture, opencode config, token discipline, MCP wrapper, etc.)
+- **Memories stored**: 22+ (admin.html, nginx, CMB deployment, stack, panteon backend API, server.py routing, ecosystem DB schema, panteon domains, roadmap plan, bug fixes, product site structure, etc.)
 - **Dashboard**: Embedded in admin.html (Memory Dashboard + System Status pages)
 - **Dashboard files**: `/home/alieninc/panteon/cmb/` (in-repo, version-controlled)
+- **Product page**: `/home/alieninc/panteon/cmb-product.html` (Palantir-style, live)
+- **Docs site**: `/home/alieninc/panteon/cmb-docs/` (5 pages: overview, API, architecture, token-savings, integration)
 - **Nginx route**: `/panteon/cmb/` serves dashboard (old `/cmb/` route removed)
-- **MCP wrapper**: `/srv/cmb/venv/bin/cmb-mcp` (patches all tool names)
+- **MCP wrapper**: `/srv/cmb/venv/bin/cmb-mcp` (patches all tool names + params + env)
 - **Plugin**: `~/.config/opencode/plugin/cmb-resume.ts` (auto-injects context)
 - **AGENTS.md**: `~/.config/opencode/AGENTS.md` (mandatory token-saving protocol)
-- **Token savings demonstrated**: 40.8% reduction (353 tokens saved) using `cmb_recall_context` vs re-reading files
+- **⚠️ Restart required**: wrapper + plugin fixes land on next opencode restart (see Phase 1 notes)
 
 ---
 
@@ -83,45 +111,46 @@ CMB is a **Model Context Protocol (MCP) server** that provides persistent memory
 
 #### Tasks
 
-1. **Restart opencode and test the plugin**
+1. ✅ **Restart opencode and test the plugin**
    - Ask: "What do you know about admin.html?"
    - Expected: AI uses `cmb_recall_context` instead of reading the file
    - Verify: Check `cmb_context_savings` for token reduction
 
-2. **Monitor token usage over 5-10 sessions**
+2. **Monitor token usage over 5-10 sessions** *(in progress)*
    - Run `cmb_context_savings` after each session
    - Target: 30-50% token reduction on average
    - Document: Which queries save the most tokens?
 
-3. **Seed CMB with more durable facts**
-   - Store: panteon backend API structure, Supabase schema, key file patterns
-   - Goal: 20-30 high-value memories that prevent re-reading files
+3. ✅ **Seed CMB with more durable facts** (2026-08-01: 21 memories)
+   - Stored: panteon backend API structure, server.py routing, ecosystem DB schema, panteon domain modules, site serving stack, roadmap plan, bug-fix records
+   - Goal: 20-30 high-value memories that prevent re-reading files — **met (21)**
 
-4. **Fix any plugin bugs**
-   - Check: Does `cmb-resume.ts` auto-inject context on session start?
-   - Check: Does it intercept file reads and check CMB first?
-   - Check: Does it auto-store large outputs (>5KB) in CMB?
+4. ✅ **Fix any plugin bugs** (2026-08-01)
+   - Check: Does `cmb-resume.ts` auto-inject context on session start? — **yes, active**
+   - Check: Does it intercept file reads and check CMB first? — **yes (tool.execute.before)**
+   - Check: Does it auto-store large outputs (>5KB) in CMB? — **yes; now restricted to `/home/alieninc/` + `/srv/cmb/` and de-duped** (Known Issue #1)
+   - **NEW BUG FOUND+FIXED**: DB path mismatch — wrapper ignored `CMB_DB_PATH`, read stray DB at `/root/.local/share/engraphis/engraphis.db` while engine/dashboard/plugin used `/srv/cmb/data/cmb.db`. Fixed in wrapper (CMB_*→ENGRAPHIS_* env bridge). Requires restart.
 
-5. **Verify MCP wrapper works**
-   - Run: `echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | /srv/cmb/venv/bin/cmb-mcp`
-   - Expected: All 31 tools named `cmb_*`, zero `engraphis_*` references
-   - Check: No Coding-Dev-Tools/Engraphis strings in output
+5. ✅ **Verify MCP wrapper works** (2026-08-01)
+   - Run: `echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | /srv/cmb/venv/bin/cmb-mcp` (must send `initialize` handshake first)
+   - Expected: All 31 tools named `cmb_*`, zero `engraphis_*` references — **verified**
+   - Check: No Coding-Dev-Tools/Engraphis strings in output — **clean, incl. parameter docs** (Known Issue #2 fixed)
 
 #### Success Criteria
-- ✅ 5+ sessions with measurable token savings (30%+ average)
-- ✅ 20+ durable memories stored
+- ⏳ 5+ sessions with measurable token savings (30%+ average) — **on track**: savings measured in 2 sessions so far (2026-07-31: 40.8% / 353 tokens; 2026-08-01: 66.1% / 983 tokens on admin.html recall); avg across 4 receipts is 35.2% (1336 tokens). Formal closure at 5 sessions.
+- ✅ 20+ durable memories stored (21 as of 2026-08-01)
 - ✅ Plugin auto-injects context without manual intervention
 - ✅ Zero third-party references in MCP layer
 
 ---
 
-### Phase 2: Product Page & Public Integration (4-8 weeks)
+### Phase 2: Product Page & Public Integration (4-8 weeks) — ✅ COMPLETE 2026-08-01
 
 **Objective**: Create a dedicated CMB product page and integrate it into the Panteon ecosystem.
 
 #### Tasks
 
-1. **Create `/home/alieninc/panteon/cmb-product.html`**
+1. ✅ **Create `/home/alieninc/panteon/cmb-product.html`**
    - Structure: Similar to `terranean-etelogy.html` (hero section, features, use cases, technical specs)
    - Design: Palantir-style dark theme, cyan/purple accents, Space Grotesk font
    - Content:
@@ -131,24 +160,24 @@ CMB is a **Model Context Protocol (MCP) server** that provides persistent memory
      - Technical specs: Architecture diagram, API endpoints, MCP protocol details
      - Live demo: Embedded iframe of CMB dashboard (read-only mode)
 
-2. **Integrate into Panteon index.html**
+2. ✅ **Integrate into Panteon index.html**
    - Location: Products section under "Cosmos (Space)" category
    - Card: CMB icon, title, one-line description, link to `cmb-product.html`
    - Style: Match existing product cards (Terranean, YONO, Apollo, etc.)
 
-3. **Add CMB to admin.html navigation**
+3. ✅ **Add CMB to admin.html navigation**
    - Current: "CMB" section with "Memory Dashboard" and "System Status"
    - Add: "Product Page" link to `/panteon/cmb-product.html`
    - Add: "Documentation" link to `/panteon/cmb-docs/` (future)
 
-4. **Create `/home/alieninc/panteon/cmb-docs/` directory**
+4. ✅ **Create `/home/alieninc/panteon/cmb-docs/` directory**
    - `index.html` — Overview and quickstart
    - `api.html` — MCP tool reference (all 31 `cmb_*` tools)
    - `architecture.html` — Technical architecture diagram
    - `token-savings.html` — How CMB reduces tokens (with examples)
    - `integration.html` — How to integrate CMB into other AI tools
 
-5. **Add CMB to sitemap.xml**
+5. ✅ **Add CMB to sitemap.xml**
    - Add: `/panteon/cmb-product.html`
    - Add: `/panteon/cmb-docs/*.html`
 
@@ -379,13 +408,17 @@ CMB is a **Model Context Protocol (MCP) server** that provides persistent memory
 
 ### Current Issues
 
-1. **Plugin auto-store is naive**
-   - Problem: `cmb-resume.ts` stores all file outputs >5KB, even if irrelevant
-   - Fix: Add relevance scoring (only store if file is in `/home/alieninc/` or `/srv/cmb/`)
+1. ~~**Plugin auto-store is naive**~~ ✅ **FIXED 2026-08-01**
+   - Problem: `cmb-resume.ts` stored all file outputs >5KB, even if irrelevant
+   - Fix: Added allow-list (`/home/alieninc/` or `/srv/cmb/`) + DB-level dedupe on title + in-session file cache
 
-2. **MCP wrapper doesn't patch tool parameters**
-   - Problem: Tool descriptions mention "Engraphis" in parameter docs
-   - Fix: Patch `tool.parameters` in wrapper (not just `tool.description`)
+2. ~~**MCP wrapper doesn't patch tool parameters**~~ ✅ **FIXED 2026-08-01**
+   - Problem: Tool descriptions mention "Engraphis" in parameter docs (7 occurrences across 6 tools)
+   - Fix: `_scrub()` helper recursively rewrites `tool.parameters` (not just `tool.description`); verified zero refs in all 31 tools
+
+3. ~~**DB path mismatch (NEW, found 2026-08-01)**~~ ✅ **FIXED**
+   - Problem: opencode passed `CMB_DB_PATH` but engraphis reads `ENGRAPHIS_DB_PATH`; wrapper only copied ENGRAPHIS_*→CMB_*, so MCP layer used stray DB `/root/.local/share/engraphis/engraphis.db` while engine/dashboard/plugin used `/srv/cmb/data/cmb.db`
+   - Fix: wrapper now bridges `CMB_*`→`ENGRAPHIS_*` (setdefault) before import. **Restart opencode to activate.** Orphaned stray DB can be deleted after verification.
 
 3. **No memory expiration**
    - Problem: Old memories accumulate, bloat context

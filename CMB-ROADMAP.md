@@ -78,7 +78,7 @@ CMB is a **Model Context Protocol (MCP) server** that provides persistent memory
 - **Product page**: `/home/alieninc/panteon/cmb-product.html` (Palantir-style, live)
 - **Docs site**: `/home/alieninc/panteon/cmb-docs/` (6 pages: overview, API, architecture, token-savings, integration, multi-tenancy)
 - **Phase 3 (multi-tenant) progress**: engine natively multi-workspace (alieninc, default, operations confirmed). Wrapper selector `CMB_DEFAULT_WORKSPACE` done + verified live + wired into opencode.jsonc. Workspaces page added to admin.html (create/rename/describe/copy/delete via native `/api/workspaces/*`) **with Token Savings card** (per-workspace `GET /api/context-savings` bars + rollup). Sharing v1 recipe in multi-tenancy.html. Design in `/home/alieninc/CMB-PHASE3-DESIGN.md`.
-- **Phase 4 (advanced) progress**: consolidation automation hook installed (plugin session.idle → cmb-consolidate.py → POST /api/consolidate, throttled 30 min, all workspaces). Code graph indexed for alieninc + panteon + cmb repos (cmb_search_code live). Bi-temporal Timeline page live in admin.html (/api/timeline + /api/why). Proactive file→memory injection hook wired (recall → system-prompt "CMB File Context"). Quality scoring live (cmb-score.py → quality_score column). Remaining: measure injection savings, wire auto-pin/archive from scores.
+- **Phase 4 (advanced) progress**: consolidation automation hook installed (plugin session.idle → cmb-consolidate.py → POST /api/consolidate, throttled 30 min, all workspaces). Code graph indexed for alieninc + panteon + cmb repos (cmb_search_code live). Bi-temporal Timeline page live in admin.html (/api/timeline + /api/why). Proactive file→memory injection hook wired (recall → system-prompt "CMB File Context"; injected-token meter writes /srv/cmb/data/injection_stats.jsonl). Quality scoring live (cmb-score.py → quality_score column, top-10% auto-pin). Remaining: measure injection savings across sessions, bottom-10% archive policy.
 - **Security (2026-08-01)**: `CMB_API_TOKEN` was hardcoded in admin.html + roadmap → removed from repo; token now served at runtime by nginx `location = /cmb_token.js` (alias /srv/cmb/data/cmb_token.js, outside repo). Token also rotated after this update.
 - **Nginx route**: `/panteon/cmb/` serves dashboard (old `/cmb/` route removed); `/api/` (non-v1) → CMB engine :8700
 - **MCP wrapper**: `/srv/cmb/venv/bin/cmb-mcp` (patches all tool names + params + env; workspace selector)
@@ -303,15 +303,16 @@ CMB is a **Model Context Protocol (MCP) server** that provides persistent memory
      engine-agnostic) and blends access (0.35) + freshness vs 180-day window (0.25)
      + salience (0.25) + stability (0.10) + conflict/supersession penalty (0.05).
      Runs after consolidation in `cmb-consolidate.py` on session.idle (daily cadence).
-     Verified live: 34 memories scored, top = web-stack/API-architecture memories.
+     Auto-pins the top-10% (non-destructive) and reports bottom-10% archive candidates.
+     Verified live: 35 memories scored, top-10% pinned (4 pinned total).
    - Use case: Auto-archive low-quality memories, pin high-quality ones
 
 #### Success Criteria
 - ✅ Automatic consolidation hook installed (session.idle) — bloat reduction measurable over time
 - ✅ Code graph indexed for 3+ repos (alieninc, panteon, cmb — engine repo done post-restart)
-- ⏳ Proactive context injection saves 20%+ tokens vs manual recall (hook installed; savings unmeasured)
+- ⏳ Proactive context injection saves 20%+ tokens vs manual recall (hook installed; meter in plugin records per-session injected tokens to /srv/cmb/data/injection_stats.jsonl)
 - ✅ Timeline visualization live in dashboard
-- ⏳ Quality scoring identifies top 10% of memories (scoring live; auto-pin/archive policy not yet wired)
+- ✅ Quality scoring identifies top 10% of memories (auto-pin live; bottom-10% candidates reported for a future archive policy)
 
 ---
 

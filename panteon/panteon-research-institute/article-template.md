@@ -1,6 +1,7 @@
 ---
 title: Your Article Title Here
 tag: Panteon Research Institute
+topic: AI Capability
 date: 2026-08-02
 author: Patrick Neil A.
 slug: your-article-title-here

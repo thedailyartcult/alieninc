@@ -1,6 +1,7 @@
 ---
 title: On the Impossibility of Full Automation
 tag: Panteon Research Institute
+topic: AI Capability
 date: 2019-12-31
 author: Patrick Neil A.
 slug: impossibility-of-full-automation

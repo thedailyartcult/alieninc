@@ -1,6 +1,7 @@
 ---
 title: The Measurement Problem in Machine Intelligence
 tag: Panteon Research Institute
+topic: Machine Intelligence
 date: 2021-12-31
 author: Patrick Neil A.
 slug: measurement-problem-machine-intelligence

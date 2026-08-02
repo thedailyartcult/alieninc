@@ -1,6 +1,7 @@
 ---
 title: From Benchmark to Behest — Reorienting Evaluation
 tag: Panteon Research Institute
+topic: Evaluation
 date: 2022-12-31
 author: Patrick Neil A.
 slug: from-benchmark-to-behest

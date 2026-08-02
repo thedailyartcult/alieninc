@@ -1,6 +1,7 @@
 ---
 title: Frameworks as Instruments — Method Notes
 tag: Panteon Research Institute
+topic: Research Method
 date: 2020-12-31
 author: Patrick Neil A.
 slug: frameworks-as-instruments

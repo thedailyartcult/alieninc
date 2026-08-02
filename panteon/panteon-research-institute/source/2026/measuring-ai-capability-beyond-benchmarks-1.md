@@ -1,3 +1,8 @@
+---
+topic: AI Capability
+date: 2026-08-02
+---
+
 # We Are Measuring AI Capability Wrong
 
 Every few months, a new benchmark tells us AI has crossed another threshold. Reasoning scores climb. Coding evals saturate. A CEO goes on a podcast and declares we've entered "the singularity." The headlines follow, the debate repeats, and almost nobody stops to ask whether the yardstick itself still measures the thing that matters.

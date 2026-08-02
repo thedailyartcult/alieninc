@@ -1,6 +1,7 @@
 ---
 title: The Smil Problem — Notes Toward a Correct Metric
 tag: Panteon Research Institute
+topic: AI Capability
 date: 2025-12-31
 author: Patrick Neil A.
 slug: the-smil-problem-notes

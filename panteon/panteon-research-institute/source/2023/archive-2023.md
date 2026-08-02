@@ -1,6 +1,7 @@
 ---
 title: Static Tests, Living Systems — A Critique
 tag: Panteon Research Institute
+topic: Evaluation
 date: 2023-12-31
 author: Patrick Neil A.
 slug: static-tests-living-systems

@@ -1,6 +1,7 @@
 ---
 title: The Taxonomy of Capability — Mapping What Cannot Be Automated
 tag: Panteon Research Institute
+topic: AI Capability
 date: 2018-12-31
 author: Patrick Neil A.
 slug: taxonomy-of-capability

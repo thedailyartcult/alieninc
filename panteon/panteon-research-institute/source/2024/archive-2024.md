@@ -1,6 +1,7 @@
 ---
 title: Preconditions of Transparency — Working Papers
 tag: Panteon Research Institute
+topic: Transparency
 date: 2024-12-31
 author: Patrick Neil A.
 slug: preconditions-of-transparency

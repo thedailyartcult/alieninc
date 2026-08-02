@@ -1,6 +1,7 @@
 ---
 title: The Founding — A Charter for Measuring Human Judgment
 tag: Panteon Research Institute
+topic: Human Judgment
 date: 2016-12-22
 author: Patrick Neil A.
 slug: the-founding-charter

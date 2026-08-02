@@ -6,11 +6,11 @@
     <title>Panteon | Panteon Research Institute</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles.css">
     <style>
         
-    :root{--accent-neon:#DFF140;--font-tech:"Space Grotesk",monospace}
+    :root{--accent-neon:var(--text-light);--font-tech:var(--font-mono)}
     .scroll-progress-bar{position:fixed;top:0;left:0;height:2px;width:0%;background-color:var(--accent-neon);z-index:1005;transition:width .1s ease-out}
     .announcement-bar{background-color:#08090a;color:var(--text-light);display:flex;justify-content:center;align-items:center;padding:10px 40px;font-size:.75rem;font-family:var(--font-tech);letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid var(--border-light);position:relative;z-index:1001;text-align:center}
     .announcement-bar a{text-decoration:none;margin-left:6px;font-weight:300;color:var(--accent-neon);border-bottom:1px solid var(--accent-neon);padding-bottom:1px}
@@ -107,6 +107,17 @@
         .topic-gate .tag{display:block;font-family:var(--font-mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px}
         .topic-gate h3{font-size:1.25rem;font-weight:400;letter-spacing:-.01em;margin-bottom:8px}
         .topic-gate p{max-width:600px;font-size:.95rem;line-height:1.6;color:var(--text-muted)}
+        .topic-group{margin-top:32px}
+        .topic-label{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted);padding-bottom:12px;border-bottom:1px solid var(--border-dark)}
+        .article-list{display:grid}
+        .article-row{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;padding:28px 20px;border-bottom:1px solid var(--border-dark);color:var(--text-dark);text-decoration:none;transition:background-color .2s ease}
+        .article-row:hover{background:var(--bg-gray)}
+        .article-row-title{display:flex;align-items:center;gap:10px;font-size:1.05rem;font-weight:400;letter-spacing:-.01em;margin-bottom:8px}
+        .article-row-meta{font-size:.8rem;color:var(--text-muted)}
+        .article-row-arrow{font-size:1.1rem;opacity:.45;transition:transform .2s ease,opacity .2s ease}
+        .article-row:hover .article-row-arrow{transform:translateX(4px);opacity:1}
+        .lock-icon{width:14px;height:14px;flex:0 0 auto;opacity:.6}
+        .article-row[hidden]{display:none}
         .year-picker{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:30px}
         .year-picker button{min-width:66px;padding:11px 12px;background:transparent;border:1px solid var(--border-dark);border-radius:2px;color:var(--text-dark);cursor:pointer;font-family:var(--font-mono);font-size:.72rem;letter-spacing:.06em;transition:background-color .2s ease,color .2s ease}
         .year-picker button:hover,.year-picker button[aria-pressed="true"]{background:var(--text-dark);border-color:var(--text-dark);color:var(--text-light)}
@@ -117,6 +128,8 @@
         .month-access .available-month:hover{background:var(--bg-gray)}
         .month-access .available-month::after{content:'Restricted';display:block;margin-top:8px;font-size:.56rem;color:var(--text-muted)}
         .archive-status{margin-top:18px;font-size:.85rem;color:var(--text-muted)}
+        .date-results{margin-top:28px}
+        .empty-results{padding:28px 0;color:var(--text-muted);font-size:.95rem;border-bottom:1px solid var(--border-dark)}
         dialog.archive-search{width:min(560px,calc(100% - 48px));margin:auto;padding:0;border:1px solid var(--border-dark);border-radius:2px;background:var(--bg-light);color:var(--text-dark)}
         dialog.archive-search::backdrop{background:rgba(7,8,9,.72)}
         .search-dialog-inner{padding:36px}
@@ -126,6 +139,7 @@
         .search-dialog-inner p{font-size:.95rem;line-height:1.6;color:var(--text-muted);margin-bottom:20px}
         .search-dialog-inner label{display:block;font-family:var(--font-mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
         .search-dialog-inner input{width:100%;padding:14px;border:1px solid var(--border-dark);border-radius:2px;font:inherit;color:var(--text-dark);margin-bottom:18px}
+        .search-result-count{font-size:.82rem;color:var(--text-muted);margin:0 0 18px}
         .search-dialog-actions{display:flex;align-items:center;justify-content:space-between;gap:16px}
         .restricted-badge{display:inline-block;font-family:var(--font-mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);border:1px solid var(--border-dark);padding:4px 8px;border-radius:2px}
         .search-dialog-actions a{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dark);text-decoration:none;border-bottom:1px solid var(--text-muted);padding-bottom:2px}
@@ -137,7 +151,7 @@
         .mission-card-inner a{display:inline-flex;align-items:center;gap:8px;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-dark);border-bottom:1px solid var(--text-muted);padding-bottom:2px;text-decoration:none;margin-top:8px}
 
         @media(max-width:1024px){.month-access{grid-template-columns:repeat(6,minmax(0,1fr))}}
-        @media(max-width:768px){.cap-hero{padding:140px 24px 80px}.archive-index{padding:60px 24px}.archive-section{padding:48px 0}.topic-gate{display:block;padding:24px}.topic-gate .archive-action{margin-top:24px}.month-access{grid-template-columns:repeat(3,minmax(0,1fr))}}
+        @media(max-width:768px){.cap-hero{padding:140px 24px 80px}.archive-index{padding:60px 24px}.archive-section{padding:48px 0}.topic-gate{display:block;padding:24px}.topic-gate .archive-action{margin-top:24px}.month-access{grid-template-columns:repeat(3,minmax(0,1fr))}.article-row{grid-template-columns:1fr;padding:24px 0}.article-row-arrow{display:none}}
     </style>
 </head>
 <body>
@@ -308,20 +322,132 @@
         <div class="archive-index">
             <section class="archive-section" aria-labelledby="topic-heading">
                 <h2 id="topic-heading">Articles by Topic</h2>
-                <p class="archive-section-intro">The PRI subject index is maintained inside the restricted archive. Sign in to search across the institute’s complete research record.</p>
+                <p class="archive-section-intro">Browse the institute’s research record by the topic assigned when each article is published. Article content is restricted to authorized personnel.</p>
                 <div class="topic-gate">
                     <div>
                         <span class="tag">Restricted archive</span>
                         <h3>Research is available to authorized personnel.</h3>
-                        <p>Topic classifications and document records are not published on this site.</p>
+                        <p>Document metadata is listed for navigation. Opening an article requires Panteon credentials.</p>
                     </div>
                     <button class="archive-action" type="button" data-open-search>Search the archive <span>→</span></button>
                 </div>
+            <div class="topic-group">
+                <div class="topic-label">AI Capability</div>
+                <div class="article-list">
+                    <a href="locked.html?slug=we-are-measuring-ai-capability-wrong&title=We%20Are%20Measuring%20AI%20Capability%20Wrong&date=2026-08-02&author=Patrick%20Neil%20A." class="article-row locked" data-year="2026" data-month="08" data-search="we are measuring ai capability wrong ai capability patrick neil a.">
+                        <div>
+                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>We Are Measuring AI Capability Wrong</div>
+                            <div class="article-row-meta">2026-08-02 · Patrick Neil A. · AI Capability<span class="restricted-badge">Restricted</span></div>
+                        </div>
+                        <div class="article-row-arrow">→</div>
+                    </a>
+                    <a href="locked.html?slug=the-smil-problem-notes&title=The%20Smil%20Problem%20%E2%80%94%20Notes%20Toward%20a%20Correct%20Metric&date=2025-12-31&author=Patrick%20Neil%20A." class="article-row locked" data-year="2025" data-month="12" data-search="the smil problem — notes toward a correct metric ai capability patrick neil a.">
+                        <div>
+                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>The Smil Problem — Notes Toward a Correct Metric</div>
+                            <div class="article-row-meta">2025-12-31 · Patrick Neil A. · AI Capability<span class="restricted-badge">Restricted</span></div>
+                        </div>
+                        <div class="article-row-arrow">→</div>
+                    </a>
+                    <a href="locked.html?slug=impossibility-of-full-automation&title=On%20the%20Impossibility%20of%20Full%20Automation&date=2019-12-31&author=Patrick%20Neil%20A." class="article-row locked" data-year="2019" data-month="12" data-search="on the impossibility of full automation ai capability patrick neil a.">
+                        <div>
+                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>On the Impossibility of Full Automation</div>
+                            <div class="article-row-meta">2019-12-31 · Patrick Neil A. · AI Capability<span class="restricted-badge">Restricted</span></div>
+                        </div>
+                        <div class="article-row-arrow">→</div>
+                    </a>
+                    <a href="locked.html?slug=taxonomy-of-capability&title=The%20Taxonomy%20of%20Capability%20%E2%80%94%20Mapping%20What%20Cannot%20Be%20Automated&date=2018-12-31&author=Patrick%20Neil%20A." class="article-row locked" data-year="2018" data-month="12" data-search="the taxonomy of capability — mapping what cannot be automated ai capability patrick neil a.">
+                        <div>
+                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>The Taxonomy of Capability — Mapping What Cannot Be Automated</div>
+                            <div class="article-row-meta">2018-12-31 · Patrick Neil A. · AI Capability<span class="restricted-badge">Restricted</span></div>
+                        </div>
+                        <div class="article-row-arrow">→</div>
+                    </a>
+                </div>
+            </div>
+            <div class="topic-group">
+                <div class="topic-label">Evaluation</div>
+                <div class="article-list">
+                    <a href="locked.html?slug=static-tests-living-systems&title=Static%20Tests%2C%20Living%20Systems%20%E2%80%94%20A%20Critique&date=2023-12-31&author=Patrick%20Neil%20A." class="article-row locked" data-year="2023" data-month="12" data-search="static tests, living systems — a critique evaluation patrick neil a.">
+                        <div>
+                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Static Tests, Living Systems — A Critique</div>
+                            <div class="article-row-meta">2023-12-31 · Patrick Neil A. · Evaluation<span class="restricted-badge">Restricted</span></div>
+                        </div>
+                        <div class="article-row-arrow">→</div>
+                    </a>
+                    <a href="locked.html?slug=from-benchmark-to-behest&title=From%20Benchmark%20to%20Behest%20%E2%80%94%20Reorienting%20Evaluation&date=2022-12-31&author=Patrick%20Neil%20A." class="article-row locked" data-year="2022" data-month="12" data-search="from benchmark to behest — reorienting evaluation evaluation patrick neil a.">
+                        <div>
+                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>From Benchmark to Behest — Reorienting Evaluation</div>
+                            <div class="article-row-meta">2022-12-31 · Patrick Neil A. · Evaluation<span class="restricted-badge">Restricted</span></div>
+                        </div>
+                        <div class="article-row-arrow">→</div>
+                    </a>
+                </div>
+            </div>
+            <div class="topic-group">
+                <div class="topic-label">Human Judgment</div>
+                <div class="article-list">
+                    <a href="locked.html?slug=the-founding-charter&title=The%20Founding%20%E2%80%94%20A%20Charter%20for%20Measuring%20Human%20Judgment&date=2016-12-22&author=Patrick%20Neil%20A." class="article-row locked" data-year="2016" data-month="12" data-search="the founding — a charter for measuring human judgment human judgment patrick neil a.">
+                        <div>
+                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>The Founding — A Charter for Measuring Human Judgment</div>
+                            <div class="article-row-meta">2016-12-22 · Patrick Neil A. · Human Judgment<span class="restricted-badge">Restricted</span></div>
+                        </div>
+                        <div class="article-row-arrow">→</div>
+                    </a>
+                </div>
+            </div>
+            <div class="topic-group">
+                <div class="topic-label">Machine Intelligence</div>
+                <div class="article-list">
+                    <a href="locked.html?slug=measurement-problem-machine-intelligence&title=The%20Measurement%20Problem%20in%20Machine%20Intelligence&date=2021-12-31&author=Patrick%20Neil%20A." class="article-row locked" data-year="2021" data-month="12" data-search="the measurement problem in machine intelligence machine intelligence patrick neil a.">
+                        <div>
+                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>The Measurement Problem in Machine Intelligence</div>
+                            <div class="article-row-meta">2021-12-31 · Patrick Neil A. · Machine Intelligence<span class="restricted-badge">Restricted</span></div>
+                        </div>
+                        <div class="article-row-arrow">→</div>
+                    </a>
+                </div>
+            </div>
+            <div class="topic-group">
+                <div class="topic-label">Measurement Theory</div>
+                <div class="article-list">
+                    <a href="locked.html?slug=instruments-of-judgment&title=Instruments%20of%20Judgment%20%E2%80%94%20Toward%20a%20Philosophy%20of%20Measurement&date=2017-12-31&author=Patrick%20Neil%20A." class="article-row locked" data-year="2017" data-month="12" data-search="instruments of judgment — toward a philosophy of measurement measurement theory patrick neil a.">
+                        <div>
+                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Instruments of Judgment — Toward a Philosophy of Measurement</div>
+                            <div class="article-row-meta">2017-12-31 · Patrick Neil A. · Measurement Theory<span class="restricted-badge">Restricted</span></div>
+                        </div>
+                        <div class="article-row-arrow">→</div>
+                    </a>
+                </div>
+            </div>
+            <div class="topic-group">
+                <div class="topic-label">Research Method</div>
+                <div class="article-list">
+                    <a href="locked.html?slug=frameworks-as-instruments&title=Frameworks%20as%20Instruments%20%E2%80%94%20Method%20Notes&date=2020-12-31&author=Patrick%20Neil%20A." class="article-row locked" data-year="2020" data-month="12" data-search="frameworks as instruments — method notes research method patrick neil a.">
+                        <div>
+                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Frameworks as Instruments — Method Notes</div>
+                            <div class="article-row-meta">2020-12-31 · Patrick Neil A. · Research Method<span class="restricted-badge">Restricted</span></div>
+                        </div>
+                        <div class="article-row-arrow">→</div>
+                    </a>
+                </div>
+            </div>
+            <div class="topic-group">
+                <div class="topic-label">Transparency</div>
+                <div class="article-list">
+                    <a href="locked.html?slug=preconditions-of-transparency&title=Preconditions%20of%20Transparency%20%E2%80%94%20Working%20Papers&date=2024-12-31&author=Patrick%20Neil%20A." class="article-row locked" data-year="2024" data-month="12" data-search="preconditions of transparency — working papers transparency patrick neil a.">
+                        <div>
+                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Preconditions of Transparency — Working Papers</div>
+                            <div class="article-row-meta">2024-12-31 · Patrick Neil A. · Transparency<span class="restricted-badge">Restricted</span></div>
+                        </div>
+                        <div class="article-row-arrow">→</div>
+                    </a>
+                </div>
+            </div>
             </section>
 
             <section class="archive-section" aria-labelledby="date-heading">
                 <h2 id="date-heading">Articles by Date</h2>
-                <p class="archive-section-intro">Select a year. August is the only month available for archive navigation; document access remains restricted from the institute’s founding on December 22, 2016.</p>
+                <p class="archive-section-intro">Select a year, then browse the August publication record. Document access remains restricted from the institute’s founding on December 22, 2016.</p>
                 <div class="year-picker" aria-label="Select an archive year">
                     <button type="button" aria-pressed="true" data-year="2026">2026</button>
                     <button type="button" aria-pressed="false" data-year="2025">2025</button>
@@ -341,10 +467,37 @@
                     <button type="button" disabled>Sep</button><button type="button" disabled>Oct</button><button type="button" disabled>Nov</button><button type="button" disabled>Dec</button>
                 </div>
                 <p class="archive-status" id="archive-status">Selected: 2026 · August archive navigation requires authorization.</p>
+                <div class="date-results" id="august-results">
+                    <a href="locked.html?slug=we-are-measuring-ai-capability-wrong&title=We%20Are%20Measuring%20AI%20Capability%20Wrong&date=2026-08-02&author=Patrick%20Neil%20A." class="article-row locked" data-year="2026" data-month="08" data-search="we are measuring ai capability wrong ai capability patrick neil a.">
+                        <div>
+                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>We Are Measuring AI Capability Wrong</div>
+                            <div class="article-row-meta">2026-08-02 · Patrick Neil A. · AI Capability<span class="restricted-badge">Restricted</span></div>
+                        </div>
+                        <div class="article-row-arrow">→</div>
+                    </a>
+                    <p class="empty-results" id="empty-august-results" hidden>No August records are available for this year.</p>
+                </div>
             </section>
         </div>
 
     </main>
+
+    <dialog class="archive-search" id="archive-search" aria-labelledby="archive-search-heading">
+        <div class="search-dialog-inner">
+            <div class="search-dialog-top">
+                <h2 id="archive-search-heading">Looking for something specific?</h2>
+                <button type="button" id="close-archive-search" aria-label="Close search">×</button>
+            </div>
+            <p>Search the published archive index by title, topic, or author. Opening a result requires authorization.</p>
+            <label for="archive-query">Research archive query</label>
+            <input id="archive-query" type="search" placeholder="Enter a title, subject, or author" autocomplete="off">
+            <p class="search-result-count" id="search-result-count">Enter a query to filter the archive.</p>
+            <div class="search-dialog-actions">
+                <span class="restricted-badge">Restricted access</span>
+                <a href="../login.html">Sign in to open articles <span>→</span></a>
+            </div>
+        </div>
+    </dialog>
 
     <footer>
         <div class="footer-container">
@@ -522,17 +675,43 @@
             var dialog = document.getElementById('archive-search');
             var status = document.getElementById('archive-status');
             var yearButtons = document.querySelectorAll('[data-year]');
+            var augustRows = document.querySelectorAll('#august-results .article-row');
+            var emptyAugust = document.getElementById('empty-august-results');
+            var query = document.getElementById('archive-query');
+            var queryCount = document.getElementById('search-result-count');
             document.querySelectorAll('[data-open-search], [data-research-search]').forEach(function (button) {
                 button.addEventListener('click', function () { dialog.showModal(); });
             });
             document.getElementById('close-archive-search').addEventListener('click', function () { dialog.close(); });
+            function showAugust(year) {
+                var visible = 0;
+                augustRows.forEach(function (row) {
+                    var match = row.getAttribute('data-year') === year;
+                    row.hidden = !match;
+                    if (match) visible += 1;
+                });
+                emptyAugust.hidden = visible !== 0;
+            }
             yearButtons.forEach(function (button) {
                 button.addEventListener('click', function () {
                     yearButtons.forEach(function (item) { item.setAttribute('aria-pressed', 'false'); });
                     button.setAttribute('aria-pressed', 'true');
                     status.textContent = 'Selected: ' + button.getAttribute('data-year') + ' · August archive navigation requires authorization.';
+                    showAugust(button.getAttribute('data-year'));
                 });
             });
+            query.addEventListener('input', function () {
+                var term = query.value.trim().toLowerCase();
+                var rows = document.querySelectorAll('.topic-group .article-row');
+                var matches = 0;
+                rows.forEach(function (row) {
+                    var match = !term || row.getAttribute('data-search').indexOf(term) !== -1;
+                    row.hidden = !match;
+                    if (match) matches += 1;
+                });
+                queryCount.textContent = term ? matches + (matches === 1 ? ' matching record.' : ' matching records.') : 'Enter a query to filter the archive.';
+            });
+            showAugust(document.querySelector('[data-year][aria-pressed="true"]').getAttribute('data-year'));
         })();
     </script>
 </body>

@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panteon | Panteon Research Institute</title>
+    <title>Panteon | We Are Measuring AI Capability Wrong</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="../../styles.css">
     <style>
         
     :root{--accent-neon:#DFF140;--font-tech:"Space Grotesk",monospace}
@@ -96,25 +96,45 @@
         .cap-hero p{font-size:1.15rem;line-height:1.6;color:rgba(255,255,255,.65);max-width:600px;margin:0 auto;opacity:0;animation:fadeUp .8s ease-out 1s forwards}
         @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
-        .articles-grid{max-width:1400px;margin:0 auto;padding:100px 40px}
-        .articles-grid h2{font-size:2.4rem;font-weight:300;letter-spacing:-.02em;margin-bottom:48px}
-        .article-list{display:grid;gap:0}
-        .article-row{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;padding:40px 20px;border-top:1px solid var(--border-dark);cursor:pointer;transition:background-color .3s ease}
-        .article-row:last-child{border-bottom:1px solid var(--border-dark)}
-        .article-row:hover{background-color:var(--bg-gray)}
-        .article-row:hover .article-row-title{color:var(--text-dark)}
-        .article-row:hover .article-row-arrow{transform:translateX(4px);opacity:1}
-        .article-row-title{font-size:1.2rem;font-weight:400;letter-spacing:-.01em;margin-bottom:8px;transition:color .3s ease}
-        .article-row-meta{font-size:.85rem;color:var(--text-muted)}
-        .article-row-arrow{font-size:1.2rem;opacity:.3;transition:transform .3s ease,opacity .3s ease}
+        .article-body{max-width:760px;margin:0 auto;padding:100px 40px}
+        .article-body h2{font-size:2.4rem;font-weight:300;letter-spacing:-.02em;margin-bottom:48px;opacity:0;transform:translateY(16px);transition:opacity .7s ease,transform .7s ease}
+        .article-body h2.in-view{opacity:1;transform:translateY(0)}
+        .article-body h3{font-size:1.4rem;font-weight:400;margin-bottom:20px;margin-top:48px}
+        .article-body h4{font-size:1.1rem;font-weight:500;margin-bottom:16px;margin-top:32px;color:var(--text-dark)}
+        .article-body p{font-size:1rem;line-height:1.75;color:var(--text-muted);margin-bottom:24px;opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+        .article-body p.in-view{opacity:1;transform:translateY(0)}
+        .article-body em{font-style:italic}
+        .article-body a{color:var(--text-dark);border-bottom:1px solid var(--text-muted);text-decoration:none}
+        .article-body a:hover{color:var(--text-muted)}
+        .article-body ul,.article-body ol{margin:0 0 24px 24px;font-size:1rem;line-height:1.75;color:var(--text-muted)}
+        .article-body li{margin-bottom:8px}
+        .article-body code{font-family:var(--font-mono);font-size:.9em;background:var(--bg-gray);padding:2px 6px;border-radius:2px}
+        .article-body ul li::marker,.article-body ol li::marker{color:var(--text-dark)}
 
-        .mission-card{max-width:1400px;margin:0 auto;padding:0 40px 100px}
-        .mission-card-inner{border:1px solid var(--border-dark);border-radius:2px;padding:48px;background:var(--bg-light)}
-        .mission-card-inner h3{font-size:1.3rem;font-weight:400;margin-bottom:12px}
-        .mission-card-inner p{font-size:.95rem;line-height:1.55;color:var(--text-muted);margin-bottom:16px}
-        .mission-card-inner a{display:inline-flex;align-items:center;gap:8px;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-dark);border-bottom:1px solid var(--text-muted);padding-bottom:2px;text-decoration:none;margin-top:8px}
+        .dark-section{background:var(--bg-dark);color:var(--text-light);padding:100px 40px;position:relative;overflow:hidden}
+        .dark-section::after{content:'';position:absolute;top:0;left:60px;width:1px;height:100%;background:linear-gradient(to bottom,transparent,rgba(154,180,193,.2) 30%,rgba(154,180,193,.2) 70%,transparent);opacity:0;transition:opacity 1s ease}
+        .dark-section.in-view::after{opacity:1}
+        .dark-section .article-body{position:relative;z-index:1}
+        .dark-section .article-body p{color:rgba(255,255,255,.7);border-left:2px solid transparent;transition:opacity .6s ease,transform .6s ease,border-color .6s ease}
+        .dark-section .article-body p.in-view{border-left-color:rgba(154,180,193,.3)}
+        .dark-section h2{color:var(--text-light);margin-bottom:40px;opacity:0;transform:translateY(16px);transition:opacity .7s ease,transform .7s ease}
+        .dark-section h2.in-view{opacity:1;transform:translateY(0)}
 
-        @media(max-width:768px){.cap-hero{padding:140px 24px 80px}.articles-grid{padding:60px 24px}.article-row{grid-template-columns:1fr;padding:30px 0}}
+        .pull-quote{font-size:clamp(1.1rem,2vw,1.35rem);font-weight:300;font-style:italic;line-height:1.6;color:rgba(255,255,255,.5);border-left:2px solid #9ab4c1;padding-left:24px;margin:40px 0;max-width:640px;opacity:0;transform:translateY(12px);transition:opacity .7s ease .2s,transform .7s ease .2s}
+        .pull-quote.in-view{opacity:1;transform:translateY(0)}
+
+        .section-divider{height:1px;background:linear-gradient(90deg,transparent 10%,#d2d2d7 50%,transparent 90%);margin:60px auto;max-width:400px;opacity:0;transition:opacity .8s ease}
+        .section-divider.in-view{opacity:1}
+
+        .closing-section{text-align:center;padding:120px 40px 140px;position:relative}
+        .closing-section .section-line{width:1px;height:60px;background:linear-gradient(to bottom,#d2d2d7,transparent);margin:0 auto 40px;opacity:0;transition:opacity .8s ease}
+        .closing-section .section-line.in-view{opacity:1}
+        .closing-section h2{font-size:2rem;font-weight:300;letter-spacing:-.02em;margin-bottom:16px;opacity:0;transform:translateY(12px);transition:opacity .7s ease .2s,transform .7s ease .2s}
+        .closing-section h2.in-view{opacity:1;transform:translateY(0)}
+        .closing-section .closing-meta{color:var(--text-muted);font-size:.9rem;line-height:1.7;max-width:480px;margin:0 auto 48px;opacity:0;transform:translateY(12px);transition:opacity .7s ease .4s,transform .7s ease .4s}
+        .closing-section .closing-meta.in-view{opacity:1;transform:translateY(0)}
+
+        @media(max-width:768px){.cap-hero{padding:140px 24px 80px}.article-body{padding:60px 24px}.dark-section::after{left:24px}}
     </style>
 </head>
 <body>
@@ -131,7 +151,7 @@
     <div class="scroll-progress-bar" id="scroll-bar"></div>
 
     <div class="announcement-bar" id="top-announcement">
-        Read CEO Patrick Neil's <a href="../letters/shareholder-letter.html">Letter to Shareholders ↗</a>
+        Read CEO Patrick Neil's <a href="../../letters/shareholder-letter.html">Letter to Shareholders ↗</a>
         <button class="close-btn" onclick="document.getElementById('top-announcement').style.display='none'">×</button>
     </div>
 
@@ -139,7 +159,7 @@
         <div class="navWrapper">
             <div class="top-nav">
                 <div class="left-wrapper">
-                    <a href="../index.html" class="logo">
+                    <a href="../../index.html" class="logo">
                         <svg viewBox="0 0 295 100" role="img" aria-label="Panteon"><use href="#panteon-lockup"/></svg>
                     </a>
                 </div>
@@ -149,7 +169,7 @@
                     <div class="nav-item-dropdown" data-menu="company">Company<div class="plus-sign"><span></span><span></span></div></div>
                 </div>
                 <div class="right-wrapper">
-                    <a href="../login.html" class="get-started-btn">Get Started <span>↖</span></a>
+                    <a href="../../login.html" class="get-started-btn">Get Started <span>↖</span></a>
                     <button class="header-icon-box" aria-label="Search button">
                         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 16 16">
                             <circle cx="9.5" cy="6.5" r="5.5" stroke-width="1.5"></circle>
@@ -170,15 +190,15 @@
                 <div class="col-1">
                     <h3>Overview</h3>
                     <p>The Five Elements of Effective Warfare. Decisive military technology, deployed across every domain — wherever the terrain demands it.</p>
-                    <a href="../overview-full-article.html" class="cta-link-arrow">READ FULL BRIEFING <span>↗</span></a>
+                    <a href="../../overview-full-article.html" class="cta-link-arrow">READ FULL BRIEFING <span>↗</span></a>
                 </div>
                 <div class="col-2">
                     <h3>The Domains</h3>
-                    <div class="menu-link-item" data-group="terra"><div class="plus-sign"><span></span><span></span></div><a href="../platforms/yono.html">Terra <span style="color:#88898c;font-weight:300;font-size:0.8rem">(Land)</span></a></div>
-                    <div class="menu-link-item" data-group="abyss"><div class="plus-sign"><span></span><span></span></div><a href="../platforms/babel.html">Abyss <span style="color:#88898c;font-weight:300;font-size:0.8rem">(Sea)</span></a></div>
-                    <div class="menu-link-item" data-group="stratos"><div class="plus-sign"><span></span><span></span></div><a href="../platforms/apollo.html">Stratos <span style="color:#88898c;font-weight:300;font-size:0.8rem">(Air)</span></a></div>
-                    <div class="menu-link-item" data-group="cosmos"><div class="plus-sign"><span></span><span></span></div><a href="../platforms/spinal-craker.html">Cosmos <span style="color:#88898c;font-weight:300;font-size:0.8rem">(Space)</span></a></div>
-                    <div class="menu-link-item" data-group="cyber"><div class="plus-sign"><span></span><span></span></div><a href="../capabilities/yono-for-developers.html">Cyber <span style="color:#88898c;font-weight:300;font-size:0.8rem">(World Wide Web)</span></a></div>
+                    <div class="menu-link-item" data-group="terra"><div class="plus-sign"><span></span><span></span></div><a href="../../platforms/yono.html">Terra <span style="color:#88898c;font-weight:300;font-size:0.8rem">(Land)</span></a></div>
+                    <div class="menu-link-item" data-group="abyss"><div class="plus-sign"><span></span><span></span></div><a href="../../platforms/babel.html">Abyss <span style="color:#88898c;font-weight:300;font-size:0.8rem">(Sea)</span></a></div>
+                    <div class="menu-link-item" data-group="stratos"><div class="plus-sign"><span></span><span></span></div><a href="../../platforms/apollo.html">Stratos <span style="color:#88898c;font-weight:300;font-size:0.8rem">(Air)</span></a></div>
+                    <div class="menu-link-item" data-group="cosmos"><div class="plus-sign"><span></span><span></span></div><a href="../../platforms/spinal-craker.html">Cosmos <span style="color:#88898c;font-weight:300;font-size:0.8rem">(Space)</span></a></div>
+                    <div class="menu-link-item" data-group="cyber"><div class="plus-sign"><span></span><span></span></div><a href="../../capabilities/yono-for-developers.html">Cyber <span style="color:#88898c;font-weight:300;font-size:0.8rem">(World Wide Web)</span></a></div>
                 </div>
                 <div class="col-3">
                     <h3 id="fe-col3-title">&nbsp;</h3>
@@ -195,9 +215,9 @@
                 </div>
                 <div class="col-2">
                     <h3>Intelligence & AI</h3>
-                    <div class="menu-link-item" data-group="aiml"><div class="plus-sign"><span></span><span></span></div><a href="../capabilities/ai-ml.html">AI + ML</a></div>
-                    <div class="menu-link-item" data-group="edgeai"><div class="plus-sign"><span></span><span></span></div><a href="../capabilities/edge-ai.html">Edge AI</a></div>
-                    <div class="menu-link-item" data-group="data"><div class="plus-sign"><span></span><span></span></div><a href="../capabilities/data-integration.html">Data Integration</a></div>
+                    <div class="menu-link-item" data-group="aiml"><div class="plus-sign"><span></span><span></span></div><a href="../../capabilities/ai-ml.html">AI + ML</a></div>
+                    <div class="menu-link-item" data-group="edgeai"><div class="plus-sign"><span></span><span></span></div><a href="../../capabilities/edge-ai.html">Edge AI</a></div>
+                    <div class="menu-link-item" data-group="data"><div class="plus-sign"><span></span><span></span></div><a href="../../capabilities/data-integration.html">Data Integration</a></div>
                 </div>
                 <div class="col-3">
                     <h3 id="cap-col3-title">&nbsp;</h3>
@@ -214,10 +234,10 @@
                 </div>
                 <div class="col-2">
                     <h3>Organization</h3>
-                    <div class="menu-link-item" data-group="impact"><div class="plus-sign"><span></span><span></span></div><a href="../index.html#scroll-content">Alien Inc</a></div>
-                    <div class="menu-link-item" data-group="letters"><div class="plus-sign"><span></span><span></span></div><a href="../letters/shareholder-letter.html">Shareholder Letter</a></div>
-                    <div class="menu-link-item" data-group="devs"><div class="plus-sign"><span></span><span></span></div><a href="../developers/community.html">Developer Community</a></div>
-                    <div class="menu-link-item" data-group="pri"><div class="plus-sign"><span></span><span></span></div><a href="../panteon-research-institute/index.html">Panteon Research Institute</a></div>
+                    <div class="menu-link-item" data-group="impact"><div class="plus-sign"><span></span><span></span></div><a href="../../index.html#scroll-content">Alien Inc</a></div>
+                    <div class="menu-link-item" data-group="letters"><div class="plus-sign"><span></span><span></span></div><a href="../../letters/shareholder-letter.html">Shareholder Letter</a></div>
+                    <div class="menu-link-item" data-group="devs"><div class="plus-sign"><span></span><span></span></div><a href="../../developers/community.html">Developer Community</a></div>
+                    <div class="menu-link-item" data-group="pri"><div class="plus-sign"><span></span><span></span></div><a href="../../panteon-research-institute/index.html">Panteon Research Institute</a></div>
                 </div>
                 <div class="col-3">
                     <h3 id="co-col3-title">&nbsp;</h3>
@@ -229,7 +249,7 @@
 
     <div class="mobile-drawer" id="mobile-drawer-overlay">
         <div class="mobile-drawer-header">
-            <a href="../index.html" class="logo">
+            <a href="../../index.html" class="logo">
                 <svg viewBox="0 0 295 100" role="img" aria-label="Panteon"><use href="#panteon-lockup"/></svg>
             </a>
             <button class="close-drawer-btn" id="close-menu-drawer-btn">×</button>
@@ -237,29 +257,29 @@
         <div class="mobile-drawer-links">
             <div>
                 <p class="mobile-drawer-group-title">Five Elements</p>
-                <a href="../platforms/yono.html" class="mobile-drawer-item">Terra (Land) <div class="plus-sign"><span></span><span></span></div></a>
-                <a href="../platforms/babel.html" class="mobile-drawer-item">Abyss (Sea) <div class="plus-sign"><span></span><span></span></div></a>
-                <a href="../platforms/apollo.html" class="mobile-drawer-item">Stratos (Air) <div class="plus-sign"><span></span><span></span></div></a>
-                <a href="../platforms/spinal-craker.html" class="mobile-drawer-item">Cosmos (Space) <div class="plus-sign"><span></span><span></span></div></a>
-                <a href="../capabilities/yono-for-developers.html" class="mobile-drawer-item">Cyber (Web) <div class="plus-sign"><span></span><span></span></div></a>
+                <a href="../../platforms/yono.html" class="mobile-drawer-item">Terra (Land) <div class="plus-sign"><span></span><span></span></div></a>
+                <a href="../../platforms/babel.html" class="mobile-drawer-item">Abyss (Sea) <div class="plus-sign"><span></span><span></span></div></a>
+                <a href="../../platforms/apollo.html" class="mobile-drawer-item">Stratos (Air) <div class="plus-sign"><span></span><span></span></div></a>
+                <a href="../../platforms/spinal-craker.html" class="mobile-drawer-item">Cosmos (Space) <div class="plus-sign"><span></span><span></span></div></a>
+                <a href="../../capabilities/yono-for-developers.html" class="mobile-drawer-item">Cyber (Web) <div class="plus-sign"><span></span><span></span></div></a>
             </div>
             <div>
                 <p class="mobile-drawer-group-title">Capabilities</p>
-                <a href="../capabilities/ai-ml.html" class="mobile-drawer-item">AI + ML <div class="plus-sign"><span></span><span></span></div></a>
-                <a href="../capabilities/edge-ai.html" class="mobile-drawer-item">Edge AI <div class="plus-sign"><span></span><span></span></div></a>
-                <a href="../capabilities/digital-twin.html" class="mobile-drawer-item">Digital Twin <div class="plus-sign"><span></span><span></span></div></a>
-                <a href="../capabilities/data-integration.html" class="mobile-drawer-item">Data Integration <div class="plus-sign"><span></span><span></span></div></a>
+                <a href="../../capabilities/ai-ml.html" class="mobile-drawer-item">AI + ML <div class="plus-sign"><span></span><span></span></div></a>
+                <a href="../../capabilities/edge-ai.html" class="mobile-drawer-item">Edge AI <div class="plus-sign"><span></span><span></span></div></a>
+                <a href="../../capabilities/digital-twin.html" class="mobile-drawer-item">Digital Twin <div class="plus-sign"><span></span><span></span></div></a>
+                <a href="../../capabilities/data-integration.html" class="mobile-drawer-item">Data Integration <div class="plus-sign"><span></span><span></span></div></a>
             </div>
             <div>
                 <p class="mobile-drawer-group-title">Company</p>
-                <a href="../index.html#scroll-content" class="mobile-drawer-item">Alien Inc</a>
-                <a href="../trust/trust-center.html" class="mobile-drawer-item">Trust Center</a>
-                <a href="../developers/community.html" class="mobile-drawer-item">Developer Community</a>
-                <a href="../panteon-research-institute/index.html" class="mobile-drawer-item">Panteon Research Institute</a>
+                <a href="../../index.html#scroll-content" class="mobile-drawer-item">Alien Inc</a>
+                <a href="../../trust/trust-center.html" class="mobile-drawer-item">Trust Center</a>
+                <a href="../../developers/community.html" class="mobile-drawer-item">Developer Community</a>
+                <a href="../../panteon-research-institute/index.html" class="mobile-drawer-item">Panteon Research Institute</a>
             </div>
         </div>
         <div class="mobile-drawer-footer">
-            <a href="../login.html" class="get-started-btn">Get Started <span>↖</span></a>
+            <a href="../../login.html" class="get-started-btn">Get Started <span>↖</span></a>
         </div>
     </div>
 
@@ -267,34 +287,40 @@
     <section class="cap-hero">
         <div class="cap-hero-inner">
             <span class="tag">Panteon Research Institute</span>
-            <h1>Articles &amp; Publications</h1>
-            <p>Falsifiable research on the boundary between AI-defined success and human-defined success.</p>
+            <h1>We Are Measuring AI Capability Wrong</h1>
+            <p>Every few months, a new benchmark tells us AI has crossed another threshold. Reasoning scores climb. Coding evals saturate. A CEO goes on a podcast and declares we've entered "the…</p>
         </div>
     </section>
 
     <main class="main-content">
-
-        <div class="mission-card">
-            <div class="mission-card-inner">
-                <h3>Mission &amp; Vision</h3>
-                <p>The founding charter of the Panteon Research Institute — why human judgment cannot be automated away, and how philosophical frameworks become instruments rather than content.</p>
-                <a href="mission-and-vision.html">Read Mission & Vision <span>→</span></a>
-            </div>
+        <div class="article-body">
+<p>Every few months, a new benchmark tells us AI has crossed another threshold. Reasoning scores climb. Coding evals saturate. A CEO goes on a podcast and declares we've entered "the singularity." The headlines follow, the debate repeats, and almost nobody stops to ask whether the yardstick itself still measures the thing that matters.</p>
+<p>It doesn't. Not fully.</p>
+<h2>The Smil Problem</h2>
+<p>Vaclav Smil's <em>How the World Really Works</em> makes an argument that's easy to nod along to and hard to actually absorb: modern civilization runs on four materials — cement, steel, plastics, and ammonia — and on energy-intensive physical processes that no amount of software elegance can skip. Food doesn't grow because a model got smarter. Ships don't cross oceans because a transformer improved its loss curve. Grain silos, fertilizer plants, shipping ports, and electrical grids are the actual substrate civilization stands on, and they are stubbornly, gloriously physical.</p>
+<p>This is the blind spot in most AI capability discourse. We benchmark language models against SAT questions, coding tests, and PhD-level science exams — domains where the bottleneck was always cognitive, and where a sufficiently capable model can fully dominate the task end to end. But dominate is the operative word, and it's precisely the word that breaks down the moment you leave the realm of pure information processing.</p>
+<p>An AI can write the chemistry that synthesizes a better fertilizer. It cannot yet mine the phosphate, run the reactor, or truck the output to a farm three time zones away. It can optimize a supply chain on a whiteboard. It cannot load a container ship. Intelligence and capability are not the same axis, and conflating them is how you end up with confident predictions of imminent civilizational transformation that keep missing their own deadlines.</p>
+<p>A more honest capability metric would ask, for any given domain: what fraction of the full stack — cognitive <em>and</em> physical — can this system actually close the loop on, unassisted? By that measure, the frontier looks a lot less like a singularity and a lot more like a series of very impressive but still partial substitutions.</p>
+<h2>Why This Isn't Just an Academic Correction</h2>
+<p>This distinction matters most, and is discussed least, in the domain where physical dominance has always been the actual point: warfare.</p>
+<p>Civilizations have never survived on intelligence alone. They've survived on the ability to convert intelligence into physical, sustained, logistically real advantage — and to do so faster and more reliably than a rival civilization can respond. Every prior general-purpose technology that mattered strategically — steel, the internal combustion engine, nuclear fission, satellites — eventually got evaluated not by how clever it was in the lab, but by what it could do in a contested, physical, adversarial environment. AI will not be exempt from this pattern. If anything, it will be judged by it first.</p>
+<p>This is where the capability conversation needs to widen rather than continue narrowing toward chatbot benchmarks. The relevant question for any civilization thinking clearly about its own continuity is not "can this model pass the bar exam" but "what does this system change about the balance of physical, strategic, and informational power between actors who do not trust each other." That's a colder question. It's also the one that history suggests actually determines outcomes.</p>
+<h2>Treaties Are Coming, and Transparency Is the Precondition</h2>
+<p>If warfare is the domain where AI capability eventually gets tested for real, then arms control is the domain where AI capability eventually gets negotiated. This is not speculative — it's the historical pattern replaying. Nuclear weapons produced non-proliferation treaties. Chemical and biological weapons produced conventions with verification regimes. Every powerful, physically consequential technology that threatened mutual civilizational continuity eventually forced its stewards to the table, not because they wanted to slow down, but because unchecked asymmetry is unstable for everyone, including the party currently ahead.</p>
+<p>AI is heading toward the same table. Not because anyone building frontier models wants to be constrained, but because a civilization-scale capability that no single actor can fully verify in a rival's hands is, definitionally, a peace-treaty-shaped problem. The trade-offs will look familiar to anyone who has studied arms control history: capability limits in exchange for verification rights, transparency commitments in exchange for continued access, mutual restraint in exchange for mutual survival.</p>
+<p>And this is precisely where transparency stops being a nice-to-have and becomes the actual precondition for any of this working. A treaty is only as good as your ability to verify the other side is honoring it. You cannot verify a black box. Not every model in the current landscape is built, documented, or operated with the same commitment to interpretability and disclosure — some organizations treat transparency as a competitive liability rather than a civilizational necessity. That asymmetry is itself a strategic problem, because treaties negotiated in good faith by transparent actors don't protect against actors who aren't.</p>
+<h2>The Metric We Actually Need</h2>
+<p>None of this argues against AI progress. It argues for measuring it honestly. A capability metric that only tracks cognitive task performance will keep producing headlines about imminent transformation while missing the actual determinants of civilizational outcomes: physical execution capacity, strategic and military application, and the verifiability of any actor's claims about what their systems can and cannot do.</p>
+<p>The singularity, if it means anything durable, isn't the moment a model passes a harder exam. It's the moment the gap between cognitive capability and physical, verifiable, civilization-scale consequence finally closes — and we are not there, no matter what a podcast appearance suggests. Until then, the more useful question isn't how smart these systems are getting. It's how much of the physical world they can actually move, how that capability shifts the balance between civilizations that don't trust each other, and whether the systems claiming that capability can be verified at all.</p>
+<p>That's the metric worth building. Everything else is a leaderboard.</p>
         </div>
 
-        <section class="articles-grid">
-            <h2>Published Articles</h2>
-            <div class="article-list">
-                <a href="articles/we-are-measuring-ai-capability-wrong.html" class="article-row">
-                    <div>
-                        <div class="article-row-title">We Are Measuring AI Capability Wrong</div>
-                        <div class="article-row-meta">2026-08-02 · Patrick Neil A.</div>
-                    </div>
-                    <div class="article-row-arrow">→</div>
-                </a>
-            </div>
+        <section class="closing-section">
+            <div class="section-line"></div>
+            <h2>We Are Measuring AI Capability Wrong</h2>
+            <p class="closing-meta">2026-08-02 · Patrick Neil A.</p>
+            <a href="../../panteon-research-institute/index.html" class="get-started-btn" style="background-color:var(--text-dark);color:var(--text-light);border-color:var(--text-dark);padding:14px 40px;font-size:.85rem;text-decoration:none">Back to Articles</a>
         </section>
-
     </main>
 
     <footer>
@@ -303,7 +329,7 @@
                 <p>© 2026 Panteon Technologies Inc.</p>
                 <p class="all-rights">All rights reserved.</p>
                 <div class="footer-divider-line"></div>
-                <a href="../cookies.html" class="footer-cookie-btn" style="text-decoration:none;">Cookies Settings</a>
+                <a href="../../cookies.html" class="footer-cookie-btn" style="text-decoration:none;">Cookies Settings</a>
                 <div class="footer-divider-line"></div>
                 <div class="footer-divider-line"></div>
                 <div class="footer-social-container">
@@ -318,7 +344,7 @@
                 <div class="footer-links-col">
                     <h4>Research</h4>
                     <ul>
-                        <li><a href="../panteon-research-institute/index.html">Panteon Research Institute</a></li>
+                        <li><a href="../../panteon-research-institute/index.html">Panteon Research Institute</a></li>
                     </ul>
                 </div>
                 <div class="footer-links-col">
@@ -336,26 +362,26 @@
                 <div class="footer-links-col">
                     <h4>Capabilities</h4>
                     <ul>
-                        <li><a href="../capabilities/ai-ml.html">AI + ML</a></li>
-                        <li><a href="../capabilities/yono-for-developers.html">YONO for Developers</a></li>
-                        <li><a href="../capabilities/data-integration.html">Data Integration</a></li>
-                        <li><a href="../capabilities/digital-twin.html">Digital Twin</a></li>
-                        <li><a href="../capabilities/dynamic-scheduling.html">Dynamic Scheduling</a></li>
-                        <li><a href="../capabilities/edge-ai.html">Edge AI</a></li>
-                        <li><a href="../capabilities/marketplace.html">Marketplace</a></li>
+                        <li><a href="../../capabilities/ai-ml.html">AI + ML</a></li>
+                        <li><a href="../../capabilities/yono-for-developers.html">YONO for Developers</a></li>
+                        <li><a href="../../capabilities/data-integration.html">Data Integration</a></li>
+                        <li><a href="../../capabilities/digital-twin.html">Digital Twin</a></li>
+                        <li><a href="../../capabilities/dynamic-scheduling.html">Dynamic Scheduling</a></li>
+                        <li><a href="../../capabilities/edge-ai.html">Edge AI</a></li>
+                        <li><a href="../../capabilities/marketplace.html">Marketplace</a></li>
                     </ul>
                 </div>
                 <div class="footer-links-col">
                     <h4>Documents</h4>
                     <ul>
-                        <li><a href="../developers/community.html">Developer Community</a></li>
-                        <li><a href="../developers/documentation.html">Platform Documentation</a></li>
-                        <li><a href="../developers/panteon-developers.html">Panteon Developers</a></li>
-                        <li><a href="../panteon-research-institute/index.html">Panteon Research Institute</a></li>
-                        <li><a href="../trust/trust-center.html">Trust Center</a></li>
-                        <li><a href="../trust/modern-slavery.html">Modern Slavery Statement</a></li>
-                        <li><a href="../cookies.html">Cookies</a></li>
-                        <li><a href="../trust/privacy-civil-liberties.html">Privacy and Civil Liberties</a></li>
+                        <li><a href="../../developers/community.html">Developer Community</a></li>
+                        <li><a href="../../developers/documentation.html">Platform Documentation</a></li>
+                        <li><a href="../../developers/panteon-developers.html">Panteon Developers</a></li>
+                        <li><a href="../../panteon-research-institute/index.html">Panteon Research Institute</a></li>
+                        <li><a href="../../trust/trust-center.html">Trust Center</a></li>
+                        <li><a href="../../trust/modern-slavery.html">Modern Slavery Statement</a></li>
+                        <li><a href="../../cookies.html">Cookies</a></li>
+                        <li><a href="../../trust/privacy-civil-liberties.html">Privacy and Civil Liberties</a></li>
                     </ul>
                 </div>
             </div>
@@ -382,17 +408,17 @@
     const overlay = document.getElementById('mega-menu-overlay');
 
     const COL3_DATA = {
-        'terra': { title: 'PRODUCTS', links: [['../platforms/terranean-eteology.html','Terranean Eteology'],['../platforms/terranean-teliology.html','Terranean Teliology'],['../developers/terranean-documentation.html','Documentation']] },
-        'abyss': { title: 'PRODUCTS', links: [['../platforms/babel.html','Babel Platform'],['../developers/documentation.html','Documentation'],['../panteon-research-institute/index.html','Panteon Research Institute'],['https://rousseau.alieninc.tech','Rousseau']] },
-        'stratos': { title: 'PRODUCTS', links: [['../platforms/apollo.html','Apollo Platform'],['../capabilities/edge-ai.html','Edge AI'],['../capabilities/dynamic-scheduling.html','Dynamic Scheduling'],['../panteon-research-institute/index.html','Panteon Research Institute']] },
-        'cosmos': { title: 'PRODUCTS', links: [['../platforms/spinal-craker.html','Spinal Craker'],['../cmb-product.html','CMB'],['../capabilities/data-integration.html','Data Integration'],['../capabilities/digital-twin.html','Digital Twin'],['https://sp.alieninc.tech','Statute & Precedent']] },
-        'cyber': { title: 'PRODUCTS', links: [['../capabilities/yono-for-developers.html','YONO for Developers'],['../developers/panteon-developers.html','Panteon Developers'],['../developers/community.html','Developer Community'],['../capabilities/marketplace.html','Marketplace']] },
-        'aiml': { title: 'AI + ML', links: [['../capabilities/ai-ml.html','Overview'],['../capabilities/edge-ai.html','Edge AI'],['../capabilities/data-integration.html','Data Integration'],['../developers/documentation.html','Documentation']] },
-        'edgeai': { title: 'Edge AI', links: [['../capabilities/edge-ai.html','Overview'],['../capabilities/ai-ml.html','AI + ML'],['../platforms/apollo.html','Apollo'],['../platforms/yono.html','YONO']] },
-        'data': { title: 'Data Integration', links: [['../capabilities/data-integration.html','Overview'],['../capabilities/digital-twin.html','Digital Twin'],['../capabilities/marketplace.html','Marketplace'],['../developers/documentation.html','Documentation']] },
+        'terra': { title: 'PRODUCTS', links: [['../../platforms/terranean-eteology.html','Terranean Eteology'],['../../platforms/terranean-teliology.html','Terranean Teliology'],['../../developers/terranean-documentation.html','Documentation']] },
+        'abyss': { title: 'PRODUCTS', links: [['../../platforms/babel.html','Babel Platform'],['../../developers/documentation.html','Documentation'],['../../panteon-research-institute/index.html','Panteon Research Institute'],['https://rousseau.alieninc.tech','Rousseau']] },
+        'stratos': { title: 'PRODUCTS', links: [['../../platforms/apollo.html','Apollo Platform'],['../../capabilities/edge-ai.html','Edge AI'],['../../capabilities/dynamic-scheduling.html','Dynamic Scheduling'],['../../panteon-research-institute/index.html','Panteon Research Institute']] },
+        'cosmos': { title: 'PRODUCTS', links: [['../../platforms/spinal-craker.html','Spinal Craker'],['../../cmb-product.html','CMB'],['../../capabilities/data-integration.html','Data Integration'],['../../capabilities/digital-twin.html','Digital Twin'],['https://sp.alieninc.tech','Statute & Precedent']] },
+        'cyber': { title: 'PRODUCTS', links: [['../../capabilities/yono-for-developers.html','YONO for Developers'],['../../developers/panteon-developers.html','Panteon Developers'],['../../developers/community.html','Developer Community'],['../../capabilities/marketplace.html','Marketplace']] },
+        'aiml': { title: 'AI + ML', links: [['../../capabilities/ai-ml.html','Overview'],['../../capabilities/edge-ai.html','Edge AI'],['../../capabilities/data-integration.html','Data Integration'],['../../developers/documentation.html','Documentation']] },
+        'edgeai': { title: 'Edge AI', links: [['../../capabilities/edge-ai.html','Overview'],['../../capabilities/ai-ml.html','AI + ML'],['../../platforms/apollo.html','Apollo'],['../../platforms/yono.html','YONO']] },
+        'data': { title: 'Data Integration', links: [['../../capabilities/data-integration.html','Overview'],['../../capabilities/digital-twin.html','Digital Twin'],['../../capabilities/marketplace.html','Marketplace'],['../../developers/documentation.html','Documentation']] },
         'impact': { title: 'Alien Inc', links: [['https://rousseau.alieninc.tech','Rousseau'],['https://thedailyartcult.alieninc.tech','The Daily Art Cult'],['https://kmt.alieninc.tech','KMT Consulting Group'],['https://sp.alieninc.tech','Statute & Precedent']] },
-        'letters': { title: 'Letters', links: [['../letters/shareholder-letter.html','Shareholder Letter'],['../trust/trust-center.html','Trust Center'],['../developers/community.html','Developer Community']] },
-        'devs': { title: 'Developers', links: [['../developers/panteon-developers.html','Panteon Developers'],['../developers/community.html','Community'],['../developers/documentation.html','Documentation'],['../panteon-research-institute/index.html','Panteon Research Institute'],['../capabilities/yono-for-developers.html','YONO for Developers']] },
+        'letters': { title: 'Letters', links: [['../../letters/shareholder-letter.html','Shareholder Letter'],['../../trust/trust-center.html','Trust Center'],['../../developers/community.html','Developer Community']] },
+        'devs': { title: 'Developers', links: [['../../developers/panteon-developers.html','Panteon Developers'],['../../developers/community.html','Community'],['../../developers/documentation.html','Documentation'],['../../panteon-research-institute/index.html','Panteon Research Institute'],['../../capabilities/yono-for-developers.html','YONO for Developers']] },
     };
 
     function populateCol3(menuId, groupKey) {
@@ -469,6 +495,19 @@
         });
     });
 
+
+        const revealTargets = document.querySelectorAll(
+            '.article-body h2, .article-body h3, .article-body h4, .article-body p, .pull-quote, .section-divider, .dark-section, .section-line, .closing-section h2, .closing-meta'
+        );
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('in-view');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+        revealTargets.forEach(el => observer.observe(el));
     </script>
 </body>
 </html>

@@ -17,7 +17,15 @@ panteon-research-institute/
 
 ### How to publish an article
 
-1. Write a `.md` file in `source/` with YAML front-matter:
+publish.py supports BOTH styles automatically (detected per-file):
+
+**Style A — bare writing (preferred):** just write the essay, no front-matter.
+Defaults are filled in: tag "Panteon Research Institute", date = today, author
+"Patrick Neil A.", slug auto-generated from the title. The first `#` is the
+title (consumed) and `##` renders as h2, `###` as h3.
+
+**Style B — YAML front-matter:** provide title/slug (required) plus optional
+tag, date, author:
    ```
    ---
    title: The Article Title
@@ -27,18 +35,24 @@ panteon-research-institute/
    slug: the-article-title
    ---
    ```
+In front-matter mode the classic offset applies: `#` → h2, `##` → h3.
+
+Steps:
+1. Drop a `.md` file in `source/` (either style)
 2. Run: `python publish.py` (publishes all) or `python publish.py my-article.md` (publishes one)
 3. The script generates `articles/{slug}.html` and regenerates `index.html`
 4. Commit and push
 
 ### Markdown syntax supported
 
-- `# Heading` → h2
-- `## Subheading` → h3
+- `# Heading` → article title (bare mode) or h2 (front-matter mode)
+- `## Subheading` → h2 (bare mode) or h3 (front-matter mode)
 - `> quote` → pull-quote blockquote (dark style with accent border)
 - `**bold**` → strong
 - `*italic*` → em
+- `` `code` `` → inline code
 - `[text](url)` → link
+- `- item` / `1. item` → ul / ol lists
 - `---` → dark section divider (switches to dark background)
 
 ### Design language (MANDATORY)

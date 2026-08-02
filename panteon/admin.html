@@ -719,6 +719,14 @@
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12v10H2z"/><path d="M5 7h6M5 9.5h4"/></svg>
                         Documentation
                     </a>
+                    <div class="nav-item" data-page="cross-lineage">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><path d="M6 4h4M4 6v4M12 6v4M6 12h4"/></svg>
+                        Cross-Company Sharing
+                    </div>
+                    <div class="nav-item" data-page="cmb-sharing">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12l6-2 6 2M2 12v6l6 2 6-2V12M8 3v6M12 3v6"/></svg>
+                        Memory Sharing
+                    </div>
                 </div>
                 <div class="nav-section">
                     <div class="nav-section-title">Terranean Engine</div>
@@ -1783,25 +1791,27 @@
                      </div>
                  </div>
 
-                 <div class="page" id="page-cmb-analytics">
-                     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
-                         <div>
-                             <div style="font-family:var(--font-tech);font-size:20px;font-weight:600">CMB Analytics</div>
-                             <div style="font-size:12px;color:var(--text-muted)">Token savings, memory portfolio, consolidation, session handoff, and quality distribution</div>
-                         </div>
-                         <select id="cmbAnalyticsWs" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px 10px;font-size:13px;outline:none"></select>
-                     </div>
-                     <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-                         <button class="btn btn-sm active" id="cmbTabSavings" onclick="loadCMBAnalyticsTab('savings')">Token Savings</button>
-                         <button class="btn btn-sm" id="cmbTabPortfolio" onclick="loadCMBAnalyticsTab('portfolio')">Memory Portfolio</button>
-                         <button class="btn btn-sm" id="cmbTabConsolidation" onclick="loadCMBAnalyticsTab('consolidation')">Consolidation</button>
-                         <button class="btn btn-sm" id="cmbTabSessions" onclick="loadCMBAnalyticsTab('sessions')">Session Handoff</button>
-                         <button class="btn btn-sm" id="cmbTabQuality" onclick="loadCMBAnalyticsTab('quality')">Quality Distribution</button>
-                     </div>
-                     <div class="card" style="padding:16px">
-                         <div id="cmbAnalyticsContent" style="font-size:12px"><div class="empty-state">Select a workspace and tab to view analytics.</div></div>
-                     </div>
-                 </div>
+                <div class="page" id="page-cmb-analytics">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+                        <div>
+                            <div style="font-family:var(--font-tech);font-size:20px;font-weight:600">CMB Analytics</div>
+                            <div style="font-size:12px;color:var(--text-muted)">Token savings, memory portfolio, consolidation, session handoff, and quality distribution</div>
+                        </div>
+                        <select id="cmbAnalyticsWs" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px 10px;font-size:13px;outline:none"></select>
+                    </div>
+                    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+                        <button class="btn btn-sm active" id="cmbTabSavings" onclick="loadCMBAnalyticsTab('savings')">Token Savings</button>
+                        <button class="btn btn-sm" id="cmbTabPortfolio" onclick="loadCMBAnalyticsTab('portfolio')">Memory Portfolio</button>
+                        <button class="btn btn-sm" id="cmbTabConsolidation" onclick="loadCMBAnalyticsTab('consolidation')">Consolidation</button>
+                        <button class="btn btn-sm" id="cmbTabSessions" onclick="loadCMBAnalyticsTab('sessions')">Session Handoff</button>
+                        <button class="btn btn-sm" id="cmbTabQuality" onclick="loadCMBAnalyticsTab('quality')">Quality Distribution</button>
+                    </div>
+                    <div class="card" style="padding:16px">
+                        <div id="cmbAnalyticsContent" style="font-size:12px"><div class="empty-state">Select a workspace and tab to view analytics.</div></div>
+                    </div>
+                </div>
+
+
 
              </div>
         </main>
@@ -1870,7 +1880,8 @@ const PAGES = {
     'cmb-status': 'CMB System Status',
     'cmb-workspaces': 'CMB Workspaces',
     'cmb-history': 'CMB Timeline',
-    'cmb-analytics': 'CMB Analytics'
+    'cmb-analytics': 'CMB Analytics',
+    'cmb-sharing': 'Memory Sharing'
 };
 
 async function doLogout() {
@@ -2005,6 +2016,7 @@ function loadPageData(page) {
         case 'group-catalog': loadServiceCatalog(); break;
         case 'group-billing': loadBilling(); break;
         case 'group-holdings': loadHoldings(); break;
+        case 'cmb-sharing': loadCMBSharingInit(); break;
         case 'babel-dashboard': loadOSINTDashboard(); break;
         case 'babel-investigations': break;
         case 'babel-threatmap': break;
@@ -2021,6 +2033,7 @@ function loadPageData(page) {
         case 'cmb-workspaces': loadCMBWorkspaces(); loadCMBSavings(); break;
         case 'cmb-history': loadCMBHistoryInit(); break;
         case 'cmb-analytics': loadCMBAnalyticsInit(); break;
+        case 'cmb-sharing': loadCMBSharingInit(); break;
     }
 }
 

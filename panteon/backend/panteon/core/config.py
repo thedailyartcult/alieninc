@@ -37,6 +37,8 @@ class Settings(BaseSettings):
 
     allowed_email_domains: str = "alieninc.tech"
 
+    locked_research_dir: Optional[str] = None
+
     ono_function_shared_secret: Optional[str] = None
     ono_function_exec_mode: str = "subprocess"
     ono_function_executable: str = "opencode"

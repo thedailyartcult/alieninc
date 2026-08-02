@@ -66,6 +66,9 @@ ARTICLES_DIR = os.path.join(BASE_DIR, "articles")
 INDEX_PATH = os.path.join(BASE_DIR, "index.html")
 LOCKED_MANIFEST_PATH = os.path.join(BASE_DIR, "LOCKED_ARCHIVE.json")
 LOCKED_PAGE_PATH = os.path.join(BASE_DIR, "locked.html")
+# Private store OUTSIDE the public web root (server.py blocks /data/). The
+# FastAPI backend serves these to authenticated users via /api/v1/research/{slug}.
+PRIVATE_DIR = os.path.join(BASE_DIR, "..", "..", "data", "research-locked")
 
 SUPABASE_URL = "https://frwjaixxlgthkgjtafhz.supabase.co"
 SUPABASE_ANON_KEY = ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyd2phaXh4bGd0aGtnanRhZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDUzNDQsImV4cCI6MjA5NDYyMTM0NH0.j2DKz__QMml4WplMYNmsQpTUw0qu-kZG7Md3qBEEdEc")
@@ -1257,7 +1260,7 @@ def build_article(source_path):
             f.write(html_out)
 
     return {"slug": slug, "title": title, "date": date, "author": author,
-            "excerpt": excerpt, "locked": locked}
+            "excerpt": excerpt, "locked": locked, "html": article_html}
 
 
 def _public_row(a):
@@ -1331,6 +1334,25 @@ def write_locked_manifest(locked_articles):
         json.dump(manifest, f, indent=2, ensure_ascii=False)
 
 
+def write_locked_content(locked_articles):
+    """Render locked doc bodies to the private store (outside the public web
+    root) for the Phase 4 backend endpoint GET /api/v1/research/{slug}."""
+    if not locked_articles:
+        return
+    os.makedirs(PRIVATE_DIR, exist_ok=True)
+    for a in locked_articles:
+        payload = {
+            "slug": a["slug"], "title": a["title"],
+            "date": a["date"], "author": a["author"],
+            "html": a.get("html", ""),
+        }
+        out_path = os.path.join(PRIVATE_DIR, f"{a['slug']}.json")
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2, ensure_ascii=False)
+    print(f"  Locked content written to private store: {PRIVATE_DIR} "
+          f"({len(locked_articles)} doc(s))")
+
+
 def build_locked_guard():
     html_out = LOCKED_TEMPLATE
     html_out = html_out.replace("{{NAV_CSS}}", NAV_CSS)
@@ -1385,6 +1407,7 @@ def main():
 
     build_index(articles, locked_articles)
     write_locked_manifest(locked_articles)
+    write_locked_content(locked_articles)
     build_locked_guard()
     print(f"\nIndex updated: {len(articles)} public article(s) listed, "
           f"{len(locked_articles)} locked archive doc(s). Manifest written to LOCKED_ARCHIVE.json.")

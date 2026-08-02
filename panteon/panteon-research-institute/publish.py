@@ -55,13 +55,25 @@ import sys
 import os
 import re
 import glob
+import json
 import html
+from urllib.parse import quote
 from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SOURCE_DIR = os.path.join(BASE_DIR, "source")
 ARTICLES_DIR = os.path.join(BASE_DIR, "articles")
 INDEX_PATH = os.path.join(BASE_DIR, "index.html")
+LOCKED_MANIFEST_PATH = os.path.join(BASE_DIR, "LOCKED_ARCHIVE.json")
+LOCKED_PAGE_PATH = os.path.join(BASE_DIR, "locked.html")
+
+SUPABASE_URL = "https://frwjaixxlgthkgjtafhz.supabase.co"
+SUPABASE_ANON_KEY = ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyd2phaXh4bGd0aGtnanRhZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDUzNDQsImV4cCI6MjA5NDYyMTM0NH0.j2DKz__QMml4WplMYNmsQpTUw0qu-kZG7Md3qBEEdEc")
+
+LOCK_ICON = ('<svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" '
+             'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+             '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>'
+             '<path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>')
 
 FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
@@ -590,6 +602,312 @@ ARTICLE_TEMPLATE = """<!DOCTYPE html>
 </html>"""
 
 
+LOCKED_TEMPLATE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panteon | Restricted Document</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ROOT}}styles.css">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co">
+    <style>
+        {{NAV_CSS}}
+        .cap-hero{background-color:var(--bg-dark);color:var(--text-light);padding:180px 40px 120px;text-align:center;position:relative;overflow:hidden}
+        .cap-hero::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:1px;height:80px;background:linear-gradient(to bottom,transparent,rgba(154,180,193,.4),transparent);animation:heroLine 1.8s ease-out forwards;opacity:0}
+        @keyframes heroLine{0%{opacity:0;height:0}50%{opacity:1}100%{opacity:1;height:80px}}
+        .cap-hero-inner{max-width:900px;margin:0 auto;position:relative;z-index:1}
+        .cap-hero .tag{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:#9ab4c1;margin-bottom:20px;display:block;opacity:0;animation:fadeUp .8s ease-out .4s forwards}
+        .cap-hero h1{font-size:clamp(2.4rem,5.5vw,4rem);font-weight:300;line-height:1.08;letter-spacing:-.03em;margin-bottom:24px;opacity:0;animation:fadeUp .8s ease-out .7s forwards}
+        .cap-hero p{font-size:1.15rem;line-height:1.6;color:rgba(255,255,255,.65);max-width:600px;margin:0 auto;opacity:0;animation:fadeUp .8s ease-out 1s forwards}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+        .article-body{max-width:760px;margin:0 auto;padding:100px 40px}
+        .article-body h2{font-size:2.4rem;font-weight:300;letter-spacing:-.02em;margin-bottom:48px;opacity:0;transform:translateY(16px);transition:opacity .7s ease,transform .7s ease}
+        .article-body h2.in-view{opacity:1;transform:translateY(0)}
+        .article-body h3{font-size:1.4rem;font-weight:400;margin-bottom:20px;margin-top:48px}
+        .article-body p{font-size:1rem;line-height:1.75;color:var(--text-muted);margin-bottom:24px;opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+        .article-body p.in-view{opacity:1;transform:translateY(0)}
+        .article-body a{color:var(--text-dark);border-bottom:1px solid var(--text-muted);text-decoration:none}
+        .article-body a:hover{color:var(--text-muted)}
+
+        .gate-status{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);text-align:center;margin-bottom:56px}
+        .gate-status.ok{color:#2e7d32}
+        .gate-status.locked{color:#b3261e}
+
+        .gate-panel{max-width:640px;margin:0 auto 40px;border:1px solid var(--border-dark);border-left:3px solid #9ab4c1;padding:48px 40px;text-align:center}
+        .gate-panel .gate-icon{width:40px;height:40px;color:var(--text-muted);margin:0 auto 24px;display:block}
+        .gate-panel h3{font-size:1.4rem;font-weight:400;letter-spacing:-.01em;margin-bottom:16px}
+        .gate-panel p{font-size:.95rem;line-height:1.7;color:var(--text-muted);max-width:440px;margin:0 auto 32px}
+        .gate-actions{display:flex;flex-direction:column;align-items:center;gap:16px}
+        .gate-actions .gate-back{font-size:.78rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);text-decoration:none;border-bottom:1px solid var(--text-muted);padding-bottom:2px}
+        .gate-actions .gate-back:hover{color:var(--text-dark)}
+
+        .doc-meta{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:#9ab4c1;text-align:center;margin-bottom:56px}
+        .doc-placeholder{max-width:640px;margin:0 auto;text-align:center}
+
+        .closing-section{text-align:center;padding:120px 40px 140px;position:relative}
+        .closing-section .section-line{width:1px;height:60px;background:linear-gradient(to bottom,#d2d2d7,transparent);margin:0 auto 40px;opacity:0;transition:opacity .8s ease}
+        .closing-section .section-line.in-view{opacity:1}
+        .closing-section h2{font-size:2rem;font-weight:300;letter-spacing:-.02em;margin-bottom:16px;opacity:0;transform:translateY(12px);transition:opacity .7s ease .2s,transform .7s ease .2s}
+        .closing-section h2.in-view{opacity:1;transform:translateY(0)}
+        .closing-section .closing-meta{color:var(--text-muted);font-size:.9rem;line-height:1.7;max-width:480px;margin:0 auto 48px;opacity:0;transform:translateY(12px);transition:opacity .7s ease .4s,transform .7s ease .4s}
+        .closing-section .closing-meta.in-view{opacity:1;transform:translateY(0)}
+
+        @media(max-width:768px){.cap-hero{padding:140px 24px 80px}.article-body{padding:60px 24px}.gate-panel{padding:36px 24px}}
+    </style>
+</head>
+<body>
+
+    <svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden">
+        <defs>
+            <filter id="panteon-brush" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.23" numOctaves="4" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="0.85" xChannelSelector="R" yChannelSelector="B"/></filter>
+            <mask id="panteon-roll"><rect width="100" height="100" fill="white"/><path d="M16 60 C20 58 24 59 27 63" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round"/></mask>
+            <g id="panteon-lockup" fill="currentColor"><g filter="url(#panteon-brush)"><path d="M63 19 C57 19 54 23 54 29 L54 55 C54 59 56 62 60 64 L46 64 C42 64 40 66 40 68 C41 70 44 70 48 70 L65 70 C69 70 72 67 72 63 L72 29 C72 23 69 19 63 19 Z"/><circle cx="20" cy="64" r="7" mask="url(#panteon-roll)"/></g><text x="82" y="67" fill="currentColor" font-family="Inter, Arial, sans-serif" font-size="40" font-weight="500" letter-spacing="1.5">PANTEON</text></g>
+        </defs>
+    </svg>
+
+{{HEADER_HTML}}
+
+    <section class="cap-hero">
+        <div class="cap-hero-inner">
+            <span class="tag">Panteon Research Institute · Restricted Archive</span>
+            <h1 id="heroTitle">Restricted Document</h1>
+            <p id="heroMeta">Authenticated archive — visible to authorized personnel only.</p>
+        </div>
+    </section>
+
+    <main class="main-content">
+        <div class="article-body">
+
+            <div class="gate-status" id="statusLine">Verifying session&hellip;</div>
+
+            <div class="gate-panel" id="gatePanel" style="display:none">
+                <svg class="gate-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <h3>Restricted Document</h3>
+                <p>This research archive document is restricted to authorized personnel. Sign in with your Panteon credentials to continue.</p>
+                <div class="gate-actions">
+                    <a class="get-started-btn" id="signInBtn" href="#" style="background-color:var(--text-dark);color:var(--text-light);border-color:var(--text-dark);padding:14px 40px;font-size:.85rem;text-decoration:none">Sign In</a>
+                    <a class="gate-back" href="index.html">Back to Research Archive</a>
+                </div>
+            </div>
+
+            <div id="docContainer" style="display:none">
+                <div class="doc-meta" id="docMeta"></div>
+                <div id="docBody"></div>
+            </div>
+
+        </div>
+
+        <section class="closing-section">
+            <div class="section-line"></div>
+            <h2>Research Archive</h2>
+            <p class="closing-meta">Restricted documents require an authorized Panteon session.</p>
+            <a href="{{ROOT}}panteon-research-institute/index.html" class="get-started-btn" style="background-color:var(--text-dark);color:var(--text-light);border-color:var(--text-dark);padding:14px 40px;font-size:.85rem;text-decoration:none">Back to Articles</a>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-left-branding">
+                <p>© 2026 Panteon Technologies Inc.</p>
+                <p class="all-rights">All rights reserved.</p>
+                <div class="footer-divider-line"></div>
+                <a href="{{ROOT}}cookies.html" class="footer-cookie-btn" style="text-decoration:none;">Cookies Settings</a>
+                <div class="footer-divider-line"></div>
+                <div class="footer-divider-line"></div>
+                <div class="footer-social-container">
+                    <a href="#" class="social-capsule">Youtube</a>
+                    <a href="#" class="social-capsule">X</a>
+                    <a href="#" class="social-capsule">Linkedin</a>
+                    <a href="#" class="social-capsule">Github</a>
+                    <a href="#" class="social-capsule">Store</a>
+                </div>
+            </div>
+            <div class="footer-links-grid">
+                <div class="footer-links-col">
+                    <h4>Research</h4>
+                    <ul>
+                        <li><a href="{{ROOT}}panteon-research-institute/index.html">Panteon Research Institute</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Alien Inc</h4>
+                    <ul>
+                        <li><a href="https://rousseau.alieninc.tech" target="_blank">Rousseau</a></li>
+                        <li><a href="https://thedailyartcult.alieninc.tech" target="_blank">The Daily Art Cult</a></li>
+                        <li><a href="https://kmt.alieninc.tech" target="_blank">KMT Consulting Group</a></li>
+                        <li><a href="https://immanuel.alieninc.tech" target="_blank">Immanuel</a></li>
+                        <li><a href="https://alcantaraartfoundation.alieninc.tech" target="_blank">St. Alcantara Foundation</a></li>
+                        <li><a href="https://sp.alieninc.tech" target="_blank">Statute & Precedent</a></li>
+                        <li><a href="https://centra.alieninc.tech" target="_blank">Centra</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Capabilities</h4>
+                    <ul>
+                        <li><a href="{{ROOT}}capabilities/ai-ml.html">AI + ML</a></li>
+                        <li><a href="{{ROOT}}capabilities/yono-for-developers.html">YONO for Developers</a></li>
+                        <li><a href="{{ROOT}}capabilities/data-integration.html">Data Integration</a></li>
+                        <li><a href="{{ROOT}}capabilities/digital-twin.html">Digital Twin</a></li>
+                        <li><a href="{{ROOT}}capabilities/dynamic-scheduling.html">Dynamic Scheduling</a></li>
+                        <li><a href="{{ROOT}}capabilities/edge-ai.html">Edge AI</a></li>
+                        <li><a href="{{ROOT}}capabilities/marketplace.html">Marketplace</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Documents</h4>
+                    <ul>
+                        <li><a href="{{ROOT}}developers/community.html">Developer Community</a></li>
+                        <li><a href="{{ROOT}}developers/documentation.html">Platform Documentation</a></li>
+                        <li><a href="{{ROOT}}developers/panteon-developers.html">Panteon Developers</a></li>
+                        <li><a href="{{ROOT}}panteon-research-institute/index.html">Panteon Research Institute</a></li>
+                        <li><a href="{{ROOT}}trust/trust-center.html">Trust Center</a></li>
+                        <li><a href="{{ROOT}}trust/modern-slavery.html">Modern Slavery Statement</a></li>
+                        <li><a href="{{ROOT}}cookies.html">Cookies</a></li>
+                        <li><a href="{{ROOT}}trust/privacy-civil-liberties.html">Privacy and Civil Liberties</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+{{NAV_JS}}
+    </script>
+
+    <script>
+    (function() {
+        var SUPABASE_URL = '{{SUPABASE_URL}}';
+        var SUPABASE_ANON_KEY = '{{SUPABASE_ANON_KEY}}';
+        var supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        var params = new URLSearchParams(window.location.search);
+        var slug = params.get('slug') || '';
+        var title = params.get('title') || 'Restricted Document';
+        var date = params.get('date') || '';
+        var author = params.get('author') || 'Panteon Research Institute';
+
+        var heroTitle = document.getElementById('heroTitle');
+        var heroMeta = document.getElementById('heroMeta');
+        var statusLine = document.getElementById('statusLine');
+        var gatePanel = document.getElementById('gatePanel');
+        var docContainer = document.getElementById('docContainer');
+        var docMeta = document.getElementById('docMeta');
+        var docBody = document.getElementById('docBody');
+        var signInBtn = document.getElementById('signInBtn');
+
+        heroTitle.textContent = title;
+        heroMeta.textContent = author + (date ? ' · ' + date : '');
+
+        function setStatus(text, cls) {
+            statusLine.textContent = text;
+            statusLine.className = 'gate-status' + (cls ? ' ' + cls : '');
+        }
+
+        function showGate() {
+            setStatus('Restricted — sign in required', 'locked');
+            gatePanel.style.display = 'block';
+            docContainer.style.display = 'none';
+            var returnPath = window.location.pathname + window.location.search;
+            signInBtn.href = '/login.html?redirect=' + encodeURIComponent(returnPath);
+        }
+
+        function showDoc(metaText) {
+            setStatus('Authenticated — document unlocked', 'ok');
+            gatePanel.style.display = 'none';
+            docContainer.style.display = 'block';
+            if (metaText && docMeta) docMeta.textContent = metaText;
+            else if (docMeta && date) docMeta.textContent = date + ' · ' + author;
+        }
+
+        function revealTargets(root) {
+            var els = (root || document).querySelectorAll(
+                '.article-body h2, .article-body h3, .article-body p, .pull-quote'
+            );
+            var io = new IntersectionObserver(function(entries) {
+                entries.forEach(function(en) {
+                    if (en.isIntersecting) {
+                        en.target.classList.add('in-view');
+                        io.unobserve(en.target);
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+            els.forEach(function(el) { io.observe(el); });
+        }
+
+        function showPlaceholder() {
+            showDoc();
+            docBody.innerHTML =
+                '<div class="doc-placeholder">' +
+                '<p>This archive document is unlocked. The full text is being prepared and will appear here once the research archive service is online.</p>' +
+                '</div>';
+            revealTargets(docBody);
+        }
+
+        function loadDocument(token) {
+            if (!slug) { showDoc(); return; }
+            setStatus('Authenticated — loading document&hellip;', 'ok');
+            fetch('/api/v1/research/' + encodeURIComponent(slug), {
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(function(resp) {
+                return resp.json().then(function(data) { return { ok: resp.ok, data: data }; });
+            })
+            .then(function(result) {
+                if (result.ok && result.data && result.data.html) {
+                    docBody.innerHTML = result.data.html;
+                    showDoc();
+                    revealTargets(docBody);
+                } else {
+                    showPlaceholder();
+                }
+            })
+            .catch(function() {
+                showPlaceholder();
+            });
+        }
+
+        function restoreSession() {
+            return supabaseClient.auth.getSession()
+                .then(function(rest) {
+                    if (rest.data && rest.data.session) return rest.data.session;
+                    var raw = localStorage.getItem('hs_session');
+                    if (!raw) return null;
+                    var stored = JSON.parse(raw);
+                    if (!stored.access_token || !stored.refresh_token) return null;
+                    return supabaseClient.auth.setSession({
+                        access_token: stored.access_token,
+                        refresh_token: stored.refresh_token
+                    }).then(function(res) {
+                        if (res.error || !res.data.session) return null;
+                        return res.data.session;
+                    });
+                })
+                .catch(function() { return null; });
+        }
+
+        restoreSession().then(function(session) {
+            if (session) loadDocument(session.access_token);
+            else showGate();
+        });
+
+        supabaseClient.auth.onAuthStateChange(function(event, session) {
+            if (session) loadDocument(session.access_token);
+        });
+    })();
+    </script>
+</body>
+</html>"""
+
+
 INDEX_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -622,6 +940,17 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         .article-row-title{font-size:1.2rem;font-weight:400;letter-spacing:-.01em;margin-bottom:8px;transition:color .3s ease}
         .article-row-meta{font-size:.85rem;color:var(--text-muted)}
         .article-row-arrow{font-size:1.2rem;opacity:.3;transition:transform .3s ease,opacity .3s ease}
+
+        .article-row.locked{cursor:pointer}
+        .article-row.locked:hover{background-color:var(--bg-gray)}
+        .article-row.locked .article-row-title{color:var(--text-muted);display:flex;align-items:center;gap:10px}
+        .article-row.locked:hover .article-row-title{color:var(--text-dark)}
+        .article-row.locked .lock-icon{width:14px;height:14px;flex:0 0 auto;opacity:.6}
+        .restricted-badge{display:inline-block;margin-left:10px;font-family:var(--font-mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:#9ab4c1;border:1px solid #9ab4c1;padding:2px 8px;border-radius:2px;vertical-align:2px}
+
+        .year-group{margin-bottom:56px}
+        .year-label{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted);padding-bottom:14px;border-bottom:1px solid var(--border-dark);margin-bottom:0}
+        .year-group .article-row{padding-top:28px}
 
         .mission-card{max-width:1400px;margin:0 auto;padding:0 40px 100px}
         .mission-card-inner{border:1px solid var(--border-dark);border-radius:2px;padding:48px;background:var(--bg-light)}
@@ -663,10 +992,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         </div>
 
         <section class="articles-grid">
-            <h2>Published Articles</h2>
-            <div class="article-list">
-{{article_rows}}
-            </div>
+            <h2>Research Archive</h2>
+{{year_sections}}
         </section>
 
     </main>
@@ -905,6 +1232,7 @@ def build_article(source_path):
     date = fm.get("date", datetime.now().strftime("%Y-%m-%d"))
     author = fm.get("author", "Patrick Neil A.")
     slug = fm.get("slug") or slugify(title)
+    locked = bool(fm.get("locked", False))
 
     excerpt = get_excerpt(body)
     article_html = md_to_html(body, bare_mode=bare_mode)
@@ -922,25 +1250,62 @@ def build_article(source_path):
     html_out = html_out.replace("{{author}}", esc(author))
     html_out = html_out.replace("{{article_html}}", article_html)
 
-    out_path = os.path.join(ARTICLES_DIR, f"{slug}.html")
-    os.makedirs(ARTICLES_DIR, exist_ok=True)
-    with open(out_path, "w", encoding="utf-8") as f:
-        f.write(html_out)
+    if not locked:
+        out_path = os.path.join(ARTICLES_DIR, f"{slug}.html")
+        os.makedirs(ARTICLES_DIR, exist_ok=True)
+        with open(out_path, "w", encoding="utf-8") as f:
+            f.write(html_out)
 
-    return {"slug": slug, "title": title, "date": date, "author": author, "excerpt": excerpt}
+    return {"slug": slug, "title": title, "date": date, "author": author,
+            "excerpt": excerpt, "locked": locked}
 
 
-def build_index(articles):
-    rows = []
-    for a in sorted(articles, key=lambda x: x["date"], reverse=True):
-        rows.append(
-            f'                <a href="articles/{esc(a["slug"])}.html" class="article-row">\n'
-            f'                    <div>\n'
-            f'                        <div class="article-row-title">{esc(a["title"])}</div>\n'
-            f'                        <div class="article-row-meta">{esc(a["date"])} · {esc(a["author"])}</div>\n'
-            f"                    </div>\n"
-            f'                    <div class="article-row-arrow">→</div>\n'
-            f"                </a>"
+def _public_row(a):
+    return (
+        f'                    <a href="articles/{esc(a["slug"])}.html" class="article-row">\n'
+        f'                        <div>\n'
+        f'                            <div class="article-row-title">{esc(a["title"])}</div>\n'
+        f'                            <div class="article-row-meta">{esc(a["date"])} · {esc(a["author"])}</div>\n'
+        f"                        </div>\n"
+        f'                        <div class="article-row-arrow">→</div>\n'
+        f"                    </a>"
+    )
+
+
+def _locked_row(a):
+    href = ("locked.html?slug=%s&title=%s&date=%s&author=%s" % (
+        quote(a["slug"]), quote(a["title"]), quote(a["date"]), quote(a["author"])))
+    return (
+        f'                    <a href="{href}" class="article-row locked">\n'
+        f'                        <div>\n'
+        f'                            <div class="article-row-title">{LOCK_ICON}{esc(a["title"])}</div>\n'
+        f'                            <div class="article-row-meta">{esc(a["date"])} · {esc(a["author"])}'
+        f'<span class="restricted-badge">Restricted</span></div>\n'
+        f"                        </div>\n"
+        f'                        <div class="article-row-arrow">→</div>\n'
+        f"                    </a>"
+    )
+
+
+def build_index(articles, locked_articles=None):
+    locked_articles = locked_articles or []
+    by_year = {}
+    for a in articles + locked_articles:
+        year = a["date"][:4] if a["date"] and len(a["date"]) >= 4 else "Unknown"
+        by_year.setdefault(year, []).append(a)
+
+    sections = []
+    for year in sorted(by_year.keys(), reverse=True):
+        rows = []
+        for a in sorted(by_year[year], key=lambda x: x["date"], reverse=True):
+            rows.append(_locked_row(a) if a.get("locked") else _public_row(a))
+        sections.append(
+            f'            <div class="year-group">\n'
+            f'                <div class="year-label">{esc(year)}</div>\n'
+            f'                <div class="article-list">\n'
+            + "\n".join(rows)
+            + f"\n                </div>\n"
+            f"            </div>"
         )
 
     root = "../"
@@ -949,9 +1314,33 @@ def build_index(articles):
     html = html.replace("{{HEADER_HTML}}", HEADER_HTML)
     html = html.replace("{{NAV_JS}}", NAV_JS)
     html = html.replace("{{ROOT}}", root)
-    html = html.replace("{{article_rows}}", "\n".join(rows))
+    html = html.replace("{{year_sections}}", "\n".join(sections))
     with open(INDEX_PATH, "w", encoding="utf-8") as f:
         f.write(html)
+
+
+def write_locked_manifest(locked_articles):
+    manifest = {}
+    for a in sorted(locked_articles, key=lambda x: x["date"]):
+        year = a["date"][:4]
+        manifest.setdefault(year, []).append({
+            "slug": a["slug"], "title": a["title"],
+            "date": a["date"], "author": a["author"],
+        })
+    with open(LOCKED_MANIFEST_PATH, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2, ensure_ascii=False)
+
+
+def build_locked_guard():
+    html_out = LOCKED_TEMPLATE
+    html_out = html_out.replace("{{NAV_CSS}}", NAV_CSS)
+    html_out = html_out.replace("{{HEADER_HTML}}", HEADER_HTML)
+    html_out = html_out.replace("{{NAV_JS}}", NAV_JS)
+    html_out = html_out.replace("{{ROOT}}", "../")
+    html_out = html_out.replace("{{SUPABASE_URL}}", SUPABASE_URL)
+    html_out = html_out.replace("{{SUPABASE_ANON_KEY}}", SUPABASE_ANON_KEY)
+    with open(LOCKED_PAGE_PATH, "w", encoding="utf-8") as f:
+        f.write(html_out)
 
 
 def main():
@@ -965,9 +1354,14 @@ def main():
         return
 
     articles = []
+    locked_articles = []
     for fp in files:
         print(f"Publishing {os.path.basename(fp)}...")
         meta = build_article(fp)
+        if meta.get("locked"):
+            print(f"  → LOCKED archive doc, not published publicly")
+            locked_articles.append(meta)
+            continue
         articles.append(meta)
         print(f"  → articles/{meta['slug']}.html")
 
@@ -989,8 +1383,11 @@ def main():
                 "excerpt": "",
             })
 
-    build_index(articles)
-    print(f"\nIndex updated: {len(articles)} article(s) listed.")
+    build_index(articles, locked_articles)
+    write_locked_manifest(locked_articles)
+    build_locked_guard()
+    print(f"\nIndex updated: {len(articles)} public article(s) listed, "
+          f"{len(locked_articles)} locked archive doc(s). Manifest written to LOCKED_ARCHIVE.json.")
 
 
 if __name__ == "__main__":

@@ -571,6 +571,12 @@ var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 var SESSION_TIMEOUT = 300;
 var SESSION_REDIRECT = '/';
 
+var _urlParams = new URLSearchParams(window.location.search);
+var redirectTarget = _urlParams.get('redirect');
+if (!redirectTarget || !/^\/(?!\/)/.test(redirectTarget) || /[:\\\s]/.test(redirectTarget)) {
+  redirectTarget = '/admin';
+}
+
 var _toastTimer = null;
 function notify(msg, type) {
   var el = document.getElementById('notify');
@@ -706,7 +712,7 @@ function notify(msg, type) {
         successCallout.classList.add('show');
         notify('Authenticated. Redirecting...', 'success');
         setTimeout(function() {
-          window.location.href = '/admin';
+          window.location.href = redirectTarget;
         }, 600);
       })
       .catch(function(err) {

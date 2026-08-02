@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panteon | Panteon Research Institute</title>
+    <title>Panteon | Restricted Document</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles.css">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co">
     <style>
         
     :root{--accent-neon:#DFF140;--font-tech:"Space Grotesk",monospace}
@@ -96,36 +97,39 @@
         .cap-hero p{font-size:1.15rem;line-height:1.6;color:rgba(255,255,255,.65);max-width:600px;margin:0 auto;opacity:0;animation:fadeUp .8s ease-out 1s forwards}
         @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
-        .articles-grid{max-width:1400px;margin:0 auto;padding:100px 40px}
-        .articles-grid h2{font-size:2.4rem;font-weight:300;letter-spacing:-.02em;margin-bottom:48px}
-        .article-list{display:grid;gap:0}
-        .article-row{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;padding:40px 20px;border-top:1px solid var(--border-dark);cursor:pointer;transition:background-color .3s ease}
-        .article-row:last-child{border-bottom:1px solid var(--border-dark)}
-        .article-row:hover{background-color:var(--bg-gray)}
-        .article-row:hover .article-row-title{color:var(--text-dark)}
-        .article-row:hover .article-row-arrow{transform:translateX(4px);opacity:1}
-        .article-row-title{font-size:1.2rem;font-weight:400;letter-spacing:-.01em;margin-bottom:8px;transition:color .3s ease}
-        .article-row-meta{font-size:.85rem;color:var(--text-muted)}
-        .article-row-arrow{font-size:1.2rem;opacity:.3;transition:transform .3s ease,opacity .3s ease}
+        .article-body{max-width:760px;margin:0 auto;padding:100px 40px}
+        .article-body h2{font-size:2.4rem;font-weight:300;letter-spacing:-.02em;margin-bottom:48px;opacity:0;transform:translateY(16px);transition:opacity .7s ease,transform .7s ease}
+        .article-body h2.in-view{opacity:1;transform:translateY(0)}
+        .article-body h3{font-size:1.4rem;font-weight:400;margin-bottom:20px;margin-top:48px}
+        .article-body p{font-size:1rem;line-height:1.75;color:var(--text-muted);margin-bottom:24px;opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+        .article-body p.in-view{opacity:1;transform:translateY(0)}
+        .article-body a{color:var(--text-dark);border-bottom:1px solid var(--text-muted);text-decoration:none}
+        .article-body a:hover{color:var(--text-muted)}
 
-        .article-row.locked{cursor:pointer}
-        .article-row.locked:hover{background-color:var(--bg-gray)}
-        .article-row.locked .article-row-title{color:var(--text-muted);display:flex;align-items:center;gap:10px}
-        .article-row.locked:hover .article-row-title{color:var(--text-dark)}
-        .article-row.locked .lock-icon{width:14px;height:14px;flex:0 0 auto;opacity:.6}
-        .restricted-badge{display:inline-block;margin-left:10px;font-family:var(--font-mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:#9ab4c1;border:1px solid #9ab4c1;padding:2px 8px;border-radius:2px;vertical-align:2px}
+        .gate-status{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);text-align:center;margin-bottom:56px}
+        .gate-status.ok{color:#2e7d32}
+        .gate-status.locked{color:#b3261e}
 
-        .year-group{margin-bottom:56px}
-        .year-label{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted);padding-bottom:14px;border-bottom:1px solid var(--border-dark);margin-bottom:0}
-        .year-group .article-row{padding-top:28px}
+        .gate-panel{max-width:640px;margin:0 auto 40px;border:1px solid var(--border-dark);border-left:3px solid #9ab4c1;padding:48px 40px;text-align:center}
+        .gate-panel .gate-icon{width:40px;height:40px;color:var(--text-muted);margin:0 auto 24px;display:block}
+        .gate-panel h3{font-size:1.4rem;font-weight:400;letter-spacing:-.01em;margin-bottom:16px}
+        .gate-panel p{font-size:.95rem;line-height:1.7;color:var(--text-muted);max-width:440px;margin:0 auto 32px}
+        .gate-actions{display:flex;flex-direction:column;align-items:center;gap:16px}
+        .gate-actions .gate-back{font-size:.78rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);text-decoration:none;border-bottom:1px solid var(--text-muted);padding-bottom:2px}
+        .gate-actions .gate-back:hover{color:var(--text-dark)}
 
-        .mission-card{max-width:1400px;margin:0 auto;padding:0 40px 100px}
-        .mission-card-inner{border:1px solid var(--border-dark);border-radius:2px;padding:48px;background:var(--bg-light)}
-        .mission-card-inner h3{font-size:1.3rem;font-weight:400;margin-bottom:12px}
-        .mission-card-inner p{font-size:.95rem;line-height:1.55;color:var(--text-muted);margin-bottom:16px}
-        .mission-card-inner a{display:inline-flex;align-items:center;gap:8px;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-dark);border-bottom:1px solid var(--text-muted);padding-bottom:2px;text-decoration:none;margin-top:8px}
+        .doc-meta{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:#9ab4c1;text-align:center;margin-bottom:56px}
+        .doc-placeholder{max-width:640px;margin:0 auto;text-align:center}
 
-        @media(max-width:768px){.cap-hero{padding:140px 24px 80px}.articles-grid{padding:60px 24px}.article-row{grid-template-columns:1fr;padding:30px 0}}
+        .closing-section{text-align:center;padding:120px 40px 140px;position:relative}
+        .closing-section .section-line{width:1px;height:60px;background:linear-gradient(to bottom,#d2d2d7,transparent);margin:0 auto 40px;opacity:0;transition:opacity .8s ease}
+        .closing-section .section-line.in-view{opacity:1}
+        .closing-section h2{font-size:2rem;font-weight:300;letter-spacing:-.02em;margin-bottom:16px;opacity:0;transform:translateY(12px);transition:opacity .7s ease .2s,transform .7s ease .2s}
+        .closing-section h2.in-view{opacity:1;transform:translateY(0)}
+        .closing-section .closing-meta{color:var(--text-muted);font-size:.9rem;line-height:1.7;max-width:480px;margin:0 auto 48px;opacity:0;transform:translateY(12px);transition:opacity .7s ease .4s,transform .7s ease .4s}
+        .closing-section .closing-meta.in-view{opacity:1;transform:translateY(0)}
+
+        @media(max-width:768px){.cap-hero{padding:140px 24px 80px}.article-body{padding:60px 24px}.gate-panel{padding:36px 24px}}
     </style>
 </head>
 <body>
@@ -277,158 +281,40 @@
 
     <section class="cap-hero">
         <div class="cap-hero-inner">
-            <span class="tag">Panteon Research Institute</span>
-            <h1>Articles &amp; Publications</h1>
-            <p>Falsifiable research on the boundary between AI-defined success and human-defined success.</p>
+            <span class="tag">Panteon Research Institute · Restricted Archive</span>
+            <h1 id="heroTitle">Restricted Document</h1>
+            <p id="heroMeta">Authenticated archive — visible to authorized personnel only.</p>
         </div>
     </section>
 
     <main class="main-content">
+        <div class="article-body">
 
-        <div class="mission-card">
-            <div class="mission-card-inner">
-                <h3>Mission &amp; Vision</h3>
-                <p>The founding charter of the Panteon Research Institute — why human judgment cannot be automated away, and how philosophical frameworks become instruments rather than content.</p>
-                <a href="mission-and-vision.html">Read Mission & Vision <span>→</span></a>
+            <div class="gate-status" id="statusLine">Verifying session&hellip;</div>
+
+            <div class="gate-panel" id="gatePanel" style="display:none">
+                <svg class="gate-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <h3>Restricted Document</h3>
+                <p>This research archive document is restricted to authorized personnel. Sign in with your Panteon credentials to continue.</p>
+                <div class="gate-actions">
+                    <a class="get-started-btn" id="signInBtn" href="#" style="background-color:var(--text-dark);color:var(--text-light);border-color:var(--text-dark);padding:14px 40px;font-size:.85rem;text-decoration:none">Sign In</a>
+                    <a class="gate-back" href="index.html">Back to Research Archive</a>
+                </div>
             </div>
+
+            <div id="docContainer" style="display:none">
+                <div class="doc-meta" id="docMeta"></div>
+                <div id="docBody"></div>
+            </div>
+
         </div>
 
-        <section class="articles-grid">
+        <section class="closing-section">
+            <div class="section-line"></div>
             <h2>Research Archive</h2>
-            <div class="year-group">
-                <div class="year-label">2026</div>
-                <div class="article-list">
-                    <a href="articles/we-are-measuring-ai-capability-wrong.html" class="article-row">
-                        <div>
-                            <div class="article-row-title">We Are Measuring AI Capability Wrong</div>
-                            <div class="article-row-meta">2026-08-02 · Patrick Neil A.</div>
-                        </div>
-                        <div class="article-row-arrow">→</div>
-                    </a>
-                </div>
-            </div>
-            <div class="year-group">
-                <div class="year-label">2025</div>
-                <div class="article-list">
-                    <a href="locked.html?slug=the-smil-problem-notes&title=The%20Smil%20Problem%20%E2%80%94%20Notes%20Toward%20a%20Correct%20Metric&date=2025-12-31&author=Patrick%20Neil%20A." class="article-row locked">
-                        <div>
-                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>The Smil Problem — Notes Toward a Correct Metric</div>
-                            <div class="article-row-meta">2025-12-31 · Patrick Neil A.<span class="restricted-badge">Restricted</span></div>
-                        </div>
-                        <div class="article-row-arrow">→</div>
-                    </a>
-                </div>
-            </div>
-            <div class="year-group">
-                <div class="year-label">2024</div>
-                <div class="article-list">
-                    <a href="locked.html?slug=preconditions-of-transparency&title=Preconditions%20of%20Transparency%20%E2%80%94%20Working%20Papers&date=2024-12-31&author=Patrick%20Neil%20A." class="article-row locked">
-                        <div>
-                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Preconditions of Transparency — Working Papers</div>
-                            <div class="article-row-meta">2024-12-31 · Patrick Neil A.<span class="restricted-badge">Restricted</span></div>
-                        </div>
-                        <div class="article-row-arrow">→</div>
-                    </a>
-                </div>
-            </div>
-            <div class="year-group">
-                <div class="year-label">2023</div>
-                <div class="article-list">
-                    <a href="locked.html?slug=static-tests-living-systems&title=Static%20Tests%2C%20Living%20Systems%20%E2%80%94%20A%20Critique&date=2023-12-31&author=Patrick%20Neil%20A." class="article-row locked">
-                        <div>
-                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Static Tests, Living Systems — A Critique</div>
-                            <div class="article-row-meta">2023-12-31 · Patrick Neil A.<span class="restricted-badge">Restricted</span></div>
-                        </div>
-                        <div class="article-row-arrow">→</div>
-                    </a>
-                </div>
-            </div>
-            <div class="year-group">
-                <div class="year-label">2022</div>
-                <div class="article-list">
-                    <a href="locked.html?slug=from-benchmark-to-behest&title=From%20Benchmark%20to%20Behest%20%E2%80%94%20Reorienting%20Evaluation&date=2022-12-31&author=Patrick%20Neil%20A." class="article-row locked">
-                        <div>
-                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>From Benchmark to Behest — Reorienting Evaluation</div>
-                            <div class="article-row-meta">2022-12-31 · Patrick Neil A.<span class="restricted-badge">Restricted</span></div>
-                        </div>
-                        <div class="article-row-arrow">→</div>
-                    </a>
-                </div>
-            </div>
-            <div class="year-group">
-                <div class="year-label">2021</div>
-                <div class="article-list">
-                    <a href="locked.html?slug=measurement-problem-machine-intelligence&title=The%20Measurement%20Problem%20in%20Machine%20Intelligence&date=2021-12-31&author=Patrick%20Neil%20A." class="article-row locked">
-                        <div>
-                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>The Measurement Problem in Machine Intelligence</div>
-                            <div class="article-row-meta">2021-12-31 · Patrick Neil A.<span class="restricted-badge">Restricted</span></div>
-                        </div>
-                        <div class="article-row-arrow">→</div>
-                    </a>
-                </div>
-            </div>
-            <div class="year-group">
-                <div class="year-label">2020</div>
-                <div class="article-list">
-                    <a href="locked.html?slug=frameworks-as-instruments&title=Frameworks%20as%20Instruments%20%E2%80%94%20Method%20Notes&date=2020-12-31&author=Patrick%20Neil%20A." class="article-row locked">
-                        <div>
-                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Frameworks as Instruments — Method Notes</div>
-                            <div class="article-row-meta">2020-12-31 · Patrick Neil A.<span class="restricted-badge">Restricted</span></div>
-                        </div>
-                        <div class="article-row-arrow">→</div>
-                    </a>
-                </div>
-            </div>
-            <div class="year-group">
-                <div class="year-label">2019</div>
-                <div class="article-list">
-                    <a href="locked.html?slug=impossibility-of-full-automation&title=On%20the%20Impossibility%20of%20Full%20Automation&date=2019-12-31&author=Patrick%20Neil%20A." class="article-row locked">
-                        <div>
-                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>On the Impossibility of Full Automation</div>
-                            <div class="article-row-meta">2019-12-31 · Patrick Neil A.<span class="restricted-badge">Restricted</span></div>
-                        </div>
-                        <div class="article-row-arrow">→</div>
-                    </a>
-                </div>
-            </div>
-            <div class="year-group">
-                <div class="year-label">2018</div>
-                <div class="article-list">
-                    <a href="locked.html?slug=taxonomy-of-capability&title=The%20Taxonomy%20of%20Capability%20%E2%80%94%20Mapping%20What%20Cannot%20Be%20Automated&date=2018-12-31&author=Patrick%20Neil%20A." class="article-row locked">
-                        <div>
-                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>The Taxonomy of Capability — Mapping What Cannot Be Automated</div>
-                            <div class="article-row-meta">2018-12-31 · Patrick Neil A.<span class="restricted-badge">Restricted</span></div>
-                        </div>
-                        <div class="article-row-arrow">→</div>
-                    </a>
-                </div>
-            </div>
-            <div class="year-group">
-                <div class="year-label">2017</div>
-                <div class="article-list">
-                    <a href="locked.html?slug=instruments-of-judgment&title=Instruments%20of%20Judgment%20%E2%80%94%20Toward%20a%20Philosophy%20of%20Measurement&date=2017-12-31&author=Patrick%20Neil%20A." class="article-row locked">
-                        <div>
-                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Instruments of Judgment — Toward a Philosophy of Measurement</div>
-                            <div class="article-row-meta">2017-12-31 · Patrick Neil A.<span class="restricted-badge">Restricted</span></div>
-                        </div>
-                        <div class="article-row-arrow">→</div>
-                    </a>
-                </div>
-            </div>
-            <div class="year-group">
-                <div class="year-label">2016</div>
-                <div class="article-list">
-                    <a href="locked.html?slug=the-founding-charter&title=The%20Founding%20%E2%80%94%20A%20Charter%20for%20Measuring%20Human%20Judgment&date=2016-12-22&author=Patrick%20Neil%20A." class="article-row locked">
-                        <div>
-                            <div class="article-row-title"><svg viewBox="0 0 24 24" class="lock-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>The Founding — A Charter for Measuring Human Judgment</div>
-                            <div class="article-row-meta">2016-12-22 · Patrick Neil A.<span class="restricted-badge">Restricted</span></div>
-                        </div>
-                        <div class="article-row-arrow">→</div>
-                    </a>
-                </div>
-            </div>
+            <p class="closing-meta">Restricted documents require an authorized Panteon session.</p>
+            <a href="../panteon-research-institute/index.html" class="get-started-btn" style="background-color:var(--text-dark);color:var(--text-light);border-color:var(--text-dark);padding:14px 40px;font-size:.85rem;text-decoration:none">Back to Articles</a>
         </section>
-
     </main>
 
     <footer>
@@ -495,6 +381,8 @@
             </div>
         </div>
     </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
 
@@ -603,6 +491,131 @@
         });
     });
 
+    </script>
+
+    <script>
+    (function() {
+        var SUPABASE_URL = 'https://frwjaixxlgthkgjtafhz.supabase.co';
+        var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyd2phaXh4bGd0aGtnanRhZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDUzNDQsImV4cCI6MjA5NDYyMTM0NH0.j2DKz__QMml4WplMYNmsQpTUw0qu-kZG7Md3qBEEdEc';
+        var supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        var params = new URLSearchParams(window.location.search);
+        var slug = params.get('slug') || '';
+        var title = params.get('title') || 'Restricted Document';
+        var date = params.get('date') || '';
+        var author = params.get('author') || 'Panteon Research Institute';
+
+        var heroTitle = document.getElementById('heroTitle');
+        var heroMeta = document.getElementById('heroMeta');
+        var statusLine = document.getElementById('statusLine');
+        var gatePanel = document.getElementById('gatePanel');
+        var docContainer = document.getElementById('docContainer');
+        var docMeta = document.getElementById('docMeta');
+        var docBody = document.getElementById('docBody');
+        var signInBtn = document.getElementById('signInBtn');
+
+        heroTitle.textContent = title;
+        heroMeta.textContent = author + (date ? ' · ' + date : '');
+
+        function setStatus(text, cls) {
+            statusLine.textContent = text;
+            statusLine.className = 'gate-status' + (cls ? ' ' + cls : '');
+        }
+
+        function showGate() {
+            setStatus('Restricted — sign in required', 'locked');
+            gatePanel.style.display = 'block';
+            docContainer.style.display = 'none';
+            var returnPath = window.location.pathname + window.location.search;
+            signInBtn.href = '/login.html?redirect=' + encodeURIComponent(returnPath);
+        }
+
+        function showDoc(metaText) {
+            setStatus('Authenticated — document unlocked', 'ok');
+            gatePanel.style.display = 'none';
+            docContainer.style.display = 'block';
+            if (metaText && docMeta) docMeta.textContent = metaText;
+            else if (docMeta && date) docMeta.textContent = date + ' · ' + author;
+        }
+
+        function revealTargets(root) {
+            var els = (root || document).querySelectorAll(
+                '.article-body h2, .article-body h3, .article-body p, .pull-quote'
+            );
+            var io = new IntersectionObserver(function(entries) {
+                entries.forEach(function(en) {
+                    if (en.isIntersecting) {
+                        en.target.classList.add('in-view');
+                        io.unobserve(en.target);
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+            els.forEach(function(el) { io.observe(el); });
+        }
+
+        function showPlaceholder() {
+            showDoc();
+            docBody.innerHTML =
+                '<div class="doc-placeholder">' +
+                '<p>This archive document is unlocked. The full text is being prepared and will appear here once the research archive service is online.</p>' +
+                '</div>';
+            revealTargets(docBody);
+        }
+
+        function loadDocument(token) {
+            if (!slug) { showDoc(); return; }
+            setStatus('Authenticated — loading document&hellip;', 'ok');
+            fetch('/api/v1/research/' + encodeURIComponent(slug), {
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(function(resp) {
+                return resp.json().then(function(data) { return { ok: resp.ok, data: data }; });
+            })
+            .then(function(result) {
+                if (result.ok && result.data && result.data.html) {
+                    docBody.innerHTML = result.data.html;
+                    showDoc();
+                    revealTargets(docBody);
+                } else {
+                    showPlaceholder();
+                }
+            })
+            .catch(function() {
+                showPlaceholder();
+            });
+        }
+
+        function restoreSession() {
+            return supabaseClient.auth.getSession()
+                .then(function(rest) {
+                    if (rest.data && rest.data.session) return rest.data.session;
+                    var raw = localStorage.getItem('hs_session');
+                    if (!raw) return null;
+                    var stored = JSON.parse(raw);
+                    if (!stored.access_token || !stored.refresh_token) return null;
+                    return supabaseClient.auth.setSession({
+                        access_token: stored.access_token,
+                        refresh_token: stored.refresh_token
+                    }).then(function(res) {
+                        if (res.error || !res.data.session) return null;
+                        return res.data.session;
+                    });
+                })
+                .catch(function() { return null; });
+        }
+
+        restoreSession().then(function(session) {
+            if (session) loadDocument(session.access_token);
+            else showGate();
+        });
+
+        supabaseClient.auth.onAuthStateChange(function(event, session) {
+            if (session) loadDocument(session.access_token);
+        });
+    })();
     </script>
 </body>
 </html>

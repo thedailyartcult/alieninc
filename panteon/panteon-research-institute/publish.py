@@ -64,11 +64,12 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SOURCE_DIR = os.path.join(BASE_DIR, "source")
 ARTICLES_DIR = os.path.join(BASE_DIR, "articles")
 INDEX_PATH = os.path.join(BASE_DIR, "index.html")
-LOCKED_MANIFEST_PATH = os.path.join(BASE_DIR, "LOCKED_ARCHIVE.json")
 LOCKED_PAGE_PATH = os.path.join(BASE_DIR, "locked.html")
+ARCHIVE_LOCK_DATE = "2016-12-22"
 # Private store OUTSIDE the public web root (server.py blocks /data/). The
 # FastAPI backend serves these to authenticated users via /api/v1/research/{slug}.
 PRIVATE_DIR = os.path.join(BASE_DIR, "..", "..", "data", "research-locked")
+LOCKED_MANIFEST_PATH = os.path.join(PRIVATE_DIR, "manifest.json")
 
 SUPABASE_URL = "https://frwjaixxlgthkgjtafhz.supabase.co"
 SUPABASE_ANON_KEY = ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyd2phaXh4bGd0aGtnanRhZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDUzNDQsImV4cCI6MjA5NDYyMTM0NH0.j2DKz__QMml4WplMYNmsQpTUw0qu-kZG7Md3qBEEdEc")
@@ -199,7 +200,7 @@ HEADER_HTML = """
                 </div>
                 <div class="right-wrapper">
                     <a href="{{ROOT}}login.html" class="get-started-btn">Get Started <span>↖</span></a>
-                    <button class="header-icon-box" aria-label="Search button">
+                    <button class="header-icon-box" data-research-search aria-label="Search the research archive">
                         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 16 16">
                             <circle cx="9.5" cy="6.5" r="5.5" stroke-width="1.5"></circle>
                             <path d="M5.5 10.5l-4.5 4.5" stroke-width="1.5"></path>
@@ -519,6 +520,22 @@ ARTICLE_TEMPLATE = """<!DOCTYPE html>
             <a href="{{ROOT}}panteon-research-institute/index.html" class="get-started-btn" style="background-color:var(--text-dark);color:var(--text-light);border-color:var(--text-dark);padding:14px 40px;font-size:.85rem;text-decoration:none">Back to Articles</a>
         </section>
     </main>
+
+    <dialog class="archive-search" id="archive-search" aria-labelledby="archive-search-heading">
+        <div class="search-dialog-inner">
+            <div class="search-dialog-top">
+                <h2 id="archive-search-heading">Looking for something specific?</h2>
+                <button type="button" id="close-archive-search" aria-label="Close search">×</button>
+            </div>
+            <p>Search is available to authorized personnel through the restricted PRI archive.</p>
+            <label for="archive-query">Research archive query</label>
+            <input id="archive-query" type="search" placeholder="Enter a title, subject, or author" autocomplete="off">
+            <div class="search-dialog-actions">
+                <span class="restricted-badge">Restricted access</span>
+                <a href="../login.html">Sign in to search <span>→</span></a>
+            </div>
+        </div>
+    </dialog>
 
     <footer>
         <div class="footer-container">
@@ -847,7 +864,7 @@ LOCKED_TEMPLATE = """<!DOCTYPE html>
             showDoc();
             docBody.innerHTML =
                 '<div class="doc-placeholder">' +
-                '<p>This archive document is unlocked. The full text is being prepared and will appear here once the research archive service is online.</p>' +
+                '<p>The requested document could not be loaded from the restricted archive. Please return to the archive and search again, or contact the research administrator.</p>' +
                 '</div>';
             revealTargets(docBody);
         }
@@ -932,28 +949,39 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         .cap-hero p{font-size:1.15rem;line-height:1.6;color:rgba(255,255,255,.65);max-width:600px;margin:0 auto;opacity:0;animation:fadeUp .8s ease-out 1s forwards}
         @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
-        .articles-grid{max-width:1400px;margin:0 auto;padding:100px 40px}
-        .articles-grid h2{font-size:2.4rem;font-weight:300;letter-spacing:-.02em;margin-bottom:48px}
-        .article-list{display:grid;gap:0}
-        .article-row{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;padding:40px 20px;border-top:1px solid var(--border-dark);cursor:pointer;transition:background-color .3s ease}
-        .article-row:last-child{border-bottom:1px solid var(--border-dark)}
-        .article-row:hover{background-color:var(--bg-gray)}
-        .article-row:hover .article-row-title{color:var(--text-dark)}
-        .article-row:hover .article-row-arrow{transform:translateX(4px);opacity:1}
-        .article-row-title{font-size:1.2rem;font-weight:400;letter-spacing:-.01em;margin-bottom:8px;transition:color .3s ease}
-        .article-row-meta{font-size:.85rem;color:var(--text-muted)}
-        .article-row-arrow{font-size:1.2rem;opacity:.3;transition:transform .3s ease,opacity .3s ease}
-
-        .article-row.locked{cursor:pointer}
-        .article-row.locked:hover{background-color:var(--bg-gray)}
-        .article-row.locked .article-row-title{color:var(--text-muted);display:flex;align-items:center;gap:10px}
-        .article-row.locked:hover .article-row-title{color:var(--text-dark)}
-        .article-row.locked .lock-icon{width:14px;height:14px;flex:0 0 auto;opacity:.6}
-        .restricted-badge{display:inline-block;margin-left:10px;font-family:var(--font-mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:#9ab4c1;border:1px solid #9ab4c1;padding:2px 8px;border-radius:2px;vertical-align:2px}
-
-        .year-group{margin-bottom:56px}
-        .year-label{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted);padding-bottom:14px;border-bottom:1px solid var(--border-dark);margin-bottom:0}
-        .year-group .article-row{padding-top:28px}
+        .archive-index{max-width:1400px;margin:0 auto;padding:100px 40px}
+        .archive-section{padding:64px 0;border-top:1px solid var(--border-dark)}
+        .archive-section:first-child{border-top:0;padding-top:0}
+        .archive-section h2{font-size:2.4rem;font-weight:300;letter-spacing:-.02em;margin-bottom:16px}
+        .archive-section-intro{max-width:620px;font-size:1rem;line-height:1.65;color:var(--text-muted);margin-bottom:32px}
+        .archive-action{display:inline-flex;align-items:center;gap:10px;background:var(--text-dark);border:1px solid var(--text-dark);border-radius:2px;color:var(--text-light);cursor:pointer;font-family:var(--font-mono);font-size:.72rem;font-weight:600;letter-spacing:.08em;padding:13px 18px;text-transform:uppercase;transition:opacity .2s ease}
+        .archive-action:hover{opacity:.78}
+        .topic-gate{display:flex;align-items:flex-start;justify-content:space-between;gap:32px;padding:32px;border:1px solid var(--border-dark);background:var(--bg-gray)}
+        .topic-gate .tag{display:block;font-family:var(--font-mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px}
+        .topic-gate h3{font-size:1.25rem;font-weight:400;letter-spacing:-.01em;margin-bottom:8px}
+        .topic-gate p{max-width:600px;font-size:.95rem;line-height:1.6;color:var(--text-muted)}
+        .year-picker{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:30px}
+        .year-picker button{min-width:66px;padding:11px 12px;background:transparent;border:1px solid var(--border-dark);border-radius:2px;color:var(--text-dark);cursor:pointer;font-family:var(--font-mono);font-size:.72rem;letter-spacing:.06em;transition:background-color .2s ease,color .2s ease}
+        .year-picker button:hover,.year-picker button[aria-pressed="true"]{background:var(--text-dark);border-color:var(--text-dark);color:var(--text-light)}
+        .month-access{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));border-top:1px solid var(--border-dark);border-left:1px solid var(--border-dark)}
+        .month-access button{min-height:88px;padding:14px 10px;background:var(--bg-light);border:0;border-right:1px solid var(--border-dark);border-bottom:1px solid var(--border-dark);color:var(--text-muted);font-family:var(--font-mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase}
+        .month-access button[disabled]{cursor:not-allowed;opacity:.45}
+        .month-access .available-month{color:var(--text-dark);cursor:pointer;position:relative;transition:background-color .2s ease}
+        .month-access .available-month:hover{background:var(--bg-gray)}
+        .month-access .available-month::after{content:'Restricted';display:block;margin-top:8px;font-size:.56rem;color:var(--text-muted)}
+        .archive-status{margin-top:18px;font-size:.85rem;color:var(--text-muted)}
+        dialog.archive-search{width:min(560px,calc(100% - 48px));margin:auto;padding:0;border:1px solid var(--border-dark);border-radius:2px;background:var(--bg-light);color:var(--text-dark)}
+        dialog.archive-search::backdrop{background:rgba(7,8,9,.72)}
+        .search-dialog-inner{padding:36px}
+        .search-dialog-top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:24px}
+        .search-dialog-top h2{font-size:1.8rem;font-weight:300;letter-spacing:-.02em}
+        .search-dialog-top button{background:transparent;border:0;color:var(--text-dark);cursor:pointer;font-size:1.4rem;line-height:1}
+        .search-dialog-inner p{font-size:.95rem;line-height:1.6;color:var(--text-muted);margin-bottom:20px}
+        .search-dialog-inner label{display:block;font-family:var(--font-mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+        .search-dialog-inner input{width:100%;padding:14px;border:1px solid var(--border-dark);border-radius:2px;font:inherit;color:var(--text-dark);margin-bottom:18px}
+        .search-dialog-actions{display:flex;align-items:center;justify-content:space-between;gap:16px}
+        .restricted-badge{display:inline-block;font-family:var(--font-mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);border:1px solid var(--border-dark);padding:4px 8px;border-radius:2px}
+        .search-dialog-actions a{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dark);text-decoration:none;border-bottom:1px solid var(--text-muted);padding-bottom:2px}
 
         .mission-card{max-width:1400px;margin:0 auto;padding:0 40px 100px}
         .mission-card-inner{border:1px solid var(--border-dark);border-radius:2px;padding:48px;background:var(--bg-light)}
@@ -961,7 +989,8 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         .mission-card-inner p{font-size:.95rem;line-height:1.55;color:var(--text-muted);margin-bottom:16px}
         .mission-card-inner a{display:inline-flex;align-items:center;gap:8px;font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-dark);border-bottom:1px solid var(--text-muted);padding-bottom:2px;text-decoration:none;margin-top:8px}
 
-        @media(max-width:768px){.cap-hero{padding:140px 24px 80px}.articles-grid{padding:60px 24px}.article-row{grid-template-columns:1fr;padding:30px 0}}
+        @media(max-width:1024px){.month-access{grid-template-columns:repeat(6,minmax(0,1fr))}}
+        @media(max-width:768px){.cap-hero{padding:140px 24px 80px}.archive-index{padding:60px 24px}.archive-section{padding:48px 0}.topic-gate{display:block;padding:24px}.topic-gate .archive-action{margin-top:24px}.month-access{grid-template-columns:repeat(3,minmax(0,1fr))}}
     </style>
 </head>
 <body>
@@ -994,10 +1023,44 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             </div>
         </div>
 
-        <section class="articles-grid">
-            <h2>Research Archive</h2>
-{{year_sections}}
-        </section>
+        <div class="archive-index">
+            <section class="archive-section" aria-labelledby="topic-heading">
+                <h2 id="topic-heading">Articles by Topic</h2>
+                <p class="archive-section-intro">The PRI subject index is maintained inside the restricted archive. Sign in to search across the institute’s complete research record.</p>
+                <div class="topic-gate">
+                    <div>
+                        <span class="tag">Restricted archive</span>
+                        <h3>Research is available to authorized personnel.</h3>
+                        <p>Topic classifications and document records are not published on this site.</p>
+                    </div>
+                    <button class="archive-action" type="button" data-open-search>Search the archive <span>→</span></button>
+                </div>
+            </section>
+
+            <section class="archive-section" aria-labelledby="date-heading">
+                <h2 id="date-heading">Articles by Date</h2>
+                <p class="archive-section-intro">Select a year. August is the only month available for archive navigation; document access remains restricted from the institute’s founding on December 22, 2016.</p>
+                <div class="year-picker" aria-label="Select an archive year">
+                    <button type="button" aria-pressed="true" data-year="2026">2026</button>
+                    <button type="button" aria-pressed="false" data-year="2025">2025</button>
+                    <button type="button" aria-pressed="false" data-year="2024">2024</button>
+                    <button type="button" aria-pressed="false" data-year="2023">2023</button>
+                    <button type="button" aria-pressed="false" data-year="2022">2022</button>
+                    <button type="button" aria-pressed="false" data-year="2021">2021</button>
+                    <button type="button" aria-pressed="false" data-year="2020">2020</button>
+                    <button type="button" aria-pressed="false" data-year="2019">2019</button>
+                    <button type="button" aria-pressed="false" data-year="2018">2018</button>
+                    <button type="button" aria-pressed="false" data-year="2017">2017</button>
+                    <button type="button" aria-pressed="false" data-year="2016">2016</button>
+                </div>
+                <div class="month-access" aria-label="Archive months">
+                    <button type="button" disabled>Jan</button><button type="button" disabled>Feb</button><button type="button" disabled>Mar</button><button type="button" disabled>Apr</button><button type="button" disabled>May</button><button type="button" disabled>Jun</button><button type="button" disabled>Jul</button>
+                    <button type="button" class="available-month" data-open-search>Aug</button>
+                    <button type="button" disabled>Sep</button><button type="button" disabled>Oct</button><button type="button" disabled>Nov</button><button type="button" disabled>Dec</button>
+                </div>
+                <p class="archive-status" id="archive-status">Selected: 2026 · August archive navigation requires authorization.</p>
+            </section>
+        </div>
 
     </main>
 
@@ -1068,6 +1131,22 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
     <script>
 {{NAV_JS}}
+        (function () {
+            var dialog = document.getElementById('archive-search');
+            var status = document.getElementById('archive-status');
+            var yearButtons = document.querySelectorAll('[data-year]');
+            document.querySelectorAll('[data-open-search], [data-research-search]').forEach(function (button) {
+                button.addEventListener('click', function () { dialog.showModal(); });
+            });
+            document.getElementById('close-archive-search').addEventListener('click', function () { dialog.close(); });
+            yearButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    yearButtons.forEach(function (item) { item.setAttribute('aria-pressed', 'false'); });
+                    button.setAttribute('aria-pressed', 'true');
+                    status.textContent = 'Selected: ' + button.getAttribute('data-year') + ' · August archive navigation requires authorization.';
+                });
+            });
+        })();
     </script>
 </body>
 </html>"""
@@ -1235,7 +1314,9 @@ def build_article(source_path):
     date = fm.get("date", datetime.now().strftime("%Y-%m-%d"))
     author = fm.get("author", "Patrick Neil A.")
     slug = fm.get("slug") or slugify(title)
-    locked = bool(fm.get("locked", False))
+    # The PRI archive begins on its founding day. Every document dated from
+    # that day onward is served only through the authenticated archive.
+    locked = bool(fm.get("locked", False)) or date >= ARCHIVE_LOCK_DATE
 
     excerpt = get_excerpt(body)
     article_html = md_to_html(body, bare_mode=bare_mode)
@@ -1258,6 +1339,12 @@ def build_article(source_path):
         os.makedirs(ARTICLES_DIR, exist_ok=True)
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(html_out)
+    else:
+        # Do not leave a previously generated public copy reachable after a
+        # document enters the restricted archive.
+        public_copy = os.path.join(ARTICLES_DIR, f"{slug}.html")
+        if os.path.exists(public_copy):
+            os.remove(public_copy)
 
     return {"slug": slug, "title": title, "date": date, "author": author,
             "excerpt": excerpt, "locked": locked, "html": article_html}
@@ -1291,33 +1378,12 @@ def _locked_row(a):
 
 
 def build_index(articles, locked_articles=None):
-    locked_articles = locked_articles or []
-    by_year = {}
-    for a in articles + locked_articles:
-        year = a["date"][:4] if a["date"] and len(a["date"]) >= 4 else "Unknown"
-        by_year.setdefault(year, []).append(a)
-
-    sections = []
-    for year in sorted(by_year.keys(), reverse=True):
-        rows = []
-        for a in sorted(by_year[year], key=lambda x: x["date"], reverse=True):
-            rows.append(_locked_row(a) if a.get("locked") else _public_row(a))
-        sections.append(
-            f'            <div class="year-group">\n'
-            f'                <div class="year-label">{esc(year)}</div>\n'
-            f'                <div class="article-list">\n'
-            + "\n".join(rows)
-            + f"\n                </div>\n"
-            f"            </div>"
-        )
-
     root = "../"
     html = INDEX_TEMPLATE
     html = html.replace("{{NAV_CSS}}", NAV_CSS)
     html = html.replace("{{HEADER_HTML}}", HEADER_HTML)
     html = html.replace("{{NAV_JS}}", NAV_JS)
     html = html.replace("{{ROOT}}", root)
-    html = html.replace("{{year_sections}}", "\n".join(sections))
     with open(INDEX_PATH, "w", encoding="utf-8") as f:
         f.write(html)
 
@@ -1330,6 +1396,7 @@ def write_locked_manifest(locked_articles):
             "slug": a["slug"], "title": a["title"],
             "date": a["date"], "author": a["author"],
         })
+    os.makedirs(PRIVATE_DIR, exist_ok=True)
     with open(LOCKED_MANIFEST_PATH, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2, ensure_ascii=False)
 
@@ -1410,7 +1477,7 @@ def main():
     write_locked_content(locked_articles)
     build_locked_guard()
     print(f"\nIndex updated: {len(articles)} public article(s) listed, "
-          f"{len(locked_articles)} locked archive doc(s). Manifest written to LOCKED_ARCHIVE.json.")
+          f"{len(locked_articles)} locked archive doc(s). Manifest written to the private archive store.")
 
 
 if __name__ == "__main__":

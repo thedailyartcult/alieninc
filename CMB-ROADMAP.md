@@ -318,60 +318,31 @@ CMB is a **Model Context Protocol (MCP) server** that provides persistent memory
 
 ---
 
-### Phase 5: Analytics & Optimization (16-20 weeks)
+### Phase 5: Analytics, Optimization & MCP Maturity (16-20 weeks) — ✅ COMPLETE 2026-08-01
 
-**Objective**: Build analytics dashboards to track CMB effectiveness and optimize token savings.
+**Full plan**: `/home/alieninc/CMB-PHASE5-PLAN.md`
+**PostgreSQL migration**: `/home/alieninc/CMB-POSTGRES-MIGRATION.md`
 
-#### Tasks
+#### Results
 
-1. **Token savings dashboard**
-   - Location: admin.html → CMB → "Analytics" page
-   - Metrics:
-     - Total tokens saved (cumulative)
-     - Tokens saved per session (bar chart)
-     - Tokens saved per memory (which memories save the most?)
-     - Savings ratio (tokens saved / tokens used)
-   - Data source: `cmb_context_savings` receipts
-   - Visualization: D3.js charts (match existing admin.html style)
+0. ✅ **Code graph**: cmb engine repo indexed (92 files, 3,549 symbols, 3,676 edges)
+1. ✅ **Injection measurement**: `CMB_INJECTION=0` toggle + enhanced stats (hit_rate, file_reads, file_hits)
+2. ✅ **Analytics dashboard**: 5 tabs in admin.html (savings, portfolio, consolidation, sessions, quality)
+3. ✅ **MCP Resources + Prompts**: 7 resource templates + 4 prompt templates
+4. ✅ **Notifications**: File-based at `/srv/cmb/data/notifications.jsonl` (consolidation, handoff, index)
+5. ✅ **TTL**: `ttl_days` param on remember, `cmb_sweep_ttl` tool, bi-temporal expiry verified
+6. ✅ **Dedup**: `cmb_dedup_report` tool, fuzzy clustering via Jaccard + embedding similarity
+7. ✅ **Sharing**: `cmb_share`/`cmb_unshare`/`cmb_list_shared` with secret detection
+8. ✅ **SQLite audit**: 10/10 concurrent ops clean + PostgreSQL migration doc
 
-2. **Memory usage heatmap**
-   - Location: admin.html → CMB → "Heatmap" page
-   - Features:
-     - Grid of all memories (x-axis: time, y-axis: memory title)
-     - Color intensity: access frequency (darker = more accessed)
-     - Click memory → show access history, token savings, related memories
-   - Use case: Identify "hot" memories (pin them) vs "cold" memories (archive them)
+#### Token Savings (Honest Numbers)
 
-3. **Consolidation efficiency report**
-   - Location: admin.html → CMB → "Consolidation" page
-   - Metrics:
-     - Memories consolidated (count)
-     - Tokens saved by consolidation (before vs after)
-     - Consolidation ratio (memories merged / memories created)
-   - Use case: Prove consolidation is working (or tune parameters)
-
-4. **Session handoff effectiveness**
-   - Location: admin.html → CMB → "Sessions" page
-   - Metrics:
-     - Sessions with handoff (count)
-     - Tokens saved by handoff (vs resuming full transcript)
-     - Open threads resolved (count)
-   - Use case: Prove session handoff is better than `opencode -c`
-
-5. **Automated optimization suggestions**
-   - Implementation: Background job analyzes memory usage patterns
-   - Suggestions:
-     - "Memory X is accessed 50x but only saves 10 tokens — consider deleting"
-     - "Memory Y is never accessed — archive it?"
-     - "Memories A, B, C are similar — consolidate them?"
-   - Delivery: Toast notifications in admin.html, or email digest
-
-#### Success Criteria
-- ✅ Token savings dashboard live with 5+ metrics
-- ✅ Heatmap identifies top 10% of memories
-- ✅ Consolidation efficiency > 50% (half the memories, same coverage)
-- ✅ Session handoff saves 30%+ tokens vs full resume
-- ✅ Automated suggestions implemented (at least 3 suggestion types)
+| Metric | Value | Notes |
+|---|---|---|
+| **Recall savings** | **52.4%** (14,365 / 27,433 tokens) | 17 receipts, valid chain, 70 packed sources |
+| **Injection savings** | **63,747 estimated tokens** | 13 sessions, 254,985 chars injected |
+| **Consolidation** | **56.8% reduction** per cluster | 3 memories → 1 digest (562→243 tokens) |
+| **Profile consolidation** | **54-72% reduction** | 21 entity profiles identified |
 
 ---
 

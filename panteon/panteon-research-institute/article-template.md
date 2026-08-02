@@ -5,6 +5,8 @@ topic: AI Capability
 date: 2026-08-02
 author: Patrick Neil A.
 slug: your-article-title-here
+# Optional: set to true to require an authenticated PRI session to open it.
+# locked: true
 ---
 
 # The Main Section Heading

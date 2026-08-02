@@ -44,6 +44,6 @@ The publisher recursively reads every `source/**/*.md` file. It rebuilds the lan
 
 ## Access model
 
-PRI records dated on or after 2016-12-22 are restricted automatically. The landing page may show their title, date, author, and topic for navigation; the article body is written only to the private archive store and opens through authenticated access.
+Articles are public by default, including August articles. To restrict a particular document, add `locked: true` to its front matter. The landing page may show a locked document’s title, date, author, and topic for navigation; its article body is written only to the private archive store and opens through authenticated access.
 
 The date archive intentionally exposes August as its monthly browsing surface. The topic index always includes all published metadata.

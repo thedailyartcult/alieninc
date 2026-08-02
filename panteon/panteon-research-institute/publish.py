@@ -66,7 +66,6 @@ SOURCE_DIR = os.path.join(BASE_DIR, "source")
 ARTICLES_DIR = os.path.join(BASE_DIR, "articles")
 INDEX_PATH = os.path.join(BASE_DIR, "index.html")
 LOCKED_PAGE_PATH = os.path.join(BASE_DIR, "locked.html")
-ARCHIVE_LOCK_DATE = "2016-12-22"
 # Private store OUTSIDE the public web root (server.py blocks /data/). The
 # FastAPI backend serves these to authenticated users via /api/v1/research/{slug}.
 PRIVATE_DIR = os.path.join(BASE_DIR, "..", "..", "data", "research-locked")
@@ -88,6 +87,11 @@ OL_ITEM_RE = re.compile(r"^\d+\.\s+(.*)$")
 
 def esc(value):
     return html.escape(str(value), quote=False)
+
+
+def parse_bool(value):
+    """Accept explicit front-matter booleans without treating 'false' as true."""
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
 
 
 # ---------------------------------------------------------------------------
@@ -1039,7 +1043,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 
             <section class="archive-section" aria-labelledby="date-heading">
                 <h2 id="date-heading">Articles by Date</h2>
-                <p class="archive-section-intro">Select a year, then browse the August publication record. Document access remains restricted from the institute’s founding on December 22, 2016.</p>
+                <p class="archive-section-intro">Select a year, then browse the August publication record. Individual documents marked restricted require authorization.</p>
                 <div class="year-picker" aria-label="Select an archive year">
 {{year_buttons}}
                 </div>
@@ -1167,7 +1171,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                 button.addEventListener('click', function () {
                     yearButtons.forEach(function (item) { item.setAttribute('aria-pressed', 'false'); });
                     button.setAttribute('aria-pressed', 'true');
-                    status.textContent = 'Selected: ' + button.getAttribute('data-year') + ' · August archive navigation requires authorization.';
+                    status.textContent = 'Selected: ' + button.getAttribute('data-year') + ' · August publication record.';
                     showAugust(button.getAttribute('data-year'));
                 });
             });
@@ -1352,9 +1356,10 @@ def build_article(source_path):
     author = fm.get("author", "Patrick Neil A.")
     slug = fm.get("slug") or slugify(title)
     topic = fm.get("topic", tag)
-    # The PRI archive begins on its founding day. Every document dated from
-    # that day onward is served only through the authenticated archive.
-    locked = bool(fm.get("locked", False)) or date >= ARCHIVE_LOCK_DATE
+    # Access is an editorial choice made per document. Public is the default;
+    # set `locked: true` in front matter to send the body to the authenticated
+    # PRI archive instead of generating a public article page.
+    locked = parse_bool(fm.get("locked", False))
 
     excerpt = get_excerpt(body)
     article_html = md_to_html(body, bare_mode=bare_mode)
@@ -1377,6 +1382,9 @@ def build_article(source_path):
         os.makedirs(ARTICLES_DIR, exist_ok=True)
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(html_out)
+        private_copy = os.path.join(PRIVATE_DIR, f"{slug}.json")
+        if os.path.exists(private_copy):
+            os.remove(private_copy)
     else:
         # Do not leave a previously generated public copy reachable after a
         # document enters the restricted archive.
@@ -1390,10 +1398,10 @@ def build_article(source_path):
 
 def _public_row(a):
     return (
-        f'                    <a href="articles/{esc(a["slug"])}.html" class="article-row">\n'
+        f'                    <a href="articles/{esc(a["slug"])}.html" class="article-row" data-year="{esc(a["date"][:4])}" data-month="{esc(a["date"][5:7])}" data-search="{esc((a["title"] + " " + a.get("topic", "") + " " + a["author"]).lower())}">\n'
         f'                        <div>\n'
         f'                            <div class="article-row-title">{esc(a["title"])}</div>\n'
-        f'                            <div class="article-row-meta">{esc(a["date"])} · {esc(a["author"])}</div>\n'
+        f'                            <div class="article-row-meta">{esc(a["date"])} · {esc(a["author"])} · {esc(a.get("topic", "Panteon Research Institute"))}</div>\n'
         f"                        </div>\n"
         f'                        <div class="article-row-arrow">→</div>\n'
         f"                    </a>"
@@ -1461,7 +1469,7 @@ def build_index(articles, locked_articles=None):
     html = html.replace("{{topic_sections}}", "\n".join(topic_sections) or '            <p class="empty-results">No research metadata is available yet.</p>')
     html = html.replace("{{year_buttons}}", year_buttons)
     html = html.replace("{{august_rows}}", august_rows)
-    html = html.replace("{{archive_status}}", f"Selected: {selected_year} · August archive navigation requires authorization.")
+    html = html.replace("{{archive_status}}", f"Selected: {selected_year} · August publication record.")
     with open(INDEX_PATH, "w", encoding="utf-8") as f:
         f.write(html)
 

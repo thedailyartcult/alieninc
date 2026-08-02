@@ -91,3 +91,14 @@ Use `../platform-template.html` as the starting point for any new product, capab
 ## CMB Dashboard Exception
 
 The `cmb/cmb.html` file is the internal application dashboard (not a marketing page). It has its own design system with 4 themes (slate, midnight, paper, matrix), sidebar navigation, and complex data visualization. This is intentional and should NOT be changed to match the marketing page template. The `cmb-product.html` page in the platforms folder IS the marketing/product description page and DOES follow the template.
+
+## Research Institute
+
+The `research/` folder has been renamed to `panteon-research-institute/`. It contains:
+- `index.html` — auto-generated article landing page
+- `mission-and-vision.html` — founding charter
+- `publish.py` — zero-dependency article publisher
+- `source/` — drop `.md` files here to publish
+- `articles/` — generated HTML (do not hand-edit)
+
+All links to the research institute now point to `panteon-research-institute/index.html`.

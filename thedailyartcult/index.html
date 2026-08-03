@@ -174,22 +174,79 @@
   100% { transform: rotate(-360deg); } /* Rotates opposite to the rays for visual balance */
 }
 
+@keyframes endorsement-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
 
-  
-  /* Automatically Sliding Logos Carousel Animation */
-    @keyframes logo-scroll {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
-    .animate-logo-scroll {
-      animation: logo-scroll 35s linear infinite;
-    }
-    .logo-carousel-fade-left {
-      background: linear-gradient(90deg, #1a120b 0%, rgba(26, 18, 11, 0) 100%);
-    }
-    .logo-carousel-fade-right {
-      background: linear-gradient(270deg, #1a120b 0%, rgba(26, 18, 11, 0) 100%);
-    }
+@keyframes endorsement-quote-reveal {
+  from {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes endorsement-rule-draw {
+  to { height: calc(100% - 56px); }
+}
+
+.endorsement-note {
+  position: relative;
+  overflow: hidden;
+}
+
+.endorsement-note::before {
+  position: absolute;
+  top: 28px;
+  bottom: 28px;
+  left: -1px;
+  width: 1px;
+  height: 0;
+  content: "";
+  background: var(--antique);
+  opacity: 0.55;
+  animation: endorsement-rule-draw 1.1s cubic-bezier(0.22, 1, 0.36, 1) 260ms forwards;
+}
+
+.endorsement-note .endorsement-kicker,
+.endorsement-note .endorsement-quote,
+.endorsement-note .endorsement-attribution,
+.endorsement-note .endorsement-link {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .endorsement-note .endorsement-kicker,
+  .endorsement-note .endorsement-quote,
+  .endorsement-note .endorsement-attribution,
+  .endorsement-note .endorsement-link {
+    opacity: 1;
+    animation: none;
+    filter: none;
+    transform: none;
+  }
+
+  .endorsement-note::before {
+    height: calc(100% - 56px);
+    animation: none;
+  }
+}
+
+
   @font-face {
         font-family: "Univers Regular";
         src: url("fonts/base.woff2") format("woff2");
@@ -1611,48 +1668,7 @@
       <div id="hero-suggestions" class="mt-5 flex flex-wrap gap-2.5 justify-center"></div>
       
       
-      <!-- SIBLING BRANDS & COOPERATIVE IMPRINTS SLIDESHOW -->
-      <div class="mt-16 w-full overflow-hidden relative">
-        <!-- Ambient Left & Right Edge Fades to match the library background -->
-        <div class="absolute left-0 top-0 bottom-0 w-20 logo-carousel-fade-left z-10 pointer-events-none"></div>
-        <div class="absolute right-0 top-0 bottom-0 w-20 logo-carousel-fade-right z-10 pointer-events-none"></div>
-        
-        <p class="text-[9px] font-mono tracking-[0.25em] text-[#c6a766]/50 text-center uppercase mb-8"></p>
-        
-        <div class="w-full overflow-hidden">
-          <!-- Double-tracked scroll layout to create seamless infinite sliding -->
-          <div class="flex items-center gap-16 w-max animate-logo-scroll hover:[animation-play-state:paused] cursor-default">
-            
-            <!-- Partner logos -->
-            <div class="flex items-center gap-16 shrink-0">
-              <!-- Better Books & Garments - Main Featured Brand -->
-              <span class="font-serif italic font-semibold text-sm tracking-wider text-cream/70 hover:text-antique transition duration-300">Better Books & Garments</span>
-              <span class="font-sans font-light text-[10px] tracking-[0.3em] uppercase text-linen/40 hover:text-antique transition duration-300">Really Fucking Simple</span>
-              <span class="font-serif font-light text-xs tracking-widest text-linen/40 hover:text-antique transition duration-300">Food and Wine</span>
-              <span class="font-sans italic font-medium text-[11px] tracking-wide text-linen/40 hover:text-antique transition duration-300">Atelier Obsidian</span>
-              <span class="font-sans font-semibold text-[10px] tracking-[0.2em] uppercase text-linen/40 hover:text-antique transition duration-300">The Vellum Review</span>
-              <span class="font-serif italic text-xs tracking-[0.15em] text-linen/40 hover:text-antique transition duration-300">Anima Mundi Press</span>
-              <span class="font-serif font-semibold text-[10px] tracking-wider text-linen/40 hover:text-antique transition duration-300">The Nocturnal School</span>
-              <span class="font-sans font-medium text-[9px] tracking-[0.25em] uppercase text-linen/40 hover:text-antique transition duration-300">Friction & Form</span>
-              <span class="font-serif text-[11px] tracking-widest text-linen/40 hover:text-antique transition duration-300">MARROW ARCHIVE</span>
-            </div>
-            
-            <!-- Duplicate Cloned Set for Infinite Loop Mechanics -->
-            <div class="flex items-center gap-16 shrink-0" aria-hidden="true">
-              <span class="font-serif italic font-semibold text-sm tracking-wider text-cream/70 hover:text-antique transition duration-300">Better Books & Garments</span>
-              <span class="font-sans font-light text-[10px] tracking-[0.3em] uppercase text-linen/40 hover:text-antique transition duration-300">SILENT SPINE</span>
-              <span class="font-serif font-light text-xs tracking-widest text-linen/40 hover:text-antique transition duration-300">SOMA & THREAD</span>
-              <span class="font-sans italic font-medium text-[11px] tracking-wide text-linen/40 hover:text-antique transition duration-300">Atelier Obsidian</span>
-              <span class="font-sans font-semibold text-[10px] tracking-[0.2em] uppercase text-linen/40 hover:text-antique transition duration-300">The Vellum Review</span>
-              <span class="font-serif italic text-xs tracking-[0.15em] text-linen/40 hover:text-antique transition duration-300">Anima Mundi Press</span>
-              <span class="font-serif font-semibold text-[10px] tracking-wider text-linen/40 hover:text-antique transition duration-300">The Nocturnal School</span>
-              <span class="font-sans font-medium text-[9px] tracking-[0.25em] uppercase text-linen/40 hover:text-antique transition duration-300">Friction & Form</span>
-              <span class="font-serif text-[11px] tracking-widest text-linen/40 hover:text-antique transition duration-300">MARROW ARCHIVE</span>
-            </div>
-            
-          </div>
-        </div>
-      </div>
+
     </section>
 
     <!-- Hidden audio playback engines -->
@@ -1704,50 +1720,166 @@
         </div>
       </div>
 
-      <!-- LAYER B: THE PRIVACY SANCTUARY (Hidden by Default) -->
-      <div id="privacy-layer" class="hidden opacity-0 transition-all duration-700 absolute inset-2 sm:inset-3 bg-[#0d0907] rounded-xl z-20 flex flex-col md:flex-row items-center overflow-hidden">
+      <!-- LAYER B: THE PRIVACY SANCTUARY (Centra Certified Security & Compliance) -->
+      <div id="privacy-layer" class="hidden opacity-0 transition-all duration-700 absolute inset-2 sm:inset-3 bg-[#0a0705] rounded-xl z-20 flex flex-col md:flex-row items-stretch overflow-y-auto max-h-full">
         
-        <!-- Interactive Vault Visualization -->
-        <div class="w-full md:w-1/2 h-64 md:h-full relative bg-black/40 flex items-center justify-center p-10 border-b md:border-b-0 md:border-r border-linen/10">
-          <div class="relative w-48 h-48">
-            <!-- Central Core (Your Data) -->
-            <div class="absolute inset-0 m-auto w-12 h-12 bg-antique rounded-sm flex items-center justify-center shadow-[0_0_30px_rgba(198,167,102,0.4)] z-30">
-               <svg class="w-6 h-6 text-ink" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
-            </div>
-            <!-- Orbiting Shield 1 (Qubes OS) -->
-            <div class="absolute inset-0 border-2 border-dashed border-antique/20 rounded-full animate-[spin_10s_linear_infinite]"></div>
-            <!-- Orbiting Shield 2 (Nessus) -->
-            <div class="absolute -inset-8 border border-emerald/30 rounded-full animate-[spin_15s_linear_infinite_reverse]"></div>
-            <!-- Pulsing Defense Rings -->
-            <div class="absolute inset-0 rounded-full bg-antique/5 animate-ping"></div>
-          </div>
-        </div>
-
-<!-- Security Guide Content -->
-        <div class="w-full md:w-1/2 p-8 md:p-12 overflow-y-auto max-h-full">
-          <div class="space-y-8">
-            <div class="group">
-              <h4 class="text-[10px] font-mono uppercase tracking-[0.2em] text-antique mb-2 flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-antique"></span> Qubes OS Architecture
-              </h4>
-              <p class="text-cream font-serif text-lg leading-relaxed">Security by Compartmentalization.</p>
-              <p class="text-linen/50 text-sm mt-2 leading-relaxed">Your personal .md files are processed in an <strong>isolated sandbox</strong>. Using the world's most secure OS, we ensure your data never touches the same system as the public internet.</p>
+        <!-- Left Panel: Official Issuer Compliance Badges Grid -->
+        <div class="w-full md:w-7/12 p-6 sm:p-8 bg-black/60 border-b md:border-b-0 md:border-r border-linen/10 flex flex-col justify-between space-y-6">
+          
+          <div class="space-y-4">
+            <div class="flex items-center justify-between border-b border-linen/10 pb-3">
+              <div class="flex items-center gap-2.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <div>
+                  <a href="https://centra.alieninc.tech" target="_blank" rel="noopener noreferrer" class="font-mono text-[10px] uppercase tracking-[0.25em] text-antique hover:text-cream transition duration-300 font-bold">
+                    CENTRA™ Security Engine ↗
+                  </a>
+                  <p class="text-[9px] font-mono text-linen/40 uppercase tracking-widest">Alien Inc. Group Security Division &middot; centra.alieninc.tech</p>
+                </div>
+              </div>
+              <a href="https://centra.alieninc.tech" target="_blank" rel="noopener noreferrer" class="text-[9px] font-mono tracking-widest uppercase text-emerald-400 border border-emerald-500/30 bg-emerald-950/50 px-2.5 py-1 rounded hover:bg-emerald-900/60 transition">
+                ● 100/100 VERIFIED
+              </a>
             </div>
 
-            <!-- 2. PLACE THE DYNAMIC COOKIE LIST HERE -->
-            <div class="group border-t border-linen/10 pt-6">
-              <h4 class="text-[10px] font-mono uppercase tracking-[0.2em] text-antique mb-4">Cookie Declaration</h4>
-              <!-- Cookiebot declaration removed -->
-            </div>
+            <!-- Certified Framework Badges (Exact Issuer Logos) -->
+            <div class="space-y-2.5">
+              <p class="text-[9px] font-mono tracking-[0.2em] uppercase text-linen/50 flex items-center justify-between">
+                <span>Verified Compliance Frameworks</span>
+                <span class="text-antique/70">Issuer Certified</span>
+              </p>
+              
+              <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                <!-- SOC 2 -->
+                <div class="flex flex-col items-center justify-center p-2 rounded-lg border border-linen/10 bg-white/95 text-center group hover:scale-[1.03] transition duration-200 shadow-sm">
+                  <img alt="SOC 2 Type 2" width="44" height="44" class="h-9 w-auto object-contain mb-1" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/soc.png" loading="lazy">
+                  <span class="text-[8px] font-mono font-bold text-gray-900 leading-tight">SOC 2 Type II</span>
+                </div>
 
-            <div class="group border-t border-linen/10 pt-6">
-              <p class="text-linen/70 italic text-sm">"We do not sell to third parties. Your mind is your property. Our site is simply the studio where it is voiced."</p>
-              <div class="mt-6 flex gap-4">
-                <a href="/thedailyartcult/policy.thedailyartcult" class="text-[9px] font-mono tracking-widest uppercase py-2 px-4 border border-linen/20 hover:border-antique hover:text-antique transition duration-300">Read Full Policy</a>
+                <!-- ISO 27001 -->
+                <div class="flex flex-col items-center justify-center p-2 rounded-lg border border-linen/10 bg-white/95 text-center group hover:scale-[1.03] transition duration-200 shadow-sm">
+                  <img alt="ISO 27001" width="44" height="44" class="h-9 w-auto object-contain mb-1" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/schellman/iso27001-certified.png" loading="lazy">
+                  <span class="text-[8px] font-mono font-bold text-gray-900 leading-tight">ISO 27001</span>
+                </div>
+
+                <!-- GDPR -->
+                <div class="flex flex-col items-center justify-center p-2 rounded-lg border border-linen/10 bg-white/95 text-center group hover:scale-[1.03] transition duration-200 shadow-sm">
+                  <img alt="GDPR" width="44" height="44" class="h-9 w-auto object-contain mb-1" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/gdpr.svg" loading="lazy">
+                  <span class="text-[8px] font-mono font-bold text-gray-900 leading-tight">GDPR</span>
+                </div>
+
+                <!-- HIPAA -->
+                <div class="flex flex-col items-center justify-center p-2 rounded-lg border border-linen/10 bg-white/95 text-center group hover:scale-[1.03] transition duration-200 shadow-sm">
+                  <img alt="HIPAA" width="44" height="44" class="h-9 w-auto object-contain mb-1" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/hipaa.svg" loading="lazy">
+                  <span class="text-[8px] font-mono font-bold text-gray-900 leading-tight">HIPAA</span>
+                </div>
+
+                <!-- CCPA -->
+                <div class="flex flex-col items-center justify-center p-2 rounded-lg border border-linen/10 bg-white/95 text-center group hover:scale-[1.03] transition duration-200 shadow-sm">
+                  <img alt="CCPA" width="44" height="44" class="h-9 w-auto object-contain mb-1" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/ccpa.svg" loading="lazy">
+                  <span class="text-[8px] font-mono font-bold text-gray-900 leading-tight">CCPA</span>
+                </div>
+
+                <!-- VPAT -->
+                <div class="flex flex-col items-center justify-center p-2 rounded-lg border border-linen/10 bg-white/95 text-center group hover:scale-[1.03] transition duration-200 shadow-sm">
+                  <img alt="VPAT" width="44" height="44" class="h-9 w-auto object-contain mb-1" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/vpat.png" loading="lazy">
+                  <span class="text-[8px] font-mono font-bold text-gray-900 leading-tight">VPAT AA</span>
+                </div>
+
+                <!-- AWS Qualified -->
+                <div class="flex flex-col items-center justify-center p-2 rounded-lg border border-linen/10 bg-white/95 text-center group hover:scale-[1.03] transition duration-200 shadow-sm">
+                  <img alt="AWS Qualified" width="44" height="44" class="h-9 w-auto object-contain mb-1" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/aws_qualified_software.svg" loading="lazy">
+                  <span class="text-[8px] font-mono font-bold text-gray-900 leading-tight">AWS Software</span>
+                </div>
+
+                <!-- FedRAMP -->
+                <div class="flex flex-col items-center justify-center p-2 rounded-lg border border-linen/10 bg-white/95 text-center group hover:scale-[1.03] transition duration-200 shadow-sm">
+                  <img alt="FedRAMP" width="44" height="44" class="h-9 w-auto object-contain mb-1" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/fedramp.png" loading="lazy">
+                  <span class="text-[8px] font-mono font-bold text-gray-900 leading-tight">FedRAMP</span>
+                </div>
+
+                <!-- CSA STAR -->
+                <div class="flex flex-col items-center justify-center p-2 rounded-lg border border-linen/10 bg-white/95 text-center group hover:scale-[1.03] transition duration-200 shadow-sm">
+                  <img alt="CSA STAR" width="44" height="44" class="h-9 w-auto object-contain mb-1" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/csastar.svg" loading="lazy">
+                  <span class="text-[8px] font-mono font-bold text-gray-900 leading-tight">CSA STAR</span>
+                </div>
+
+                <!-- SOX -->
+                <div class="flex flex-col items-center justify-center p-2 rounded-lg border border-linen/10 bg-white/95 text-center group hover:scale-[1.03] transition duration-200 shadow-sm">
+                  <img alt="SOX" width="44" height="44" class="h-9 w-auto object-contain mb-1" src="https://cdn.safebase.io/public/ba85662eef14607beea5216d47150436bd482e56/images/certifications/sox.webp" loading="lazy">
+                  <span class="text-[8px] font-mono font-bold text-gray-900 leading-tight">SOX</span>
+                </div>
               </div>
             </div>
           </div>
+
+          <!-- Real Audit Telemetry Stats -->
+          <div class="p-4 rounded-xl bg-linen/[0.03] border border-linen/10 space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-serif font-semibold text-cream">Centra Audit Engine Telemetry</span>
+              <span class="font-mono text-[10px] text-emerald-400">26/26 Audits Passing</span>
+            </div>
+            <p class="text-[10px] font-mono text-linen/50 leading-normal">
+              Auditing CIS NGINX, DISA STIG, PCI-DSS, OWASP ASVS, NIST 800-53 &amp; NIST CSF 2.0. Over 275,000 detection plugins covering CVEs (2017&ndash;2026).
+            </p>
+          </div>
+
+          <div class="pt-2 text-[9px] font-mono text-linen/40 flex items-center justify-between border-t border-linen/10">
+            <span>Official Portal: <a href="https://centra.alieninc.tech" target="_blank" rel="noopener noreferrer" class="text-antique hover:text-cream underline">centra.alieninc.tech ↗</a></span>
+            <span>Alien Inc Security Division</span>
+          </div>
+
         </div>
+
+        <!-- Right Panel: Zero-Knowledge Architecture & Comprehensive Privacy Policy -->
+        <div class="w-full md:w-5/12 p-6 sm:p-8 bg-[#0d0907] flex flex-col justify-between space-y-6">
+          <div class="space-y-6">
+            
+            <div>
+              <span class="text-[9px] font-mono tracking-[0.25em] uppercase text-antique/80 block mb-1">Architecture &amp; Sanctuary</span>
+              <h3 class="font-serif text-2xl font-semibold text-cream">Fortress of Silence</h3>
+            </div>
+
+            <div class="space-y-4 text-left">
+              <div class="p-3.5 rounded-lg border border-linen/10 bg-white/[0.02]">
+                <h4 class="text-[10px] font-mono uppercase tracking-[0.2em] text-antique mb-1 flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-antique"></span> Zero-Knowledge Isolation
+                </h4>
+                <p class="text-linen/70 text-xs leading-relaxed">
+                  Your markdown files and prompt profiles are processed within isolated sandbox environments. No raw data is ever exposed or sold.
+                </p>
+              </div>
+
+              <div class="p-3.5 rounded-lg border border-linen/10 bg-white/[0.02]">
+                <h4 class="text-[10px] font-mono uppercase tracking-[0.2em] text-antique mb-1">
+                  Data Ownership Guarantee
+                </h4>
+                <p class="text-linen/80 italic font-serif text-xs leading-relaxed">
+                  “We do not sell to third parties. Your mind is your property. Our site is simply the studio where it is voiced.”
+                </p>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Comprehensive Privacy Policy Link & Portal Badge -->
+          <div class="pt-4 border-t border-linen/10 space-y-3">
+            <div class="flex items-center justify-between gap-2">
+              <a href="https://policy.thedailyartcult.lol" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-[9px] font-mono tracking-widest uppercase py-2 px-3 border border-antique/40 bg-antique/10 text-antique hover:bg-antique hover:text-ink transition duration-300 rounded font-semibold">
+                Comprehensive Privacy Policy ↗
+              </a>
+              <a href="/thedailyartcult/policy.thedailyartcult" class="text-[9px] font-mono tracking-widest uppercase text-linen/40 hover:text-linen transition duration-300">
+                Local Terms
+              </a>
+            </div>
+
+            <p class="text-[8px] font-mono text-linen/30 uppercase tracking-widest text-center">
+              https://policy.thedailyartcult.lol &middot; Verified by Alien Inc.
+            </p>
+          </div>
+
+        </div>
+
       </div>
     </div>
 
@@ -1915,8 +2047,36 @@
       setInterval(tick, 30000);
     })();
   </script>
-</section>
+<!-- SECTION 4: EDITORIAL COLOPHON & ENDORSEMENT -->
+<section id="colophon-endorsement" class="px-5 py-28 relative border-t border-linen/10 reveal text-center">
+  <div class="mx-auto max-w-3xl flex flex-col items-center space-y-6">
+    
+    <!-- Top Editorial Kicker -->
+    <p class="font-mono text-[9px] uppercase tracking-[0.35em] text-antique/70">
+      Imprint Colophon &middot; Witness &amp; Attention
+    </p>
 
+    <!-- Pure High-End Serif Quote -->
+    <blockquote class="font-serif text-3xl sm:text-4xl md:text-5xl italic font-light leading-[1.25] text-cream/95 tracking-[-0.01em]">
+      “This is amazing. Recommended.”
+    </blockquote>
+
+    <!-- Delicate Hairline Accent -->
+    <div class="w-12 h-px bg-gradient-to-r from-transparent via-antique/50 to-transparent my-2"></div>
+
+    <!-- Attribution Line -->
+    <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-[0.25em] text-linen/50">
+      <span class="text-cream/90 font-medium">Darry Biller</span>
+      <span class="text-antique/40">&middot;</span>
+      <span class="text-linen/60">CEO &amp; Founder</span>
+      <span class="text-antique/40">&middot;</span>
+      <a href="https://betterbooksandgarments.lol" target="_blank" rel="noopener noreferrer" class="text-antique hover:text-cream transition-colors duration-300 border-b border-antique/30 pb-0.5">
+        Better Books &amp; Garments ↗
+      </a>
+    </div>
+
+  </div>
+</section>
 
   </main>
 
@@ -2363,6 +2523,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const mdFileInput = document.getElementById('md-file-input');
   const revealPasteBtn = document.getElementById('reveal-paste-btn');
   const copyPromptBtn = document.getElementById('copy-profile-prompt-btn');
+  const betterBooksNote = document.getElementById('better-books-note');
+  let betterBooksNoteShown = false;
+
+  const revealBetterBooksNote = () => {
+    if (!betterBooksNote || betterBooksNoteShown) return;
+    betterBooksNoteShown = true;
+    betterBooksNote.classList.remove('hidden');
+    betterBooksNote.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => {
+      betterBooksNote.classList.remove('translate-y-4', 'opacity-0');
+      betterBooksNote.classList.add('translate-y-0', 'opacity-100');
+    });
+  };
 
   // New gate elements
   const worldviewGate = document.getElementById('booth-worldview-gate');
@@ -2859,13 +3032,17 @@ A single sentence that captures me as a learner and thinker — precise enough t
 
   if (chatInput) {
     chatInput.addEventListener('input', () => {
+      revealBetterBooksNote();
       stopHeadlineCountdown();
       chatInput.style.height = 'auto';
       chatInput.style.height = Math.min(chatInput.scrollHeight, 180) + 'px';
       updateCharacterCount();
     });
 
-    chatInput.addEventListener('focus', stopHeadlineCountdown);
+    chatInput.addEventListener('focus', () => {
+      revealBetterBooksNote();
+      stopHeadlineCountdown();
+    });
 
     chatInput.addEventListener('keydown', (e) => {
       stopHeadlineCountdown();
@@ -2878,13 +3055,17 @@ A single sentence that captures me as a learner and thinker — precise enough t
 
   if (mdInput) {
     mdInput.addEventListener('input', () => {
+      revealBetterBooksNote();
       stopHeadlineCountdown();
       mdInput.style.height = 'auto';
       mdInput.style.height = Math.min(mdInput.scrollHeight, 240) + 'px';
       updateCharacterCount();
     });
 
-    mdInput.addEventListener('focus', stopHeadlineCountdown);
+    mdInput.addEventListener('focus', () => {
+      revealBetterBooksNote();
+      stopHeadlineCountdown();
+    });
 
     mdInput.addEventListener('keydown', (e) => {
       stopHeadlineCountdown();
@@ -2898,13 +3079,17 @@ A single sentence that captures me as a learner and thinker — precise enough t
 
   if (sourceInput) {
     sourceInput.addEventListener('input', () => {
+      revealBetterBooksNote();
       stopHeadlineCountdown();
       sourceInput.style.height = 'auto';
       sourceInput.style.height = Math.min(sourceInput.scrollHeight, 220) + 'px';
       updateCharacterCount();
     });
 
-    sourceInput.addEventListener('focus', stopHeadlineCountdown);
+    sourceInput.addEventListener('focus', () => {
+      revealBetterBooksNote();
+      stopHeadlineCountdown();
+    });
 
     sourceInput.addEventListener('keydown', (e) => {
       stopHeadlineCountdown();
@@ -2916,9 +3101,18 @@ A single sentence that captures me as a learner and thinker — precise enough t
     });
   }
 
-  studioModePrompt?.addEventListener('click', () => setStudioInputMode('prompt'));
-  studioModeMd?.addEventListener('click', () => setStudioInputMode('md'));
-  studioModeSource?.addEventListener('click', () => setStudioInputMode('source'));
+  studioModePrompt?.addEventListener('click', () => {
+    revealBetterBooksNote();
+    setStudioInputMode('prompt');
+  });
+  studioModeMd?.addEventListener('click', () => {
+    revealBetterBooksNote();
+    setStudioInputMode('md');
+  });
+  studioModeSource?.addEventListener('click', () => {
+    revealBetterBooksNote();
+    setStudioInputMode('source');
+  });
 
   // --- Worldview Gate Logic ---
 

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="TDAC for Enterprise — philosophy that lands because it starts with your people.">
+  <title>TDAC for Enterprise · The Daily Art Cult</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: "#070504", night: "#0d0907", walnut: "#1b110d",
+            leather: "#2b1913", cream: "#f2eadc", linen: "#d8cbb8",
+            smoke: "#9f9283", antique: "#c6a766"
+          },
+          fontFamily: {
+            serif: ["Playfair Display", "Georgia", "serif"],
+            cormorant: ["Cormorant Garamond", "Georgia", "serif"],
+            sans: ["Inter", "system-ui", "sans-serif"],
+            jost: ["Jost", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    :root { --antique: #c6a766; --cream: #f2eadc; --linen: #d8cbb8; }
+
+    body {
+      background: #1a120b;
+      color: var(--cream);
+      font-family: "Inter", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    #ent-headline .word {
+      opacity: 0;
+      transform: translateY(0.48em);
+      filter: blur(7px);
+      transition:
+        opacity 860ms cubic-bezier(0.16, 1, 0.3, 1),
+        transform 860ms cubic-bezier(0.16, 1, 0.3, 1),
+        filter 860ms cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform, filter;
+    }
+    #ent-headline .word.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+
+    .headline-accent {
+      position: relative;
+      display: inline-block;
+      color: rgba(198, 167, 102, 0.92);
+    }
+    .headline-accent::after {
+      content: "";
+      position: absolute;
+      left: 0; right: 0;
+      bottom: -0.08em;
+      height: 0.07em;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent, rgba(198,167,102,0.3) 8%, #c6a766 48%, rgba(198,167,102,0.7) 88%, transparent);
+      transform: scaleX(0);
+      transform-origin: left center;
+      opacity: 0;
+      transition: opacity 520ms ease, transform 920ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .headline-accent.is-underlined::after {
+      opacity: 0.95;
+      transform: scaleX(1);
+    }
+
+    @keyframes studioReveal {
+      from { opacity: 0; transform: translateY(12px); filter: blur(8px); }
+      to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+    }
+    .studio-reveal {
+      animation: studioReveal 820ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .studio-reveal-delay-1 { animation-delay: 120ms; }
+    .studio-reveal-delay-2 { animation-delay: 240ms; }
+    .studio-reveal-delay-3 { animation-delay: 360ms; }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 760ms ease, transform 760ms ease;
+    }
+    .reveal.is-visible { opacity: 1; transform: translateY(0); }
+
+    .ent-input-frame {
+      border: 1px solid rgba(242, 234, 220, 0.10);
+      background: rgba(13, 9, 7, 0.75);
+      backdrop-filter: blur(18px);
+      border-radius: 1rem;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.38);
+      transition: border-color 300ms ease;
+    }
+    .ent-input-frame:focus-within {
+      border-color: rgba(198, 167, 102, 0.40);
+    }
+    .ent-input-frame::before {
+      content: "";
+      position: absolute;
+      left: 1rem; right: 1rem; top: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(198,167,102,0.58), transparent);
+      opacity: 0.22;
+      transform: scaleX(0.5);
+      transform-origin: center;
+      transition: opacity 420ms ease, transform 640ms cubic-bezier(0.16,1,0.3,1);
+      border-radius: 999px;
+    }
+    .ent-input-frame:focus-within::before {
+      opacity: 0.88;
+      transform: scaleX(1);
+    }
+
+    .gold-rule {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(198,167,102,0.55), transparent);
+    }
+
+    @keyframes golden-breath {
+      0%, 100% { opacity: 0.12; transform: scaleX(0.75); }
+      50% { opacity: 0.85; transform: scaleX(1); }
+    }
+    .filament-breath {
+      animation: golden-breath 2.4s cubic-bezier(0.4,0,0.2,1) infinite;
+    }
+
+    .pillar-card {
+      border: 1px solid rgba(242, 234, 220, 0.09);
+      background: rgba(9, 6, 5, 0.48);
+      backdrop-filter: blur(12px);
+      transition: border-color 400ms ease, box-shadow 400ms ease, transform 400ms ease;
+    }
+    .pillar-card:hover {
+      border-color: rgba(198, 167, 102, 0.28);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.30);
+      transform: translateY(-2px);
+    }
+
+    .step-marker {
+      width: 2rem; height: 2rem;
+      border: 1px solid rgba(198,167,102,0.32);
+      border-radius: 999px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.62rem; font-family: "Jost", sans-serif;
+      font-weight: 300; letter-spacing: 0.1em;
+      color: rgba(198,167,102,0.72);
+      flex-shrink: 0;
+    }
+
+    .cta-panel {
+      border: 1px solid rgba(198,167,102,0.20);
+      background:
+        radial-gradient(circle at 18% 0%, rgba(198,167,102,0.08), transparent 38%),
+        linear-gradient(135deg, rgba(7,5,4,0.90), rgba(16,44,38,0.42));
+      backdrop-filter: blur(22px);
+    }
+
+    .pull-quote {
+      font-family: "Cormorant Garamond", serif;
+      font-style: italic;
+      font-weight: 300;
+      line-height: 1.35;
+    }
+
+    .nav-link {
+      color: rgba(216,203,184,0.52);
+      transition: color 250ms ease;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+    }
+    .nav-link:hover { color: var(--cream); }
+
+    #ent-submit {
+      transition: background-color 300ms ease, transform 260ms cubic-bezier(0.16,1,0.3,1);
+    }
+    #ent-submit:hover { transform: scale(1.04); }
+    #ent-submit:active { transform: scale(0.96); }
+
+    .domain-tag {
+      border: 1px solid rgba(242,234,220,0.10);
+      color: rgba(216,203,184,0.42);
+      transition: border-color 300ms ease, color 300ms ease;
+    }
+    .domain-tag:hover {
+      border-color: rgba(198,167,102,0.38);
+      color: rgba(198,167,102,0.75);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── NAV ─────────────────────────────────────────────────── -->
+<header class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 border-b border-linen/8" style="background: rgba(26,18,11,0.76); backdrop-filter: blur(18px);">
+  <a href="" class="font-serif text-sm font-semibold tracking-wide text-cream">The Daily Art Cult</a>
+  <nav class="hidden md:flex items-center gap-7">
+    <a href="" class="nav-link">Home</a>
+    <a href="/thedailyartcult/publications.thedailyartcult" class="nav-link">Publications</a>
+    <a href="/about" class="nav-link">About</a>
+    <a href="/immortality" class="nav-link">Immortality Projects</a>
+  </nav>
+  <a href="mailto:enterprise@thedailyartcult.lol" class="text-[10px] font-jost font-light tracking-[0.20em] uppercase border border-antique/38 text-antique px-4 py-2 hover:bg-antique hover:text-ink transition duration-300">
+    Request Access
+  </a>
+</header>
+
+
+<!-- ─── HERO ─────────────────────────────────────────────────── -->
+<section class="relative min-h-screen flex flex-col items-center justify-center px-6 pt-24 pb-20 overflow-hidden">
+
+  <!-- Ambient background -->
+  <div class="absolute inset-0 pointer-events-none" style="background: radial-gradient(ellipse at 28% 18%, rgba(70,16,27,0.20), transparent 48%), radial-gradient(ellipse at 74% 72%, rgba(16,44,38,0.16), transparent 44%), linear-gradient(180deg, rgba(26,18,11,0.40) 0%, rgba(26,18,11,0.0) 50%, rgba(26,18,11,0.72) 100%);"></div>
+
+  <div class="relative z-10 mx-auto max-w-3xl w-full text-center">
+
+    <!-- Eyebrow -->
+    <p class="studio-reveal text-[10px] font-mono tracking-[0.30em] uppercase text-antique/60 mb-10">TDAC for Enterprise · B2B Program</p>
+
+    <!-- Animated headline -->
+    <div class="mb-10">
+      <h1 id="ent-headline" class="font-serif text-4xl sm:text-5xl lg:text-6xl font-semibold text-cream leading-[1.15]" style="letter-spacing: -0.01em;">
+        <span class="word inline-block mr-2">Philosophy</span>
+        <span class="word inline-block mr-2">that</span>
+        <span class="word inline-block mr-2">scales</span>
+        <span class="word inline-block mr-2">because</span>
+        <span class="word inline-block mr-2">it</span>
+        <span class="word inline-block mr-2">starts</span>
+        <span class="word inline-block mr-2">with</span>
+        <span class="word headline-accent inline-block">them.</span>
+      </h1>
+    </div>
+
+    <!-- Sub -->
+    <p class="studio-reveal studio-reveal-delay-2 text-base text-linen/52 max-w-lg mx-auto leading-relaxed font-light mb-12">
+      A program for organizations that believe ideas only take root when they find a life to land in. We give your people a form for self-inquiry — and return it as something they can hear.
+    </p>
+
+    <!-- Input frame — mirrors hero-editor-frame -->
+    <div class="studio-reveal studio-reveal-delay-3 ent-input-frame relative w-full max-w-xl mx-auto p-3.5">
+      <p class="text-[10px] font-mono uppercase tracking-[0.26em] text-antique/48 px-3 pt-1 pb-2 text-left">Your organization · your email</p>
+      <input
+        id="ent-email-input"
+        type="email"
+        placeholder="hr@company.com"
+        class="w-full bg-transparent text-cream px-3 py-2 text-base outline-none font-sans leading-relaxed placeholder:text-linen/22"
+      />
+      <div class="flex items-center justify-between border-t border-white/[0.05] pt-3 mt-2 px-3">
+        <p class="text-[9px] font-mono tracking-[0.20em] uppercase text-linen/30">We reply within one working day</p>
+        <button id="ent-submit" onclick="handleEntSubmit()" class="shrink-0 rounded-xl bg-cream hover:bg-antique w-9 h-9 flex items-center justify-center text-ink focus:outline-none" aria-label="Send">
+          <svg class="w-4 h-4 transform rotate-45 -translate-x-0.5 translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Micro CTA -->
+    <p class="mt-6 text-[10px] font-mono tracking-[0.18em] uppercase text-linen/22">
+      B2B · No Shareholders · No Exit
+    </p>
+
+  </div>
+</section>
+
+
+<!-- ─── GOLD FILAMENT ─────────────────────────────────────────── -->
+<div class="px-6 py-12 flex justify-center">
+  <div class="filament-breath w-24 h-px" style="background: linear-gradient(90deg, transparent, #c6a766, transparent);"></div>
+</div>
+
+
+<!-- ─── THE PROBLEM ──────────────────────────────────────────── -->
+<section class="px-6 pb-24 reveal">
+  <div class="mx-auto max-w-4xl">
+    <p class="text-[10px] font-mono tracking-[0.26em] uppercase text-antique/52 mb-8">The Problem</p>
+    <div class="grid md:grid-cols-2 gap-12 items-start">
+      <h2 class="font-serif text-3xl md:text-[2.1rem] font-medium text-cream leading-[1.25]">
+        Most corporate training teaches compliance.<br>
+        <em class="font-normal text-linen/60">Almost none teach the person.</em>
+      </h2>
+      <div class="space-y-5 text-sm text-linen/52 leading-relaxed font-light pt-1">
+        <p>An employee can complete every module and still feel nothing. Not because the content is wrong — but because no one has asked them what they are actually carrying. Understanding follows identification. And identification requires a mirror.</p>
+        <p>TDAC turns the philosophical archive into that mirror. When an employee articulates what they believe, what they are questioning, and what they want their thinking to become — the ideas they encounter stop being abstract. They become instruments.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── PULL QUOTE ───────────────────────────────────────────── -->
+<section class="px-6 py-8 reveal">
+  <div class="mx-auto max-w-3xl text-center">
+    <div class="gold-rule mb-14"></div>
+    <p class="pull-quote text-3xl md:text-4xl text-cream/78" style="letter-spacing:-0.005em;">
+      "The program is not what you deliver.<br>It is what they carry out."
+    </p>
+    <p class="mt-6 text-[10px] font-mono tracking-[0.24em] uppercase text-antique/40">— The Daily Art Cult · On the purpose of organizational learning</p>
+    <div class="gold-rule mt-14"></div>
+  </div>
+</section>
+
+
+<!-- ─── PILLARS ──────────────────────────────────────────────── -->
+<section class="px-6 py-24 reveal">
+  <div class="mx-auto max-w-5xl">
+    <p class="text-[10px] font-mono tracking-[0.26em] uppercase text-antique/52 mb-12">What your people receive</p>
+    <div class="grid md:grid-cols-3 gap-5">
+
+      <div class="pillar-card rounded-sm p-8">
+        <div class="w-6 h-6 mb-7 opacity-55">
+          <svg viewBox="0 0 24 24" fill="none" stroke="rgba(198,167,102,0.9)" stroke-width="1.4"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        </div>
+        <p class="font-serif text-lg text-cream mb-3">Anchored to Their Role</p>
+        <p class="text-xs text-linen/48 leading-relaxed font-light">Employees begin with what they are actually carrying — not a topic, but a condition. The philosophy they encounter is chosen because it speaks to where they are, not where a training deck says they should be.</p>
+      </div>
+
+      <div class="pillar-card rounded-sm p-8">
+        <div class="w-6 h-6 mb-7 opacity-55">
+          <svg viewBox="0 0 24 24" fill="none" stroke="rgba(198,167,102,0.9)" stroke-width="1.4"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        </div>
+        <p class="font-serif text-lg text-cream mb-3">Returned as Audio</p>
+        <p class="text-xs text-linen/48 leading-relaxed font-light">Every reflection is synthesized into a bespoke audiobook — voiced, shaped, and ready to be heard. Not a transcript. Not a summary. A work, in the employee's own philosophical register.</p>
+      </div>
+
+      <div class="pillar-card rounded-sm p-8">
+        <div class="w-6 h-6 mb-7 opacity-55">
+          <svg viewBox="0 0 24 24" fill="none" stroke="rgba(198,167,102,0.9)" stroke-width="1.4"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <p class="font-serif text-lg text-cream mb-3">Something That Lasts</p>
+        <p class="text-xs text-linen/48 leading-relaxed font-light">The session produces an artifact. Employees leave with a record of how they thought — at this moment, in this role, during this particular period of becoming. That is not a small thing.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── HOW IT WORKS ─────────────────────────────────────────── -->
+<section id="how-it-works" class="px-6 pb-28 reveal">
+  <div class="mx-auto max-w-4xl">
+    <div class="gold-rule mb-16"></div>
+    <p class="text-[10px] font-mono tracking-[0.26em] uppercase text-antique/52 mb-12">How it works</p>
+    <div class="space-y-12">
+
+      <div class="flex gap-7 items-start">
+        <div class="step-marker mt-0.5">01</div>
+        <div>
+          <p class="font-serif text-xl text-cream mb-2">The Organization Enrolls</p>
+          <p class="text-xs text-linen/48 leading-relaxed font-light max-w-lg">Request access for your team, department, or organization. We open a dedicated ledger for your cohort — no algorithms, no third-party advertising, no noise between the employee and the work.</p>
+        </div>
+      </div>
+
+      <div class="flex gap-7 items-start">
+        <div class="step-marker mt-0.5">02</div>
+        <div>
+          <p class="font-serif text-xl text-cream mb-2">Each Employee Enters</p>
+          <p class="text-xs text-linen/48 leading-relaxed font-light max-w-lg">Employees engage with a short intake — three questions about what they are carrying, what is beginning or ending in their professional life, and what they want their thinking to do for them. The platform listens without judgment.</p>
+        </div>
+      </div>
+
+      <div class="flex gap-7 items-start">
+        <div class="step-marker mt-0.5">03</div>
+        <div>
+          <p class="font-serif text-xl text-cream mb-2">The Work Is Returned</p>
+          <p class="text-xs text-linen/48 leading-relaxed font-light max-w-lg">Each employee receives a bespoke audio reflection — voiced by our synthesis engine, shaped to their particular philosophical territory. The program ends with something worth keeping long after the quarter does.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── ENTERPRISE DOMAINS ───────────────────────────────────── -->
+<section class="px-6 pb-28 reveal">
+  <div class="mx-auto max-w-4xl">
+    <div class="gold-rule mb-16"></div>
+    <p class="text-[10px] font-mono tracking-[0.26em] uppercase text-antique/52 mb-4">Enterprise Domains</p>
+    <p class="font-serif text-2xl text-cream/65 font-light mb-10">The platform is not bound to philosophy alone.<br>Any domain where ideas meet a workplace belongs here.</p>
+    <div class="flex flex-wrap gap-2">
+      <span class="domain-tag text-[10px] font-mono tracking-[0.16em] uppercase px-4 py-2 rounded-sm">Leadership</span>
+      <span class="domain-tag text-[10px] font-mono tracking-[0.16em] uppercase px-4 py-2 rounded-sm">Ethics</span>
+      <span class="domain-tag text-[10px] font-mono tracking-[0.16em] uppercase px-4 py-2 rounded-sm">Organizational Psychology</span>
+      <span class="domain-tag text-[10px] font-mono tracking-[0.16em] uppercase px-4 py-2 rounded-sm">Strategy</span>
+      <span class="domain-tag text-[10px] font-mono tracking-[0.16em] uppercase px-4 py-2 rounded-sm">Change Management</span>
+      <span class="domain-tag text-[10px] font-mono tracking-[0.16em] uppercase px-4 py-2 rounded-sm">Existentialism</span>
+      <span class="domain-tag text-[10px] font-mono tracking-[0.16em] uppercase px-4 py-2 rounded-sm">Political Economy</span>
+      <span class="domain-tag text-[10px] font-mono tracking-[0.16em] uppercase px-4 py-2 rounded-sm">History of Ideas</span>
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── CTA ──────────────────────────────────────────────────── -->
+<section class="px-6 pb-32 reveal">
+  <div class="mx-auto max-w-4xl">
+    <div class="cta-panel rounded-sm px-8 md:px-16 py-16 text-center">
+      <p class="text-[10px] font-mono tracking-[0.28em] uppercase text-antique/52 mb-6">Organizational Access</p>
+      <h2 class="font-serif text-3xl md:text-4xl text-cream font-medium mb-5 leading-snug">
+        Your people are already doing<br>the philosophical work.<br>
+        <em class="font-normal text-antique/85">We give it a form.</em>
+      </h2>
+      <p class="text-sm text-linen/48 font-light leading-relaxed max-w-sm mx-auto mb-10">
+        Available to companies, institutions, and organizational learning communities. Access is granted on a cohort basis — write to us with your organization and the size of your group.
+      </p>
+
+      <!-- Second input frame in CTA -->
+      <div class="ent-input-frame relative w-full max-w-sm mx-auto p-3 mb-6">
+        <input
+          id="ent-cta-input"
+          type="email"
+          placeholder="hr@company.com"
+          class="w-full bg-transparent text-cream px-3 py-2 text-sm outline-none font-sans leading-relaxed placeholder:text-linen/22"
+        />
+        <div class="flex items-center justify-between border-t border-white/[0.05] pt-3 mt-2 px-3">
+          <p class="text-[9px] font-mono tracking-[0.18em] uppercase text-linen/28">Write to the archive</p>
+          <button onclick="handleCtaSubmit()" class="shrink-0 rounded-xl bg-cream hover:bg-antique w-8 h-8 flex items-center justify-center text-ink transition duration-300 focus:outline-none" aria-label="Send">
+            <svg class="w-3.5 h-3.5 transform rotate-45 -translate-x-0.5 translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <a href="/about" class="text-[10px] font-mono tracking-[0.18em] uppercase text-linen/28 hover:text-antique transition duration-300">
+        Read the mission →
+      </a>
+      <p class="mt-8 text-[10px] font-mono tracking-[0.20em] uppercase text-linen/18">B2B · No Shareholders · No Exit</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── FOOTER ───────────────────────────────────────────────── -->
+<footer class="border-t border-linen/10 px-6 pt-14 pb-10">
+  <div class="mx-auto max-w-5xl">
+    <div class="grid gap-10 md:grid-cols-[1.6fr_1fr_1fr] md:gap-16 mb-12">
+      <div>
+        <p class="font-serif text-xl font-semibold tracking-wide text-cream mb-3">The Daily Art Cult</p>
+        <p class="text-xs text-linen/38 leading-relaxed max-w-xs">A non-profit archive of philosophical voices. No shareholders. No exit. The archive belongs to the people who contribute to it.</p>
+      </div>
+      <div>
+        <p class="text-[10px] font-mono tracking-[0.22em] uppercase text-antique/68 mb-5">The Ledger</p>
+        <ul class="space-y-3 text-sm text-linen/52">
+          <li><a href="/thedailyartcult/accounts.thedailyartcult" class="hover:text-antique transition duration-300">Membership</a></li>
+          <li><a href="/enterprise" class="text-antique">TDAC for Enterprise</a></li>
+          <li><a href="/giftcard" class="hover:text-antique transition duration-300">Gift a Membership</a></li>
+          <li><a href="/thedailyartcult/support.thedailyartcult" class="hover:text-antique transition duration-300">Support</a></li>
+          <li><a href="/track/index.html" class="hover:text-antique transition duration-300">Track My Card</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="text-[10px] font-mono tracking-[0.22em] uppercase text-antique/68 mb-5">The Mission</p>
+        <ul class="space-y-3 text-sm text-linen/52">
+          <li><a href="/about" class="hover:text-antique transition duration-300">About</a></li>
+          <li><a href="/immortality" class="hover:text-antique transition duration-300">Immortality Projects</a></li>
+          <li><a href="/thedailyartcult/publications.thedailyartcult" class="hover:text-antique transition duration-300">Publications</a></li>
+          <li><a href="/thedailyartcult/policy.thedailyartcult" class="hover:text-antique transition duration-300">Privacy & Terms</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="gold-rule mb-7"></div>
+    <div class="flex flex-wrap items-center justify-between gap-4 text-xs text-linen/24">
+      <span>&copy; 2026 The Daily Art Cult. All rights reserved.</span>
+      <span class="font-mono tracking-[0.18em] uppercase text-[10px]">B2B · No Shareholders · No Exit</span>
+    </div>
+  </div>
+</footer>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+  // ── Word-by-word headline animation ──
+  const words = document.querySelectorAll('#ent-headline .word');
+  const accent = document.querySelector('.headline-accent');
+  let delay = 120;
+  words.forEach((word, idx) => {
+    setTimeout(() => {
+      word.classList.add('is-visible');
+      if (idx === words.length - 1 && accent) {
+        setTimeout(() => accent.classList.add('is-underlined'), 340);
+      }
+    }, delay);
+    delay += idx < 3 ? 160 : 130;
+  });
+
+  // ── Scroll reveal ──
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('is-visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.07 });
+  reveals.forEach(el => observer.observe(el));
+
+});
+
+// ── Email submit handlers ──
+function handleEntSubmit() {
+  const val = document.getElementById('ent-email-input').value.trim();
+  if (!val) return;
+  window.location.href = `mailto:enterprise@thedailyartcult.lol?subject=Enterprise Access Request&body=Email: ${encodeURIComponent(val)}`;
+}
+
+function handleCtaSubmit() {
+  const val = document.getElementById('ent-cta-input').value.trim();
+  if (!val) return;
+  window.location.href = `mailto:enterprise@thedailyartcult.lol?subject=Enterprise Access Request&body=Email: ${encodeURIComponent(val)}`;
+}
+
+// Enter key on inputs
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('ent-email-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') handleEntSubmit(); });
+  document.getElementById('ent-cta-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') handleCtaSubmit(); });
+});
+</script>
+
+</body>
+</html>

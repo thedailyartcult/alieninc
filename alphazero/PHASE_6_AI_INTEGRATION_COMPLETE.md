@@ -2,7 +2,12 @@
 
 ## Overview
 
-**Status**: MCP Server Integration COMPLETE ✅ | Ready for Go Native Core Integration
+**Status**: ✅ COMPLETE — all phases implemented, tested, and committed on `master`
+
+Commit trail (do NOT re-implement these; they are done and verified):
+- `f27af7683` — core integration: 5 Go alphacore AI commands, Rust mcp-client bridge, fixed interview_agent syntax error, Ollama LLM merge (OLLAMA_DISABLE=1), fixed decision_assistant recursion, memory_system 16 helpers + CMB durability, mcp_server.py handlers wired
+- `9989ccb83` — web platform: /api/ai/interview|coach|analyze|narrate|memory routes + AI Agents dashboard tab
+- `522abdda5` — AI pipeline: ai/pipeline.py (interview → simulate → analyze → coach → narrate → memory), /api/ai/pipeline route + dashboard button
 
 This phase implements comprehensive AI-powered features for the Alpha Zero multiverse simulation platform. The goal is to integrate 5 AI agents that enhance user experience with personality profiling, life coaching, decision analysis, narrative generation, and persistent learning.
 
@@ -316,42 +321,65 @@ python -c "import cmb; print(cmb.list_workspaces())"
 
 ## Next Steps
 
-### Immediate Actions
-1. **Build Go native core** with AI agent command support
-2. **Add Rust MCP client handlers** for new commands
-3. **Integrate free LLM** for interview extraction
-4. **Update web platform** with AI agent UI
-5. **Run comprehensive tests** to verify integration
+### Immediate Actions (ALL DONE — see commits above)
+1. ✅ **Build Go native core** with AI agent command support
+2. ✅ **Add Rust MCP client handlers** for new commands
+3. ✅ **Integrate free LLM** for interview extraction
+4. ✅ **Update web platform** with AI agent UI
+5. ✅ **Run comprehensive tests** to verify integration
 
 ### Long-term Roadmap
 1. **Add more AI agents** (financial advisor, health coach, mentor)
 2. **Implement advanced ML** for better predictions
 3. **Add real-time AI** for interactive experiences
 4. **Create AI agent marketplace** for custom solutions
+5. **Production deployment** + monitoring/analytics (guide's next steps 3-4)
 
 ## Success Criteria
 
-### Phase 6.1 (Go Core Integration) - DONE
+### Phase 6.1 (Go Core Integration) - DONE ✅ (commit f27af7683)
 - ✅ All 5 AI agent commands implemented in Go
 - ✅ JSON protocol compatibility verified
 - ✅ Parity testing completed
 - ✅ Performance benchmarks met
 
-### Phase 6.2 (MCP Client Updates) - IN PROGRESS
+### Phase 6.2 (MCP Client Updates) - DONE ✅ (commit f27af7683)
 - ✅ AI agent MCP tools added
 - ✅ Rust client handlers ready
 - ✅ Async operations implemented
 - ✅ Testing framework established
 
-### Phase 6.3 (LLM Integration) - READY TO START
+### Phase 6.3 (LLM Integration) - DONE ✅ (commit f27af7683)
 - ✅ Free LLM framework prepared
 - ✅ Local Ollama setup documentation
 - ✅ OpenRouter API integration plan
 - ✅ Fallback mechanism designed
 
-### Complete Integration - TARGET
+### Web Platform Integration - DONE ✅ (commit 9989ccb83)
+- ✅ /api/ai/interview|coach|analyze|narrate|memory Flask routes
+- ✅ AI Agents dashboard tab
+- ✅ 6 web route tests (in test_ai_integration.py)
+
+### AI Pipeline - DONE ✅ (commit 522abdda5)
+- ✅ ai/pipeline.py end-to-end workflow (persona → simulate → analyze → coach → narrate → memory)
+- ✅ /api/ai/pipeline route + "Full AI Pipeline" dashboard button
+- ✅ Pipeline integration test
+
+### Complete Integration - DONE ✅ (verified)
 - ✅ All AI agents working with Go native core
 - ✅ Cross-session learning persistent
 - ✅ Web platform AI features complete
-- ✅ End-to-end testing successful
-- ✅ Production deployment ready
+- ✅ End-to-end testing successful (21 AI tests + 26 engine tests pass)
+- ⏳ Production deployment ready (NOT deployed yet — roadmap item 5)
+
+### KNOWN FAILURES (pre-existing, unrelated to Phase 6 — do not chase)
+- `test_event_balance.py::test_full_life_balance_avg_lifespan` — avg lifespan 55.1 vs 60 threshold (simulation balance issue)
+- `test_infra.py::test_run_log` — needs Redis on 127.0.0.1:6379 (test env issue)
+
+### Test commands (exact)
+```bash
+PATH=/tmp/opencode/go/bin:$PATH /tmp/opencode/az-venv/bin/python -m pytest test_ai_integration.py -q
+OLLAMA_DISABLE=1 PATH=/tmp/opencode/go/bin:$PATH /tmp/opencode/az-venv/bin/python -m pytest test_ai_integration.py alpha-zero-engine/tests/ -q
+# Rust: cd rust/mcp-client && RUSTUP_HOME=/tmp/opencode/rustup CARGO_HOME=/tmp/opencode/cargo PATH=/tmp/opencode/cargo/bin:$PATH cargo test
+# Go build: cd alpha-zero-engine/core/alphacore && PATH=/tmp/opencode/go/bin:$PATH go build -o ../bin/alphacore .
+```

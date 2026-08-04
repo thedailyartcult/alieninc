@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alpha Zero — Every Decision, Branched</title>
+  <style>
+    :root {
+      --bg-color: #ffffff;
+      --bg-alt: #f8f9fa;
+      --pill-bg: #f1f3f4;
+      --text-main: #202124;
+      --text-body: #3c4043;
+      --text-muted: #5f6368;
+      --border-color: #e8eaed;
+      --font-stack: 'Google Sans Flex', 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --container-max: 1280px;
+      --content-max: 720px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-family: var(--font-stack);
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      line-height: 1.6;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* HEADER */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .site-header.scrolled {
+      border-color: var(--border-color);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    }
+
+    .header-container {
+      max-width: var(--container-max);
+      margin: 0 auto;
+      height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+    }
+
+    .brand-logo svg {
+      width: 12px;
+      height: 12px;
+      fill: var(--text-muted);
+    }
+
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-link {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-main);
+      padding: 8px 0;
+      transition: color 0.15s ease;
+    }
+
+    .nav-link:hover {
+      color: #000000;
+    }
+
+    .header-cta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 500;
+      border: 1px solid #dadce0;
+      background: var(--bg-color);
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-pill:hover {
+      background: #f8f9fa;
+      border-color: #bdc1c6;
+    }
+
+    .btn-pill svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+    }
+
+    /* HERO SECTION */
+    .hero-section {
+      padding: 72px 24px 32px;
+      text-align: center;
+    }
+
+    .hero-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .hero-eyebrow {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .hero-title {
+      font-size: 56px;
+      font-weight: 500;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: var(--text-main);
+      margin-bottom: 28px;
+    }
+
+    .hero-description {
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 1.5;
+      color: var(--text-body);
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .hero-media-wrapper {
+      max-width: var(--container-max);
+      margin: 48px auto 0;
+      padding: 0 24px;
+    }
+
+    .hero-image {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      border-radius: 24px;
+      display: block;
+    }
+
+    /* STICKY JUMP NAVIGATION */
+    .jump-nav-wrapper {
+      position: sticky;
+      top: 68px;
+      z-index: 900;
+      padding: 24px 0;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .jump-nav-capsule {
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      background: var(--pill-bg);
+      padding: 6px;
+      border-radius: 100px;
+      gap: 4px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .jump-link {
+      padding: 10px 22px;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-main);
+      transition: all 0.2s ease;
+    }
+
+    .jump-link:hover,
+    .jump-link.active {
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* CONTENT SECTIONS */
+    .content-section {
+      padding: 48px 24px;
+    }
+
+    .content-container {
+      max-width: var(--content-max);
+      margin: 0 auto;
+    }
+
+    .section-title {
+      font-size: 40px;
+      font-weight: 500;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+      margin-bottom: 28px;
+    }
+
+    .body-paragraph {
+      font-size: 18px;
+      line-height: 1.6;
+      color: var(--text-body);
+      margin-bottom: 24px;
+    }
+
+    /* QUOTE CARD */
+    .quote-container {
+      padding: 32px 24px;
+    }
+
+    .quote-card {
+      background: #ffffff;
+      border-left: 3px solid var(--text-main);
+      padding: 8px 0 8px 28px;
+      margin: 24px 0;
+    }
+
+    .quote-text {
+      font-size: 24px;
+      font-weight: 400;
+      line-height: 1.4;
+      color: var(--text-main);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    .quote-author {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .quote-role {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    /* MEDIA CONTAINER */
+    .media-card-container {
+      max-width: var(--content-max);
+      margin: 40px auto;
+      padding: 0 24px;
+    }
+
+    .media-card-container img,
+    .media-card-container iframe {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      display: block;
+    }
+
+    /* FOOTER */
+    .site-footer {
+      background-color: var(--bg-color);
+      border-top: 1px solid var(--border-color);
+      padding: 80px 32px 40px;
+      margin-top: 80px;
+    }
+
+    .footer-container {
+      max-width: var(--container-max);
+      margin: 0 auto;
+    }
+
+    .footer-top-grid {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 64px;
+      padding-bottom: 64px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .footer-mission-title {
+      font-size: 32px;
+      font-weight: 500;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+    }
+
+    .footer-columns-wrapper {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+    }
+
+    .footer-col-group {
+      margin-bottom: 32px;
+    }
+
+    .footer-col-header {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 16px;
+    }
+
+    .footer-links-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .footer-item-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--text-body);
+      transition: color 0.15s ease;
+    }
+
+    .footer-item-link:hover {
+      color: var(--text-main);
+    }
+
+    .footer-icon-box {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .footer-icon-box svg {
+      width: 14px;
+      height: 14px;
+      fill: var(--text-main);
+    }
+
+    .footer-bottom-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 32px;
+    }
+
+    .footer-legal-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .footer-legal-links a:hover {
+      color: var(--text-main);
+    }
+
+    @media (max-width: 1024px) {
+      .footer-top-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+      .footer-columns-wrapper {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .main-nav, .header-cta {
+        display: none;
+      }
+      .hero-title {
+        font-size: 36px;
+      }
+      .hero-description {
+        font-size: 18px;
+      }
+      .section-title {
+        font-size: 28px;
+      }
+      .footer-columns-wrapper {
+        grid-template-columns: 1fr;
+      }
+      .footer-bottom-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header" id="header">
+    <div class="header-container">
+      <a href="#" class="brand-logo">
+        Alpha Zero
+        <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5H7z"/></svg>
+      </a>
+      <nav>
+        <ul class="main-nav">
+          <li><a href="#alphazero" class="nav-link">The Engine</a></li>
+          <li><a href="#sample-output" class="nav-link">Sample Output</a></li>
+          <li><a href="#proving-ais-potential" class="nav-link">Limits &amp; Metrics</a></li>
+          <li><a href="#quote" class="nav-link">About</a></li>
+        </ul>
+      </nav>
+      <div class="header-cta">
+        <button class="btn-pill">Join the Waitlist</button>
+        <button class="btn-pill">
+          <svg viewBox="0 0 24 24"><path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z"/></svg>
+          Run a Simulation
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero-section">
+      <div class="hero-container">
+        <div class="hero-eyebrow">Simulation Engine — a feature of ALIEN.INC</div>
+        <h1 class="hero-title">Every decision, <em>branched.</em></h1>
+        <p class="hero-description">
+          Alpha Zero takes a decision that already happened — a trade, a stock call, a company's move — and re-runs it as thousands of parallel timelines. Then it shows you which branch actually won, and by how much.
+        </p>
+      </div>
+      <div class="hero-media-wrapper">
+        <img class="hero-image" src="https://lh3.googleusercontent.com/JYolXXDHGb3yKhPHRnbJHbaRt87iz9mQ9ztjoI1Bu4dYjV9DmR89hdtNwKABFKbtKxb0oACRKGblNWMpDKH8cBdU2UGLxwM15sBXYlNLxWFspu_h=w1440-h810-n-nu" alt="AlphaZero and MuZero abstract representation">
+      </div>
+    </section>
+
+    <!-- STICKY JUMP NAV -->
+    <div class="jump-nav-wrapper">
+      <nav class="jump-nav-capsule">
+        <a href="#alphazero" class="jump-link active">The Engine</a>
+        <a href="#sample-output" class="jump-link">Sample Output</a>
+        <a href="#proving-ais-potential" class="jump-link">Limits &amp; Metrics</a>
+        <a href="#quote" class="jump-link">About</a>
+      </nav>
+    </div>
+
+    <!-- ALPHAZERO SECTION -->
+    <section id="alphazero" class="content-section">
+      <div class="content-container">
+        <h2 class="section-title">How a single decision becomes a thousand</h2>
+        <p class="body-paragraph"><strong>01 — Start from what happened</strong><br>Alpha Zero takes a decision with a real record — a trade, a stock call, a launch date — not a hypothetical. The record is the input, not a guess about it.</p>
+        <p class="body-paragraph"><strong>02 — Fork at every decision point</strong><br>Each moment where a different call could have been made becomes a branch point — a fork the model is free to take differently than history did.</p>
+        <p class="body-paragraph"><strong>03 — Run it forward, millions of times</strong><br>Each branch plays out independently, scored against the same measurable, real-world benchmark as what actually happened — price, volume, volatility.</p>
+        <p class="body-paragraph"><strong>04 — Surface the branch that won</strong><br>Not a forecast — a ranked map of every path that could have been taken, and exactly how far the real outcome landed from the best one.</p>
+      </div>
+    </section>
+
+    <!-- QUOTE SECTION -->
+    <section id="quote" class="quote-container">
+      <div class="content-container">
+        <div class="quote-card">
+          <p class="quote-text">“The past isn’t a single story — it’s just the one branch that happened to win. Alpha Zero is how we go back and read the ones that didn’t.”</p>
+          <div class="quote-author">Patrick Neil A.</div>
+          <div class="quote-role">Founder, ALIEN.INC</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIDEO MEDIA -->
+    <div class="media-card-container">
+      <iframe src="https://www.youtube.com/embed/7L2sUGcOgh0" title="AlphaZero Video" allowfullscreen></iframe>
+    </div>
+
+    <!-- IMAGE MEDIA -->
+    <div class="media-card-container">
+      <img src="https://lh3.googleusercontent.com/65JkTQXXh9xmUyjytfkp8efhfkEBfV9E3TYJcDT-Yj__IVZkphMbwQtLbVKLpsO9lkEn5jwFHysZ2q-Yj3UO7cgVsTUQH-tXoBTaQ0ktATWUjCZ-=w1440-h810-n-nu" alt="MuZero real-world applications">
+    </div>
+
+    <!-- SAMPLE OUTPUT -->
+    <section id="sample-output" class="content-section">
+      <div class="content-container">
+        <div class="hero-eyebrow">Sample Output</div>
+        <h2 class="section-title">What a branch map actually looks like</h2>
+        <p class="body-paragraph">Run #0417 — Illustrative sample, not live data / 4,812 branches simulated</p>
+        <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:16px;line-height:1.6;">
+          <thead>
+            <tr style="border-bottom:2px solid var(--text-main);text-align:left;">
+              <th style="padding:12px 16px;font-weight:600;">Branch</th>
+              <th style="padding:12px 16px;font-weight:600;">Decision point</th>
+              <th style="padding:12px 16px;font-weight:600;">Outcome delta</th>
+              <th style="padding:12px 16px;font-weight:600;">Convergence</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--border-color);">
+              <td style="padding:12px 16px;"><strong>Branch A — *Best*</strong></td>
+              <td style="padding:12px 16px;">Held through Q3 dip</td>
+              <td style="padding:12px 16px;color:#1a73e8;">+14.2%</td>
+              <td style="padding:12px 16px;">68% of branches</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border-color);">
+              <td style="padding:12px 16px;">Branch B</td>
+              <td style="padding:12px 16px;">Sold at first drawdown</td>
+              <td style="padding:12px 16px;">+2.1%</td>
+              <td style="padding:12px 16px;">19% of branches</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border-color);">
+              <td style="padding:12px 16px;">Branch C</td>
+              <td style="padding:12px 16px;">Doubled position early</td>
+              <td style="padding:12px 16px;color:#c5221f;">-6.4%</td>
+              <td style="padding:12px 16px;">9% of branches</td>
+            </tr>
+            <tr>
+              <td style="padding:12px 16px;"><em>What actually happened — *Recorded*</em></td>
+              <td style="padding:12px 16px;">Sold at Q3 dip</td>
+              <td style="padding:12px 16px;">0.0%</td>
+              <td style="padding:12px 16px;">—</td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROVING AI'S POTENTIAL SECTION -->
+    <section id="proving-ais-potential" class="content-section">
+      <div class="content-container">
+        <h2 class="section-title">What it can and can't tell you</h2>
+        <p class="body-paragraph"><strong>What it can't do</strong></p>
+        <p class="body-paragraph">Can't branch off an event that was never recorded — no data, no fork.</p>
+        <p class="body-paragraph">Can't account for a genuine black-swan event; there's no prior branch to learn from.</p>
+        <p class="body-paragraph">Never reports certainty — only a distribution of outcomes and how tightly they cluster.</p>
+        <p class="body-paragraph"><strong>What we measure</strong></p>
+        <p class="body-paragraph"><em>Outcome delta</em> — The gap between the best branch found and what actually happened.</p>
+        <p class="body-paragraph"><em>Convergence</em> — How many independent branches land on the same answer.</p>
+        <p class="body-paragraph"><em>Backtest accuracy</em> — Hit rate against decisions we already know the ending to.</p>
+      </div>
+    <section id="closing-cta" class="content-section">
+      <div class="content-container" style="text-align:center;">
+        <div class="hero-eyebrow">About</div>
+        <h2 class="section-title">The same engine works on any decision with a before and after</h2>
+        <p class="body-paragraph">Point it at a single stock decision and it generates thousands of divergent timelines in minutes. Point it at a portfolio, and it maps the whole tree of what could have been.</p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:32px;">
+          <button class="btn-pill">Run a Simulation</button>
+          <button class="btn-pill">Join the Waitlist</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-top-grid">
+        <h2 class="footer-mission-title">Simulate every path. Trust the one that wins.</h2>
+
+        <div class="footer-columns-wrapper">
+          <!-- COLUMN 1: ENGINES -->
+          <div>
+            <div class="footer-col-group">
+              <div class="footer-col-header">Engines</div>
+              <ul class="footer-links-list">
+                <li><a href="alpha-zero-core.html" class="footer-item-link"><span class="footer-icon-box"><svg viewBox="0 0 24 24"><path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z"/></svg></span>Alpha Zero Core</a></li>
+                <li><a href="alpha-zero-markets.html" class="footer-item-link"><span class="footer-icon-box"><svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V4h-5z"/></svg></span>Alpha Zero Markets</a></li>
+                <li><a href="alpha-zero-branch.html" class="footer-item-link"><span class="footer-icon-box"><svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></span>Alpha Zero Branch</a></li>
+                <li><a href="alpha-zero-signal.html" class="footer-item-link"><span class="footer-icon-box"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/></svg></span>Alpha Zero Signal</a></li>
+              </ul>
+            </div>
+            <div class="footer-col-group">
+              <div class="footer-col-header">Products</div>
+              <ul class="footer-links-list">
+                <li><a href="alpha-zero-web-app.html" class="footer-item-link"><span class="footer-icon-box"><svg viewBox="0 0 24 24"><path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z"/></svg></span>Alpha Zero Web App</a></li>
+                <li><a href="alpha-zero-studio.html" class="footer-item-link"><span class="footer-icon-box"><svg viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg></span>Alpha Zero Studio</a></li>
+                <li><a href="alpha-zero-api.html" class="footer-item-link"><span class="footer-icon-box"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg></span>Alpha Zero API</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- COLUMN 2: RESEARCH -->
+          <div>
+            <div class="footer-col-group">
+              <div class="footer-col-header">Research</div>
+              <ul class="footer-links-list">
+                <li><a href="#" class="footer-item-link"><span class="footer-icon-box"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg></span>Multiverse Modeling</a></li>
+                <li><a href="#" class="footer-item-link">Backtests</a></li>
+                <li><a href="#" class="footer-item-link">Data Integrity</a></li>
+                <li><a href="#" class="footer-item-link">Responsible Simulation</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom-bar">
+        <span class="footer-powered" style="font-size:14px;color:var(--text-muted);">Powered by <a href="https://alieninc.tech" style="color:var(--text-main);font-weight:500;">Alien Inc</a></span>
+        <ul class="footer-legal-links">
+          <li><a href="#">Privacy</a></li>
+          <li><a href="#">Terms</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <!-- SCROLL INTERACTION SCRIPT -->
+  <script>
+    const header = document.getElementById('header');
+    const jumpLinks = document.querySelectorAll('.jump-link');
+    const sections = document.querySelectorAll('section[id]');
+
+    window.addEventListener('scroll', () => {
+      // Toggle header shadow on scroll
+      if (window.scrollY > 20) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+
+      // Highlight active jump link based on scroll position
+      let currentSection = '';
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop - 140;
+        if (window.scrollY >= sectionTop) {
+          currentSection = section.getAttribute('id');
+        }
+      });
+
+      jumpLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === `#${currentSection}`) {
+          link.classList.add('active');
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>

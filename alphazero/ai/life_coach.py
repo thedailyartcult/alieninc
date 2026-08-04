@@ -7,9 +7,37 @@ character attributes, simulation results, and life coaching principles.
 from __future__ import annotations
 
 import json
+import os
+import sys
 from typing import Dict, List, Any, Optional
 
-from engine.character import Character
+from engine.character import Character, Gender
+
+
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434/api/generate")
+OLLAMA_MODEL = os.environ.get("OLLAMA_COACH_MODEL", "llama3.2:latest")
+
+
+def _ollama_generate(prompt: str, model: Optional[str] = None,
+                     timeout: int = 90) -> Optional[str]:
+    """Call the local Ollama server; return raw text or None on any failure.
+
+    Honors OLLAMA_DISABLE=1 to skip the LLM (deterministic mode for tests).
+    """
+    if os.environ.get("OLLAMA_DISABLE") == "1":
+        return None
+    try:
+        import requests
+        resp = requests.post(
+            OLLAMA_URL,
+            json={"model": model or OLLAMA_MODEL, "prompt": prompt, "stream": False},
+            timeout=timeout,
+        )
+        if resp.status_code == 200:
+            return resp.json().get("response")
+    except Exception:
+        pass
+    return None
 
 
 class LifeCoachAgent:
@@ -210,15 +238,72 @@ class LifeCoachAgent:
         return focus_areas
 
     def _generate_life_advice(self, character: Character) -> Dict[str, Any]:
-        """Generate holistic life advice based on character's situation."""
-        advice = {
+        """Generate holistic life advice based on character's situation.
+
+        Tries to personalize the advice with the local Ollama LLM first,
+        falling back to the deterministic heuristic advice when unavailable.
+        """
+        basic_advice = {
             "overall philosophy": self._get_philosophical_advice(character),
             "daily_habits": self._suggest_daily_habits(character),
             "medium_term_goals": self._suggest_medium_term_goals(character),
             "long_term_vision": self._suggest_long_term_vision(character),
             "key_insight": self._derive_key_insight(character),
         }
-        return advice
+
+        enhanced = self._enhance_with_llm(character, basic_advice)
+        if enhanced and enhanced.get("key_insight"):
+            return enhanced
+        return basic_advice
+
+    def _enhance_with_llm(self, character: Character, basic_advice: Dict[str, Any]) -> Dict[str, Any]:
+        """Use Ollama to tailor the coaching advice to the character."""
+        prompt = f"""
+        You are a wise life coach. Given this character profile and the basic
+        advice generated for them, enhance the advice to be deeply personalized
+        and actionable for this specific person.
+
+        Character profile:
+        - Name: {character.name}, Age: {character.age}
+        - Happiness: {character.happiness}/100, Health: {character.health}/100
+        - Smarts: {character.smarts}/100, Looks: {character.looks}/100
+        - Karma: {character.karma}/100, Net Worth: ${character.net_worth:,.0f}
+        - Occupation: {character.occupation}, Education: {character.education_level}
+        - City: {character.current_city}
+
+        Basic advice: {json.dumps(basic_advice, default=str)}
+
+        Return ONLY valid JSON with keys:
+        - overall philosophy (string): deeper philosophical advice
+        - daily_habits (array of strings): specific daily routines
+        - medium_term_goals (array of strings): 6-12 month goals
+        - long_term_vision (string): 5+ year vision
+        - key_insight (string): one powerful, memorable insight
+
+        Do not include markdown or explanation.
+        """
+        raw = _ollama_generate(prompt)
+        if not raw:
+            return {}
+        try:
+            parsed = json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            import re
+            match = re.search(r"\{.*\}", raw, re.DOTALL)
+            if not match:
+                return {}
+            try:
+                parsed = json.loads(match.group(0))
+            except (json.JSONDecodeError, TypeError):
+                return {}
+        if not isinstance(parsed, dict):
+            return {}
+        # Use LLM fields where present, keeping heuristic advice as fallback
+        out = dict(basic_advice)
+        for key in ("overall philosophy", "daily_habits", "medium_term_goals", "long_term_vision", "key_insight"):
+            if parsed.get(key):
+                out[key] = parsed[key]
+        return out
 
     def _get_philosophical_advice(self, character: Character) -> str:
         """Get philosophical advice based on character's attributes."""
@@ -831,3 +916,90 @@ class LifeCoachAgent:
             needs["education"] = "educational support or tutoring"
 
         return needs
+
+    def provide_advice(self, character_data: Dict[str, Any], situation: str = "general") -> Dict[str, Any]:
+        """Coaching from a plain dict (MCP JSON protocol). Converts to Character."""
+        character = character_from_dict(character_data)
+        coaching = self.provide_coaching(character, situation)
+        return {
+            "character_name": character.name,
+            "situation": situation,
+            "analysis": coaching.get("analysis", {}),
+            "specific_recommendations": coaching.get("specific_recommendations", []),
+            "recommendations": coaching.get("specific_recommendations", []),
+            "action_plan": coaching.get("action_plan", {}),
+            "encouragement": coaching.get("encouragement", ""),
+            "life_advice": self._generate_life_advice(character),
+        }
+
+    def provide_coaching_with_llm(self, character_data: Dict[str, Any], situation: str = "general") -> Dict[str, Any]:
+        """Same as provide_advice, but forces LLM-enhanced life advice when available."""
+        return self.provide_advice(character_data, situation)
+
+
+def character_from_dict(data: Dict[str, Any]) -> Character:
+    """Build a Character from a JSON-style dict with safe defaults."""
+    gender_raw = data.get("gender", "male")
+    try:
+        gender = Gender(gender_raw)
+    except (ValueError, KeyError):
+        gender = Gender.MALE
+
+    return Character(
+        name=data.get("name", "Unknown"),
+        age=int(data.get("age", 0)),
+        gender=gender,
+        happiness=int(data.get("happiness", 50)),
+        health=int(data.get("health", 70)),
+        smarts=int(data.get("smarts", 50)),
+        looks=int(data.get("looks", 50)),
+        karma=int(data.get("karma", 50)),
+        money=float(data.get("money", 0.0)),
+        net_worth=float(data.get("net_worth", 0.0)),
+        portfolio_value=float(data.get("portfolio_value", 0.0)),
+        birthplace=data.get("birthplace", "Unknown"),
+        current_city=data.get("current_city", "Unknown"),
+        occupation=data.get("occupation", "Unemployed"),
+        education_level=data.get("education_level", data.get("education", "None")),
+        relationship_status=data.get("relationship_status", "Single"),
+        social_variables=data.get("social_variables", {}),
+        desires=data.get("desires", {}),
+        seed=int(data.get("seed", 0)),
+        universe_id=data.get("universe_id", "anchor"),
+    )
+
+
+def main() -> None:
+    """CLI entry point: read JSON on stdin, write JSON on stdout.
+
+    Protocol (used by the Rust MCP client and Go core integration):
+      input:  {"character_json": str|object, "situation": str}
+      output: {"status": "success", "result": {...coaching...}}
+    """
+    try:
+        raw = sys.stdin.buffer.read().decode("utf-8")
+    except Exception:
+        raw = ""
+
+    request = {}
+    if raw:
+        try:
+            request = json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            request = {}
+
+    character_data = request.get("character_json") or request.get("character") or {}
+    if isinstance(character_data, str):
+        try:
+            character_data = json.loads(character_data)
+        except (json.JSONDecodeError, TypeError):
+            character_data = {}
+
+    situation = request.get("situation", "general")
+    agent = LifeCoachAgent()
+    advice = agent.provide_advice(character_data, situation)
+    print(json.dumps({"status": "success", "result": advice}, default=str))
+
+
+if __name__ == "__main__":
+    main()

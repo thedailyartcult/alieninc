@@ -184,21 +184,22 @@ class DecisionAssistantAgent:
         net_worths = [result.get("final_net_worth", 0) for result in simulation_results]
         happiness_levels = [result.get("final_happiness", 0) for result in simulation_results]
 
-        analysis = self.analyze_simulation_outcomes(simulation_results)
+        risk_assessment = self._assess_risks_and_opportunities(simulation_results)
+        path_analysis = self._analyze_potential_paths(simulation_results)
 
-        if analysis["risk_assessment"]["risk_factors"]:
-            recommendations.extend(analysis["risk_assessment"]["risk_factors"])
+        if risk_assessment.get("risk_factors"):
+            recommendations.extend(risk_assessment.get("risk_factors"))
 
-        if analysis["risk_assessment"]["opportunities"]:
-            recommendations.extend(analysis["risk_assessment"]["opportunities"])
+        if risk_assessment.get("opportunities"):
+            recommendations.extend(risk_assessment.get("opportunities"))
 
-        if analysis["path_analysis"]["balanced"]:
+        if path_analysis.get("balanced"):
             recommendations.append("Balanced paths (wealth + happiness) are most achievable")
 
-        if analysis["path_analysis"]["wealth_focused"]:
+        if path_analysis.get("wealth_focused"):
             recommendations.append("Wealth-focused paths demonstrate strong financial strategies")
 
-        if analysis["path_analysis"]["happiness_focused"]:
+        if path_analysis.get("happiness_focused"):
             recommendations.append("Happiness-focused paths show the value of non-material success")
 
         return recommendations
@@ -525,3 +526,35 @@ class DecisionAssistantAgent:
             "recommendations": recommendations,
         }
         self.decision_history.append(decision)
+
+
+def main() -> None:
+    """CLI entry point: read JSON on stdin, write JSON on stdout.
+
+    Protocol (used by the Rust MCP client and Go core integration):
+      input:  {"simulation_results": [...]}
+      output: {"status": "success", "result": {...analysis...}}
+    """
+    import sys
+    import json as _json
+
+    try:
+        raw = sys.stdin.buffer.read().decode("utf-8")
+    except Exception:
+        raw = ""
+
+    request = {}
+    if raw:
+        try:
+            request = _json.loads(raw)
+        except (_json.JSONDecodeError, TypeError):
+            request = {}
+
+    results = request.get("simulation_results", [])
+    agent = DecisionAssistantAgent()
+    analysis = agent.analyze_simulation_outcomes(results)
+    print(_json.dumps({"status": "success", "result": analysis}, default=str))
+
+
+if __name__ == "__main__":
+    main()

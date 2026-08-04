@@ -321,3 +321,57 @@ class StorytellerAgent:
         return self.generate_simulation_narrative(simulation_results)
 
 
+
+
+def main() -> None:
+    """CLI entry point: read JSON on stdin, write JSON on stdout.
+
+    Protocol (used by the Rust MCP client and Go core integration):
+      input:  {"character_name": str, "simulation_result": {...}} or
+              {"simulation_results": [...]}
+      output: {"status": "success", "result": {...narrative...}}
+    """
+    import sys
+    import json as _json
+
+    try:
+        raw = sys.stdin.buffer.read().decode("utf-8")
+    except Exception:
+        raw = ""
+
+    request = {}
+    if raw:
+        try:
+            request = _json.loads(raw)
+        except (_json.JSONDecodeError, TypeError):
+            request = {}
+
+    agent = StorytellerAgent()
+
+    simulation_results = request.get("simulation_results")
+    if simulation_results:
+        result = agent.generate_simulation_narrative(simulation_results)
+    else:
+        simulation_result = request.get("simulation_result", {})
+        from engine.character import Character, Gender
+
+        sim = simulation_result if isinstance(simulation_result, dict) else {}
+        character = Character(
+            name=request.get("character_name", sim.get("character_name", "Unknown")),
+            age=int(sim.get("final_age", sim.get("age", 30))),
+            gender=Gender.MALE,
+            happiness=int(sim.get("final_happiness", sim.get("happiness", 50))),
+            health=int(sim.get("final_health", sim.get("health", 70))),
+            net_worth=float(sim.get("final_net_worth", sim.get("net_worth", 0.0))),
+            occupation=sim.get("occupation", "Unknown"),
+        )
+        result = {
+            "character_name": character.name,
+            "narrative": agent.generate_character_narrative(character, sim),
+        }
+
+    print(_json.dumps({"status": "success", "result": result}, default=str))
+
+
+if __name__ == "__main__":
+    main()

@@ -7,6 +7,8 @@
 //
 // Protocol: JSON object on stdin, JSON object on stdout.
 // Commands: forecast | market | compare | stress | benchmark
+//
+//	| interview | coach | analyze | narrate | memory (Phase 6 AI)
 package main
 
 import (
@@ -280,19 +282,72 @@ type CompareRequest struct {
 }
 
 type StressRequest struct {
-	InitialValue float64            `json:"initial_value"`
-	Strategy     string             `json:"strategy"`
-	Allocations  map[string]float64 `json:"allocations"`
-	Volatility   float64            `json:"volatility"`
+	InitialValue float64                       `json:"initial_value"`
+	Strategy     string                        `json:"strategy"`
+	Allocations  map[string]float64            `json:"allocations"`
+	Volatility   float64                       `json:"volatility"`
 	Scenarios    map[string]map[string]float64 `json:"scenarios"`
 }
 
 type BenchmarkRequest struct {
-	Seed    int64 `json:"seed"`
-	Years   int   `json:"years"`
-	Paths   int   `json:"paths"`
-	Rounds  int   `json:"rounds"`
+	Seed    int64   `json:"seed"`
+	Years   int     `json:"years"`
+	Paths   int     `json:"paths"`
+	Rounds  int     `json:"rounds"`
 	Initial float64 `json:"initial_value"`
+}
+
+// ---------------------------------------------------------------------------
+// Phase 6: AI agent command requests (interview | coach | analyze | narrate | memory)
+//
+// These commands expose the JSON protocol consumed by the Rust MCP client and
+// MCP server. The Go core provides deterministic baseline handling; the Rust
+// client bridges to the Python AI agents for the full LLM-powered behavior.
+// ---------------------------------------------------------------------------
+
+type InterviewRequest struct {
+	Name        string `json:"name"`
+	Age         int    `json:"age"`
+	Gender      string `json:"gender"`
+	InitialText string `json:"initial_interview_text"`
+	Workspace   string `json:"workspace"`
+	Repo        string `json:"repo"`
+}
+
+type CoachingRequest struct {
+	Workspace     string `json:"workspace"`
+	CharacterJSON string `json:"character_json"`
+	Situation     string `json:"situation"`
+	Repo          string `json:"repo"`
+	SessionID     string `json:"session_id"`
+}
+
+type AnalyzeRequest struct {
+	Workspace         string          `json:"workspace"`
+	SimulationResults []SimulationRes `json:"simulation_results"`
+	Repo              string          `json:"repo"`
+}
+
+type SimulationRes struct {
+	FinalNetWorth  float64 `json:"final_net_worth"`
+	FinalHappiness float64 `json:"final_happiness"`
+	FinalAge       int     `json:"final_age"`
+}
+
+type NarrateRequest struct {
+	Workspace        string        `json:"workspace"`
+	CharacterName    string        `json:"character_name"`
+	SimulationResult SimulationRes `json:"simulation_result"`
+	Repo             string        `json:"repo"`
+}
+
+type MemoryRequest struct {
+	Workspace string         `json:"workspace"`
+	Operation string         `json:"operation"` // store | retrieve | update | delete | create_session
+	Data      map[string]any `json:"data"`
+	Query     string         `json:"query"`
+	SessionID string         `json:"session_id"`
+	Repo      string         `json:"repo"`
 }
 
 func fail(err error) {
@@ -367,16 +422,16 @@ func cmdForecast(req ForecastRequest) {
 	probLoss /= float64(len(finalValues))
 
 	writeJSON(map[string]any{
-		"initial_value": req.InitialValue,
-		"years":         years,
-		"paths":         len(finalValues),
-		"seed":          req.Seed,
-		"percentiles":   percentiles,
-		"mean_value":    math.Round(mean*100) / 100,
-		"median_value":  math.Round(median*100) / 100,
-		"prob_of_loss":  math.Round(probLoss*10000) / 10000,
-		"worst_path":    math.Round(sorted[0]*100) / 100,
-		"best_path":     math.Round(sorted[len(sorted)-1]*100) / 100,
+		"initial_value":     req.InitialValue,
+		"years":             years,
+		"paths":             len(finalValues),
+		"seed":              req.Seed,
+		"percentiles":       percentiles,
+		"mean_value":        math.Round(mean*100) / 100,
+		"median_value":      math.Round(median*100) / 100,
+		"prob_of_loss":      math.Round(probLoss*10000) / 10000,
+		"worst_path":        math.Round(sorted[0]*100) / 100,
+		"best_path":         math.Round(sorted[len(sorted)-1]*100) / 100,
 		"median_return_pct": math.Round((median/req.InitialValue-1)*100*100) / 100,
 	})
 }
@@ -424,12 +479,12 @@ func cmdCompare(req CompareRequest) {
 		}
 		avg /= float64(len(annual))
 		results[strat.Name] = map[string]any{
-			"name":                 strat.DisplayName,
-			"final_value":          value,
-			"total_return_pct":     math.Round(totalReturn*100) / 100,
+			"name":                  strat.DisplayName,
+			"final_value":           value,
+			"total_return_pct":      math.Round(totalReturn*100) / 100,
 			"annualized_return_pct": math.Round(avg*100*100) / 100,
-			"volatility":           strat.Volatility,
-			"sharpe_target":        strat.Sharpe,
+			"volatility":            strat.Volatility,
+			"sharpe_target":         strat.Sharpe,
 		}
 	}
 	writeJSON(map[string]any{"results": results})
@@ -486,22 +541,22 @@ func cmdStress(req StressRequest) {
 		}
 		affected := req.InitialValue * (1 + portfolioShock)
 		results = append(results, map[string]any{
-			"scenario":       scenario,
+			"scenario":        scenario,
 			"portfolio_shock": math.Round(portfolioShock*10000) / 10000,
-			"value_after":    math.Round(affected*100) / 100,
-			"loss":           math.Round((req.InitialValue-affected)*100) / 100,
+			"value_after":     math.Round(affected*100) / 100,
+			"loss":            math.Round((req.InitialValue-affected)*100) / 100,
 		})
 	}
 	sort.Slice(results, func(i, j int) bool {
 		return results[i]["portfolio_shock"].(float64) < results[j]["portfolio_shock"].(float64)
 	})
 	writeJSON(map[string]any{
-		"strategy":        req.Strategy,
-		"initial_value":   req.InitialValue,
-		"volatility":      req.Volatility,
-		"scenarios":       results,
-		"worst_scenario":  results[0]["scenario"],
-		"best_scenario":   results[len(results)-1]["scenario"],
+		"strategy":       req.Strategy,
+		"initial_value":  req.InitialValue,
+		"volatility":     req.Volatility,
+		"scenarios":      results,
+		"worst_scenario": results[0]["scenario"],
+		"best_scenario":  results[len(results)-1]["scenario"],
 	})
 }
 
@@ -522,11 +577,11 @@ func cmdBenchmark(req BenchmarkRequest) {
 	}
 	elapsed := time.Since(start)
 	writeJSON(map[string]any{
-		"rounds":    req.Rounds,
-		"paths":     req.Paths,
-		"years":     req.Years,
+		"rounds":     req.Rounds,
+		"paths":      req.Paths,
+		"years":      req.Years,
 		"elapsed_ms": elapsed.Milliseconds(),
-		"runs":      req.Rounds * req.Paths,
+		"runs":       req.Rounds * req.Paths,
 	})
 }
 
@@ -535,6 +590,154 @@ func max(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// ---------------------------------------------------------------------------
+// Phase 6: AI agent commands
+//
+// Deterministic baseline handlers. The Rust MCP client replaces these with
+// the full Python AI agent implementations via `python3 ai/<agent>.py`.
+// ---------------------------------------------------------------------------
+
+func cmdInterview(req InterviewRequest) {
+	profile := map[string]any{
+		"name":             firstNonEmpty(req.Name, "Unknown"),
+		"age":              req.Age,
+		"gender":           firstNonEmpty(req.Gender, "male"),
+		"happiness":        50,
+		"health":           70,
+		"smarts":           50,
+		"looks":            50,
+		"karma":            50,
+		"occupation":       "unknown",
+		"education":        "unknown",
+		"birthplace":       "Unknown",
+		"current_city":     "Unknown",
+		"social_variables": map[string]int{},
+		"desires":          map[string]float64{},
+	}
+	writeJSON(map[string]any{
+		"status":  "success",
+		"backend": "go",
+		"profile": profile,
+		"persona": profile,
+		"message": "baseline profile from Go core; use Rust client for full AI extraction",
+	})
+}
+
+func cmdCoach(req CoachingRequest) {
+	character := map[string]any{}
+	if req.CharacterJSON != "" {
+		if err := json.Unmarshal([]byte(req.CharacterJSON), &character); err != nil {
+			character = map[string]any{}
+		}
+	}
+	advice := map[string]any{
+		"character_name": firstNonEmpty(str(character["name"]), "Unknown"),
+		"situation":      firstNonEmpty(req.Situation, "general"),
+		"analysis": map[string]any{
+			"overall_health":  "baseline",
+			"immediate_focus": []string{"Build consistent daily habits"},
+		},
+		"recommendations": []string{
+			"Invest in health and learning consistently",
+			"Build a diversified financial portfolio",
+			"Maintain strong relationships and community ties",
+		},
+		"action_plan": map[string]any{
+			"immediate_steps":  []string{"Sleep 7-9 hours", "Save 20% of income"},
+			"short_term_goals": []string{"Build an emergency fund", "Learn a new skill"},
+			"long_term_vision": "Create sustainable wealth and wellbeing",
+		},
+		"encouragement": "Keep building momentum — small consistent steps compound.",
+		"message":       "baseline advice from Go core; use Rust client for full AI coaching",
+	}
+	writeJSON(map[string]any{"status": "success", "backend": "go", "result": advice})
+}
+
+func cmdAnalyze(req AnalyzeRequest) {
+	total := len(req.SimulationResults)
+	avgNW, avgHap := 0.0, 0.0
+	if total > 0 {
+		for _, r := range req.SimulationResults {
+			avgNW += r.FinalNetWorth
+			avgHap += r.FinalHappiness
+		}
+		avgNW /= float64(total)
+		avgHap /= float64(total)
+	}
+	analysis := map[string]any{
+		"simulation_results": req.SimulationResults,
+		"summary": map[string]any{
+			"total":         total,
+			"avg_net_worth": math.Round(avgNW*100) / 100,
+			"avg_happiness": math.Round(avgHap*100) / 100,
+		},
+		"recommendations": []string{
+			"Balanced paths (wealth + happiness) are most achievable",
+			"Maintain diversified investments across regimes",
+		},
+		"message": "baseline analysis from Go core; use Rust client for full AI analysis",
+	}
+	writeJSON(map[string]any{"status": "success", "backend": "go", "result": analysis})
+}
+
+func cmdNarrate(req NarrateRequest) {
+	narrative := map[string]any{
+		"character_name": firstNonEmpty(req.CharacterName, "Unknown"),
+		"age":            req.SimulationResult.FinalAge,
+		"title":          "The Story of " + firstNonEmpty(req.CharacterName, "Unknown"),
+		"opening":        "Every life holds countless parallel paths.",
+		"development":    []string{},
+		"climax":         "The turning point arrived when choices became consequences.",
+		"resolution":     "A new chapter begins.",
+		"key_insights":   []string{"Every choice shapes the future"},
+		"message":        "baseline narrative from Go core; use Rust client for full AI storytelling",
+	}
+	writeJSON(map[string]any{"status": "success", "backend": "go", "result": narrative})
+}
+
+func cmdMemory(req MemoryRequest) {
+	switch req.Operation {
+	case "store":
+		learningID := firstNonEmpty(str(req.Data["learning_id"]), "unknown")
+		writeJSON(map[string]any{
+			"status":  "success",
+			"backend": "go",
+			"result":  map[string]any{"learning_id": learningID, "stored": true},
+			"message": "baseline memory store; use Rust client for full persistence",
+		})
+	case "retrieve":
+		writeJSON(map[string]any{
+			"status":  "success",
+			"backend": "go",
+			"result":  map[string]any{"results": []any{}, "count": 0},
+			"message": "baseline memory retrieve; use Rust client for full recall",
+		})
+	default:
+		writeJSON(map[string]any{
+			"status":  "success",
+			"backend": "go",
+			"result":  map[string]any{"operation": req.Operation, "accepted": true},
+			"message": "baseline memory operation; use Rust client for full implementation",
+		})
+	}
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+func str(v any) string {
+	if s, ok := v.(string); ok {
+		return s
+	}
+	return ""
 }
 
 // ---------------------------------------------------------------------------
@@ -586,6 +789,36 @@ func main() {
 			fail(err)
 		}
 		cmdBenchmark(req)
+	case "interview":
+		var req InterviewRequest
+		if err := json.Unmarshal(raw, &req); err != nil {
+			fail(err)
+		}
+		cmdInterview(req)
+	case "coach":
+		var req CoachingRequest
+		if err := json.Unmarshal(raw, &req); err != nil {
+			fail(err)
+		}
+		cmdCoach(req)
+	case "analyze":
+		var req AnalyzeRequest
+		if err := json.Unmarshal(raw, &req); err != nil {
+			fail(err)
+		}
+		cmdAnalyze(req)
+	case "narrate":
+		var req NarrateRequest
+		if err := json.Unmarshal(raw, &req); err != nil {
+			fail(err)
+		}
+		cmdNarrate(req)
+	case "memory":
+		var req MemoryRequest
+		if err := json.Unmarshal(raw, &req); err != nil {
+			fail(err)
+		}
+		cmdMemory(req)
 	default:
 		writeJSON(map[string]any{"error": "unknown command: " + cmd})
 		os.Exit(1)

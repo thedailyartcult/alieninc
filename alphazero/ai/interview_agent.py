@@ -7,11 +7,35 @@ seed Character objects for Alpha Zero multiverse simulations.
 from __future__ import annotations
 
 import json
+import os
 import re
+import sys
 from typing import Dict, List, Optional, Any
 
 from engine.character import Character, Gender
 from engine.social_variables import ALL_VARIABLES
+
+
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434/api/generate")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:latest")
+OLLAMA_TIMEOUT = int(os.environ.get("OLLAMA_TIMEOUT", "30"))
+
+
+def _ollama_generate(prompt: str, model: Optional[str] = None,
+                     timeout: Optional[int] = None) -> Optional[str]:
+    """Call the local Ollama server; return raw text or None on any failure."""
+    try:
+        import requests
+        resp = requests.post(
+            OLLAMA_URL,
+            json={"model": model or OLLAMA_MODEL, "prompt": prompt, "stream": False},
+            timeout=timeout if timeout is not None else OLLAMA_TIMEOUT,
+        )
+        if resp.status_code != 200:
+            return None
+        return resp.json().get("response")
+    except Exception:
+        return None
 
 
 class InterviewAgent:
@@ -24,9 +48,134 @@ class InterviewAgent:
     def extract_persona_from_text(self, text: str) -> Dict[str, Any]:
         """Extract persona information from interview text using LLM-like processing.
 
-        In a real implementation, this would call an LLM API. For now, we'll
-        use regex patterns and rule-based extraction.
+        Strategy: the deterministic regex extraction is always the reliable base
+        (guaranteed 34-variable coverage). When the local Ollama LLM is
+        available, its higher-quality extractions are merged on top so the
+        persona keeps full variable coverage while gaining LLM personalization.
         """
+        persona = self._extract_with_regex(text)
+
+        llm = self._extract_with_llm(text)
+        if not isinstance(llm, dict) or not llm:
+            return persona
+
+        proper_name = re.compile(r"^[A-Z][a-z]+(?: [A-Z][a-z]+)*$")
+
+        # Name: only overlay when the regex found nothing AND the LLM name
+        # looks like a real capitalized proper name (small local models
+        # frequently hallucinate tokens like "Interviewer").
+        llm_name = llm.get("name")
+        if (persona.get("name") in (None, "", "Unknown")
+                and isinstance(llm_name, str)
+                and proper_name.match(llm_name.strip())):
+            persona["name"] = llm_name.strip()
+
+        # Occupation / education / location: overlay when LLM answered.
+        for field in ("occupation", "education", "birthplace", "current_city"):
+            value = llm.get(field)
+            if isinstance(value, str) and value.strip() and value.strip().lower() != "unknown":
+                persona[field] = value.strip()
+
+        # Desires and inferred traits: overlay when non-empty.
+        for field in ("desires", "inferred_traits"):
+            value = llm.get(field)
+            if isinstance(value, (dict, list)) and value:
+                persona[field] = value
+
+        # Numeric stats: only trust the LLM when the regex stayed at its
+        # default, otherwise the deterministic extraction wins.
+        defaults = {"happiness": 50, "health": 70, "smarts": 50, "looks": 50, "karma": 50}
+        for field, default in defaults.items():
+            if persona.get(field) != default:
+                continue
+            value = llm.get(field)
+            if isinstance(value, (int, float)) and 0 <= int(value) <= 100:
+                persona[field] = int(value)
+
+        age_value = llm.get("age")
+        if persona.get("age") in (None, 0, 25) and isinstance(age_value, (int, float)) and 0 < int(age_value) <= 120:
+            persona["age"] = int(age_value)
+
+        # Social variables: overlay only when LLM returned broad coverage.
+        if llm.get("social_variables") and len(llm["social_variables"]) > 5:
+            merged = dict(persona.get("social_variables", {}))
+            for var_id, value in llm["social_variables"].items():
+                if var_id in merged and isinstance(value, (int, float)):
+                    merged[var_id] = max(0, min(100, int(float(value))))
+            persona["social_variables"] = merged
+
+        return persona
+
+    def _extract_with_llm(self, text: str) -> Dict[str, Any]:
+        """Use Ollama to extract the full persona in a single JSON pass."""
+        prompt = f"""
+        Extract personality information from this interview text.
+
+        Interview: {text}
+
+        Return ONLY valid JSON with these keys:
+        - name: person's name
+        - age: age as integer
+        - gender: male, female, or non_binary
+        - birthplace: place of birth
+        - current_city: current city
+        - occupation: job or profession, or "Unemployed"
+        - education: "None", "Primary", "High School", or "University"
+        - happiness: 0-100 (default 50)
+        - health: 0-100 (default 70)
+        - smarts: 0-100 (default 50)
+        - looks: 0-100 (default 50)
+        - karma: 0-100 (default 50)
+        - social_variables: object with numeric 0-100 values
+        - desires: object with desire strengths as numbers 0.0-1.0
+        - inferred_traits: array of strings
+
+        Do not include any explanation or markdown.
+        """
+        raw = _ollama_generate(prompt)
+        if not raw:
+            return {"name": "Unknown"}
+        return self._parse_llm_json(raw)
+
+    def _infer_with_llm(self, text: str) -> Dict[str, int]:
+        """Use Ollama for the 34 social variables, falling back to regex."""
+        variables = self._infer_social_variables(text)
+        prompt = (
+            "Rate this person on each social/psychological dimension from 0-100 "
+            "based on the interview text.\n\n"
+            f"Interview: {text}\n\n"
+            f"Variables: {json.dumps([v.var_id for v in ALL_VARIABLES])}\n\n"
+            "Return ONLY a JSON object mapping each variable id to an integer 0-100."
+        )
+        raw = _ollama_generate(prompt)
+        if not raw:
+            return variables
+        parsed = self._parse_llm_json(raw)
+        if not isinstance(parsed, dict):
+            return variables
+        merged = dict(variables)
+        for var_id, value in parsed.items():
+            if var_id in merged and isinstance(value, (int, float)):
+                merged[var_id] = max(0, min(100, int(float(value))))
+        return merged
+
+    @staticmethod
+    def _parse_llm_json(raw: str) -> Any:
+        """Best-effort parse of an LLM response into JSON."""
+        try:
+            return json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            pass
+        match = re.search(r"\{.*\}", raw, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group(0))
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return None
+
+    def _extract_with_regex(self, text: str) -> Dict[str, Any]:
+        """Rule-based persona extraction (deterministic fallback)."""
         persona = {
             "name": self._extract_name(text),
             "age": self._extract_age(text),
@@ -94,9 +243,8 @@ class InterviewAgent:
     def _extract_occupation(self, text: str) -> str:
         """Extract occupation from text."""
         patterns = [
-            r"(?:I'm|am) (?:a|an) ([^.\\n]+?)(?:\.|\n|\r|
-, and)",
-            r"work(?:s|s)?\s+(?:as\s+)?([^.\\n]+)",
+            r"(?:I'm|am) (?:a|an) ([^.\n]+?)(?:\.|\n|\r|, and)",
+            r"work(?:s|s)?\s+(?:as\s+)?([^.\n]+)",
         ]
         for pattern in patterns:
             match = re.search(pattern, text, re.IGNORECASE)
@@ -418,3 +566,52 @@ class InterviewAgent:
             "interview_history": self.interview_history,
             "current_profile": self.current_profile,
         }
+
+
+def main() -> None:
+    """CLI entry point: read JSON on stdin, write JSON on stdout.
+
+    Protocol (used by the Rust MCP client and Go core integration):
+      input:  {"name": str, "age": int, "gender": str, "interview_text": str}
+      output: {"persona": {...persona dict...}, "profile": {...same...}}
+
+    Env: OLLAMA_DISABLE=1 skips the LLM call (pure regex mode).
+    """
+    try:
+        raw = sys.stdin.buffer.read().decode("utf-8")
+    except Exception:
+        raw = sys.stdin.read() if hasattr(sys.stdin, "read") else ""
+
+    request = {}
+    if raw:
+        try:
+            request = json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            request = {}
+
+    text = request.get("interview_text") or request.get("initial_interview_text") or ""
+    if not text:
+        fields = [
+            f"{k}: {v}" for k, v in request.items()
+            if k in ("name", "age", "gender", "occupation") and v not in (None, "")
+        ]
+        text = ", ".join(fields)
+
+    agent = InterviewAgent()
+    if os.environ.get("OLLAMA_DISABLE") == "1":
+        persona = agent._extract_with_regex(text)
+    else:
+        persona = agent.extract_persona_from_text(text)
+    agent.current_profile = persona
+
+    output = {
+        "persona": persona,
+        "profile": persona,
+        "social_variables": persona.get("social_variables", {}),
+        "status": "success",
+    }
+    print(json.dumps(output, default=str))
+
+
+if __name__ == "__main__":
+    main()

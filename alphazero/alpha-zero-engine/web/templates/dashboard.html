@@ -479,6 +479,17 @@
 
         <!-- Tab: AI Agents -->
         <div class="tab-content" id="tab-ai-agents">
+            <div class="card" style="grid-column: 1 / -1;">
+                <h3>Full AI Pipeline</h3>
+                <div class="subtext">Interview → simulate → analyze → coach → narrate → memory, end-to-end</div>
+                <div class="control-group">
+                    <label>Interview Text</label>
+                    <textarea id="ai-pipeline-text" rows="3" style="width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:10px;">My name is Maria Santos, I am 28 years old, a nurse from Cebu looking to start her own clinic</textarea>
+                </div>
+                <button class="btn" id="btn-ai-pipeline">Run AI Pipeline</button>
+                <div id="ai-pipeline-result" class="ai-result"></div>
+            </div>
+
             <div class="dashboard">
                 <div class="card">
                     <h3>Interview Agent</h3>
@@ -749,6 +760,46 @@
             } catch (e) {
                 console.error(e);
                 alert('Memory failed: ' + e.message);
+            }
+            setLoading(false);
+        });
+
+                // Full AI Pipeline
+        document.getElementById('btn-ai-pipeline').addEventListener('click', async () => {
+            setLoading(true);
+            try {
+                const res = await fetch('/api/ai/pipeline', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        name: document.getElementById('name').value,
+                        age: parseInt(document.getElementById('age').value),
+                        gender: document.getElementById('gender').value,
+                        strategy: document.getElementById('strategy').value,
+                        universes: Math.min(parseInt(document.getElementById('universes').value), 50),
+                        max_universes: 50,
+                        interview_text: document.getElementById('ai-pipeline-text').value,
+                        workspace: 'web',
+                        persist_memory: true,
+                    })
+                });
+                const data = await res.json();
+                if (data.status !== 'success') throw new Error('Pipeline failed');
+                const p = data.persona;
+                const sim = data.simulation;
+                const recs = (data.analysis.recommendations || []).map(x => `• ${x}`).join('\n');
+                const coachRecs = (data.coaching.recommendations || []).map(x => `• ${x}`).join('\n');
+                renderAIResult('ai-pipeline-result',
+                    `AI Pipeline — ${p.name || '?'} (${p.age || '?'}), ${sim.total_simulations} universes`,
+                    `Convergence: ${(sim.convergence_rate * 100).toFixed(1)}% | Sharpe: ${sim.sharpe_ratio.toFixed(2)}\n` +
+                    `Best universe: ${formatMoney(sim.best.final_net_worth)} net worth, happiness ${sim.best.final_happiness}\n\n` +
+                    `Analysis recommendations:\n${recs || 'none'}\n\n` +
+                    `Coaching:\n${coachRecs || 'none'}\n\n` +
+                    `Story:\n${data.narrative.story.slice(0, 600)}…\n\n` +
+                    `Learning stored: ${data.learning_id || '—'}`);
+            } catch (e) {
+                console.error(e);
+                alert('AI Pipeline failed: ' + e.message);
             }
             setLoading(false);
         });

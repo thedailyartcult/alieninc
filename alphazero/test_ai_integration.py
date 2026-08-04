@@ -421,3 +421,25 @@ def test_web_ai_memory_route():
         "operation": "retrieve", "workspace": "test_ws_web", "query": "route",
     })
     assert r2.get_json()["result"]["count"] >= 1
+
+
+@NEEDS_FLASK
+def test_web_ai_pipeline_route():
+    """End-to-end pipeline: interview -> simulate -> analyze -> coach -> narrate -> memory."""
+    client = _web_app()
+    r = client.post("/api/ai/pipeline", json={
+        "name": "Maria", "age": 28, "gender": "female",
+        "interview_text": "My name is Maria Santos, I am 28 years old, a nurse from Cebu",
+        "universes": 15, "max_universes": 15, "workspace": "test_ws_pipeline",
+        "persist_memory": True,
+    })
+    data = r.get_json()
+    assert r.status_code == 200
+    assert data["status"] == "success"
+    assert data["persona"]["name"] == "Maria"
+    assert data["simulation"]["total_simulations"] >= 15
+    assert data["simulation"]["convergence_rate"] >= 0
+    assert len(data["analysis"]["recommendations"]) > 0
+    assert len(data["coaching"]["recommendations"]) > 0
+    assert len(data["narrative"]["story"]) > 50
+    assert data["learning_id"] is not None

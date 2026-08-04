@@ -374,4 +374,27 @@ def create_app():
 
         return jsonify({"status": "success", "result": result})
 
+    @app.route("/api/ai/pipeline", methods=["POST"])
+    def api_ai_pipeline():
+        """Run the end-to-end AI pipeline: interview -> simulate -> analyze
+        -> coach -> narrate -> memory."""
+        from ai.pipeline import run_ai_pipeline
+
+        data = request.json or {}
+        text = data.get("interview_text") or data.get("initial_interview_text") or ""
+        if not text:
+            fields = [f"{k}: {v}" for k, v in data.items()
+                      if k in ("name", "age", "gender", "occupation") and v not in (None, "")]
+            text = ", ".join(fields)
+
+        max_universes = int(data.get("max_universes", 100))
+        result = run_ai_pipeline(
+            text,
+            workspace=data.get("workspace", "web"),
+            overrides=data,
+            persist_memory=data.get("persist_memory", True),
+            max_universes=max_universes,
+        )
+        return jsonify(result)
+
     return app

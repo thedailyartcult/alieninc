@@ -367,7 +367,7 @@
       justify-content: flex-start;
       gap: 0.75rem;
       border-radius: 4px;
-      transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+      transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, opacity 0.15s ease;
     }
 
     .network-grid__item:hover {
@@ -1464,6 +1464,10 @@
         min-height: 480px;
       }
     }
+  .network-grid__item.view-switch-fade {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
   </style>
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https:; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
     <meta http-equiv="X-Frame-Options" content="DENY">
@@ -3030,6 +3034,186 @@
     startMapWhenVisible();
   }
 })();
+  </script>
+
+  <script>
+  (function () {
+    var KONAMI_SEQUENCE = [
+      'ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
+      'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight',
+      'b', 'a'
+    ];
+
+    var COMMERCIAL_VIEW = [
+      {
+        label: 'AI-Powered Automation',
+        name: 'Platoon',
+        link: 'https://platoon.alieninc.tech',
+        description: 'Commercial automation platform for enterprise clients.',
+        actions: 'Site'
+      },
+      {
+        label: 'Culture and art preservation',
+        name: 'Art Guessing Game',
+        link: '#',
+        description: 'Commercial art platform and interactive experience.',
+        actions: 'Site'
+      },
+      {
+        label: 'Digital media and publishing',
+        name: 'The Daily Art Cult',
+        link: 'https://thedailyartcult.lol',
+        description: 'Independent publisher and cultural media studio for membership, editorial series, and licensing.',
+        actions: 'Site'
+      },
+      {
+        label: 'Capital allocator',
+        name: 'Rift',
+        link: '#',
+        description: 'Real-time capital routing and portfolio intelligence platform.',
+        actions: 'Site'
+      },
+      {
+        label: 'Crisis &amp; Risk Management',
+        name: 'Ion',
+        link: '#',
+        description: 'Intelligence-driven incident response and operational continuity.',
+        actions: 'Site'
+      },
+      {
+        label: 'Vulnerability &amp; Compliance Scanning',
+        name: 'Cipher',
+        link: '#',
+        description: 'Continuous compliance monitoring and cryptographic threat assessment.',
+        actions: 'Site'
+      },
+      {
+        label: 'Consulting and applied AI',
+        name: 'Kinetic',
+        link: '#',
+        description: 'Knowledge-driven AI workflow transformation and strategy.',
+        actions: 'Site'
+      }
+    ];
+
+    var isCommercialView = true;
+    var konamiIndex = 0;
+    var gridItems = null;
+
+    function getGridItems() {
+      if (!gridItems) {
+        gridItems = document.querySelectorAll('.network-grid__item');
+      }
+      return gridItems;
+    }
+
+    function buildCommercialHTML(item) {
+      var data = COMMERCIAL_VIEW[item];
+      var html = '<div class="network-grid__label">' + data.label + '</div>';
+      html += '<div class="network-grid__value"><a href="' + data.link + '">' + data.name + '</a></div>';
+      if (data.description) {
+        html += '<div class="network-grid__description">' + data.description + '</div>';
+      }
+      html += '<div class="network-grid__actions">';
+      if (data.actions) {
+        html += '<a href="' + data.link + '">' + data.actions + '</a>';
+      }
+      html += '</div>';
+      return html;
+    }
+
+    function buildInternalHTML(index) {
+      var originals = [
+        '<div class="network-grid__label">AI-Powered Automation</div>' +
+        '<div class="network-grid__value"><a href="https://panteon.alieninc.tech">Panteon</a></div>' +
+        '<div class="network-grid__description">Enterprise software and AI-powered automation platforms — ontology-driven business operating systems, edge AI, and digital twins for the public, private, and nonprofit sectors.</div>' +
+        '<div class="network-grid__description" data-ecosystem="company-panteon-revenue" style="color:#ffd400;font-weight:600;font-size:12px;"></div>' +
+        '<div class="network-grid__actions"><a href="https://panteon.alieninc.tech">Site</a><a href="https://panteon.alieninc.tech/login.html">Portal</a></div>',
+
+        '<div class="network-grid__label">Culture and art preservation</div>' +
+        '<div class="network-grid__value"><a href="https://alcantaraartfoundation.alieninc.tech">Alcantara Art Foundation</a></div>' +
+        '<div class="network-grid__description">Affiliated nonprofit for preservation, digitization, exhibitions, donor programs, and public access.</div>' +
+        '<div class="network-grid__description" data-ecosystem="company-alcantara-revenue" style="color:#ffd400;font-weight:600;font-size:12px;"></div>' +
+        '<div class="network-grid__actions"><a href="https://alcantaraartfoundation.alieninc.tech">Site</a><a href="https://alcantaraartfoundation.alieninc.tech/privacy.html">Privacy</a></div>',
+
+        '<div class="network-grid__label">Digital media and publishing</div>' +
+        '<div class="network-grid__value"><a href="https://thedailyartcult.lol">The Daily Art Cult</a></div>' +
+        '<div class="network-grid__description">Independent publisher and cultural media studio for membership, editorial series, and licensing.</div>' +
+        '<div class="network-grid__description" data-ecosystem="company-tdac-revenue" style="color:#ffd400;font-weight:600;font-size:12px;"></div>' +
+        '<div class="network-grid__actions"><a href="https://thedailyartcult.lol">Site</a></div>',
+
+        '<div class="network-grid__label">Capital allocator</div>' +
+        '<div class="network-grid__value"><a href="https://rousseau.alieninc.tech">Rousseau Holdings</a></div>' +
+        '<div class="network-grid__description">Capital allocation, governance, board reporting, and portfolio operating discipline.</div>' +
+        '<div class="network-grid__description" data-ecosystem="company-rousseau-revenue" style="color:#ffd400;font-weight:600;font-size:12px;"></div>' +
+        '<div class="network-grid__actions"><a href="https://rousseau.alieninc.tech">Site</a><a href="https://rousseau.alieninc.tech/funds.html">Funds</a></div>',
+
+        '<div class="network-grid__label">Crisis &amp; Risk Management</div>' +
+        '<div class="network-grid__value"><a href="https://immanuel.alieninc.tech">Immanuel</a></div>' +
+        '<div class="network-grid__description">The only true global, end-to-end crisis and risk management experts. Combining always-on intelligence, enterprise platforms, and in-country security and medical teams across 190+ countries.</div>' +
+        '<div class="network-grid__description" data-ecosystem="company-immanuel-revenue" style="color:#ffd400;font-weight:600;font-size:12px;"></div>' +
+        '<div class="network-grid__actions"><a href="https://immanuel.alieninc.tech">Site</a></div>',
+
+        '<div class="network-grid__label">Vulnerability &amp; Compliance Scanning</div>' +
+        '<div class="network-grid__value"><a href="https://centra.alieninc.tech">Centra</a></div>' +
+        '<div class="network-grid__description">Automated security scanning, vulnerability assessment, bot defense, intrusion detection, compliance monitoring, and the group-wide compliance scanning engine.</div>' +
+        '<div class="network-grid__description" data-ecosystem="company-centra-revenue" style="color:#ffd400;font-weight:600;font-size:12px;"></div>' +
+        '<div class="network-grid__actions"><a href="https://centra.alieninc.tech">Site</a><a href="https://centra.alieninc.tech/scan.html">Scanner</a></div>',
+
+        '<div class="network-grid__label">Consulting and applied AI</div>' +
+        '<div class="network-grid__value"><a href="https://kmt.alieninc.tech">KMT Consulting Group</a></div>' +
+        '<div class="network-grid__description">Strategy, applied AI workflow transformation, operating model design, and post-merger integration.</div>' +
+        '<div class="network-grid__description" data-ecosystem="company-kmt-revenue" style="color:#ffd400;font-weight:600;font-size:12px;"></div>' +
+        '<div class="network-grid__actions"><a href="https://kmt.alieninc.tech">Site</a></div>'
+      ];
+      return originals[index];
+    }
+
+    function applyView(isCommercial) {
+      var items = getGridItems();
+      if (!items.length) return;
+
+      for (var i = 0; i < items.length; i++) {
+        items[i].classList.add('view-switch-fade');
+      }
+
+      setTimeout(function () {
+        for (var i = 0; i < items.length; i++) {
+          if (isCommercial) {
+            items[i].innerHTML = buildCommercialHTML(i);
+          } else {
+            items[i].innerHTML = buildInternalHTML(i);
+          }
+          items[i].classList.remove('view-switch-fade');
+        }
+      }, 150);
+    }
+
+    function toggleView() {
+      isCommercialView = !isCommercialView;
+      applyView(isCommercialView);
+    }
+
+    function handleKeydown(e) {
+      var key = e.key.toLowerCase();
+      var seq = KONAMI_SEQUENCE.map(function (k) { return k.toLowerCase(); });
+      if (key === seq[konamiIndex]) {
+        konamiIndex++;
+        if (konamiIndex === seq.length) {
+          konamiIndex = 0;
+          toggleView();
+        }
+      } else {
+        konamiIndex = 0;
+        if (key === seq[0]) {
+          konamiIndex = 1;
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeydown);
+    applyView(true);
+  })();
   </script>
 
 </body>

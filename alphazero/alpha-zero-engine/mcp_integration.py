@@ -164,6 +164,221 @@ def recall_best_universes(
     return "best performing parallel universes highest net worth"
 
 
+# ─── AI Agent Integration ──────────────────────────────────────────────────────
+
+def store_interview_profile(
+    workspace: str,
+    profile: dict,
+    repo: str = "alphazero",
+    session_id: str = None,
+) -> dict:
+    """
+    Store an AI interview profile and generated character data.
+
+    Args:
+        workspace: CMB workspace
+        profile: Interview profile with name, age, gender, and social variables
+        repo: Repository scope
+        session_id: Optional session ID
+
+    Returns:
+        Memory payload dict
+    """
+    content = json.dumps({
+        "type": "interview_profile",
+        "name": profile.get("name"),
+        "age": profile.get("age"),
+        "gender": profile.get("gender"),
+        "happiness": profile.get("happiness"),
+        "health": profile.get("health"),
+        "smarts": profile.get("smarts"),
+        "looks": profile.get("looks"),
+        "karma": profile.get("karma"),
+        "occupation": profile.get("occupation"),
+        "education": profile.get("education"),
+        "social_variables": profile.get("social_variables", {}),
+        "desires": profile.get("desires", {}),
+        "inferred_traits": profile.get("inferred_traits", []),
+    }, indent=2)
+
+    return {
+        "workspace": workspace,
+        "repo": repo,
+        "content": content,
+        "title": f"Interview Profile: {profile.get('name', 'Unknown')} — Age {profile.get('age', 'N/A')}",
+        "mtype": "semantic",
+        "session_id": session_id,
+        "keywords": ["interview", "profile", "character", "social_variables", "ai_agent"],
+    }
+
+
+def store_coaching_advice(
+    workspace: str,
+    advice: dict,
+    repo: str = "alphazero",
+    session_id: str = None,
+) -> dict:
+    """
+    Store AI coaching advice and recommendations.
+
+    Args:
+        workspace: CMB workspace
+        advice: Coaching data with analysis and recommendations
+        repo: Repository scope
+        session_id: Optional session ID
+
+    Returns:
+        Memory payload dict
+    """
+    content = json.dumps({
+        "type": "coaching_advice",
+        "character_name": advice.get("character_name"),
+        "situation": advice.get("situation"),
+        "analysis": advice.get("analysis", {}),
+        "immediate_focus": advice.get("immediate_focus", []),
+        "growth_areas": advice.get("growth_areas", []),
+        "strengths": advice.get("strengths", []),
+        "recommendations": advice.get("recommendations", []),
+        "action_plan": advice.get("action_plan", {}),
+        "encouragement": advice.get("encouragement"),
+    }, indent=2)
+
+    return {
+        "workspace": workspace,
+        "repo": repo,
+        "content": content,
+        "title": f"Coaching Advice for {advice.get('character_name', 'Unknown')}",
+        "mtype": "procedural",
+        "session_id": session_id,
+        "keywords": ["coaching", "advice", "recommendations", "life_coach", "ai_agent"],
+    }
+
+
+def store_decision_analysis(
+    workspace: str,
+    analysis: dict,
+    repo: str = "alphazero",
+    session_id: str = None,
+) -> dict:
+    """
+    Store AI decision analysis and insights.
+
+    Args:
+        workspace: CMB workspace
+        analysis: Decision analysis with outcomes and recommendations
+        repo: Repository scope
+        session_id: Optional session ID
+
+    Returns:
+        Memory payload dict
+    """
+    content = json.dumps({
+        "type": "decision_analysis",
+        "simulation_results": analysis.get("simulation_results", []),
+        "summary": analysis.get("summary", {}),
+        "path_analysis": analysis.get("path_analysis", {}),
+        "risk_assessment": analysis.get("risk_assessment", {}),
+        "recommendations": analysis.get("recommendations", []),
+        "decision_points": analysis.get("decision_points", []),
+        "scenario_projections": analysis.get("scenario_projections", {}),
+        "insights": analysis.get("insights", []),
+    }, indent=2)
+
+    return {
+        "workspace": workspace,
+        "repo": repo,
+        "content": content,
+        "title": f"Decision Analysis — {len(analysis.get('simulation_results', []))} scenarios",
+        "mtype": "semantic",
+        "session_id": session_id,
+        "keywords": ["decision", "analysis", "insights", "assistant", "ai_agent"],
+    }
+
+
+def store_narrative(
+    workspace: str,
+    narrative: dict,
+    repo: str = "alphazero",
+    session_id: str = None,
+) -> dict:
+    """
+    Store AI-generated narrative and story from simulation data.
+
+    Args:
+        workspace: CMB workspace
+        narrative: Generated narrative with story components
+        repo: Repository scope
+        session_id: Optional session ID
+
+    Returns:
+        Memory payload dict
+    """
+    content = json.dumps({
+        "type": "narrative",
+        "character_name": narrative.get("character_name"),
+        "age": narrative.get("age"),
+        "title": narrative.get("title"),
+        "opening": narrative.get("opening"),
+        "development": narrative.get("development", []),
+        "climax": narrative.get("climax"),
+        "resolution": narrative.get("resolution"),
+        "key_insights": narrative.get("key_insights", []),
+        "sentiment": narrative.get("sentiment", "neutral"),
+    }, indent=2)
+
+    return {
+        "workspace": workspace,
+        "repo": repo,
+        "content": content,
+        "title": f"Narrative: {narrative.get('title', 'Untitled')}",
+        "mtype": "episodic",
+        "session_id": session_id,
+        "keywords": ["narrative", "story", "character", "storyteller", "ai_agent"],
+    }
+
+
+def store_learning(
+    workspace: str,
+    learning: dict,
+    repo: str = "alphazero",
+    session_id: str = None,
+) -> dict:
+    """
+    Store AI learning and knowledge across sessions.
+
+    Args:
+        workspace: CMB workspace
+        learning: Learning data with patterns and insights
+        repo: Repository scope
+        session_id: Optional session ID
+
+    Returns:
+        Memory payload dict
+    """
+    content = json.dumps({
+        "type": "learning",
+        "learning_id": learning.get("learning_id"),
+        "timestamp": learning.get("timestamp"),
+        "data": learning.get("data", {}),
+        "tags": learning.get("tags", []),
+        "importance": learning.get("importance", 0),
+        "source": learning.get("source", "ai_agent"),
+        "patterns": learning.get("patterns", []),
+        "knowledge_graph": learning.get("knowledge_graph", {}),
+        "applications": learning.get("applications", []),
+    }, indent=2)
+
+    return {
+        "workspace": workspace,
+        "repo": repo,
+        "content": content,
+        "title": f"Learning: {learning.get('learning_id', 'Unknown')}",
+        "mtype": "semantic",
+        "session_id": session_id,
+        "keywords": ["learning", "knowledge", "memory", "memory_system", "ai_agent"],
+    }
+
+
 # ─── MCP Tool Definitions ────────────────────────────────────────────────────
 # These can be added to the MCP server's tool registry
 
@@ -365,6 +580,70 @@ ALPHA_ZERO_TOOLS = {
                 "market_returns": {"type": "array", "items": {"type": "number"}, "description": "Market returns array"},
                 "strategies": {"type": "array", "description": "Array of strategy specs"},
                 "seed": {"type": "integer", "description": "Random seed"},
+            },
+        },
+    },
+    "alpha_zero_interview": {
+        "description": "Conduct AI personality interview and generate character profile with 34 social variables.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "Character name"},
+                "age": {"type": "integer", "description": "Starting age"},
+                "gender": {"type": "string", "description": "Gender (male, female, non_binary)"},
+                "initial_interview_text": {"type": "string", "description": "Initial interview message to start personality profiling"},
+                "workspace": {"type": "string", "description": "CMB workspace"},
+                "repo": {"type": "string", "description": "Repository scope"},
+            },
+        },
+    },
+    "alpha_zero_coach": {
+        "description": "Provide AI life coaching advice based on character state and simulation outcomes.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "workspace": {"type": "string", "description": "CMB workspace"},
+                "character_json": {"type": "string", "description": "Character state as JSON string"},
+                "situation": {"type": "string", "description": "Life situation to provide coaching for"},
+                "repo": {"type": "string", "description": "Repository scope"},
+                "session_id": {"type": "string", "description": "Session ID"},
+            },
+        },
+    },
+    "alpha_zero_analyze": {
+        "description": "Analyze simulation outcomes and provide strategic decision guidance.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "workspace": {"type": "string", "description": "CMB workspace"},
+                "simulation_results": {"type": "array", "description": "Array of simulation result objects"},
+                "repo": {"type": "string", "description": "Repository scope"},
+            },
+        },
+    },
+    "alpha_zero_narrate": {
+        "description": "Generate compelling narratives and life stories from simulation data.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "workspace": {"type": "string", "description": "CMB workspace"},
+                "character_name": {"type": "string", "description": "Character name"},
+                "simulation_result": {"type": "object", "description": "Single simulation result object"},
+                "repo": {"type": "string", "description": "Repository scope"},
+            },
+        },
+    },
+    "alpha_zero_memory": {
+        "description": "Store, retrieve, and manage AI learnings across sessions with retention policies.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "workspace": {"type": "string", "description": "CMB workspace"},
+                "operation": {"type": "string", "description": "Operation: 'store', 'retrieve', 'update', 'delete', 'create_session'"},
+                "data": {"type": "object", "description": "Data payload for the operation"},
+                "query": {"type": "string", "description": "Search query for retrieval operations"},
+                "session_id": {"type": "string", "description": "Session ID"},
+                "repo": {"type": "string", "description": "Repository scope"},
             },
         },
     },

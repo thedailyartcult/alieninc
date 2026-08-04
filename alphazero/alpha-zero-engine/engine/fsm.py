@@ -10,6 +10,37 @@ from engine.character import Character
 from engine.relations import RelationGraph, Relation, RelationType, RelationStatus
 from engine.events import EventEngine, build_life_events
 
+# Phase 3: Finance Engine — algorithmic portfolio management
+try:
+    from finance.portfolio import PortfolioEngine
+    from finance.market import MarketSimulator
+except ImportError:  # pragma: no cover - finance module optional
+    PortfolioEngine = None
+    MarketSimulator = None
+
+# Annual salary by occupation (Phase 3)
+SALARY_TABLE = {
+    "Unemployed": 0.0,
+    "Manual Labor": 25000.0,
+    "Entry Level": 35000.0,
+    "Mid Career": 65000.0,
+    "Senior": 110000.0,
+    "Executive": 250000.0,
+    "Retired": 24000.0,
+}
+
+# Annual living expenses by life stage (Phase 3)
+EXPENSE_TABLE = {
+    "infant": 8000.0,
+    "child": 10000.0,
+    "teen": 15000.0,
+    "young_adult": 30000.0,
+    "adult": 42000.0,
+    "midlife": 48000.0,
+    "senior": 40000.0,
+    "elder": 35000.0,
+}
+
 
 class LifeStage(Enum):
     INFANT = "infant"       # 0-2
@@ -46,9 +77,11 @@ class FSM:
     Outputs = Attribute changes, events, relation updates
     """
 
-    def __init__(self, seed: int = 42):
+    def __init__(self, seed: int = 42, strategy: str = "balanced"):
         self.event_engine = EventEngine()
         self.seed = seed
+        self.strategy = strategy
+        self.market_sim = MarketSimulator(seed=seed) if MarketSimulator else None
 
     @staticmethod
     def get_life_stage(age: int) -> LifeStage:
@@ -72,6 +105,25 @@ class FSM:
     def _natural_decay(self, character: Character) -> dict:
         """Apply natural attribute changes that happen every year."""
         changes = {}
+
+        # Health recovers naturally while young (young bodies heal fast),
+        # countering small event damage so characters don't death-spiral.
+        if character.age < 30:
+            target = 85
+            if character.health < target:
+                delta = character.roll(2, 4)
+                character.modify("health", delta)
+                changes["health"] = delta
+        elif character.age < 40:
+            target = 75
+            if character.health < target:
+                delta = character.roll(1, 3)
+                character.modify("health", delta)
+                changes["health"] = delta
+        elif character.age < 60 and character.health < 60:
+            delta = character.roll(1, 2)
+            character.modify("health", delta)
+            changes["health"] = delta
 
         # Health naturally declines after 40
         if character.age > 40:
@@ -143,6 +195,109 @@ class FSM:
 
         return changes
 
+    def _career_progression(self, character: Character) -> dict:
+        """Promote occupation at career milestones (Phase 3)."""
+        changes = {}
+        if not character.is_employed:
+            return changes
+
+        if character.age == 30 and character.occupation == "Entry Level":
+            character.occupation = "Mid Career"
+            changes["occupation"] = "Mid Career"
+        elif character.age == 45 and character.occupation == "Mid Career":
+            character.occupation = "Senior"
+            changes["occupation"] = "Senior"
+        elif (
+            character.age == 55
+            and character.occupation == "Senior"
+            and character.smarts >= 60
+        ):
+            character.occupation = "Executive"
+            changes["occupation"] = "Executive"
+        return changes
+
+    def _job_search(self, character: Character) -> dict:
+        """Adults without a job try to find work (Phase 3)."""
+        changes = {}
+        if character.age < 22 or character.age >= 65 or character.is_employed:
+            return changes
+
+        chance = 20 + character.smarts // 2  # smarts 50 -> 45% per year
+        if character.roll(1, 100) <= chance:
+            if character.smarts >= 40:
+                character.occupation = "Entry Level"
+            else:
+                character.occupation = "Manual Labor"
+            character.is_employed = True
+            changes["occupation"] = character.occupation
+            changes["is_employed"] = True
+        return changes
+
+    def _finance_step(self, character: Character) -> dict:
+        """
+        Apply annual income, expenses, investment, and portfolio returns (Phase 3).
+
+        Flow:
+        1. Earn salary (or pension after retirement)
+        2. Pay living expenses
+        3. Invest a portion of income into the portfolio
+        4. Apply market returns to the portfolio
+        5. Withdraw 4% of portfolio after retirement
+        6. Rebalance toward target allocations every 5 years
+        """
+        changes = {}
+
+        if not PortfolioEngine or not self.market_sim:
+            return changes
+
+        salary = SALARY_TABLE.get(character.occupation, 0.0)
+
+        # Retirement: 4% safe withdrawal from portfolio
+        if character.age >= 65 and not character.is_employed:
+            withdrawal = character.portfolio_value * 0.04
+            character.money += withdrawal
+            changes["retirement_withdrawal"] = round(withdrawal, 2)
+
+        # Income
+        character.money += salary
+        changes["salary"] = round(salary, 2)
+
+        # Expenses by life stage
+        stage = self.get_life_stage(character.age).value
+        expenses = EXPENSE_TABLE.get(stage, 30000.0)
+        character.money -= expenses
+        changes["expenses"] = round(expenses, 2)
+
+        # Invest portion of income (smarts raise the invest rate)
+        if salary > 0:
+            invest_rate = 0.10 + character.smarts / 500.0  # smarts 50 -> 20%
+            invest = min(max(0, salary * invest_rate), max(0, character.money))
+            character.money -= invest
+            character.portfolio_value += invest
+            changes["invested"] = round(invest, 2)
+
+        # Handle debt
+        if character.money < 0:
+            character.debt += -character.money
+            character.money = 0.0
+            changes["new_debt"] = round(character.debt, 2)
+
+        # Apply market return to portfolio
+        if character.portfolio_value > 0:
+            year_return = self.market_sim.get_year_return(character.year)
+            portfolio_return = PortfolioEngine.apply_annual_return(
+                character, year_return, self.strategy
+            )
+            changes["portfolio_return"] = round(portfolio_return, 4)
+
+        # Rebalance every 5 years
+        if character.portfolio_value > 0 and character.age % 5 == 0:
+            PortfolioEngine.rebalance(character, self.strategy)
+            changes["rebalanced"] = True
+
+        character._recalc_net_worth()
+        return changes
+
     def _check_death(self, character: Character) -> bool:
         """Deterministic death check based on health, age, and random factors."""
         if character.health <= 0:
@@ -161,8 +316,9 @@ class FSM:
         else:
             mortality = 0.15
 
-        # Health modifies mortality
-        health_factor = max(0.1, character.health / 100.0)
+        # Health modifies mortality (capped at 4x so low health is risky
+        # but not a guaranteed death sentence)
+        health_factor = max(0.25, character.health / 100.0)
         adjusted_mortality = mortality / health_factor
 
         return character.roll(1, 1000) <= int(adjusted_mortality * 1000)
@@ -228,6 +384,15 @@ class FSM:
 
         # Life stage transitions
         stage_changes = self._life_stage_transition(character, relations)
+
+        # Career progression (Phase 3)
+        career_changes = self._career_progression(character)
+
+        # Job search for unemployed adults (Phase 3)
+        job_changes = self._job_search(character)
+
+        # Finance: income, expenses, investment, portfolio returns (Phase 3)
+        finance_changes = self._finance_step(character)
 
         # Roll events
         events = self.event_engine.roll_events(character, relations)

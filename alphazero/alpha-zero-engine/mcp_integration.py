@@ -178,6 +178,8 @@ ALPHA_ZERO_TOOLS = {
                 "universes": {"type": "integer", "description": "Number of parallel universes"},
                 "strategy": {"type": "string", "description": "Portfolio strategy"},
                 "seed": {"type": "integer", "description": "Random seed"},
+                "inject_chaos": {"type": "boolean", "description": "Enable chaotic micro-variable injection"},
+                "injection_rate": {"type": "number", "description": "Probability of chaos injection per variable"},
             },
         },
     },
@@ -189,6 +191,7 @@ ALPHA_ZERO_TOOLS = {
                 "branch_age": {"type": "integer", "description": "Age to branch from"},
                 "modification": {"type": "object", "description": "Attribute modifications"},
                 "branches": {"type": "integer", "description": "Number of branches"},
+                "inject_chaos": {"type": "boolean", "description": "Enable chaotic micro-variable injection"},
             },
         },
     },
@@ -209,6 +212,159 @@ ALPHA_ZERO_TOOLS = {
             "properties": {
                 "query": {"type": "string", "description": "What to recall"},
                 "k": {"type": "integer", "description": "Max results"},
+            },
+        },
+    },
+    "alpha_zero_scale_universes": {
+        "description": "Scale simulation to 10,000+ parallel universes with chaotic micro-variable injection.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "Character name"},
+                "age": {"type": "integer", "description": "Starting age"},
+                "universes": {"type": "integer", "description": "Number of parallel universes (10,000+)"},
+                "seed": {"type": "integer", "description": "Random seed"},
+            },
+        },
+    },
+    "alpha_zero_convergence_analysis": {
+        "description": "Analyze convergence probability across parallel universes with configurable threshold.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "Character name"},
+                "age": {"type": "integer", "description": "Starting age"},
+                "universes": {"type": "integer", "description": "Number of parallel universes"},
+                "threshold": {"type": "number", "description": "Convergence threshold (0.0-1.0, default 0.85)"},
+                "seed": {"type": "integer", "description": "Random seed"},
+            },
+        },
+    },
+    "alpha_zero_compare_universes": {
+        "description": "Compare two groups of universes side-by-side (e.g., with/without a modification).",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "Character name"},
+                "age": {"type": "integer", "description": "Starting age"},
+                "universes_a": {"type": "integer", "description": "Number of universes in group A"},
+                "universes_b": {"type": "integer", "description": "Number of universes in group B"},
+                "modification_b": {"type": "object", "description": "Modifications for group B"},
+                "seed": {"type": "integer", "description": "Random seed"},
+            },
+        },
+    },
+    "alpha_zero_best_branch": {
+        "description": "Surface the best-performing branch across all universes by a given metric.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "Character name"},
+                "age": {"type": "integer", "description": "Starting age"},
+                "universes": {"type": "integer", "description": "Number of parallel universes"},
+                "metric": {"type": "string", "description": "Metric to optimize: 'net_worth', 'happiness', or 'convergence'"},
+                "seed": {"type": "integer", "description": "Random seed"},
+            },
+        },
+    },
+    "alpha_zero_cluster_universes": {
+        "description": "Group similar universe outcomes into clusters and surface representative branches.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "Character name"},
+                "age": {"type": "integer", "description": "Starting age"},
+                "universes": {"type": "integer", "description": "Number of parallel universes"},
+                "num_clusters": {"type": "integer", "description": "Number of clusters to form"},
+                "seed": {"type": "integer", "description": "Random seed"},
+            },
+        },
+    },
+    "alpha_zero_serialize_universe": {
+        "description": "Save a universe state to a JSON file for save/load capability.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "Character name"},
+                "age": {"type": "integer", "description": "Starting age"},
+                "universe_id": {"type": "string", "description": "Universe ID to serialize"},
+                "seed": {"type": "integer", "description": "Random seed"},
+                "output_path": {"type": "string", "description": "Output file path"},
+            },
+        },
+    },
+    "alpha_zero_deserialize_universe": {
+        "description": "Load a previously serialized universe state from a JSON file.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "input_path": {"type": "string", "description": "Path to serialized universe JSON file"},
+            },
+        },
+    },
+    "alpha_zero_portfolio_optimize": {
+        "description": "Optimize portfolio allocations for a risk tolerance or age-based glide path.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "workspace": {"type": "string", "description": "CMB workspace"},
+                "risk_tolerance": {"type": "integer", "description": "0 (very safe) to 10 (aggressive)"},
+                "age": {"type": "integer", "description": "If set, use lifecycle glide path"},
+                "seed": {"type": "integer", "description": "Random seed"},
+            },
+        },
+    },
+    "alpha_zero_financial_forecast": {
+        "description": "Monte Carlo forecast of portfolio value with percentile bands.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "workspace": {"type": "string", "description": "CMB workspace"},
+                "initial_value": {"type": "number", "description": "Starting portfolio value"},
+                "strategy": {"type": "string", "description": "Portfolio strategy"},
+                "years": {"type": "integer", "description": "Forecast horizon in years"},
+                "paths": {"type": "integer", "description": "Number of Monte Carlo paths"},
+                "seed": {"type": "integer", "description": "Random seed"},
+            },
+        },
+    },
+    "alpha_zero_risk_analysis": {
+        "description": "Stress test a portfolio strategy: VaR, drawdown, crisis scenarios.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "workspace": {"type": "string", "description": "CMB workspace"},
+                "strategy": {"type": "string", "description": "Portfolio strategy to analyze"},
+                "initial_value": {"type": "number", "description": "Portfolio value to stress"},
+                "years": {"type": "integer", "description": "Simulation years for VaR"},
+                "seed": {"type": "integer", "description": "Random seed"},
+            },
+        },
+    },
+    "alpha_zero_rust_forecast": {
+        "description": "Run Go alphacore native forecast simulation with Rust client integration.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "workspace": {"type": "string", "description": "CMB workspace"},
+                "initial_value": {"type": "number", "description": "Starting portfolio value"},
+                "years": {"type": "integer", "description": "Forecast horizon in years"},
+                "paths": {"type": "integer", "description": "Number of Monte Carlo paths"},
+                "seed": {"type": "integer", "description": "Random seed"},
+            },
+        },
+    },
+    "alpha_zero_rust_compare": {
+        "description": "Run Go alphacore native strategy comparison with Rust client integration.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "workspace": {"type": "string", "description": "CMB workspace"},
+                "initial_value": {"type": "number", "description": "Starting portfolio value"},
+                "years": {"type": "integer", "description": "Simulation years"},
+                "market_returns": {"type": "array", "items": {"type": "number"}, "description": "Market returns array"},
+                "strategies": {"type": "array", "description": "Array of strategy specs"},
+                "seed": {"type": "integer", "description": "Random seed"},
             },
         },
     },

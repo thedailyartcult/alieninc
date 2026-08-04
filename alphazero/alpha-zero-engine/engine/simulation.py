@@ -14,6 +14,14 @@ from finance.market import MarketSimulator
 from finance.metrics import compute_metrics
 
 
+def _config_signature(config) -> str:
+    """Stable signature for a SimulationConfig (for persistence keys)."""
+    import hashlib
+    import json
+    blob = json.dumps(config.__dict__, sort_keys=True, default=str)
+    return hashlib.sha1(blob.encode()).hexdigest()
+
+
 @dataclass
 class SimulationConfig:
     """Configuration for a simulation run."""
@@ -59,7 +67,7 @@ class SimulationOrchestrator:
 
     def __init__(self, config: SimulationConfig = None):
         self.config = config or SimulationConfig()
-        self.fsm = FSM(seed=self.config.seed)
+        self.fsm = FSM(seed=self.config.seed, strategy=self.config.portfolio_strategy)
         self.monte_carlo = MonteCarloEngine(fsm=self.fsm)
         self.portfolio_engine = PortfolioEngine()
         self.market_sim = MarketSimulator(seed=self.config.seed)
@@ -153,16 +161,9 @@ class SimulationOrchestrator:
         character = self.create_character()
         relations = self.create_default_relations(character)
 
-        # Run FSM
+        # Phase 3: finance (income, expenses, investment, portfolio returns)
+        # is applied inside each FSM step via the portfolio strategy.
         steps = self.fsm.run_simulation(character, relations)
-
-        # Apply portfolio simulation
-        if self.config.initial_portfolio > 0:
-            for step in steps:
-                year_return = self.market_sim.get_year_return(step.year)
-                self.portfolio_engine.apply_annual_return(
-                    character, year_return, self.config.portfolio_strategy
-                )
 
         return steps
 
@@ -181,6 +182,35 @@ class SimulationOrchestrator:
         # Compute finance metrics
         metrics = compute_metrics(report)
 
+        # Phase 4: persist report + log the run (never blocks the engine)
+        try:
+            from infra.tidb_store import save_report
+            from infra.cache import log_run, config_hash
+            signature = _config_signature(self.config)
+            save_report(
+                f"multiverse:{signature}",
+                "multiverse",
+                self.config.__dict__,
+                {
+                    "total_simulations": report.total_simulations,
+                    "convergence_rate": report.convergence_rate,
+                    "sharpe_ratio": report.sharpe_ratio,
+                    "alpha": report.alpha,
+                    "beta": report.beta,
+                    "avg_years_lived": report.avg_years_lived,
+                    "best_net_worth": report.best_net_worth.final_net_worth,
+                    "best_happiness": report.best_happiness.final_happiness,
+                    "outcome_distribution": report.outcome_distribution,
+                },
+                backend="python",
+            )
+            log_run("multiverse", self.config.__dict__, {
+                "universes": report.total_simulations,
+                "convergence_rate": report.convergence_rate,
+            })
+        except Exception:
+            pass
+
         return report
 
     def run_with_portfolio(self, strategy: str = "balanced") -> dict:
@@ -192,20 +222,19 @@ class SimulationOrchestrator:
             character.portfolio_value = 100000  # Default P100k
 
         character.portfolio_allocations = self.portfolio_engine.get_default_allocation(strategy)
+        self.fsm.strategy = strategy
 
         steps = self.fsm.run_simulation(character, relations)
 
-        # Track portfolio per year
+        # Track portfolio per year (returns already applied inside FSM steps)
         portfolio_history = []
         for step in steps:
-            year_return = self.market_sim.get_year_return(step.year)
-            self.portfolio_engine.apply_annual_return(character, year_return, strategy)
+            after = step.attributes_after
             portfolio_history.append({
                 "age": step.age,
                 "year": step.year,
-                "portfolio_value": character.portfolio_value,
-                "net_worth": character.net_worth,
-                "year_return": year_return,
+                "portfolio_value": round(after.get("portfolio_value", 0), 2),
+                "net_worth": round(after.get("net_worth", 0), 2),
             })
 
         return {
@@ -216,3 +245,34 @@ class SimulationOrchestrator:
             "final_net_worth": character.net_worth,
             "total_return": (character.portfolio_value / 100000 - 1) * 100,
         }
+
+    def run_portfolio_forecast(
+        self,
+        initial_value: float = 100000.0,
+        years: int = 10,
+        paths: int = 1000,
+    ) -> dict:
+        """Phase 4: Monte Carlo forecast through the native core (Go first,
+        Python fallback), with Redis caching."""
+        try:
+            from finance.native import native_forecast
+            from infra.cache import cached, config_hash
+            key = f"alpha_zero:forecast:{config_hash(initial_value, self.config.portfolio_strategy, years, paths, self.config.seed)}"
+            result, source = cached(key, lambda: native_forecast(
+                initial_value=initial_value,
+                strategy=self.config.portfolio_strategy,
+                years=years,
+                paths=paths,
+                seed=self.config.seed,
+            ))
+            result["cache"] = source
+            return result
+        except Exception:
+            from finance.risk import RiskAnalyzer
+            return RiskAnalyzer.monte_carlo_forecast(
+                initial_value=initial_value,
+                strategy=self.config.portfolio_strategy,
+                years=years,
+                paths=paths,
+                seed=self.config.seed,
+            )

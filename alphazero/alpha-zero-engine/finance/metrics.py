@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import statistics
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from engine.monte_carlo import MultiverseReport
+if TYPE_CHECKING:  # pragma: no cover - type hints only, avoids circular import
+    from engine.monte_carlo import MultiverseReport
 
 
 def compute_sharpe_ratio(returns: list[float], risk_free_rate: float = 0.02) -> float:

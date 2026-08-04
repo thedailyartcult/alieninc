@@ -5,8 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from engine.character import Character
-
 
 # Predefined portfolio strategies
 STRATEGIES = {

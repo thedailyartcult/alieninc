@@ -2,6 +2,9 @@
 
 import json
 import os
+import sys
+from pathlib import Path
+
 from flask import Flask, render_template, request, jsonify, Response, stream_with_context
 
 from engine.character import Gender
@@ -11,6 +14,13 @@ from engine.fsm import FSM
 from finance.portfolio import PortfolioEngine, STRATEGIES
 from finance.market import MarketSimulator
 from finance.metrics import compute_metrics
+
+# The AI agents live in the repo-root ai/ package (sibling of alpha-zero-engine).
+_AI_DIR = str(Path(__file__).resolve().parents[2])
+if _AI_DIR not in sys.path:
+    sys.path.insert(0, _AI_DIR)
+
+OLLAMA_DISABLE = os.environ.get("OLLAMA_DISABLE", "0") == "1"
 
 
 def create_app():
@@ -224,5 +234,144 @@ def create_app():
             ]
 
         return jsonify({"scenarios": scenarios})
+
+    # ------------------------------------------------------------------
+    # AI Agent routes
+    # ------------------------------------------------------------------
+
+    @app.route("/api/ai/interview", methods=["POST"])
+    def api_ai_interview():
+        """Conduct an AI interview and build a Character profile."""
+        from ai.interview_agent import InterviewAgent
+
+        data = request.json or {}
+        text = data.get("interview_text") or data.get("initial_interview_text") or ""
+        if not text:
+            fields = [f"{k}: {v}" for k, v in data.items()
+                      if k in ("name", "age", "gender", "occupation") and v not in (None, "")]
+            text = ", ".join(fields)
+
+        agent = InterviewAgent()
+        if OLLAMA_DISABLE:
+            persona = agent._extract_with_regex(text)
+        else:
+            persona = agent.extract_persona_from_text(text)
+
+        for field in ("name", "age", "gender", "occupation", "birthplace", "current_city"):
+            explicit = data.get(field)
+            if explicit not in (None, ""):
+                persona[field] = explicit
+        agent.current_profile = persona
+
+        return jsonify({
+            "persona": persona,
+            "profile": persona,
+            "social_variables": persona.get("social_variables", {}),
+            "status": "success",
+        })
+
+    @app.route("/api/ai/coach", methods=["POST"])
+    def api_ai_coach():
+        """Provide life coaching advice for a Character profile."""
+        from ai.life_coach import LifeCoachAgent
+
+        data = request.json or {}
+        character_data = data.get("character_json") or data.get("character") or {}
+        if isinstance(character_data, str):
+            try:
+                character_data = json.loads(character_data)
+            except (json.JSONDecodeError, TypeError):
+                character_data = {}
+
+        situation = data.get("situation", "general")
+        agent = LifeCoachAgent()
+        advice = agent.provide_advice(character_data, situation)
+        return jsonify({"status": "success", "result": advice})
+
+    @app.route("/api/ai/analyze", methods=["POST"])
+    def api_ai_analyze():
+        """Analyze simulation outcomes and suggest life paths."""
+        from ai.decision_assistant import DecisionAssistantAgent
+
+        data = request.json or {}
+        results = data.get("simulation_results", [])
+        agent = DecisionAssistantAgent()
+        analysis = agent.analyze_simulation_outcomes(results)
+        return jsonify({"status": "success", "result": analysis})
+
+    @app.route("/api/ai/narrate", methods=["POST"])
+    def api_ai_narrate():
+        """Generate a narrative from a simulation result."""
+        from ai.storyteller import StorytellerAgent
+        from engine.character import Character, Gender
+
+        data = request.json or {}
+        agent = StorytellerAgent()
+
+        simulation_results = data.get("simulation_results")
+        if simulation_results:
+            result = agent.generate_simulation_narrative(simulation_results)
+        else:
+            sim = data.get("simulation_result") or {}
+            if isinstance(sim, str):
+                try:
+                    sim = json.loads(sim)
+                except (json.JSONDecodeError, TypeError):
+                    sim = {}
+            character = Character(
+                name=data.get("character_name", sim.get("character_name", "Unknown")),
+                age=int(sim.get("final_age", sim.get("age", 30))),
+                gender=Gender.MALE,
+                happiness=int(sim.get("final_happiness", sim.get("happiness", 50))),
+                health=int(sim.get("final_health", sim.get("health", 70))),
+                net_worth=float(sim.get("final_net_worth", sim.get("net_worth", 0.0))),
+                occupation=sim.get("occupation", "Unknown"),
+            )
+            result = {
+                "character_name": character.name,
+                "narrative": agent.generate_character_narrative(character, sim),
+            }
+
+        return jsonify({"status": "success", "result": result})
+
+    @app.route("/api/ai/memory", methods=["POST"])
+    def api_ai_memory():
+        """Store / retrieve cross-session learnings via the memory agent."""
+        from ai.memory_system import MemorySystemAgent
+
+        data = request.json or {}
+        operation = data.get("operation", "store")
+        payload = data.get("data", {})
+        query = data.get("query")
+        session_id = data.get("session_id")
+        workspace = data.get("workspace", "alphazero")
+
+        agent = MemorySystemAgent(workspace=workspace)
+        result = {"error": f"Unknown operation: {operation}"}
+
+        if operation == "store":
+            learning_id = agent.store_learning(payload, session_id=session_id)
+            result = {"learning_id": learning_id, "stored": True}
+        elif operation == "retrieve":
+            learnings = agent.retrieve_learnings(query=query)
+            result = {"results": learnings, "count": len(learnings)}
+        elif operation == "update":
+            learning_id = payload.get("learning_id")
+            updated = agent.update_learning(learning_id, payload.get("updates", {})) if learning_id else False
+            result = {"updated": updated}
+        elif operation == "delete":
+            learning_id = payload.get("learning_id")
+            deleted = agent.delete_learning(learning_id) if learning_id else False
+            result = {"deleted": deleted}
+        elif operation == "create_session":
+            session_id = session_id or payload.get("session_id", "default")
+            created = agent.create_session(session_id, payload.get("context", {}))
+            result = {"session_id": session_id, "created": created}
+        elif operation == "end_session":
+            session_id = session_id or payload.get("session_id", "default")
+            ended = agent.end_session(session_id, payload.get("insights"))
+            result = {"session_id": session_id, "ended": ended}
+
+        return jsonify({"status": "success", "result": result})
 
     return app

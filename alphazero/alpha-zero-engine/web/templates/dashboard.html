@@ -303,6 +303,26 @@
         }
 
         .strategy-table tr:hover { background: var(--bg-alt); }
+
+        /* AI Agents */
+        .ai-result {
+            margin-top: 14px;
+            padding: 12px;
+            background: var(--bg-alt);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 320px;
+            overflow-y: auto;
+            min-height: 24px;
+        }
+        .ai-result strong { color: var(--accent); }
+        .ai-result ul { margin: 6px 0 6px 18px; }
+        #tab-ai-agents .dashboard { grid-template-columns: 1fr 1fr; }
+        #tab-ai-agents .card { grid-column: auto; }
     </style>
 </head>
 <body>
@@ -379,6 +399,7 @@
             <button class="tab" data-tab="universes">Universe Map</button>
             <button class="tab" data-tab="strategies">Strategies</button>
             <button class="tab" data-tab="timeline">Timeline</button>
+            <button class="tab" data-tab="ai-agents">AI Agents</button>
         </div>
 
         <!-- Tab: Overview -->
@@ -452,6 +473,58 @@
                 <h3>Life Timeline</h3>
                 <div id="timeline-entries">
                     <p style="color: var(--text-muted); padding: 20px 0;">Run a simulation to see the timeline</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: AI Agents -->
+        <div class="tab-content" id="tab-ai-agents">
+            <div class="dashboard">
+                <div class="card">
+                    <h3>Interview Agent</h3>
+                    <div class="subtext">Build a character profile from an interview</div>
+                    <div class="control-group">
+                        <label>Interview Text</label>
+                        <textarea id="ai-interview-text" rows="3" style="width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:10px;">I am a recent college graduate in Manila looking for my path in life</textarea>
+                    </div>
+                    <button class="btn" id="btn-ai-interview">Run Interview</button>
+                    <div id="ai-interview-result" class="ai-result"></div>
+                </div>
+
+                <div class="card">
+                    <h3>Coach &amp; Analytics</h3>
+                    <div class="subtext">Coaching advice for the profile, generated from its situation</div>
+                    <div class="control-group">
+                        <label>Situation</label>
+                        <select id="ai-situation">
+                            <option value="general">General</option>
+                            <option value="career_change">Career Change</option>
+                            <option value="career_starting_out">Starting Out</option>
+                            <option value="financial">Financial</option>
+                            <option value="health">Health</option>
+                            <option value="relationships">Relationships</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary" id="btn-ai-coach">Get Coaching</button>
+                    <div id="ai-coach-result" class="ai-result"></div>
+                </div>
+
+                <div class="card">
+                    <h3>Narrative</h3>
+                    <div class="subtext">Turn the character profile into a life story</div>
+                    <button class="btn btn-secondary" id="btn-ai-narrate">Generate Narrative</button>
+                    <div id="ai-narrate-result" class="ai-result"></div>
+                </div>
+
+                <div class="card">
+                    <h3>Memory</h3>
+                    <div class="subtext">Store/retrieve learnings across sessions</div>
+                    <div class="control-group">
+                        <label>Learnings Search</label>
+                        <input type="text" id="ai-memory-query" value="coaching">
+                    </div>
+                    <button class="btn btn-secondary" id="btn-ai-memory">Retrieve Learnings</button>
+                    <div id="ai-memory-result" class="ai-result"></div>
                 </div>
             </div>
         </div>
@@ -553,6 +626,129 @@
             } catch (e) {
                 console.error(e);
                 alert('Comparison failed: ' + e.message);
+            }
+            setLoading(false);
+        });
+
+        // AI Agents
+        const aiProfile = {};
+
+        function renderAIResult(elId, title, bodyHtml) {
+            document.getElementById(elId).innerHTML = `<strong>${title}</strong>\n${bodyHtml}`;
+        }
+
+        function aiValue(v, fallback) {
+            if (v === null || v === undefined || v === '') return fallback;
+            return v;
+        }
+
+        document.getElementById('btn-ai-interview').addEventListener('click', async () => {
+            setLoading(true);
+            try {
+                const res = await fetch('/api/ai/interview', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        name: document.getElementById('name').value,
+                        age: parseInt(document.getElementById('age').value),
+                        gender: document.getElementById('gender').value,
+                        initial_interview_text: document.getElementById('ai-interview-text').value,
+                    })
+                });
+                const data = await res.json();
+                if (data.status !== 'success') throw new Error('Interview failed');
+                Object.assign(aiProfile, data.profile);
+                const sv = data.social_variables;
+                const svRows = Object.entries(sv).map(([k, v]) => `${k}: ${v}`).join(', ');
+                renderAIResult('ai-interview-result', 'Profile',
+                    `Name: ${aiValue(aiProfile.name, '?')} | Age: ${aiValue(aiProfile.age, '?')} | Occupation: ${aiValue(aiProfile.occupation, '?')}\n` +
+                    `Happiness: ${aiValue(aiProfile.happiness, '?')} | Health: ${aiValue(aiProfile.health, '?')} | Smarts: ${aiValue(aiProfile.smarts, '?')}\n\n` +
+                    `Social variables: ${svRows}`);
+            } catch (e) {
+                console.error(e);
+                alert('Interview failed: ' + e.message);
+            }
+            setLoading(false);
+        });
+
+        document.getElementById('btn-ai-coach').addEventListener('click', async () => {
+            setLoading(true);
+            try {
+                const res = await fetch('/api/ai/coach', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        character_json: aiProfile,
+                        situation: document.getElementById('ai-situation').value,
+                    })
+                });
+                const data = await res.json();
+                if (data.status !== 'success') throw new Error('Coaching failed');
+                const r = data.result;
+                const recs = (r.recommendations || []).map(x => `• ${x}`).join('\n');
+                let advice = '';
+                if (r.life_advice) {
+                    const la = r.life_advice;
+                    advice = (la['overall philosophy'] ? `Philosophy: ${la['overall philosophy']}\n` : '') +
+                             (la.key_insight ? `Insight: ${la.key_insight}\n` : '');
+                }
+                renderAIResult('ai-coach-result', 'Coaching',
+                    (r.analysis ? `Analysis: ${r.analysis}\n\n` : '') +
+                    `Recommendations:\n${recs || 'none'}\n` +
+                    (advice ? `\n${advice}` : '') +
+                    (r.encouragement ? `\n${r.encouragement}` : ''));
+            } catch (e) {
+                console.error(e);
+                alert('Coaching failed: ' + e.message);
+            }
+            setLoading(false);
+        });
+
+        document.getElementById('btn-ai-narrate').addEventListener('click', async () => {
+            setLoading(true);
+            try {
+                const res = await fetch('/api/ai/narrate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        character_name: aiProfile.name || document.getElementById('name').value,
+                        simulation_result: {
+                            final_age: aiValue(aiProfile.age, 30),
+                            final_net_worth: aiValue(aiProfile.net_worth, 100000),
+                            final_happiness: aiValue(aiProfile.happiness, 50),
+                        },
+                    })
+                });
+                const data = await res.json();
+                if (data.status !== 'success') throw new Error('Narrative failed');
+                const story = data.result.narrative.slice(0, 1200);
+                renderAIResult('ai-narrate-result', `Story for ${data.result.character_name}`, story);
+            } catch (e) {
+                console.error(e);
+                alert('Narrative failed: ' + e.message);
+            }
+            setLoading(false);
+        });
+
+        document.getElementById('btn-ai-memory').addEventListener('click', async () => {
+            setLoading(true);
+            try {
+                const query = document.getElementById('ai-memory-query').value;
+                const res = await fetch('/api/ai/memory', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({operation: 'retrieve', query, workspace: 'web'})
+                });
+                const data = await res.json();
+                if (data.status !== 'success') throw new Error('Memory failed');
+                const items = (data.result.results || []).map(m => {
+                    const insight = (m.data && m.data.data && m.data.data.insight) ? m.data.data.insight : JSON.stringify(m.data);
+                    return `• ${insight}`;
+                }).join('\n');
+                renderAIResult('ai-memory-result', `Learnings (${data.result.count})`, items || 'No learnings found');
+            } catch (e) {
+                console.error(e);
+                alert('Memory failed: ' + e.message);
             }
             setLoading(false);
         });

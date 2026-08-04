@@ -321,3 +321,103 @@ def test_alphacore_memory():
     out = _alphacore("memory", {"operation": "store", "data": {"learning_id": "l1"}})
     assert out["status"] == "success"
     assert out["result"]["stored"] is True
+
+
+# ---------------------------------------------------------------------------
+# Web platform (Flask) AI routes
+# ---------------------------------------------------------------------------
+
+def _import_ok(module):
+    try:
+        __import__(module)
+        return True
+    except ImportError:
+        return False
+
+
+NEEDS_FLASK = pytest.mark.skipif(
+    not _import_ok("flask"),
+    reason="flask not installed (pip install flask)",
+)
+
+
+def _web_app():
+    sys.path.insert(0, os.path.join(REPO_ROOT, "alpha-zero-engine"))
+    from api.routes import create_app
+    return create_app().test_client()
+
+
+@NEEDS_FLASK
+def test_web_index_has_ai_tab():
+    """Dashboard renders the AI Agents tab."""
+    client = _web_app()
+    html = client.get("/").get_data(as_text=True)
+    assert "tab-ai-agents" in html
+    assert "btn-ai-interview" in html
+
+
+@NEEDS_FLASK
+def test_web_ai_interview_route():
+    """Interview route builds a persona with explicit field overlay."""
+    client = _web_app()
+    r = client.post("/api/ai/interview", json={
+        "name": "Maria", "age": 28, "gender": "female",
+        "initial_interview_text": "I work as a nurse in Cebu",
+    })
+    data = r.get_json()
+    assert r.status_code == 200
+    assert data["status"] == "success"
+    assert data["persona"]["name"] == "Maria"
+    assert data["persona"]["age"] == 28
+    assert len(data["social_variables"]) > 20
+
+
+@NEEDS_FLASK
+def test_web_ai_coach_route():
+    client = _web_app()
+    r = client.post("/api/ai/coach", json={
+        "character_json": {"name": "Maria", "age": 28, "happiness": 55},
+        "situation": "career_change",
+    })
+    data = r.get_json()
+    assert r.status_code == 200
+    assert data["status"] == "success"
+    assert len(data["result"]["recommendations"]) > 0
+
+
+@NEEDS_FLASK
+def test_web_ai_analyze_route():
+    client = _web_app()
+    r = client.post("/api/ai/analyze", json={
+        "simulation_results": [{"final_net_worth": 50000, "final_happiness": 70}],
+    })
+    data = r.get_json()
+    assert r.status_code == 200
+    assert data["result"]["summary"]["total_simulations"] == 1
+
+
+@NEEDS_FLASK
+def test_web_ai_narrate_route():
+    client = _web_app()
+    r = client.post("/api/ai/narrate", json={
+        "character_name": "Maria",
+        "simulation_result": {"final_age": 65, "final_net_worth": 120000, "final_happiness": 75},
+    })
+    data = r.get_json()
+    assert r.status_code == 200
+    assert "Maria" in data["result"]["narrative"]
+
+
+@NEEDS_FLASK
+def test_web_ai_memory_route():
+    client = _web_app()
+    r = client.post("/api/ai/memory", json={
+        "operation": "store", "workspace": "test_ws_web",
+        "data": {"learning_id": "web_route_1", "data": {"insight": "route works"},
+                 "tags": ["web"], "importance": 5},
+    })
+    assert r.get_json()["result"]["stored"] is True
+    r2 = client.post("/api/ai/memory", json={
+        "operation": "retrieve", "workspace": "test_ws_web", "query": "route",
+    })
+    assert r2.get_json()["result"]["count"] >= 1

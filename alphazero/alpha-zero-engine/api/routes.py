@@ -447,6 +447,60 @@ def create_app():
 
         return jsonify({"status": "success", "result": result})
 
+    @app.route("/api/ai/financial_advisor", methods=["POST"])
+    def api_ai_financial_advisor():
+        """Financial advice: budget, debt, savings, and allocation guidance."""
+        from ai.financial_advisor import FinancialAdvisorAgent
+
+        data = request.json or {}
+        character_data = data.get("character_json") or data.get("character") or {}
+        if isinstance(character_data, str):
+            try:
+                character_data = json.loads(character_data)
+            except (json.JSONDecodeError, TypeError):
+                character_data = {}
+
+        situation = data.get("situation", "general")
+        agent = FinancialAdvisorAgent()
+        advice = agent.provide_advice(character_data, situation)
+        return jsonify({"status": "success", "result": advice})
+
+    @app.route("/api/ai/health_coach", methods=["POST"])
+    def api_ai_health_coach():
+        """Health coaching: wellness assessment, exercise, sleep, stress."""
+        from ai.health_coach import HealthCoachAgent
+
+        data = request.json or {}
+        character_data = data.get("character_json") or data.get("character") or {}
+        if isinstance(character_data, str):
+            try:
+                character_data = json.loads(character_data)
+            except (json.JSONDecodeError, TypeError):
+                character_data = {}
+
+        situation = data.get("situation", "general")
+        agent = HealthCoachAgent()
+        advice = agent.provide_advice(character_data, situation)
+        return jsonify({"status": "success", "result": advice})
+
+    @app.route("/api/ai/mentor", methods=["POST"])
+    def api_ai_mentor():
+        """Mentoring session synthesizing financial, health, and life coaching."""
+        from ai.mentor import MentorAgent
+
+        data = request.json or {}
+        character_data = data.get("character_json") or data.get("character") or {}
+        if isinstance(character_data, str):
+            try:
+                character_data = json.loads(character_data)
+            except (json.JSONDecodeError, TypeError):
+                character_data = {}
+
+        question = data.get("question", "") or ""
+        agent = MentorAgent()
+        result = agent.provide_mentorship(character_data, question)
+        return jsonify({"status": "success", "result": result})
+
     @app.route("/api/ai/memory", methods=["POST"])
     def api_ai_memory():
         """Store / retrieve cross-session learnings via the memory agent."""

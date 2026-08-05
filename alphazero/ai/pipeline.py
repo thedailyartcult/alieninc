@@ -1,9 +1,10 @@
 """AI Pipeline — end-to-end agent workflow.
 
-Orchestrates all five AI agents into a single pipeline:
+Orchestrates all AI agents into a single pipeline:
 
     interview  ->  persona seeds a multiverse simulation
-    ->  analyze  ->  narrate the best universe
+    ->  analyze  ->  specialist advisors (financial / health / mentor)
+    ->  coach  ->  narrate the best universe
     ->  memory   (learnings stored across sessions)
 
 Used by the web platform (/api/ai/pipeline) and available as a CLI
@@ -111,6 +112,15 @@ def run_ai_pipeline(
     coach = LifeCoachAgent()
     coaching = coach.provide_advice(persona, overrides.get("situation", "general"))
 
+    # 4b. Specialist advisors — financial, health, and mentoring synthesis
+    from ai.financial_advisor import FinancialAdvisorAgent
+    from ai.health_coach import HealthCoachAgent
+    from ai.mentor import MentorAgent
+
+    financial_advice = FinancialAdvisorAgent().provide_advice(persona, "general")
+    health_coach_advice = HealthCoachAgent().provide_advice(persona, "general")
+    mentor = MentorAgent().provide_mentorship(persona, "")
+
     # 5. Narrate — story of the best universe
     storyteller = StorytellerAgent()
     from engine.character import Character
@@ -152,6 +162,9 @@ def run_ai_pipeline(
         },
         "analysis": analysis,
         "coaching": coaching,
+        "financial_advice": financial_advice,
+        "health_coach_advice": health_coach_advice,
+        "mentor": mentor,
         "narrative": {"character_name": character.name,
                       "story": narrative},
         "learning_id": learning_id,

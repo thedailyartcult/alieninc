@@ -538,6 +538,53 @@
                     <button class="btn btn-secondary" id="btn-ai-memory">Retrieve Learnings</button>
                     <div id="ai-memory-result" class="ai-result"></div>
                 </div>
+
+                <div class="card">
+                    <h3>Financial Advisor</h3>
+                    <div class="subtext">Budget, debt, savings, and allocation guidance</div>
+                    <div class="control-group">
+                        <label>Focus</label>
+                        <select id="ai-financial-situation">
+                            <option value="general">General</option>
+                            <option value="debt_reduction">Debt Reduction</option>
+                            <option value="investment">Investment</option>
+                            <option value="retirement">Retirement</option>
+                            <option value="buying_home">Buying a Home</option>
+                            <option value="emergency">Emergency</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary" id="btn-ai-financial">Get Financial Advice</button>
+                    <div id="ai-financial-result" class="ai-result"></div>
+                </div>
+
+                <div class="card">
+                    <h3>Health Coach</h3>
+                    <div class="subtext">Wellness assessment, exercise, sleep, and stress</div>
+                    <div class="control-group">
+                        <label>Focus</label>
+                        <select id="ai-health-situation">
+                            <option value="general">General</option>
+                            <option value="fitness">Fitness</option>
+                            <option value="weight_loss">Weight Loss</option>
+                            <option value="stress">Stress</option>
+                            <option value="sleep">Sleep</option>
+                            <option value="recovery">Recovery</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary" id="btn-ai-health">Get Health Coaching</button>
+                    <div id="ai-health-result" class="ai-result"></div>
+                </div>
+
+                <div class="card">
+                    <h3>Mentor</h3>
+                    <div class="subtext">Synthesizes financial, health, and life coaching</div>
+                    <div class="control-group">
+                        <label>Your Question (optional)</label>
+                        <input type="text" id="ai-mentor-question" value="">
+                    </div>
+                    <button class="btn btn-secondary" id="btn-ai-mentor">Ask the Mentor</button>
+                    <div id="ai-mentor-result" class="ai-result"></div>
+                </div>
             </div>
         </div>
 
@@ -816,6 +863,89 @@
             } catch (e) {
                 console.error(e);
                 alert('Memory failed: ' + e.message);
+            }
+            setLoading(false);
+        });
+
+        document.getElementById('btn-ai-financial').addEventListener('click', async () => {
+            setLoading(true);
+            try {
+                const res = await fetch('/api/ai/financial_advisor', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        character_json: aiProfile,
+                        situation: document.getElementById('ai-financial-situation').value,
+                    })
+                });
+                const data = await res.json();
+                if (data.status !== 'success') throw new Error('Financial advice failed');
+                const r = data.result;
+                const recs = (r.recommendations || []).map(x => `• ${x}`).join('\n');
+                const alloc = r.allocation || {};
+                const allocs = Object.entries(alloc.allocations || {}).map(([k, v]) => `${k}: ${(v * 100).toFixed(0)}%`).join(', ');
+                renderAIResult('ai-financial-result', `Financial Advice — ${r.character_name}`,
+                    (r.assessment ? `Assessment: ${r.assessment}\n\n` : '') +
+                    `Recommendations:\n${recs || 'none'}\n\n` +
+                    (alloc.strategy ? `Recommended: ${alloc.name} (${alloc.strategy}) — ${allocs}\n\n` : '') +
+                    (r.encouragement ? r.encouragement : ''));
+            } catch (e) {
+                console.error(e);
+                alert('Financial advice failed: ' + e.message);
+            }
+            setLoading(false);
+        });
+
+        document.getElementById('btn-ai-health').addEventListener('click', async () => {
+            setLoading(true);
+            try {
+                const res = await fetch('/api/ai/health_coach', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        character_json: aiProfile,
+                        situation: document.getElementById('ai-health-situation').value,
+                    })
+                });
+                const data = await res.json();
+                if (data.status !== 'success') throw new Error('Health coaching failed');
+                const r = data.result;
+                const recs = (r.recommendations || []).map(x => `• ${x}`).join('\n');
+                renderAIResult('ai-health-result', `Health Coaching — ${r.character_name}`,
+                    (r.assessment ? `Assessment: ${r.assessment}\n\n` : '') +
+                    `Recommendations:\n${recs || 'none'}\n\n` +
+                    (r.encouragement ? r.encouragement : ''));
+            } catch (e) {
+                console.error(e);
+                alert('Health coaching failed: ' + e.message);
+            }
+            setLoading(false);
+        });
+
+        document.getElementById('btn-ai-mentor').addEventListener('click', async () => {
+            setLoading(true);
+            try {
+                const res = await fetch('/api/ai/mentor', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        character_json: aiProfile,
+                        question: document.getElementById('ai-mentor-question').value,
+                    })
+                });
+                const data = await res.json();
+                if (data.status !== 'success') throw new Error('Mentor failed');
+                const r = data.result;
+                const focus = (r.focus_areas || []).join(', ');
+                renderAIResult('ai-mentor-result', `Mentoring — ${r.character_name}`,
+                    (r.mentor_response ? `${r.mentor_response}\n\n` : '') +
+                    `Focus areas: ${focus || 'none'}\n\n` +
+                    `Financial: ${aiValue(r.financial_advisor.assessment, '—')}\n` +
+                    `Health: ${aiValue(r.health_coach.assessment, '—')}\n` +
+                    `Life: ${aiValue(r.life_coach.assessment, '—')}`);
+            } catch (e) {
+                console.error(e);
+                alert('Mentor failed: ' + e.message);
             }
             setLoading(false);
         });

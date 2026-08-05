@@ -151,6 +151,87 @@ def test_narrate_from_simulation():
 
 
 # ---------------------------------------------------------------------------
+# Financial advisor
+# ---------------------------------------------------------------------------
+
+
+def test_financial_advisor_advice():
+    """Financial advice returns assessment, recommendations, and allocation."""
+    character = {
+        "name": "Maria",
+        "age": 35,
+        "net_worth": 45000,
+        "debt": 5000,
+        "money": 8000,
+        "portfolio_value": 30000,
+        "occupation": "nurse",
+        "education": "University",
+    }
+    out = _run_cli("financial_advisor.py", {"character_json": character, "situation": "investment"})
+    assert out["status"] == "success"
+    result = out["result"]
+    assert result["character_name"] == "Maria"
+    assert len(result["recommendations"]) > 0
+    assert result["analysis"]["net_worth"] == 38000
+    assert result["allocation"]["strategy"] in ("hyper_growth", "balanced", "recession_defense", "dividend_income")
+    assert result["encouragement"]
+
+
+# ---------------------------------------------------------------------------
+# Health coach
+# ---------------------------------------------------------------------------
+
+
+def test_health_coach_advice():
+    """Health coaching returns assessment, recommendations, and a plan."""
+    character = {
+        "name": "Maria",
+        "age": 35,
+        "health": 55,
+        "happiness": 45,
+    }
+    out = _run_cli("health_coach.py", {"character_json": character, "situation": "stress"})
+    assert out["status"] == "success"
+    result = out["result"]
+    assert result["character_name"] == "Maria"
+    assert len(result["recommendations"]) > 0
+    assert result["weekly_plan"]["monday"]
+    assert result["action_plan"]["30_days"]
+    assert result["analysis"]["health_category"] in ("excellent", "good", "fair", "poor")
+
+
+# ---------------------------------------------------------------------------
+# Mentor
+# ---------------------------------------------------------------------------
+
+
+def test_mentor_synthesizes_advisors():
+    """Mentor merges financial, health, and life coaching into one session."""
+    character = {
+        "name": "Maria",
+        "age": 35,
+        "happiness": 45,
+        "health": 55,
+        "smarts": 70,
+        "net_worth": 15000,
+        "occupation": "nurse",
+    }
+    out = _run_cli("mentor.py", {
+        "character_json": character,
+        "question": "Should I quit my job to start a clinic?",
+    })
+    assert out["status"] == "success"
+    result = out["result"]
+    assert result["character_name"] == "Maria"
+    assert result["focus_areas"]
+    assert len(result["principles"]) > 0
+    assert result["financial_advisor"]["recommendations"]
+    assert result["health_coach"]["recommendations"]
+    assert result["life_coach"]["recommendations"]
+    assert result["mentor_response"]
+
+
+# ---------------------------------------------------------------------------
 # Memory system
 # ---------------------------------------------------------------------------
 
@@ -406,6 +487,50 @@ def test_web_ai_narrate_route():
     data = r.get_json()
     assert r.status_code == 200
     assert "Maria" in data["result"]["narrative"]
+
+
+@NEEDS_FLASK
+def test_web_ai_financial_advisor_route():
+    client = _web_app()
+    r = client.post("/api/ai/financial_advisor", json={
+        "character_json": {"name": "Maria", "age": 35, "net_worth": 45000,
+                           "debt": 5000, "money": 8000, "portfolio_value": 30000},
+        "situation": "investment",
+    })
+    data = r.get_json()
+    assert r.status_code == 200
+    assert data["status"] == "success"
+    assert len(data["result"]["recommendations"]) > 0
+    assert data["result"]["allocation"]["strategy"]
+
+
+@NEEDS_FLASK
+def test_web_ai_health_coach_route():
+    client = _web_app()
+    r = client.post("/api/ai/health_coach", json={
+        "character_json": {"name": "Maria", "age": 35, "health": 55, "happiness": 45},
+        "situation": "stress",
+    })
+    data = r.get_json()
+    assert r.status_code == 200
+    assert data["status"] == "success"
+    assert len(data["result"]["recommendations"]) > 0
+    assert data["result"]["weekly_plan"]["monday"]
+
+
+@NEEDS_FLASK
+def test_web_ai_mentor_route():
+    client = _web_app()
+    r = client.post("/api/ai/mentor", json={
+        "character_json": {"name": "Maria", "age": 35, "happiness": 45, "health": 55},
+        "question": "What should I focus on this year?",
+    })
+    data = r.get_json()
+    assert r.status_code == 200
+    assert data["status"] == "success"
+    assert data["result"]["focus_areas"]
+    assert data["result"]["mentor_response"]
+    assert data["result"]["financial_advisor"]["recommendations"]
 
 
 @NEEDS_FLASK

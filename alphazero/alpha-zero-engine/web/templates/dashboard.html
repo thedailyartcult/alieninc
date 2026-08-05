@@ -727,10 +727,10 @@
           <div class="pulse"></div>
           <span>Engine Ready</span>
         </div>
-        <a href="#controls" class="btn-pill">
+        <button class="btn btn-pill" id="btn-header-run">
           <svg viewBox="0 0 24 24"><path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z"/></svg>
           Run a Simulation
-        </a>
+        </button>
       </div>
     </div>
   </header>
@@ -1208,6 +1208,13 @@
 
   <!-- SCROLL + APP SCRIPT -->
   <script>
+    // API base: works both at the app root (/) and under a reverse-proxy
+    // subpath (e.g. /alphazero/dashboard/) — backend paths stay /api/*.
+    const API_BASE = (() => {
+      const p = window.location.pathname;
+      return (p === '/') ? '' : (p.endsWith('/') ? p.slice(0, -1) : p);
+    })();
+
     // Header shadow on scroll
     const header = document.getElementById('header');
     window.addEventListener('scroll', () => {
@@ -1246,10 +1253,14 @@
 
     // Run Multiverse
     let lastMultiverse = null;
+    document.getElementById('btn-header-run').addEventListener('click', () => {
+      window.scrollTo({top: 0, behavior: 'smooth'});
+      document.getElementById('btn-multiverse').click();
+    });
     document.getElementById('btn-multiverse').addEventListener('click', async () => {
       setLoading(true);
       try {
-        const res = await fetch('/api/multiverse', {
+        const res = await fetch(API_BASE + '/api/multiverse', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
@@ -1280,7 +1291,7 @@
     document.getElementById('btn-single').addEventListener('click', async () => {
       setLoading(true);
       try {
-        const res = await fetch('/api/simulate', {
+        const res = await fetch(API_BASE + '/api/simulate', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
@@ -1308,7 +1319,7 @@
     document.getElementById('btn-compare').addEventListener('click', async () => {
       setLoading(true);
       try {
-        const res = await fetch('/api/portfolio/compare', {
+        const res = await fetch(API_BASE + '/api/portfolio/compare', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
@@ -1342,7 +1353,7 @@
     document.getElementById('btn-ai-interview').addEventListener('click', async () => {
       setLoading(true);
       try {
-        const res = await fetch('/api/ai/interview', {
+        const res = await fetch(API_BASE + '/api/ai/interview', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
@@ -1371,7 +1382,7 @@
     document.getElementById('btn-ai-coach').addEventListener('click', async () => {
       setLoading(true);
       try {
-        const res = await fetch('/api/ai/coach', {
+        const res = await fetch(API_BASE + '/api/ai/coach', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
@@ -1404,7 +1415,7 @@
     document.getElementById('btn-ai-narrate').addEventListener('click', async () => {
       setLoading(true);
       try {
-        const res = await fetch('/api/ai/narrate', {
+        const res = await fetch(API_BASE + '/api/ai/narrate', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
@@ -1431,7 +1442,7 @@
       setLoading(true);
       try {
         const query = document.getElementById('ai-memory-query').value;
-        const res = await fetch('/api/ai/memory', {
+        const res = await fetch(API_BASE + '/api/ai/memory', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({operation: 'retrieve', query, workspace: 'web'})
@@ -1453,7 +1464,7 @@
     document.getElementById('btn-ai-financial').addEventListener('click', async () => {
       setLoading(true);
       try {
-        const res = await fetch('/api/ai/financial_advisor', {
+        const res = await fetch(API_BASE + '/api/ai/financial_advisor', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
@@ -1482,7 +1493,7 @@
     document.getElementById('btn-ai-health').addEventListener('click', async () => {
       setLoading(true);
       try {
-        const res = await fetch('/api/ai/health_coach', {
+        const res = await fetch(API_BASE + '/api/ai/health_coach', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
@@ -1508,7 +1519,7 @@
     document.getElementById('btn-ai-mentor').addEventListener('click', async () => {
       setLoading(true);
       try {
-        const res = await fetch('/api/ai/mentor', {
+        const res = await fetch(API_BASE + '/api/ai/mentor', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
@@ -1537,7 +1548,7 @@
     document.getElementById('btn-adv-run').addEventListener('click', async () => {
       setLoading(true);
       try {
-        const res = await fetch('/api/ai/advisors', {
+        const res = await fetch(API_BASE + '/api/ai/advisors', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
@@ -1587,7 +1598,7 @@
       setLoading(true);
       try {
         const name = document.getElementById('adv-recall-name').value;
-        const res = await fetch('/api/ai/advisor_dossier', {
+        const res = await fetch(API_BASE + '/api/ai/advisor_dossier', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({character_name: name, workspace: 'web'})
@@ -1616,7 +1627,7 @@
     document.getElementById('btn-ai-pipeline').addEventListener('click', async () => {
       setLoading(true);
       try {
-        const res = await fetch('/api/ai/pipeline', {
+        const res = await fetch(API_BASE + '/api/ai/pipeline', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
@@ -1666,9 +1677,9 @@
     async function loadMonitor() {
       try {
         const [healthRes, summaryRes, runsRes] = await Promise.all([
-          fetch('/api/health'),
-          fetch('/api/analytics/summary'),
-          fetch('/api/analytics/runs?limit=10'),
+          fetch(API_BASE + '/api/health'),
+          fetch(API_BASE + '/api/analytics/summary'),
+          fetch(API_BASE + '/api/analytics/runs?limit=10'),
         ]);
         const health = await healthRes.json();
         const summary = await summaryRes.json();

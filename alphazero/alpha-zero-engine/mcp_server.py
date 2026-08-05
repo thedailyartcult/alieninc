@@ -9,6 +9,7 @@ Usage:
 import json
 import sys
 import os
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -17,6 +18,7 @@ from mcp.server import MCPServer
 from mcp.types import Tool
 
 from cmb import cmb_store, cmb_retrieve, cmb_list, cmb_search, cmb_delete, cmb_clear
+from infra import metrics as az_metrics
 from mcp_integration import (
     ALPHA_ZERO_TOOLS,
     store_simulation_result,
@@ -34,6 +36,16 @@ from mcp_integration import (
 
 def _workspace(workspace: str) -> str:
     return workspace or "default"
+
+
+def _parse_character(character_json) -> dict:
+    """Accept a character as a JSON string or an already-parsed dict."""
+    if isinstance(character_json, dict):
+        return character_json
+    try:
+        return json.loads(character_json) if character_json else {}
+    except (json.JSONDecodeError, TypeError):
+        return {}
 
 
 def _load_simulation_module():
@@ -455,10 +467,7 @@ async def handle_coach(params: dict) -> dict:
     repo = params.get("repo", "alphazero")
     session_id = params.get("session_id")
 
-    try:
-        character = json.loads(character_json)
-    except json.JSONDecodeError:
-        character = {}
+    character = _parse_character(character_json)
 
     try:
         sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -616,6 +625,108 @@ async def handle_memory(params: dict) -> dict:
         return {"status": "error", "error": str(exc)}
 
 
+async def handle_financial_advisor(params: dict) -> dict:
+    workspace = _workspace(params.get("workspace"))
+    character_json = params.get("character_json", "{}")
+    situation = params.get("situation", "general")
+    repo = params.get("repo", "alphazero")
+    session_id = params.get("session_id")
+
+    character = _parse_character(character_json)
+
+    try:
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        from ai.financial_advisor import FinancialAdvisorAgent
+
+        agent = FinancialAdvisorAgent()
+        advice = agent.provide_advice(character, situation)
+    except Exception:
+        advice = {
+            "character_name": character.get("name", "Unknown"),
+            "situation": situation,
+            "analysis": {},
+            "assessment": "Unable to assess financial state right now.",
+            "recommendations": [],
+            "action_plan": {},
+            "allocation": {},
+            "encouragement": "Keep building your financial foundation!",
+            "continuity": {},
+        }
+
+    cmb_store(workspace, f"financial_advisor_{session_id or 'default'}", advice, repo=repo)
+
+    return {"status": "success", "result": advice}
+
+
+async def handle_health_coach(params: dict) -> dict:
+    workspace = _workspace(params.get("workspace"))
+    character_json = params.get("character_json", "{}")
+    situation = params.get("situation", "general")
+    repo = params.get("repo", "alphazero")
+    session_id = params.get("session_id")
+
+    character = _parse_character(character_json)
+
+    try:
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        from ai.health_coach import HealthCoachAgent
+
+        agent = HealthCoachAgent()
+        advice = agent.provide_advice(character, situation)
+    except Exception:
+        advice = {
+            "character_name": character.get("name", "Unknown"),
+            "situation": situation,
+            "analysis": {},
+            "assessment": "Unable to assess health state right now.",
+            "recommendations": [],
+            "weekly_plan": {},
+            "action_plan": {},
+            "encouragement": "Every day is a chance to get healthier!",
+            "continuity": {},
+        }
+
+    cmb_store(workspace, f"health_coach_{session_id or 'default'}", advice, repo=repo)
+
+    return {"status": "success", "result": advice}
+
+
+async def handle_mentor(params: dict) -> dict:
+    workspace = _workspace(params.get("workspace"))
+    character_json = params.get("character_json", "{}")
+    question = params.get("question", "")
+    repo = params.get("repo", "alphazero")
+    session_id = params.get("session_id")
+
+    character = _parse_character(character_json)
+
+    try:
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        from ai.mentor import MentorAgent
+
+        agent = MentorAgent()
+        advice = agent.provide_mentorship(character, question)
+    except Exception:
+        advice = {
+            "character_name": character.get("name", "Unknown"),
+            "question": question,
+            "assessment": "Unable to provide mentorship right now.",
+            "focus_areas": [],
+            "principles": [],
+            "action_plan": {},
+            "weekly_routine": {},
+            "mentor_response": "Let us work through this together.",
+            "financial_advisor": {},
+            "health_coach": {},
+            "life_coach": {},
+            "continuity": {},
+        }
+
+    cmb_store(workspace, f"mentor_{session_id or 'default'}", advice, repo=repo)
+
+    return {"status": "success", "result": advice}
+
+
 TOOL_HANDLERS = {
     "alpha_zero_simulate": handle_simulate,
     "alpha_zero_branch": handle_branch,
@@ -638,6 +749,9 @@ TOOL_HANDLERS = {
     "alpha_zero_analyze": handle_analyze,
     "alpha_zero_narrate": handle_narrate,
     "alpha_zero_memory": handle_memory,
+    "alpha_zero_financial_advisor": handle_financial_advisor,
+    "alpha_zero_health_coach": handle_health_coach,
+    "alpha_zero_mentor": handle_mentor,
 }
 
 
@@ -651,6 +765,36 @@ def create_mcp_server() -> MCPServer:
     return server
 
 
+async def _instrument_call_tool(orig_call_tool, name, arguments, context):
+    """Wrap the MCP tool dispatcher with Prometheus counters + latency."""
+    started = time.perf_counter()
+    try:
+        result = await orig_call_tool(name, arguments, context)
+        ok = not bool(getattr(result, "is_error", False))
+        az_metrics.record_tool(name, "ok" if ok else "error", (time.perf_counter() - started) * 1000)
+        return result
+    except Exception:
+        az_metrics.record_tool(name, "error", (time.perf_counter() - started) * 1000)
+        raise
+
+
+def _make_http_app(server: MCPServer, host: str):
+    """Build a Starlette app that serves MCP at /mcp and Prometheus at /metrics."""
+    from starlette.applications import Starlette
+    from starlette.responses import PlainTextResponse
+    from starlette.routing import Mount, Route
+
+    mcp_app = server.streamable_http_app(streamable_http_path="/mcp", host=host)
+
+    async def _metrics(request):
+        return PlainTextResponse(
+            az_metrics.generate(),
+            media_type="text/plain; version=0.0.4; charset=utf-8",
+        )
+
+    return Starlette(routes=[Route("/metrics", endpoint=_metrics), Mount("/", app=mcp_app)])
+
+
 async def main():
     import argparse
 
@@ -658,6 +802,7 @@ async def main():
     parser.add_argument("--http", action="store_true", help="Use streamable HTTP transport")
     parser.add_argument("--port", type=int, default=8000, help="HTTP port")
     parser.add_argument("--host", type=str, default="127.0.0.1", help="HTTP host")
+    parser.add_argument("--metrics-port", type=int, default=0, help="Dedicated Prometheus port (stdio mode; 0 = disabled)")
     args = parser.parse_args()
 
     server = create_mcp_server()
@@ -808,13 +953,43 @@ async def main():
             "session_id": session_id, "repo": repo,
         })
 
+    @server.tool()
+    async def alpha_zero_financial_advisor(workspace="default", character_json="{}", situation="general", repo="alphazero", session_id=None):
+        return await handle_financial_advisor({
+            "workspace": workspace, "character_json": character_json,
+            "situation": situation, "repo": repo, "session_id": session_id,
+        })
+
+    @server.tool()
+    async def alpha_zero_health_coach(workspace="default", character_json="{}", situation="general", repo="alphazero", session_id=None):
+        return await handle_health_coach({
+            "workspace": workspace, "character_json": character_json,
+            "situation": situation, "repo": repo, "session_id": session_id,
+        })
+
+    @server.tool()
+    async def alpha_zero_mentor(workspace="default", character_json="{}", question="", repo="alphazero", session_id=None):
+        return await handle_mentor({
+            "workspace": workspace, "character_json": character_json,
+            "question": question, "repo": repo, "session_id": session_id,
+        })
+
+    # Instrument the tool dispatcher (covers both stdio and HTTP transports).
+    _orig_call_tool = server.call_tool
+    import functools
+    server.call_tool = functools.partial(_instrument_call_tool, _orig_call_tool)
+
     if args.http:
+        import uvicorn
+
         print(f"Alpha Zero MCP Server running on http://{args.host}:{args.port}/mcp", flush=True)
-        await server.run_streamable_http_async(
-            host=args.host,
-            port=args.port,
-        )
+        app = _make_http_app(server, args.host)
+        config = uvicorn.Config(app, host=args.host, port=args.port, log_level="info")
+        uvicorn_server = uvicorn.Server(config)
+        await uvicorn_server.serve()
     else:
+        if args.metrics_port:
+            az_metrics.serve(args.metrics_port, args.host)
         print("Alpha Zero MCP Server starting (stdio mode)...", flush=True)
         await server.run_stdio_async()
 

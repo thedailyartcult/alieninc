@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from finance.market import MarketSimulator
 from finance.native import (
     _find_binary,
+    native_advisor,
     native_compare_strategies,
     native_forecast,
     native_market_years,
@@ -123,6 +124,118 @@ def test_benchmark_reports_speedup():
     data = json.loads(out.stdout)
     assert data["runs"] == 4000
     assert data["elapsed_ms"] > 0
+
+
+# ── Phase 8 advisor parity (Go alphacore vs Python AI agents) ─────────────
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+os.environ.setdefault("OLLAMA_DISABLE", "1")
+
+
+def _without_backend(d: dict) -> dict:
+    return {k: v for k, v in d.items() if k != "backend"}
+
+_ADVISOR_CASES = {
+    "standard": {
+        "name": "Alex", "age": 32, "gender": "male", "happiness": 60, "health": 75,
+        "smarts": 65, "looks": 60, "karma": 70, "money": 12000.0, "portfolio_value": 45000.0,
+        "debt": 3000.0, "occupation": "Software Engineer", "education_level": "bachelors",
+    },
+    "debt_burdened": {
+        "name": "Riya", "age": 41, "gender": "female", "happiness": 40, "health": 55,
+        "smarts": 70, "looks": 50, "karma": 60, "money": -15000.0, "portfolio_value": 8000.0,
+        "debt": 60000.0, "occupation": "Teacher", "education_level": "masters",
+    },
+    "retiree": {
+        "name": "Ken", "age": 67, "gender": "male", "happiness": 80, "health": 65,
+        "smarts": 55, "looks": 45, "karma": 75, "money": 200000.0, "portfolio_value": 450000.0,
+        "debt": 0.0, "occupation": "Retired", "education_level": "high_school",
+    },
+    "zero_attributes": {
+        "name": "Zero", "age": 0, "gender": "unknown", "happiness": 0, "health": 0,
+        "smarts": 0, "looks": 0, "karma": 0, "money": 0.0, "portfolio_value": 0.0,
+        "debt": 0.0, "occupation": "unknown", "education_level": "none",
+    },
+    "missing_fields": {
+        "name": "Mystery", "age": 28,
+    },
+}
+
+
+@NEEDS_BINARY
+@pytest.mark.parametrize("kind", ["financial", "health", "mentor"])
+@pytest.mark.parametrize("case_name", sorted(_ADVISOR_CASES))
+def test_advisor_parity(kind, case_name):
+    from ai.financial_advisor import FinancialAdvisorAgent
+    from ai.health_coach import HealthCoachAgent
+    from ai.mentor import MentorAgent
+
+    char = _ADVISOR_CASES[case_name]
+    go = native_advisor(kind, char)
+    assert go["backend"] == "go", f"{kind}/{case_name} fell back to Python"
+
+    if kind == "financial":
+        py = FinancialAdvisorAgent().provide_advice(char, "general")
+    elif kind == "health":
+        py = HealthCoachAgent().provide_advice(char, "general")
+    else:
+        py = MentorAgent().provide_mentorship(char, "")
+
+    if kind == "mentor":
+        # The full LifeCoachAgent is Python-only; Go produces an explicit
+        # baseline block (message marker) that the Rust client replaces.
+        go_body = {k: v for k, v in go.items() if k != "life_coach"}
+        py_body = {k: v for k, v in py.items() if k != "life_coach"}
+        assert _without_backend(go_body) == py_body, \
+            f"Go != Python for advisor {kind} case {case_name} (excluding life_coach)"
+        assert go["life_coach"]["character_name"] == py["life_coach"]["character_name"]
+        assert "baseline" in go["life_coach"].get("message", "")
+    else:
+        assert _without_backend(go) == py, f"Go != Python for advisor {kind} case {case_name}"
+
+
+@NEEDS_BINARY
+@pytest.mark.parametrize("kind", ["financial", "health", "mentor"])
+def test_advisor_parity_with_prior_advice(kind):
+    from ai.financial_advisor import FinancialAdvisorAgent
+    from ai.health_coach import HealthCoachAgent
+    from ai.mentor import MentorAgent
+
+    char = dict(_ADVISOR_CASES["standard"])
+    char["prior_advice"] = [
+        "Saved three months of expenses and started investing.",
+        "Started automatic transfers into a diversified index fund.",
+    ]
+
+    go = native_advisor(kind, char)
+    assert go["backend"] == "go"
+    assert go["continuity"]["prior_advice_recalled"] == char["prior_advice"]
+
+    if kind == "financial":
+        py = FinancialAdvisorAgent().provide_advice(char, "general")
+    elif kind == "health":
+        py = HealthCoachAgent().provide_advice(char, "general")
+    else:
+        py = MentorAgent().provide_mentorship(char, "")
+
+    if kind == "mentor":
+        go_body = {k: v for k, v in go.items() if k != "life_coach"}
+        py_body = {k: v for k, v in py.items() if k != "life_coach"}
+        assert _without_backend(go_body) == py_body
+    else:
+        assert _without_backend(go) == py
+
+
+@NEEDS_BINARY
+@pytest.mark.parametrize("situation", ["retirement", "debt", "general"])
+def test_financial_advisor_situation_variants(situation):
+    from ai.financial_advisor import FinancialAdvisorAgent
+
+    char = _ADVISOR_CASES["standard"]
+    go = native_advisor("financial", char, situation=situation)
+    assert go["backend"] == "go"
+    py = FinancialAdvisorAgent().provide_advice(char, situation)
+    assert _without_backend(go) == py
 
 
 # ── TiDB persistence via native core ──────────────────────────────────────

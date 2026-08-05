@@ -9,6 +9,7 @@
 // Commands: forecast | market | compare | stress | benchmark
 //
 //	| interview | coach | analyze | narrate | memory (Phase 6 AI)
+//	| advisor_financial | advisor_health | advisor_mentor (Phase 8 advisors)
 package main
 
 import (
@@ -19,6 +20,8 @@ import (
 	"math"
 	"os"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -763,6 +766,819 @@ func firstNonEmpty(values ...string) string {
 	return ""
 }
 
+// ---------------------------------------------------------------------------
+// Phase 8: Advisor commands (advisor_financial | advisor_health | advisor_mentor)
+//
+// Deterministic ports of the Python advisor heuristic cores — the exact
+// OLLAMA_DISABLE=1 path of ai/financial_advisor.py, ai/health_coach.py and
+// ai/mentor.py — so native runs produce the same advice JSON as the Python
+// agents in deterministic mode. The Rust MCP client replaces these baselines
+// with the full Python AI agents (including LLM personalization).
+// ---------------------------------------------------------------------------
+
+type AdvisorRequest struct {
+	CharacterJSON json.RawMessage `json:"character_json"`
+	Character     json.RawMessage `json:"character"`
+	Situation     string          `json:"situation"`
+	Question      string          `json:"question"`
+}
+
+// character returns the parsed character dict, honoring both the
+// character_json and character keys (string or object form).
+func (req AdvisorRequest) character() map[string]any {
+	raw := req.CharacterJSON
+	if len(raw) == 0 {
+		raw = req.Character
+	}
+	return parseCharacterJSON(raw)
+}
+
+func parseCharacterJSON(raw json.RawMessage) map[string]any {
+	if len(raw) == 0 || string(raw) == "null" {
+		return map[string]any{}
+	}
+	var s string
+	if err := json.Unmarshal(raw, &s); err == nil {
+		var m map[string]any
+		if err := json.Unmarshal([]byte(s), &m); err == nil {
+			return m
+		}
+		return map[string]any{}
+	}
+	var m map[string]any
+	if err := json.Unmarshal(raw, &m); err == nil {
+		return m
+	}
+	return map[string]any{}
+}
+
+func numField(m map[string]any, key string) float64 {
+	switch v := m[key].(type) {
+	case float64:
+		return v
+	case string:
+		f, _ := strconv.ParseFloat(v, 64)
+		return f
+	}
+	return 0
+}
+
+func strField(m map[string]any, key string) string {
+	if s, ok := m[key].(string); ok {
+		return s
+	}
+	return ""
+}
+
+func intField(m map[string]any, key string) int {
+	return int(numField(m, key))
+}
+
+// intOrDefault mirrors Python's `int(x or default)`: a missing or falsy (0)
+// value yields the default, so an explicit 0 is treated as "unset".
+func intOrDefault(m map[string]any, key string, dflt int) int {
+	v := intField(m, key)
+	if v == 0 {
+		return dflt
+	}
+	return v
+}
+
+// presentInt returns (value, true) only when the key actually exists, so
+// "missing" (character_from_dict default applies) and "explicit 0" can be
+// distinguished — Python's `data.get(key, default)` vs `int(x or fallback)`.
+func presentInt(m map[string]any, key string) (int, bool) {
+	v, ok := m[key]
+	if !ok {
+		return 0, false
+	}
+	switch t := v.(type) {
+	case float64:
+		return int(t), true
+	case string:
+		f, err := strconv.ParseFloat(t, 64)
+		if err != nil {
+			return 0, true
+		}
+		return int(f), true
+	}
+	return 0, true
+}
+
+// normalizedHealth mirrors the two-stage Python path: character_from_dict
+// fills a default health of 70, then HealthCoachAgent reads `int(health or 50)`.
+func normalizedHealth(c map[string]any) int {
+	health := 70
+	if v, ok := presentInt(c, "health"); ok {
+		health = v
+	}
+	if health == 0 {
+		health = 50
+	}
+	return health
+}
+
+// pyRound mirrors CPython round(x, ndigits): round-half-to-even.
+func pyRound(x float64, ndigits int) float64 {
+	p := math.Pow10(ndigits)
+	f := x * p
+	lower := math.Floor(f)
+	frac := f - lower
+	var result float64
+	if frac < 0.5 {
+		result = lower
+	} else if frac > 0.5 {
+		result = lower + 1
+	} else if math.Mod(math.Abs(lower), 2) == 0 {
+		result = lower
+	} else {
+		result = lower + 1
+	}
+	return result / p
+}
+
+// commaInt mirrors Python's f"{x:,.0f}" thousands separator formatting.
+func commaInt(x float64) string {
+	v := int64(pyRound(x, 0))
+	s := strconv.FormatInt(v, 10)
+	if v < 0 {
+		return "-" + groupDigits(s[1:])
+	}
+	return groupDigits(s)
+}
+
+func groupDigits(s string) string {
+	out := ""
+	for i := 0; i < len(s); i++ {
+		if i > 0 && (len(s)-i)%3 == 0 {
+			out += ","
+		}
+		out += string(s[i])
+	}
+	return out
+}
+
+// strategies mirrors finance/portfolio.py STRATEGIES (the subset the advisors
+// recommend: hyper_growth, balanced, recession_defense, dividend_income).
+var strategies = map[string]map[string]any{
+	"hyper_growth": {
+		"name": "Hyper-Growth",
+		"allocations": map[string]float64{
+			"tech_stocks": 0.40, "leveraged_etf": 0.25, "crypto": 0.15,
+			"emerging_markets": 0.10, "cash": 0.10,
+		},
+		"expected_return": 0.18, "volatility": 0.35, "sharpe_target": 2.1,
+	},
+	"balanced": {
+		"name": "Balanced",
+		"allocations": map[string]float64{
+			"us_stocks": 0.30, "intl_stocks": 0.20, "bonds": 0.25,
+			"real_estate": 0.15, "cash": 0.10,
+		},
+		"expected_return": 0.08, "volatility": 0.12, "sharpe_target": 1.0,
+	},
+	"recession_defense": {
+		"name": "Recession Defense",
+		"allocations": map[string]float64{
+			"consumer_staples": 0.30, "gold": 0.25, "bonds": 0.25,
+			"utilities": 0.10, "cash": 0.10,
+		},
+		"expected_return": 0.05, "volatility": 0.08, "sharpe_target": 1.4,
+	},
+	"dividend_income": {
+		"name": "Dividend Aristocrats",
+		"allocations": map[string]float64{
+			"dividend_stocks": 0.40, "reits": 0.20, "bonds": 0.25,
+			"preferred_stock": 0.10, "cash": 0.05,
+		},
+		"expected_return": 0.06, "volatility": 0.10, "sharpe_target": 0.8,
+	},
+}
+
+// buildContinuity mirrors ai/advisor_dossier.py build_continuity.
+func buildContinuity(characterData map[string]any, name string) map[string]any {
+	prior := []string{}
+	if raw, ok := characterData["prior_advice"].([]any); ok {
+		for _, p := range raw {
+			switch v := p.(type) {
+			case string:
+				if v != "" {
+					prior = append(prior, v)
+				}
+			case float64:
+				prior = append(prior, strconv.FormatFloat(v, 'f', -1, 64))
+			}
+		}
+	}
+	if len(prior) > 5 {
+		prior = prior[:5]
+	}
+	summary := fmt.Sprintf("No prior advice on file for %s yet.", name)
+	if len(prior) > 0 {
+		label := "entries"
+		if len(prior) == 1 {
+			label = "entry"
+		}
+		summary = fmt.Sprintf("Building on %d prior advice %s for %s.", len(prior), label, name)
+	}
+	return map[string]any{
+		"prior_advice_recalled": prior,
+		"recalled_count":        len(prior),
+		"summary":               summary,
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Financial advisor (ai/financial_advisor.py deterministic core)
+// ---------------------------------------------------------------------------
+
+type FinState struct {
+	NetWorth           float64
+	LiquidCash         float64
+	Debt               float64
+	DebtToIncome       float64
+	Portfolio          float64
+	MonthlyIncome      float64
+	EmergencyMonths    float64
+	RiskProfile        string
+	RecommendedStrategy string
+}
+
+func cmdAdvisorFinancial(req AdvisorRequest) {
+	character := req.character()
+	situation := firstNonEmpty(req.Situation, "general")
+	writeJSON(map[string]any{
+		"status":  "success",
+		"backend": "go",
+		"result":  financialAdvice(character, situation),
+	})
+}
+
+func financialAdvice(c map[string]any, situation string) map[string]any {
+	state := analyzeFinancialState(c)
+	basic := map[string]any{
+		"assessment":      financialAssessment(state),
+		"recommendations": financialRecommendations(state, situation),
+		"action_plan": map[string]any{
+			"immediate": "Create a written budget; list all debts and expenses.",
+			"30_days":   "Cut discretionary spending to raise the savings rate above 20%.",
+			"90_days":   "Fund the emergency reserve to 3 months of expenses.",
+			"6_months":  "Fully fund the 6-month emergency fund and start automated investing.",
+			"long_term": "Rebalance quarterly and review the allocation once a year.",
+		},
+		"allocation":    allocationAdvice(state),
+		"encouragement": financialEncouragement(state),
+	}
+	name := firstNonEmpty(strField(c, "name"), "Unknown")
+	return map[string]any{
+		"character_name":  name,
+		"situation":       situation,
+		"analysis":        financialStateMap(state),
+		"assessment":      basic["assessment"],
+		"recommendations": basic["recommendations"],
+		"action_plan":     basic["action_plan"],
+		"allocation":      basic["allocation"],
+		"encouragement":   basic["encouragement"],
+		"continuity":      buildContinuity(c, name),
+	}
+}
+
+func analyzeFinancialState(c map[string]any) FinState {
+	// Mirror character_from_dict + Character.__post_init__: `debt` is never
+	// carried through character_from_dict, and net_worth is always recomputed
+	// as money + portfolio_value, so the advisors observe debt=0 and the
+	// recalculated net worth regardless of the input dict.
+	money := numField(c, "money")
+	portfolio := numField(c, "portfolio_value")
+	netWorth := money + portfolio
+	debt := 0.0
+	income := estimateIncome(c)
+	age := intField(c, "age")
+
+	monthlyExpenses := income / 12 * 0.6
+	if monthlyExpenses < 1 {
+		monthlyExpenses = 1
+	}
+	emergencyFund := money
+	if emergencyFund <= 0 {
+		emergencyFund = math.Max(0, netWorth*0.1)
+	}
+	emergencyMonths := pyRound(emergencyFund/monthlyExpenses, 1)
+
+	debtRatio := 0.0
+	if income > 0 {
+		debtRatio = pyRound(debt/income, 2)
+	} else if debt > 0 {
+		debtRatio = 1.0
+	}
+
+	riskProfile := riskProfile(age, netWorth, debtRatio)
+	recommended := recommendedStrategy(age, netWorth)
+
+	return FinState{
+		NetWorth:            netWorth,
+		LiquidCash:          money,
+		Debt:                debt,
+		DebtToIncome:        debtRatio,
+		Portfolio:           portfolio,
+		MonthlyIncome:       pyRound(income/12, 2),
+		EmergencyMonths:     emergencyMonths,
+		RiskProfile:         riskProfile,
+		RecommendedStrategy: recommended,
+	}
+}
+
+func financialStateMap(s FinState) map[string]any {
+	return map[string]any{
+		"net_worth":                 s.NetWorth,
+		"liquid_cash":               s.LiquidCash,
+		"debt":                      s.Debt,
+		"debt_to_income_ratio":      s.DebtToIncome,
+		"portfolio_value":           s.Portfolio,
+		"estimated_monthly_income":  s.MonthlyIncome,
+		"emergency_fund_months":     s.EmergencyMonths,
+		"risk_profile":              s.RiskProfile,
+		"recommended_strategy":      s.RecommendedStrategy,
+	}
+}
+
+// estimateIncome mirrors FinancialAdvisorAgent._estimate_income (education base
+// x occupation multiplier, matched in Python's dict insertion order).
+func estimateIncome(c map[string]any) float64 {
+	education := strField(c, "education_level")
+	if education == "" {
+		education = strField(c, "education")
+	}
+	if education == "" {
+		education = "None" // character_from_dict default is "None"
+	}
+	base := 45000.0
+	switch education {
+	case "None":
+		base = 25000
+	case "Primary":
+		base = 30000
+	case "High School":
+		base = 45000
+	case "University":
+		base = 70000
+	}
+	occupation := strings.ToLower(strField(c, "occupation"))
+	multipliers := [][2]any{
+		{"doctor", 5.0}, {"physician", 5.0}, {"surgeon", 6.0}, {"lawyer", 3.0},
+		{"engineer", 2.0}, {"nurse", 1.6}, {"teacher", 1.2}, {"manager", 2.2},
+		{"developer", 2.5}, {"financ", 2.5}, {"entrepreneur", 2.0}, {"executive", 4.0},
+	}
+	for _, entry := range multipliers {
+		if strings.Contains(occupation, entry[0].(string)) {
+			return base * entry[1].(float64)
+		}
+	}
+	return base
+}
+
+func riskProfile(age int, netWorth, debtRatio float64) string {
+	if debtRatio > 0.35 {
+		return "conservative"
+	}
+	if age < 30 && netWorth >= 0 {
+		return "aggressive"
+	}
+	if age < 50 {
+		return "moderate"
+	}
+	return "conservative"
+}
+
+func recommendedStrategy(age int, netWorth float64) string {
+	profile := riskProfile(age, netWorth, 0.0)
+	if profile == "aggressive" {
+		return "hyper_growth"
+	}
+	if profile == "conservative" {
+		return "recession_defense"
+	}
+	if netWorth > 200000 {
+		return "dividend_income"
+	}
+	return "balanced"
+}
+
+func financialAssessment(s FinState) string {
+	nw := s.NetWorth
+	if nw < 0 {
+		return "Net worth is negative — the priority is eliminating debt and rebuilding a positive balance before investing."
+	}
+	if s.EmergencyMonths < 3 {
+		return "Liquid savings cover less than 3 months of expenses — build the emergency fund before aggressive investing."
+	}
+	if nw >= 100000 {
+		return "The financial foundation is solid; focus shifts to growth, tax efficiency, and long-term wealth preservation."
+	}
+	return "A reasonable starting point — the next step is consistent saving and a diversified allocation."
+}
+
+func financialRecommendations(s FinState, situation string) []string {
+	recs := []string{}
+	if s.Debt > 0 {
+		recs = append(recs, fmt.Sprintf(
+			"Pay off the %s debt aggressively (snowball or avalanche) — debt-to-income is %.2f.",
+			commaInt(s.Debt), s.DebtToIncome))
+	}
+	if s.EmergencyMonths < 3 {
+		recs = append(recs, fmt.Sprintf(
+			"Build an emergency fund covering 6 months of expenses (currently %s month(s)).",
+			strconv.FormatFloat(s.EmergencyMonths, 'f', 1, 64)))
+	}
+	if s.NetWorth >= 0 {
+		recs = append(recs, fmt.Sprintf(
+			"Automate saving at least 20%% of income into the %s allocation.",
+			s.RecommendedStrategy))
+	}
+	if s.RiskProfile == "conservative" && s.NetWorth > 0 {
+		recs = append(recs, "Prioritize capital preservation: bonds, dividend stocks, and gold over volatile assets.")
+	}
+	situationAdvice := map[string][]string{
+		"general":        {"Review your budget monthly and track every peso for 30 days."},
+		"debt_reduction": {"Negotiate interest rates with creditors and consolidate high-interest debt."},
+		"investment":     {"Dollar-cost average monthly instead of timing the market; rebalance once a year."},
+		"retirement":     {"Maximize tax-advantaged retirement accounts and let compounding run."},
+		"buying_home":    {"Target a down payment of at least 20% to avoid mortgage insurance."},
+		"emergency":      {"Liquidate volatile positions first; keep only essential expenses funded."},
+	}
+	adv, ok := situationAdvice[situation]
+	if !ok {
+		adv = situationAdvice["general"]
+	}
+	return append(recs, adv...)
+}
+
+func allocationAdvice(s FinState) map[string]any {
+	info, ok := strategies[s.RecommendedStrategy]
+	if !ok {
+		info = strategies["balanced"]
+	}
+	return map[string]any{
+		"strategy":        s.RecommendedStrategy,
+		"name":            info["name"],
+		"allocations":     info["allocations"],
+		"expected_return": info["expected_return"],
+		"volatility":      info["volatility"],
+	}
+}
+
+func financialEncouragement(s FinState) string {
+	if s.NetWorth < 0 {
+		return "Debt is a chapter, not the whole book. Every payment moves the story forward."
+	}
+	if s.EmergencyMonths < 3 {
+		return "Building the reserve first is the disciplined move — the markets will still be there."
+	}
+	return "Consistency beats brilliance. Keep the plan simple and show up every month."
+}
+
+// ---------------------------------------------------------------------------
+// Health coach (ai/health_coach.py deterministic core)
+// ---------------------------------------------------------------------------
+
+type HealthState struct {
+	HealthScore     int
+	Happiness       int
+	HealthCategory  string
+	StressLevel     int
+	RiskFactors     []string
+	ExerciseRec     string
+	SleepRec        string
+}
+
+func cmdAdvisorHealth(req AdvisorRequest) {
+	character := req.character()
+	situation := firstNonEmpty(req.Situation, "general")
+	writeJSON(map[string]any{
+		"status":  "success",
+		"backend": "go",
+		"result":  healthAdvice(character, situation),
+	})
+}
+
+func healthAdvice(c map[string]any, situation string) map[string]any {
+	state := analyzeHealthState(c)
+	basic := map[string]any{
+		"assessment":      healthAssessment(state),
+		"recommendations": healthRecommendations(state, situation),
+		"weekly_plan": map[string]any{
+			"monday":    "30 min cardio + hydration focus",
+			"tuesday":   "Strength session (full body, light weights)",
+			"wednesday": "Active rest: walk and stretch 20 min",
+			"thursday":  "30 min cardio + strength session",
+			"friday":    "Flexibility: yoga or mobility routine",
+			"saturday":  "Social activity or outdoor recreation",
+			"sunday":    "Rest, meal prep, and sleep schedule reset",
+		},
+		"action_plan": map[string]any{
+			"immediate": "Schedule 15 minutes of movement today; set a consistent wake time.",
+			"30_days":   "Hit 150 minutes of weekly exercise and a fixed sleep window.",
+			"90_days":   "Introduce two weekly strength sessions and a daily stress practice.",
+			"6_months":  "Reassess health metrics; adjust the plan based on progress.",
+			"long_term": "Build a sustainable routine that survives busy weeks.",
+		},
+		"encouragement": healthEncouragement(state),
+	}
+	name := firstNonEmpty(strField(c, "name"), "Unknown")
+	return map[string]any{
+		"character_name":  name,
+		"situation":       situation,
+		"analysis":        healthStateMap(state),
+		"assessment":      basic["assessment"],
+		"recommendations": basic["recommendations"],
+		"weekly_plan":     basic["weekly_plan"],
+		"action_plan":     basic["action_plan"],
+		"encouragement":   basic["encouragement"],
+		"continuity":      buildContinuity(c, name),
+	}
+}
+
+func analyzeHealthState(c map[string]any) HealthState {
+	health := normalizedHealth(c)
+	happiness := intOrDefault(c, "happiness", 50)
+	age := intField(c, "age")
+
+	category := "poor"
+	switch {
+	case health >= 80:
+		category = "excellent"
+	case health >= 60:
+		category = "good"
+	case health >= 40:
+		category = "fair"
+	}
+
+	risks := []string{}
+	if health < 40 {
+		risks = append(risks, "Chronic health risk — professional medical check-up recommended")
+	}
+	if happiness < 40 {
+		risks = append(risks, "Low mood — stress and burnout are likely contributing factors")
+	}
+	if age > 50 && health < 60 {
+		risks = append(risks, "Age-related decline — prioritize screening and strength training")
+	}
+	if happiness > 70 && health < 40 {
+		risks = append(risks, "Happiness masking physical strain — do not ignore physical symptoms")
+	}
+	if len(risks) == 0 {
+		risks = append(risks, "No major risk factors detected")
+	}
+
+	stress := 100 - int(math.Min(100, math.Max(0, float64(happiness+10))))
+
+	exercise := "150+ minutes/week of moderate cardio plus two strength sessions"
+	if age > 60 {
+		exercise = "30 min daily of low-impact activity (walking, swimming, tai chi)"
+	} else if health < 40 {
+		exercise = "15 min daily walk first; build up gradually toward 30 min"
+	}
+
+	return HealthState{
+		HealthScore:    health,
+		Happiness:      happiness,
+		HealthCategory: category,
+		StressLevel:    stress,
+		RiskFactors:    risks,
+		ExerciseRec:    exercise,
+		SleepRec:       "7-9",
+	}
+}
+
+func healthStateMap(s HealthState) map[string]any {
+	return map[string]any{
+		"health_score":             s.HealthScore,
+		"happiness_score":          s.Happiness,
+		"health_category":          s.HealthCategory,
+		"stress_level":             s.StressLevel,
+		"risk_factors":             s.RiskFactors,
+		"exercise_recommendation":  s.ExerciseRec,
+		"sleep_recommendation":     s.SleepRec,
+	}
+}
+
+func healthAssessment(s HealthState) string {
+	switch s.HealthCategory {
+	case "excellent":
+		return "You are in excellent condition — the goal is maintenance, consistency, and prevention."
+	case "good":
+		return "Health is solid with clear room to improve fitness, sleep, and stress resilience."
+	case "fair":
+		return "Health needs active attention — small daily habits will compound into real gains."
+	default:
+		return "Health is fragile right now. Rest, medical guidance, and gentle movement come first."
+	}
+}
+
+func healthRecommendations(s HealthState, situation string) []string {
+	recs := []string{}
+	if s.HealthScore < 40 {
+		recs = append(recs, "See a healthcare professional before starting any intense program.")
+	}
+	recs = append(recs, "Aim for 7-9 hours of sleep and 8 glasses of water daily.")
+	recs = append(recs, s.ExerciseRec)
+	if s.StressLevel > 60 {
+		recs = append(recs, "Incorporate a 10-minute daily mindfulness or breathing practice to lower stress.")
+	}
+	if s.Happiness < 50 {
+		recs = append(recs, "Schedule weekly social time — connection is a measurable health input.")
+	}
+	situationAdvice := map[string][]string{
+		"general":     {"Track sleep, steps, and mood for two weeks to find your baseline."},
+		"weight_loss": {"Create a modest calorie deficit and add daily walking; avoid crash diets."},
+		"fitness":     {"Progressively overload workouts — add small weight or reps each week."},
+		"stress":      {"Set work boundaries, take real lunch breaks, and protect sleep as a non-negotiable."},
+		"sleep":       {"Keep a fixed wake time, no screens an hour before bed, and a cool dark room."},
+		"recovery":    {"Prioritize rest days and protein; sleep is where adaptation happens."},
+	}
+	adv, ok := situationAdvice[situation]
+	if !ok {
+		adv = situationAdvice["general"]
+	}
+	return append(recs, adv...)
+}
+
+func healthEncouragement(s HealthState) string {
+	if s.HealthCategory == "poor" {
+		return "Every journey starts with one kind, small step. Rest is productive too."
+	}
+	return "Health is built one ordinary day at a time — consistency quietly outperforms intensity."
+}
+
+// ---------------------------------------------------------------------------
+// Mentor (ai/mentor.py deterministic core)
+// ---------------------------------------------------------------------------
+
+func cmdAdvisorMentor(req AdvisorRequest) {
+	character := req.character()
+	question := req.Question
+	writeJSON(map[string]any{
+		"status":  "success",
+		"backend": "go",
+		"result":  mentorship(character, question),
+	})
+}
+
+func mentorship(c map[string]any, question string) map[string]any {
+	name := firstNonEmpty(strField(c, "name"), "Unknown")
+	financial := financialAdvice(c, "general")
+	health := healthAdvice(c, "general")
+	focus := focusAreas(c)
+	basic := map[string]any{
+		"assessment":      mentorAssessment(c),
+		"focus_areas":     focus,
+		"principles":      mentorPrinciples(),
+		"action_plan":     mentorActionPlan(focus),
+		"weekly_routine":  mentorWeeklyRoutine(),
+		"mentor_response": mentorDefaultResponse(c, question),
+	}
+	return map[string]any{
+		"character_name":   name,
+		"question":         question,
+		"assessment":       basic["assessment"],
+		"focus_areas":      basic["focus_areas"],
+		"principles":       basic["principles"],
+		"action_plan":      basic["action_plan"],
+		"weekly_routine":   basic["weekly_routine"],
+		"mentor_response":  basic["mentor_response"],
+		"financial_advisor": financial,
+		"health_coach":     health,
+		"life_coach":       baselineLifeAdvice(c),
+		"continuity":       buildContinuity(c, name),
+	}
+}
+
+func focusAreas(c map[string]any) []string {
+	focus := []string{}
+	if intOrDefault(c, "smarts", 50) < 60 {
+		focus = append(focus, "Skills & Education")
+	}
+	if intOrDefault(c, "happiness", 50) < 55 {
+		focus = append(focus, "Relationships & Fulfillment")
+	}
+	if intOrDefault(c, "health", 70) < 60 {
+		focus = append(focus, "Health & Energy")
+	}
+	// Same recalculated net worth the Python Character exposes to the mentors
+	// (money + portfolio_value; the raw net_worth input is overwritten).
+	if numField(c, "money")+numField(c, "portfolio_value") < 20000 {
+		focus = append(focus, "Financial Foundation")
+	}
+	if intOrDefault(c, "karma", 50) < 50 {
+		focus = append(focus, "Integrity & Community")
+	}
+	if len(focus) == 0 {
+		focus = append(focus, "Growth & Leverage")
+	}
+	return focus
+}
+
+func mentorAssessment(c map[string]any) string {
+	age := intField(c, "age")
+	if age < 25 {
+		return "A defining window — choices about skills, habits, and people now compound for decades."
+	}
+	if age < 40 {
+		return "The compounding years — career and relationships are being built while you still have energy to redirect."
+	}
+	if age < 60 {
+		return "The leverage years — experience is your edge; delegate, mentor others, and protect your health."
+	}
+	return "The legacy years — focus on impact, mentorship, and financial security for the future."
+}
+
+func mentorPrinciples() []string {
+	return []string{
+		"Energy follows health: protect sleep and movement before everything else.",
+		"Money is a tool, not a score — a quiet emergency fund buys more freedom than a loud splurge.",
+		"Skills compound like investments: study the craft that pays your rent and opens doors.",
+		"Relationships are the real net worth — invest in people who grow when you grow.",
+		"Make the important small and the small important — daily habits beat heroic effort.",
+	}
+}
+
+func mentorActionPlan(focus []string) map[string]any {
+	plan := map[string]any{
+		"immediate": "Choose one focus area and define a single concrete win for the week.",
+		"30_days":   "Establish one new daily habit tied to that focus area.",
+		"90_days":   "Finish one project or course that builds proof of skill.",
+		"6_months":  "Revisit the focus areas; rebalance effort toward the weakest.",
+		"long_term": "Define the person you are becoming and let goals serve that person.",
+	}
+	// Same fixed check order as MentorAgent._action_plan: financial first, then
+	// health, so "Health & Energy" wins when both are present.
+	for _, f := range focus {
+		if f == "Financial Foundation" {
+			plan["immediate"] = "Write a budget today; auto-save 20% before spending anything else."
+		}
+	}
+	for _, f := range focus {
+		if f == "Health & Energy" {
+			plan["immediate"] = "Protect tonight's sleep and move for 15 minutes today."
+		}
+	}
+	return plan
+}
+
+func mentorWeeklyRoutine() map[string]any {
+	return map[string]any{
+		"monday":    "Deep work on the top skill or project",
+		"tuesday":   "Network: one conversation with someone ahead of you",
+		"wednesday": "Health: strength or cardio session",
+		"thursday":  "Financial review: track spending, save first",
+		"friday":    "Reflect and plan the next week",
+		"saturday":  "Relationships: quality time with key people",
+		"sunday":    "Rest, read, and reset",
+	}
+}
+
+func mentorDefaultResponse(c map[string]any, question string) string {
+	name := firstNonEmpty(strField(c, "name"), "Unknown")
+	focus := strings.Join(focusAreas(c), ", ")
+	if strings.TrimSpace(question) == "" {
+		return fmt.Sprintf(
+			"%s, the highest-leverage moves right now are %s. Start with the smallest daily habit, then let momentum carry the rest.",
+			name, focus)
+	}
+	return fmt.Sprintf(
+		"On '%s': start with the honest version of your situation, choose one concrete step you can take this week, and treat the outcome as data, not verdict.",
+		question)
+}
+
+// baselineLifeAdvice is the deterministic Go baseline for the life_coach block
+// embedded in the mentor session (the full LifeCoachAgent stays Python-only;
+// the Rust MCP client bridges to it for the real coaching output).
+func baselineLifeAdvice(c map[string]any) map[string]any {
+	name := firstNonEmpty(strField(c, "name"), "Unknown")
+	return map[string]any{
+		"character_name": name,
+		"situation":      "general",
+		"analysis": map[string]any{
+			"overall_health": "baseline",
+		},
+		"specific_recommendations": []string{
+			"Invest in health and learning consistently",
+			"Build a diversified financial portfolio",
+		},
+		"recommendations": []string{
+			"Invest in health and learning consistently",
+			"Build a diversified financial portfolio",
+		},
+		"action_plan": map[string]any{
+			"immediate_steps":  []string{"Sleep 7-9 hours", "Save 20% of income"},
+			"short_term_goals": []string{"Build an emergency fund", "Learn a new skill"},
+			"long_term_vision": "Create sustainable wealth and wellbeing",
+		},
+		"encouragement": "Keep building momentum — small consistent steps compound.",
+		"message":       "baseline life coaching from Go core; use Rust client for full AI coaching",
+	}
+}
+
 // reportDSNs converts the mysql:// URL into (full, base) go-sql-driver DSNs:
 // full includes the database; base does not (used to CREATE DATABASE first).
 func reportDSNs(urlDSN string) (full, base string) {
@@ -1034,6 +1850,24 @@ func main() {
 			fail(err)
 		}
 		cmdReport(req)
+	case "advisor_financial":
+		var req AdvisorRequest
+		if err := json.Unmarshal(raw, &req); err != nil {
+			fail(err)
+		}
+		cmdAdvisorFinancial(req)
+	case "advisor_health":
+		var req AdvisorRequest
+		if err := json.Unmarshal(raw, &req); err != nil {
+			fail(err)
+		}
+		cmdAdvisorHealth(req)
+	case "advisor_mentor":
+		var req AdvisorRequest
+		if err := json.Unmarshal(raw, &req); err != nil {
+			fail(err)
+		}
+		cmdAdvisorMentor(req)
 	default:
 		writeJSON(map[string]any{"error": "unknown command: " + cmd})
 		os.Exit(1)

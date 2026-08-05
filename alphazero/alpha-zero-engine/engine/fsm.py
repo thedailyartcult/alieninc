@@ -120,14 +120,19 @@ class FSM:
                 delta = character.roll(1, 3)
                 character.modify("health", delta)
                 changes["health"] = delta
-        elif character.age < 60 and character.health < 60:
+        elif character.age < 65 and character.health < 72:
             delta = character.roll(1, 2)
             character.modify("health", delta)
             changes["health"] = delta
+        elif character.age < 80 and character.health < 48:
+            delta = character.roll(1, 1)
+            character.modify("health", delta)
+            changes["health"] = delta
 
-        # Health naturally declines after 40
-        if character.age > 40:
-            decline = max(1, (character.age - 40) // 10)
+        # Health naturally declines with age, starting in the late 50s.
+        # Decline stays gentle so a healthy adult lives into their 70s.
+        if character.age > 50:
+            decline = max(1, (character.age - 55) // 10)
             delta = -character.roll(1, decline)
             character.modify("health", delta)
             changes["health"] = delta
@@ -308,13 +313,13 @@ class FSM:
         if age < 30:
             mortality = 0.001
         elif age < 50:
-            mortality = 0.005
+            mortality = 0.003
         elif age < 70:
-            mortality = 0.02
+            mortality = 0.01
         elif age < 85:
-            mortality = 0.08
+            mortality = 0.05
         else:
-            mortality = 0.15
+            mortality = 0.1
 
         # Health modifies mortality (capped at 4x so low health is risky
         # but not a guaranteed death sentence)

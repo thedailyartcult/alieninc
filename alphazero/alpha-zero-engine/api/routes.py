@@ -17,6 +17,7 @@ from finance.portfolio import PortfolioEngine, STRATEGIES
 from finance.market import MarketSimulator
 from finance.metrics import compute_metrics
 from infra import analytics
+from infra import metrics as az_metrics
 from infra.cache import healthy as redis_healthy
 from infra.tidb_store import healthy as tidb_healthy
 
@@ -78,6 +79,9 @@ def create_app():
             analytics.record_request(
                 request.method, endpoint, response.status_code, round(duration, 2)
             )
+            az_metrics.record_request(
+                request.method, endpoint, response.status_code, round(duration, 2)
+            )
         return response
 
     # ------------------------------------------------------------------
@@ -123,6 +127,14 @@ def create_app():
         limit = request.args.get("limit", 50, type=int)
         return jsonify({"runs": analytics.run_history(limit)})
 
+    @app.route("/metrics")
+    def api_metrics():
+        """Prometheus text-format metrics (scraped by the observability stack)."""
+        return Response(
+            az_metrics.generate(),
+            mimetype="text/plain; version=0.0.4; charset=utf-8",
+        )
+
     @app.route("/api/simulate", methods=["POST"])
     def api_simulate():
         """Run a single universe simulation."""
@@ -154,6 +166,7 @@ def create_app():
             "strategy": config.portfolio_strategy,
             "years": len(steps),
         })
+        az_metrics.record_simulation("single", strategy=config.portfolio_strategy)
 
         # Format steps for frontend
         timeline = []
@@ -212,6 +225,12 @@ def create_app():
             "sharpe_ratio": report.sharpe_ratio,
             "avg_years_lived": report.avg_years_lived,
         })
+        az_metrics.record_simulation(
+            "multiverse",
+            universes=report.total_simulations,
+            strategy=config.portfolio_strategy,
+            convergence=report.convergence_rate,
+        )
 
         # Format for frontend
         result = {
@@ -271,6 +290,11 @@ def create_app():
             "universes": report.total_simulations,
             "convergence_rate": report.convergence_rate,
         })
+        az_metrics.record_simulation(
+            "branch",
+            universes=report.total_simulations,
+            convergence=report.convergence_rate,
+        )
 
         return jsonify({
             "branch_age": data.get("branch_age"),

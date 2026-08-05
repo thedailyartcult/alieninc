@@ -16,6 +16,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import time
 from typing import Optional
 
@@ -229,3 +230,53 @@ def native_report(operation: str, **kwargs) -> dict:
     if result is None:
         return {"backend": "unavailable"}
     return result
+
+
+_ADVISOR_COMMANDS = {
+    "financial": "advisor_financial",
+    "health": "advisor_health",
+    "mentor": "advisor_mentor",
+}
+
+
+def native_advisor(kind: str, character: dict, situation: str = "general",
+                   question: str = "") -> dict:
+    """Phase 8 advisor advice via the native core, falling back to Python.
+
+    kind is one of "financial" | "health" | "mentor". The Go command is the
+    deterministic port of the Python heuristic core (the OLLAMA_DISABLE path),
+    so both engines must return identical advice JSON. The Python fallback
+    disables the LLM to keep results deterministic.
+    """
+    command = _ADVISOR_COMMANDS.get(kind)
+    if command is None:
+        raise ValueError(f"unknown advisor kind: {kind!r} (financial|health|mentor)")
+
+    payload = {"character_json": character}
+    if command == "advisor_mentor":
+        payload["question"] = question
+    else:
+        payload["situation"] = situation
+
+    result = _call(command, payload)
+    if result is not None:
+        if isinstance(result.get("result"), dict):
+            result = result["result"]
+        result["backend"] = "go"
+        return result
+
+    repo_root = os.path.join(os.path.dirname(__file__), "..", "..")
+    if repo_root not in sys.path:
+        sys.path.insert(0, repo_root)
+    os.environ.setdefault("OLLAMA_DISABLE", "1")
+    if kind == "financial":
+        from ai.financial_advisor import FinancialAdvisorAgent
+        advice = FinancialAdvisorAgent().provide_advice(character, situation)
+    elif kind == "health":
+        from ai.health_coach import HealthCoachAgent
+        advice = HealthCoachAgent().provide_advice(character, situation)
+    else:
+        from ai.mentor import MentorAgent
+        advice = MentorAgent().provide_mentorship(character, question)
+    advice["backend"] = "python"
+    return advice

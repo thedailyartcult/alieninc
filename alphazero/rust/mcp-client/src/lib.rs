@@ -179,6 +179,69 @@ async fn rust_memory_handler(params: serde_json::Value) -> Result<serde_json::Va
     Ok(memory_data)
 }
 
+// ---------------------------------------------------------------------------
+// Phase 8: Advisor handlers — bridge Go alphacore and Python AI advisors.
+//
+// The Go core provides deterministic baselines (advisor_financial | advisor_health |
+// advisor_mentor); these handlers call the full Python AI agents (with LLM
+// personalization) exactly like the Phase 6 interview/coach/analyze bridge.
+// ---------------------------------------------------------------------------
+
+async fn rust_financial_advisor_handler(params: serde_json::Value) -> Result<serde_json::Value, Box<dyn Error>> {
+    // character_json may arrive as a JSON string or as an object.
+    let character_json = params.get("character_json").cloned().unwrap_or_else(|| json!("{}"));
+    let situation = params.get("situation").and_then(|v| v.as_str()).unwrap_or("general");
+
+    let input_json = json!({
+        "character_json": character_json,
+        "situation": situation,
+    });
+
+    let result = AlphaZeroResult::run_command(
+        &agent_command("financial_advisor.py"),
+        Some(&serde_json::to_string(&input_json)?),
+    ).await?;
+
+    let advice_data: serde_json::Value = serde_json::from_str(&result.output)?;
+    Ok(advice_data)
+}
+
+async fn rust_health_coach_handler(params: serde_json::Value) -> Result<serde_json::Value, Box<dyn Error>> {
+    let character_json = params.get("character_json").cloned().unwrap_or_else(|| json!("{}"));
+    let situation = params.get("situation").and_then(|v| v.as_str()).unwrap_or("general");
+
+    let input_json = json!({
+        "character_json": character_json,
+        "situation": situation,
+    });
+
+    let result = AlphaZeroResult::run_command(
+        &agent_command("health_coach.py"),
+        Some(&serde_json::to_string(&input_json)?),
+    ).await?;
+
+    let advice_data: serde_json::Value = serde_json::from_str(&result.output)?;
+    Ok(advice_data)
+}
+
+async fn rust_mentor_handler(params: serde_json::Value) -> Result<serde_json::Value, Box<dyn Error>> {
+    let character_json = params.get("character_json").cloned().unwrap_or_else(|| json!("{}"));
+    let question = params.get("question").and_then(|v| v.as_str()).unwrap_or("");
+
+    let input_json = json!({
+        "character_json": character_json,
+        "question": question,
+    });
+
+    let result = AlphaZeroResult::run_command(
+        &agent_command("mentor.py"),
+        Some(&serde_json::to_string(&input_json)?),
+    ).await?;
+
+    let advice_data: serde_json::Value = serde_json::from_str(&result.output)?;
+    Ok(advice_data)
+}
+
 async fn rust_forecast_handler(params: serde_json::Value) -> Result<serde_json::Value, Box<dyn Error>> {
     let initial_value = params.get("initial_value").and_then(|v| v.as_f64()).unwrap_or(100000.0);
     let years = params.get("years").and_then(|v| v.as_i64()).unwrap_or(10);
@@ -275,6 +338,10 @@ pub async fn handle_command(command: &str, params: serde_json::Value) -> Result<
         "analyze" => rust_analyze_handler(params).await,
         "narrate" => rust_narrate_handler(params).await,
         "memory" => rust_memory_handler(params).await,
+        // Phase 8: Advisor commands
+        "financial_advisor" => rust_financial_advisor_handler(params).await,
+        "health_coach" => rust_health_coach_handler(params).await,
+        "mentor" => rust_mentor_handler(params).await,
         // Native finance commands
         "forecast" => rust_forecast_handler(params).await,
         "market" => {
@@ -330,5 +397,77 @@ mod tests {
         assert!(result.is_ok(), "memory handler should succeed");
         let value = result.unwrap();
         assert_eq!(value.get("status").and_then(|v| v.as_str()), Some("success"));
+    }
+
+    #[tokio::test]
+    async fn financial_advisor_handler_returns_advice() {
+        let result = rust_financial_advisor_handler(json!({
+            "character_json": json!({
+                "name": "Rusty",
+                "age": 35,
+                "net_worth": 45000,
+                "money": 8000,
+                "portfolio_value": 30000,
+                "occupation": "nurse",
+                "education_level": "University",
+            }),
+            "situation": "investment",
+        }))
+        .await;
+        assert!(result.is_ok(), "financial advisor handler should succeed");
+        let value = result.unwrap();
+        assert_eq!(value.get("status").and_then(|v| v.as_str()), Some("success"));
+        let advice = &value["result"];
+        assert_eq!(advice["character_name"].as_str(), Some("Rusty"));
+        assert!(advice["recommendations"].as_array().map_or(false, |r| !r.is_empty()));
+        assert_eq!(advice["allocation"]["strategy"].as_str(), Some("balanced"));
+    }
+
+    #[tokio::test]
+    async fn health_coach_handler_returns_advice() {
+        let result = rust_health_coach_handler(json!({
+            "character_json": json!({
+                "name": "Fit",
+                "age": 35,
+                "health": 55,
+                "happiness": 45,
+            }),
+            "situation": "stress",
+        }))
+        .await;
+        assert!(result.is_ok(), "health coach handler should succeed");
+        let value = result.unwrap();
+        assert_eq!(value.get("status").and_then(|v| v.as_str()), Some("success"));
+        let advice = &value["result"];
+        assert_eq!(advice["character_name"].as_str(), Some("Fit"));
+        assert!(advice["weekly_plan"]["monday"].is_string());
+        assert!(advice["analysis"]["health_category"].is_string());
+    }
+
+    #[tokio::test]
+    async fn mentor_handler_returns_mentorship() {
+        let result = rust_mentor_handler(json!({
+            "character_json": json!({
+                "name": "Maria",
+                "age": 35,
+                "happiness": 45,
+                "health": 55,
+                "smarts": 70,
+                "net_worth": 15000,
+                "occupation": "nurse",
+            }),
+            "question": "Should I quit my job?",
+        }))
+        .await;
+        assert!(result.is_ok(), "mentor handler should succeed");
+        let value = result.unwrap();
+        assert_eq!(value.get("status").and_then(|v| v.as_str()), Some("success"));
+        let advice = &value["result"];
+        assert_eq!(advice["character_name"].as_str(), Some("Maria"));
+        assert!(advice["focus_areas"].as_array().map_or(false, |f| !f.is_empty()));
+        assert!(advice["financial_advisor"].is_object());
+        assert!(advice["health_coach"].is_object());
+        assert!(advice["life_coach"].is_object());
+        assert!(advice["mentor_response"].as_str().map_or(false, |s| !s.is_empty()));
     }
 }

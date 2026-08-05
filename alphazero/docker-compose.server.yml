@@ -2,20 +2,26 @@
 # The server already runs native services on 8765 (cmb), 6379 (redis) and 8080
 # (Alien Inc dashboard). This override publishes the containers on alternate
 # host ports so nothing native is disturbed.
+# Published ports are bound to 127.0.0.1: external access goes through nginx
+# only (DOCKER-USER iptables drop is the backup). Container-to-container
+# traffic uses the internal docker bridge and is unaffected.
 #
 # Usage:  docker compose -f docker-compose.yml -f docker-compose.server.yml up -d
 services:
   cmb:
     ports: !override
-      - "18765:8765"
+      - "127.0.0.1:18765:8765"
   redis:
     ports: !override
-      - "16379:6379"
+      - "127.0.0.1:16379:6379"
   tidb:
     ports: !override
-      - "14000:4000"
+      - "127.0.0.1:14000:4000"
   web:
     ports: !override
-      - "18080:8080"
+      - "127.0.0.1:18080:8080"
     environment:
       - CMB_MCP_URL=http://cmb:8765/mcp
+  ollama:
+    ports: !override
+      - "127.0.0.1:11434:11434"

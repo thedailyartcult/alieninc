@@ -1,0 +1,43 @@
+# CMB Memory Server — Multi-stage build
+FROM python:3.13-slim AS builder
+ENV PIP_NO_CACHE_DIR=1
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /build
+COPY docker/cmb-src/ ./cmb-src/
+RUN pip install --no-cache-dir ./cmb-src pydantic pydantic-settings fastapi uvicorn mcp
+
+# Create wrapper scripts
+RUN cat > /usr/local/bin/cmb-mcp-http <<'EOF'
+#!/usr/bin/env python3
+import os
+os.environ.setdefault("CMB_DB_PATH", "/srv/cmb/data/cmb.db")
+from cmb import mcp_server
+mcp_server.mcp.settings.host = "0.0.0.0"
+mcp_server.mcp.settings.port = 8765
+mcp_server.mcp.settings.mount_path = "/mcp"
+mcp_server.mcp.run(transport="streamable-http")
+EOF
+RUN chmod +x /usr/local/bin/cmb-mcp-http
+
+FROM python:3.13-slim AS runtime
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+RUN groupadd -r cmb && useradd -r -g cmb -d /srv/cmb -s /sbin/nologin cmb
+WORKDIR /srv/cmb
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+COPY --from=builder /usr/local/bin/cmb* /usr/local/bin/
+RUN mkdir -p /srv/cmb/data && chown -R cmb:cmb /srv/cmb
+USER cmb
+EXPOSE 8765
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8765/health || exit 1
+ENV CMB_DB_PATH=/srv/cmb/data/cmb.db
+ENV CMB_DEFAULT_WORKSPACE=alphazero
+CMD ["cmb-mcp-http"]

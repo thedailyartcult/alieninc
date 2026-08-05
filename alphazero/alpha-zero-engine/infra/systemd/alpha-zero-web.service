@@ -1,0 +1,32 @@
+[Unit]
+Description=Alpha Zero Web Application
+After=network.target cmb-mcp-http.service
+Wants=cmb-mcp-http.service
+
+[Service]
+Type=notify
+User=tablet
+WorkingDirectory=/home/tablet/alieninc/alphazero/alpha-zero-engine
+Environment=PATH=/home/tablet/az-venv/bin:/usr/bin:/bin
+Environment=PYTHONPATH=/home/tablet/alieninc/alphazero:/home/tablet/alieninc/alphazero/alpha-zero-engine
+Environment=ALPHA_ZERO_ANALYTICS_DIR=/home/tablet/alieninc/alphazero/alpha-zero-engine/analytics_data
+ExecStart=/home/tablet/az-venv/bin/gunicorn \
+  --bind 0.0.0.0:8080 \
+  --workers 2 \
+  --threads 4 \
+  --timeout 600 \
+  --access-logfile /home/tablet/alpha_zero_data/access.log \
+  --error-logfile /home/tablet/alpha_zero_data/error.log \
+  --log-level info \
+  wsgi:app
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Health check
+# Gunicorn doesn't support native health checks, but we can use a wrapper
+
+[Install]
+WantedBy=multi-user.target

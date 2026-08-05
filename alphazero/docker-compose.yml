@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # CMB Memory Server (MCP)
+  cmb:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.cmb
+    image: alphazero-cmb:latest
+    container_name: alphazero-cmb
+    ports:
+      - "8765:8765"
+    volumes:
+      - cmb_data:/srv/cmb/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8765/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for caching (optional, used by infra.cache)
+  redis:
+    image: redis:7-alpine
+    container_name: alphazero-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Ollama LLM (optional, for AI agents)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: alphazero-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Alpha Zero Web Application
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: alphazero-web:latest
+    container_name: alphazero-web
+    ports:
+      - "8080:8080"
+    environment:
+      - CMB_DB_PATH=/srv/cmb/data/cmb.db
+      - CMB_DEFAULT_WORKSPACE=alphazero
+      - REDIS_URL=redis://redis:6379
+      - OLLAMA_HOST=http://ollama:11434
+      - ALPHA_ZERO_ANALYTICS_DIR=/app/alpha-zero-engine/analytics_data
+      - PYTHONPATH=/app:/app/alpha-zero-engine
+    volumes:
+      - alpha_zero_logs:/home/tablet/alpha_zero_data
+    depends_on:
+      cmb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+
+volumes:
+  cmb_data:
+  redis_data:
+  ollama_data:
+  alpha_zero_logs:

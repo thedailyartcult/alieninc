@@ -14,9 +14,10 @@ services:
       - cmb_data:/srv/cmb/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8765/health"]
+      test: ["CMD", "python", "-c", "import socket,sys; s=socket.socket(); s.settimeout(3); s.connect(('127.0.0.1',8765)); s.close()"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
+      start_period: 10s
       retries: 3
 
   # Redis for caching (optional, used by infra.cache)
@@ -34,6 +35,23 @@ services:
       timeout: 5s
       retries: 3
 
+  # TiDB (MySQL-wire-compatible durable store for simulation reports/universe states)
+  tidb:
+    image: pingcap/tidb:v8.5.0
+    container_name: alphazero-tidb
+    command: ["tidb-server", "-store", "unistore", "-path", "/tidb-data"]
+    ports:
+      - "4000:4000"
+    volumes:
+      - tidb_data:/tidb-data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 3 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/4000'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
   # Ollama LLM (optional, for AI agents)
   ollama:
     image: ollama/ollama:latest
@@ -43,13 +61,11 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "ollama", "--version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   # Alpha Zero Web Application
   web:
@@ -63,8 +79,9 @@ services:
     environment:
       - CMB_DB_PATH=/srv/cmb/data/cmb.db
       - CMB_DEFAULT_WORKSPACE=alphazero
-      - REDIS_URL=redis://redis:6379
-      - OLLAMA_HOST=http://ollama:11434
+      - ALPHA_ZERO_REDIS_URL=redis://redis:6379/0
+      - ALPHA_ZERO_SQL_DSN=mysql://root@tidb:4000/alpha_zero
+      - OLLAMA_URL=http://ollama:11434
       - ALPHA_ZERO_ANALYTICS_DIR=/app/alpha-zero-engine/analytics_data
       - PYTHONPATH=/app:/app/alpha-zero-engine
     volumes:
@@ -73,6 +90,8 @@ services:
       cmb:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      tidb:
         condition: service_healthy
       ollama:
         condition: service_started
@@ -87,5 +106,6 @@ services:
 volumes:
   cmb_data:
   redis_data:
+  tidb_data:
   ollama_data:
   alpha_zero_logs:

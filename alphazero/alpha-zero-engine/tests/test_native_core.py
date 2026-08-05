@@ -123,3 +123,36 @@ def test_benchmark_reports_speedup():
     data = json.loads(out.stdout)
     assert data["runs"] == 4000
     assert data["elapsed_ms"] > 0
+
+
+# ── TiDB persistence via native core ──────────────────────────────────────
+
+def _sql_store_ready() -> bool:
+    """True when a MySQL-compatible server (TiDB) answers on the DSN."""
+    from infra import tidb_store
+    return tidb_store.healthy()
+
+
+@pytest.mark.skipif(not _sql_store_ready(), reason="no TiDB/MySQL server on DSN")
+def test_report_store_load_roundtrip_go():
+    from finance.native import native_report
+    rid = "go_pytest_report_1"
+    stored = native_report("store", report_id=rid, run_type="multiverse",
+                           config={"universes": 10, "seed": 7},
+                           report={"convergence_rate": 0.92}, backend="go")
+    assert stored.get("backend") == "go"
+    assert stored.get("stored") is True
+    loaded = native_report("load", report_id=rid)
+    assert loaded.get("found") is True
+    assert loaded["report"]["convergence_rate"] == 0.92
+
+
+@pytest.mark.skipif(not _sql_store_ready(), reason="no TiDB/MySQL server on DSN")
+def test_report_list_go():
+    from finance.native import native_report
+    native_report("store", report_id="go_pytest_report_2", run_type="forecast",
+                  config={"years": 3}, report={"p50": 555}, backend="go")
+    listed = native_report("list", limit=50)
+    assert listed.get("backend") == "go"
+    ids = [r["id"] for r in listed.get("results", [])]
+    assert "go_pytest_report_2" in ids

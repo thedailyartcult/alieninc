@@ -18,6 +18,7 @@ from finance.market import MarketSimulator
 from finance.metrics import compute_metrics
 from infra import analytics
 from infra.cache import healthy as redis_healthy
+from infra.tidb_store import healthy as tidb_healthy
 
 # The AI agents live in the repo-root ai/ package (sibling of alpha-zero-engine).
 _AI_DIR = str(Path(__file__).resolve().parents[2])
@@ -103,6 +104,7 @@ def create_app():
                 "ollama": _ollama_up(),
                 "ollama_disabled": OLLAMA_DISABLE,
                 "redis": redis_healthy(),
+                "tidb": tidb_healthy(),
                 "alphacore_binary": ALPHACORE_BIN.exists(),
             },
         })

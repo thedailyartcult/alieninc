@@ -11,6 +11,7 @@ import sys
 import json
 import asyncio
 import logging
+import secrets
 from pathlib import Path
 from datetime import datetime
 
@@ -96,15 +97,16 @@ async def seed_defaults():
         await db.ensure_company(cid, name)
 
     default_users = [
-        ('admin', 'centra2026', 'alieninc', 'System Admin'),
-        ('scan.ops', 'scanops2026', 'centra', 'Scan Operator'),
+        ('admin', 'alieninc', 'System Admin'),
+        ('scan.ops', 'centra', 'Scan Operator'),
     ]
-    for uname, pw, cid, dname in default_users:
+    for uname, cid, dname in default_users:
         existing = await db.get_user(uname)
         if not existing:
+            pw = secrets.token_urlsafe(18)
             hashed = get_password_hash(pw)
             await db.create_user(uname, hashed, cid, dname, 'admin' if uname == 'admin' else 'operator')
-            logger.info(f'Created user: {uname} ({cid})')
+            logger.info(f'Created user: {uname} ({cid}) — one-time password: {pw}')
 
 
 # ── Auth Routes ──
@@ -308,10 +310,8 @@ async def ws_scan(websocket: WebSocket):
 CENTRA_DIR = BASE_DIR.parent
 SITE_DIR = CENTRA_DIR.parent
 
-app.mount('/centra/engine', StaticFiles(directory=str(BASE_DIR)), name='engine_internal')
 app.mount('/centra', StaticFiles(directory=str(CENTRA_DIR), html=True), name='centra')
 app.mount('/data', StaticFiles(directory=str(SITE_DIR / 'data')), name='data')
-app.mount('/kmt', StaticFiles(directory=str(SITE_DIR / 'kmt')), name='kmt')
 
 # Catch-all: serve root site index
 @app.get('/')
@@ -333,4 +333,4 @@ if __name__ == '__main__':
     import uvicorn
     port = int(os.environ.get('PORT', 8721))
     logger.info(f'Starting Centra Engine on port {port}')
-    uvicorn.run(app, host='0.0.0.0', port=port, log_level='info')
+    uvicorn.run(app, host='127.0.0.1', port=port, log_level='info')

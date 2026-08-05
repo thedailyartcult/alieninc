@@ -2863,7 +2863,7 @@ if __name__ == '__main__':
     t = threading.Thread(target=_warmup, daemon=True)
     t.start()
 
-    with ReusableTCPServer(('', PORT), AlienHandler) as httpd:
+    with ReusableTCPServer(('127.0.0.1', PORT), AlienHandler) as httpd:
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:

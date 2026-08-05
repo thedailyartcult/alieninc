@@ -1,6 +1,7 @@
 # Alpha Zero — Multi-stage Docker build for production
 # Stage 1: Build Go alphacore binary
 FROM golang:1.24-alpine AS go-builder
+ENV GOPROXY=https://goproxy.io,direct GOTOOLCHAIN=local
 RUN apk add --no-cache git make
 WORKDIR /build
 COPY alpha-zero-engine/core/alphacore/ ./alphacore/

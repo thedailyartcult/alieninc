@@ -3,6 +3,8 @@
 import json
 import os
 import sys
+import time
+import urllib.request
 from pathlib import Path
 
 from flask import Flask, render_template, request, jsonify, Response, stream_with_context
@@ -14,6 +16,8 @@ from engine.fsm import FSM
 from finance.portfolio import PortfolioEngine, STRATEGIES
 from finance.market import MarketSimulator
 from finance.metrics import compute_metrics
+from infra import analytics
+from infra.cache import healthy as redis_healthy
 
 # The AI agents live in the repo-root ai/ package (sibling of alpha-zero-engine).
 _AI_DIR = str(Path(__file__).resolve().parents[2])
@@ -21,6 +25,30 @@ if _AI_DIR not in sys.path:
     sys.path.insert(0, _AI_DIR)
 
 OLLAMA_DISABLE = os.environ.get("OLLAMA_DISABLE", "0") == "1"
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
+ALPHACORE_BIN = Path(__file__).resolve().parents[1] / "core" / "bin" / "alphacore"
+_PID = os.getpid()
+
+
+def _rss_mb() -> float:
+    """Resident set size of this process in MB (Linux /proc)."""
+    try:
+        with open(f"/proc/{_PID}/statm") as f:
+            pages = int(f.read().split()[1])
+        page_size = os.sysconf("SC_PAGE_SIZE")
+        return round(pages * page_size / (1024 * 1024), 2)
+    except (OSError, ValueError, IndexError):
+        return 0.0
+
+
+def _ollama_up() -> bool:
+    if OLLAMA_DISABLE:
+        return False
+    try:
+        with urllib.request.urlopen(f"{OLLAMA_URL}/api/tags", timeout=1.5) as resp:
+            return resp.status == 200
+    except Exception:
+        return False
 
 
 def create_app():
@@ -30,6 +58,68 @@ def create_app():
     @app.route("/")
     def index():
         return render_template("dashboard.html")
+
+    # ------------------------------------------------------------------
+    # Monitoring & analytics hooks
+    # ------------------------------------------------------------------
+
+    @app.before_request
+    def _az_start_timer():
+        request.environ["_az_start"] = time.perf_counter()
+
+    @app.after_request
+    def _az_record_request(response):
+        start = request.environ.pop("_az_start", None)
+        duration = (time.perf_counter() - start) * 1000 if start else 0.0
+        endpoint = request.path
+        # Skip the health/analytics endpoints themselves to avoid recursion.
+        if endpoint != "/api/health" and not endpoint.startswith("/api/analytics"):
+            analytics.record_request(
+                request.method, endpoint, response.status_code, round(duration, 2)
+            )
+        return response
+
+    # ------------------------------------------------------------------
+    # Monitoring & analytics endpoints
+    # ------------------------------------------------------------------
+
+    @app.route("/api/health")
+    def api_health():
+        """Liveness + dependency status for the deployed app."""
+        usage = analytics.usage_summary()
+        return jsonify({
+            "status": "ok",
+            "uptime_seconds": round(time.time() - analytics._started_at, 2),
+            "process": {
+                "pid": _PID,
+                "memory_rss_mb": _rss_mb(),
+                "started_at": analytics._started_at,
+            },
+            "requests": {
+                "total": usage["total_requests"],
+                "errors": usage["error_count"],
+            },
+            "dependencies": {
+                "ollama": _ollama_up(),
+                "ollama_disabled": OLLAMA_DISABLE,
+                "redis": redis_healthy(),
+                "alphacore_binary": ALPHACORE_BIN.exists(),
+            },
+        })
+
+    @app.route("/api/analytics/summary")
+    def api_analytics_summary():
+        return jsonify(analytics.summary())
+
+    @app.route("/api/analytics/requests")
+    def api_analytics_requests():
+        limit = request.args.get("limit", 100, type=int)
+        return jsonify({"requests": analytics.request_history(limit)})
+
+    @app.route("/api/analytics/runs")
+    def api_analytics_runs():
+        limit = request.args.get("limit", 50, type=int)
+        return jsonify({"runs": analytics.run_history(limit)})
 
     @app.route("/api/simulate", methods=["POST"])
     def api_simulate():
@@ -55,6 +145,13 @@ def create_app():
 
         orchestrator = SimulationOrchestrator(config)
         steps = orchestrator.run_single()
+
+        analytics.record_simulation("single", {
+            "name": config.name,
+            "age": config.age,
+            "strategy": config.portfolio_strategy,
+            "years": len(steps),
+        })
 
         # Format steps for frontend
         timeline = []
@@ -104,6 +201,15 @@ def create_app():
 
         # Compute metrics
         metrics = compute_metrics(report)
+
+        analytics.record_simulation("multiverse", {
+            "name": config.name,
+            "universes": report.total_simulations,
+            "strategy": config.portfolio_strategy,
+            "convergence_rate": report.convergence_rate,
+            "sharpe_ratio": report.sharpe_ratio,
+            "avg_years_lived": report.avg_years_lived,
+        })
 
         # Format for frontend
         result = {
@@ -156,6 +262,13 @@ def create_app():
         )
 
         metrics = compute_metrics(report)
+
+        analytics.record_simulation("branch", {
+            "name": config.name,
+            "branch_age": data.get("branch_age"),
+            "universes": report.total_simulations,
+            "convergence_rate": report.convergence_rate,
+        })
 
         return jsonify({
             "branch_age": data.get("branch_age"),

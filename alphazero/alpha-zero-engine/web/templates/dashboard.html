@@ -400,6 +400,7 @@
             <button class="tab" data-tab="strategies">Strategies</button>
             <button class="tab" data-tab="timeline">Timeline</button>
             <button class="tab" data-tab="ai-agents">AI Agents</button>
+            <button class="tab" data-tab="monitor">Monitor</button>
         </div>
 
         <!-- Tab: Overview -->
@@ -537,6 +538,61 @@
                     <button class="btn btn-secondary" id="btn-ai-memory">Retrieve Learnings</button>
                     <div id="ai-memory-result" class="ai-result"></div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Tab: Monitor -->
+        <div class="tab-content" id="tab-monitor">
+            <div class="dashboard">
+                <div class="card">
+                    <h3>Engine Health</h3>
+                    <div class="metric" id="mon-uptime">—</div>
+                    <div class="subtext" id="mon-process">process info</div>
+                </div>
+                <div class="card">
+                    <h3>Dependencies</h3>
+                    <div class="metric" id="mon-deps">—</div>
+                    <div class="subtext">Ollama / Redis / Go core</div>
+                </div>
+                <div class="card">
+                    <h3>Requests</h3>
+                    <div class="metric" id="mon-requests">—</div>
+                    <div class="subtext" id="mon-errors">0 errors</div>
+                </div>
+                <div class="card">
+                    <h3>Latency</h3>
+                    <div class="metric" id="mon-latency">—</div>
+                    <div class="subtext" id="mon-latency-24h">p50 / p95</div>
+                </div>
+                <div class="card">
+                    <h3>Simulation Runs</h3>
+                    <div class="metric" id="mon-runs">—</div>
+                    <div class="subtext" id="mon-universes">0 universes computed</div>
+                </div>
+                <div class="card">
+                    <h3>Top Endpoints</h3>
+                    <div id="mon-endpoints" style="font-size: 12px; line-height: 1.7;">—</div>
+                </div>
+            </div>
+            <div class="card" style="grid-column: 1 / -1;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3>Recent Simulation Runs</h3>
+                    <button class="btn btn-secondary" id="btn-monitor-refresh">Refresh</button>
+                </div>
+                <table class="strategy-table" id="monitor-runs-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Type</th>
+                            <th>Universes</th>
+                            <th>Strategy</th>
+                            <th>Convergence</th>
+                        </tr>
+                    </thead>
+                    <tbody id="monitor-runs-tbody">
+                        <tr><td colspan="5" style="color: var(--text-muted);">No runs yet</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -803,6 +859,74 @@
             }
             setLoading(false);
         });
+
+        // Monitor tab
+        function fmtDuration(sec) {
+            const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = Math.floor(sec % 60);
+            return h > 0 ? `${h}h ${m}m ${s}s` : (m > 0 ? `${m}m ${s}s` : `${s}s`);
+        }
+        function fmtTime(ts) {
+            return new Date(ts * 1000).toLocaleTimeString();
+        }
+        function depDot(ok) {
+            return `<span style="color: ${ok ? 'var(--green)' : 'var(--red)'};">${ok ? '●' : '○'}</span>`;
+        }
+        async function loadMonitor() {
+            try {
+                const [healthRes, summaryRes, runsRes] = await Promise.all([
+                    fetch('/api/health'),
+                    fetch('/api/analytics/summary'),
+                    fetch('/api/analytics/runs?limit=10'),
+                ]);
+                const health = await healthRes.json();
+                const summary = await summaryRes.json();
+                const runs = (await runsRes.json()).runs || [];
+
+                document.getElementById('mon-uptime').textContent = fmtDuration(health.uptime_seconds);
+                document.getElementById('mon-process').textContent =
+                    `pid ${health.process.pid} · ${health.process.memory_rss_mb} MB RSS`;
+                document.getElementById('mon-deps').innerHTML =
+                    `Ollama ${depDot(health.dependencies.ollama)}  ` +
+                    `Redis ${depDot(health.dependencies.redis)}  ` +
+                    `Core ${depDot(health.dependencies.alphacore_binary)}`;
+
+                const req = summary.requests;
+                document.getElementById('mon-requests').textContent = req.total_requests;
+                document.getElementById('mon-errors').textContent =
+                    `${req.error_count} errors (${(req.error_rate * 100).toFixed(1)}%) · ${req.last_24h_requests} in 24h`;
+                document.getElementById('mon-latency').textContent =
+                    req.total_requests ? req.avg_latency_ms + ' ms avg' : '—';
+                document.getElementById('mon-latency-24h').textContent =
+                    `p50 ${req.p50_latency_ms}ms · p95 ${req.p95_latency_ms}ms`;
+
+                const sim = summary.simulations;
+                document.getElementById('mon-runs').textContent = sim.total_runs;
+                document.getElementById('mon-universes').textContent =
+                    `${sim.total_universes} universes computed` +
+                    (sim.avg_convergence !== null && sim.avg_convergence !== undefined
+                        ? ` · avg convergence ${(sim.avg_convergence * 100).toFixed(1)}%` : '');
+                document.getElementById('mon-endpoints').innerHTML =
+                    Object.entries(req.by_endpoint).slice(0, 8)
+                        .map(([ep, n]) => `<div>${n} — <span style="color: var(--text-muted);">${ep}</span></div>`)
+                        .join('') || '—';
+
+                const tbody = document.getElementById('monitor-runs-tbody');
+                tbody.innerHTML = runs.length ? runs.map(r => `
+                    <tr>
+                        <td>${fmtTime(r.ts)}</td>
+                        <td><strong>${r.type}</strong></td>
+                        <td>${(r.summary && r.summary.universes) || (r.summary && r.summary.years) || '—'}</td>
+                        <td>${(r.summary && r.summary.strategy) || '—'}</td>
+                        <td>${r.summary && r.summary.convergence_rate !== undefined
+                            ? (r.summary.convergence_rate * 100).toFixed(1) + '%' : '—'}</td>
+                    </tr>
+                `).join('') : '<tr><td colspan="5" style="color: var(--text-muted);">No runs yet</td></tr>';
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        document.getElementById('btn-monitor-refresh').addEventListener('click', loadMonitor);
+        setInterval(loadMonitor, 15000);
 
         function updateMetrics(data) {
             document.getElementById('metric-sims').textContent = data.total_simulations;

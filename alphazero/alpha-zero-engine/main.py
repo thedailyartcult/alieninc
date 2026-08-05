@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from engine.character import Gender
 from engine.simulation import SimulationOrchestrator, SimulationConfig
 from finance.portfolio import PortfolioEngine, STRATEGIES
+from infra import analytics
 
 
 def run_cli(args):
@@ -52,6 +53,13 @@ def run_cli(args):
         steps = orchestrator.run_single()
         print(f"Simulated {len(steps)} years")
 
+        analytics.record_simulation("single", {
+            "name": config.name,
+            "age": config.age,
+            "strategy": config.portfolio_strategy,
+            "years": len(steps),
+        })
+
         if steps:
             final = steps[-1]
             print(f"\nFinal State (Age {final.age}):")
@@ -70,6 +78,15 @@ def run_cli(args):
         print(f"{'='*60}\n")
 
         report = orchestrator.run_multiverse()
+
+        analytics.record_simulation("multiverse", {
+            "name": config.name,
+            "universes": report.total_simulations,
+            "strategy": config.portfolio_strategy,
+            "convergence_rate": report.convergence_rate,
+            "sharpe_ratio": report.sharpe_ratio,
+            "avg_years_lived": report.avg_years_lived,
+        })
 
         print(f"Simulated {report.total_simulations} universes")
         print(f"\nConvergence Rate: {report.convergence_rate:.1%}")

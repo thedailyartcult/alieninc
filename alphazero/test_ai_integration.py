@@ -283,6 +283,96 @@ def test_memory_session_lifecycle():
 
 
 # ---------------------------------------------------------------------------
+# Advisor panel (Phase 9): interview -> multiverse -> 3 specialists + dossier
+# ---------------------------------------------------------------------------
+
+
+def _unique_ws(prefix):
+    """Unique per-run workspace so repeated test runs don't see stale dossiers."""
+    return f"{prefix}_{os.getpid()}_{int(time.time() * 1000)}"
+
+
+def test_advisor_panel_cli():
+    """Advisor panel runs interview -> multiverse -> 3 specialists + stores dossier."""
+    out = _run_cli("advisor_panel.py", {
+        "interview_text": "My name is Carlos Dizon, I am 32 years old, an engineer in Manila",
+        "universes": 10, "max_universes": 10, "workspace": _unique_ws("test_ws_advisor"),
+        "persist_memory": True,
+    })
+    assert out["status"] == "success"
+    assert out["persona"]["name"] == "Carlos Dizon"
+    assert out["simulation"]["total_simulations"] >= 10
+    adv = out["advisors"]
+    assert len(adv["financial_advisor"]["recommendations"]) > 0
+    assert len(adv["health_coach"]["recommendations"]) > 0
+    assert adv["mentor"]["focus_areas"]
+    assert out["dossier"]["learning_id"] is not None
+    assert out["dossier"]["stored"] is True
+    assert out["continuity"]["prior_dossiers"] == 0
+    assert adv["financial_advisor"]["continuity"]["recalled_count"] == 0
+    assert adv["health_coach"]["continuity"]["recalled_count"] == 0
+    assert adv["mentor"]["continuity"]["recalled_count"] == 0
+
+
+def test_advisor_continuity_recall():
+    """A second run for the same character recalls the prior dossier's advice."""
+    ws = _unique_ws("test_ws_advisor_cont")
+    payload = {
+        "interview_text": "My name is Liza Cruz, I am 40 years old, a teacher in Manila",
+        "universes": 10, "max_universes": 10, "workspace": ws, "persist_memory": True,
+    }
+    first = _run_cli("advisor_panel.py", payload)
+    assert first["status"] == "success"
+    assert first["continuity"]["prior_dossiers"] == 0
+
+    second = _run_cli("advisor_panel.py", payload)
+    assert second["status"] == "success"
+    assert second["continuity"]["prior_dossiers"] >= 1
+    assert len(second["continuity"]["prior_advice"]["financial_advisor"]) > 0
+    assert len(second["continuity"]["prior_advice"]["health_coach"]) > 0
+    assert len(second["continuity"]["prior_advice"]["mentor"]) > 0
+    assert second["advisors"]["financial_advisor"]["continuity"]["recalled_count"] > 0
+
+
+def test_advisor_dossier_recall():
+    """Stored dossiers can be recalled per character via the CLI."""
+    ws = _unique_ws("test_ws_advisor_dossier")
+    _run_cli("advisor_panel.py", {
+        "interview_text": "My name is Andres Bonifacio, I am 29, a businessman in Manila",
+        "universes": 10, "max_universes": 10, "workspace": ws, "persist_memory": True,
+    })
+    out = _run_cli("advisor_panel.py", {
+        "operation": "recall_dossier",
+        "character_name": "Andres Bonifacio", "workspace": ws,
+    })
+    assert out["status"] == "success"
+    assert out["result"]["count"] >= 1
+    dossiers = out["result"]["dossiers"]
+    assert dossiers[0]["data"]["type"] == "advisor_panel"
+    assert "financial_advisor" in dossiers[0]["data"]["advisor_outputs"]
+
+
+def test_pipeline_stores_advisor_outputs():
+    """The pipeline memory stage stores each advisor's output, not just the insight."""
+    ws = _unique_ws("test_ws_pipeline_adv")
+    _run_cli("pipeline.py", {
+        "interview_text": "My name is Rosa Alba, I am 26, a designer in Manila",
+        "universes": 10, "max_universes": 10, "workspace": ws, "persist_memory": True,
+    })
+    out = _run_cli("memory_system.py", {
+        "operation": "retrieve", "query": "Rosa Alba", "workspace": ws,
+    })
+    learnings = out["result"]["results"]
+    assert learnings, "expected a stored pipeline learning"
+    data = learnings[0]["data"]
+    assert data["type"] == "ai_pipeline"
+    assert "advisor_outputs" in data
+    assert data["advisor_outputs"]["financial_advisor"]["recommendations"]
+    assert data["advisor_outputs"]["health_coach"]["recommendations"]
+    assert data["advisor_outputs"]["mentor"]["focus_areas"]
+
+
+# ---------------------------------------------------------------------------
 # Complete workflow
 # ---------------------------------------------------------------------------
 
@@ -568,3 +658,66 @@ def test_web_ai_pipeline_route():
     assert len(data["coaching"]["recommendations"]) > 0
     assert len(data["narrative"]["story"]) > 50
     assert data["learning_id"] is not None
+
+
+@NEEDS_FLASK
+def test_web_ai_advisors_route():
+    """Advisor panel route runs the full flow and persists a dossier."""
+    old = os.environ.get("OLLAMA_DISABLE")
+    os.environ["OLLAMA_DISABLE"] = "1"
+    try:
+        client = _web_app()
+        r = client.post("/api/ai/advisors", json={
+            "name": "Carlos", "age": 32, "gender": "male",
+            "interview_text": "My name is Carlos Dizon, I am 32 years old, an engineer in Manila",
+            "universes": 10, "max_universes": 10, "workspace": "test_ws_web_advisor",
+            "persist_memory": True,
+        })
+        data = r.get_json()
+        assert r.status_code == 200
+        assert data["status"] == "success"
+        assert data["persona"]["name"] == "Carlos"
+        assert data["simulation"]["total_simulations"] >= 10
+        assert data["advisors"]["financial_advisor"]["recommendations"]
+        assert data["advisors"]["health_coach"]["recommendations"]
+        assert data["advisors"]["mentor"]["focus_areas"]
+        assert data["dossier"]["learning_id"] is not None
+    finally:
+        if old is None:
+            os.environ.pop("OLLAMA_DISABLE", None)
+        else:
+            os.environ["OLLAMA_DISABLE"] = old
+
+
+@NEEDS_FLASK
+def test_web_ai_advisor_dossier_route():
+    """Dossier route returns the stored advisor panel for a character."""
+    client = _web_app()
+    ws = "test_ws_web_dossier"
+    name = "Dossier Tester"
+    store = client.post("/api/ai/memory", json={
+        "operation": "store", "workspace": ws,
+        "data": {
+            "learning_id": f"dossier_{os.getpid()}",
+            "data": {
+                "type": "advisor_panel",
+                "character_name": name,
+                "advisor_outputs": {
+                    "financial_advisor": {"recommendations": ["save 20%"]},
+                    "health_coach": {"recommendations": ["sleep 8h"]},
+                    "mentor": {"focus_areas": ["Growth & Leverage"]},
+                },
+            },
+            "tags": ["advisor_panel", "dossier"], "importance": 5,
+        },
+    })
+    assert store.get_json()["result"]["stored"] is True
+
+    r = client.post("/api/ai/advisor_dossier", json={
+        "character_name": name, "workspace": ws,
+    })
+    data = r.get_json()
+    assert r.status_code == 200
+    assert data["status"] == "success"
+    assert data["result"]["count"] >= 1
+    assert data["result"]["dossiers"][0]["data"]["type"] == "advisor_panel"

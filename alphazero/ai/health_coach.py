@@ -23,6 +23,7 @@ if __name__ == "__main__" and __package__ is None:
         sys.path.insert(0, _REPO_ROOT)
 
 from ai.life_coach import character_from_dict
+from ai.advisor_dossier import build_continuity
 
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434/api/generate")
@@ -171,6 +172,7 @@ class HealthCoachAgent:
             "weekly_plan": advice["weekly_plan"],
             "action_plan": advice["action_plan"],
             "encouragement": advice["encouragement"],
+            "continuity": build_continuity(character_data, character.name),
         }
 
     def _assessment(self, character: Any, state: Dict[str, Any]) -> str:

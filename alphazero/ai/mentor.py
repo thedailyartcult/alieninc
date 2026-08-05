@@ -23,6 +23,7 @@ if __name__ == "__main__" and __package__ is None:
         sys.path.insert(0, _REPO_ROOT)
 
 from ai.life_coach import LifeCoachAgent, character_from_dict
+from ai.advisor_dossier import build_continuity
 from ai.financial_advisor import FinancialAdvisorAgent
 from ai.health_coach import HealthCoachAgent
 
@@ -106,6 +107,7 @@ class MentorAgent:
             "financial_advisor": financial,
             "health_coach": health,
             "life_coach": life,
+            "continuity": build_continuity(character_data, character.name),
         }
 
     # ------------------------------------------------------------------

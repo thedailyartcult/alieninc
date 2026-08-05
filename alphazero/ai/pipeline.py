@@ -14,8 +14,16 @@ for parity with the other agents.
 from __future__ import annotations
 
 import json
+import os
 import sys
 from typing import Any, Dict, Optional
+
+if __name__ == "__main__" and __package__ is None:
+    _AI_DIR = os.path.dirname(os.path.abspath(__file__))
+    _REPO_ROOT = os.path.dirname(_AI_DIR)
+    sys.path.insert(0, _AI_DIR)
+    if _REPO_ROOT not in sys.path:
+        sys.path.insert(0, _REPO_ROOT)
 
 from engine.character import Gender
 from engine.simulation import SimulationOrchestrator, SimulationConfig
@@ -25,6 +33,7 @@ from ai.life_coach import LifeCoachAgent
 from ai.decision_assistant import DecisionAssistantAgent
 from ai.storyteller import StorytellerAgent
 from ai.memory_system import MemorySystemAgent
+from ai.advisor_dossier import recall_prior_advice
 
 
 def _clamp(value: Any, default: int = 50, lo: int = 0, hi: int = 100) -> int:
@@ -112,14 +121,23 @@ def run_ai_pipeline(
     coach = LifeCoachAgent()
     coaching = coach.provide_advice(persona, overrides.get("situation", "general"))
 
-    # 4b. Specialist advisors — financial, health, and mentoring synthesis
+    # 4b. Specialist advisors — with cross-session continuity
     from ai.financial_advisor import FinancialAdvisorAgent
     from ai.health_coach import HealthCoachAgent
     from ai.mentor import MentorAgent
 
-    financial_advice = FinancialAdvisorAgent().provide_advice(persona, "general")
-    health_coach_advice = HealthCoachAgent().provide_advice(persona, "general")
-    mentor = MentorAgent().provide_mentorship(persona, "")
+    memory = MemorySystemAgent(workspace=workspace) if persist_memory else None
+    prior_advice, _ = recall_prior_advice(memory, persona.get("name", "Player"))
+    fa_input = dict(persona)
+    fa_input["prior_advice"] = prior_advice["financial_advisor"]
+    hc_input = dict(persona)
+    hc_input["prior_advice"] = prior_advice["health_coach"]
+    mn_input = dict(persona)
+    mn_input["prior_advice"] = prior_advice["mentor"]
+
+    financial_advice = FinancialAdvisorAgent().provide_advice(fa_input, "general")
+    health_coach_advice = HealthCoachAgent().provide_advice(hc_input, "general")
+    mentor = MentorAgent().provide_mentorship(mn_input, "")
 
     # 5. Narrate — story of the best universe
     storyteller = StorytellerAgent()
@@ -135,14 +153,20 @@ def run_ai_pipeline(
     )
     narrative = storyteller.generate_character_narrative(character, best)
 
-    # 6. Memory — persist learnings across sessions
+    # 6. Memory — persist learnings across sessions (each advisor's output
+    #    is stored, not just the analysis insight)
     learning_id = None
     if persist_memory:
-        memory = MemorySystemAgent(workspace=workspace)
         learning_id = memory.store_learning({
             "type": "ai_pipeline",
+            "character_name": persona.get("name", "Player"),
             "persona": persona,
             "best": best,
+            "advisor_outputs": {
+                "financial_advisor": financial_advice,
+                "health_coach": health_coach_advice,
+                "mentor": mentor,
+            },
             "convergence_rate": report.convergence_rate,
             "sharpe_ratio": report.sharpe_ratio,
             "insight": analysis.get("summary", {}),

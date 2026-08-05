@@ -24,6 +24,7 @@ if __name__ == "__main__" and __package__ is None:
         sys.path.insert(0, _REPO_ROOT)
 
 from ai.life_coach import character_from_dict
+from ai.advisor_dossier import build_continuity
 
 from finance.portfolio import STRATEGIES
 
@@ -184,6 +185,7 @@ class FinancialAdvisorAgent:
             "action_plan": advice["action_plan"],
             "allocation": advice["allocation"],
             "encouragement": advice["encouragement"],
+            "continuity": build_continuity(character_data, character.name),
         }
 
     def _assessment(self, character: Any, state: Dict[str, Any]) -> str:

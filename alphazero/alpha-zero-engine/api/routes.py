@@ -501,6 +501,45 @@ def create_app():
         result = agent.provide_mentorship(character_data, question)
         return jsonify({"status": "success", "result": result})
 
+    @app.route("/api/ai/advisors", methods=["POST"])
+    def api_ai_advisors():
+        """Advisor Panel: interview -> multiverse -> financial / health / mentor
+        specialists for one character, with a durable per-character dossier."""
+        from ai.advisor_panel import run_advisor_panel
+
+        data = request.json or {}
+        text = data.get("interview_text") or data.get("initial_interview_text") or ""
+        if not text:
+            fields = [f"{k}: {v}" for k, v in data.items()
+                      if k in ("name", "age", "gender", "occupation") and v not in (None, "")]
+            text = ", ".join(fields)
+
+        max_universes = int(data.get("max_universes", 100))
+        result = run_advisor_panel(
+            text,
+            workspace=data.get("workspace", "web"),
+            overrides=data,
+            persist_memory=data.get("persist_memory", True),
+            max_universes=max_universes,
+        )
+        return jsonify(result)
+
+    @app.route("/api/ai/advisor_dossier", methods=["POST"])
+    def api_ai_advisor_dossier():
+        """Recall a character's durable advisor dossier (cross-session continuity)."""
+        from ai.advisor_dossier import recall_advisor_dossier
+
+        data = request.json or {}
+        character_name = data.get("character_name") or data.get("name") or ""
+        workspace = data.get("workspace", "web")
+        limit = int(data.get("limit", 10))
+        dossiers = recall_advisor_dossier(character_name, workspace=workspace, limit=limit)
+        return jsonify({
+            "status": "success",
+            "character_name": character_name,
+            "result": {"count": len(dossiers), "dossiers": dossiers},
+        })
+
     @app.route("/api/ai/memory", methods=["POST"])
     def api_ai_memory():
         """Store / retrieve cross-session learnings via the memory agent."""

@@ -400,6 +400,7 @@
             <button class="tab" data-tab="strategies">Strategies</button>
             <button class="tab" data-tab="timeline">Timeline</button>
             <button class="tab" data-tab="ai-agents">AI Agents</button>
+            <button class="tab" data-tab="advisors">Advisors</button>
             <button class="tab" data-tab="monitor">Monitor</button>
         </div>
 
@@ -585,6 +586,39 @@
                     <button class="btn btn-secondary" id="btn-ai-mentor">Ask the Mentor</button>
                     <div id="ai-mentor-result" class="ai-result"></div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Tab: Advisors -->
+        <div class="tab-content" id="tab-advisors">
+            <div class="card" style="grid-column: 1 / -1;">
+                <h3>Advisor Panel</h3>
+                <div class="subtext">Interview → multiverse → financial advisor, health coach &amp; mentor for one character, with durable cross-session continuity</div>
+                <div class="control-group">
+                    <label>Interview Text</label>
+                    <textarea id="adv-interview-text" rows="3" style="width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:10px;">My name is Carlos Dizon, I am 32 years old, an engineer in Manila with a small family and modest savings</textarea>
+                </div>
+                <div class="control-group">
+                    <label>Character Name Override (optional)</label>
+                    <input type="text" id="adv-name" value="" style="width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:10px;">
+                </div>
+                <div class="control-group">
+                    <label>Question for the Mentor (optional)</label>
+                    <input type="text" id="adv-question" value="" style="width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:10px;">
+                </div>
+                <button class="btn" id="btn-adv-run">Run Advisor Panel</button>
+                <div id="adv-result" class="ai-result"></div>
+            </div>
+
+            <div class="card" style="grid-column: 1 / -1;">
+                <h3>Recall Dossier</h3>
+                <div class="subtext">Load a character's stored advisor dossier from previous sessions (state lives in CMB, not code)</div>
+                <div class="control-group">
+                    <label>Character Name</label>
+                    <input type="text" id="adv-recall-name" value="" style="width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:10px;">
+                </div>
+                <button class="btn btn-secondary" id="btn-adv-recall">Recall Dossier</button>
+                <div id="adv-recall-result" class="ai-result"></div>
             </div>
         </div>
 
@@ -946,6 +980,85 @@
             } catch (e) {
                 console.error(e);
                 alert('Mentor failed: ' + e.message);
+            }
+            setLoading(false);
+        });
+
+        // Advisor Panel
+        document.getElementById('btn-adv-run').addEventListener('click', async () => {
+            setLoading(true);
+            try {
+                const res = await fetch('/api/ai/advisors', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        name: document.getElementById('adv-name').value,
+                        interview_text: document.getElementById('adv-interview-text').value,
+                        question: document.getElementById('adv-question').value,
+                        universes: Math.min(parseInt(document.getElementById('universes').value), 50),
+                        max_universes: 50,
+                        workspace: 'web',
+                        persist_memory: true,
+                    })
+                });
+                const data = await res.json();
+                if (data.status !== 'success') throw new Error('Advisor panel failed');
+                const p = data.persona;
+                const sim = data.simulation;
+                const fa = data.advisors.financial_advisor;
+                const hc = data.advisors.health_coach;
+                const mn = data.advisors.mentor;
+                const cont = data.continuity || {};
+                const faRecs = (fa.recommendations || []).map(x => `• ${x}`).join('\n');
+                const hcRecs = (hc.recommendations || []).map(x => `• ${x}`).join('\n');
+                const mnFocus = (mn.focus_areas || []).join(', ');
+                const contNote = (cont.prior_dossiers || 0) > 0
+                    ? `Prior dossiers recalled: ${cont.prior_dossiers}\n${(cont.prior_advice.financial_advisor || []).length} financial + ${(cont.prior_advice.health_coach || []).length} health + ${(cont.prior_advice.mentor || []).length} mentor prior items`
+                    : 'No prior dossier on file for this character — this is the first session';
+                renderAIResult('adv-result',
+                    `Advisor Panel — ${p.name || '?'} (${p.age || '?'}), ${sim.total_simulations} universes`,
+                    `Convergence: ${(sim.convergence_rate * 100).toFixed(1)}% | Sharpe: ${sim.sharpe_ratio.toFixed(2)}\n` +
+                    `Best universe: ${formatMoney(sim.best.final_net_worth)} net worth, happiness ${sim.best.final_happiness}\n` +
+                    `${contNote}\n\n` +
+                    `FINANCIAL — ${fa.assessment || ''}\n${faRecs || 'none'}\n` +
+                    (fa.continuity && fa.continuity.summary ? `Continuity: ${fa.continuity.summary}\n` : '') +
+                    `\nHEALTH — ${hc.assessment || ''}\n${hcRecs || 'none'}\n` +
+                    (hc.continuity && hc.continuity.summary ? `Continuity: ${hc.continuity.summary}\n` : '') +
+                    `\nMENTOR — Focus: ${mnFocus || 'none'}\n${mn.mentor_response || ''}\n` +
+                    (mn.continuity && mn.continuity.summary ? `Continuity: ${mn.continuity.summary}` : '') +
+                    `\n\nDossier stored: ${data.dossier.learning_id || '—'}`);
+            } catch (e) {
+                console.error(e);
+                alert('Advisor panel failed: ' + e.message);
+            }
+            setLoading(false);
+        });
+
+        document.getElementById('btn-adv-recall').addEventListener('click', async () => {
+            setLoading(true);
+            try {
+                const name = document.getElementById('adv-recall-name').value;
+                const res = await fetch('/api/ai/advisor_dossier', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({character_name: name, workspace: 'web'})
+                });
+                const data = await res.json();
+                if (data.status !== 'success') throw new Error('Dossier recall failed');
+                const dossiers = data.result.dossiers || [];
+                const lines = dossiers.map((d, i) => {
+                    const inner = (d.data && d.data.advisor_outputs) ? d.data.advisor_outputs : {};
+                    const fa = inner.financial_advisor || {};
+                    const hc = inner.health_coach || {};
+                    const mn = inner.mentor || {};
+                    const nw = (d.data && d.data.best && d.data.best.final_net_worth);
+                    return `[${i + 1}] ${nw ? formatMoney(nw) : '—'} net worth · Financial: ${(fa.recommendations || []).length} recs · Health: ${(hc.recommendations || []).length} recs · Mentor focus: ${(mn.focus_areas || []).join(', ') || '—'}`;
+                }).join('\n');
+                renderAIResult('adv-recall-result', `Dossier for ${data.character_name} (${data.result.count})`,
+                    lines || 'No dossier on file yet — run the Advisor Panel once to create one.');
+            } catch (e) {
+                console.error(e);
+                alert('Dossier recall failed: ' + e.message);
             }
             setLoading(false);
         });

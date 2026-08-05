@@ -720,4 +720,6 @@ def test_web_ai_advisor_dossier_route():
     assert r.status_code == 200
     assert data["status"] == "success"
     assert data["result"]["count"] >= 1
-    assert data["result"]["dossiers"][0]["data"]["type"] == "advisor_panel"
+    dossier_data = data["result"]["dossiers"][0]["data"]
+    inner = dossier_data.get("data", dossier_data)
+    assert inner["type"] == "advisor_panel"

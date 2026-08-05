@@ -22,6 +22,9 @@ if __name__ == "__main__" and __package__ is None:
     sys.path.insert(0, _AI_DIR)
     if _REPO_ROOT not in sys.path:
         sys.path.insert(0, _REPO_ROOT)
+    _ENGINE_DIR = os.path.join(_REPO_ROOT, "alpha-zero-engine")
+    if _ENGINE_DIR not in sys.path:
+        sys.path.insert(0, _ENGINE_DIR)
 
 from engine.simulation import SimulationOrchestrator
 

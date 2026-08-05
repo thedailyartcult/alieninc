@@ -83,8 +83,10 @@ def recall_advisor_dossier(character_name: str, workspace: str = "alphazero",
 
     memory = MemorySystemAgent(workspace=workspace)
     learnings = memory.retrieve_learnings(query=character_name, limit=limit)
-    return [
-        learning for learning in learnings
-        if learning.get("data", {}).get("type") == "advisor_panel"
-        and learning.get("data", {}).get("character_name") == character_name
-    ]
+    results = []
+    for learning in learnings:
+        data = learning.get("data", {})
+        inner = data.get("data", data)  # handle double-nested payload from web endpoint
+        if inner.get("type") == "advisor_panel" and inner.get("character_name") == character_name:
+            results.append(learning)
+    return results

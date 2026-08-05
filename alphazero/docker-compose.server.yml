@@ -1,0 +1,18 @@
+# Server-specific override for 178.104.71.88.
+# The server already runs native services on 8765 (cmb), 6379 (redis) and 8080
+# (Alien Inc dashboard). This override publishes the containers on alternate
+# host ports so nothing native is disturbed.
+#
+# Usage:  docker compose -f docker-compose.yml -f docker-compose.server.yml up -d
+services:
+  cmb:
+    ports: !override
+      - "18765:8765"
+  redis:
+    ports: !override
+      - "16379:6379"
+  web:
+    ports: !override
+      - "18080:8080"
+    environment:
+      - CMB_MCP_URL=http://cmb:8765/mcp

@@ -1,18 +1,23 @@
 #!/bin/bash
 # Alpha Zero Production Deployment Script
 # Usage: ./deploy.sh [version_tag]
-# If no version_tag provided, uses 'latest' from local build
+# Environment:
+#   AZ_HEALTH_URL     Health endpoint to verify (default http://localhost:8080/api/health)
+#   AZ_COMPOSE_FILES  Space-separated compose files (default "docker-compose.yml")
+#                     e.g. on the server: AZ_COMPOSE_FILES="docker-compose.yml docker-compose.server.yml"
+#   AZ_SKIP_BUILD=1   Skip `docker compose build` (image-only deploy)
 
 set -euo pipefail
 
 VERSION="${1:-latest}"
-COMPOSE_FILE="/home/tablet/alieninc/alphazero/docker-compose.yml"
+COMPOSE_FILES="${AZ_COMPOSE_FILES:-docker-compose.yml}"
+HEALTH_URL="${AZ_HEALTH_URL:-http://localhost:8080/api/health}"
 BACKUP_DIR="/home/tablet/alpha_zero_backups"
 DATE=$(date +%Y%m%d_%H%M%S)
+COMPOSE_ARGS=()
+for f in ${COMPOSE_FILES}; do COMPOSE_ARGS+=(-f "$f"); done
 
 echo "=== Alpha Zero Deploy v${VERSION} ==="
-
-# Create backup directory
 mkdir -p "${BACKUP_DIR}"
 
 # Backup current database state
@@ -23,38 +28,29 @@ docker exec alphazero-cmb cp /srv/cmb/data/cmb.db /srv/cmb/data/cmb.db.backup.${
 echo "Backing up analytics..."
 docker cp alphazero-web:/app/alpha-zero-engine/analytics_data "${BACKUP_DIR}/analytics_${DATE}" 2>/dev/null || true
 
-# Pull/build new images
-echo "Building images..."
-docker compose -f "${COMPOSE_FILE}" build --pull
+# Build new images (skippable for image-only deploys)
+if [[ "${AZ_SKIP_BUILD:-0}" != "1" ]]; then
+    echo "Building images..."
+    docker compose "${COMPOSE_ARGS[@]}" build
+else
+    echo "AZ_SKIP_BUILD=1 — skipping image build"
+fi
 
-# Rolling update with health checks
-echo "Starting rolling update..."
-docker compose -f "${COMPOSE_FILE}" up -d --no-deps --scale web=2 web
+# Recreate changed services (idempotent; unchanged services are untouched)
+echo "Recreating services..."
+docker compose "${COMPOSE_ARGS[@]}" up -d
 
-# Wait for new container to be healthy
-echo "Waiting for health check..."
+# Wait for health check
+echo "Waiting for health check (${HEALTH_URL})..."
 for i in {1..30}; do
-    if docker compose -f "${COMPOSE_FILE}" ps web | grep -q "healthy"; then
-        echo "New container healthy!"
-        break
+    if curl -sf "${HEALTH_URL}" > /dev/null; then
+        echo "✓ Deployment successful!"
+        echo "  Health: $(curl -s "${HEALTH_URL}" | grep -o '"status":"[^"]*"' | head -1)"
+        exit 0
     fi
     sleep 2
 done
 
-# Scale back to single instance
-docker compose -f "${COMPOSE_FILE}" up -d --no-deps --scale web=1 web
-
-# Verify deployment
-echo "Verifying deployment..."
-sleep 3
-if curl -sf http://localhost:8080/api/health > /dev/null; then
-    echo "✓ Deployment successful!"
-    echo "  Health: $(curl -s http://localhost:8080/api/health | jq -r '.status')"
-    echo "  Uptime: $(curl -s http://localhost:8080/api/health | jq -r '.uptime_seconds')s"
-else
-    echo "✗ Deployment failed - rolling back..."
-    ./rollback.sh
-    exit 1
-fi
-
-echo "=== Deploy complete ==="
+echo "✗ Deployment failed - rolling back..."
+./rollback.sh
+exit 1

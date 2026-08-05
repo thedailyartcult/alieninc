@@ -212,3 +212,20 @@ def benchmark(
     result["speedup"] = round(py_ms / max(1, result["elapsed_ms"]), 1)
     result["backend"] = "go"
     return result
+
+
+def native_report(operation: str, **kwargs) -> dict:
+    """TiDB persistence via the native core (`report` command).
+
+    Mirrors the Python infra.tidb_store surface so native runs can share the
+    same simulation_reports table. Returns {"backend": "go", ...} on success,
+    or {"backend": "unavailable"} when the binary is missing. No Python
+    fallback: durable SQL writes belong to the store layer, not a re-impl.
+    """
+    payload = {"operation": operation, **kwargs}
+    if "dsn" not in payload:
+        payload["dsn"] = os.environ.get("ALPHA_ZERO_SQL_DSN", "")
+    result = _call("report", payload)
+    if result is None:
+        return {"backend": "unavailable"}
+    return result

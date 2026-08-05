@@ -12,6 +12,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,6 +20,8 @@ import (
 	"os"
 	"sort"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 // ---------------------------------------------------------------------------
@@ -349,6 +352,33 @@ type MemoryRequest struct {
 	SessionID string         `json:"session_id"`
 	Repo      string         `json:"repo"`
 }
+
+// ReportRequest — durable persistence of simulation reports against a
+// MySQL-wire-compatible store (TiDB default, port 4000). Mirrors the
+// behaviour of the Python infra.tidb_store layer so native runs and Python
+// runs share the same tables.
+type ReportRequest struct {
+	Operation string `json:"operation"` // health | store | load | list
+	ReportID  string `json:"report_id"`
+	RunType   string `json:"run_type"`
+	Config    any    `json:"config"`
+	Report    any    `json:"report"`
+	Backend   string `json:"backend"`
+	Limit     int    `json:"limit"`
+	DSN       string `json:"dsn"` // override ALPHA_ZERO_SQL_DSN
+}
+
+const reportSchema = `
+CREATE TABLE IF NOT EXISTS simulation_reports (
+    id           VARCHAR(64)  PRIMARY KEY,
+    run_type     VARCHAR(32)  NOT NULL,
+    config       JSON         NOT NULL,
+    report       JSON         NOT NULL,
+    backend      VARCHAR(16)  DEFAULT 'go',
+    created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_reports_type (run_type),
+    KEY idx_reports_created (created_at)
+);`
 
 func fail(err error) {
 	writeJSON(map[string]any{"error": err.Error()})
@@ -733,6 +763,185 @@ func firstNonEmpty(values ...string) string {
 	return ""
 }
 
+// reportDSNs converts the mysql:// URL into (full, base) go-sql-driver DSNs:
+// full includes the database; base does not (used to CREATE DATABASE first).
+func reportDSNs(urlDSN string) (full, base string) {
+	rest := urlDSN
+	if i := indexOf(urlDSN, "://"); i >= 0 {
+		rest = urlDSN[i+3:]
+	}
+	creds := ""
+	hostport := rest
+	if i := indexOf(rest, "@"); i >= 0 {
+		creds = rest[:i]
+		hostport = rest[i+1:]
+	}
+	db := "alpha_zero"
+	if i := indexOf(hostport, "/"); i >= 0 {
+		hostport, db = hostport[:i], hostport[i+1:]
+	}
+	host := "127.0.0.1"
+	port := "4000"
+	if i := lastIndex(hostport, ":"); i >= 0 {
+		host, port = hostport[:i], hostport[i+1:]
+	}
+	user := "root"
+	password := ""
+	if creds != "" {
+		if i := indexOf(creds, ":"); i >= 0 {
+			user, password = creds[:i], creds[i+1:]
+		} else {
+			user = creds
+		}
+	}
+	common := fmt.Sprintf("%s:%s@tcp(%s:%s)", user, password, host, port)
+	return common + "/" + db + "?timeout=3s&interpolateParams=true",
+		common + "/?timeout=3s&interpolateParams=true"
+}
+
+func indexOf(s, sub string) int {
+	for i := 0; i+len(sub) <= len(s); i++ {
+		if s[i:i+len(sub)] == sub {
+			return i
+		}
+	}
+	return -1
+}
+
+func lastIndex(s, sub string) int {
+	for i := len(s) - len(sub); i >= 0; i-- {
+		if s[i:i+len(sub)] == sub {
+			return i
+		}
+	}
+	return -1
+}
+
+func cmdReport(req ReportRequest) {
+	urlDSN := req.DSN
+	if urlDSN == "" {
+		urlDSN = os.Getenv("ALPHA_ZERO_SQL_DSN")
+	}
+	if urlDSN == "" {
+		urlDSN = "mysql://root@127.0.0.1:4000/alpha_zero"
+	}
+	full, base := reportDSNs(urlDSN)
+
+	// Bootstrap the database idempotently (base DSN = no db selected yet).
+	if req.Operation == "store" {
+		raw, err := sql.Open("mysql", base)
+		if err != nil {
+			fail(fmt.Errorf("report: open base: %w", err))
+		}
+		raw.SetConnMaxLifetime(time.Minute)
+		raw.SetMaxOpenConns(2)
+		if _, err := raw.Exec("CREATE DATABASE IF NOT EXISTS alpha_zero"); err != nil {
+			raw.Close()
+			fail(fmt.Errorf("report: create db: %w", err))
+		}
+		raw.Close()
+	}
+
+	db, err := sql.Open("mysql", full)
+	if err != nil {
+		fail(fmt.Errorf("report: open: %w", err))
+	}
+	defer db.Close()
+	db.SetConnMaxLifetime(time.Minute)
+	db.SetMaxOpenConns(2)
+
+	switch req.Operation {
+	case "health":
+		var one int
+		if err := db.QueryRow("SELECT 1").Scan(&one); err != nil {
+			writeJSON(map[string]any{"status": "error", "backend": "go", "healthy": false, "message": err.Error()})
+			return
+		}
+		writeJSON(map[string]any{"status": "success", "backend": "go", "healthy": true})
+	case "store":
+		if req.ReportID == "" {
+			fail(fmt.Errorf("report: store requires report_id"))
+		}
+		if _, err := db.Exec(reportSchema); err != nil {
+			fail(fmt.Errorf("report: schema: %w", err))
+		}
+		config, err := json.Marshal(req.Config)
+		if err != nil {
+			fail(fmt.Errorf("report: config: %w", err))
+		}
+		report, err := json.Marshal(req.Report)
+		if err != nil {
+			fail(fmt.Errorf("report: report: %w", err))
+		}
+		backend := req.Backend
+		if backend == "" {
+			backend = "go"
+		}
+		runType := req.RunType
+		if runType == "" {
+			runType = "multiverse"
+		}
+		_, err = db.Exec(`INSERT INTO simulation_reports (id, run_type, config, report, backend)
+			VALUES (?, ?, ?, ?, ?)
+			ON DUPLICATE KEY UPDATE run_type = VALUES(run_type), report = VALUES(report), backend = VALUES(backend)`,
+			req.ReportID, runType, string(config), string(report), backend)
+		if err != nil {
+			fail(fmt.Errorf("report: store: %w", err))
+		}
+		writeJSON(map[string]any{"status": "success", "backend": "go", "stored": true, "report_id": req.ReportID})
+	case "load":
+		if req.ReportID == "" {
+			fail(fmt.Errorf("report: load requires report_id"))
+		}
+		var reportJSON []byte
+		if err := db.QueryRow("SELECT report FROM simulation_reports WHERE id = ?", req.ReportID).Scan(&reportJSON); err != nil {
+			if err == sql.ErrNoRows {
+				writeJSON(map[string]any{"status": "success", "backend": "go", "found": false})
+				return
+			}
+			fail(fmt.Errorf("report: load: %w", err))
+		}
+		var payload any
+		if err := json.Unmarshal(reportJSON, &payload); err != nil {
+			fail(fmt.Errorf("report: decode: %w", err))
+		}
+		writeJSON(map[string]any{"status": "success", "backend": "go", "found": true, "report": payload})
+	case "list":
+		limit := req.Limit
+		if limit <= 0 {
+			limit = 50
+		}
+		rows, err := db.Query(`SELECT id, run_type, backend, created_at FROM simulation_reports
+			ORDER BY created_at DESC LIMIT ?`, limit)
+		if err != nil {
+			fail(fmt.Errorf("report: list: %w", err))
+		}
+		defer rows.Close()
+		items := []map[string]any{}
+		for rows.Next() {
+			var id, runType, backend string
+			var createdAt []byte
+			if err := rows.Scan(&id, &runType, &backend, &createdAt); err != nil {
+				fail(fmt.Errorf("report: list scan: %w", err))
+			}
+			ts := ""
+			if len(createdAt) > 0 {
+				ts = string(createdAt)
+			}
+			items = append(items, map[string]any{
+				"id": id, "run_type": runType, "backend": backend,
+				"created_at": ts,
+			})
+		}
+		if err := rows.Err(); err != nil {
+			fail(fmt.Errorf("report: list: %w", err))
+		}
+		writeJSON(map[string]any{"status": "success", "backend": "go", "results": items, "count": len(items)})
+	default:
+		fail(fmt.Errorf("report: unknown operation %q", req.Operation))
+	}
+}
+
 func str(v any) string {
 	if s, ok := v.(string); ok {
 		return s
@@ -819,6 +1028,12 @@ func main() {
 			fail(err)
 		}
 		cmdMemory(req)
+	case "report":
+		var req ReportRequest
+		if err := json.Unmarshal(raw, &req); err != nil {
+			fail(err)
+		}
+		cmdReport(req)
 	default:
 		writeJSON(map[string]any{"error": "unknown command: " + cmd})
 		os.Exit(1)

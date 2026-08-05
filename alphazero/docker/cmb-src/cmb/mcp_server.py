@@ -82,13 +82,23 @@ https://github.com/thedailyartcult/alpha-zero
   - FSM integration: salary, expenses, investing, market returns, 4% retirement withdrawal, 5-year rebalancing
   - Career progression: Entry Level → Mid Career (30) → Senior (45) → Executive (55, smarts≥60)
   - New MCP tools: alpha_zero_portfolio_optimize, alpha_zero_financial_forecast, alpha_zero_risk_analysis
-🔲 Phase 4: Infrastructure — Go/Rust Core + Redis + TiDB — NEXT
+✅ Phase 4: Infrastructure — Go/Rust Core + Redis + TiDB — COMPLETE
+  - Go alphacore: bit-exact finance hot paths (forecast/market/compare/stress/benchmark)
+    + AI commands (interview/coach/analyze/narrate/memory) + TiDB `report` command
+    (go-sql-driver/mysql, shares simulation_reports with Python)
+  - Rust mcp-client bridge (interview..memory handlers, PYTHONPATH-aware)
+  - Redis cache layer (infra/cache.py) with graceful in-memory fallback
+  - TiDB durable store (infra/tidb_store.py, pymysql, mysql-wire compatible)
+  - docker-compose `tidb` service (pingcap/tidb), ALPHA_ZERO_SQL_DSN wired to web
+  - /api/health reports redis + tidb status; infra tests green against real TiDB
 
 NEXT STEPS (for new sessions):
 1. Check `cmb_recall_grounded` with query="alpha zero master plan" for the full roadmap
 2. Check `cmb_recall` with query="Alpha Zero Phase Status" for current phase details
-3. Phase 4: Infrastructure — Go/Rust Core + Redis + TiDB
-4. CMB MCP Server Cleanup: All 8 phases complete — Phase 8 (Deployment & Monitoring) implemented and verified
+3. Go/Rust parity for the 3 Phase-8 advisors (financial_advisor, health_coach, mentor are Python-only)
+4. Phase 11: Observability (Prometheus, Grafana, alerting)
+5. Phase 12: CI/CD (GitHub Actions test → build → deploy → rollback)
+6. CMB MCP Server Cleanup: All 8 phases complete — Phase 8 (Deployment & Monitoring) implemented and verified
 """
 from __future__ import annotations
 

@@ -780,11 +780,18 @@ async def _instrument_call_tool(orig_call_tool, name, arguments, context):
 
 def _make_http_app(server: MCPServer, host: str):
     """Build a Starlette app that serves MCP at /mcp and Prometheus at /metrics."""
+    from contextlib import asynccontextmanager
     from starlette.applications import Starlette
     from starlette.responses import PlainTextResponse
     from starlette.routing import Mount, Route
 
     mcp_app = server.streamable_http_app(streamable_http_path="/mcp", host=host)
+    manager = getattr(server, "_session_manager", None) or server.session_manager
+
+    @asynccontextmanager
+    async def _lifespan(app):
+        async with manager.run():
+            yield
 
     async def _metrics(request):
         return PlainTextResponse(
@@ -792,7 +799,7 @@ def _make_http_app(server: MCPServer, host: str):
             media_type="text/plain; version=0.0.4; charset=utf-8",
         )
 
-    return Starlette(routes=[Route("/metrics", endpoint=_metrics), Mount("/", app=mcp_app)])
+    return Starlette(lifespan=_lifespan, routes=[Route("/metrics", endpoint=_metrics), Mount("/", app=mcp_app)])
 
 
 async def main():

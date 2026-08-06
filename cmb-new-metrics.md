@@ -76,3 +76,18 @@ and check this file's Status section (authoritative). Baseline metrics are in
   against the live server (PID 3107661). To push code changes to the laptop: `/home/tablet/sync-to-server.sh --pull-server`
   from the laptop side pulls installed `cmb/` + `scripts/` — **note**: new `cmb/ai_context.py` must also be
   copied (only `cmb/` + `scripts/` are tarred, which includes it).
+- **2026-08-06 (resume — no re-work)** Server-side re-verified, nothing re-diagnosed/re-initiated:
+  W1 guard present (`ExecStartPre=/bin/chown cmb:cmb /srv/cmb/data/cmb.db`), service active,
+  DB owner `cmb:cmb`. W3 cron entry `30 2 * * *` present in root crontab (installed via
+  `/srv/cmb/scripts/cmb-sync-cron`); `consolidate-sweep.sh` runs `cmb-consolidate` as the `cmb` user
+  against the live DB. **`ai_context.py` caveat resolved server-side**: file confirmed in both
+  `/root/cmb-upgrade/src/cmb/ai_context.py` and installed `/srv/cmb/venv/lib/python3.11/site-packages/cmb/ai_context.py`
+  (installed 04:53, after the 04:52 note) → a laptop `--pull-server` now includes it automatically.
+- **2026-08-06 (open thread — laptop offline)** Reverse tunnel 8766 listener is stale (PID 3112375 gone,
+  SSH banner timeout) and no server→laptop SSH key works (cmb_sync key `Permission denied` on
+  178.104.71.88:22), so laptop-side verification of W2/W4/W5 code + `ai_context.py` is STILL PENDING.
+  Laptop initiates code pull itself; verify `ai_context.py` + rebuilt package there next time the laptop
+  (178.104.71.88) is reachable.
+- **2026-08-06 (forward check — not yet due)** The first nightly consolidation sweep has NOT run yet
+  (cron written 04:52 today, fires at 02:30). Confirm on 2026-08-07 02:30 that `consolidate-sweep.sh`
+  runs clean and its receipt carries `token_usage` (`cmb.regex.v1`) — expected in `/srv/cmb/logs/consolidate-sweep.log`.

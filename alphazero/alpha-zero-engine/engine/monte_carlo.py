@@ -208,15 +208,13 @@ class MonteCarloEngine:
         happiness_scores = [r.final_happiness for r in results]
         years_lived = [r.years_lived for r in results]
 
+        nw_mean = statistics.mean(net_worths) if net_worths else 0
+        nw_std = statistics.stdev(net_worths) if len(net_worths) > 1 else 0
+
         # Convergence: % of universes within 1 std dev of mean
         if len(net_worths) > 1:
-            nw_mean = statistics.mean(net_worths)
-            nw_std = statistics.stdev(net_worths) if len(net_worths) > 1 else 0
-            if nw_std > 0:
-                converged = sum(1 for nw in net_worths if abs(nw - nw_mean) <= nw_std)
-                convergence_rate = converged / len(net_worths)
-            else:
-                convergence_rate = 1.0
+            converged = sum(1 for nw in net_worths if abs(nw - nw_mean) <= nw_std)
+            convergence_rate = converged / len(net_worths)
         else:
             convergence_rate = 1.0
 

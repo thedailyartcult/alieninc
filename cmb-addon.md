@@ -105,24 +105,68 @@ Two code surfaces:
 | # | Task | Files/commands | Status |
 |---|------|----------------|--------|
 | P0 | Lock baseline: cmb-new-metrics W1–W8 already complete (do not re-do); CMB v1.2.5, PID 3107661, DB owner `cmb:cmb`, service active; this tracking memory exists in CMB | `cmb-addon.md`, CMB memory | [x] done |
-| P1 | Provision reference server: `python3.11 -m venv /srv/cmb/venv-fetch`; `pip install mcp-server-fetch==0.6.3`; verify console script + `python -m mcp_server_fetch` boots and `tools/list` returns exactly `fetch` with the documented schema | `/srv/cmb/venv-fetch`, `mcp-server-fetch==0.6.3` | [ ] not started |
-| P2 | Register server in opencode config (stdio entry, venv python, NO `--ignore-robots-txt`), reload, confirm `fetch` tool visible | opencode config (opencode.json / `.opencode/`) | [ ] not started |
-| P3 | Write bridge skill `.opencode/skills/fetch-ingest/`: (a) call `fetch`; (b) loop `start_index` while response contains the truncation sentinel; (c) SSRF deny-list; (d) pipe into `cmb_ingest` with `source="tool:fetch"`, `trusted=false`, `mtype="semantic"` | `.opencode/skills/fetch-ingest/SKILL.md` | [ ] not started |
-| P4 | Security hardening: deny-list at bridge (deny 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.169.254, IPv6 ::1/fe80::, non-http(s) schemes) — NOT present upstream, so it lives in the bridge | bridge skill, P1 venv config | [ ] not started |
-| P5 | End-to-end validation: live fetch of a known public URL → markdown → ingest → `cmb_recall_grounded` returns cited content; verify robots refusal on a robots-blocked URL; verify paging sentinel on a long page | — | [ ] not started |
-| P6 | Docs + memory: update this file's status table + Completion log (append-only) and the CMB tracking memory | `cmb-addon.md`, CMB | [ ] not started |
+| P1 | Provision reference server: `python3.11 -m venv /srv/cmb/venv-fetch`; `pip install mcp-server-fetch==0.6.3`; verify console script + `python -m mcp_server_fetch` boots and `tools/list` returns exactly `fetch` with the documented schema | `/srv/cmb/venv-fetch`, `mcp-server-fetch==0.6.3` | [x] done |
+| P2 | Register server in opencode config (stdio entry, venv python, NO `--ignore-robots-txt`), reload, confirm `fetch` tool visible | opencode config (opencode.json / `.opencode/`) | [x] done |
+| P3 | Write bridge skill `.opencode/skills/fetch-ingest/`: (a) call `fetch`; (b) loop `start_index` while response contains the truncation sentinel; (c) SSRF deny-list; (d) pipe into `cmb_ingest` with `source="tool:fetch"`, `trusted=false`, `mtype="semantic"` | `.opencode/skills/fetch-ingest/SKILL.md` | [x] done |
+| P4 | Security hardening: deny-list at bridge (deny 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.169.254, IPv6 ::1/fe80::, non-http(s) schemes) — NOT present upstream, so it lives in the bridge | bridge skill, P1 venv config | [x] done |
+| P5 | End-to-end validation: live fetch of a known public URL → markdown → ingest → `cmb_recall_grounded` returns cited content; verify robots refusal on a robots-blocked URL; verify paging sentinel on a long page | — | [x] done |
+| P6 | Docs + memory: update this file's status table + Completion log (append-only) and the CMB tracking memory | `cmb-addon.md`, CMB | [x] done |
+| P7 | Native integration: build the fetch capability INTO CMB (`cmb_fetch` + `cmb_fetch_ingest` MCP tools + `source`/`trusted` on `cmb_ingest`), replacing the external bridge so both laptop and server get it from the shared source | `cmb/fetchutil.py`, `cmb/mcp_server.py`, rebuild | [x] done |
 
 ## RESUME QUERY — give this verbatim to the next LLM doing the work
-The next operator MUST start by loading CMB context, then read this file, then execute only
-the phases marked `[ ] not started` in order. Do NOT re-do P0 or anything in `cmb-new-metrics.md`.
+CMB native fetch-ingest is **implemented but NOT finished**: P0–P7 complete (2026-08-06),
+and there is still refinement + integration work the user wants done (see **Remaining
+work** below). Do NOT re-run or re-plan completed phases, and do NOT re-initialize
+anything in `cmb-new-metrics.md` (W1–W8 complete). What is DONE: fetch is native in CMB —
+`cmb_fetch` (SSRF-guarded, robots-always-on, paging), `cmb_fetch_ingest` (fetch + store,
+`source=tool:fetch, trusted=false, kind=web`, title defaults to the URL), a `fetch` MCP
+prompt, and `source`/`trusted`/`title` params on `cmb_ingest` (the P5 provenance DEVIATION
+is resolved). The external `/srv/cmb/venv-fetch` server + its `/home/alieninc/opencode.jsonc`
+entry are REDUNDANT (kept as reference). The user has restarted opencode and expects the
+native tools in-session; do NOT claim completion — verify, refine, integrate, and report
+concrete next steps.
 
 ```
-cmb_recall_context(query="CMB addon fetch-ingest bridge plan status and phase completions",
+cmb_recall_context(query="CMB addon fetch-ingest bridge P7 complete, remaining refinement and integration work",
                    workspace="alieninc", token_budget=512, k=8)
 ```
 Then: `cmb_recall_proactive(workspace="alieninc", repo="cmb", k=5)` for the latest session
-handoff, then read `/home/alieninc/cmb-addon.md` (authoritative) and `/home/alieninc/cmb-new-metrics.md`
-for completed work that must not be re-initialized.
+handoff, then read `/home/alieninc/cmb-addon.md` (authoritative — start at **Remaining
+work** below) and `/home/alieninc/cmb-new-metrics.md` for completed work that must not be
+re-initialized. End the session with `cmb_end_session` + a summary that includes the
+concrete next steps you found, not just a status.
+
+## Remaining work (refinement & integration — NOT finished)
+
+Refinement (code, canonical source `/root/cmb-upgrade/src/cmb`):
+1. **Laptop deployment** (laptop offline now): run `upgrade-cmb.sh` on the laptop so native
+   `cmb_fetch`/`cmb_fetch_ingest`/`fetch` prompt exist there too; verify `tools/list` +
+   one live fetch on the laptop side. Then decide: deregister the redundant external
+   `fetch` server from `/home/alieninc/opencode.jsonc` and retire `/srv/cmb/venv-fetch`.
+2. **In-session verification** after the opencode restart: confirm the three surfaces appear
+   under the `cmb` server in the actual MCP client, and run one fetch→ingest→grounded-recall
+   round trip end to end from the user's own session.
+3. **`cmb_fetch` response shape — RESOLVED (2026-08-06)**: stays raw text (not a JSON
+   envelope), deliberately — upstream parity, best for direct agent consumption; the skill
+   documents this and its paging loop operates on raw text.
+4. **MCP session protocol — DONE (2026-08-06)**: `_SESSION_PROTOCOL` in `mcp_server.py`
+   now names `cmb_fetch_ingest`/`cmb_fetch` as a first-class primitive (provenance +
+   never-bypass the SSRF/robots guards). Ships in the next rebuild (this is that rebuild).
+5. **REST provenance parity — re-scoped as OPTIONAL**: the REST ingest path
+   (`routes/memory.py` → `engines/ingest.ingest_document` → `upsert_memory`) is the legacy
+   namespace/document pipeline and has no modern `source`/`trusted`/`kind` model; adding it
+   is a provenance retrofit, not a quick tweak. Only do it if a real API client needs it.
+6. **Robots/SSRF parity check on the laptop network**: egress/proxies differ from the
+   server — re-verify SSRF deny cases and robots refusal there.
+
+Integration (workflow):
+7. **Consolidation — RESOLVED (dry-run 2026-08-06)**: `cmb_consolidate(repo=cmb, dry_run)`
+   reports 0 clusters — fetched pages are distinct single semantic memories (web-provenance),
+   not recurring episodic clusters, so they are not consolidation candidates. No action.
+8. **Reusable "web research → memory" workflow**: wire fetch-ingest into a repeatable
+   session pattern (fetch → ingest → recall_grounded citations) and store the procedure.
+9. **cmb-new-metrics carry-over**: laptop-side verification of W2/W4/W5 + `ai_context.py`
+   remains pending from that doc.
 
 Context-window note (opencode with different providers): if the provider's window is small,
 do NOT paste upstream source into the prompt — re-fetch only the single file you are touching
@@ -135,3 +179,114 @@ from the "Verification sources" list above; the md already pins exact file:line 
   an open thread from the metrics doc). Upstream `mcp-server-fetch` v0.6.3 source verified
   directly from `modelcontextprotocol/servers@main` (tool `fetch`, schema, robots, truncation,
   stdio transport — see "What we are adopting"). Plan + this memory stored in CMB.
+- **2026-08-06** P1 done: `/srv/cmb/venv-fetch` provisioned (python3.11, owned `cmb:cmb`).
+  `mcp-server-fetch==0.6.3` is NOT on PyPI (latest published 0.6.2) → installed the EXACT
+  verified source from `modelcontextprotocol/servers@main#subdirectory=src/fetch`
+  (same version string 0.6.3, wheel built from upstream). One venv-level pin added:
+  `mcp<2` → 1.29.0 (upstream declares `mcp>=1.1.3` but mcp 2.0.0 removed the `McpError`
+  API the server imports; no source change). Verified BOTH entry points boot and
+  `tools/list` returns exactly one tool `fetch` with the documented schema
+  (url required, max_length 5000 0<x<1e6, start_index>=0, raw bool).
+- **2026-08-06** P2 done: fetch stdio server registered at project level
+  `/home/alieninc/opencode.jsonc` (deep-merges with global config; `type: local`,
+  command `/srv/cmb/venv-fetch/bin/mcp-server-fetch`, NO `--ignore-robots-txt`,
+  enabled, timeout 60000). JSON-valid; shape matches the working `cmb-local` entry.
+  In-session tool visibility is pending an opencode restart (config not hot-reloaded).
+- **2026-08-06** P3 done: bridge skill written at `.opencode/skills/fetch-ingest/SKILL.md`
+  (frontmatter name+description per opencode skill loader). Steps: (1) SSRF URL guard
+  before ANY fetch, (2) `fetch` call with paging loop on the exact upstream truncation
+  sentinel, (3) `cmb_ingest` mapping `workspace=alieninc, repo=cmb, mtype=semantic,
+  scope=repo, source=tool:fetch, trusted=false`, (4) confirm + report incl. robots-refusal
+  handling. NO bypass of robots, NO spidering, `max_length` capped at 10000 absent consent.
+- **2026-08-06** P4 done: SSRF deny-list codified BOTH as skill prose AND as an executable
+  stdlib guard `check_url.py` (exit 0 = SAFE, exit 1 = blocked with reason) so every agent
+  enforces identical rules. Denies non-http(s) schemes, host-literal deny (localhost,
+  metadata hostnames, `*.local/*.internal/*.lan/*.home`), and resolved-IP ranges
+  127.0.0.0/8, 10/8, 172.16/12, 192.168/16, 169.254.0.0/16, 0.0.0.0/8, ::1, ::, fe80::/10,
+  fc00::/7 — checked per-address to block DNS rebinding. Live-tested: 8 deny cases all
+  blocked, `https://example.com` passes.
+- **2026-08-06** P5 done (e2e, driven via MCP client against the exact registered command):
+  (1) SSRF guard SAFE on example.com/Wikipedia; 8 deny cases blocked. (2) Live fetch OK —
+  response prefix `Contents of {url}:` confirmed, markdown extracted. (3) Paging verified:
+  truncation sentinel `<error>Content truncated. Call the fetch tool with a start_index of
+  {next} to get more content.</error>` parsed, loop reassembled a 19,451-char Wikipedia
+  article in 4 pages; past-end `<error>No more content available.</error>` confirmed.
+  (4) Robots refusal verified: `https://www.google.com/search?q=cmb` refused by Google's
+  robots.txt (autonomous UA), while allowed pages fetch fine. (5) Ingest→grounded:
+  article ingested, `cmb_recall_grounded` returned grounded:true with citation
+  mem_01KZASY3RAEWWC044VKPEEFRVH carrying `source=tool:fetch, trusted=false`.
+  DEVIATION (recorded in skill): `cmb_ingest` MCP schema has NO source/trusted params and
+  stores `agent/trusted:true`; with no extractor it is passthrough anyway → bridge uses
+  `cmb_remember(source="tool:fetch", trusted=false)` so the memory-poisoning guard holds.
+  Server stdout verified clean (pure JSON-RPC, one tool). Note: in-session `fetch` tool
+  visibility in opencode needs a restart (config not hot-reloaded).
+- **2026-08-06** P6 done: this file's status table all `[x] done`; completion log entries
+  for P1–P6 appended (append-only); CMB tracking memory updated. The bridge is complete:
+  upstream reference server in `/srv/cmb/venv-fetch`, project config registration
+  `/home/alieninc/opencode.jsonc`, skill `.opencode/skills/fetch-ingest/` (paging loop,
+  SSRF guard `check_url.py`, provenance-guarded ingest). Open thread: opencode restart to
+  surface the `fetch` tool in-session.
+- **2026-08-06** P7 done — NATIVE integration (fix for "why is this outside tooling?"):
+  the fetch capability is now a built-in CMB MCP feature, no external server needed.
+  (1) New stdlib-lazy module `cmb/fetchutil.py` (canonical source
+  `/root/cmb-upgrade/src/cmb/fetchutil.py`): SSRF deny-list guard (same list as P4 —
+  127/8, 10/8, 172.16/12, 192.168/16, 169.254.0.0/16, 0.0.0.0/8, ::1, ::, fe80::/10,
+  fc00::/7, localhost + metadata hostnames + `*.local/*.internal/*.lan/*.home`,
+  non-http(s) schemes, per-address DNS-rebinding check), robots.txt ALWAYS enforced
+  (Protego primary, minimal stdlib parser fallback; 401/403 → refuse, other 4xx → allow),
+  httpx fetch (follow_redirects, UA, timeout 30, >=400 → error), HTML→markdown via
+  readabilipy+markdownify with raw-content graceful degradation. (2) Two new MCP tools in
+  `cmb/mcp_server.py`: `cmb_fetch` (url/max_length/start_index/raw; paging sentinel EXACTLY
+  matches upstream `<error>Content truncated...start_index of {next}</error>`; read-only,
+  viewer role) and `cmb_fetch_ingest` (url/workspace/repo/session_id/max_length/raw/mtype/
+  scope; fetches whole page then stores via `service().ingest` with
+  `source="tool:fetch", trusted=false, kind="web"`; admin role). (3) `cmb_ingest` MCP tool
+  now exposes `source` and `trusted` params — the P5 provenance DEVIATION is RESOLVED
+  (service.ingest always supported them; the MCP binding just omitted them). (4) Optional
+  `fetch` extra added to `pyproject.toml` (httpx, protego, markdownify, readabilipy);
+  installed into `/srv/cmb/venv` (added beautifulsoup4, html5lib, lxml, markdownify 1.2.3,
+  protego 0.6.2, readabilipy 0.3.0, six, soupsieve, webencodings). (5) Rebuilt via
+  `upgrade-cmb.sh` (still version 1.2.5, wheel rebuilt), `cmb-mcp-http.service` restarted.
+  VERIFIED live over HTTP (port 8765, the tunnel the laptop connects through): tools/list
+  = 39 tools incl. cmb_fetch + cmb_fetch_ingest with correct schemas; example.com fetches
+  to markdown; Google /search robots refusal returned as error (not bypassable);
+  Wikipedia paging sentinel + start_index continuation correct; cmb_fetch_ingest created
+  mem_01KZAWDKNSCYEECWV4PEKJNCN9 with provenance `{source: tool:fetch, trusted: false,
+  kind: web}` and dedupe noop on retry. Because the HTTP wrapper reuses
+  `mcp_server.mcp`, the tools are live on both stdio and HTTP everywhere CMB is installed —
+  the laptop gets them on next `upgrade-cmb.sh` run. NOTE: `/srv/cmb/venv-fetch` + the
+  external `fetch` registration in `/home/alieninc/opencode.jsonc` are now REDUNDANT
+  (kept as reference; safe to deregister once native tools are confirmed in-session).
+  Open threads now: (a) laptop offline → laptop-side verification of native tools +
+  cmb-new-metrics W2/W4/W5 still pending; (b) optional deregistration of the external
+  fetch server.
+- **2026-08-06** P7 follow-up refinements (done, before the user's opencode restart):
+  (1) `title` now supported END-TO-END on the ingest path — added optional `title` to
+  `service().ingest` and `core/engine.ingest` (passthrough `ExtractedFact(content, title)`;
+  extractor path unaffected), and `cmb_fetch_ingest` re-exposes `title` defaulting to the
+  fetched URL. Verified live: `cmb_fetch_ingest(url=https://example.org/, title=...)` stored
+  mem_01KZAX70K9MX22R0VT164P828E with the given title AND provenance
+  `{source: tool:fetch, trusted: false, kind: web}` (op=invalidate via dedupe supersession).
+  (2) `fetch` MCP **prompt** added (upstream-parity; FastMCP `@mcp.prompt`, instructs the
+  paging loop + provenance-guarded ingest) — `prompts/list` now returns `fetch`.
+  (3) `cmb_fetch` now increments the `cmb_health` tool-call counter (it returns raw text so
+  it bypasses `_ok`). Rebuilt via `upgrade-cmb.sh`, service restarted, live-verified over
+  HTTP :8765. NOTE: the work is intentionally NOT declared finished — see **Remaining
+  work** section (laptop deployment + in-session verification, `cmb_fetch` response-shape
+  decision, MCP protocol/AGENTS.md integration, REST `source`/`trusted`/`title` parity,
+  consolidation/workflow integration, cmb-new-metrics laptop carry-over).
+- **2026-08-06** P7 continuation (unblocked server-side items only): (1) **protocol
+  integration** — `_SESSION_PROTOCOL` in `mcp_server.py` now names `cmb_fetch_ingest` /
+  `cmb_fetch` as a first-class primitive (provenance + never-bypass SSRF/robots); rebuilt +
+  restarted, verified live: instructions carry the paragraph, 39 tools, `cmb_fetch_ingest`
+  schema has `title`, `prompts/list` returns `fetch`, `cmb_fetch(example.org)` returns
+  markdown. (2) **Response-shape decision RESOLVED**: `cmb_fetch` stays raw text (upstream
+  parity, agent-friendly); documented in the skill. (3) **Consolidation RESOLVED**:
+  `cmb_consolidate(repo=cmb, dry_run)` = 0 clusters; fetched pages are distinct single
+  semantic memories, not consolidation candidates. (4) **REST provenance parity re-scoped
+  OPTIONAL**: REST ingest is the legacy `engines/ingest.ingest_document` pipeline without the
+  modern source/trusted/kind model — would be a provenance retrofit, only if an API client
+  needs it. STILL OPEN (next session): laptop deployment + in-session verification after the
+  opencode restart, laptop-network SSRF/robots re-check, reusable web-research workflow
+  procedure, cmb-new-metrics laptop carry-over (W2/W4/W5 + ai_context.py), optional
+  deregistration of the external fetch server.

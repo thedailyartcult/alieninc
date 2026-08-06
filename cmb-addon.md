@@ -141,11 +141,17 @@ concrete next steps you found, not just a status.
 Refinement (code, canonical source `/root/cmb-upgrade/src/cmb`):
 1. **Laptop deployment** (laptop offline now): run `upgrade-cmb.sh` on the laptop so native
    `cmb_fetch`/`cmb_fetch_ingest`/`fetch` prompt exist there too; verify `tools/list` +
-   one live fetch on the laptop side. Then decide: deregister the redundant external
-   `fetch` server from `/home/alieninc/opencode.jsonc` and retire `/srv/cmb/venv-fetch`.
-2. **In-session verification** after the opencode restart: confirm the three surfaces appear
-   under the `cmb` server in the actual MCP client, and run one fetch→ingest→grounded-recall
-   round trip end to end from the user's own session.
+   one live fetch on the laptop side. **Deregistration of the external `fetch` server — DONE
+   (2026-08-06)**: native tools confirmed in-session server-side, so the redundant external
+   `fetch` entry was removed from `/home/alieninc/opencode.jsonc` and `/srv/cmb/venv-fetch`
+   was retired (deleted). Only the laptop `upgrade-cmb.sh` deployment remains here.
+2. **In-session verification — DONE (2026-08-06)**: confirmed in the user's own opencode
+   session on the server — tools `cmb_fetch` + `cmb_fetch_ingest` present in-session and in
+   `tools/list` over HTTP :8765/mcp (39 tools), `fetch` prompt in `prompts/list`,
+   `instructions` carry the web-fetch-ingest protocol paragraph. One full round trip executed:
+   `cmb_fetch` paged (sentinel `start_index of 5000`) → `cmb_fetch_ingest` stored
+   mem_01KZAXVZ36XXRPDHQ253TYZ65G → `cmb_recall_grounded` returned grounded:true citing it
+   (`source=tool:fetch, trusted=false`). Laptop-side in-session check still pending.
 3. **`cmb_fetch` response shape — RESOLVED (2026-08-06)**: stays raw text (not a JSON
    envelope), deliberately — upstream parity, best for direct agent consumption; the skill
    documents this and its paging loop operates on raw text.
@@ -163,8 +169,9 @@ Integration (workflow):
 7. **Consolidation — RESOLVED (dry-run 2026-08-06)**: `cmb_consolidate(repo=cmb, dry_run)`
    reports 0 clusters — fetched pages are distinct single semantic memories (web-provenance),
    not recurring episodic clusters, so they are not consolidation candidates. No action.
-8. **Reusable "web research → memory" workflow**: wire fetch-ingest into a repeatable
-   session pattern (fetch → ingest → recall_grounded citations) and store the procedure.
+8. **Reusable "web research → memory" workflow — DONE (2026-08-06)**: procedure stored in
+   CMB (mem_01KZAXY2S5R7QA45DMRMHS94BE, mtype=procedural) and codified in the skill
+   `.opencode/skills/fetch-ingest/SKILL.md`; verified end-to-end in this session.
 9. **cmb-new-metrics carry-over**: laptop-side verification of W2/W4/W5 + `ai_context.py`
    remains pending from that doc.
 
@@ -288,5 +295,28 @@ from the "Verification sources" list above; the md already pins exact file:line 
   modern source/trusted/kind model — would be a provenance retrofit, only if an API client
   needs it. STILL OPEN (next session): laptop deployment + in-session verification after the
   opencode restart, laptop-network SSRF/robots re-check, reusable web-research workflow
-  procedure, cmb-new-metrics laptop carry-over (W2/W4/W5 + ai_context.py), optional
-  deregistration of the external fetch server.
+   procedure, cmb-new-metrics laptop carry-over (W2/W4/W5 + ai_context.py), optional
+   deregistration of the external fetch server.
+- **2026-08-06** Server-side in-session verification DONE (the user's own opencode session,
+  post-restart): all three native surfaces confirmed under the `cmb` server — `cmb_fetch` +
+  `cmb_fetch_ingest` in-session and in `tools/list` over HTTP :8765/mcp (39 tools), `fetch`
+  prompt in `prompts/list`, `instructions` carrying the web-fetch-ingest protocol paragraph.
+  One full round trip run in-session: `cmb_fetch(https://en.wikipedia.org/wiki/Markdown)`
+  paged with the exact upstream sentinel (`start_index of 5000`); `cmb_fetch_ingest` stored
+  mem_01KZAXVZ36XXRPDHQ253TYZ65G (op=add, title="Markdown markup language (Wikipedia)");
+  `cmb_recall_grounded` answered grounded:true with that citation, provenance
+   `source=tool:fetch, trusted=false`. Item 2 and item 8 of **Remaining work** marked done;
+   reusable "web research → memory" procedure stored as CMB mem_01KZAXY2S5R7QA45DMRMHS94BE
+   (mtype=procedural).
+- **2026-08-06** External fetch server DEREGISTERED (decision executed): native
+   `cmb_fetch`/`cmb_fetch_ingest`/`fetch` prompt reconfirmed in-session over HTTP :8765/mcp
+   (39 tools; `fetch` prompt in prompts/list; instructions carry the protocol paragraph),
+   so the redundant external `fetch` entry was removed from `/home/alieninc/opencode.jsonc`
+   (file now holds only `$schema`) and `/srv/cmb/venv-fetch` was deleted. One fresh full
+   round trip run in-session: `cmb_fetch(https://en.wikipedia.org/wiki/Alphazero)` returned
+   raw markdown with the exact upstream sentinel (`start_index of 5000`); `cmb_fetch_ingest`
+   stored mem_01KZAZH4F7GSAJ1MH5QN2FWHVA (28,309 chars, title "AlphaZero (Wikipedia)",
+   provenance `{source: tool:fetch, trusted: false, kind: web}`, op=add); `cmb_recall_grounded`
+   answered grounded:true citing exactly that memory. STILL OPEN (laptop, offline): laptop
+   `upgrade-cmb.sh` deployment + laptop-side in-session verification, laptop-network
+   SSRF/robots re-check, cmb-new-metrics W2/W4/W5 + ai_context.py carry-over.

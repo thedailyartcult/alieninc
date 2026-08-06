@@ -91,3 +91,21 @@ and check this file's Status section (authoritative). Baseline metrics are in
 - **2026-08-06 (forward check — not yet due)** The first nightly consolidation sweep has NOT run yet
   (cron written 04:52 today, fires at 02:30). Confirm on 2026-08-07 02:30 that `consolidate-sweep.sh`
   runs clean and its receipt carries `token_usage` (`cmb.regex.v1`) — expected in `/srv/cmb/logs/consolidate-sweep.log`.
+
+## Completion Log (append-only)
+
+### 2026-08-06 (session end — server-side verification complete)
+- **CMB v1.29.0 live** on server: confirmed 40 tools via HTTP MCP `:8765/mcp`, including `cmb_next_prompt`, `cmb_fetch`, `cmb_fetch_ingest`
+- **cmb_next_prompt SHIPPED & verified**: all 5 progress phases marked done via `mark_done` parameter
+- **W2 verified live**: `build_proactive_context` in `cmb.ai_context` (no longer crashes)
+- **W4 verified live**: `count_tokens` in `cmb.core.textutil` with `TOKEN_RE = \w+|[^\w\s]`; `RegexTokenCounter` imports `TOKEN_RE` from textutil
+- **W5 verified live**: `ContextUsage.omitted_tokens` + `omitted_count` present in receipts; `context_usage` payload now includes `omitted_count`/`omitted_tokens` (verified in operation_receipts)
+- **W3 cron installed**: `30 2 * * * root /srv/cmb/scripts/consolidate-sweep.sh` in root crontab; script runs as `cmb` user; first sweep due 2026-08-07 02:30 UTC
+- **Laptop offline**: SSH denied (no matching key); server-side code already at v1.29.0 with all W1-W8 features
+- **Memory DB**: 74 memories (32 semantic, 31 procedural, 11 episodic); consolidation sweep dry-run shows 0 clusters (workspace already clean)
+- **Receipts verified**: 88 total receipts with token_usage payloads (e.g., saved_tokens=223, savings_ratio=0.13)
+
+### 2026-08-06 (post-upgrade cleanup)
+- **tmux fixed**: `/tmp/tmux-0` had stale unsafe permissions after Hetzner RAM/storage upgrade; resolved by setting `TMUX_TMPDIR=/srv/tmux` in `~/.bashrc`
+- **Stale MCP `fetch` entry removed** from `/root/.config/opencode/opencode.jsonc`: pointed to deleted `/srv/cmb/venv-fetch/bin/mcp-server-fetch` (ENOENT); native `cmb_fetch`/`cmb_fetch_ingest` now handle all web-fetching needs
+- **MCP config cleaned**: now only `cmb` (remote, enabled) + `cmb-local` (local, disabled fallback) — no more stale entries in MCP tab

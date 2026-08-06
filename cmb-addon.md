@@ -113,6 +113,24 @@ Two code surfaces:
 | P6 | Docs + memory: update this file's status table + Completion log (append-only) and the CMB tracking memory | `cmb-addon.md`, CMB | [x] done |
 | P7 | Native integration: build the fetch capability INTO CMB (`cmb_fetch` + `cmb_fetch_ingest` MCP tools + `source`/`trusted` on `cmb_ingest`), replacing the external bridge so both laptop and server get it from the shared source | `cmb/fetchutil.py`, `cmb/mcp_server.py`, rebuild | [x] done |
 
+## Next-prompt tool (`cmb_next_prompt`) — [x] done (2026-08-06)
+- **Purpose:** a single tool that serves as the **one-liner handoff + task loop** for the next
+  LLM session — "check the next prompt", execute it with automatic progress tracking, and when
+  all phases are done find other work to do. No repetition across sessions.
+- **Design:** `cmb_next_prompt(workspace, repo=None, task="", mark_done=None, k=10)` in
+  `mcp_server.py` (after `cmb_proactive_context`): one `service().recall_proactive` for memories
+  + last-session handoff, a scoped `recall` to load the auto-saved plan (subject_key
+  `cmb_next_prompt.plan`), deterministic Markdown assembly with a live **progress bar**, and a
+  `remember` (subject_key dedupe) to persist updates when `mark_done` is given. Phases seed once
+  from open_threads / `task`; `mark_done="<label or 1-based index>"` advances the bar; on full
+  completion a "next work suggested" section surfaces candidate memories. Mutates only when
+  `mark_done` is set; read-only + idempotent in the read path. Member role (not viewer, since it
+  can mutate) — moved out of `_READ_ONLY_TOOLS` to `_ADMIN_TOOLS`. No new deps.
+- **Verification:** rebuilt via `upgrade-cmb.sh` (v1.2.5), service restarted; over HTTP
+  `:8765/mcp` `tools/list` = **40 tools** incl. `cmb_next_prompt`; live read seeds 4/4 phases from
+  open_threads (25%/50%/75%/100% as mark_done is applied); final state `completed=true` with
+  "All phases complete — next work suggested". NOTE: needs an opencode restart to appear in-session.
+
 ## RESUME QUERY — give this verbatim to the next LLM doing the work
 CMB native fetch-ingest is **implemented but NOT finished**: P0–P7 complete (2026-08-06),
 and there is still refinement + integration work the user wants done (see **Remaining
@@ -320,3 +338,21 @@ from the "Verification sources" list above; the md already pins exact file:line 
    answered grounded:true citing exactly that memory. STILL OPEN (laptop, offline): laptop
    `upgrade-cmb.sh` deployment + laptop-side in-session verification, laptop-network
    SSRF/robots re-check, cmb-new-metrics W2/W4/W5 + ai_context.py carry-over.
+- **2026-08-06** `cmb_next_prompt` extended into the task-loop tool (v1.2.5). One tool, full
+   loop so you never repeat yourself: `cmb_next_prompt(workspace, repo, task="",
+   mark_done=None, k=10)`. **Check the next prompt** — call with just workspace/repo; phases
+   are seeded once from the last session's `open_threads` (or from `task`) and a plan is
+   auto-saved in CMB (subject_key `cmb_next_prompt.plan`, repo-scoped) so each call resumes;
+   output includes a live progress bar + Goal = next pending phase. **Update progress** — after
+   finishing a phase, call with `mark_done="<phase label or 1-based index>"`; the phase moves to
+   completed, the bar advances, and the saved plan is updated (subject_key dedupe supersedes the
+   old plan). **Find other work** — once `phases_done == phases_total`,
+   `progress.completed=true` and the prompt appends "All phases complete — next work suggested"
+   (candidate memories surfaced). Implemented in `mcp/mcp_server.py` after `cmb_proactive_context`:
+   one `recall_proactive` (memories + handoff), scoped `recall` to load the plan, `remember`
+   (subject_key) to persist updates; mutates only when `mark_done` given. Moved to `_ADMIN_TOOLS`.
+   VERIFIED live over HTTP :8765/mcp (40 tools): read seeds 4/4 from open_threads; mark_done
+   #1/#2/#3/#4 → 1/4, 2/4, 3/4, 4/4 (100%, completed=true); final read shows "All phases complete
+   — next work suggested". NOTE: needs opencode restart for in-session visibility. STILL OPEN
+   (laptop offline): laptop `upgrade-cmb.sh`, laptop-side in-session verify + SSRF/robots
+   re-check, cmb-new-metrics W2/W4/W5 + ai_context.py carry-over.

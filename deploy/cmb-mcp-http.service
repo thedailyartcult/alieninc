@@ -7,6 +7,10 @@ Wants=cmb-engine.service
 Type=simple
 User=cmb
 Group=cmb
+# Guard: the DB must be owned by the service user. A laptop sync that restored an
+# alien owner (e.g. chatwoot) silently makes the whole DB read-only for cmb and
+# every write fails with OperationalError. Fix owner before start, every start.
+ExecStartPre=/bin/chown cmb:cmb /srv/cmb/data/cmb.db
 ExecStart=/srv/cmb/venv/bin/cmb-mcp-http
 EnvironmentFile=/srv/cmb/.env
 Restart=on-failure

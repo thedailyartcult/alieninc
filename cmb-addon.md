@@ -16,7 +16,7 @@
 
 ## Goal
 Give CMB a **web → memory** primitive: fetch a live URL, convert it to markdown (using the
-exact, upstream-verified Anthropic reference implementation), and pipe the result into
+exact, upstream-verified reference implementation), and pipe the result into
 `cmb_ingest` so the page becomes durable, recallable memory. No media, no model-routing,
 no new LLM backend — this is purely the **fetch** capability plus a thin ingest bridge.
 
@@ -27,7 +27,7 @@ in the "Verification sources" section before changing anything.
 
 ### 1. Package identity — `src/fetch/pyproject.toml`
 - name = `mcp-server-fetch`, version = **0.6.3**
-- author = **"Anthropic, PBC."** (maintainer Jack Adamson, jadamson@anthropic.com)
+- author = **"Model Context Protocol"** (official SDK maintainer)
 - license = **MIT**, requires-python = **>=3.10**
 - dependencies: `httpx>=0.27`, `markdownify>=0.13.1`, `mcp>=1.1.3`, `protego>=0.3.1`,
   `pydantic>=2.0.0`, `readabilipy>=0.2.0`, `requests>=2.32.3`
@@ -87,7 +87,7 @@ bridge layer MUST add its own deny-list (see P4).
 open-code agent
    │ 1. calls tool "fetch" (upstream reference server, stdio, our venv)
    ▼
-mcp-server-fetch (v0.6.3, Anthropic)  →  markdown text
+mcp-server-fetch (v0.6.3)  →  markdown text
    │ 2. bridge protocol (paging until sentinel, SSRF deny-list)
    ▼
 cmb_ingest(content=<page markdown>, workspace="alieninc",

@@ -221,6 +221,188 @@
       transform: rotate(180deg);
     }
 
+    /* Thinking Navigation — animated analyze/generate sequence before reveal */
+    .nav {
+      position: relative;
+    }
+
+    .nav__thinking {
+      position: absolute;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      display: none;
+      align-items: center;
+      gap: 0.9rem;
+      white-space: nowrap;
+      font-family: var(--hg-font-primary);
+      font-size: 1.125rem;
+      font-weight: 700;
+      line-height: 1.3;
+      color: var(--ppl-color-text-default);
+    }
+
+    .nav__thinking-pulse {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.32rem;
+      padding-bottom: 0.1em;
+    }
+
+    .nav__thinking-pulse i {
+      display: block;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--ppl-color-text-default);
+      animation: nav-pulse-breathe 1.8s ease-in-out infinite;
+    }
+
+    .nav__thinking-pulse i:nth-child(2) {
+      background: var(--hg-color-secondary);
+      animation-delay: 0.2s;
+    }
+
+    .nav__thinking-pulse i:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    .nav__thinking-line {
+      opacity: 0;
+      transition: opacity 0.5s ease, color 0.2s ease;
+    }
+
+    .nav__thinking-line.is-visible {
+      opacity: 1;
+    }
+
+    .nav__thinking-line.is-typing::after {
+      content: '';
+      display: inline-block;
+      width: 2px;
+      height: 1.05em;
+      margin-left: 3px;
+      background: var(--ppl-color-text-default);
+      vertical-align: -0.12em;
+      animation: nav-caret-blink 1.2s step-end infinite;
+    }
+
+    .nav__thinking-line.is-done::after {
+      content: '\2026';
+      animation: nav-ellipsis-breathe 1.6s ease-in-out infinite;
+    }
+
+    .nav__thinking-word {
+      animation: nav-word-in 0.4s ease-out both;
+    }
+
+    .nav__thinking-line.is-title {
+      color: var(--ppl-color-text-subtle);
+      text-decoration: underline;
+      text-decoration-color: var(--hg-color-secondary);
+      text-decoration-thickness: 0.14em;
+      text-underline-offset: 0.2em;
+    }
+
+    @keyframes nav-word-in {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes nav-pulse-breathe {
+      0%, 100% { transform: scale(1); opacity: 0.15; }
+      50% { transform: scale(1.5); opacity: 1; }
+    }
+
+    @keyframes nav-ellipsis-breathe {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 1; }
+    }
+
+    @keyframes nav-caret-blink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    /* Nav sets — a set is picked at random on each load; only the active set's list is displayed.
+       To add set N: add <ul class="nav__list nav__list--setN">, a rule pair below,
+       one selector line in the reveal rule, and one entry in ALIEN_NAV_SETS (head). */
+    .nav__list--set2,
+    .nav__list--set3,
+    .nav__list--set4,
+    .nav__list--set5 {
+      display: none;
+    }
+
+    html[data-nav-set="2"] .nav__list--set1 { display: none; }
+    html[data-nav-set="2"] .nav__list--set2 { display: flex; }
+    html[data-nav-set="3"] .nav__list--set1 { display: none; }
+    html[data-nav-set="3"] .nav__list--set3 { display: flex; }
+    html[data-nav-set="4"] .nav__list--set1 { display: none; }
+    html[data-nav-set="4"] .nav__list--set4 { display: flex; }
+    html[data-nav-set="5"] .nav__list--set1 { display: none; }
+    html[data-nav-set="5"] .nav__list--set5 { display: flex; }
+
+    /* JS-driven loading & reveal states (no-JS and reduced-motion skip to the default nav) */
+    .js-nav:not(.reduced-motion) .nav__thinking {
+      display: flex;
+    }
+
+    .js-nav:not(.reduced-motion) .nav__list {
+      visibility: hidden;
+    }
+
+    .js-nav:not(.reduced-motion) .nav__list-item {
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .js-nav:not(.reduced-motion).is-nav-revealed .nav__list--set1,
+    .js-nav:not(.reduced-motion).is-nav-revealed[data-nav-set="2"] .nav__list--set2,
+    .js-nav:not(.reduced-motion).is-nav-revealed[data-nav-set="3"] .nav__list--set3,
+    .js-nav:not(.reduced-motion).is-nav-revealed[data-nav-set="4"] .nav__list--set4,
+    .js-nav:not(.reduced-motion).is-nav-revealed[data-nav-set="5"] .nav__list--set5 {
+      visibility: visible;
+    }
+
+    .js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item:nth-child(1) { transition-delay: 0.06s; }
+    .js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item:nth-child(2) { transition-delay: 0.14s; }
+    .js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item:nth-child(3) { transition-delay: 0.22s; }
+    .js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item:nth-child(4) { transition-delay: 0.3s; }
+    .js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item:nth-child(5) { transition-delay: 0.38s; }
+    .js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item:nth-child(6) { transition-delay: 0.46s; }
+
+    .js-nav:not(.reduced-motion) .nav__thinking {
+      opacity: 1;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .js-nav:not(.reduced-motion).is-nav-revealed .nav__thinking {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    @media (max-width: 900px) {
+      .nav__thinking {
+        font-size: 0.95rem;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .nav__thinking {
+        right: auto;
+        left: 0;
+        white-space: normal;
+        max-width: calc(100vw - 3rem);
+      }
+    }
+
     /* Notification Banner */
     .notification-banner {
       background-color: var(--ppl-button-contained-bg);
@@ -1469,6 +1651,51 @@
     transform: translateY(-4px);
   }
   </style>
+  <script>
+    (function () {
+      var NAV_SETS = {
+        '1': {
+          phrases: ['analyzing operating model', 'generating navigation'],
+          title: null
+        },
+        '2': {
+          phrases: [
+            'Finding books that we\'ve destroyed',
+            'We found it, let\'s use this for our navigation bar'
+          ],
+          title: '1902 book Just So Stories, Rudyard Kipling\'s collection'
+        },
+        '3': {
+          phrases: ['placeholder phrase one for set three', 'placeholder phrase two for set three'],
+          title: null
+        },
+        '4': {
+          phrases: ['placeholder phrase one for set four', 'placeholder phrase two for set four'],
+          title: null
+        },
+        '5': {
+          phrases: ['placeholder phrase one for set five', 'placeholder phrase two for set five'],
+          title: null
+        }
+      };
+      window.ALIEN_NAV_SETS = NAV_SETS;
+
+      var d = document.documentElement;
+      var keys = Object.keys(NAV_SETS);
+      var last = null;
+      try { last = window.sessionStorage.getItem('alien-nav-set'); } catch (e) {}
+      var pick = keys[Math.floor(Math.random() * keys.length)];
+      if (keys.length > 1 && pick === last) {
+        pick = keys[(keys.indexOf(pick) + 1) % keys.length];
+      }
+      try { window.sessionStorage.setItem('alien-nav-set', pick); } catch (e) {}
+      d.setAttribute('data-nav-set', pick);
+      d.classList.add('js-nav');
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        d.classList.add('reduced-motion');
+      }
+    })();
+  </script>
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https:; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
     <meta http-equiv="X-Frame-Options" content="DENY">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
@@ -1490,8 +1717,13 @@
             <span class="brand-logo__text">Inc</span>
           </a>
         </div>
-        <nav class="nav">
-          <ul class="nav__list">
+        <nav class="nav" aria-label="Primary">
+          <div class="nav__thinking" aria-hidden="true">
+            <span class="nav__thinking-pulse"><i></i><i></i><i></i></span>
+            <span class="nav__thinking-line" id="nav-thinking-line"></span>
+          </div>
+          <!-- Set 1: corporate navigation -->
+          <ul class="nav__list nav__list--set1">
             <li class="nav__list-item"><a href="founder.html" class="nav__list-item-link">Founder</a></li>
             <li class="nav__list-item"><a href="#portfolio" class="nav__list-item-link">Companies</a></li>
             <li class="nav__list-item"><a href="#network-map" class="nav__list-item-link">Operating Model</a></li>
@@ -1503,6 +1735,39 @@
               </div>
             </li>
             <li class="nav__list-item"><a href="#contact" class="nav__list-item-link">Contact</a></li>
+          </ul>
+          <!-- Set 2: the recovered book navigation -->
+          <ul class="nav__list nav__list--set2">
+            <li class="nav__list-item"><a href="founder.html" class="nav__list-item-link">What</a></li>
+            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Why</a></li>
+            <li class="nav__list-item"><a href="#" class="nav__list-item-link">When</a></li>
+            <li class="nav__list-item"><a href="#" class="nav__list-item-link">How</a></li>
+            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Where</a></li>
+            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Who</a></li>
+          </ul>
+          <!-- Sets 3-5: placeholders — replace hrefs, labels, and phrases -->
+          <ul class="nav__list nav__list--set3">
+            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Remember</a></li>
+            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Understand</a></li>
+            <li class="nav__list-item"><a href="founder.html" class="nav__list-item-link">Apply</a></li>
+            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Analyze</a></li>
+            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Evaluate</a></li>
+            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Create</a></li>
+          </ul>
+          <ul class="nav__list nav__list--set4">
+            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Blue Hat</a></li>
+            <li class="nav__list-item"><a href="#" class="nav__list-item-link">White Hat</a></li>
+            <li class="nav__list-item"><a href="founder.html" class="nav__list-item-link">Yellow Hat</a></li>
+            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Black Hat</a></li>
+            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Green Hat</a></li>
+            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Red Hat</a></li>
+          </ul>
+          <ul class="nav__list nav__list--set5">
+            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Physio</a></li>
+            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Safety</a></li>
+            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Social</a></li>
+            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Esteem</a></li>
+            <li class="nav__list-item"><a href="founder.html" class="nav__list-item-link">Actualization</a></li>
           </ul>
         </nav>
       </div>
@@ -3213,6 +3478,121 @@
 
     document.addEventListener('keydown', handleKeydown);
     applyView(true);
+  })();
+  </script>
+
+  <!-- Thinking Navigation — analyze/generate sequence before revealing the nav links -->
+  <script>
+  (function () {
+    var html = document.documentElement;
+    if (!html.classList.contains('js-nav') || html.classList.contains('reduced-motion')) return;
+
+    var line = document.getElementById('nav-thinking-line');
+    if (!line) { html.classList.add('is-nav-revealed'); return; }
+
+    var SETS = window.ALIEN_NAV_SETS || {};
+    var set = html.getAttribute('data-nav-set') || '1';
+    var cfg = SETS[set] || SETS['1'] || { phrases: ['analyzing operating model', 'generating navigation'], title: null };
+
+    var WORD_DELAY = 260;
+    var HOLD_MS = 750;
+    var TITLE_HOLD_MS = 700;
+    var FADE_OUT_MS = 500;
+    var BETWEEN_MS = 550;
+
+    function addWord(text) {
+      var word = document.createElement('span');
+      word.className = 'nav__thinking-word';
+      word.textContent = text;
+      line.appendChild(word);
+    }
+
+    function revealWords(words, opts, onDone) {
+      if (opts.title) {
+        for (var k = 0; k < words.length; k++) {
+          var word = document.createElement('span');
+          word.className = 'nav__thinking-word';
+          word.style.animationDelay = (k * 45) + 'ms';
+          word.textContent = words[k];
+          line.appendChild(word);
+          if (k < words.length - 1) line.appendChild(document.createTextNode(' '));
+        }
+        onDone();
+        return;
+      }
+      var i = 0;
+      var timer = setInterval(function () {
+        addWord(words[i]);
+        if (i < words.length - 1) line.appendChild(document.createTextNode(' '));
+        i += 1;
+        if (i >= words.length) {
+          clearInterval(timer);
+          onDone();
+        }
+      }, WORD_DELAY);
+    }
+
+    function fadeOut(onDone) {
+      line.classList.remove('is-visible');
+      setTimeout(function () {
+        line.classList.remove('is-done', 'is-title');
+        line.textContent = '';
+        onDone();
+      }, FADE_OUT_MS);
+    }
+
+    function showPhrase(text, opts, onDone) {
+      var words = text.split(' ');
+      line.classList.add('is-visible');
+      if (opts.title) line.classList.add('is-title');
+      setTimeout(function () {
+        if (!opts.title) line.classList.add('is-typing');
+        revealWords(words, opts, function () {
+          if (opts.title) {
+            setTimeout(function () { fadeOut(onDone); }, TITLE_HOLD_MS);
+          } else {
+            line.classList.remove('is-typing');
+            line.classList.add('is-done');
+            setTimeout(function () { fadeOut(onDone); }, HOLD_MS);
+          }
+        });
+      }, 250);
+    }
+
+    function runPhases(phases, onDone) {
+      (function next(i) {
+        if (i >= phases.length) return onDone();
+        showPhrase(phases[i].text, { title: !!phases[i].title }, function () {
+          if (i < phases.length - 1) {
+            setTimeout(function () { next(i + 1); }, BETWEEN_MS);
+          } else {
+            next(i + 1);
+          }
+        });
+      })(0);
+    }
+
+    function reveal() {
+      html.classList.add('is-nav-revealed');
+    }
+
+    var phases = cfg.phrases.map(function (t) { return { text: t, title: false }; });
+    if (cfg.title) phases.push({ text: cfg.title, title: true });
+
+    var est = 180 + 300 + FADE_OUT_MS;
+    phases.forEach(function (p, idx) {
+      est += 250 + p.text.split(' ').length * (p.title ? 45 : WORD_DELAY) + (p.title ? TITLE_HOLD_MS : HOLD_MS) + FADE_OUT_MS;
+      if (idx < phases.length - 1) est += BETWEEN_MS;
+    });
+    setTimeout(function () {
+      if (!html.classList.contains('is-nav-revealed')) reveal();
+    }, est + 3000);
+
+    setTimeout(function () {
+      runPhases(phases, function () {
+        setTimeout(reveal, 300);
+      });
+    }, 180);
   })();
   </script>
 

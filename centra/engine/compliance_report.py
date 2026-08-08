@@ -88,7 +88,7 @@ async def run_compliance_scan(company_id: str = 'alieninc', force: bool = False)
     scan_id = await db.create_scan(company_id, 1, ['127.0.0.1'])
     logger.info(f'Starting compliance scan: {scan_id}')
 
-    await engine.run_scan(scan_id, company_id, 1, targets)
+    await engine.run_scan(scan_id, company_id, 1, targets, plugin_cap=2000, wall_timeout=300)
 
     result = _generate_report_from_scan(scan_id, plugins)
     logger.info(
@@ -114,7 +114,7 @@ def _validate_plugin_ids(plugins):
 
     unused = actual_ids - mapper_ids
     if unused:
-        logger.info(f'Plugins not mapped to any compliance control: {sorted(unused)}')
+        logger.info(f'Plugins not mapped to any compliance control: {len(unused)} total')
 
 
 def _find_recent_scan(company_id: str, within_minutes: int) -> str | None:

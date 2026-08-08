@@ -80,6 +80,16 @@ class Database:
             await self._db.execute('ALTER TABLE findings ADD COLUMN status TEXT DEFAULT "fail"')
         except Exception:
             pass
+        # Add indexes for hot query paths
+        await self._db.executescript('''
+            CREATE INDEX IF NOT EXISTS idx_findings_scan_id ON findings(scan_id);
+            CREATE INDEX IF NOT EXISTS idx_findings_company_id ON findings(company_id);
+            CREATE INDEX IF NOT EXISTS idx_scan_logs_scan_id ON scan_logs(scan_id);
+            CREATE INDEX IF NOT EXISTS idx_scans_company_status ON scans(company_id, status, created_at);
+        ''')
+        # Use WAL + NORMAL sync for much better write throughput
+        await self._db.execute('PRAGMA journal_mode=WAL')
+        await self._db.execute('PRAGMA synchronous=NORMAL')
         await self._db.commit()
 
     async def ensure_company(self, cid: str, name: str):
@@ -178,6 +188,19 @@ class Database:
                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
             (scan_id, company_id, plugin_id, plugin_name, family, cvss,
              target, port, severity, status, description, solution, json.dumps(references), evidence)
+        )
+        await self._db.commit()
+
+    async def add_findings_batch(self, findings: list[tuple]):
+        """Insert multiple findings in a single transaction. Each tuple matches add_finding args."""
+        if not findings:
+            return
+        await self._db.executemany(
+            '''INSERT INTO findings
+               (scan_id, company_id, plugin_id, plugin_name, family, cvss_score,
+                target, port, severity, status, description, solution, reference_urls, evidence)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+            findings
         )
         await self._db.commit()
 

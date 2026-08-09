@@ -670,6 +670,11 @@
       height: 100%;
       object-fit: cover;
       display: block;
+      transition: opacity 0.18s ease;
+    }
+
+    .infobox__photo img.is-konami-swapping {
+      opacity: 0;
     }
 
     .infobox__title {
@@ -1864,6 +1869,41 @@ Neil Armstrong was born August 5, 1930. I was born exactly 72 years later, on Au
         setTimeout(reveal, 300);
       });
     }, 350);
+  })();
+  </script>
+
+  <!-- KONAMI CODE: swap founder photo (founder.jpeg <-> thedayibecamethefounder.jpeg) -->
+  <script>
+  (function () {
+    var KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+    var ORIGINAL = 'founder.jpeg';
+    var ALTERNATE = 'thedayibecamethefounder.jpeg';
+    var photo = document.querySelector('.infobox__photo img');
+    var index = 0;
+    if (!photo) return;
+
+    function swap() {
+      var next = photo.getAttribute('src') === ORIGINAL ? ALTERNATE : ORIGINAL;
+      photo.classList.add('is-konami-swapping');
+      window.setTimeout(function () {
+        photo.setAttribute('src', next);
+        photo.classList.remove('is-konami-swapping');
+      }, 180);
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.repeat) return;
+      var key = e.key;
+      if (key === KONAMI[index]) {
+        index += 1;
+        if (index === KONAMI.length) {
+          index = 0;
+          swap();
+        }
+      } else {
+        index = key === KONAMI[0] ? 1 : 0;
+      }
+    });
   })();
   </script>
 

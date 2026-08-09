@@ -1310,6 +1310,532 @@
         max-width: calc(100vw - 3rem);
       }
     }
+
+    /* === PAGE SKELETON — mirrors the founder layout while the agent 'builds' the page === */
+    .page-wrap {
+      position: relative;
+    }
+
+    .skeleton {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      display: none;
+      overflow: hidden;
+      background: var(--ppl-color-bg-default);
+      pointer-events: none;
+    }
+
+    .js-nav:not(.reduced-motion) .skeleton {
+      display: block;
+    }
+
+    .js-nav:not(.reduced-motion).is-nav-revealed .skeleton {
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.55s ease 0.1s, visibility 0.55s ease 0.1s;
+    }
+
+    /* Skeleton building blocks — design tokens only (base #f7f7f7, highlight #fff, radius 4px) */
+    .skeleton__bar {
+      display: block;
+      border-radius: 4px;
+      background-color: var(--hg-color-muted);
+      background-image: linear-gradient(100deg, transparent 25%, var(--hg-color-lightest) 45%, var(--hg-color-lightest) 55%, transparent 75%);
+      background-size: 220% 100%;
+      background-repeat: no-repeat;
+      animation: skeleton-shimmer 1.5s linear infinite;
+    }
+
+    .skeleton__bar--dark,
+    .skeleton__metrics i,
+    .skeleton__word-track i,
+    .skeleton__flow-card i {
+      background-color: rgba(255, 255, 255, 0.10);
+      background-image: linear-gradient(100deg, transparent 25%, rgba(255, 255, 255, 0.22) 45%, rgba(255, 255, 255, 0.22) 55%, transparent 75%);
+      background-size: 220% 100%;
+      background-repeat: no-repeat;
+      animation: skeleton-shimmer 1.5s linear infinite;
+    }
+
+    .skeleton__bar--gold {
+      background-color: rgba(19, 25, 32, 0.16);
+      background-image: linear-gradient(100deg, transparent 25%, rgba(19, 25, 32, 0.30) 45%, rgba(19, 25, 32, 0.30) 55%, transparent 75%);
+      background-size: 220% 100%;
+      background-repeat: no-repeat;
+      animation: skeleton-shimmer 1.5s linear infinite;
+    }
+
+    @keyframes skeleton-shimmer {
+      0% { background-position: 120% 0; }
+      100% { background-position: -120% 0; }
+    }
+
+    /* Notification banner */
+    .skeleton__banner {
+      background: var(--ppl-button-contained-bg);
+      padding: 0.75rem 1rem;
+    }
+
+    .skeleton__banner-inner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .skeleton__banner .skeleton__bar {
+      height: 1.125rem;
+    }
+
+    /* Hero — mirrors .hero exactly */
+    .skeleton__hero {
+      width: min(1200px, calc(100% - 48px));
+      min-height: 640px;
+      margin: 3rem auto;
+      background: var(--hg-color-darkest);
+      border-left: 6px solid var(--hg-color-secondary);
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    .skeleton__hero-content {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+      gap: clamp(36px, 6vw, 76px);
+      align-items: center;
+      width: 100%;
+      padding: clamp(42px, 6vw, 78px);
+      box-sizing: border-box;
+    }
+
+    .skeleton__hero-copy {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .skeleton__eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .skeleton__eyebrow-mark {
+      width: 38px;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--hg-color-secondary);
+    }
+
+    .skeleton__h1 {
+      height: clamp(42px, 6.3vw, 74px);
+      margin-bottom: 12px;
+      border-radius: 4px;
+    }
+
+    .skeleton__lead {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 10px 0 34px;
+    }
+
+    .skeleton__lead-bar {
+      height: clamp(28px, 3.1vw, 34px);
+    }
+
+    .skeleton__actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .skeleton__button {
+      height: 46px;
+      width: 150px;
+      border-radius: 4px;
+    }
+
+    /* Founder card — mirrors .founder-card exactly */
+    .skeleton__founder-card {
+      background: #131920;
+      border-top: 6px solid var(--hg-color-secondary);
+      padding: 28px;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 500px;
+      box-sizing: border-box;
+    }
+
+    .skeleton__card-label {
+      height: 11px;
+      width: 110px;
+    }
+
+    .skeleton__card-name {
+      height: clamp(30px, 4.5vw, 42px);
+      width: 210px;
+      margin: 10px 0 22px;
+    }
+
+    .skeleton__word {
+      height: clamp(3.6rem, 10vw, 6.2rem);
+      margin: 0 0 2.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .skeleton__word-track {
+      width: min(100%, 380px);
+      height: 100%;
+      display: flex;
+      align-items: center;
+      gap: 4%;
+    }
+
+    .skeleton__word-track i {
+      flex: 1 1 0;
+      height: 88%;
+      border-radius: 4px;
+    }
+
+    .skeleton__caption {
+      height: 14px;
+      width: 60%;
+      margin: 0 auto;
+    }
+
+    .skeleton__metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      margin-top: 24px;
+    }
+
+    .skeleton__metrics > div {
+      background: #1c232d;
+      padding: 14px;
+      min-height: 80px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .skeleton__metrics i {
+      display: block;
+      height: 10px;
+      border-radius: 4px;
+    }
+
+    .skeleton__metrics i:first-child { width: 64%; }
+    .skeleton__metrics i:last-child { width: 86%; height: 20px; }
+
+    /* Founder profile — mirrors .founder-profile / .infobox */
+    .skeleton__profile {
+      padding: 5rem 0;
+      background: var(--hg-color-muted);
+      border-top: 1px solid rgba(19, 25, 32, 0.08);
+      border-bottom: 1px solid rgba(19, 25, 32, 0.08);
+    }
+
+    .skeleton__profile-inner {
+      display: grid;
+      grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+      gap: clamp(2rem, 5vw, 4rem);
+      align-items: start;
+    }
+
+    .skeleton__infobox-wrap {
+      border-right: 4px solid var(--hg-color-secondary);
+      padding-right: 2rem;
+    }
+
+    .skeleton__infobox {
+      background: var(--hg-color-lightest);
+      border: 1px solid rgba(19, 25, 32, 0.15);
+    }
+
+    .skeleton__infobox-title {
+      height: 2.9rem;
+      border-radius: 0;
+      background-color: var(--hg-color-darkest);
+      background-image: linear-gradient(100deg, transparent 25%, rgba(255, 255, 255, 0.16) 45%, rgba(255, 255, 255, 0.16) 55%, transparent 75%);
+      background-size: 220% 100%;
+      background-repeat: no-repeat;
+      animation: skeleton-shimmer 1.5s linear infinite;
+    }
+
+    .skeleton__infobox-subtitle {
+      height: 1.7rem;
+      border-radius: 0;
+      background-color: var(--hg-color-secondary);
+      background-image: linear-gradient(100deg, transparent 25%, rgba(19, 25, 32, 0.20) 45%, rgba(19, 25, 32, 0.20) 55%, transparent 75%);
+      background-size: 220% 100%;
+      background-repeat: no-repeat;
+      animation: skeleton-shimmer 1.5s linear infinite;
+    }
+
+    .skeleton__infobox-photo {
+      aspect-ratio: 1 / 1;
+      background: var(--hg-color-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid rgba(19, 25, 32, 0.12);
+    }
+
+    .skeleton__infobox-photo i {
+      width: 56%;
+      height: 70%;
+    }
+
+    .skeleton__infobox-caption {
+      height: 13px;
+      width: 88%;
+      margin: 0 auto;
+    }
+
+    .skeleton__infobox-row {
+      display: grid;
+      grid-template-columns: 100px 1fr;
+      gap: 0.75rem;
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid rgba(19, 25, 32, 0.08);
+      align-items: center;
+    }
+
+    .skeleton__infobox-row i {
+      display: block;
+      height: 13px;
+    }
+
+    .skeleton__infobox-row i:first-child { width: 100%; }
+    .skeleton__infobox-row i:last-child { width: 74%; }
+
+    .skeleton__copy {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .skeleton__h2 {
+      height: clamp(38px, 4.5vw, 64px);
+    }
+
+    .skeleton__h2-block {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+
+    .skeleton__para {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 1.25rem;
+    }
+
+    .skeleton__para-bar {
+      height: clamp(26px, 2.9vw, 30px);
+    }
+
+    .skeleton__principles {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .skeleton__principle {
+      border-top: 4px solid var(--hg-color-secondary);
+      padding-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .skeleton__principle i {
+      display: block;
+      height: 14px;
+    }
+
+    .skeleton__principle i:first-child { height: 20px; width: 68%; }
+    .skeleton__principle i:nth-child(2) { width: 100%; }
+    .skeleton__principle i:nth-child(3) { width: 82%; }
+
+    /* Section heads + company grid — mirrors .network-grid */
+    .skeleton__section {
+      padding: 5rem 0;
+      background: var(--ppl-color-bg-default);
+    }
+
+    .skeleton__section-head {
+      margin-bottom: 2.5rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .skeleton__kicker {
+      height: 12px;
+      width: 112px;
+      margin-bottom: 0.75rem;
+    }
+
+    .skeleton__section-title {
+      height: clamp(38px, 4.5vw, 72px);
+    }
+
+    .skeleton__title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .skeleton__section-lead {
+      height: 28px;
+      width: 54%;
+      margin-top: 1rem;
+    }
+
+    .skeleton__grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 2.5rem 1.5rem;
+      max-width: 1120px;
+      margin-top: 3rem;
+    }
+
+    .skeleton__grid-item {
+      padding: 1.5rem;
+      border-left: 4px solid var(--hg-color-secondary);
+      background: var(--hg-color-muted);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .skeleton__grid-item i {
+      display: block;
+      height: 12px;
+    }
+
+    .skeleton__grid-item i:nth-child(1) { width: 64%; }
+    .skeleton__grid-item i:nth-child(2) { width: 82%; height: 22px; }
+    .skeleton__grid-item i:nth-child(3) { width: 100%; height: 14px; }
+    .skeleton__grid-item i:nth-child(4) { width: 88%; height: 14px; }
+    .skeleton__grid-item i:nth-child(5) { width: 58%; height: 14px; }
+
+    /* Operating loops (dark) — mirrors .flow-grid */
+    .skeleton__flow-section {
+      padding: 5rem 0;
+      background: #131920;
+    }
+
+    .skeleton__flow-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 3rem;
+    }
+
+    .skeleton__flow-card {
+      background: #1c232d;
+      padding: 1.4rem;
+      border-left: 4px solid var(--hg-color-secondary);
+      min-height: 190px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .skeleton__flow-card i {
+      display: block;
+      height: 14px;
+    }
+
+    .skeleton__flow-card i:first-child { height: 20px; width: 78%; }
+    .skeleton__flow-card i:nth-child(2) { width: 100%; }
+    .skeleton__flow-card i:nth-child(3) { width: 92%; }
+
+    /* Data access — mirrors .sitemap-grid */
+    .skeleton__sitemap-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+
+    .skeleton__sitemap-card {
+      border: 1px solid rgba(19, 25, 32, 0.12);
+      padding: 1.5rem;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .skeleton__sitemap-card i {
+      display: block;
+      height: 14px;
+    }
+
+    .skeleton__sitemap-card i:first-child { height: 20px; width: 70%; }
+    .skeleton__sitemap-card i:nth-child(2) { width: 100%; }
+    .skeleton__sitemap-card i:nth-child(3) { width: 88%; }
+
+    /* Responsive — mirrors the real layout breakpoints */
+    @media (max-width: 900px) {
+      .skeleton__hero-content {
+        grid-template-columns: 1fr;
+        padding: 40px 24px;
+        gap: 40px;
+      }
+
+      .skeleton__profile-inner {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+      }
+
+      .skeleton__infobox-wrap {
+        border-right: none;
+        border-bottom: 4px solid var(--hg-color-secondary);
+        padding-right: 0;
+        padding-bottom: 2rem;
+      }
+
+      .skeleton__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 2rem;
+      }
+
+      .skeleton__principles {
+        grid-template-columns: 1fr;
+      }
+
+      .skeleton__flow-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .skeleton__sitemap-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .skeleton__grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
     <meta http-equiv="X-Frame-Options" content="DENY">
@@ -1370,7 +1896,149 @@
     </div>
   </header>
 
-  <main>
+  <div class="page-wrap">
+
+    <!-- PAGE SKELETON — mirrors the founder layout while the agent 'builds' the page -->
+    <div class="skeleton" aria-hidden="true">
+      <!-- Notification banner -->
+      <div class="skeleton__banner">
+        <div class="skeleton__banner-inner l-container">
+          <span class="skeleton__bar" style="width: 180px;"></span>
+          <span class="skeleton__bar skeleton__bar--gold" style="width: 140px;"></span>
+        </div>
+      </div>
+
+      <!-- Hero -->
+      <div class="skeleton__hero">
+        <div class="skeleton__hero-content">
+          <div class="skeleton__hero-copy">
+            <span class="skeleton__eyebrow">
+              <i class="skeleton__eyebrow-mark"></i>
+              <span class="skeleton__bar" style="width: 120px; height: 11px;"></span>
+            </span>
+            <span class="skeleton__bar skeleton__h1"></span>
+            <span class="skeleton__lead">
+              <span class="skeleton__bar skeleton__lead-bar"></span>
+              <span class="skeleton__bar skeleton__lead-bar" style="width: 86%;"></span>
+              <span class="skeleton__bar skeleton__lead-bar" style="width: 58%;"></span>
+            </span>
+            <span class="skeleton__actions">
+              <span class="skeleton__button skeleton__bar skeleton__bar--gold"></span>
+              <span class="skeleton__button skeleton__bar"></span>
+            </span>
+          </div>
+          <div class="skeleton__founder-card">
+            <span class="skeleton__bar skeleton__card-label"></span>
+            <span class="skeleton__bar skeleton__card-name"></span>
+            <span class="skeleton__word">
+              <span class="skeleton__word-track">
+                <i></i><i></i><i></i><i></i><i></i>
+              </span>
+            </span>
+            <span class="skeleton__bar skeleton__caption"></span>
+            <div class="skeleton__metrics">
+              <div><i></i><i></i></div>
+              <div><i></i><i></i></div>
+              <div><i></i><i></i></div>
+              <div><i></i><i></i></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Founder profile -->
+      <div class="skeleton__profile">
+        <div class="l-container skeleton__profile-inner">
+          <div class="skeleton__infobox-wrap">
+            <div class="skeleton__infobox">
+              <span class="skeleton__bar skeleton__infobox-title"></span>
+              <span class="skeleton__bar skeleton__infobox-subtitle"></span>
+              <span class="skeleton__infobox-photo"><i class="skeleton__bar skeleton__bar--dark"></i></span>
+              <span class="skeleton__bar skeleton__infobox-caption"></span>
+              <div class="skeleton__infobox-row"><i></i><i></i></div>
+              <div class="skeleton__infobox-row"><i></i><i></i></div>
+              <div class="skeleton__infobox-row"><i></i><i></i></div>
+            </div>
+          </div>
+          <div class="skeleton__copy">
+            <span class="skeleton__h2-block">
+              <span class="skeleton__bar skeleton__h2"></span>
+            </span>
+            <span class="skeleton__para">
+              <span class="skeleton__bar skeleton__para-bar"></span>
+              <span class="skeleton__bar skeleton__para-bar" style="width: 92%;"></span>
+              <span class="skeleton__bar skeleton__para-bar" style="width: 76%;"></span>
+            </span>
+            <div class="skeleton__principles">
+              <div class="skeleton__principle"><i></i><i></i><i></i></div>
+              <div class="skeleton__principle"><i></i><i></i><i></i></div>
+              <div class="skeleton__principle"><i></i><i></i><i></i></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Companies -->
+      <div class="skeleton__section">
+        <div class="l-container">
+          <span class="skeleton__section-head">
+            <span class="skeleton__bar skeleton__kicker"></span>
+            <span class="skeleton__title-block">
+              <span class="skeleton__bar skeleton__section-title"></span>
+            </span>
+            <span class="skeleton__bar skeleton__section-lead"></span>
+          </span>
+          <div class="skeleton__grid">
+            <span class="skeleton__grid-item"><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="skeleton__grid-item"><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="skeleton__grid-item"><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="skeleton__grid-item"><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="skeleton__grid-item"><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="skeleton__grid-item"><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="skeleton__grid-item"><i></i><i></i><i></i><i></i><i></i></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Operating loops -->
+      <div class="skeleton__flow-section">
+        <div class="l-container">
+          <span class="skeleton__section-head">
+            <span class="skeleton__bar skeleton__kicker"></span>
+            <span class="skeleton__title-block">
+              <span class="skeleton__bar skeleton__section-title"></span>
+            </span>
+            <span class="skeleton__bar skeleton__section-lead"></span>
+          </span>
+          <div class="skeleton__flow-grid">
+            <span class="skeleton__flow-card"><i></i><i></i><i></i></span>
+            <span class="skeleton__flow-card"><i></i><i></i><i></i></span>
+            <span class="skeleton__flow-card"><i></i><i></i><i></i></span>
+            <span class="skeleton__flow-card"><i></i><i></i><i></i></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data access -->
+      <div class="skeleton__section">
+        <div class="l-container">
+          <span class="skeleton__section-head">
+            <span class="skeleton__bar skeleton__kicker"></span>
+            <span class="skeleton__title-block">
+              <span class="skeleton__bar skeleton__section-title"></span>
+            </span>
+            <span class="skeleton__bar skeleton__section-lead"></span>
+          </span>
+          <div class="skeleton__sitemap-grid">
+            <span class="skeleton__sitemap-card"><i></i><i></i><i></i></span>
+            <span class="skeleton__sitemap-card"><i></i><i></i><i></i></span>
+            <span class="skeleton__sitemap-card"><i></i><i></i><i></i></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <main>
     <!-- NOTIFICATION BANNER - Identical to Homepage -->
     <div class="notification-banner">
       <div class="notification-banner__inner l-container">
@@ -1634,6 +2302,7 @@ Neil Armstrong was born August 5, 1930. I was born exactly 72 years later, on Au
       </div>
     </section>
   </main>
+  </div>
 
   <!-- FOOTER - Identical to Homepage -->
   <footer class="footer">

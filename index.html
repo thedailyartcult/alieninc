@@ -226,6 +226,77 @@
       position: relative;
     }
 
+    /* Live simulations reminder in the nav — identical rendering to the phrases nav
+       (nav__thinking): the "Simulations Live" label and the tally number are revealed
+       one word at a time with the same nav-word-in animation, the line uses the same
+       caret then ellipsis, and the number keeps counting while visible. Shown only
+       in "sims mode" (a random pop-up while scrolling); the nav links appear only
+       while hovering the nav. */
+    .nav__sims {
+      position: absolute;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      display: none;
+      align-items: center;
+      gap: 0.9rem;
+      white-space: nowrap;
+      font-family: var(--hg-font-primary);
+      font-size: 1.125rem;
+      font-weight: 700;
+      line-height: 1.3;
+      color: var(--ppl-color-text-default);
+    }
+
+    .nav__sims-pulse {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.32rem;
+      padding-bottom: 0.1em;
+    }
+
+    .nav__sims-pulse i {
+      display: block;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--ppl-color-text-default);
+      animation: nav-pulse-breathe 1.8s ease-in-out infinite;
+    }
+
+    .nav__sims-pulse i:nth-child(2) {
+      background: var(--hg-color-secondary);
+      animation-delay: 0.2s;
+    }
+
+    .nav__sims-pulse i:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    .nav__sims-num {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Sims mode (desktop only): the live counter is the only nav content; the
+       nav links stay hidden until the nav is hovered, then the counter swaps out. */
+    @media (min-width: 901px) {
+      .is-sims-nav .nav__sims {
+        display: inline-flex;
+      }
+
+      .is-sims-nav .nav__list {
+        display: none;
+      }
+
+      .is-sims-nav .nav:hover .nav__list {
+        display: flex;
+      }
+
+      .is-sims-nav .nav:hover .nav__sims {
+        display: none;
+      }
+    }
+
     .nav__thinking {
       position: absolute;
       top: 50%;
@@ -506,20 +577,14 @@
       margin: 0;
     }
 
-    /* Text Block Styling */
-    .essential-brands {
-      margin: 5rem 0 3rem;
-      text-align: center;
+    html.reduced-motion .nav__sims-pulse i {
+      animation: none;
+      opacity: 1;
     }
 
-    .essential-brands h2 {
-      font-family: var(--hg-font-secondary);
-      font-size: clamp(2.8rem, 7vw, 4.375rem);
-      font-weight: 700;
-      margin: 0;
-      line-height: 1.1;
-      text-transform: uppercase;
-      letter-spacing: -0.02em;
+    html.reduced-motion .nav__sims .nav__thinking-word {
+      animation: none;
+      opacity: 1;
     }
 
     /* Holding Companies Logo Grid */
@@ -774,6 +839,10 @@
     @media (max-width: 900px) {
       .header {
         height: auto;
+      }
+
+      .nav__sims {
+        display: none !important;
       }
 
       .header__inner {
@@ -1722,6 +1791,11 @@
             <span class="nav__thinking-pulse"><i></i><i></i><i></i></span>
             <span class="nav__thinking-line" id="nav-thinking-line"></span>
           </div>
+          <!-- Live simulations reminder — random pop-up while scrolling; renders exactly like the phrases nav -->
+          <div class="nav__sims" id="navSims" aria-hidden="true">
+            <span class="nav__sims-pulse"><i></i><i></i><i></i></span>
+            <span class="nav__thinking-line" id="navSimsLine"></span>
+          </div>
           <!-- Set 1: corporate navigation -->
           <ul class="nav__list nav__list--set1">
             <li class="nav__list-item"><a href="founder.html" class="nav__list-item-link">Founder</a></li>
@@ -1816,7 +1890,7 @@
             </div>
             <div class="metric-card">
               <div class="metric-card__label">2026F standalone revenue</div>
-              <div class="metric-card__value" data-ecosystem="standaloneRevenue" id="metricRevenue">—</div>
+              <div class="metric-card__value" id="metricRevenue">580,297</div>
               <div class="metric-card__note">Forecast before intercompany eliminations.</div>
             </div>
             <div class="metric-card">
@@ -1851,13 +1925,6 @@
           </div>
         </div>
       </section>
-
-      <!-- ESSENTIAL BRANDS -->
-      <div class="essential-brands">
-        <div class="l-container">
-          <h2>Company Directory</h2>
-        </div>
-      </div>
 
       <!-- PORTFOLIO GRID -->
       <section id="portfolio" class="logo-collage">
@@ -3593,6 +3660,158 @@
         setTimeout(reveal, 300);
       });
     }, 180);
+  })();
+  </script>
+
+  <!-- Live Simulations Output — shared engine drives the section counter and the nav counter -->
+  <script>
+  // To drive the counter from a real source, define before this script runs:
+  //   window.ALIEN_SIMS = { getValue: function () { return <number>; } };
+  // e.g. poll /api/simulations/today in the background and return the live tally.
+  (function () {
+    var reduced = document.documentElement.classList.contains('reduced-motion');
+    var MAX = 1000000;
+    var VALUE = (function () {
+      var now = new Date();
+      var start = new Date(now.getFullYear(), 0, 0);
+      var day = Math.floor((now - start) / 86400000);
+      return 60000 + (day * 13757) % 840000;
+    })();
+
+    function liveValue() {
+      if (window.ALIEN_SIMS && typeof window.ALIEN_SIMS.getValue === 'function') {
+        var v = Number(window.ALIEN_SIMS.getValue());
+        if (isFinite(v) && v >= 0) return v;
+      }
+      return null;
+    }
+
+    function format(n) {
+      return String(Math.floor(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    var subs = [];
+    function emit() {
+      var s = format(VALUE);
+      for (var i = 0; i < subs.length; i++) subs[i](s, VALUE);
+    }
+
+    function tick() {
+      var live = liveValue();
+      if (live !== null) {
+        VALUE = live;
+      } else {
+        var pace = 1 + VALUE / MAX;
+        var step = Math.random() < 0.05 ? 1 + Math.random() * 120 : 1 + Math.random() * 9;
+        VALUE = Math.min(VALUE + Math.round(step * pace), 9999999);
+      }
+      emit();
+    }
+
+    window.ALIEN_SIMS_TALLY = {
+      onTick: function (fn) {
+        subs.push(fn);
+        fn(format(VALUE), VALUE);
+      }
+    };
+
+    emit();
+    setInterval(tick, 190);
+
+    // Section display — the simulation tally lives in the "2026F standalone revenue"
+    // metric of the group operating model section.
+    var sectionValue = document.getElementById('metricRevenue');
+    if (sectionValue) {
+      window.ALIEN_SIMS_TALLY.onTick(function (s) { sectionValue.textContent = s; });
+    }
+
+    // Nav "sims reminder": pops up at random while the user scrolls, stays just
+    // long enough for the tally to count, then fades away. Rendering follows the
+    // phrases nav exactly — "Simulations Live" and the number are revealed one word
+    // at a time with nav-word-in, the line gets the same caret then ellipsis, and
+    // the number keeps counting while visible. Hovering the nav swaps in the
+    // standard nav (the random set already chosen on load).
+    var simsLine = document.getElementById('navSimsLine');
+    var htmlEl = document.documentElement;
+    var isDesktop = !window.matchMedia || !window.matchMedia('(max-width: 900px)').matches;
+
+    if (simsLine && window.ALIEN_SIMS_TALLY && !reduced && isDesktop) {
+      var WORD_DELAY = 260;      // same word cadence as the phrases nav
+      var HOLD_MS = 5200;        // longer than a phrase so the tally visibly counts
+      var FADE_OUT_MS = 500;
+      var MIN_GAP_MS = 26000;    // never nag — at least this long between reminders
+      var TRIGGER_CHANCE = 0.35; // per scroll burst
+      var SCROLL_THROTTLE_MS = 160;
+
+      var active = false;
+      var hovering = false;
+      var lastShown = 0;
+      var currentNum = null;
+
+      function showReminder() {
+        if (active) return;
+        active = true;
+        htmlEl.classList.add('is-sims-nav');
+        simsLine.classList.add('is-visible', 'is-typing');
+
+        var words = ['Simulations', 'Live'];
+        var i = 0;
+        var timer = setInterval(function () {
+          var w = document.createElement('span');
+          w.className = 'nav__thinking-word';
+          w.textContent = words[i];
+          simsLine.appendChild(w);
+          if (i < words.length - 1) simsLine.appendChild(document.createTextNode(' '));
+          i += 1;
+          if (i >= words.length) {
+            clearInterval(timer);
+            simsLine.classList.remove('is-typing');
+            simsLine.classList.add('is-done');
+            simsLine.appendChild(document.createTextNode(' '));
+            currentNum = document.createElement('span');
+            currentNum.className = 'nav__thinking-word nav__sims-num';
+            simsLine.appendChild(currentNum);
+            window.ALIEN_SIMS_TALLY.onTick(function (s) { if (currentNum) currentNum.textContent = s; });
+            setTimeout(hideReminder, HOLD_MS);
+          }
+        }, WORD_DELAY);
+      }
+
+      function hideReminder() {
+        if (!active) return;
+        active = false;
+        currentNum = null;
+        simsLine.classList.remove('is-visible');
+        setTimeout(function () {
+          simsLine.classList.remove('is-done');
+          simsLine.textContent = '';
+          htmlEl.classList.remove('is-sims-nav');
+        }, FADE_OUT_MS);
+      }
+
+      function maybeTrigger() {
+        if (active || hovering) return;
+        if (!htmlEl.classList.contains('is-nav-revealed')) return;
+        var now = Date.now();
+        if (now - lastShown < MIN_GAP_MS) return;
+        if (Math.random() >= TRIGGER_CHANCE) return;
+        lastShown = now;
+        showReminder();
+      }
+
+      var scrollTimer = null;
+      window.addEventListener('scroll', function () {
+        if (scrollTimer) return;
+        scrollTimer = setTimeout(function () { scrollTimer = null; }, SCROLL_THROTTLE_MS);
+        maybeTrigger();
+      }, { passive: true });
+
+      var navEl = document.querySelector('.nav');
+      if (navEl) {
+        navEl.addEventListener('mouseenter', function () { hovering = true; });
+        navEl.addEventListener('mouseleave', function () { hovering = false; });
+      }
+    }
   })();
   </script>
 

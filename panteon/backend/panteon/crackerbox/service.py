@@ -7,7 +7,7 @@ from collections import defaultdict
 from sqlalchemy import select, func, and_, or_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from panteon.babel.models import (
+from panteon.crackerbox.models import (
     Investigation, Finding, Evidence, ThreatEntity, GeoEvent,
     PatternAlert, TimelineEvent, CountryRiskProfile,
 )
@@ -23,7 +23,7 @@ def _uid(val) -> str:
     return val
 
 
-class BabelService:
+class CrackerboxService:
     def __init__(self, db: AsyncSession):
         self.db = db
 

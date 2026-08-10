@@ -8,7 +8,7 @@ from panteon.core.types import JSONB, UUID_COL
 
 
 class Environment(Base):
-    __tablename__ = "apollo_environments"
+    __tablename__ = "statham_environments"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String(255), nullable=False, unique=True)
@@ -21,7 +21,7 @@ class Environment(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     deployments = relationship("Deployment", back_populates="environment")
-    agents = relationship("ApolloAgent", back_populates="environment")
+    agents = relationship("StathamAgent", back_populates="environment")
 
     __table_args__ = (
         Index("ix_env_type", "env_type"),
@@ -29,12 +29,12 @@ class Environment(Base):
     )
 
 
-class ApolloAgent(Base):
-    __tablename__ = "apollo_agents"
+class StathamAgent(Base):
+    __tablename__ = "statham_agents"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String(255), nullable=False)
-    environment_id = Column(UUID_COL(), ForeignKey("apollo_environments.id"), nullable=False)
+    environment_id = Column(UUID_COL(), ForeignKey("statham_environments.id"), nullable=False)
     agent_type = Column(String(50), nullable=False)
     hostname = Column(String(255))
     ip_address = Column(String(50))
@@ -53,7 +53,7 @@ class ApolloAgent(Base):
 
 
 class Service(Base):
-    __tablename__ = "apollo_services"
+    __tablename__ = "statham_services"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String(255), nullable=False, unique=True)
@@ -74,11 +74,11 @@ class Service(Base):
 
 
 class Deployment(Base):
-    __tablename__ = "apollo_deployments"
+    __tablename__ = "statham_deployments"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
-    service_id = Column(UUID_COL(), ForeignKey("apollo_services.id"), nullable=False)
-    environment_id = Column(UUID_COL(), ForeignKey("apollo_environments.id"), nullable=False)
+    service_id = Column(UUID_COL(), ForeignKey("statham_services.id"), nullable=False)
+    environment_id = Column(UUID_COL(), ForeignKey("statham_environments.id"), nullable=False)
     version = Column(String(100), nullable=False)
     status = Column(String(50), default="pending")
     deploy_type = Column(String(50), default="rolling")
@@ -100,11 +100,11 @@ class Deployment(Base):
 
 
 class HealthCheck(Base):
-    __tablename__ = "apollo_health_checks"
+    __tablename__ = "statham_health_checks"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
-    service_id = Column(UUID_COL(), ForeignKey("apollo_services.id"), nullable=False)
-    environment_id = Column(UUID_COL(), ForeignKey("apollo_environments.id"))
+    service_id = Column(UUID_COL(), ForeignKey("statham_services.id"), nullable=False)
+    environment_id = Column(UUID_COL(), ForeignKey("statham_environments.id"))
     status = Column(String(50), nullable=False)
     latency_ms = Column(Integer)
     response_code = Column(Integer)
@@ -120,13 +120,13 @@ class HealthCheck(Base):
 
 
 class Pipeline(Base):
-    __tablename__ = "apollo_pipelines"
+    __tablename__ = "statham_pipelines"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String(255), nullable=False, unique=True)
     display_name = Column(String(255), nullable=False)
     description = Column(Text)
-    service_id = Column(UUID_COL(), ForeignKey("apollo_services.id"))
+    service_id = Column(UUID_COL(), ForeignKey("statham_services.id"))
     stages = Column(JSONB, default=list)
     triggers = Column(JSONB, default=list)
     is_enabled = Column(Boolean, default=True)
@@ -142,10 +142,10 @@ class Pipeline(Base):
 
 
 class PipelineRun(Base):
-    __tablename__ = "apollo_pipeline_runs"
+    __tablename__ = "statham_pipeline_runs"
 
     id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
-    pipeline_id = Column(UUID_COL(), ForeignKey("apollo_pipelines.id"), nullable=False)
+    pipeline_id = Column(UUID_COL(), ForeignKey("statham_pipelines.id"), nullable=False)
     status = Column(String(50), default="pending")
     stages_completed = Column(Integer, default=0)
     stages_total = Column(Integer, default=0)

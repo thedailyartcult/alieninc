@@ -16,13 +16,13 @@ from panteon.api.routes_spinal_craker import router as spinal_craker_router
 from panteon.api.routes_yono import router as yono_router
 from panteon.api.routes_tdac import router as tdac_router
 from panteon.api.routes_webhooks import router as webhooks_router
-from panteon.api.routes_apollo import router as apollo_router
+from panteon.api.routes_statham import router as statham_router
 from panteon.api.routes_admin import router as admin_router
 from panteon.api.routes_lineage import router as lineage_router
 from panteon.api.routes_monitoring import router as monitoring_router
 from panteon.api.routes_workspaces import router as workspaces_router
 from panteon.api.routes_group import router as group_router
-from panteon.api.routes_babel import router as babel_router
+from panteon.api.routes_crackerbox import router as crackerbox_router
 from panteon.api.routes_contour import router as contour_router
 from panteon.api.routes_aip import router as aip_router
 from panteon.api.routes_terranean import router as terranean_router
@@ -62,7 +62,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(spinal_craker_router, prefix="/api/v1")
 app.include_router(yono_router, prefix="/api/v1")
-app.include_router(apollo_router, prefix="/api/v1")
+app.include_router(statham_router, prefix="/api/v1")
 app.include_router(tdac_router, prefix="/api/v1")
 app.include_router(webhooks_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
@@ -70,7 +70,7 @@ app.include_router(lineage_router, prefix="/api/v1")
 app.include_router(monitoring_router, prefix="/api/v1")
 app.include_router(workspaces_router, prefix="/api/v1")
 app.include_router(group_router, prefix="/api/v1")
-app.include_router(babel_router, prefix="/api/v1")
+app.include_router(crackerbox_router, prefix="/api/v1")
 app.include_router(contour_router, prefix="/api/v1")
 app.include_router(aip_router, prefix="/api/v1")
 app.include_router(terranean_router, prefix="/api/v1")
@@ -89,7 +89,7 @@ async def root():
         "platforms": {
             "spinal_craker": "/api/v1/spinal-craker",
             "yono": "/api/v1/yono",
-            "apollo": "/api/v1/apollo",
+            "statham": "/api/v1/statham",
         },
     }
 

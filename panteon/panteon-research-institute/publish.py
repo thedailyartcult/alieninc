@@ -230,8 +230,8 @@ HEADER_HTML = """
                 <div class="col-2">
                     <h3>The Domains</h3>
                     <div class="menu-link-item" data-group="terra"><div class="plus-sign"><span></span><span></span></div><a href="{{ROOT}}platforms/yono.html">Terra <span style="color:#88898c;font-weight:300;font-size:0.8rem">(Land)</span></a></div>
-                    <div class="menu-link-item" data-group="abyss"><div class="plus-sign"><span></span><span></span></div><a href="{{ROOT}}platforms/babel.html">Abyss <span style="color:#88898c;font-weight:300;font-size:0.8rem">(Sea)</span></a></div>
-                    <div class="menu-link-item" data-group="stratos"><div class="plus-sign"><span></span><span></span></div><a href="{{ROOT}}platforms/apollo.html">Stratos <span style="color:#88898c;font-weight:300;font-size:0.8rem">(Air)</span></a></div>
+                    <div class="menu-link-item" data-group="abyss"><div class="plus-sign"><span></span><span></span></div><a href="{{ROOT}}platforms/crackerbox.html">Abyss <span style="color:#88898c;font-weight:300;font-size:0.8rem">(Sea)</span></a></div>
+                    <div class="menu-link-item" data-group="stratos"><div class="plus-sign"><span></span><span></span></div><a href="{{ROOT}}platforms/statham.html">Stratos <span style="color:#88898c;font-weight:300;font-size:0.8rem">(Air)</span></a></div>
                     <div class="menu-link-item" data-group="cosmos"><div class="plus-sign"><span></span><span></span></div><a href="{{ROOT}}platforms/spinal-craker.html">Cosmos <span style="color:#88898c;font-weight:300;font-size:0.8rem">(Space)</span></a></div>
                     <div class="menu-link-item" data-group="cyber"><div class="plus-sign"><span></span><span></span></div><a href="{{ROOT}}capabilities/yono-for-developers.html">Cyber <span style="color:#88898c;font-weight:300;font-size:0.8rem">(World Wide Web)</span></a></div>
                 </div>
@@ -293,8 +293,8 @@ HEADER_HTML = """
             <div>
                 <p class="mobile-drawer-group-title">Five Elements</p>
                 <a href="{{ROOT}}platforms/yono.html" class="mobile-drawer-item">Terra (Land) <div class="plus-sign"><span></span><span></span></div></a>
-                <a href="{{ROOT}}platforms/babel.html" class="mobile-drawer-item">Abyss (Sea) <div class="plus-sign"><span></span><span></span></div></a>
-                <a href="{{ROOT}}platforms/apollo.html" class="mobile-drawer-item">Stratos (Air) <div class="plus-sign"><span></span><span></span></div></a>
+                <a href="{{ROOT}}platforms/crackerbox.html" class="mobile-drawer-item">Abyss (Sea) <div class="plus-sign"><span></span><span></span></div></a>
+                <a href="{{ROOT}}platforms/statham.html" class="mobile-drawer-item">Stratos (Air) <div class="plus-sign"><span></span><span></span></div></a>
                 <a href="{{ROOT}}platforms/spinal-craker.html" class="mobile-drawer-item">Cosmos (Space) <div class="plus-sign"><span></span><span></span></div></a>
                 <a href="{{ROOT}}capabilities/yono-for-developers.html" class="mobile-drawer-item">Cyber (Web) <div class="plus-sign"><span></span><span></span></div></a>
             </div>
@@ -343,12 +343,12 @@ NAV_JS = """
 
     const COL3_DATA = {
         'terra': { title: 'PRODUCTS', links: [['{{ROOT}}platforms/terranean-eteology.html','Terranean Eteology'],['{{ROOT}}platforms/terranean-teliology.html','Terranean Teliology'],['{{ROOT}}developers/terranean-documentation.html','Documentation']] },
-        'abyss': { title: 'PRODUCTS', links: [['{{ROOT}}platforms/babel.html','Babel Platform'],['{{ROOT}}developers/documentation.html','Documentation'],['{{ROOT}}panteon-research-institute/index.html','Panteon Research Institute'],['https://rousseau.alieninc.tech','Rousseau']] },
-        'stratos': { title: 'PRODUCTS', links: [['{{ROOT}}platforms/apollo.html','Apollo Platform'],['{{ROOT}}capabilities/edge-ai.html','Edge AI'],['{{ROOT}}capabilities/dynamic-scheduling.html','Dynamic Scheduling'],['{{ROOT}}panteon-research-institute/index.html','Panteon Research Institute']] },
+        'abyss': { title: 'PRODUCTS', links: [['{{ROOT}}platforms/crackerbox.html','Crackerbox Platform'],['{{ROOT}}developers/documentation.html','Documentation'],['{{ROOT}}panteon-research-institute/index.html','Panteon Research Institute'],['https://rousseau.alieninc.tech','Rousseau']] },
+        'stratos': { title: 'PRODUCTS', links: [['{{ROOT}}platforms/statham.html','Statham Platform'],['{{ROOT}}capabilities/edge-ai.html','Edge AI'],['{{ROOT}}capabilities/dynamic-scheduling.html','Dynamic Scheduling'],['{{ROOT}}panteon-research-institute/index.html','Panteon Research Institute']] },
         'cosmos': { title: 'PRODUCTS', links: [['{{ROOT}}platforms/spinal-craker.html','Spinal Craker'],['{{ROOT}}cmb-product.html','CMB'],['{{ROOT}}capabilities/data-integration.html','Data Integration'],['{{ROOT}}capabilities/digital-twin.html','Digital Twin'],['https://sp.alieninc.tech','Statute & Precedent']] },
         'cyber': { title: 'PRODUCTS', links: [['{{ROOT}}capabilities/yono-for-developers.html','YONO for Developers'],['{{ROOT}}developers/panteon-developers.html','Panteon Developers'],['{{ROOT}}developers/community.html','Developer Community'],['{{ROOT}}capabilities/marketplace.html','Marketplace']] },
         'aiml': { title: 'AI + ML', links: [['{{ROOT}}capabilities/ai-ml.html','Overview'],['{{ROOT}}capabilities/edge-ai.html','Edge AI'],['{{ROOT}}capabilities/data-integration.html','Data Integration'],['{{ROOT}}developers/documentation.html','Documentation']] },
-        'edgeai': { title: 'Edge AI', links: [['{{ROOT}}capabilities/edge-ai.html','Overview'],['{{ROOT}}capabilities/ai-ml.html','AI + ML'],['{{ROOT}}platforms/apollo.html','Apollo'],['{{ROOT}}platforms/yono.html','YONO']] },
+        'edgeai': { title: 'Edge AI', links: [['{{ROOT}}capabilities/edge-ai.html','Overview'],['{{ROOT}}capabilities/ai-ml.html','AI + ML'],['{{ROOT}}platforms/statham.html','Statham'],['{{ROOT}}platforms/yono.html','YONO']] },
         'data': { title: 'Data Integration', links: [['{{ROOT}}capabilities/data-integration.html','Overview'],['{{ROOT}}capabilities/digital-twin.html','Digital Twin'],['{{ROOT}}capabilities/marketplace.html','Marketplace'],['{{ROOT}}developers/documentation.html','Documentation']] },
         'impact': { title: 'Alien Inc', links: [['https://rousseau.alieninc.tech','Rousseau'],['https://thedailyartcult.alieninc.tech','The Daily Art Cult'],['https://kmt.alieninc.tech','KMT Consulting Group'],['https://sp.alieninc.tech','Statute & Precedent']] },
         'letters': { title: 'Letters', links: [['{{ROOT}}letters/shareholder-letter.html','Shareholder Letter'],['{{ROOT}}trust/trust-center.html','Trust Center'],['{{ROOT}}developers/community.html','Developer Community']] },

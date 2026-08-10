@@ -41,12 +41,12 @@ async def init_db():
     from panteon.spinal_craker.models import ObjectType, Object, LinkType, Link, ActionType, ActionExecution, DataPipeline, DataPipelineRun
     from panteon.yono.models import LLMProvider, LLMModel, LLMExecution, Agent, AgentSession, Automation, AutomationExecution, Evaluation, EvaluationRun
     from panteon.core.tenant import Tenant, TenantMetric, TenantWebhook
-    from panteon.apollo.models import Environment, ApolloAgent, Service, Deployment, HealthCheck, Pipeline, PipelineRun
+    from panteon.statham.models import Environment, StathamAgent, Service, Deployment, HealthCheck, Pipeline, PipelineRun
     from panteon.core.audit import AuditLog
     from panteon.core.apikeys import APIKey
     from panteon.core.lineage import LineageNode, LineageEdge, LineageEvent
     from panteon.core.workspace import Workspace, WorkspaceMembership
-    from panteon.babel.models import Investigation, Finding, Evidence, ThreatEntity, GeoEvent, PatternAlert, TimelineEvent, CountryRiskProfile
+    from panteon.crackerbox.models import Investigation, Finding, Evidence, ThreatEntity, GeoEvent, PatternAlert, TimelineEvent, CountryRiskProfile
     from panteon.contour.models import Dashboard, Chart, PipelineSchedule, PipelineScheduleRun, DataQualityRule, DataQualityViolation, SearchIndex
     from panteon.aip.models import Workflow, WorkflowRun, RagDocument, RagChunk, KnowledgeEntity, KnowledgeRelation, GuardPolicy, GuardEvent, Prompt, PromptVersion, PromptEvaluation
     async with engine.begin() as conn:

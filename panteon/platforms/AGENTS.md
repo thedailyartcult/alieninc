@@ -9,10 +9,10 @@ Each product page follows the unified Panteon design language. Use `../platform-
 | File | Domain | Product |
 |------|--------|---------|
 | `yono.html` | Terra (Land) | YONO — AI Operations Platform |
-| `babel.html` | Abyss (Sea) | Babel |
+| `crackerbox.html` | Abyss (Sea) | Crackerbox |
 | `terranean-eteology.html` | Terra | Terranean Eteology — Causal Forensics |
 | `terranean-teliology.html` | Terra | Terranean Teliology — Purpose Modeling |
-| `apollo.html` | Stratos (Air) | Apollo |
+| `statham.html` | Stratos (Air) | Statham |
 | `spinal-craker.html` | Cosmos (Space) | Spinal Craker |
 | `cmb-product.html` | Cosmos | CMB — Persistent Memory (internal tooling) |
 
@@ -21,7 +21,7 @@ Each product page follows the unified Panteon design language. Use `../platform-
 Products within the same domain share a `.platform-nav` bar:
 
 - **Terra products**: yono.html, terranean-eteology.html, terranean-teliology.html
-- **Cosmos products**: cmb-product.html, apollo.html, babel.html, spinal-craker.html, yono.html
+- **Cosmos products**: cmb-product.html, statham.html, crackerbox.html, spinal-craker.html, yono.html
 
 When adding a new product page, update the sibling nav links on related pages.
 

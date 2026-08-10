@@ -4,8 +4,8 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from panteon.apollo.models import (
-    Environment, ApolloAgent, Service, Deployment, HealthCheck, Pipeline, PipelineRun
+from panteon.statham.models import (
+    Environment, StathamAgent, Service, Deployment, HealthCheck, Pipeline, PipelineRun
 )
 from panteon.core.database import is_sqlite
 
@@ -16,7 +16,7 @@ def _uid(val):
     return val
 
 
-class ApolloService:
+class StathamService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
@@ -98,8 +98,8 @@ class ApolloService:
     async def register_agent(
         self, name: str, environment_id: str, agent_type: str,
         hostname: Optional[str] = None, version: Optional[str] = None,
-    ) -> ApolloAgent:
-        agent = ApolloAgent(
+    ) -> StathamAgent:
+        agent = StathamAgent(
             name=name, environment_id=_uid(environment_id),
             agent_type=agent_type, hostname=hostname, version=version,
             last_heartbeat=datetime.utcnow(),
@@ -108,16 +108,16 @@ class ApolloService:
         await self.db.flush()
         return agent
 
-    async def list_agents(self, environment_id: Optional[str] = None) -> list[ApolloAgent]:
-        query = select(ApolloAgent).options(selectinload(ApolloAgent.environment))
+    async def list_agents(self, environment_id: Optional[str] = None) -> list[StathamAgent]:
+        query = select(StathamAgent).options(selectinload(StathamAgent.environment))
         if environment_id:
-            query = query.where(ApolloAgent.environment_id == _uid(environment_id))
+            query = query.where(StathamAgent.environment_id == _uid(environment_id))
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
-    async def heartbeat(self, agent_id: str) -> Optional[ApolloAgent]:
+    async def heartbeat(self, agent_id: str) -> Optional[StathamAgent]:
         result = await self.db.execute(
-            select(ApolloAgent).where(ApolloAgent.id == _uid(agent_id))
+            select(StathamAgent).where(StathamAgent.id == _uid(agent_id))
         )
         agent = result.scalar_one_or_none()
         if agent:

@@ -4,7 +4,7 @@ import random
 from datetime import datetime, timedelta
 from sqlalchemy import select
 from panteon.core.database import async_session, init_db
-from panteon.apollo.models import Environment, ApolloAgent, Service, Deployment, HealthCheck, Pipeline, PipelineRun
+from panteon.statham.models import Environment, StathamAgent, Service, Deployment, HealthCheck, Pipeline, PipelineRun
 
 
 ENVS = [
@@ -21,18 +21,18 @@ SERVICES = [
     {"name": "panteon-api", "display_name": "Panteon API", "desc": "Core platform API server", "lang": "python", "version": "0.14.2"},
     {"name": "spinal-craker-engine", "display_name": "Spinal Craker Engine", "desc": "Ontology engine and query processor", "lang": "python", "version": "0.11.0"},
     {"name": "yono-orchestrator", "display_name": "YONO Orchestrator", "desc": "LLM routing and agent execution engine", "lang": "python", "version": "0.9.3"},
-    {"name": "apollo-agent", "display_name": "Apollo Agent", "desc": "Deployment agent for fleet management", "lang": "go", "version": "2.4.1"},
+    {"name": "statham-agent", "display_name": "Statham Agent", "desc": "Deployment agent for fleet management", "lang": "go", "version": "2.4.1"},
     {"name": "tdac-bridge", "display_name": "TDAC Bridge", "desc": "The Daily Art Cult integration connector", "lang": "python", "version": "0.3.0"},
     {"name": "admin-ui", "display_name": "Admin Dashboard", "desc": "Platform administration interface", "lang": "typescript", "version": "0.8.1"},
     {"name": "yono-forge", "display_name": "YONO Forge", "desc": "No-code agent builder UI", "lang": "typescript", "version": "0.2.0"},
 ]
 
 
-async def seed_apollo():
+async def seed_statham():
     await init_db()
     async with async_session() as db:
-        from panteon.apollo.service import ApolloService
-        svc = ApolloService(db)
+        from panteon.statham.service import StathamService
+        svc = StathamService(db)
 
         env_ids = {}
         for e in ENVS:
@@ -85,9 +85,9 @@ async def seed_apollo():
         ]
         now = datetime.utcnow()
         for name, env_name, atype, hostname in agent_configs:
-            existing = await db.execute(select(ApolloAgent).where(ApolloAgent.name == name))
+            existing = await db.execute(select(StathamAgent).where(StathamAgent.name == name))
             if not existing.scalar_one_or_none():
-                agent = ApolloAgent(
+                agent = StathamAgent(
                     name=name, environment_id=env_ids[env_name],
                     agent_type=atype, hostname=hostname,
                     version="2.4.1",
@@ -191,8 +191,8 @@ async def seed_apollo():
         print(f"Pipelines: {pipe_count}")
 
         await db.commit()
-        print("\n=== APOLLO SEED COMPLETE ===")
+        print("\n=== STATHAM SEED COMPLETE ===")
 
 
 if __name__ == "__main__":
-    asyncio.run(seed_apollo())
+    asyncio.run(seed_statham())

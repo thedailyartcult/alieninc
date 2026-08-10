@@ -112,7 +112,15 @@ Use `../platform-template.html` as the starting point for any new product, capab
 
 ## CMB Dashboard Exception
 
-The `cmb/cmb.html` file is the internal application dashboard (not a marketing page). It has its own design system with 4 themes (slate, midnight, paper, matrix), sidebar navigation, and complex data visualization. This is intentional and should NOT be changed to match the marketing page template. The `cmb-product.html` page in the platforms folder IS the marketing/product description page and DOES follow the template.
+The `cmb/cmb.html` file is the internal application dashboard (not a marketing page). It has its own design system ("Command Deck") and should NOT be changed to match the marketing page template. The `cmb-product.html` page in the platforms folder IS the marketing/product description page and DOES follow the template.
+
+Command Deck design language (self-contained, one inline `<style>` + 4 inline `<script>` blocks including d3 v7.9.0 and a force-graph bundle):
+- Layout: sticky top `.deck` (brand lockup, 6-item `.deck-nav` with `data-view` buttons, workspace chip, theme select, `.engine-status` dot) over `<main>` containing six `.view` panels keyed by `data-view-panel`: today, ask, library, relations, manage, provenance.
+- Dark-first design: `--bg:#05060a`, lime accent `--accent:#DFF140`, fonts Inter / Space Grotesk / JetBrains Mono.
+- 4 themes via `body[data-theme]`: slate (default), midnight, paper, matrix. Theme select is `#theme-select`.
+- Graph studio (relations view): `.relations-layout` = sticky `.graph-stage` (`.graph-canvas` with `data-graph-style` backgrounds galaxy/solar/classic) + 380px `.graph-rail` (`.graph-tabs` analyse/explore/time, search, toolbars, style/layout/palette presets via `data-graph-*-choice` chips, motion switches, saved views `data-graph-saved-view`, `<details class="graph-tuning">` with `graph-layer-chip` chips for `data-graph-layer` temporal/entity/causal/semantic/code).
+- Editable structure: the front-end ends at the first `<script>` (d3 bundle); assembly = front + scripts region. Contract for edits: every `byId(...)` id referenced in the scripts must exist as static HTML in the front or be generated at runtime by the render helpers (automation/LLM settings, graph-connections dialog).
+- Ask view: `#answer-panel` + `<details class="retrieval-details">` → `#retrieval-list` (raw /recall candidates).
 
 ## Research Institute
 

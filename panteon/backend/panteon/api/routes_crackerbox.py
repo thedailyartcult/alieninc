@@ -448,6 +448,87 @@ async def get_cctv_cameras(
             except Exception as e:
                 print(f"Warning: Caltrans cameras failed: {e}")
 
+            # Finland: Digitraffic weather cameras (gzip required)
+            try:
+                async with httpx.AsyncClient(timeout=5.0) as client:
+                    response = await client.get(
+                        'https://tie.digitraffic.fi/api/weathercam/v1/stations',
+                        headers={'Accept-Encoding': 'gzip', 'User-Agent': 'alieninc-panteon/1.0'}
+                    )
+                    if response.status_code == 200:
+                        data = response.json()
+                        for feature in (data.get('features') or [])[:250]:
+                            props = feature.get('properties', {})
+                            coords = (feature.get('geometry') or {}).get('coordinates') or []
+                            presets = props.get('presets') or []
+                            if not presets or len(coords) < 2:
+                                continue
+                            preset_id = next((p.get('id') for p in presets if p.get('inCollection')), presets[0].get('id'))
+                            cameras.append(CCTVCamera(
+                                id=f"dig-{props.get('id')}",
+                                lat=float(coords[1]),
+                                lng=float(coords[0]),
+                                name=props.get('name', 'Digitraffic camera'),
+                                city=None,
+                                country='FI',
+                                feed_url=f"https://weathercam.digitraffic.fi/{preset_id}.jpg",
+                                source='Digitraffic'
+                            ))
+            except Exception as e:
+                print(f"Warning: Digitraffic cameras failed: {e}")
+
+            # Hong Kong: Transport Department CCTV
+            try:
+                async with httpx.AsyncClient(timeout=5.0) as client:
+                    response = await client.get(
+                        'https://static.data.gov.hk/td/traffic-snapshot-images/code/Traffic_Camera_Locations_En.xml'
+                    )
+                    if response.status_code == 200:
+                        import xml.etree.ElementTree as ET
+                        root = ET.fromstring(response.content)
+                        for img in (root.findall('image') or [])[:250]:
+                            def _tag(t):
+                                el = img.find(t)
+                                return el.text.strip() if el is not None and el.text else None
+                            lat, lng, url = _tag('latitude'), _tag('longitude'), _tag('url')
+                            if lat and lng and url:
+                                cameras.append(CCTVCamera(
+                                    id=f"hk-{_tag('key')}",
+                                    lat=float(lat),
+                                    lng=float(lng),
+                                    name=_tag('description') or 'HK traffic camera',
+                                    city=_tag('region') or _tag('district'),
+                                    country='HK',
+                                    feed_url=url,
+                                    source='TD HK'
+                                ))
+            except Exception as e:
+                print(f"Warning: HK cameras failed: {e}")
+
+            # New Zealand: NZTA traffic cameras
+            try:
+                async with httpx.AsyncClient(timeout=5.0) as client:
+                    response = await client.get(
+                        'https://www.journeys.nzta.govt.nz/assets/map-data-cache/cameras.json'
+                    )
+                    if response.status_code == 200:
+                        data = response.json()
+                        for feature in (data.get('features') or [])[:250]:
+                            props = feature.get('properties', {})
+                            if props.get('ImageUrl') and props.get('Latitude') and props.get('Longitude'):
+                                cameras.append(CCTVCamera(
+                                    id=f"nzta-{props.get('ExternalId') or props.get('id')}",
+                                    lat=float(props['Latitude']),
+                                    lng=float(props['Longitude']),
+                                    name=props.get('Name', 'NZTA camera'),
+                                    city=None,
+                                    country='NZ',
+                                    feed_url=props['ImageUrl'],
+                                    source='NZTA'
+                                ))
+            except Exception as e:
+                print(f"Warning: NZTA cameras failed: {e}")
+
             # Cache the results
             _cctv_cache["cameras"] = cameras
             _cctv_cache["fetched_at"] = now
@@ -460,11 +541,11 @@ async def get_cctv_cameras(
             elif region_lower == 'us':
                 cameras = [c for c in cameras if c.country == 'US']
             elif region_lower == 'europe':
-                cameras = [c for c in cameras if c.country in ['UK']]
+                cameras = [c for c in cameras if c.country in ['UK', 'FI']]
             elif region_lower == 'asia':
-                cameras = [c for c in cameras if c.country in ['JP', 'HK', 'TW']]
+                cameras = [c for c in cameras if c.country in ['HK', 'JP', 'TW']]
             elif region_lower == 'australia':
-                cameras = [c for c in cameras if c.country == 'AU']
+                cameras = [c for c in cameras if c.country in ['AU', 'NZ']]
 
         return CCTVResponse(
             total=len(cameras),

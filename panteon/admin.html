@@ -1032,6 +1032,11 @@
                             <button class="btn btn-sm" onclick="clearCameras()" style="color:var(--text-muted)">Clear</button>
                         </div>
                         <div id="cameraLoadStatus" style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono)">No regions selected — cameras will not load until you choose</div>
+                        <div id="cameraPager" style="display:none;align-items:center;gap:8px;margin-top:12px">
+                            <button class="btn btn-sm camera-region-btn" id="cameraPrevBtn" onclick="cameraPagePrev()">&#x2190; Prev</button>
+                            <span id="cameraPageLabel" style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);min-width:120px;text-align:center"></span>
+                            <button class="btn btn-sm camera-region-btn" id="cameraNextBtn" onclick="cameraPageNext()">Next &#x2192;</button>
+                        </div>
                     </div>
                     <div class="camera-workspace-panel">
                         <div class="camera-group-container">
@@ -3409,6 +3414,9 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
 
 document.addEventListener('DOMContentLoaded', async () => {
     const selectedCameraRegions = new Set();
+    let cameraAll = [];
+    let cameraPage = 0;
+    const CAMERA_PAGE_SIZE = 8;
 
     window.toggleCameraRegion = function(btn) {
         const region = btn.dataset.region;
@@ -3440,6 +3448,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('cameraGroupAFooter').textContent = 'No streams loaded';
         document.getElementById('cameraGroupBFooter').textContent = 'No streams loaded';
         document.getElementById('cameraLoadStatus').textContent = 'Cleared — no regions selected';
+        document.getElementById('cameraPager').style.display = 'none';
+        cameraAll = [];
+        cameraPage = 0;
     };
 
     window.loadSelectedCameras = async function() {
@@ -3454,7 +3465,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const response = await api('/crackerbox/cctv');
             const cameras = response.cameras || [];
 
-            const regionCountryMap = { 'UK': 'UK', 'US': 'US', 'Europe': ['BG','GR','RS','MK','RO','TR','IT','CZ','SK','DE','FR','ES','PL','CH','FI','IS'], 'Asia': ['JP','HK','TW'], 'Australia': 'AU' };
+            const regionCountryMap = { 'UK': 'UK', 'US': 'US', 'Europe': ['BG','GR','RS','MK','RO','TR','IT','CZ','SK','DE','FR','ES','PL','CH','FI','IS'], 'Asia': ['JP','HK','TW'], 'Australia': ['AU','NZ'] };
 
             const filteredCameras = cameras.filter(c => {
                 return regions.some(r => {
@@ -3464,52 +3475,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             });
 
-            const half = Math.ceil(filteredCameras.length / 2);
-            const groupA = filteredCameras.slice(0, half);
-            const groupB = filteredCameras.slice(half);
-
-            const buildCameraGrid = (elementId, cameraList, startIdx, headerId, statusId, dotId, footerId, regionLabel) => {
-                const grid = document.getElementById(elementId);
-                if (!grid) return;
-                if (cameraList.length === 0) {
-                    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">No cameras found for selected regions</div>';
-                    document.getElementById(statusId).textContent = 'EMPTY';
-                    document.getElementById(dotId).style.background = 'var(--text-muted)';
-                    document.getElementById(headerId).textContent = regionLabel + ' — No cameras';
-                    document.getElementById(footerId).textContent = '0 streams';
-                    return;
-                }
-                let cameraHtml = '';
-                cameraList.forEach((cam, idx) => {
-                    const camIndex = startIdx + idx;
-                    const paddedIndex = String(camIndex).padStart(2, '0');
-                    const isTrackingCam = idx % 3 === 0;
-                    const boxW = 18 + Math.floor(Math.random() * 20);
-                    const boxH = 18 + Math.floor(Math.random() * 20);
-                    const boxTop = 15 + Math.floor(Math.random() * 45);
-                    const boxLeft = 15 + Math.floor(Math.random() * 45);
-                    const scanDelay = (Math.random() * 3).toFixed(1);
-                    cameraHtml += `
-                        <div class="camera-box" title="${cam.name} - ${cam.city}, ${cam.country} (${cam.source})">
-                            <img src="${cam.feed_url}" style="width:100%;height:100%;object-fit:cover;opacity:0.6;" onerror="this.style.display='none';this.parentElement.querySelector('.camera-feed-mock').style.opacity='0.5';" />
-                            <div class="camera-feed-mock"></div>
-                            <div class="camera-feed-vector"></div>
-                            ${isTrackingCam ? `<div class="camera-target-box" style="width: ${boxW}%; height: ${boxH}%; top: ${boxTop}%; left: ${boxLeft}%; animation-delay: ${scanDelay}s;"></div>` : ''}
-                            <div class="camera-scanline" style="animation-delay: ${scanDelay}s;"></div>
-                            <span class="camera-label">CAM ${paddedIndex} · ${cam.city || cam.country}</span>
-                        </div>
-                    `;
-                });
-                grid.innerHTML = cameraHtml;
-                document.getElementById(statusId).textContent = 'LIVE';
-                document.getElementById(dotId).style.background = 'var(--green)';
-                document.getElementById(headerId).textContent = regionLabel + ' (' + cameraList.length + ')';
-                document.getElementById(footerId).textContent = cameraList.length + ' streams loaded';
-            };
-
-            const regionLabel = regions.join(' + ');
-            buildCameraGrid('camera-grid-a', groupA, 1, 'cameraGroupAHeader', 'cameraGroupAStatus', 'cameraGroupADot', 'cameraGroupAFooter', 'Group A — ' + regionLabel);
-            buildCameraGrid('camera-grid-b', groupB, half + 1, 'cameraGroupBHeader', 'cameraGroupBStatus', 'cameraGroupBDot', 'cameraGroupBFooter', 'Group B — ' + regionLabel);
+            cameraAll = filteredCameras;
+            cameraPage = 0;
+            renderCameraPage();
 
             document.getElementById('cameraLoadStatus').textContent = 'Loaded ' + filteredCameras.length + ' cameras from: ' + regions.join(', ') + ' — auto-refresh every 5 minutes';
         } catch (e) {
@@ -3518,6 +3486,78 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('camera-grid-a').innerHTML = '<div class="empty-state" style="grid-column:1/-1">Failed: ' + e.message + '</div>';
             document.getElementById('camera-grid-b').innerHTML = '<div class="empty-state" style="grid-column:1/-1">Failed: ' + e.message + '</div>';
         }
+    };
+
+    const buildCameraGrid = (elementId, cameraList, startIdx, headerId, statusId, dotId, footerId, regionLabel) => {
+        const grid = document.getElementById(elementId);
+        if (!grid) return;
+        if (cameraList.length === 0) {
+            grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">No cameras found for selected regions</div>';
+            document.getElementById(statusId).textContent = 'EMPTY';
+            document.getElementById(dotId).style.background = 'var(--text-muted)';
+            document.getElementById(headerId).textContent = regionLabel + ' — No cameras';
+            document.getElementById(footerId).textContent = '0 streams';
+            return;
+        }
+        let cameraHtml = '';
+        cameraList.forEach((cam, idx) => {
+            const camIndex = startIdx + idx;
+            const paddedIndex = String(camIndex).padStart(2, '0');
+            const isTrackingCam = idx % 3 === 0;
+            const boxW = 18 + Math.floor(Math.random() * 20);
+            const boxH = 18 + Math.floor(Math.random() * 20);
+            const boxTop = 15 + Math.floor(Math.random() * 45);
+            const boxLeft = 15 + Math.floor(Math.random() * 45);
+            const scanDelay = (Math.random() * 3).toFixed(1);
+            cameraHtml += `
+                <div class="camera-box" title="${cam.name} - ${cam.city}, ${cam.country} (${cam.source})">
+                    <img src="${cam.feed_url}" style="width:100%;height:100%;object-fit:cover;opacity:0.6;" onerror="this.style.display='none';this.parentElement.querySelector('.camera-feed-mock').style.opacity='0.5';" />
+                    <div class="camera-feed-mock"></div>
+                    <div class="camera-feed-vector"></div>
+                    ${isTrackingCam ? `<div class="camera-target-box" style="width: ${boxW}%; height: ${boxH}%; top: ${boxTop}%; left: ${boxLeft}%; animation-delay: ${scanDelay}s;"></div>` : ''}
+                    <div class="camera-scanline" style="animation-delay: ${scanDelay}s;"></div>
+                    <span class="camera-label">CAM ${paddedIndex} · ${cam.city || cam.country}</span>
+                </div>
+            `;
+        });
+        grid.innerHTML = cameraHtml;
+        document.getElementById(statusId).textContent = 'LIVE';
+        document.getElementById(dotId).style.background = 'var(--green)';
+        document.getElementById(headerId).textContent = regionLabel + ' (' + cameraList.length + ')';
+        document.getElementById(footerId).textContent = cameraList.length + ' streams loaded';
+    };
+
+    const renderCameraPage = () => {
+        const totalPages = Math.max(1, Math.ceil(cameraAll.length / (CAMERA_PAGE_SIZE * 2)));
+        cameraPage = Math.max(0, Math.min(cameraPage, totalPages - 1));
+        const pageStart = cameraPage * CAMERA_PAGE_SIZE * 2;
+        const groupA = cameraAll.slice(pageStart, pageStart + CAMERA_PAGE_SIZE);
+        const groupB = cameraAll.slice(pageStart + CAMERA_PAGE_SIZE, pageStart + CAMERA_PAGE_SIZE * 2);
+        const regionLabel = [...selectedCameraRegions].join(' + ');
+
+        buildCameraGrid('camera-grid-a', groupA, pageStart + 1, 'cameraGroupAHeader', 'cameraGroupAStatus', 'cameraGroupADot', 'cameraGroupAFooter', 'Group A — ' + regionLabel);
+        buildCameraGrid('camera-grid-b', groupB, pageStart + CAMERA_PAGE_SIZE + 1, 'cameraGroupBHeader', 'cameraGroupBStatus', 'cameraGroupBDot', 'cameraGroupBFooter', 'Group B — ' + regionLabel);
+
+        const pager = document.getElementById('cameraPager');
+        if (pager) {
+            const hasCameras = cameraAll.length > 0;
+            pager.style.display = hasCameras ? 'flex' : 'none';
+            if (hasCameras) {
+                document.getElementById('cameraPageLabel').textContent = 'Page ' + (cameraPage + 1) + ' / ' + totalPages + ' · ' + cameraAll.length + ' cams';
+                document.getElementById('cameraPrevBtn').style.opacity = cameraPage === 0 ? '0.4' : '1';
+                document.getElementById('cameraNextBtn').style.opacity = cameraPage >= totalPages - 1 ? '0.4' : '1';
+            }
+        }
+    };
+
+    window.cameraPageNext = function() {
+        cameraPage++;
+        renderCameraPage();
+    };
+
+    window.cameraPagePrev = function() {
+        cameraPage--;
+        renderCameraPage();
     };
 
     setInterval(() => {

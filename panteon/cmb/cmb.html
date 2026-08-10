@@ -183,6 +183,7 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);opacity:1}
 .graph-canvas[data-graph-style="galaxy"]{background:radial-gradient(58% 50% at 24% 22%,rgba(126,64,208,.30),transparent 66%),radial-gradient(52% 58% at 82% 78%,rgba(220,72,164,.20),transparent 68%),radial-gradient(46% 52% at 62% 42%,rgba(58,120,224,.16),transparent 70%),#06040f}
 .graph-canvas[data-graph-style="solar"]{background:radial-gradient(38% 46% at 50% 50%,rgba(255,155,58,.17),transparent 60%),radial-gradient(88% 88% at 50% 50%,rgba(112,48,15,.18),transparent 82%),#080504}
 .graph-canvas[data-graph-style="cyber"]{background:linear-gradient(rgba(34,224,255,.055) 1px,transparent 1px) 0 0/30px 30px,linear-gradient(90deg,rgba(34,224,255,.055) 1px,transparent 1px) 0 0/30px 30px,radial-gradient(72% 60% at 50% 0%,rgba(255,62,165,.12),transparent 72%),#050810}
+.graph-canvas[data-graph-style="panteon-theme"]{background:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/40px 40px,linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/40px 40px,radial-gradient(46% 46% at 50% 0%,rgba(223,241,64,.055),transparent 68%),#05060a}
 .graph-empty{position:absolute;inset:0;display:grid;place-items:center;z-index:1;color:var(--text-dim);font-size:13px;pointer-events:none}
 .graph-empty[hidden]{display:none}
 .graph-hud{position:absolute;z-index:3;right:12px;bottom:12px;left:12px;display:flex;justify-content:space-between;gap:12px;color:var(--text-dim);font:11px/1.4 var(--mono);pointer-events:none}
@@ -228,6 +229,10 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);opacity:1}
 .render-preview.classic i{border-color:#8294a8;background:linear-gradient(138deg,#b5c0c8,#4e5c66 43%,#171d24 65%,#55758a);box-shadow:0 0 0 1px rgba(111,164,191,.20),0 0 4px rgba(105,139,170,.20)}
 .render-preview.classic i:nth-child(2){background:linear-gradient(138deg,#c0c8cd,#53606a 43%,#181e25 65%,#52788c)}
 .render-preview.classic i:nth-child(3){background:linear-gradient(138deg,#aeb8c0,#45535e 43%,#151b22 65%,#506d82)}
+.render-preview.panteon-theme{background:linear-gradient(118deg,rgba(255,255,255,.05),transparent 46%,rgba(223,241,64,.06)),#05060a}
+.render-preview.panteon-theme i{border-color:#2c3038;background:linear-gradient(145deg,#eef0f3 0%,#9aa2ad 38%,#1a1d24 62%,#e8eaed 100%);box-shadow:0 0 0 1px rgba(255,255,255,.14),0 0 5px rgba(223,241,64,.22)}
+.render-preview.panteon-theme i:nth-child(2){background:linear-gradient(145deg,#f4f6f8 0%,#b6bdc9 38%,#171a20 62%,#c2c8d2)}
+.render-preview.panteon-theme i:nth-child(3){background:linear-gradient(145deg,#d7dbe1 0%,#7c8591 38%,#111318 62%,#DFF140)}
 .graph-note{margin:8px 0 0;color:var(--text-dim);font-size:11px;line-height:1.5}
 .layout-preview{min-height:30px;background:transparent}
 .layout-preview::before,.layout-preview::after{position:absolute;display:block;height:1px;background:#515968;content:'';transform-origin:left center}
@@ -241,6 +246,8 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);opacity:1}
 .layout-preview.radial::after{top:15px;left:50%;width:17px;transform:rotate(33deg)}
 .layout-preview.constellation::before{top:16px;left:26%;width:29px;transform:rotate(-24deg)}
 .layout-preview.constellation::after{top:18px;left:34%;width:23px;transform:rotate(-10deg)}
+.layout-preview.panteon::before{top:14px;left:32%;width:22px;transform:rotate(10deg)}
+.layout-preview.panteon::after{top:15px;left:37%;width:21px;transform:rotate(-16deg)}
 .layout-preview i:nth-child(1){top:12px;left:28%}
 .layout-preview i:nth-child(2){top:18px;left:48%}
 .layout-preview i:nth-child(3){top:10px;left:66%}
@@ -709,6 +716,7 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);opacity:1}
               <button class="graph-choice graph-style-choice" type="button" data-graph-style-choice="galaxy" aria-pressed="false"><span class="render-preview galaxy"><i></i><i></i><i></i></span><span>Galaxy</span></button>
               <button class="graph-choice graph-style-choice" type="button" data-graph-style-choice="solar" aria-pressed="false"><span class="render-preview solar"><i></i><i></i><i></i></span><span>Solar</span></button>
               <button class="graph-choice graph-style-choice" type="button" data-graph-style-choice="classic" aria-pressed="false"><span class="render-preview classic"><i></i><i></i><i></i></span><span>Classic</span></button>
+              <button class="graph-choice graph-style-choice" type="button" data-graph-style-choice="panteon-theme" aria-pressed="false"><span class="render-preview panteon-theme"><i></i><i></i><i></i></span><span>Panteon</span></button>
             </div>
             <p id="graph-style-note" class="graph-note">Iridescent PVD over graphite — cyan, violet, and magenta across each node.</p>
           </section>
@@ -721,6 +729,7 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);opacity:1}
               <button class="graph-choice graph-layout-choice" type="button" data-graph-preset-choice="original" aria-pressed="false"><span class="layout-preview spacious"><i></i><i></i><i></i><i></i></span><span>Spacious</span></button>
               <button class="graph-choice graph-layout-choice" type="button" data-graph-preset-choice="radial" aria-pressed="false"><span class="layout-preview radial"><i></i><i></i><i></i><i></i></span><span>Radial</span></button>
               <button class="graph-choice graph-layout-choice" type="button" data-graph-preset-choice="constellation" aria-pressed="false"><span class="layout-preview constellation"><i></i><i></i><i></i><i></i></span><span>Constellation</span></button>
+              <button class="graph-choice graph-layout-choice" type="button" data-graph-preset-choice="panteon" aria-pressed="false"><span class="layout-preview panteon"><i></i><i></i><i></i><i></i></span><span>Panteon</span></button>
             </div>
           </section>
 
@@ -980,7 +989,7 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
 
   <script>
 /* CMB knowledge graph — the dashboard's opt-in force-graph engine.
-   Restores the shipped behaviour: GRAPH_PRESETS, GSTYLE render modes (cyber/galaxy/solar/classic),
+   Restores the shipped behaviour: GRAPH_PRESETS, GSTYLE render modes (cyber/galaxy/solar/classic/panteon-theme),
    STYLE_PAL / STYLE_LAYERS / STYLE_BG, COMMUNITY_PALS, GRAPH_HEAT, colour-by community/type/connections,
    GRAPH_PALETTES with per-entity-type overrides, d3 force wiring, directional particles, label ranking,
    hover neighbourhood highlight, freeze, fit and reheat. Reference values for the CMB renderer.
@@ -995,19 +1004,22 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
     communities: { label: 'Community islands', repel: 48, link: 16, gravity: 48, font: 12, size: 3, linkw: 0.72, labelDensity: 24, curve: 0.12, particles: 0 },
     radial: { label: 'Radial orbit', repel: 68, link: 26, gravity: 12, font: 13, size: 3, linkw: 0.75, labelDensity: 55, curve: 0.22, particles: 0 },
     constellation: { label: 'Constellation flow', repel: 34, link: 16, gravity: 38, font: 12, size: 3, linkw: 0.65, labelDensity: 35, curve: 0.32, particles: 2 },
+    panteon: { label: 'Panteon', repel: 44, link: 28, gravity: 30, font: 12, size: 3, linkw: 0.7, labelDensity: 30, curve: 0.08, particles: 0 },
     custom: { label: 'Custom tuning', curve: 0.1, particles: 0 }
   };
 
   const STYLE_PAL = {
     galaxy: { person_or_concept: '#b789ff', mention: '#7bb4ff', hashtag: '#ffcf6b', email: '#8aa2ff', organization: '#66e0d0', location: '#ff7ea8' },
     solar: { person_or_concept: '#ffb454', mention: '#3fd2c7', hashtag: '#ffd68a', email: '#8ea8ff', organization: '#5b9bff', location: '#ff8f6b' },
-    cyber: { person_or_concept: '#ff3ea5', mention: '#b6ff3c', hashtag: '#ffe14d', email: '#8b7bff', organization: '#22e0ff', location: '#ff5c7a' }
+    cyber: { person_or_concept: '#ff3ea5', mention: '#b6ff3c', hashtag: '#ffe14d', email: '#8b7bff', organization: '#22e0ff', location: '#ff5c7a' },
+    'panteon-theme': { person_or_concept: '#e8eaed', mention: '#c2c8d2', hashtag: '#949ca8', email: '#b6bdc9', organization: '#f4f6f8', location: '#7c8591' }
   };
   const STYLE_LAYERS = {
     classic: { temporal: '#6f9fd8', entity: '#5aafb3', causal: '#d7a84b', semantic: '#8c83e8' },
     galaxy: { temporal: '#7bb4ff', entity: '#66e0d0', causal: '#ffcf6b', semantic: '#b789ff' },
     solar: { temporal: '#5b9bff', entity: '#3fd2c7', causal: '#ffb454', semantic: '#ffd68a' },
-    cyber: { temporal: '#22e0ff', entity: '#b6ff3c', causal: '#ffe14d', semantic: '#ff3ea5' }
+    cyber: { temporal: '#22e0ff', entity: '#b6ff3c', causal: '#ffe14d', semantic: '#ff3ea5' },
+    'panteon-theme': { temporal: '#d7dbe1', entity: '#9aa2ad', causal: '#e8eaed', semantic: '#71717a' }
   };
   /* The per-style pane backgrounds are NOT defined here. `style-src-attr 'none'` forbids
      writing them onto the element, so the stylesheet owns them behind
@@ -1030,7 +1042,8 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
     classic: ['#8c83e8', '#5aafb3', '#d7a84b', '#6f9fd8', '#58b882', '#df7478', '#b07de0', '#4fb0a0', '#e0894a', '#7c9be0', '#e06a9a', '#9ac25a'],
     galaxy: ['#b789ff', '#7bb4ff', '#66e0d0', '#ffcf6b', '#ff7ea8', '#8aa2ff', '#c98bff', '#5ad0e0', '#ffa0d0', '#9d7bff', '#6ad0b0', '#ffb060'],
     solar: ['#ffb454', '#5b9bff', '#3fd2c7', '#ffd68a', '#ff8f6b', '#8ea8ff', '#ffc24a', '#6ac0d0', '#ff9f7a', '#7ab0ff', '#e0b050', '#5fd0b0'],
-    cyber: ['#22e0ff', '#ff3ea5', '#b6ff3c', '#ffe14d', '#8b7bff', '#ff5c7a', '#3affd0', '#ff7be0', '#7affea', '#c0ff4a', '#5c9bff', '#ff9b3c']
+    cyber: ['#22e0ff', '#ff3ea5', '#b6ff3c', '#ffe14d', '#8b7bff', '#ff5c7a', '#3affd0', '#ff7be0', '#7affea', '#c0ff4a', '#5c9bff', '#ff9b3c'],
+    'panteon-theme': ['#DFF140', '#e8eaed', '#c2c8d2', '#949ca8', '#b6bdc9', '#7c8591', '#f4f6f8', '#a9b1bd', '#d7dbe1', '#5f6873', '#eef0f3', '#8b939f']
   };
   const GRAPH_HEAT = ['#3f7bff', '#6a5cff', '#a24bff', '#e0479f', '#ff6b6b', '#ffc23d'];
 
@@ -1200,7 +1213,7 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
       themeColors = paletteOrTheme && typeof paletteOrTheme === 'object' ? paletteOrTheme : {};
       paletteName = 'theme';
     }
-    const style = ['cyber', 'galaxy', 'solar', 'classic'].indexOf(styleName) < 0 ? 'classic' : styleName;
+    const style = ['cyber', 'galaxy', 'solar', 'classic', 'panteon-theme'].indexOf(styleName) < 0 ? 'classic' : styleName;
     const surface = themeColors.surface || themeColors.canvas || '#0e1014';
     const substrate = mixColours(surface, '#02050a', style === 'classic' ? 0.68 : 0.78);
     const base = {
@@ -1243,6 +1256,22 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
         bezel: mixColours(substrate, '#351609', 0.62),
         face: mixColours(substrate, fixedPalette.copper, 0.48),
         edge: fixedPalette.amber, sheen: fixedPalette.gold
+      });
+    }
+    if (style === 'panteon-theme') {
+      /* Panteon house language: pure black substrate, hairline white bezel, and a single neon
+         #DFF140 highlight. The node's own palette colour stays on the identity ring (like the
+         other styles); the neon is the brand accent only — the sheen that lights on hover/focus,
+         mirroring how index.html reserves the neon for the scroll bar and active states. */
+      const fixedPalette = {
+        black: '#05060a', graphite: '#1a1d24', steel: '#e8eaed', neon: '#DFF140'
+      };
+      return Object.assign(base, {
+        family: 'panteon-graphite', fixedPalette,
+        outer: mixColours(substrate, '#020305', 0.78),
+        bezel: mixColours(substrate, '#24282f', 0.5),
+        face: mixColours(substrate, fixedPalette.graphite, 0.62),
+        edge: fixedPalette.steel, sheen: fixedPalette.neon
       });
     }
     const fixedPalette = {
@@ -1483,11 +1512,47 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
     identityRing(ctx, x, y, r, recipe, 0.62);
   }
 
+  function paintPanteonThemeMaterial(ctx, x, y, r, recipe, tier) {
+    const f = recipe.fixedPalette;
+    fillCircle(ctx, x, y, r, recipe.outer);
+    fillCircle(ctx, x, y, r * 0.94, recipe.bezel);
+    if (tier === 'signature') {
+      fillCircle(ctx, x, y, r * 0.79, recipe.face);
+      strokeCircle(ctx, x, y, r * 0.84, alpha(f.steel, 0.72), Math.max(0.35, r * 0.08));
+      identityRing(ctx, x, y, r, recipe, 0.78);
+      return;
+    }
+    /* Matte graphite face: a flatter sweep than the PVD/anodized styles, staying within the
+       site's black/white/grey language. The one neon crescent is the brand accent — the same
+       role the #DFF140 scroll bar plays on a black homepage. */
+    const graphite = gradient(ctx, 'createLinearGradient',
+      [x - r * 0.72, y - r * 0.72, x + r * 0.72, y + r * 0.72], [
+        [0, mixColours(recipe.face, f.steel, 0.16)],
+        [0.3, recipe.face],
+        [0.7, mixColours(recipe.face, '#000000', 0.3)],
+        [1, mixColours(recipe.face, '#020305', 0.55)]
+      ]);
+    fillCircle(ctx, x, y, r * 0.83, graphite);
+    const matte = gradient(ctx, 'createRadialGradient',
+      [x - r * 0.24, y - r * 0.3, r * 0.04, x, y, r * 0.86], [
+        [0, alpha('#ffffff', 0.1)], [0.4, alpha('#ffffff', 0.015)],
+        [0.78, alpha('#000000', 0.1)], [1, alpha('#000000', 0.4)]
+      ]);
+    fillCircle(ctx, x, y, r * 0.82, matte);
+    /* Hairline white bezel — index.html's 1px rgba(255,255,255,.15) border, scaled to the node. */
+    strokeCircle(ctx, x, y, r * 0.88, alpha(f.steel, 0.4), Math.max(0.34, r * 0.035));
+    ctx.lineWidth = Math.max(0.34, r * 0.028);
+    ctx.strokeStyle = alpha(f.neon, 0.5);
+    ctx.beginPath(); ctx.arc(x, y, r * 0.76, -2.75, -1.05); ctx.stroke();
+    identityRing(ctx, x, y, r, recipe, 0.72);
+  }
+
   function paintMaterialDirect(ctx, x, y, r, recipe, tier) {
     const detail = tier || 'full';
     if (recipe.family === 'iridescent-pvd') paintCyberMaterial(ctx, x, y, r, recipe, detail);
     else if (recipe.family === 'anodized-alloy') paintGalaxyMaterial(ctx, x, y, r, recipe, detail);
     else if (recipe.family === 'brushed-copper') paintSolarMaterial(ctx, x, y, r, recipe, detail);
+    else if (recipe.family === 'panteon-graphite') paintPanteonThemeMaterial(ctx, x, y, r, recipe, detail);
     else paintClassicMaterial(ctx, x, y, r, recipe, detail);
   }
 
@@ -2246,6 +2311,16 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
            out of that film and appears only in the slim identity ring. */
         nodeMaterial = materialRecipe('cyber', state.themeColors, state.palette, col);
         paintMaterialSurface(ctx, node.x, node.y, r, scale, nodeMaterial, materialLow);
+      } else if (state.styleName === 'panteon-theme') {
+        nodeMaterial = materialRecipe('panteon-theme', state.themeColors, state.palette, col);
+        paintMaterialSurface(ctx, node.x, node.y, r, scale, nodeMaterial, materialLow);
+        if (node.hub) {
+          /* Panteon brand mark on hubs: the 6px square block from index.html's card-num-bar,
+             drawn neon so it reads as the one accent on a black field. Screen-space, capped. */
+          const s = Math.min(6, Math.max(1.2, r * scale * 0.4)) / scale;
+          ctx.fillStyle = alpha('#DFF140', 0.92);
+          ctx.fillRect(node.x + r * 0.78, node.y - r * 0.78, s, s);
+        }
       } else {
         nodeMaterial = materialRecipe('classic', state.themeColors, state.palette, col);
         paintMaterialSurface(ctx, node.x, node.y, r, scale, nodeMaterial, materialLow);
@@ -2485,6 +2560,7 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
         if (state.styleName === 'galaxy') base = l.layer === 'causal' ? '#c58bff' : '#91a8ff';
         else if (state.styleName === 'solar') base = l.layer === 'causal' ? '#ffc06d' : '#ef913e';
         else if (state.styleName === 'cyber') base = l.layer === 'causal' ? '#ec71d2' : '#6edce6';
+        else if (state.styleName === 'panteon-theme') base = l.layer === 'causal' ? '#e8eaed' : '#9aa2ad';
         else if (state.styleName === 'classic') base = l.layer === 'causal' ? '#b9c8da' : '#86c7d1';
         return active ? alpha(base, focus ? 0.85 : 0.4) : alpha(base, 0.06);
       })
@@ -2671,7 +2747,7 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
       return { ...state.settings };
     };
     api.setStyle = name => {
-      state.styleName = ['classic', 'galaxy', 'solar', 'cyber'].indexOf(name) < 0 ? 'cyber' : name;
+      state.styleName = ['classic', 'galaxy', 'solar', 'cyber', 'panteon-theme'].indexOf(name) < 0 ? 'cyber' : name;
       clearMaterialCache();
       render(false, false);
     };
@@ -3059,6 +3135,7 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
     communities: { repel: 48, link: 16, gravity: 48, font: 12, size: 3, linkw: 0.72, labelDensity: 24 },
     radial: { repel: 68, link: 26, gravity: 12, font: 13, size: 3, linkw: 0.75, labelDensity: 55 },
     constellation: { repel: 34, link: 16, gravity: 38, font: 12, size: 3, linkw: 0.65, labelDensity: 35 },
+    panteon: { repel: 44, link: 28, gravity: 30, font: 12, size: 3, linkw: 0.7, labelDensity: 30, curve: 0.08, particles: 0 },
   };
   const GRAPH_SAVED_VIEWS = {
     operations: {
@@ -3087,12 +3164,14 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
     communities: 'Islands',
     radial: 'Radial',
     constellation: 'Constellation',
+    panteon: 'Panteon',
   };
   const GRAPH_STYLE_NOTES = {
     cyber: 'Iridescent PVD over graphite — cyan, violet, and magenta across each node.',
     galaxy: 'Deep anodized alloy with a cool blue-violet directional sheen.',
     solar: 'Brushed copper faces with amber bezels and warm radial grain.',
     classic: 'Neutral satin gunmetal with a restrained cool steel edge.',
+    'panteon-theme': 'Matte graphite on pure black — hairline white bezels, a single neon #DFF140 highlight.',
   };
   const GRAPH_CUSTOM_PALETTE = {
     person_or_concept: '#8d82e3',
@@ -4257,9 +4336,9 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
 
   function restoreGraphPreferences() {
     const preset = graphPreference('preset', byId('graph-preset').value,
-      ['original', 'compact', 'communities', 'radial', 'constellation']);
+      ['original', 'compact', 'communities', 'radial', 'constellation', 'panteon']);
     const style = graphPreference('style', byId('graph-style').value,
-      ['classic', 'galaxy', 'solar', 'cyber']);
+      ['classic', 'galaxy', 'solar', 'cyber', 'panteon-theme']);
     const color = graphPreference('color', byId('graph-color').value,
       ['community', 'connections', 'type']);
     const palette = graphPreference('palette', byId('graph-palette').value,
@@ -4324,7 +4403,7 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
     }
     const preset = Object.prototype.hasOwnProperty.call(GRAPH_PRESET_LABELS, view.preset)
       ? view.preset : byId('graph-preset').value;
-    const style = ['classic', 'galaxy', 'solar', 'cyber'].includes(view.style) ? view.style : byId('graph-style').value;
+    const style = ['classic', 'galaxy', 'solar', 'cyber', 'panteon-theme'].includes(view.style) ? view.style : byId('graph-style').value;
     const color = ['community', 'connections', 'type'].includes(view.color) ? view.color : byId('graph-color').value;
     const palette = ['theme', 'aurora', 'ocean', 'ember', 'contrast', 'custom'].includes(view.palette)
       ? view.palette : byId('graph-palette').value;

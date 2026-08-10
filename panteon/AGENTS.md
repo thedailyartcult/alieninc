@@ -4,54 +4,76 @@
 
 Every HTML page in this directory tree MUST follow the established Panteon design language. Do NOT create new fonts, colors, layouts, or component patterns. Use what already exists.
 
-## Design Tokens (from styles.css)
+**The homepage (`index.html`) is the canonical design language reference.** It was redesigned 2026-08-10 and is fully self-contained (inline `<style>` block + one inline script). When in doubt, open `index.html` and match it.
+
+## Design Tokens (from index.html `:root`)
 
 ```css
---bg-dark: #070809;
+--bg-dark: #000000;
 --bg-light: #ffffff;
---bg-gray: #f4f4f6;
---text-dark: #111213;
+--bg-gray: #f8f9fa;
+--text-dark: #000000;
 --text-light: #ffffff;
---text-muted: #707275;
---border-light: rgba(255, 255, 255, 0.1);
---border-dark: rgba(0, 0, 0, 0.08);
---font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
---font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+--text-muted: #71717a;
+--accent-neon: #DFF140; /* Yellow-Green Neon accent */
+--border-light: rgba(255, 255, 255, 0.15);
+--border-dark: #000000;
+--border-subtle: rgba(0, 0, 0, 0.12);
+--font-sans: "Inter", -apple-system, sans-serif;
+--font-tech: "Space Grotesk", monospace;
+--font-mono: "JetBrains Mono", monospace;
+--font-brand: "Inter", -apple-system, sans-serif;
 ```
+
+Note: the body background is `var(--bg-dark)` (#000000) — the homepage is a **dark theme** page; light surfaces (`.main-content`) sit on top.
 
 ## Typography
 
-- **Only** Google Fonts Inter (weights 300, 400, 500, 600, 700)
+- **Only** Google Fonts: Inter (300–700), Space Grotesk (300–700, `--font-tech`), JetBrains Mono (300–600, `--font-mono`)
 - **Never** import other fonts
-- Hero headlines: `font-weight: 300`, `letter-spacing: -0.03em`
-- Body text: `font-size: 0.95rem–1.15rem`, `line-height: 1.55–1.75`
-- Tags/labels: `font-family: var(--font-mono)`, `font-size: 0.7rem`, `text-transform: uppercase`
+- Headlines/section titles use `--font-tech` (Space Grotesk), `font-weight: 300`
+- Body text: `--font-sans` (Inter), `line-height: 1.5–1.75`
+- Tags/labels (`.section-badge`, press tag, eyebrow text): `font-family: var(--font-mono)`, `text-transform: uppercase`, small size
 
-## Page Structure (all product/capability/article pages)
+## Homepage Structure (`index.html`)
 
-1. SVG brand lockup (single-source, inline `<defs>`)
-2. Announcement bar (`.announcement-bar`)
-3. Header (`<header id="main-header">`) with logo + nav-right
-4. Hero section (`.platform-hero` with video bg)
-5. Main content (`.main-content`) — white/light background
-6. Footer (identical across ALL pages)
-7. Scroll-handler script at bottom
+1. Inline `<defs>` brand lockup SVG (`.panteon-lockup` referenced via `#panteon-lockup`)
+2. `<head>` inline `<style>` (reset, tokens, all section styles) + font import
+3. `dimension-transition-overlay` (`#dim-overlay`) — entrance reveal with grid lines
+4. `scroll-progress-bar` (`#scroll-bar`) — fixed neon top progress bar
+5. `.announcement-bar` (`#top-announcement`) — top ribbon
+6. `header#main-header` — sticky glass header + logo + nav, with `mega-menu-overlay` and `.mega-menu-container` panels (`#menu-five-elements`, `#menu-capabilities`, `#menu-company`) + `#mobile-drawer-overlay`
+7. `.hero` with `hero-video-bg` (hero-bg-panteon.mp4) + `.hero-content` (hero-title with `.reveal-text-line`, `.scroll-explore-tag`, `.hero-arrow`)
+8. `<main class="main-content" id="scroll-content">` — the sections below
+9. Footer `<footer id="footer">` — `.footer-container` with left branding (logo, copyright, cookies button, `.footer-social-container`), `.footer-links-grid` of `.footer-links-col` accordions
+10. One inline `<script>` block at the bottom with the interaction engines
 
-## Required Components
+## Section Components (in order on the homepage)
 
-- **Platform Hero**: `.platform-hero` with `.platform-hero-bg` video, `.platform-hero-content`
-- **Platform Nav**: `.platform-nav` horizontal tab bar for sibling pages
-- **Architecture Grid**: `.architecture-grid` (2-column) with `.architecture-card`
-- **Prose Section**: `.prose-section` for overview text (max-width 800px)
-- **Workflow Steps**: `.workflow-steps` with `.workflow-step` (3-column: num, text, media)
-- **Editorial Callout**: `.editorial-callout` with `.editorial-callout-text`
-- **CTA Section**: centered heading + description + button
+- **Use Cases marquee**: `.alien-use-cases-section` → `.section-header-bar` (title + `.section-badge`) + `.use-cases-track-container#use-cases-container` → `.use-cases-track-wrapper#use-cases-track` containing `.use-case-card` items
+- **Partners gliding marquee**: `.partners-section` → `.partners-header` + `.partners-marquee-container#partners-container` → `.partners-marquee-track#partners-track` containing `.partner-box` items (180×180 linked boxes; anchors need `text-decoration: none`)
+- **User Segments**: `.user-segments-section` → `.user-segments-grid` with `.user-segment-col` (2 columns)
+- **Editorial Callout**: `.editorial-callout` with `.editorial-callout-text.reveal-text-line`
+- **Software Grid**: `.software-section` → `.software-header` + `.software-grid-matrix` containing `.software-card` items (last card uses `style="grid-column: span 2;"`)
+- **Press Coverage**: `.press-section` → `.press-header-tag` + `.press-list` of `.press-item` (each with `data-preview` image attribute, `.press-title`, `.press-discover`), plus `#press-floating-card` floating hover preview
+- **Pre-footer Contact**: `.pre-footer-contact` with `#spiralCanvas` (canvas) + `.pre-footer-content`
+- **Section header pattern**: `.section-header-bar` / `.partners-header` with `.reveal-text-line` heading + `.section-badge` (mono, uppercase)
 
 ## CSS File
 
-- All pages link to `../styles.css` (relative path from subdirectory)
-- Page-specific styles go in `<style>` block in `<head>`
-- The shared `styles.css` contains: reset, tokens, header, footer, cards, sections, responsive
+- The homepage (`index.html`) is **self-contained**: all styles live in one inline `<style>` block in `<head>`. Do not split it out.
+- Product/capability/article subpages still link to `../styles.css` (shared tokens, header, footer, cards) with page-specific `<style>` in `<head>`.
+- Keep the design tokens identical wherever a page defines its own `:root`.
+
+## Interactive Systems (bottom inline `<script>`)
+
+1. Dimension switch entrance reveal (`#dim-overlay`)
+2. Header scroll + parallax engine (`data-parallax-bg`, `data-parallax-content`, `data-parallax-item`, `.reveal-text-line` via IntersectionObserver)
+3. Continuous gliding track engine (`createContinuousTrack(containerId, trackId, speed)` — clones children, auto-scroll, drag/touch support) — used for use-cases and partners
+4. Mega menu controller (`.nav-item-dropdown` + `#mega-menu-overlay` + mobile drawer)
+5. Floating press image preview (`#press-floating-card` + `.press-item` hover)
+6. High-DPI 3D perspective vector canvas engine (`#spiralCanvas`)
+7. Footer accordions on mobile (`.footer-links-col h4` click toggle)
 
 ## Brand SVG
 
@@ -66,27 +88,27 @@ Every page MUST include the single-source brand lockup SVG:
 </svg>
 ```
 
-Logo usage: `<a href="../index.html" class="logo"><svg viewBox="0 0 295 100"><use href="#panteon-lockup"/></svg></a>`
+Logo usage (homepage, click scrolls to top): `<svg viewBox="0 0 295 100" role="img" aria-label="Panteon"><use href="#panteon-lockup"/></svg>`
 
 ## Responsive Breakpoints
 
-- `1024px`: grids collapse to fewer columns
-- `768px`: mobile padding (24px), hero padding reduced
+- `1200px`: grids collapse to fewer columns
+- `768px`: mobile padding (24px), hero padding reduced, footer columns become accordions
 
 ## Template
 
-Use `../platform-template.html` as the starting point for any new product, capability, or article page. Replace `{{PLACEHOLDER}}` tokens with actual content.
+Use `../platform-template.html` as the starting point for any new product, capability, or article subpage. For new homepage-style landing sections, copy the matching section from `index.html` directly.
 
 ## Forbidden
 
 - NO Tailwind, Bootstrap, or CSS frameworks
-- NO new font imports
-- NO new color values (use CSS variables)
+- NO fonts other than Inter, Space Grotesk, JetBrains Mono
+- NO new color values (use the CSS variables above)
 - NO different footer structures
 - NO different header structures
-- NO inline styles that override the design system (except for one-off CTA button variants)
 - NO emoji in UI text
-- NO third-party JS libraries (only the scroll-handler script)
+- NO third-party JS libraries (all interaction engines are inline vanilla JS)
+- NO inline `style=""` attributes that override the design system (the only sanctioned one is the `grid-column: span 2` software card)
 
 ## CMB Dashboard Exception
 

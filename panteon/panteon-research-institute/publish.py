@@ -344,12 +344,12 @@ NAV_JS = """
         'terra': { title: 'PRODUCTS', links: [['{{ROOT}}platforms/terranean-etiology.html','Terranean Etiology'],['{{ROOT}}platforms/terranean-teleology.html','Terranean Teleology'],['{{ROOT}}developers/terranean-documentation.html','Documentation']] },
         'abyss': { title: 'PRODUCTS', links: [['{{ROOT}}platforms/crackerbox.html','Crackerbox Platform'],['{{ROOT}}developers/documentation.html','Documentation'],['{{ROOT}}panteon-research-institute/index.html','Panteon Research Institute'],['https://rousseau.alieninc.tech','Rousseau']] },
         'stratos': { title: 'PRODUCTS', links: [['{{ROOT}}platforms/statham.html','Statham Platform'],['{{ROOT}}capabilities/edge-ai.html','Edge AI'],['{{ROOT}}capabilities/dynamic-scheduling.html','Dynamic Scheduling'],['{{ROOT}}panteon-research-institute/index.html','Panteon Research Institute']] },
-        'cosmos': { title: 'PRODUCTS', links: [['{{ROOT}}platforms/spinal-craker.html','Spinal Craker'],['{{ROOT}}cmb-product.html','CMB'],['{{ROOT}}capabilities/data-integration.html','Data Integration'],['{{ROOT}}capabilities/digital-twin.html','Digital Twin'],['https://sp.alieninc.tech','Statute & Precedent']] },
+        'cosmos': { title: 'PRODUCTS', links: [['{{ROOT}}platforms/spinal-craker.html','Spinal Craker'],['{{ROOT}}cmb-product.html','CMB'],['{{ROOT}}capabilities/data-integration.html','Data Integration'],['{{ROOT}}capabilities/digital-twin.html','Digital Twin']] },
         'cyber': { title: 'PRODUCTS', links: [['{{ROOT}}capabilities/yono-for-developers.html','YONO for Developers'],['{{ROOT}}developers/panteon-developers.html','Panteon Developers'],['{{ROOT}}developers/community.html','Developer Community'],['{{ROOT}}capabilities/marketplace.html','Marketplace']] },
         'aiml': { title: 'AI + ML', links: [['{{ROOT}}capabilities/ai-ml.html','Overview'],['{{ROOT}}capabilities/edge-ai.html','Edge AI'],['{{ROOT}}capabilities/data-integration.html','Data Integration'],['{{ROOT}}developers/documentation.html','Documentation']] },
         'edgeai': { title: 'Edge AI', links: [['{{ROOT}}capabilities/edge-ai.html','Overview'],['{{ROOT}}capabilities/ai-ml.html','AI + ML'],['{{ROOT}}platforms/statham.html','Statham'],['{{ROOT}}platforms/yono.html','YONO']] },
         'data': { title: 'Data Integration', links: [['{{ROOT}}capabilities/data-integration.html','Overview'],['{{ROOT}}capabilities/digital-twin.html','Digital Twin'],['{{ROOT}}capabilities/marketplace.html','Marketplace'],['{{ROOT}}developers/documentation.html','Documentation']] },
-        'impact': { title: 'Alien Inc', links: [['https://rousseau.alieninc.tech','Rousseau'],['https://thedailyartcult.alieninc.tech','The Daily Art Cult'],['https://kmt.alieninc.tech','KMT Consulting Group'],['https://sp.alieninc.tech','Statute & Precedent']] },
+        'impact': { title: 'Alien Inc', links: [['https://rousseau.alieninc.tech','Rousseau'],['https://thedailyartcult.alieninc.tech','The Daily Art Cult'],['https://kmt.alieninc.tech','KMT Consulting Group']] },
         'letters': { title: 'Letters', links: [['{{ROOT}}letters/shareholder-letter.html','Shareholder Letter'],['{{ROOT}}trust/trust-center.html','Trust Center'],['{{ROOT}}developers/community.html','Developer Community']] },
         'devs': { title: 'Developers', links: [['{{ROOT}}developers/panteon-developers.html','Panteon Developers'],['{{ROOT}}developers/community.html','Community'],['{{ROOT}}developers/documentation.html','Documentation'],['{{ROOT}}panteon-research-institute/index.html','Panteon Research Institute'],['{{ROOT}}capabilities/yono-for-developers.html','YONO for Developers']] },
     };
@@ -557,7 +557,6 @@ ARTICLE_TEMPLATE = """<!DOCTYPE html>
                         <li><a href="https://kmt.alieninc.tech" target="_blank">KMT Consulting Group</a></li>
                         <li><a href="https://immanuel.alieninc.tech" target="_blank">Immanuel</a></li>
                         <li><a href="https://alcantaraartfoundation.alieninc.tech" target="_blank">St. Alcantara Foundation</a></li>
-                        <li><a href="https://sp.alieninc.tech" target="_blank">Statute & Precedent</a></li>
                         <li><a href="https://centra.alieninc.tech" target="_blank">Centra</a></li>
                     </ul>
                 </div>
@@ -749,7 +748,6 @@ LOCKED_TEMPLATE = """<!DOCTYPE html>
                         <li><a href="https://kmt.alieninc.tech" target="_blank">KMT Consulting Group</a></li>
                         <li><a href="https://immanuel.alieninc.tech" target="_blank">Immanuel</a></li>
                         <li><a href="https://alcantaraartfoundation.alieninc.tech" target="_blank">St. Alcantara Foundation</a></li>
-                        <li><a href="https://sp.alieninc.tech" target="_blank">Statute & Precedent</a></li>
                         <li><a href="https://centra.alieninc.tech" target="_blank">Centra</a></li>
                     </ul>
                 </div>
@@ -1110,7 +1108,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                         <li><a href="https://kmt.alieninc.tech" target="_blank">KMT Consulting Group</a></li>
                         <li><a href="https://immanuel.alieninc.tech" target="_blank">Immanuel</a></li>
                         <li><a href="https://alcantaraartfoundation.alieninc.tech" target="_blank">St. Alcantara Foundation</a></li>
-                        <li><a href="https://sp.alieninc.tech" target="_blank">Statute & Precedent</a></li>
                         <li><a href="https://centra.alieninc.tech" target="_blank">Centra</a></li>
                     </ul>
                 </div>

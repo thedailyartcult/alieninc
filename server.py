@@ -38,7 +38,6 @@ SUBDOMAIN_ROOTS = {
     'kmt':              os.path.join(ROOT, 'kmt'),
     'immanuel':         os.path.join(ROOT, 'immanuel'),
     'alcantaraartfoundation': os.path.join(ROOT, 'alcantaraartfoundation'),
-    'sp':               os.path.join(ROOT, 'sp'),
     'secure':           os.path.join(ROOT, 'secure'),
 }
 
@@ -626,7 +625,6 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             os.path.join(ROOT, 'secure', 'moderation'),
             os.path.join(ROOT, 'panteon', 'engine'),
             os.path.join(ROOT, 'panteon', 'plugins'),
-            os.path.join(ROOT, 'sp', 'engine'),
             os.path.join(ROOT, 'thedailyartcult', 'supabase'),
         ]
         translated_lower = translated.lower().rstrip('/')
@@ -2544,7 +2542,7 @@ tr:hover{background:rgba(59,130,246,.04)}
 <div class="card">
 <h2>Register Notification Channel</h2>
 <div class="form-group"><label>Channel ID</label><input id="chan-id" placeholder="e.g. panteon-slack-soc"></div>
-<div class="form-group"><label>Company</label><select id="chan-company" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:.3rem;border-radius:3px"><option>panteon</option><option>kmt</option><option>rousseau</option><option>immanuel</option><option>sp</option><option>tdac</option><option>alcantara</option></select></div>
+<div class="form-group"><label>Company</label><select id="chan-company" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:.3rem;border-radius:3px"><option>panteon</option><option>kmt</option><option>rousseau</option><option>immanuel</option><option>tdac</option><option>alcantara</option></select></div>
 <div class="form-row">
 <div class="form-group"><label>Type</label><select id="chan-type"><option>webhook</option><option>slack</option><option>pagerduty</option><option>email</option></select></div>
 <div class="form-group"><label>Webhook URL</label><input id="chan-url" placeholder="https://hooks.slack.com/..."></div>

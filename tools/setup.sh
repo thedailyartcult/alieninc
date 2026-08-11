@@ -50,9 +50,6 @@ fi
 if ! command -v chromium &>/dev/null && ! command -v chromium-browser &>/dev/null; then
     apt install -y -qq chromium-browser 2>/dev/null || apt install -y -qq chromium 2>/dev/null || warn "Chromium install failed. Set CHROMIUM_PATH manually."
 fi
-if command -v npm &>/dev/null && [ -f "${APP_DIR}/sp/engine/package.json" ]; then
-    (cd "${APP_DIR}/sp/engine" && npm install --production 2>/dev/null) || warn "npm install in sp/engine failed. WAT scan won't have adblocking."
-fi
 
 log "Installing yfinance (for /api/competitors)..."
 if pip3 install yfinance --break-system-packages -q 2>/dev/null; then

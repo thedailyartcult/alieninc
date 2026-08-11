@@ -37,7 +37,6 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 | `panteon.alieninc.tech` | `panteon/` |
 | `kmt.alieninc.tech` | `kmt/` |
 | `alcantaraartfoundation.alieninc.tech` | `alcantaraartfoundation/` |
-| `sp.alieninc.tech` | `sp/` |
 | `centra.alieninc.tech` | `centra/` |
 
 ## Supporting Pages

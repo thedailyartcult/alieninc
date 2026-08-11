@@ -1,11 +1,11 @@
 # Terranean Engine
 
-Dual-mode intelligence service combining **Eteology** (causal reconstruction) and **Teliology** (purpose & trajectory modeling).
+Dual-mode intelligence service combining **Etiology** (causal reconstruction) and **Teleology** (purpose & trajectory modeling).
 
 ## What It Does
 
-- **Eteology**: Ingests events, builds causal graphs (NetworkX), finds root causes, runs counterfactual analysis
-- **Teliology**: Infers actor purposes from behavior patterns, projects future trajectories, identifies leverage points
+- **Etiology**: Ingests events, builds causal graphs (NetworkX), finds root causes, runs counterfactual analysis
+- **Teleology**: Infers actor purposes from behavior patterns, projects future trajectories, identifies leverage points
 
 ## Install & Run (Debian)
 

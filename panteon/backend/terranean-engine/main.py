@@ -6,10 +6,10 @@ from models import (
     ProjectTrajectoryRequest, LeveragePointsRequest,
 )
 from store import store
-import eteology
-import teliology
+import etiology
+import teleology
 
-app = FastAPI(title="Terranean Engine", version="1.0.0", description="Dual-mode intelligence: Eteology (causal) + Teliology (purpose)")
+app = FastAPI(title="Terranean Engine", version="1.0.0", description="Dual-mode intelligence: Etiology (causal) + Teleology (purpose)")
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,43 +28,43 @@ def ingest(req: IngestRequest):
 @app.post("/reconstruct")
 def reconstruct(req: ReconstructRequest):
     events = store.get_events(scope=req.scope)
-    G = eteology.build_causal_graph(events)
+    G = etiology.build_causal_graph(events)
     return {"nodes": G.number_of_nodes(), "edges": G.number_of_edges()}
 
 
 @app.get("/graph")
 def graph():
-    return eteology.get_graph()
+    return etiology.get_graph()
 
 
 @app.post("/root-cause")
 def root_cause(req: RootCauseRequest):
-    return {"target": req.target_id, "root_causes": eteology.find_root_causes(req.target_id, req.depth)}
+    return {"target": req.target_id, "root_causes": etiology.find_root_causes(req.target_id, req.depth)}
 
 
 @app.post("/counterfactual")
 def counterfactual(req: CounterfactualRequest):
-    return eteology.counterfactual(req.event_ids, req.intervention)
+    return etiology.counterfactual(req.event_ids, req.intervention)
 
 
 @app.post("/infer-purposes")
 def infer_purposes(req: InferPurposesRequest):
-    return {"purposes": teliology.infer_purposes(req.actor_scope)}
+    return {"purposes": teleology.infer_purposes(req.actor_scope)}
 
 
 @app.get("/purposes")
 def purposes():
-    return {"purposes": teliology.get_purposes()}
+    return {"purposes": teleology.get_purposes()}
 
 
 @app.post("/project-trajectory")
 def project_trajectory(req: ProjectTrajectoryRequest):
-    return {"trajectories": teliology.project_trajectory(req.purpose_ids, req.horizon)}
+    return {"trajectories": teleology.project_trajectory(req.purpose_ids, req.horizon)}
 
 
 @app.post("/leverage-points")
 def leverage_points(req: LeveragePointsRequest):
-    return {"leverage_points": teliology.find_leverage_points(req.trajectory_id, req.objective)}
+    return {"leverage_points": teleology.find_leverage_points(req.trajectory_id, req.objective)}
 
 
 @app.get("/health")

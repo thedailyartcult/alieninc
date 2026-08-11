@@ -3,7 +3,7 @@ from collections import Counter
 from typing import Any
 from store import store
 from models import Event
-import eteology
+import etiology
 
 
 def infer_purposes(actor_scope: list[str] | None = None) -> list[dict]:
@@ -80,7 +80,7 @@ def project_trajectory(purpose_ids: list[str] | None = None, horizon: int = 10) 
 
 
 def find_leverage_points(trajectory_id: str | None, objective: str) -> list[dict]:
-    G = eteology.build_causal_graph()
+    G = etiology.build_causal_graph()
     trajectories = list(store.trajectories.values())
     if trajectory_id:
         trajectories = [t for t in trajectories if t["id"] == trajectory_id]

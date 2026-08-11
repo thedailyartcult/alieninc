@@ -341,7 +341,7 @@ NAV_JS = """
     const overlay = document.getElementById('mega-menu-overlay');
 
     const COL3_DATA = {
-        'terra': { title: 'PRODUCTS', links: [['{{ROOT}}platforms/terranean-eteology.html','Terranean Eteology'],['{{ROOT}}platforms/terranean-teliology.html','Terranean Teliology'],['{{ROOT}}developers/terranean-documentation.html','Documentation']] },
+        'terra': { title: 'PRODUCTS', links: [['{{ROOT}}platforms/terranean-etiology.html','Terranean Etiology'],['{{ROOT}}platforms/terranean-teleology.html','Terranean Teleology'],['{{ROOT}}developers/terranean-documentation.html','Documentation']] },
         'abyss': { title: 'PRODUCTS', links: [['{{ROOT}}platforms/crackerbox.html','Crackerbox Platform'],['{{ROOT}}developers/documentation.html','Documentation'],['{{ROOT}}panteon-research-institute/index.html','Panteon Research Institute'],['https://rousseau.alieninc.tech','Rousseau']] },
         'stratos': { title: 'PRODUCTS', links: [['{{ROOT}}platforms/statham.html','Statham Platform'],['{{ROOT}}capabilities/edge-ai.html','Edge AI'],['{{ROOT}}capabilities/dynamic-scheduling.html','Dynamic Scheduling'],['{{ROOT}}panteon-research-institute/index.html','Panteon Research Institute']] },
         'cosmos': { title: 'PRODUCTS', links: [['{{ROOT}}platforms/spinal-craker.html','Spinal Craker'],['{{ROOT}}cmb-product.html','CMB'],['{{ROOT}}capabilities/data-integration.html','Data Integration'],['{{ROOT}}capabilities/digital-twin.html','Digital Twin'],['https://sp.alieninc.tech','Statute & Precedent']] },

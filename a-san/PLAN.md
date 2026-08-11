@@ -2,7 +2,11 @@
 
 **Operation:** Stand up the A-SAN technical catalog from public sources only.
 **Primary workspace:** `/home/alieninc/a-san/`
-**Status:** Plan + first data acquisition complete (2026-08-11)
+**Status:** v1 data acquisition complete (2026-08-11); automated deep scanner live —
+crawled the full `armyrecognition.com` sitemap (1,437 product URLs) + seeded entries,
+yielding 1,473 parsed catalog entries (up from the original 44) across 11 categories.
+A second source (`patents.google.com`) is wired into the engine and produces entries;
+USPTO PEDS has migrated to a gated API (see §2 / Phase 5).
 
 ---
 
@@ -19,15 +23,23 @@ inferred.**
 
 | Source | Reachable from this server | Role |
 |---|---|---|
-| `armyrecognition.com` | Yes — full product pages via fetch | **Primary**: detailed product spec pages |
-| `patents.google.com` | Yes — full patent records via fetch | Secondary: patent/technical records |
-| `ppubs.uspto.gov/pubwebapp` | Partial — JavaScript app | Secondary: USPTO records (manual/browser pass) |
-| `worldwide.espacenet.com` | **No** — robots.txt + 403 | Manual research-desk or licensed pass |
-| `janes.com` | **No** — robots.txt | Manual research-desk or licensed pass |
+| `armyrecognition.com` | Yes — full product pages via fetch; sitemap enumerated | **Primary**: 1,473 entries across 10 product categories |
+| `patents.google.com` | Yes — full patent records via fetch | **Secondary (live)**: patent records, wired into the engine |
+| `ppubs.uspto.gov/pubwebapp` | 404 — **migrated**. New USPTO Open Data Portal now requires a USPTO.gov account + API key + MFA (Aug 2026). | Secondary: USPTO records (now gated) |
+| `worldwide.espacenet.com` | **No** — robots.txt + 403 (use official OPS API w/ credentials) | Research-desk or licensed pass |
+| `janes.com` | **No** — robots.txt | Licensed research-desk pass |
 
-**Doctrine:** a system is only included if at least one approved page was
-actually fetched and its data read. Unreachable sources are never cited from
-memory.
+**Doctrine:** a system is only included if at least one approved page was actually
+fetched and its data read. Unreachable sources are never cited from memory.
+
+**Scale lever:** the catalog is fed by an idempotent, resumable queue
+(`python -m scan discover` pulls the sitemap; `python -m scan crawl` drains it,
+per-host polite, robots-gated). To reach thousands of entries, add a high-volume
+feed (e.g. USPTO patent publication numbers → `patents.google.com/patent/…` URLs
+→ `enqueue`), then `crawl`. The engine dispatches each host to its parser
+(`armyrecognition` → `parse_armyrecognition`; `patents.google.com` →
+`parse_patent`). Adding a source = new parser + a host branch in
+`engine._process` (see `scan/scan/engine.py`).
 
 ## 3. Phase 0 — Design baseline (complete)
 
@@ -41,40 +53,60 @@ Design tokens locked from `index.html` (see `index.html:13-532`):
   `.locked-overlay` restricted-access pattern; `.spec-table` (th 40%).
 - Brand voice: "ASEAN Superiority Aerospace Navigator"; restrained, factual.
 
-## 4. Phase 1 — Data acquisition (complete for v1, 44 entries)
+## 4. Phase 1 — Data acquisition (done: automated deep crawl, 1,552 entries)
 
-Workflow per system: websearch for the Army Recognition product page → fetch the
-full page (page-through on truncation) → extract only data printed on the page →
-record the exact source URL. Patent records (Google Patents) reserved for the
-follow-up pass.
+The scanner (`scanner/`) automates the full pipeline: `seed` (existing catalog +
+`seeds/categories.json`) → `discover` (sitemap enumeration of all 1,733
+`/military-products/` product URLs, classified into the 11 categories) → `crawl`
+(robots-gated, polite, cached, resumable fetch + parse + dedupe) → `export` /
+`build-web`. One run drained all 1,437 sitemap URLs and produced 1,552 live entries.
 
-### Category coverage — v1
+### Category coverage — current
 
-| # | Category | Entries | Verified systems |
+| # | Key | Category | Entries |
 |---|---|---|---|
-| 1 | Aircraft | 5 | F-35A, F-16A/B, Su-57, Chengdu J-20, Dassault Rafale |
-| 2 | UAVs | 5 | MQ-9 Reaper, Bayraktar TB2, Shahed-136, Wing Loong II, Switchblade 300 |
-| 3 | Air-launched munitions | 4 | AIM-120 AMRAAM, JDAM (GBU-31), Storm Shadow/SCALP-EG, AGM-158 JASSM |
-| 4 | Rocket and missile weapons | 5 | M142 HIMARS, MIM-104 Patriot, S-400, Iskander-M, MGM-140 ATACMS |
-| 5 | Sea-launched cruise missiles | 5 | BGM-109 Tomahawk, 3M-54 Kalibr, NSM, P-800 Oniks, Exocet MM40 B3C |
-| 6 | EW assets | 4 | Krasukha-4 (1RL257), AN/SLQ-32, Pole-21, AN/ALQ-249 NGJ-MB |
-| 7 | UGVs | 4 | Uran-9, Milrem THeMIS, Mission Master SP, MUTT |
-| 8 | Armored vehicles and equipment | 5 | M1 Abrams, Leopard 2A8, T-90M, Challenger 2, BMP-3 |
-| 9 | Automotive vehicles | 3 | HEMTT M977 A2, JLTV L-ATV, IVECO LMV |
-| 10 | Small arms | 4 | AK-12, FN SCAR L MK2, FAMAS, M16A2 |
+| 1 | aircraft | Aircraft | 156 |
+| 2 | uavs | UAVs | 29 |
+| 3 | air-launched-munitions | Air-launched munitions | 19 |
+| 4 | rocket-and-missile-weapons | Rocket and missile weapons | 442 |
+| 5 | sea-launched-cruise-missiles | Sea-launched cruise missiles | 28 |
+| 6 | ew-assets | EW assets | 19 |
+| 7 | ugvs | UGVs | 19 |
+| 8 | armored-vehicles-and-equipment | Armored vehicles and equipment | 624 |
+| 9 | automotive-vehicles | Automotive vehicles | 58 |
+| 10 | small-arms | Small arms | 80 |
+| 11 | naval-vessels | Naval vessels | 78 |
 
-**Total: 44 entries.** Data lives in `catalog-data.json` (schema v1.0).
+**Total ≈ 1,552 entries** (live count in `scan.db` / `web/data/categories.json`).
+`Rocket and missile weapons` and `Armored vehicles` dominate because Army
+Recognition has deep coverage there; `UAVs` / `UAVs-small` are thin.
 
-### Known gaps (open threads)
+**Patent pass (live):** `patents.google.com` is wired into `engine._process` →
+`parse_patent`. Patent pages are fetched, the title/abstract/publication are
+captured, and records enter the catalog under their assigned category. This is
+the secondary scale lever (to reach thousands/hundreds-of-thousands, feed USPTO
+publication numbers as Google-Patents URLs into the queue and re-`crawl`).
 
-- **Automotive / Small arms** are the thinnest categories — Army Recognition
-  product coverage is sparser there. MAN HX2, Ural-4320, Tatra T810, Steyr AUG,
-  HK MP5, FN P90, M4/HK416/M249 were attempted and have no verifiable Army
-  Recognition product page.
-- **EW assets** have few dedicated product pages; several entries are sourced
-  from fetched Army Recognition news/focus articles instead.
-- **espacenet / janes / USPTO** entries: zero so far (blocked from server).
-  Requires the research-desk pass (Phase 5).
+### Adding a category (procedure)
+
+1. `scan/config.py`: add display name to `CANONICAL_CATEGORIES` (ordered list),
+   `"key": "Display name"` to `CATEGORY_KEYS`, and a `(key, [path-keywords])` rule
+   to `CATEGORY_RULES` — **before** the broad `aircraft` (`"air/"`) / generics
+   so specific paths win (rule order is decisive).
+2. `seeds/categories.json`: add `"key": [verified_product_urls]`.
+3. `python -m scan seed` → `python -m scan discover` → `python -m scan crawl --limit N`
+   → `python -m scan build-web` (or `python -m scan export` for `catalog-data.json`).
+
+### Adding a source (procedure)
+
+1. `POLICY.md` / `PLAN.md §2`: add the host to the approved matrix with its
+   compliant path and status.
+2. `scan/parsers.py`: write `parse_<host>(url, html, category, …)` returning a
+   `CatalogEntry` using only fields printed on the page.
+3. `scan/config.py`: add the host to `Settings.domains`.
+4. `scan/engine.py`: add an `elif host == "…":` branch in `_process` calling the
+   new parser (see the `patents.google.com` branch as a template).
+5. Re-run `discover`/`crawl`/`build-web`.
 
 ## 5. Phase 2 — Data structuring & QA (complete)
 
@@ -158,17 +190,22 @@ Mirror the existing teaser/locked language exactly:
 
 ## 9. Phase 5 — Research-desk expansion roadmap
 
-1. **Patent pass** — for each system, attach one Google Patents record
-   (`patents.google.com/patent/…`) verified by fetch; build a lookup table of
-   representative patents (e.g. Kalibr/3M-54, Iskander 9M723, JASSM, Exocet).
-2. **USPTO pass** — `ppubs.uspto.gov` records via browser/research desk.
-3. **Espacenet pass** — licensed/manual; add publication numbers + URLs.
-4. **Janes pass** — licensed/manual; use for cross-check and gap filling.
-5. **Category deepening** — add systems until each category holds ≥6 entries;
-   prioritise Automotive (HEMTT variants, JLTV variants), Small arms (M16,
-   FAL, G36, P90) and EW (more Krasukha variants, NGJ-Low).
-6. **Monthly refresh** — re-fetch changed pages, supersede stale entries,
-   archive removed systems; record each cycle in CMB.
+1. **Patent pass (live)** — `patents.google.com` records are ingested via the
+   wired engine pass. For high volume: pull USPTO publication numbers from the
+   **new USPTO Open Data Portal** (requires USPTO.gov account + API key + MFA,
+   Aug 2026 migration — the legacy `ppubs.uspto.gov/pubwebapp` API is gone), turn
+   each into a `patents.google.com/patent/<pub>/en` URL, `enqueue`, and `crawl`.
+2. **Espacenet pass** — Espacenet web UI blocks autonomous fetches; use the
+   official **OPS API** (`ops.epo.org`, free EPO developer account) which the
+   engine already has a client stub for (`parsers.EspacenetOPS`, wired to
+   `ESPACENET_OPS_KEY`/`ESPACENET_OPS_SECRET` env vars).
+3. **Janes pass** — licensed research-desk CSV; `import-janes` (read-only ingest,
+   never crawled).
+4. **Category deepening** — add systems until each category holds ≥6 entries;
+   prioritise Automotive (HEMTT variants, JLTV variants), Small arms (M16, FAL,
+   G36, P90) and EW (more Krasukha variants, NGJ-Low).
+5. **Monthly refresh** — re-fetch changed pages, supersede stale entries, archive
+   removed systems; record each cycle in CMB.
 
 ## 10. Deliverables
 
@@ -178,10 +215,12 @@ Mirror the existing teaser/locked language exactly:
 | Structured catalog data (44 entries) | `catalog-data.json` | Done |
 | Deep scanner (raw pool engine) | `scanner/` | Done |
 | Picklist generator (curation model) | `scanner/scan/picklist.py` | Done |
+| Category coverage (11 categories) | `scan/config.py` + `web/data/categories.json` | Done |
+| Second source wired (patents.google.com) | `scan/engine.py` `parse_patent` | Done |
+| Static web export (design-aligned) | `scanner/web/` (`build-web`) | Done |
 | Operations plan | `PLAN.md` | Done |
 | Catalog pages (v1) | `catalog.html` (proposed) | Next |
 | Picklist UI (decision cards) | — | Next |
-| Patent/Espacenet/Janes additions | — | Roadmap |
 
 ## 11. Verification & hygiene
 

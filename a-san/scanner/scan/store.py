@@ -44,7 +44,6 @@ CREATE TABLE IF NOT EXISTS entries (
 CREATE INDEX IF NOT EXISTS idx_urls_state ON urls(state);
 CREATE INDEX IF NOT EXISTS idx_urls_cat ON urls(category);
 CREATE INDEX IF NOT EXISTS idx_entries_cat ON entries(category);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_entries_dk ON entries(designation_key);
 """
 
 
@@ -58,7 +57,19 @@ class ScanStore:
         self._lock = threading.Lock()
         with self._lock:
             self._conn.executescript(SCHEMA)
+            self._migrate()
             self._conn.commit()
+
+    def _migrate(self):
+        """In-place upgrades for stores created by older schemas."""
+        cols = [r["name"] for r in self._conn.execute("PRAGMA table_info(entries)")]
+        if "designation_key" not in cols:
+            self._conn.execute("ALTER TABLE entries ADD COLUMN designation_key TEXT")
+            self._conn.execute(
+                "UPDATE entries SET designation_key = LOWER(TRIM(designation)) "
+                "WHERE designation_key IS NULL OR designation_key=''")
+        self._conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_entries_dk "
+                           "ON entries(designation_key)")
 
     # ---------- urls queue ----------
     def enqueue(self, url: str, domain: str, category: str | None = None,

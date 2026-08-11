@@ -100,10 +100,27 @@ def _strip_lead_date(text: str) -> str:
 
 
 # ---------- Google Patents ----------
-def parse_patent(url: str, html: str, category_display: str, system_designation: str) -> CatalogEntry:
+def _patent_designation(d: dict, system_designation: str = "") -> str:
+    """Human-readable designation: the patent's title, stripped of the
+    'USxxxxx - ' prefix and ' - Google Patents' suffix. Falls back to the
+    publication number, then to system_designation, then a placeholder."""
+    title = (d.get("title") or "").strip()
+    if title:
+        title = re.sub(r"\s*-\s*Google Patents\s*$", "", title, flags=re.I)
+        title = re.sub(r"^[-–]\s*", "", title)
+        if " - " in title:
+            title = title.split(" - ", 1)[1]
+        if title:
+            return title
+    return system_designation or (d.get("publication") or "Patent record")
+
+
+def parse_patent(url: str, html: str, category_display: str, system_designation: str = "",
+                 source_label: str = "Google Patents record") -> CatalogEntry:
     d = parse_google_patents(html)
-    designation = system_designation or d["title"] or "Patent record"
-    pub = d.get("publication") or url.rsplit("/", 2)[1] if "/patent/" in url else ""
+    pub = d.get("publication") or (
+        url.rsplit("/", 2)[1] if "/patent/" in url else "")
+    designation = _patent_designation(d, system_designation)
     specs = []
     if d.get("publication"):
         specs.append(f"Publication number: {d['publication']}")
@@ -114,7 +131,7 @@ def parse_patent(url: str, html: str, category_display: str, system_designation:
         category=category_display,
         description=(d.get("abstract") or f"Public patent record {pub}.")[:600],
         specs=specs,
-        sources=[SourceRef("Google Patents record", url)],
+        sources=[SourceRef(source_label, url)],
         fetched_at=now_iso(),
     )
 

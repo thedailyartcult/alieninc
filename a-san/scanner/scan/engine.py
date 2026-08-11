@@ -12,6 +12,7 @@ from __future__ import annotations
 import concurrent.futures
 import json
 import logging
+import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -19,13 +20,14 @@ from pathlib import Path
 from .config import Settings, CATEGORY_KEYS
 from .models import CatalogEntry, SourceRef
 from .net import HttpFetcher, RobotsGate
-from .parsers import parse_armyrecognition
+from .parsers import parse_armyrecognition, parse_patent
 from .sitemap import product_urls_from_sitemap, sitemap_urls_to_parse
 from .store import ScanStore
 
 log = logging.getLogger("scan")
 
 ARMYREC_HOST = "www.armyrecognition.com"
+PATENTS_HOST = "patents.google.com"
 
 
 def load_catalog_entries(path: Path) -> list[dict]:
@@ -148,6 +150,18 @@ class Engine:
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", disp, e.designation[:50], op, len(e.specs))
                     return
+            elif host == PATENTS_HOST:
+                disp = row["category"] or "Uncategorized"
+                pub = url.rsplit("/", 2)[1] if "/patent/" in url else ""
+                e = parse_patent(url, fetched.html, disp, system_designation=pub)
+                if e:
+                    op = self.store.upsert_entry(e, url)
+                    self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (patent)", disp, e.designation[:50], op)
+                    return
+            self.store.mark(url, "done", status=200)
+            return
             self.store.mark(url, "done", status=200)
             return
         if fetched.status == 0:
@@ -197,6 +211,64 @@ class Engine:
         tmp.write_text(json.dumps(catalog, indent=2, ensure_ascii=False), encoding="utf-8")
         tmp.replace(self.settings.catalog_path)
         log.info("exported %d entries to %s", catalog["total_entries"], self.settings.catalog_path)
+
+    # ---------------- web export ----------------
+    def export_web(self, out_dir: Path):
+        """Write the static web bundle: per-category data JSONs + category.html.
+
+        category.html is a static template (scanner/web/category.html) that reads
+        ./data/categories.json and ./data/<category-key>.json and renders the
+        cards client-side — so it scales to thousands of entries without extra
+        HTML files.
+        """
+        out_dir.mkdir(parents=True, exist_ok=True)
+        data_dir = out_dir / "data"
+        data_dir.mkdir(parents=True, exist_ok=True)
+
+        entries = self.store.all_entries()
+        grouped: dict[str, list[CatalogEntry]] = {}
+        for e in entries:
+            key = None
+            for k, disp in CATEGORY_KEYS.items():
+                if disp.lower() == (e.category or "").lower():
+                    key = k
+                    break
+            grouped.setdefault(key or "uncategorized", []).append(e)
+
+        cats = []
+        for key in CATEGORY_KEYS:
+            lst = sorted(grouped.get(key, []), key=lambda e: e.designation.lower())
+            cats.append({"key": key, "name": CATEGORY_KEYS[key], "count": len(lst)})
+            (data_dir / f"{key}.json").write_text(
+                json.dumps({"key": key, "category": CATEGORY_KEYS[key],
+                            "count": len(lst), "entries": [e.to_dict() for e in lst]},
+                           ensure_ascii=False), encoding="utf-8")
+
+        # picklist (scores) when available — powers the score badges in the UI
+        pl = self.settings.root / "data" / "picklist.json"
+        picklist_present = False
+        if pl.exists():
+            try:
+                shutil.copy(pl, data_dir / "picklist.json")
+                picklist_present = True
+            except OSError:
+                picklist_present = False
+
+        meta = {
+            "schema_version": "web.1",
+            "generated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "total_entries": sum(c["count"] for c in cats),
+            "picklist_present": picklist_present,
+            "categories": cats,
+        }
+        (data_dir / "categories.json").write_text(
+            json.dumps(meta, ensure_ascii=False), encoding="utf-8")
+
+        tpl = Path(__file__).resolve().parent.parent / "web" / "templates" / "category.html"
+        if tpl.exists():
+            shutil.copy(tpl, out_dir / "category.html")
+        log.info("web export: %d entries, %d categories -> %s",
+                 meta["total_entries"], len(cats), out_dir)
 
     def status(self) -> dict:
         st = self.store.stats()

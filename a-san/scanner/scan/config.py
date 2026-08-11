@@ -15,6 +15,7 @@ CANONICAL_CATEGORIES = [
     "Armored vehicles and equipment",
     "Automotive vehicles",
     "Small arms",
+    "Naval vessels",
 ]
 
 # Canonical key -> display name
@@ -29,6 +30,7 @@ CATEGORY_KEYS = {
     "armored-vehicles-and-equipment": "Armored vehicles and equipment",
     "automotive-vehicles": "Automotive vehicles",
     "small-arms": "Small arms",
+    "naval-vessels": "Naval vessels",
 }
 KEY_TO_CATEGORY = CATEGORY_KEYS
 
@@ -44,6 +46,10 @@ def category_key(display: str) -> str:
 # Order matters — more specific rules first (e.g. SLCM before generic missiles).
 CATEGORY_RULES: list[tuple[str, list[str]]] = [
     ("sea-launched-cruise-missiles", ["navy/weapons-systems/missiles", "anti-ship", "cruise-missiles", "naval-strike"]),
+    ("naval-vessels", ["navy/aircraft-carriers", "navy/frigates", "navy/submarines", "navy/corvettes",
+                       "navy/destroyers-cruisers", "navy/amphibious-warfare-ship", "navy/patrol-vessels",
+                       "navy/minehunter", "navy/auxiliary-ships", "navy/naval-aircraft",
+                       "navy/rigid-inflatable-boat", "navy/naval-combat-equipment", "navy/unmanned-systems"]),
     ("air-launched-munitions", ["air-launched", "air-to-air-missile", "air-to-ground", "smart-bombs", "precision-guided", "bombs", "smart-munition"]),
     ("uavs", ["unmanned-aerial-vehicles", "unmanned-aerial-system", "loitering", "kamikaze", "uav", "drones"]),
     ("ugvs", ["unmanned-ground-vehicles", "ugv", "unmanned-ground"]),
@@ -107,7 +113,7 @@ class Settings:
     root: Path = Path(__file__).resolve().parent.parent
     db_path: Path = Path("data/scan.db")
     cache_dir: Path = Path("data/cache")    # optional disk mirror of raw HTML
-    catalog_path: Path = Path("catalog-data.json")  # absolute-ised in cli
+    catalog_path: Path = Path("../catalog-data.json")  # scanner lives inside a-san/
     seeds_path: Path = Path("seeds/categories.json")
 
     # Official API credentials (env) — only used if set. Never stored.

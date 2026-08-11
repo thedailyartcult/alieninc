@@ -142,6 +142,19 @@ def cmd_curate(args, s: Settings):
     eng.close()
 
 
+def cmd_build_web(args, s: Settings):
+    eng = Engine(s)
+    out = Path(args.out) if args.out else s.root / "web"
+    if not out.is_absolute():
+        out = s.root / out
+    eng.export_web(out)
+    eng.close()
+    print(json.dumps({
+        "out": str(out),
+        "note": "serve with:  python3 -m http.server 8000 --directory %s" % out,
+    }, indent=2))
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(prog="python -m scan", description="A-SAN deep scanner")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -154,6 +167,9 @@ def main(argv=None):
     cp.add_argument("--max-per-category", type=int, default=15)
     cp.add_argument("--max-total", type=int, default=100)
     _add_common(cp)
+    wp = sub.add_parser("build-web")
+    wp.add_argument("--out", default=None, help="output dir (default <scanner>/web)")
+    _add_common(wp)
     sp = sub.add_parser("import-janes")
     sp.add_argument("csv")
     _add_common(sp)
@@ -178,6 +194,8 @@ def main(argv=None):
         cmd_import_janes(args, s)
     elif args.cmd == "curate":
         cmd_curate(args, s)
+    elif args.cmd == "build-web":
+        cmd_build_web(args, s)
 
 
 def _add_common(sp):

@@ -26,7 +26,13 @@ discover  pull the site sitemap, classify /military-products URLs into the 10
 crawl     fetch (robots-gated, cached, polite) -> parse spec content -> dedupe
 export    write catalog-data.json (schema v1.0, grouped by category)
 curate    RAW POOL -> filters -> scoring -> ranked PICKLIST (+ audit)
+build-web write static site (web/) for browsing the catalog
 ```
+
+The engine dispatches each host to a source-specific parser:
+`armyrecognition.com` → `parse_armyrecognition`; `patents.google.com` →
+`parse_patent`. To add a site, add a parser + a host branch in `engine._process`
+(see PLAN.md §1 "Adding a source").
 
 Every run is **resumable**: the queue lives in `data/scan.db` (SQLite WAL). A
 killed run restarts where it left off. Raw HTML is cached so `--refresh` is the
@@ -78,13 +84,14 @@ description, key_specs, source_urls`.
 
 | Command | Purpose |
 |---|---|
-| `python -m scan run` | Full cycle for all 10 categories |
+| `python -m scan run` | Full cycle for all 11 categories |
 | `python -m scan run --categories uavs,small-arms --limit 100` | Scoped run |
-| `python -m scan discover` | Enqueue sitemap product URLs only |
+| `python -m scan discover` | Enqueue sitemap product URLs only (10 sources now) |
 | `python -m scan crawl` | Continue a partial run |
 | `python -m scan status` | Queue + entry counts |
 | `python -m scan export` | Rebuild catalog-data.json from the store |
 | `python -m scan curate` | Raw pool → picklist (`data/picklist.json` + `.csv`) |
+| `python -m scan build-web` | Static site (`web/`) — entries by category + picklist |
 | `python -m scan import-janes desk.csv` | Ingest licensed research-desk CSV |
 
 ## Flags
@@ -103,10 +110,17 @@ description, key_specs, source_urls`.
 
 - Keep `--workers` modest (2–6); per-host throttling is the real limit.
 - Run category-scoped batches so a failure only affects one category:
-  `python -m scan run --categories armored-vehicles-and-equipment --limit 500`
+  `python -m scan run --categories naval-vessels --limit 500`
 - Schedule repeated runs (cron / systemd timer) — the store is idempotent and
-  merges, never duplicates. Each run adds the sitemap-discovered pages for the
-  chosen categories and works through the queue.
+  merges, never duplicates.
+- To reach **thousands/hundreds of thousands** of entries: the high-volume lever
+  is a feed of publication numbers — e.g. the new **USPTO Open Data Portal** API
+  (requires USPTO.gov account + key + MFA; the legacy `ppubs.uspto.gov` API
+  migrated in Aug 2026). Each publication number becomes a
+  `patents.google.com/patent/<pub>/en` URL → `scan seed` a list → `crawl` (the
+  `patents.google.com` parser is already wired). See `PLAN.md §5`.
+- `python -m scan build-web` is **not automatic** — re-run it after a crawl to
+  refresh `web/data/*.json`; serve with `python3 -m http.server 8000 --directory web`.
 
 ## Espacenet / Janes / USPTO
 
@@ -123,3 +137,8 @@ description, key_specs, source_urls`.
 
 `data/picklist.json` + `data/picklist.csv` — the curated, ranked picklist for
 user decision-making (see "The picklist mission" above).
+
+`web/` — static browser site: `web/index.html` links to `web/category.html`,
+which reads the per-category JSON in `web/data/` (template lives at
+`web/templates/category.html`). Serve with `python3 -m http.server 8000
+--directory web`.

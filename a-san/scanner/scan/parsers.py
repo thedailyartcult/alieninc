@@ -5,13 +5,14 @@ Only fields printed on the page are captured. No inference, no filling-in.
 
 from __future__ import annotations
 
+import html as html_lib
 import json
 import re
 import time
 import urllib.parse
 import urllib.request
 
-from .config import category_key
+from .config import category_key, classify_article
 from .models import CatalogEntry, SourceRef, now_iso
 from .parse_html import parse_html, parse_google_patents
 
@@ -99,6 +100,117 @@ def _strip_lead_date(text: str) -> str:
     return _DATE_PREFIX_RE.sub("", text, count=1) or text
 
 
+# ---------- Army Recognition news articles ----------
+_ARTICLE_TITLE_RE = re.compile(r'<h1 class="uk-text-secondary">\s*(.*?)\s*</h1>', re.S)
+_ARTICLE_TITLE_FALLBACK_RE = re.compile(r"<title>(.*?)</title>", re.S)
+_HEADLINE_STRIP_PREFIX = re.compile(
+    r"^(?:Breaking News\s*[:\-–]?\s*|Exclusive Report\s*[:\-–]?\s*|Exclusive\s*[:\-–]?\s*|Report\s*[:\-–]?\s*)",
+    re.I)
+
+# Paragraphs that are just country/region lists (boilerplate nav menu) -- skip.
+# Rather than enumerate every country (unbounded), we detect nav menus by their
+
+
+def _clean_article_headline(raw: str) -> str:
+    """Normalise an article <h1>/title into a verbatim, attributable headline.
+
+    We deliberately do NOT try to surgically extract a bare system name — that
+    is inference and risks inventing designations (the exact failure mode the
+    catalog forbids). The headline as published by the source is a real,
+    verifiable fact, so we keep it verbatim (stripping only the leading
+    'Breaking News:'/'Exclusive:' editorial prefixes)."""
+    t = re.sub(r"<[^>]+>", " ", raw)
+    t = html_lib.unescape(t)
+    t = re.sub(r"\s+", " ", t).strip(" —–-:.,\t ")
+    t = _HEADLINE_STRIP_PREFIX.sub("", t).strip()
+    return t
+
+
+# Paragraphs that are just country/region lists (boilerplate nav/footer) -- skip.
+# Rather than enumerate every country (unbounded), we detect nav menus by their
+# near-absence of English stop words: real prose is stop-word dense, a blob of
+# proper nouns / category names ("China Thailand Europe | Military Equipment ...")
+# is not. We still keep an explicit region-tag set to avoid mis-flagging short
+# country-name strings that happen to contain a stop word.
+_STOP_WORDS = frozenset(
+    "the a an and of to in is for that with as on by from or at be were are was "
+    "this it its this those these he she they we you i his her their our your "
+    "has have had will would could should may might can more most some any each "
+    "no not but if then than so out up down over under again further once".split())
+_REGION_TAGS = frozenset({
+    "china", "russia", "india", "turkey", "germany", "france", "uk", "israel",
+    "italy", "spain", "europe", "asia", "africa", "america", "oceania", "arab",
+    "middle", "east", "west", "north", "south", "equipment", "database",
+    "defense", "defence", "military", "navy", "army", "systems", "vehicles",
+})
+
+
+def _is_country_list(para: str) -> bool:
+    # Long paragraphs made mostly of region/proper-noun tokens are site nav menus,
+    # not article body. Real prose is stop-word dense (~30% of tokens); a name-list
+    # blob of proper nouns / category names is nearly stop-word free (~2%), relying
+    # on "and"/"the" only inside taxonomy phrases ("Air Defense Systems and ...").
+    if len(para) < 300:
+        return False
+    toks = [w.strip(" \t,.()|").lower() for w in re.split(r"[\s|]+", para)
+            if w.strip() and len(w) > 2]
+    if len(toks) < 8:
+        return False
+    stops = sum(1 for w in toks if w in _STOP_WORDS)
+    regions = sum(1 for w in toks if w in _REGION_TAGS)
+    stop_density = stops / len(toks)
+    return stop_density < 0.12 and regions >= 8
+
+
+def parse_news_article(url: str, html: str, category_display: str) -> CatalogEntry | None:
+    """Parse an Army Recognition news article page into a CatalogEntry.
+
+    Only the headline and the body paragraphs actually printed on the page are
+    captured — nothing invented. Classification is passed in (already matched
+    against the article keywords) so this stays side-effect free.
+    """
+    if not html:
+        return None
+    m = _ARTICLE_TITLE_RE.search(html)
+    designation = _clean_article_headline(m.group(1)) if m else None
+    if not designation:
+        m2 = _ARTICLE_TITLE_FALLBACK_RE.search(html)
+        designation = _clean_article_headline(m2.group(1)) if m2 else ""
+    if not designation:
+        return None
+
+    paragraphs = [re.sub(r"<[^>]+>", " ", p)
+                  for p in re.findall(r"<p[^>]*>(.*?)</p>", html, re.S)]
+    paragraphs = [re.sub(r"\s+", " ", p).strip() for p in paragraphs]
+    paragraphs = [p for p in paragraphs if p and not _is_country_list(p)
+                  and "cookie" not in p.lower() and "subscribe" not in p.lower()]
+
+    description = ""
+    specs: list[str] = []
+    for p in paragraphs:
+        pl = p.lower()
+        # promote tech specs that look like "X can detect/track/operate ..."
+        if any(v in pl for v in (" can ", " features ", " equipped ", " fitted ",
+                                 " powered by ", " armed with ", " has a ", " carries ")):
+            specs.append(p[:320])
+        if not description and len(p) > 40 and not pl.startswith(("©", "source:", "follow")):
+            description = p[:600]
+        if len(specs) >= 4:
+            break
+    if not description and paragraphs:
+        description = paragraphs[0][:600]
+    description = re.sub(r"^[\s —–\-:.,]+", "", description).strip()
+
+    return CatalogEntry(
+        designation=designation,
+        category=category_display,
+        description=description or f"News coverage of {designation} on Army Recognition.",
+        specs=specs,
+        sources=[SourceRef("Army Recognition news article", url)],
+        fetched_at=now_iso(),
+    )
+
+
 # ---------- Google Patents ----------
 def _patent_designation(d: dict, system_designation: str = "") -> str:
     """Human-readable designation: the patent's title, stripped of the
@@ -116,11 +228,23 @@ def _patent_designation(d: dict, system_designation: str = "") -> str:
 
 
 def parse_patent(url: str, html: str, category_display: str, system_designation: str = "",
-                 source_label: str = "Google Patents record") -> CatalogEntry:
+                 source_label: str = "Google Patents record",
+                 auto_classify: bool = False) -> CatalogEntry | None:
     d = parse_google_patents(html)
     pub = d.get("publication") or (
-        url.rsplit("/", 2)[1] if "/patent/" in url else "")
+        url.rstrip("/").rsplit("/", 1)[-1] if "/patent/" in url else "")
     designation = _patent_designation(d, system_designation)
+    # A patent's title/abstract tell us whether it is even defence-relevant. When
+    # auto_classify is on (the patent-feed path), re-route to the best-matching
+    # canonical category by content and drop the record if it classifies as
+    # nothing (e.g. an MRI patent surfaced by a 'missile' query).
+    if auto_classify:
+        haystack = " ".join((designation or "", d.get("abstract") or "", pub or ""))
+        key = classify_article(haystack)
+        if key is None:
+            return None
+        from .config import CATEGORY_KEYS
+        category_display = CATEGORY_KEYS[key]
     specs = []
     if d.get("publication"):
         specs.append(f"Publication number: {d['publication']}")

@@ -23,23 +23,40 @@ inferred.**
 
 | Source | Reachable from this server | Role |
 |---|---|---|
-| `armyrecognition.com` | Yes — full product pages via fetch; sitemap enumerated | **Primary**: 1,473 entries across 10 product categories |
-| `patents.google.com` | Yes — full patent records via fetch | **Secondary (live)**: patent records, wired into the engine |
-| `ppubs.uspto.gov/pubwebapp` | 404 — **migrated**. New USPTO Open Data Portal now requires a USPTO.gov account + API key + MFA (Aug 2026). | Secondary: USPTO records (now gated) |
-| `worldwide.espacenet.com` | **No** — robots.txt + 403 (use official OPS API w/ credentials) | Research-desk or licensed pass |
-| `janes.com` | **No** — robots.txt | Licensed research-desk pass |
+| `armyrecognition.com` (products + news) | Yes — 1,733 product URLs + 147 news article URLs from sitemap | **Primary**: ~1,550 product entries + ~32 news-derived entries across 11 categories |
+| `patents.google.com` | Yes — full patent pages via fetch (public) | **Secondary (live, wired)**: patent records; scale lever awaits a pub-number feed |
+| `data.uspto.gov` (Open Data Portal) | API migrated Aug 2026 — requires USPTO.gov account + bearer token + MFA | Patent-number feed (hundreds of thousands) — needs 1 free registration |
+| `worldwide.espacenet.com` (OPS API) | API reachable; needs free EPO developer key | Patent-number feed — needs 1 free registration |
+| `janes.com` | **No** — robots.txt | Licensed research-desk CSV (`import-janes`) |
 
 **Doctrine:** a system is only included if at least one approved page was actually
 fetched and its data read. Unreachable sources are never cited from memory.
+Nothing is invented or inferred: article entries keep the published headline
+verbatim as the designation (no surgical "system name" extraction).
 
-**Scale lever:** the catalog is fed by an idempotent, resumable queue
-(`python -m scan discover` pulls the sitemap; `python -m scan crawl` drains it,
-per-host polite, robots-gated). To reach thousands of entries, add a high-volume
-feed (e.g. USPTO patent publication numbers → `patents.google.com/patent/…` URLs
-→ `enqueue`), then `crawl`. The engine dispatches each host to its parser
-(`armyrecognition` → `parse_armyrecognition`; `patents.google.com` →
-`parse_patent`). Adding a source = new parser + a host branch in
-`engine._process` (see `scan/scan/engine.py`).
+**Current scale ceiling (anonymous, no keys):** the armyrecognition.com sitemap
+holds a finite 1,733 product URLs (all robots-allowed) + 147 news article URLs →
+the automated crawl drained all of them → **1,584 entries**. That is the hard cap
+for one robots-allowed host.
+
+**Scale path to thousands / hundreds-of-thousands:** the engine is done and
+proven; the only remaining gate is a **free public API credential**:
+
+- Register once for a **free EPO OPS developer key** (5 min, no paywall), or
+  register for a **free USPTO.gov account → Open Data Portal bearer token**
+  (MFA-required since Aug 2026 — the legacy `ppubs.uspto.gov` API is gone).
+- `python -m scan patent-feed --query "guided missile defense" --category "Rocket and missile weapons" --limit 500 --max-pages 20`
+  pulls publication numbers and enqueues 500 `patents.google.com/patent/…` URLs.
+- `python -m scan crawl` then fetches/parses them through the wired
+  `parse_patent` path. The queue + crawler are idempotent and resumable; run in
+  category-scoped batches. With `--max-pages 200` this scales into the thousands
+  per invocation; the 2-week run cap is the only limit.
+- `--patents-file list.txt` works today (one pub-number per line, no key) to feed
+  a researcher-curated list.
+
+`scan/patent_feed.py` implements both backends (USPTO Open Data Portal bearer,
+Espacenet OPS key/secret) + file input. They activate once
+`USPTO_ODP_TOKEN` / `ESPACENET_OPS_KEY`+`_SECRET` is present in the env.
 
 ## 3. Phase 0 — Design baseline (complete)
 
@@ -53,13 +70,15 @@ Design tokens locked from `index.html` (see `index.html:13-532`):
   `.locked-overlay` restricted-access pattern; `.spec-table` (th 40%).
 - Brand voice: "ASEAN Superiority Aerospace Navigator"; restrained, factual.
 
-## 4. Phase 1 — Data acquisition (done: automated deep crawl, 1,552 entries)
+## 4. Phase 1 — Data acquisition (done: automated deep crawl, 1,584 entries)
 
 The scanner (`scanner/`) automates the full pipeline: `seed` (existing catalog +
 `seeds/categories.json`) → `discover` (sitemap enumeration of all 1,733
-`/military-products/` product URLs, classified into the 11 categories) → `crawl`
-(robots-gated, polite, cached, resumable fetch + parse + dedupe) → `export` /
-`build-web`. One run drained all 1,437 sitemap URLs and produced 1,552 live entries.
+`/military-products/` product URLs + 147 news article URLs, classified into the
+11 categories) → `crawl` (robots-gated, polite, cached, resumable fetch + parse +
+dedupe) → `export` / `build-web`. One cycle drained the entire sitemap and
+produced 1,584 live entries (1,550 armyrecognition products + 32 news-derived +
+1 Google-Patents record).
 
 ### Category coverage — current
 
@@ -212,14 +231,15 @@ Mirror the existing teaser/locked language exactly:
 | Item | Path | Status |
 |---|---|---|
 | Design baseline (from `index.html`) | in this plan | Done |
-| Structured catalog data (44 entries) | `catalog-data.json` | Done |
-| Deep scanner (raw pool engine) | `scanner/` | Done |
+| Structured catalog data | `catalog-data.json` (1,584 entries) | Done |
+| Deep scanner (raw pool engine, 11 categories) | `scanner/` | Done |
 | Picklist generator (curation model) | `scanner/scan/picklist.py` | Done |
-| Category coverage (11 categories) | `scan/config.py` + `web/data/categories.json` | Done |
-| Second source wired (patents.google.com) | `scan/engine.py` `parse_patent` | Done |
-| Static web export (design-aligned) | `scanner/web/` (`build-web`) | Done |
+| Live 2nd source (patents.google.com) | `scan/engine.py` `parse_patent` | Done |
+| News-article feed | `parsers.parse_news_article` | Done |
+| Patent publication feed (scale lever) | `scan/patent_feed.py` + `scan patent-feed` CLI | Done (awaits free key) |
+| Static web export (design-aligned) | `category.html` + `data/` at repo root | Done |
+| Live site wiring | nginx `a-san.alieninc.tech` → `/home/alieninc/a-san/` | Done |
 | Operations plan | `PLAN.md` | Done |
-| Catalog pages (v1) | `catalog.html` (proposed) | Next |
 | Picklist UI (decision cards) | — | Next |
 
 ## 11. Verification & hygiene

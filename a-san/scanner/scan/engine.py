@@ -20,14 +20,16 @@ from pathlib import Path
 from .config import Settings, CATEGORY_KEYS
 from .models import CatalogEntry, SourceRef
 from .net import HttpFetcher, RobotsGate
-from .parsers import parse_armyrecognition, parse_patent
-from .sitemap import product_urls_from_sitemap, sitemap_urls_to_parse
+from .parsers import parse_armyrecognition, parse_patent, parse_news_article
+from .parsers_weaponsystems import parse_weaponsystem
+from .sitemap import product_urls_from_sitemap, article_urls_from_sitemap, sitemap_urls_to_parse
 from .store import ScanStore
 
 log = logging.getLogger("scan")
 
 ARMYREC_HOST = "www.armyrecognition.com"
 PATENTS_HOST = "patents.google.com"
+WEAPONSYSTEMS_HOST = "weaponsystems.net"
 
 
 def load_catalog_entries(path: Path) -> list[dict]:
@@ -106,7 +108,11 @@ class Engine:
         added = 0
         for u, key, disp in urls:
             added += self.store.enqueue(u, ARMYREC_HOST, category=disp, kind="product")
-        log.info("discovery: %d product urls enqueued (of %d candidates)", added, len(urls))
+        arts = article_urls_from_sitemap(xml, wanted_keys)
+        for u, key, disp in arts:
+            added += self.store.enqueue(u, ARMYREC_HOST, category=disp, kind="article")
+        log.info("discovery: %d product + %d article urls enqueued (of %d candidates)",
+                 added - len(arts), len(arts), len(urls) + len(arts))
         return added
 
     # ---------------- crawl ----------------
@@ -135,13 +141,34 @@ class Engine:
     def _process(self, row: dict):
         url = row["url"]
         host = row["domain"]
+        kind = row["kind"] or "product"
         fetched = self._fetcher(host).fetch(url, store=self.store,
                                             use_cache=self.settings.use_cache)
         if fetched.robots_verdict == "disallow":
             self.store.set_robots(url, "disallow")
             return
         if fetched.status == 200 and fetched.html:
-            if host == ARMYREC_HOST:
+            if host == PATENTS_HOST and "/patent/" in url:
+                disp = row["category"] or "Uncategorized"
+                pub = url.rstrip("/").rsplit("/", 1)[-1]
+                e = parse_patent(url, fetched.html, disp, system_designation=pub,
+                                 auto_classify=True)
+                if e:
+                    op = self.store.upsert_entry(e, url)
+                    self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (patent)", disp, e.designation[:50], op)
+                    return
+            elif host == ARMYREC_HOST and kind == "article":
+                disp = row["category"] or "Uncategorized"
+                e = parse_news_article(url, fetched.html, disp)
+                if e:
+                    op = self.store.upsert_entry(e, url)
+                    self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (news)", disp, e.designation[:50], op)
+                    return
+            elif host == ARMYREC_HOST and kind == "product":
                 disp = row["category"] or "Uncategorized"
                 e = parse_armyrecognition(url, fetched.html, disp)
                 if e:
@@ -150,18 +177,17 @@ class Engine:
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", disp, e.designation[:50], op, len(e.specs))
                     return
-            elif host == PATENTS_HOST:
+            elif host == WEAPONSYSTEMS_HOST and "/system/" in url:
                 disp = row["category"] or "Uncategorized"
-                pub = url.rsplit("/", 2)[1] if "/patent/" in url else ""
-                e = parse_patent(url, fetched.html, disp, system_designation=pub)
+                e = parse_weaponsystem(url, fetched.html, disp)
                 if e:
                     op = self.store.upsert_entry(e, url)
                     self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
-                    log.info("[%s] %s -> %s (patent)", disp, e.designation[:50], op)
+                    log.info("[%s] %s -> %s (%s)", disp, e.designation[:50], op, len(e.specs))
                     return
-            self.store.mark(url, "done", status=200)
-            return
+            # unknown host/kind or parser returned None: still mark fetched so the
+            # page isn't re-fetched on every run (no data extracted).
             self.store.mark(url, "done", status=200)
             return
         if fetched.status == 0:

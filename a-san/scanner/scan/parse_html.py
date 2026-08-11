@@ -9,6 +9,7 @@ Plus generic title / paragraph extraction and Google Patents meta extraction.
 
 from __future__ import annotations
 
+import html as html_lib
 import re
 from html.parser import HTMLParser
 
@@ -17,7 +18,7 @@ _TAG_RE = re.compile(r"<[^>]+>")
 
 def clean_text(s: str) -> str:
     s = re.sub(r"<[^>]+>", " ", s)
-    s = s.replace("&nbsp;", " ").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
+    s = html_lib.unescape(s)          # &#39; &amp; &nbsp; &lt; &gt; entities -> chars
     s = re.sub(r"\s+", " ", s)
     s = s.replace(" ,", ",").replace(" .", ".")
     return s.strip()

@@ -27,8 +27,10 @@ from pathlib import Path
 
 from .config import Settings, CATEGORY_KEYS, category_key
 from .engine import Engine
+from .models import CatalogEntry, SourceRef, now_iso
 from .parsers import janes_import_csv
 from .picklist import CurationRules, curate, write_outputs
+from .patent_feed import feed_patents, feed_from_file
 
 
 def _settings(args) -> Settings:
@@ -41,6 +43,7 @@ def _settings(args) -> Settings:
         obey_robots=not args.no_robots,
         espacenet_ops_key=os.environ.get("ESPACENET_OPS_KEY", ""),
         espacenet_ops_secret=os.environ.get("ESPACENET_OPS_SECRET", ""),
+        uspto_odp_token=os.environ.get("USPTO_ODP_TOKEN", ""),
     )
     if args.catalog:
         s.catalog_path = Path(args.catalog)
@@ -144,14 +147,48 @@ def cmd_curate(args, s: Settings):
 
 def cmd_build_web(args, s: Settings):
     eng = Engine(s)
-    out = Path(args.out) if args.out else s.root / "web"
+    # Default: the A-SAN site root (repo root, sibling of index.html) so
+    # https://a-san.alieninc.tech/category.html serves the catalog. Override
+    # with --out to stage elsewhere.
+    default_out = s.root.parent
+    out = Path(args.out) if args.out else default_out
     if not out.is_absolute():
-        out = s.root / out
+        out = s.root.parent / out
     eng.export_web(out)
     eng.close()
     print(json.dumps({
         "out": str(out),
         "note": "serve with:  python3 -m http.server 8000 --directory %s" % out,
+        "deployed": "https://a-san.alieninc.tech/category.html",
+    }, indent=2))
+
+
+def cmd_patent_feed(args, s: Settings):
+    """Enqueue patent publication numbers as Google-Patents reader URLs.
+
+    Either `--patents-file list.txt` (one pub number per line) or, with no file,
+    a live API query (USPTO Open Data Portal bearer token, or Espacenet OPS
+    key/secret — whichever is configured in the env). Each resulting
+    publication number becomes a `patents.google.com/patent/<pub>` URL and is
+    enqueued under `--category`. Then run `python -m scan crawl`.
+    """
+    eng = Engine(s)
+    cat = args.category
+    category_display = _categories(argparse.Namespace(categories=cat))[0] if cat else "Uncategorized"
+    try:
+        if args.patents_file:
+            count = feed_from_file(eng, args.patents_file, category_display, limit=args.limit)
+        else:
+            count = feed_patents(eng, args.query, category_display,
+                                 limit=args.limit, per_page=args.per_page,
+                                 max_pages=args.max_pages)
+    finally:
+        eng.close()
+    print(json.dumps({
+        "enqueued": count,
+        "category": category_display,
+        "query": args.query,
+        "next": "python -m scan crawl",
     }, indent=2))
 
 
@@ -170,6 +207,13 @@ def main(argv=None):
     wp = sub.add_parser("build-web")
     wp.add_argument("--out", default=None, help="output dir (default <scanner>/web)")
     _add_common(wp)
+    fp = sub.add_parser("patent-feed", help="enqueue patent pub-numbers as google-patents URLs")
+    fp.add_argument("--query", default="guided missile defense", help="search text for the API feed")
+    fp.add_argument("--category", default="Rocket and missile weapons", help="category to assign (key or display name)")
+    fp.add_argument("--patents-file", default=None, help="txt list of pub numbers (one per line) instead of an API query")
+    fp.add_argument("--per-page", type=int, default=50, help="results per API page")
+    fp.add_argument("--max-pages", type=int, default=20, help="max API pages to pull")
+    _add_common(fp)
     sp = sub.add_parser("import-janes")
     sp.add_argument("csv")
     _add_common(sp)
@@ -196,6 +240,8 @@ def main(argv=None):
         cmd_curate(args, s)
     elif args.cmd == "build-web":
         cmd_build_web(args, s)
+    elif args.cmd == "patent-feed":
+        cmd_patent_feed(args, s)
 
 
 def _add_common(sp):

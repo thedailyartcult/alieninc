@@ -20,13 +20,14 @@ python -m scan run --categories aircraft,uavs --limit 10   # smoke test
 ## Pipeline
 
 ```
-seed      load existing catalog-data.json + seeds/categories.json into the queue
-discover  pull the site sitemap, classify /military-products URLs into the 10
-          categories, enqueue product pages
-crawl     fetch (robots-gated, cached, polite) -> parse spec content -> dedupe
+seed      load existing catalog + seeds/categories.json into the queue (dedupe-aware)
+discover  sitemap enumeration: /military-products product URLs + news article URLs,
+          classified into the 11 categories, enqueued (product + article + patent kinds)
+crawl     fetch (robots-gated, cached, polite) -> host-dispatched parser -> upsert+dedupe
 export    write catalog-data.json (schema v1.0, grouped by category)
 curate    RAW POOL -> filters -> scoring -> ranked PICKLIST (+ audit)
-build-web write static site (web/) for browsing the catalog
+build-web write static site (category.html + data/) to the site root, design-faithful to index.html
+patent-feed enqueue patent pub-numbers (USPTO ODP / Espacenet OPS / --patents-file)
 ```
 
 The engine dispatches each host to a source-specific parser:
@@ -91,8 +92,9 @@ description, key_specs, source_urls`.
 | `python -m scan status` | Queue + entry counts |
 | `python -m scan export` | Rebuild catalog-data.json from the store |
 | `python -m scan curate` | Raw pool → picklist (`data/picklist.json` + `.csv`) |
-| `python -m scan build-web` | Static site (`web/`) — entries by category + picklist |
+| `python -m scan build-web` | Static site — `category.html` + `data/` at the site root (11 categories) |
 | `python -m scan import-janes desk.csv` | Ingest licensed research-desk CSV |
+| `python -m scan patent-feed --query "guided missile defense" --category "Rocket and missile weapons" --limit 500` | Enqueue 500 patent URLs (USPTO ODP / Espacenet OPS; or `--patents-file list.txt`) → then `crawl` |
 
 ## Flags
 

@@ -87,7 +87,7 @@ class ScanStore:
             if categories:
                 ph = ",".join("?" * len(categories))
                 rows = self._conn.execute(
-                    f"SELECT * FROM urls WHERE state='queued' AND category IN ({ph}) "
+                    f"SELECT * FROM urls WHERE state='queued' AND (category IN ({ph}) OR category IS NULL) "
                     "ORDER BY rowid LIMIT ?", (*categories, limit)).fetchall()
             else:
                 rows = self._conn.execute(

@@ -87,6 +87,47 @@ def rule_index_for_path(path: str) -> int | None:
     return None
 
 
+# ---------- News-article classifier ----------
+# Army Recognition news titles are free text (no stable URL path taxonomy), so we
+# classify by keyword presence in the title/body. Order = specificity.
+ARTICLE_CATEGORY_RULES: list[tuple[str, list[str]]] = [
+    ("sea-launched-cruise-missiles", ["cruise missile", "slcm", "naval strike", "anti-ship missile"]),
+    ("naval-vessels", ["frigate", "destroyer", "corvette", "submarine", "aircraft carrier",
+                       "amphibious assault", "patrol vessel", "mine hunter", "warship"]),
+    ("air-launched-munitions", ["jdam", "jdam", "bomb", "guided bomb", "air-to-air missile",
+                                "air-to-surface", "precision-guided", "cruise missile air"]),
+    ("rocket-and-missile-weapons", ["ballistic missile", "icbm", "irbm", "medium-range ballistic",
+                                    "short-range ballistic", "anti-tank missile", "atgm", "mlrs",
+                                    "multiple launch rocket", "scud", "is kander", "patriot", "s-400",
+                                    "himars", "tomahawk", "atacms", "fateh"]),
+    ("aircraft", ["fighter", "f-35", "f-16", "rafale", "su-57", "eurofighter", "f-22", "f-15",
+                  "f-14", "f-18", "f-20", "fj-31", "j-20", "j-31", "typhoon", "gripen", "hornets",
+                  "super hornet", "harrier", "a10", "a-10", "transport aircraft", "tanker",
+                  "aerial refueling", "awacs", "early warning"]),
+    ("uavs", ["uav", "uas", "drone", "loitering", "kamikaze", "mq-", "bayraktar", "shahed",
+              "switchblade", "wing loong", "predator", "reaper"]),
+    ("ew-assets", ["radar", "electronic warfare", "jammer", "signals intelligence", "sigint",
+                   "electronic countermeasure", "ecm", "giraffe", "surveillance radar",
+                   "air defense radar", "phased array"]),
+    ("ugvs", ["ugv", "unmanned ground vehicle", "robotic ground", "ground robot"]),
+    ("armored-vehicles-and-equipment", ["tank", "mbt", "main battle tank", "ifv", "infantry fighting vehicle",
+                                        "apc", "armored personnel carrier", "armoured", "mrap", "afv"]),
+    ("automotive-vehicles", ["truck", "logistics vehicle", "tactical truck", "cargo truck", "transport vehicle"]),
+    ("small-arms", ["rifle", "pistol", "machine gun", "assault rifle", "sniper", "light machine gun",
+                    "submachine gun", "handgun", "automatic rifle"]),
+]
+
+
+def classify_article(text: str) -> str | None:
+    """Classify a news article (title+body) -> category key, by keyword priority."""
+    p = (text or "").lower()
+    for key, kws in ARTICLE_CATEGORY_RULES:
+        for kw in kws:
+            if kw in p:
+                return key
+    return None
+
+
 @dataclass
 class Settings:
     """Runtime settings. Everything overridable via CLI flags / env vars."""
@@ -119,6 +160,7 @@ class Settings:
     # Official API credentials (env) — only used if set. Never stored.
     espacenet_ops_key: str = ""
     espacenet_ops_secret: str = ""
+    uspto_odp_token: str = ""   # USPTO Open Data Portal bearer token (data.uspto.gov)
 
     def __post_init__(self):
         if not self.root.is_absolute():

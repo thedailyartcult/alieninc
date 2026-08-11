@@ -1,0 +1,125 @@
+# A-SAN Deep Scanner
+
+Robots-compliant, resumable, category-aware crawler that deep-scans the approved
+public sources and merges results into the A-SAN catalog schema
+(`catalog-data.json`). Built to run **again and again** until the selected
+categories are exhausted — designed for thousands of entries.
+
+**Policy first:** read `POLICY.md`. robots.txt is always honoured; espacenet and
+janes are accessed via their official/licensed paths, never bypassed.
+
+## Install
+
+Python 3.10+ — **stdlib only, no pip install needed.**
+
+```
+cd scanner
+python -m scan run --categories aircraft,uavs --limit 10   # smoke test
+```
+
+## Pipeline
+
+```
+seed      load existing catalog-data.json + seeds/categories.json into the queue
+discover  pull the site sitemap, classify /military-products URLs into the 10
+          categories, enqueue product pages
+crawl     fetch (robots-gated, cached, polite) -> parse spec content -> dedupe
+export    write catalog-data.json (schema v1.0, grouped by category)
+curate    RAW POOL -> filters -> scoring -> ranked PICKLIST (+ audit)
+```
+
+Every run is **resumable**: the queue lives in `data/scan.db` (SQLite WAL). A
+killed run restarts where it left off. Raw HTML is cached so `--refresh` is the
+only thing that re-fetches.
+
+## The picklist mission
+
+A-SAN generates a **picklist from a raw pool** — that is the user-facing product.
+
+- **Raw pool** = every candidate the scanner acquired that passed *base
+  admission*: approved source, robots-allowed, fetched & parsed into the schema,
+  deduped. Nothing else enters.
+- **Picklist** = the curated, scored, ranked, bounded subset of the raw pool
+  that the user is shown for decision-making. The user only ever sees the
+  picklist.
+
+`python -m scan curate` runs the full curation pipeline:
+
+```
+raw pool ──► hard filters ──► weighted scoring ──► per-category top-N ──► picklist
+```
+
+**Hard filters (exclusion):** no source URL, empty content (no specs *and* no
+description), designation shorter than 3 chars.
+
+**Scoring (0–100, weighted, deterministic):**
+
+| Dimension | Weight | Measures |
+|---|---|---|
+| completeness | 0.35 | description length, # specs, country, manufacturer, alt names |
+| source_quality | 0.25 | product page > patent > news; spec table present |
+| category_confidence | 0.15 | classifier rule specificity (rule 0 = most specific) |
+| recency | 0.10 | days since fetch |
+| coverage | 0.15 | rarity bonus so sparse categories aren't drowned out |
+
+Ranking is score desc (tie-break: designation alpha). `--min-score` (default 40)
+excludes low-quality candidates; `--max-per-category` (default 15) bounds each
+category; `--max-total` (default 100) caps the whole picklist.
+
+Every run is **fully automated, deterministic and audited**: weights are
+versioned, each entry carries `_score` + `_score_breakdown`, and the exclusion
+counts per rule are written to `data/picklist.json` alongside the ranked entries.
+
+**Picklist entry anatomy** (what the user sees in `picklist.csv` / the future UI):
+`rank, category, score, designation, alt_names, country, manufacturer,
+description, key_specs, source_urls`.
+
+## Commands
+
+| Command | Purpose |
+|---|---|
+| `python -m scan run` | Full cycle for all 10 categories |
+| `python -m scan run --categories uavs,small-arms --limit 100` | Scoped run |
+| `python -m scan discover` | Enqueue sitemap product URLs only |
+| `python -m scan crawl` | Continue a partial run |
+| `python -m scan status` | Queue + entry counts |
+| `python -m scan export` | Rebuild catalog-data.json from the store |
+| `python -m scan curate` | Raw pool → picklist (`data/picklist.json` + `.csv`) |
+| `python -m scan import-janes desk.csv` | Ingest licensed research-desk CSV |
+
+## Flags
+
+```
+--categories uavs,ew-assets   comma-separated (keys or display names)
+--limit 500                   cap product pages this run
+--delay 1.5                   min seconds between requests per host
+--workers 1                   parallel hosts (per-host politeness always kept)
+--refresh                     ignore the raw-HTML cache and re-fetch
+--catalog PATH                output catalog path (default ../catalog-data.json)
+--db PATH                     scan store path (default data/scan.db)
+```
+
+## Scaling for the high-end server
+
+- Keep `--workers` modest (2–6); per-host throttling is the real limit.
+- Run category-scoped batches so a failure only affects one category:
+  `python -m scan run --categories armored-vehicles-and-equipment --limit 500`
+- Schedule repeated runs (cron / systemd timer) — the store is idempotent and
+  merges, never duplicates. Each run adds the sitemap-discovered pages for the
+  chosen categories and works through the queue.
+
+## Espacenet / Janes / USPTO
+
+- **Espacenet**: set `ESPACENET_OPS_KEY` / `ESPACENET_OPS_SECRET` (free EPO OPS
+  developer account) — the official API client is wired in `parsers.EspacenetOPS`.
+- **Janes**: licensed research desk exports a CSV; `import-janes` ingests it.
+- **USPTO**: use the official PatentsView/PEDS APIs (see `parsers.uspto_help`).
+
+## Output
+
+`../catalog-data.json` — same schema as v1.0 (`designation`, `alt_names`,
+`country`, `manufacturer`, `category`, `description`, `specs[]`,
+`sources[{label,url}]`), grouped by the 10 canonical categories with counts.
+
+`data/picklist.json` + `data/picklist.csv` — the curated, ranked picklist for
+user decision-making (see "The picklist mission" above).

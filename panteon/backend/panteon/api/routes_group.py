@@ -89,7 +89,7 @@ async def group_overview(_user: SupabaseUser = Depends(get_current_user)):
 
     external_rev = sum(
         c["annualFinancials"][-1]["revenue"]
-        for c in companies if c["id"] in ("tdac", "alcantara")
+        for c in companies if c["id"] == "tdac"
     )
     internal_rev = total_rev - external_rev
 

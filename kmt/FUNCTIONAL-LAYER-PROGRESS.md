@@ -105,7 +105,7 @@ Delivery Health: healthy
 ## Data Sources
 
 All analysis is based on real data from `data/alieninc-ecosystem.json`:
-- 7 companies with full financial history (2019-2026F)
+- 6 companies with full financial history (2019-2026F)
 - 14 client records with ACV and status
 - 7 major projects in pipeline
 - 8 intercompany transactions

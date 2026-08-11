@@ -17,7 +17,7 @@ echo "[$(date)] Panteon Connector Run" >> "$LOG"
 
 # GitHub — for each company that has repos configured
 if [ -n "$GITHUB_TOKEN" ]; then
-  for company in panteon kmt immanuel sp tdac alcantara exosphere; do
+  for company in panteon kmt immanuel sp tdac; do
     python3 "$DIR/github_connector.py" --company "$company" 2>&1 | tee -a "$LOG"
   done
 else
@@ -26,7 +26,7 @@ fi
 
 # Jira — for each company that has a Jira URL configured
 if [ -n "$JIRA_EMAIL" ] && [ -n "$JIRA_TOKEN" ]; then
-  for company in panteon kmt immanuel sp tdac alcantara; do
+  for company in panteon kmt immanuel sp tdac; do
     python3 "$DIR/jira_connector.py" --company "$company" 2>&1 | tee -a "$LOG"
   done
 else

@@ -25,7 +25,6 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 | Immanuel | `https://immanuel.alieninc.tech` | Crisis management, risk intelligence, and global assistance across 190+ countries |
 | Centra | `https://centra.alieninc.tech` | Vulnerability scanning, compliance monitoring, bot defense, intrusion detection |
 | KMT Consulting Group | `https://kmt.alieninc.tech` | Strategy, applied AI, operating model, post-merger integration |
-| Alcantara Art Foundation | `https://alcantaraartfoundation.alieninc.tech` | Culture and art preservation nonprofit |
 
 ## Directory Map
 
@@ -36,7 +35,6 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 | `immanuel.alieninc.tech` | `immanuel/` |
 | `panteon.alieninc.tech` | `panteon/` |
 | `kmt.alieninc.tech` | `kmt/` |
-| `alcantaraartfoundation.alieninc.tech` | `alcantaraartfoundation/` |
 | `centra.alieninc.tech` | `centra/` |
 
 ## Supporting Pages
@@ -44,8 +42,6 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 | Subdomain | Path | Notes |
 | --- | --- | --- |
 | `panteon.alieninc.tech` | `/login.html` | Panteon portal/login surface |
-| `alcantaraartfoundation.alieninc.tech` | `/login.html` | Foundation login surface |
-| `alcantaraartfoundation.alieninc.tech` | `/privacy.html` | Foundation privacy page |
 | `alieninc.tech` | `/data/alieninc-ecosystem.json` | Operating dataset |
 
 ## Operating Loops
@@ -53,7 +49,6 @@ This file is the navigation and ownership map for the Alien.Inc workspace. It is
 | Loop | Lead | Participants |
 | --- | --- | --- |
 | Acquire-to-Improve | Immanuel | Rousseau Holdings, KMT, Panteon |
-| Culture-to-Audience | Alcantara Art Foundation | The Daily Art Cult, Rousseau Holdings |
 | Risk-to-Product | Panteon | KMT, Immanuel |
 | Insight-to-Capital | Rousseau Holdings | KMT, The Daily Art Cult, Immanuel |
 

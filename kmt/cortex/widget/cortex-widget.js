@@ -51,13 +51,6 @@ const CortexWidget = (() => {
       font: '"Inter", sans-serif',
       buttonRadius: '8px',
       cardRadius: '12px'
-    },
-    alcantaraartfoundation: {
-      primary: '#161616',
-      accent: '#BF955F',
-      font: "'Austin', Georgia, serif",
-      buttonRadius: '2px',
-      cardRadius: '4px'
     }
   };
 
@@ -346,14 +339,6 @@ const CortexWidget = (() => {
       placeholder: 'e.g., How is capital flowing across the group this quarter?',
       ctaLabel: 'Analyze'
     },
-    alcantaraartfoundation: {
-      title: 'Cortex Cultural Intelligence',
-      subtitle: 'AI-powered cultural analysis. Ask about preservation priorities, collection insights, or audience engagement.',
-      quickActions: ['Collection Insights', 'Preservation', 'Audience Growth', 'Exhibition Planning'],
-      quickQueries: ['collection insights', 'preservation priorities', 'audience growth', 'exhibition planning'],
-      placeholder: 'e.g., Which collection items need preservation attention?',
-      ctaLabel: 'Analyze'
-    },
     alieninc: {
       title: 'Cortex Ecosystem Intelligence',
       subtitle: 'AI-powered group analysis. Ask about cross-company synergies, risk, or operating performance.',
@@ -479,38 +464,12 @@ const CortexWidget = (() => {
           return 'Centra revenue trajectory: $' + (rev2025.revenue/1000000).toFixed(2) + 'M (2025 actual) to $' + (rev2026.revenue/1000000).toFixed(2) + 'M (2026 forecast), representing ' + growth + '% year-over-year growth.';
         }, 'Centra tracks threat patterns and bot activity across monitored environments.')
       },
-      alcantaraartfoundation: {
-        'collection insights': buildFromEco(function(eco) {
-          var alc = eco.companies.find(function(c){return c.id==='alcantara';});
-          var kpis = alc.kpis2026F;
-          return 'Alcantara Art Foundation: ' + kpis.artifactsDigitized.toLocaleString() + ' artifacts digitized. Collection risk score: ' + kpis.collectionRiskScore + '. Program attendance: ' + kpis.programAttendance.toLocaleString() + '. Active donors: ' + kpis.activeDonors + '. Grant success rate: ' + (kpis.grantSuccessRate * 100).toFixed(0) + '%.';
-        }, 'Alcantara Art Foundation preserves cultural memory through conservation, digitization, education, and public access.'),
-        'preservation priorities': buildFromEco(function(eco) {
-          var alc = eco.companies.find(function(c){return c.id==='alcantara';});
-          var rev = alc.annualFinancials.find(function(f){return f.year===2026;});
-          var breakdown = alc.revenueBreakdown2026F;
-          return '2026F revenue: $' + (rev.revenue/1000).toFixed(0) + 'K. Service lines: digitization and preservation $' + (breakdown[1].amount/1000).toFixed(0) + 'K (' + (breakdown[1].share*100).toFixed(1) + '%), public programs $' + (breakdown[0].amount/1000).toFixed(0) + 'K (' + (breakdown[0].share*100).toFixed(1) + '%), donor membership $' + (breakdown[2].amount/1000).toFixed(0) + 'K (' + (breakdown[2].share*100).toFixed(1) + '%).';
-        }, 'Alcantara Art Foundation prioritizes preservation based on condition scoring, environmental exposure, and cultural significance.'),
-        'audience growth': buildFromEco(function(eco) {
-          var alc = eco.companies.find(function(c){return c.id==='alcantara';});
-          var kpis = alc.kpis2026F;
-          var rev2025 = alc.annualFinancials.find(function(f){return f.year===2025;});
-          var rev2026 = alc.annualFinancials.find(function(f){return f.year===2026;});
-          var growth = ((rev2026.revenue - rev2025.revenue) / rev2025.revenue * 100).toFixed(1);
-          return 'Revenue trajectory: $' + (rev2025.revenue/1000).toFixed(0) + 'K (2025) to $' + (rev2026.revenue/1000).toFixed(0) + 'K (2026F), ' + growth + '% growth. Donor retention: ' + (kpis.donorRetentionRate * 100).toFixed(0) + '% with ' + kpis.activeDonors + ' active donors.';
-        }, 'Alcantara Art Foundation tracks audience engagement across physical programs and digital channels.'),
-        'exhibition planning': buildFromEco(function(eco) {
-          var alc = eco.companies.find(function(c){return c.id==='alcantara';});
-          var clients = eco.clientDatabase.filter(function(cl){return cl.companyId==='alcantara';});
-          return 'Active partnerships: ' + clients.map(function(c){return c.clientName;}).join(', ') + '. Headcount: ' + alc.headcount['2026F'] + ' (' + alc.headcount.fullTime + ' full-time, ' + alc.headcount.contractors + ' contractors). 2026F EBITDA: $' + (alc.annualFinancials.find(function(f){return f.year===2026;}).ebitda/1000).toFixed(0) + 'K.';
-        }, 'Alcantara Art Foundation plans exhibitions based on collection utilization, visitor interest, and conservation priorities.')
-      },
       alieninc: {
         'ecosystem health': buildFromEco(function(eco) {
           var rollup = eco.groupRollup;
           var totalClients = eco.clientDatabase.length;
-          return 'Group-wide metrics: $' + (rollup.standaloneRevenueTotal2026F/1000000).toFixed(2) + 'M standalone revenue, $' + (rollup.standaloneEbitdaTotal2026F/1000000).toFixed(2) + 'M EBITDA, ' + totalClients + ' active client relationships across 7 companies. External revenue: $' + (rollup.estimatedExternalRevenue2026F/1000000).toFixed(2) + 'M.';
-        }, 'Alien.Inc operates 7 companies across consulting, cybersecurity, media, acquisitions, capital allocation, and cultural preservation.'),
+          return 'Group-wide metrics: $' + (rollup.standaloneRevenueTotal2026F/1000000).toFixed(2) + 'M standalone revenue, $' + (rollup.standaloneEbitdaTotal2026F/1000000).toFixed(2) + 'M EBITDA, ' + totalClients + ' active client relationships across 6 companies. External revenue: $' + (rollup.estimatedExternalRevenue2026F/1000000).toFixed(2) + 'M.';
+        }, 'Alien.Inc operates 6 companies across consulting, cybersecurity, media, acquisitions, and capital allocation.'),
         'synergy mapping': buildFromEco(function(eco) {
           var txns = eco.intercompanyTransactions2026F;
           var totalIc = txns.reduce(function(sum,t){return sum+t.amount;}, 0);
@@ -552,7 +511,7 @@ const CortexWidget = (() => {
             return { name: c.brandName, ebitda: rev ? rev.ebitda : 0 };
           }).sort(function(a,b){return b.ebitda - a.ebitda;});
           var positive = ebitdas.filter(function(e){return e.ebitda > 0;});
-          return 'EBITDA-positive subsidiaries (2026F): ' + positive.length + ' of 7. Range: $' + (ebitdas[ebitdas.length-1].ebitda/1000).toFixed(0) + 'K (' + ebitdas[ebitdas.length-1].name + ') to $' + (ebitdas[0].ebitda/1000).toFixed(0) + 'K (' + ebitdas[0].name + ').';
+          return 'EBITDA-positive subsidiaries (2026F): ' + positive.length + ' of 6. Range: $' + (ebitdas[ebitdas.length-1].ebitda/1000).toFixed(0) + 'K (' + ebitdas[ebitdas.length-1].name + ') to $' + (ebitdas[0].ebitda/1000).toFixed(0) + 'K (' + ebitdas[0].name + ').';
         }, 'Rousseau oversees EBITDA performance across all operating subsidiaries.'),
         'allocation strategy': buildFromEco(function(eco) {
           var fc = eco.fundCentre.summary;
@@ -597,8 +556,7 @@ const CortexWidget = (() => {
     var brandDefault = {
       panteon: 'Panteon delivers enterprise software and AI-powered automation platforms — ontology-driven operating systems, edge AI, and digital twins. Headcount: 16 across 12 full-time and 4 contractors.',
       centra: 'Centra delivers continuous vulnerability scanning, compliance monitoring, and bot defense across enterprise environments. Monitors CIS benchmarks, DISA STIG, and PCI-DSS compliance.',
-      alcantaraartfoundation: 'Alcantara Art Foundation preserves cultural memory through conservation, digitization, education, and public access. 18,400 artifacts digitized to date.',
-      alieninc: 'Alien.Inc operates 7 companies: KMT Consulting, Panteon, Centra, The Daily Art Cult, Alcantara Art Foundation, Immanuel, and Rousseau.',
+      alieninc: 'Alien.Inc operates 6 companies: KMT Consulting, Panteon, Centra, The Daily Art Cult, Immanuel, and Rousseau.',
       "rousseau": 'Rousseau allocates capital and governance capacity across the Alien.Inc group. Fund centre: EUR 5.77B across 6 funds.'
     };
     

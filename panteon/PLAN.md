@@ -17,7 +17,7 @@
 - Webhook HMAC verification
 - Monitoring + observability dashboard
 - Intercompany service management (31 ICTs, €12.2M group)
-- Multi-workspace (7 companies)
+- Multi-workspace (6 companies)
 - Data lineage graph
 - TDAC reflection pipeline (Gemini + Azure TTS edge function)
 
@@ -36,7 +36,7 @@ Currently: Marketing page only. No operational backend.
 | Pattern detection and anomaly scoring | Anomaly Engine | HIGH (Centra, Panteon) |
 | Case/incident management | Case Management | HIGH (Immanuel, Panteon) |
 | Counter-fraud detection | Fraud Detection | MEDIUM (Rousseau) |
-| Document intelligence / OCR | Document Processing | MEDIUM (Alcantara, TDAC) |
+| Document intelligence / OCR | Document Processing | MEDIUM (TDAC) |
 | Signal intelligence integration | SIGINT Connector | MEDIUM (Immanuel) |
 | Temporal analysis (event timeline) | Timeline Analysis | HIGH (all) |
 | Entity resolution / deduplication | Entity Resolution | MEDIUM (all) |
@@ -64,7 +64,7 @@ Currently: Marketing page only. No operational backend.
 | RAG engine (document retrieval) | AIP RAG | CRITICAL (Immanuel, TDAC) |
 | Prompt management + versioning | Prompt Studio | MEDIUM (Panteon) |
 | Agent evaluation / testing | Evaluations | EXISTS (basic) |
-| Multi-modal AI (image, doc understanding) | Multi-modal | HIGH (Alcantara, Immanuel) |
+| Multi-modal AI (image, doc understanding) | Multi-modal | HIGH (Immanuel) |
 | AI safety and governance layer | AIP Guard | CRITICAL (all — security) |
 | Streaming / real-time AI | Streaming Logic | MEDIUM (Immanuel) |
 | Knowledge graph integration | Knowledge Graph | HIGH (Immanuel, Panteon) |
@@ -180,7 +180,6 @@ This would bring Panteon from ~21,700 lines to ~32,200 lines — matching the sc
 | KMT | ★ | ★★★ | ★ | ★ |
 | Centra | ★ | ★★★ | ★ | ★★ |
 | TDAC | ★ | ★ | ★★ | ★ |
-| Alcantara | ★ | ★ | ★★ | ★ |
 | Rousseau | ★★ | ★★★ | ★ | ★ |
 
 ---

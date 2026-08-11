@@ -5,7 +5,7 @@
  * Enables cross-sell opportunities and unified client intelligence.
  * 
  * Architecture: Event-driven with message queue
- * Companies: Rousseau, Panteon, Centra, TDAC, Alcantara, Immanuel
+ * Companies: Rousseau, Panteon, Centra, TDAC, Immanuel
  */
 
 const EcosystemIntegrator = (() => {
@@ -17,15 +17,12 @@ const EcosystemIntegrator = (() => {
       panteon: { name: "Panteon Technologies", role: "ai_automation_platforms" },
       centra: { name: "Centra Security", role: "vulnerability_scanning_compliance" },
       tdac: { name: "The Daily Art Cult", role: "media_publishing" },
-      alcantara: { name: "Alcantara Art Foundation", role: "nonprofit_culture" },
       "rousseau": { name: "Rousseau", role: "holding_company" }
     },
     intercompanyRates2026: {
       "kmt-panteon": 96000,
       "centra-panteon": 88000,
-      "alcantara-tdac": 54000,
-      "rousseau-kmt": 126000,
-      "rousseau-alcantara": 150000
+      "rousseau-kmt": 126000
     }
   };
 

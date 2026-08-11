@@ -11,7 +11,6 @@ Comprehensive profiles for all 7 Alien.Inc companies including:
 - **Panteon** - Cybersecurity & defense
 - **Centra** - Vulnerability scanning & compliance
 - **Centra** - Vulnerability scanning & compliance monitoring
-- **Alcantara Art Foundation** - Nonprofit & cultural preservation
 - **The Daily Art Cult** - Digital media & publishing
 - **KMT Consulting** - Internal strategy consulting (self-profile)
 
@@ -31,7 +30,7 @@ Each subsidiary profile contains:
 
 ## Files Created
 - `kmt/knowledge/knowledge-engine.js` - Core knowledge management engine
-- `kmt/knowledge/data/subsidiaries.json` - Complete subsidiary profiles (7 companies)
+- `kmt/knowledge/data/subsidiaries.json` - Complete subsidiary profiles (6 companies)
 
 ## Key Insights Captured
 
@@ -40,7 +39,6 @@ Each subsidiary profile contains:
 - **Panteon**: Established (productized services, strong tech stack)
 - **Centra**: Developing (scanning operations maturity)
 - **Centra**: Establishing (automated scanning platform)
-- **Alcantara Art Foundation**: Nascent (manual processes, limited tech)
 - **TDAC**: Establishing (content-first, lean operations)
 - **KMT**: Establishing (project-based delivery)
 

@@ -46,7 +46,7 @@ When adding a new product page, update the sibling nav links on related pages.
 
 ## CMB Product Page Note
 
-`cmb-product.html` describes CMB (Cosmic Microwave Background), an internal memory tool for Alien Inc's seven companies. It is NOT commercial software. The page should:
+`cmb-product.html` describes CMB (Cosmic Microwave Background), an internal memory tool for Alien Inc's six companies. It is NOT commercial software. The page should:
 - Use the standard platform template structure
 - Note that it's internal tooling in the tag line (e.g., "Cosmos Domain · CMB")
 - Link to the dashboard at `../cmb/`

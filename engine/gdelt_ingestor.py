@@ -64,14 +64,6 @@ COMPANY_CONTEXT = {
                       "business strategy", "process optimization", "enterprise AI", "agentic AI"],
         "regions": ["global"],
     },
-    "alcantara": {
-        "name": "Alcantara Art Foundation",
-        "sector": "cultural preservation, art conservation, nonprofit, heritage, museum, digitization",
-        "keywords": ["cultural preservation", "art conservation", "heritage", "museum",
-                      "digitization", "cultural heritage", "endangered culture", "preservation",
-                      "nonprofit arts", "cultural foundation", "archive", "conservation"],
-        "regions": ["global"],
-    },
     "immanuel": {
         "name": "Immanuel",
         "sector": "crisis management, security, risk management, medical evacuation, travel security, intelligence",
@@ -128,10 +120,10 @@ MACRO_EVENTS = [
     {
         "pattern": ["heritage", "cultural preservation", "museum funding", "endangered site",
                      "art conservation", "cultural heritage", "UNESCO", "archaeological discovery"],
-        "affected": ["alcantara", "tdac"],
+        "affected": ["tdac"],
         "severity": "low",
         "event_type": "operational",
-        "description_template": "Cultural preservation event — Alcantara Art Foundation engagement opportunity",
+        "description_template": "Cultural preservation event — The Daily Art Cult editorial and membership engagement opportunity",
     },
     {
         "pattern": ["currency", "euro", "exchange rate", "forex", "dollar", "interest rate",
@@ -161,10 +153,10 @@ MACRO_EVENTS = [
     {
         "pattern": ["earthquake", "hurricane", "typhoon", "flood", "wildfire", "tsunami",
                      "natural disaster", "extreme weather", "climate event"],
-        "affected": ["immanuel", "alcantara"],
+        "affected": ["immanuel"],
         "severity": "high",
         "event_type": "natural_disaster",
-        "description_template": "Natural disaster — Immanuel emergency response activation, Alcantara heritage risk assessment",
+        "description_template": "Natural disaster — Immanuel emergency response activation",
     },
     {
         "pattern": ["supply chain", "logistics disruption", "shipping", "port closure",

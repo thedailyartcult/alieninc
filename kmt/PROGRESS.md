@@ -40,7 +40,6 @@ Build KMT Consulting Group as a realistic, professional internal consulting unit
 | Panteon | Cybersecurity defense | Cloud security strategy, vulnerability program design |
 | Centra | Vulnerability scanning & compliance | Compliance scanning engine, vulnerability assessment |
 | KMT Consulting | Internal strategy powerhouse | (self) |
-| Alcantara Art Foundation | Culture & art preservation | Strategic planning, digitization strategy |
 | Centra | Vulnerability scanning & compliance | Compliance monitoring, security scanning strategy |
 | The Daily Art Cult | Digital media & publishing | Growth strategy, digital transformation |
 
@@ -91,7 +90,7 @@ All financial and operational data: `data/alieninc-ecosystem.json`
 
 #### 4. Transfer Pricing / Billing System (`billing/`)
 - Hourly rate cards by role and seniority ($150-$350/hr)
-- Transfer pricing matrix across all 7 companies (5-15% management fees)
+- Transfer pricing matrix across all 6 companies (5-15% management fees)
 - Invoice generation from time entries
 - Revenue tracking by company and service line
 - Utilization metrics by employee

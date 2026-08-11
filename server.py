@@ -37,7 +37,6 @@ SUBDOMAIN_ROOTS = {
     'centra':           os.path.join(ROOT, 'centra'),
     'kmt':              os.path.join(ROOT, 'kmt'),
     'immanuel':         os.path.join(ROOT, 'immanuel'),
-    'alcantaraartfoundation': os.path.join(ROOT, 'alcantaraartfoundation'),
     'secure':           os.path.join(ROOT, 'secure'),
 }
 
@@ -2542,7 +2541,7 @@ tr:hover{background:rgba(59,130,246,.04)}
 <div class="card">
 <h2>Register Notification Channel</h2>
 <div class="form-group"><label>Channel ID</label><input id="chan-id" placeholder="e.g. panteon-slack-soc"></div>
-<div class="form-group"><label>Company</label><select id="chan-company" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:.3rem;border-radius:3px"><option>panteon</option><option>kmt</option><option>rousseau</option><option>immanuel</option><option>tdac</option><option>alcantara</option></select></div>
+<div class="form-group"><label>Company</label><select id="chan-company" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:.3rem;border-radius:3px"><option>panteon</option><option>kmt</option><option>rousseau</option><option>immanuel</option><option>tdac</option></select></div>
 <div class="form-row">
 <div class="form-group"><label>Type</label><select id="chan-type"><option>webhook</option><option>slack</option><option>pagerduty</option><option>email</option></select></div>
 <div class="form-group"><label>Webhook URL</label><input id="chan-url" placeholder="https://hooks.slack.com/..."></div>
@@ -2565,7 +2564,7 @@ tr:hover{background:rgba(59,130,246,.04)}
 <div class="card">
 <h2>Register New Source</h2>
 <div class="stat" style="margin-bottom:1rem;background:rgba(59,130,246,.03)"><span class="label">Data Types Available</span><div style="margin-top:.3rem;font-size:.8rem;color:var(--text)">aws_bill, github_commit, jira_ticket, financial_sheet, security_alert, network_log, hr_record, client_interaction</div></div>
-<div class="stat" style="margin-bottom:1rem"><label class="label">Company</label><select id="reg-company" style="width:100%;margin-top:.3rem;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:.3rem;border-radius:3px"><option>panteon</option><option>kmt</option><option>rousseau</option><option>immanuel</option><option>centra</option><option>tdac</option><option>alcantaraartfoundation</option></select></div>
+<div class="stat" style="margin-bottom:1rem"><label class="label">Company</label><select id="reg-company" style="width:100%;margin-top:.3rem;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:.3rem;border-radius:3px"><option>panteon</option><option>kmt</option><option>rousseau</option><option>immanuel</option><option>centra</option><option>tdac</option></select></div>
 <div class="stat" style="margin-bottom:1rem"><label class="label">Source Type</label><select id="reg-type" style="width:100%;margin-top:.3rem;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:.3rem;border-radius:3px"><option>security_alert</option><option>github_commit</option><option>jira_ticket</option><option>financial_sheet</option><option>aws_bill</option><option>network_log</option><option>hr_record</option><option>client_interaction</option></select></div>
 <div class="stat" style="margin-bottom:1rem"><label class="label">Source Name</label><input id="reg-name" type="text" style="width:100%;margin-top:.3rem;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:.3rem;border-radius:3px" placeholder="e.g. Production SOC Feed"></div>
 <button class="btn" onclick="registerSource()">Register Source</button>

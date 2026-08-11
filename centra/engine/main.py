@@ -90,7 +90,6 @@ async def seed_defaults():
         'rousseau': 'Rousseau',
         'centra': 'Centra',
         'kmt': 'KMT Consulting Group',
-        'alcantara': 'Alcantara Art Foundation',
         'tdac': 'The Daily Art Cult',
     }
     for cid, name in companies.items():

@@ -49,17 +49,9 @@ WORKSPACES = [
     {
         "name": "The Daily Art Cult",
         "slug": "thedailyartcult",
-        "description": "Media and patron platform. Alcantara preservation work becomes trusted cultural programming through TDAC.",
+        "description": "Media and patron platform.",
         "domain": "thedailyartcult.lol",
         "workspace_type": "company",
-        "parent_slug": "alien-inc",
-    },
-    {
-        "name": "Alcantara Art Foundation",
-        "slug": "alcantara",
-        "description": "Art preservation foundation. Preservation work feeds into The Daily Art Cult cultural programming.",
-        "domain": "alcantaraartfoundation.alieninc.tech",
-        "workspace_type": "foundation",
         "parent_slug": "alien-inc",
     },
     {
@@ -77,7 +69,6 @@ CROSS_COMPANY_FLOWS = [
     {"from": "immanuel", "to": "centra", "type": "risk_data", "description": "Risk data feeds into Centra vulnerability scanning"},
     {"from": "centra", "to": "panteon", "type": "vulnerability_data", "description": "Vulnerability data feeds into Panteon automation platforms"},
     {"from": "kmt", "to": "rousseau-holdings", "type": "reports", "description": "Reports, media signals, deal flow feed capital allocation"},
-    {"from": "alcantara", "to": "thedailyartcult", "type": "cultural_programming", "description": "Preservation work becomes cultural programming"},
 ]
 
 

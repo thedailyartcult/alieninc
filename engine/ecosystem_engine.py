@@ -78,7 +78,6 @@ _SECTOR_MARKET_SENSITIVITY = {
     "panteon": {"bull": 1.10, "neutral": 1.0, "bear": 1.12, "crisis": 1.25},
     "centra": {"bull": 1.10, "neutral": 1.0, "bear": 1.12, "crisis": 1.25},
     "kmt": {"bull": 1.08, "neutral": 1.0, "bear": 0.85, "crisis": 0.72},
-    "alcantara": {"bull": 0.95, "neutral": 1.0, "bear": 0.92, "crisis": 0.80},
     "immanuel": {"bull": 1.05, "neutral": 1.0, "bear": 1.15, "crisis": 1.35},
 }
 

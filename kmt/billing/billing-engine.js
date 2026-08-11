@@ -276,7 +276,6 @@ class BillingSystem {
     const rules = [
       { from: 'kmt', to: 'panteon', managementFeeRate: 0.12, description: 'KMT to Panteon - Standard consulting rate' },
       { from: 'kmt', to: 'centra', managementFeeRate: 0.10, description: 'KMT to Centra - Cybersecurity services rate' },
-      { from: 'kmt', to: 'alcantaraartfoundation', managementFeeRate: 0.05, description: 'KMT to Alcantara Art Foundation - Nonprofit rate' },
       { from: 'kmt', to: 'thedailyartcult', managementFeeRate: 0.10, description: 'KMT to TDAC - Standard rate' },
       { from: 'kmt', to: 'rousseau', managementFeeRate: 0.15, description: 'KMT to Rousseau - Holdco oversight rate' },
       { from: 'rousseau', to: 'kmt', managementFeeRate: 0.15, description: 'Rousseau to KMT - Management fee' },

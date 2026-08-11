@@ -2869,7 +2869,7 @@ async function loadGroupOverview() {
         tbody.innerHTML = data.companies.map(c => '<tr><td style="font-weight:500">' + c.brandName + '</td><td style="font-size:11px">' + c.category + '</td><td>' + c.headcount + '</td><td style="font-variant-numeric:tabular-nums">' + fmtMoney(c.revenue2026F) + '</td><td style="font-variant-numeric:tabular-nums;color:' + (c.ebitda2026F >= 0 ? 'var(--green)' : 'var(--red)') + '">' + fmtMoney(c.ebitda2026F) + '</td><td>' + c.margin + '%</td><td style="font-variant-numeric:tabular-nums">' + fmtMoney(c.revenuePerEmployee) + '</td><td style="font-variant-numeric:tabular-nums">' + (c.ictIncome ? fmtMoney(c.ictIncome) : '--') + '</td><td style="font-variant-numeric:tabular-nums">' + (c.ictSpend ? fmtMoney(c.ictSpend) : '--') + '</td><td>' + (c.clientCount || 0) + '</td></tr>').join('');
         const chart = document.getElementById('groupRevenueChart');
         const maxRev = Math.max(...data.companies.map(c => c.revenue2026F));
-        chart.innerHTML = data.companies.map(c => { const pct = (c.revenue2026F / maxRev * 100).toFixed(1); const color = c.id === 'tdac' || c.id === 'alcantara' ? 'var(--accent-cyan)' : 'var(--accent-purple)'; return '<div style="display:flex;align-items:center;gap:12px;padding:4px 0"><span style="width:140px;font-size:11px;text-align:right">' + c.brandName + '</span><div style="flex:1;height:16px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden"><div style="width:' + pct + '%;height:100%;background:' + color + ';border-radius:3px;opacity:0.7"></div></div><span style="width:80px;font-size:11px;font-variant-numeric:tabular-nums">' + fmtMoney(c.revenue2026F) + '</span></div>'; }).join('');
+        chart.innerHTML = data.companies.map(c => { const pct = (c.revenue2026F / maxRev * 100).toFixed(1); const color = c.id === 'tdac' ? 'var(--accent-cyan)' : 'var(--accent-purple)'; return '<div style="display:flex;align-items:center;gap:12px;padding:4px 0"><span style="width:140px;font-size:11px;text-align:right">' + c.brandName + '</span><div style="flex:1;height:16px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden"><div style="width:' + pct + '%;height:100%;background:' + color + ';border-radius:3px;opacity:0.7"></div></div><span style="width:80px;font-size:11px;font-variant-numeric:tabular-nums">' + fmtMoney(c.revenue2026F) + '</span></div>'; }).join('');
     } catch (e) { document.getElementById('groupKpiCards').innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
 }
 
@@ -2877,7 +2877,7 @@ async function loadGroupFlows() {
     try {
         const [matrix, icts] = await Promise.all([api('/group/icts/flow-matrix'), api('/group/icts')]);
         const ids = matrix.companyIds;
-        const names = {rousseau:'Rousseau',tdac:'TDAC',panteon:'Panteon',kmt:'KMT',alcantara:'Alcantara',immanuel:'Immanuel',centra:'Centra'};
+        const names = {rousseau:'Rousseau',tdac:'TDAC',panteon:'Panteon',kmt:'KMT',immanuel:'Immanuel',centra:'Centra'};
         let table = '<table style="font-size:10px"><thead><tr><th style="min-width:80px">Provider \u2193 / Consumer \u2192</th>';
         ids.forEach(id => { table += '<th style="text-align:center;min-width:70px">' + (names[id] || id) + '</th>'; });
         table += '<th style="text-align:center;min-width:70px;font-weight:600">Total Out</th></tr></thead><tbody>';
@@ -2898,7 +2898,7 @@ async function loadGroupFlows() {
 async function loadServiceCatalog() {
     try {
         const data = await api('/group/service-catalog');
-        const names = {rousseau:'Rousseau',tdac:'TDAC',panteon:'Panteon',kmt:'KMT',alcantara:'Alcantara',immanuel:'Immanuel',centra:'Centra'};
+        const names = {rousseau:'Rousseau',tdac:'TDAC',panteon:'Panteon',kmt:'KMT',immanuel:'Immanuel',centra:'Centra'};
         const container = document.getElementById('serviceCatalogContent');
         container.innerHTML = data.catalog.filter(c => c.providedTo.length > 0).map(c => '<div style="margin-bottom:16px;padding:14px;background:var(--bg-input);border-radius:4px;border:1px solid var(--border-color)"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><strong style="font-size:13px">' + c.brandName + '</strong><span style="font-size:10px;color:var(--text-muted);margin-left:8px">' + c.category + '</span></div><div class="card-value" style="font-size:16px">' + fmtMoney(c.totalRevenueFromICTs) + '</div></div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px">' + c.serviceOfferings.map(s => '<span class="tag">' + s.name + '</span>').join('') + '</div>' + c.providedTo.map(p => '<div style="display:flex;align-items:center;gap:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04)"><span style="width:100px;font-weight:500;font-size:11px">' + (names[p.companyId] || p.companyId) + '</span><div style="flex:1;font-size:10px;color:var(--text-muted)">' + p.services.map(s => s.description).join('; ') + '</div><span style="font-variant-numeric:tabular-nums;font-size:11px">' + fmtMoney(p.totalAmount) + '</span></div>').join('') + '</div>').join('');
     } catch (e) { document.getElementById('serviceCatalogContent').innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }

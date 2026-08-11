@@ -385,8 +385,6 @@ class KMTEngine {
       role.contributions = ['Vulnerability scanning', 'Compliance monitoring', 'Bot defense'];
     } else if (company.id === 'tdac') {
       role.contributions = ['Media distribution', 'Content creation', 'Audience building'];
-    } else if (company.id === 'alcantara') {
-      role.contributions = ['Cultural preservation', 'Public benefit', 'Education'];
     }
     
     return role;

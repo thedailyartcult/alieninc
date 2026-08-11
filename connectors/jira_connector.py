@@ -27,7 +27,6 @@ COMPANY_JIRA = {
     "immanuel": "",
     "sp": "",
     "tdac": "",
-    "alcantara": "",
 }
 
 

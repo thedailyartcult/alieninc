@@ -20,14 +20,13 @@ Hourly billing rates by role and seniority:
 | Analyst | Senior | $175 |
 
 ### Transfer Pricing Rules
-Internal fee structures across the 7 companies:
+Internal fee structures across the 6 companies:
 
 | From | To | Management Fee Rate |
 |------|----|---------------------|
 | KMT | Panteon | 12% |
 | KMT | Centra | 10% |
 | KMT | Centra | 10% |
-| KMT | Alcantara Art Foundation | 5% (nonprofit) |
 | KMT | The Daily Art Cult | 10% |
 | KMT | Rousseau Holdings | 15% |
 | Rousseau Holdings | KMT | 15% |

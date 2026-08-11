@@ -29,9 +29,6 @@ COMPANY_TARGETS = {
     'kmt': [
         {'host': 'localhost', 'name': 'KMT Consulting', 'ports': [80, 443]},
     ],
-    'alcantara': [
-        {'host': 'localhost', 'name': 'Alcantara Art Foundation', 'ports': [80, 443]},
-    ],
     'tdac': [
         {'host': 'localhost', 'name': 'The Daily Art Cult', 'ports': [80, 443]},
     ],

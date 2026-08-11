@@ -556,7 +556,6 @@ ARTICLE_TEMPLATE = """<!DOCTYPE html>
                         <li><a href="https://thedailyartcult.alieninc.tech" target="_blank">The Daily Art Cult</a></li>
                         <li><a href="https://kmt.alieninc.tech" target="_blank">KMT Consulting Group</a></li>
                         <li><a href="https://immanuel.alieninc.tech" target="_blank">Immanuel</a></li>
-                        <li><a href="https://alcantaraartfoundation.alieninc.tech" target="_blank">St. Alcantara Foundation</a></li>
                         <li><a href="https://centra.alieninc.tech" target="_blank">Centra</a></li>
                     </ul>
                 </div>
@@ -747,7 +746,6 @@ LOCKED_TEMPLATE = """<!DOCTYPE html>
                         <li><a href="https://thedailyartcult.alieninc.tech" target="_blank">The Daily Art Cult</a></li>
                         <li><a href="https://kmt.alieninc.tech" target="_blank">KMT Consulting Group</a></li>
                         <li><a href="https://immanuel.alieninc.tech" target="_blank">Immanuel</a></li>
-                        <li><a href="https://alcantaraartfoundation.alieninc.tech" target="_blank">St. Alcantara Foundation</a></li>
                         <li><a href="https://centra.alieninc.tech" target="_blank">Centra</a></li>
                     </ul>
                 </div>
@@ -1107,7 +1105,6 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                         <li><a href="https://thedailyartcult.alieninc.tech" target="_blank">The Daily Art Cult</a></li>
                         <li><a href="https://kmt.alieninc.tech" target="_blank">KMT Consulting Group</a></li>
                         <li><a href="https://immanuel.alieninc.tech" target="_blank">Immanuel</a></li>
-                        <li><a href="https://alcantaraartfoundation.alieninc.tech" target="_blank">St. Alcantara Foundation</a></li>
                         <li><a href="https://centra.alieninc.tech" target="_blank">Centra</a></li>
                     </ul>
                 </div>

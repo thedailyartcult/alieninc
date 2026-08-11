@@ -5,7 +5,7 @@
 
 ## What Was Built
 
-A self-evolving organism where 7 companies breathe together. Each day, companies operate, interact, and adapt.
+A self-evolving organism where 6 companies breathe together. Each day, companies operate, interact, and adapt.
 
 ### Architecture
 
@@ -21,10 +21,10 @@ A self-evolving organism where 7 companies breathe together. Each day, companies
 │       │            │            │            │              │
 │       └────────────┴────────────┴────────────┘              │
 │                         ↕                                   │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐                    │
-│  │ Centra  │  │  TDAC   │  │Alcantara│                    │
-│  │& Preced │←→│         │←→│Foundation│                    │
-│  └─────────┘  └─────────┘  └─────────┘                    │
+│  ┌─────────┐  ┌─────────┐                                 │
+│  │ Centra  │  │  TDAC   │                                 │
+│  │& Preced │←→│         │                                 │
+│  └─────────┘  └─────────┘                                 │
 │                                                             │
 ├─────────────────────────────────────────────────────────────┤
 │  MARKET DYNAMICS  │  EVENTS  │  INTERCOMPANY FLOWS         │
@@ -35,7 +35,7 @@ A self-evolving organism where 7 companies breathe together. Each day, companies
 
 #### 1. Ecosystem Engine (`ecosystem-engine.js`)
 Main orchestrator that:
-- Manages 7 companies as living entities
+- Manages 6 companies as living entities
 - Processes daily operations (revenue, costs, cash)
 - Generates business events
 - Executes intercompany flows
@@ -106,7 +106,6 @@ The Daily Art Cult           $176K     100       0.0
 Panteon                    $265K     100       0.0
 Centra                     $239K     100       0.0
 KMT Consulting Group         $388K      98      -1.0
-Alcantara Art Foundation     $100K     100       0.0
 Centra                         $680K     100       0.0
 ```
 

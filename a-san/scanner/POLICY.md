@@ -30,6 +30,7 @@ our selected categories, keep the licence records (email/agreement) in
 | worldwide.espacenet.com | **Official OPS API** (`ops.epo.org`) with free developer credentials; the web UI blocks autonomous fetches — the API is the sanctioned route | Requires OPS key/secret env vars |
 | ppubs.uspto.gov | Official APIs (PatentsView / PEDS); the web app is browser-only | Manual / API pass |
 | janes.com | **Paid licence** via research desk; CSV import (`import-janes`), never automated crawling | Licensed desk |
+| militaryfactory.com | robots.txt imposes no crawl rules; scanner fetches with its UA. By-country list pages are also ingested from operator-supplied local HTML via `import-military` (site blocks some autonomous fetches, so local fallback is supported); detail pages are fetched live by the scanner to enrich specs. | Active |
 
 ## 4. Operator-whitelisted deep scan (rare, documented)
 

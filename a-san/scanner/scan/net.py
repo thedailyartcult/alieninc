@@ -49,10 +49,17 @@ class RobotsGate:
             if rp is None:
                 rp = urllib.robotparser.RobotFileParser()
                 rp.set_url(f"{parts.scheme}://{domain}/robots.txt")
+                # Fetch robots.txt with *our* UA, not robotparser's default
+                # "Python-urllib" UA (some sites 403 that UA even when their
+                # robots.txt imposes no restrictions). If unreachable -> allow.
                 try:
-                    rp.read()
+                    req = urllib.request.Request(
+                        rp.url,
+                        headers={"User-Agent": self.user_agent,
+                                 "Accept": "text/plain,text/html,*/*"})
+                    with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                        rp.parse(resp.read().decode("utf-8", "replace").splitlines())
                 except Exception:
-                    # robots.txt unreachable -> no restrictions applied by us.
                     rp = None
                 self._parsers[domain] = rp if rp is not None else "unreachable"
                 if rp is None:

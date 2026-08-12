@@ -28,12 +28,15 @@ export    write catalog-data.json (schema v1.0, grouped by category)
 curate    RAW POOL -> filters -> scoring -> ranked PICKLIST (+ audit)
 build-web write static site (category.html + data/) to the site root, design-faithful to index.html
 patent-feed enqueue patent pub-numbers (USPTO ODP / Espacenet OPS / --patents-file)
+import-military ingest operator-scraped militaryfactory.com "Aircraft by Country"
+              pages (scanner/data/military/*.html) — merged by stable aircraft_id,
+              civilian-only types dropped, operators accumulated
 ```
 
 The engine dispatches each host to a source-specific parser:
 `armyrecognition.com` → `parse_armyrecognition`; `patents.google.com` →
-`parse_patent`. To add a site, add a parser + a host branch in `engine._process`
-(see PLAN.md §1 "Adding a source").
+`parse_patent`; `weaponsystems.net` → `parse_weaponsystem`. To add a site, add a
+parser + a host branch in `engine._process` (see PLAN.md §1 "Adding a source").
 
 Every run is **resumable**: the queue lives in `data/scan.db` (SQLite WAL). A
 killed run restarts where it left off. Raw HTML is cached so `--refresh` is the

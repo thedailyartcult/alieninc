@@ -29,6 +29,7 @@ from .config import Settings, CATEGORY_KEYS, category_key
 from .engine import Engine
 from .models import CatalogEntry, SourceRef, now_iso
 from .parsers import janes_import_csv
+from .parsers_militaryfactory import parse_militaryfactory_country, build_entries, parse_militaryfactory_detail
 from .picklist import CurationRules, curate, write_outputs
 from .patent_feed import feed_patents, feed_from_file
 
@@ -114,6 +115,78 @@ def cmd_export(args, s: Settings):
 def cmd_status(args, s: Settings):
     eng = Engine(s)
     print(json.dumps(eng.status(), indent=2))
+    eng.close()
+
+
+def cmd_import_military(args, s: Settings):
+    """Ingest the operator-scraped militaryfactory.com by-country pages
+    (scanner/data/military/*.html) into the scan store. Rows are merged by the
+    stable aircraft_id so the same aircraft listed under several countries
+    accumulates its operators; clearly civilian-only types are dropped."""
+    eng = Engine(s)
+    src_dir = Path(args.military_dir)
+    if not src_dir.is_absolute():
+        src_dir = s.root / src_dir
+    if not src_dir.exists():
+        print(f"military data dir not found: {src_dir}")
+        eng.close()
+        return
+    merged: dict[int, dict] = {}
+    for p in sorted(src_dir.glob("*.html")):
+        country = p.stem.replace("militaryfactory", "").upper()
+        rows = parse_militaryfactory_country(
+            p.read_text(encoding="utf-8", errors="replace"), country)
+        for r in rows:
+            aid = r["aircraft_id"]
+            if aid in merged:
+                merged[aid]["operators"] |= r["operators"]
+            else:
+                merged[aid] = r
+    entries = build_entries(list(merged.values()))
+    ops = {"inserted": 0, "merged": 0}
+    for e in entries:
+        ops[eng.store.upsert_entry(e, e.sources[0].url if e.sources else "")] += 1
+    # Enqueue the per-aircraft detail pages so the crawler can enrich the
+    # entries with full specs. Each detail URL is unique per aircraft_id.
+    enqueued = 0
+    for u, cat in {e.sources[0].url: e.category for e in entries if e.sources}.items():
+        enqueued += eng.store.enqueue(u, "www.militaryfactory.com", category=cat, kind="product")
+    print(json.dumps({
+        "files_parsed": len(list(src_dir.glob("*.html"))),
+        "unique_aircraft": len(merged),
+        "entries_upserted": len(entries),
+        "inserted": ops["inserted"],
+        "merged": ops["merged"],
+        "dropped_civilian": len(merged) - len(entries),
+        "detail_urls_enqueued": enqueued,
+        "next": "python -m scan crawl --categories aircraft,uavs --delay 1",
+    }, indent=2))
+    eng.close()
+
+
+def cmd_re_enrich_military(args, s: Settings):
+    """Re-parse the cached militaryfactory detail HTML (already fetched) with
+    the latest parser and re-upsert, so enriched specs (Mission Roles, etc.)
+    fold into the existing entries. No network needed."""
+    eng = Engine(s)
+    rows = eng.store._conn.execute(
+        "SELECT url, html FROM raw_html WHERE url LIKE "
+        "'https://www.militaryfactory.com/aircraft/detail.php?aircraft_id=%'").fetchall()
+    ops = {"inserted": 0, "merged": 0, "skipped": 0}
+    for row in rows:
+        e = parse_militaryfactory_detail(row["url"], row["html"])
+        if e is None:
+            ops["skipped"] += 1
+            continue
+        ops[eng.store.upsert_entry(e, row["url"])] += 1
+    print(json.dumps({
+        "cached_detail_pages": len(rows),
+        "re_upserted": ops["inserted"] + ops["merged"],
+        "inserted": ops["inserted"],
+        "merged": ops["merged"],
+        "skipped": ops["skipped"],
+        "next": "python -m scan export && python -m scan build-web && python -m scan curate",
+    }, indent=2))
     eng.close()
 
 
@@ -217,6 +290,14 @@ def main(argv=None):
     sp = sub.add_parser("import-janes")
     sp.add_argument("csv")
     _add_common(sp)
+    rp = sub.add_parser("import-military",
+                        help="ingest operator-scraped militaryfactory.com by-country pages")
+    rp.add_argument("--military-dir", default="data/military",
+                    help="dir containing militaryfactory<COUNTRY>.html pages")
+    _add_common(rp)
+    rep = sub.add_parser("re-enrich-military",
+                         help="re-parse cached militaryfactory detail HTML and re-upsert")
+    _add_common(rep)
 
     args = p.parse_args(argv)
     logging.basicConfig(level=logging.INFO if not args.quiet else logging.WARNING,
@@ -236,6 +317,10 @@ def main(argv=None):
         cmd_status(args, s)
     elif args.cmd == "import-janes":
         cmd_import_janes(args, s)
+    elif args.cmd == "import-military":
+        cmd_import_military(args, s)
+    elif args.cmd == "re-enrich-military":
+        cmd_re_enrich_military(args, s)
     elif args.cmd == "curate":
         cmd_curate(args, s)
     elif args.cmd == "build-web":

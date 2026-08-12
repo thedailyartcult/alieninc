@@ -22,6 +22,7 @@ from .models import CatalogEntry, SourceRef
 from .net import HttpFetcher, RobotsGate
 from .parsers import parse_armyrecognition, parse_patent, parse_news_article
 from .parsers_weaponsystems import parse_weaponsystem
+from .parsers_militaryfactory import parse_militaryfactory_detail
 from .sitemap import product_urls_from_sitemap, article_urls_from_sitemap, sitemap_urls_to_parse
 from .store import ScanStore
 
@@ -30,6 +31,7 @@ log = logging.getLogger("scan")
 ARMYREC_HOST = "www.armyrecognition.com"
 PATENTS_HOST = "patents.google.com"
 WEAPONSYSTEMS_HOST = "weaponsystems.net"
+MILITARYFACTORY_HOST = "www.militaryfactory.com"
 
 
 def load_catalog_entries(path: Path) -> list[dict]:
@@ -186,6 +188,14 @@ class Engine:
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", disp, e.designation[:50], op, len(e.specs))
                     return
+            elif host == MILITARYFACTORY_HOST and "detail.php?aircraft_id=" in url:
+                e = parse_militaryfactory_detail(url, fetched.html)
+                if e:
+                    op = self.store.upsert_entry(e, url)
+                    self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
             # unknown host/kind or parser returned None: still mark fetched so the
             # page isn't re-fetched on every run (no data extracted).
             self.store.mark(url, "done", status=200)
@@ -221,6 +231,7 @@ class Engine:
                     "https://ppubs.uspto.gov",
                     "https://worldwide.espacenet.com",
                     "https://janes.com",
+                    "https://www.militaryfactory.com",
                 ],
                 "note": ("Compiled by the A-SAN deep scanner. robots.txt and site ToS are "
                          "respected; every entry carries the exact source URL it was fetched "

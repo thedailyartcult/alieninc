@@ -176,4 +176,5 @@ class Settings:
     @property
     def domains(self):
         return {"www.armyrecognition.com", "patents.google.com",
-                "worldwide.espacenet.com", "ppubs.uspto.gov", "janes.com"}
+                "worldwide.espacenet.com", "ppubs.uspto.gov", "janes.com",
+                "www.militaryfactory.com"}

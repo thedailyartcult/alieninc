@@ -120,12 +120,20 @@ class GDELTConnector:
         self,
         config: GDELTConfig,
         staging: StagingDataset,
+        aiohttp_session: Optional[aiohttp.ClientSession] = None,
     ):
         self.config = config
         self.staging = staging
+        self._session = aiohttp_session
+
+    async def _get_session(self) -> aiohttp.ClientSession:
+        """Return the shared session or create one."""
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession()
+        return self._session
 
     async def _build_request(self) -> Dict[str, Any]:
-        """Construct a GDELT DOC 2.0 request payload (ArtList JSON mode)."""
+        """Construct a GDELT DOC 2.0 request payload."""
         payload: Dict[str, Any] = {
             "query": self.config.query,
             "mode": self.config.mode.value,
@@ -134,6 +142,49 @@ class GDELTConnector:
             "timespan": self.config.timespan,
         }
         return payload
+
+    def _parse_mode_response(self, data: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], int]:
+        """Parse response based on the configured mode."""
+        mode = self.config.mode
+        if mode == GDELTMode.ARTLIST:
+            articles = data.get("articles", []) or []
+            return articles, len(articles)
+        elif mode == GDELTMode.ART:
+            # ART mode returns full article text articles
+            articles = data.get("articles", []) or []
+            return articles, len(articles)
+        elif mode == GDELTMode.IMAGECOLLAGE:
+            # IMAGECOLLAGE mode returns visual knowledge graph objects
+            objects = data.get("objects", []) or []
+            return objects, len(objects)
+        elif mode == GDELTMode.TIMELINEVOL:
+            # Already handled in pull()
+            articles = data.get("timeline", {}).get("timelinevolraw", []) or []
+            return articles, len(articles)
+        elif mode == GDELTMode.TONECHART:
+            # TONECHART returns tone analysis per article
+            articles = data.get("articles", []) or []
+            # Extract tone data if present, otherwise return empty
+            for art in articles:
+                art["tone"] = art.get("tone", {"sentiment": 0, "anger": 0, "fear": 0, "joy": 0, "sadness": 0})
+            return articles, len(articles)
+        elif mode == GDELTMode.WORDCLOUDENGLISH:
+            # WORDCLOUDENGLISH returns word frequency counts
+            words = data.get("words", []) or []
+            return words, len(words)
+        elif mode == GDELTMode.WORDCLOUDIMAGETAGS:
+            # WORDCLOUDIMAGETAGS returns image tag frequencies
+            tags = data.get("tags", []) or []
+            return tags, len(tags)
+        elif mode == GDELTMode.IMAGECOLLAGESHARE:
+            # IMAGECOLLAGESHARE returns sharing metrics
+            articles = data.get("articles", []) or []
+            for art in articles:
+                art["share_count"] = art.get("share_count", 0)
+            return articles, len(articles)
+        else:
+            articles = data.get("articles", []) or []
+            return articles, len(articles)
 
     async def _request_with_retry(
         self, url: str, method: str = "GET", headers: Optional[Dict[str, str]] = None,
@@ -145,28 +196,44 @@ class GDELTConnector:
         max_backoff = self.config.max_backoff_ms
         jitter = self.config.jitter_factor
 
+        session = await self._get_session()
         last_exc: Optional[Exception] = None
-        async with aiohttp.ClientSession() as session:
-            for attempt in range(max_retries + 1):
-                try:
-                    async with session.request(
-                        method, url, headers=headers, params=params,
-                        timeout=aiohttp.ClientTimeout(total=self.config.request_timeout),
-                    ) as resp:
-                        if resp.status == 429:
-                            await asyncio.sleep(self._compute_backoff(attempt, max_retries, base_backoff, max_backoff, jitter))
-                            continue
-                        if resp.status >= 500:
-                            await asyncio.sleep(self._compute_backoff(attempt, max_retries, base_backoff, max_backoff, jitter))
-                            continue
-                        if resp.status >= 400:
-                            body = await resp.text()
-                            raise Exception(f"HTTP {resp.status}: {body}")
-                        data = await resp.json()
-                        return data
-                except Exception as exc:
-                    last_exc = exc
-                    await asyncio.sleep(self._compute_backoff(attempt, max_retries, base_backoff, max_backoff, jitter))
+        for attempt in range(max_retries + 1):
+            try:
+                async with session.request(
+                    method, url, headers=headers, params=params,
+                    timeout=aiohttp.ClientTimeout(total=self.config.request_timeout),
+                ) as resp:
+                    if resp.status == 429:
+                        backoff = self._compute_backoff(attempt, max_retries, base_backoff, max_backoff, jitter)
+                        logger.warning(f"GDELT rate limited (429), retrying in {backoff/1000:.1f}s (attempt {attempt+1}/{max_retries+1})")
+                        await asyncio.sleep(backoff / 1000)
+                        continue
+                    if resp.status >= 500:
+                        backoff = self._compute_backoff(attempt, max_retries, base_backoff, max_backoff, jitter)
+                        logger.warning(f"GDELT server error ({resp.status}), retrying in {backoff/1000:.1f}s (attempt {attempt+1}/{max_retries+1})")
+                        await asyncio.sleep(backoff / 1000)
+                        continue
+                    if resp.status >= 400:
+                        body = await resp.text()
+                        raise Exception(f"HTTP {resp.status}: {body}")
+                    data = await resp.json()
+                    return data
+            except asyncio.TimeoutError as exc:
+                last_exc = exc
+                backoff = self._compute_backoff(attempt, max_retries, base_backoff, max_backoff, jitter)
+                logger.warning(f"GDELT request timeout, retrying in {backoff/1000:.1f}s (attempt {attempt+1}/{max_retries+1})")
+                await asyncio.sleep(backoff / 1000)
+            except aiohttp.ClientError as exc:
+                last_exc = exc
+                backoff = self._compute_backoff(attempt, max_retries, base_backoff, max_backoff, jitter)
+                logger.warning(f"GDELT connection error ({exc}), retrying in {backoff/1000:.1f}s (attempt {attempt+1}/{max_retries+1})")
+                await asyncio.sleep(backoff / 1000)
+            except Exception as exc:
+                last_exc = exc
+                backoff = self._compute_backoff(attempt, max_retries, base_backoff, max_backoff, jitter)
+                logger.warning(f"GDELT request failed ({exc}), retrying in {backoff/1000:.1f}s (attempt {attempt+1}/{max_retries+1})")
+                await asyncio.sleep(backoff / 1000)
 
         raise Exception(f"GDELT request failed after {max_retries + 1} attempts: {last_exc}")
 
@@ -196,32 +263,8 @@ class GDELTConnector:
         payload = await self._build_request()
         data = await self._request_with_retry(url, headers=headers, params=payload)
 
-        articles = data.get("articles", []) or []
-        total_count = len(articles)
-
-        # TimelineVol mode — GDELT DOC 2.0 returns aggregated coverage volume
-        # instead of individual article metadata. The response structure is:
-        # {"timeline": {"timelinevol": [...], "timelinevolraw": [...]}}
-        # when mode=timelinevol. For this mode, we store time-step data
-        # rather than article records, and total_count reflects the number
-        # of time steps returned (not article count).
-        if self.config.mode == GDELTMode.TIMELINEVOL:
-            timeline_data = data.get("timeline", {})
-            if "timelinevol" in timeline_data:
-                # timelinevol mode: percent coverage by 15-min/hour/day intervals
-                articles = []
-                total_count = len(timeline_data["timelinevol"])
-            elif "timelinevolraw" in timeline_data:
-                # timelinevolraw mode: raw volume counts
-                articles = []
-                total_count = len(timeline_data["timelinevolraw"])
-            else:
-                articles = []
-                total_count = 0
-            total_pages = 1
-        else:
-            total_count = len(articles)
-            total_pages = 1
+        articles, total_count = self._parse_mode_response(data)
+        total_pages = 1
         return articles, total_count, total_pages
 
     async def persist_raw(
@@ -252,14 +295,30 @@ class GDELTConnector:
         )
         return staged
 
+    async def close(self) -> None:
+        """Close the aiohttp session if we own it."""
+        if self._session and not self._session.closed:
+            await self._session.close()
+            self._session = None
+
 
 class GDELTConnectorFactory:
     """Factory for creating GDELTConnector instances."""
 
+    _shared_session: Optional[aiohttp.ClientSession] = None
+
     @classmethod
     async def create_session(cls) -> aiohttp.ClientSession:
-        return aiohttp.ClientSession()
+        if cls._shared_session is None or cls._shared_session.closed:
+            cls._shared_session = aiohttp.ClientSession()
+        return cls._shared_session
 
     @classmethod
     async def reset_session(cls) -> None:
-        pass
+        if cls._shared_session and not cls._shared_session.closed:
+            await cls._shared_session.close()
+        cls._shared_session = None
+
+    @classmethod
+    async def close_session(cls) -> None:
+        await cls.reset_session()

@@ -101,7 +101,7 @@ async def _run_pipeline(config: PipelineConfig) -> dict:
     )
     staging = StagingDataset(path="/tmp/spinal_cracker_staging.jsonl")
 
-    session = GDELTConnectorFactory.create_session()
+    session = await GDELTConnectorFactory.create_session()
     connector = GDELTConnector(config=gdconfig, staging=staging, aiohttp_session=session)
 
     report: dict = {"phase": "pending"}

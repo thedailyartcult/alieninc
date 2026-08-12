@@ -3,6 +3,17 @@ Module A: magritte_connector_gdelt
 The Ingestion Sync Job — high-reliability pull mechanism targeting GDELT DOC 2.0 API.
 Implements an aggressive, jittered exponential backoff retry, deterministic UUIDv5
 identification via URL namespace, and raw append-only staging dataset persistence.
+
+GDELT (Global Database of Events, Language, and Tone) is a free, open-source
+global news database maintained by the GDELT Project (Georgetown University).
+The DOC 2.0 API returns machine-translated global news coverage across 65+
+languages. Per the official API:
+  * Endpoint:  https://api.gdeltproject.org/api/v2/doc/doc
+  * Auth:      NONE — the API is fully open, no API key required.
+  * Params:    query, mode (ArtList), format, maxrecords (1-250), timespan
+  * Response:  {"articles": [ {url, title, seendate, domain, sourcecountry, ...} ]}
+  * seendate:  ISO-ish "YYYYMMDDTHHMMSSZ" (e.g. 20260714T030000Z)
+  * Timespan:  "<n>min|h|hours|d|days|w|weeks|m|months" (e.g. 24h, 1m)
 """
 
 import uuid
@@ -21,28 +32,38 @@ logger = logging.getLogger("magritte.connector.gdelt")
 
 
 class GDELTMode(Enum):
-    SUMMARY = "summary"
-    DOC = "doc"
+    """Valid DOC 2.0 API modes."""
+    ARTLIST = "artlist"
+    ART = "art"
+    IMAGECOLLAGE = "imagecollage"
+    TIMELINEVOL = "timelinevol"
+    TONECHART = "tonechart"
+    WORDCLOUDENGLISH = "wordcloudenglish"
+    WORDCLOUDIMAGETAGS = "wordcloudimagetags"
+    IMAGECOLLAGESHARE = "imagecollageshare"
+    TIMELINEVOL = "timelinevol"
 
 
 @dataclass
 class GDELTConfig:
     """Low-level config schema for GDELT DOC 2.0 API pull."""
     query: str
-    mode: GDELTMode
-    timespan: str
-    maxrecords: int
-    api_key: str
-    base_url: str = "https://api.gdeltproject.org/api/gdeltv2"
+    mode: GDELTMode = GDELTMode.ARTLIST
+    timespan: str = "1m"
+    maxrecords: int = 250
+    api_key: str = ""
+    base_url: str = "https://api.gdeltproject.org/api/v2/doc"
     request_timeout: int = 30
     max_retries: int = 5
-    base_backoff_ms: int = 1000
+    base_backoff_ms: int = 5000
     max_backoff_ms: int = 60000
     jitter_factor: float = 0.3
 
     def __post_init__(self) -> None:
         if isinstance(self.mode, str):
-            self.mode = GDELTMode(self.mode)
+            self.mode = GDELTMode(self.mode.lower())
+        if self.maxrecords > 250:
+            self.maxrecords = 250
 
 
 @dataclass
@@ -106,14 +127,14 @@ class GDELTConnector:
         self.staging = staging
         self._session = aiohttp_session
 
-    async def _build_request(self, page: int) -> Dict[str, Any]:
-        """Construct a paginated GDELT DOC 2.0 request payload."""
+    async def _build_request(self) -> Dict[str, Any]:
+        """Construct a GDELT DOC 2.0 request payload (ArtList JSON mode)."""
         payload: Dict[str, Any] = {
             "query": self.config.query,
             "mode": self.config.mode.value,
+            "format": "json",
+            "maxrecords": self.config.maxrecords,
             "timespan": self.config.timespan,
-            "maxRecords": self.config.maxrecords,
-            "page": page,
         }
         return payload
 
@@ -121,7 +142,7 @@ class GDELTConnector:
         self, url: str, method: str = "GET", headers: Optional[Dict[str, str]] = None,
         params: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """Aggressive jittered exponential backoff retry."""
+        """Aggressive jittered exponential backoff retry (GDELT enforces ~1 req / 5s)."""
         max_retries = self.config.max_retries
         base_backoff = self.config.base_backoff_ms
         max_backoff = self.config.max_backoff_ms
@@ -164,35 +185,28 @@ class GDELTConnector:
     async def pull(
         self, page: int = 1
     ) -> Tuple[List[Dict[str, Any]], int, int]:
-        """Pull GDELT DOC 2.0 data. Returns (records, total_count, page_count)."""
-        url = f"{self.config.base_url}/doc2"
-        headers = {"Authorization": f"Bearer {self.config.api_key}"}
+        """
+        Pull GDELT DOC 2.0 data. Returns (records, total_count, page_count).
 
-        all_records: List[Dict[str, Any]] = []
-        page_count = 0
-        next_page = page
+        GDELT returns up to `maxrecords` (max 250) articles in a single
+        response and does NOT support server-side pagination, so this issues
+        one request and returns the full result set.
+        """
+        url = f"{self.config.base_url}/doc"
+        headers: Dict[str, str] = {}
+        if self.config.api_key:
+            headers["Authorization"] = f"Bearer {self.config.api_key}"
 
-        while next_page is not None and len(all_records) < self.config.maxrecords:
-            payload = await self._build_request(next_page)
-            data = await self._request_with_retry(url, headers=headers, params=payload)
+        payload = await self._build_request()
+        data = await self._request_with_retry(url, headers=headers, params=payload)
 
-            results = data.get("result", []) or []
-            page_count = len(results)
-            all_records.extend(results)
+        articles = data.get("articles", []) or []
+        total_count = len(articles)
 
-            total = data.get("totalRecords", 0) or len(all_records)
+        self._cache[str(page)] = articles
 
-            if total > 0 and len(all_records) >= total:
-                break
-
-            next_page = next_page + 1 if len(all_records) < self.config.maxrecords else None
-
-        self._cache[str(page)] = all_records
-
-        total_count = len(all_records)
-        total_pages = int((total_count + self.config.maxrecords - 1) / self.config.maxrecords)
-
-        return all_records, total_count, total_pages
+        total_pages = 1
+        return articles, total_count, total_pages
 
     async def persist_raw(
         self, records: List[Dict[str, Any]]
@@ -235,7 +249,7 @@ class GDELTConnectorFactory:
         return cls._session
 
     @classmethod
-    def reset_session(cls) -> None:
+    async def reset_session(cls) -> None:
         if cls._session:
-            cls._session.close()
+            await cls._session.close()
             cls._session = None

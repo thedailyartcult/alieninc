@@ -96,10 +96,14 @@ class GDELTTransformEngine:
 
     @staticmethod
     def _normalize_timestamp(seendate: str) -> Optional[str]:
-        """Normalize a seendate to ISO-8601 UTC."""
+        """Normalize a seendate to ISO-8601 UTC.
+
+        Handles GDELT DOC 2.0's ``YYYYMMDDTHHMMSSZ`` format (e.g.
+        ``20260714T030000Z``) as well as a few common alternatives.
+        """
         if not seendate:
             return None
-        for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d", "%Y/%m/%d"):
+        for fmt in ("%Y%m%dT%H%M%SZ", "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d", "%Y/%m/%d"):
             try:
                 dt = datetime.strptime(seendate, fmt)
                 return dt.replace(tzinfo=timezone.utc).isoformat()

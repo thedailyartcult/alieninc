@@ -773,6 +773,10 @@
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="8" r="2.5"/><circle cx="12" cy="8" r="2.5"/><path d="M6.5 8h3"/></svg>
                         Link Types
                     </div>
+                    <div class="nav-item" data-page="sc-gdelt">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12l4-8 4 4 4-4v6H2z"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>
+                        GDELT Pipeline
+                    </div>
                 </div>
                 <div class="nav-section">
                     <div class="nav-section-title">YONO</div>
@@ -1196,9 +1200,47 @@
                             <tbody id="linkTypesBody"><tr><td colspan="6"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
                         </div>
                     </div>
-                </div>
+                 </div>
 
-                <div class="page" id="page-yono-providers">
+                 <div class="page" id="page-sc-gdelt">
+                     <div class="section">
+                         <div class="section-header">
+                             <span class="section-title">GDELT DOC 2.0 Pipeline</span>
+                             <div style="display:flex;gap:8px;align-items:center">
+                                 <span class="pulse-dot" id="gdeltHealthDot" style="width:10px;height:10px;border-radius:50%;background:#555;"></span>
+                                 <span class="mono" id="gdeltHealthText" style="font-size:12px">Health: …</span>
+                             </div>
+                         </div>
+                         <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+                             <input id="gdeltQuery" type="text" placeholder='GDELT query e.g. ("military" OR "defense")' style="flex:1">
+                             <input id="gdeltTimespan" type="text" placeholder="timespan e.g. 1m" value="1m" style="width:110px">
+                             <input id="gdeltMax" type="number" min="1" max="250" value="50" style="width:80px">
+                             <button class="btn btn-primary btn-sm" onclick="runGdeltPipeline()">Run Pipeline</button>
+                             <button class="btn btn-secondary btn-sm" onclick="loadGdeltSnapshot()">Refresh Snapshot</button>
+                         </div>
+                         <div id="gdeltRunStatus" style="margin-bottom:12px;font-size:13px;color:#aaa"></div>
+                     </div>
+                     <div class="section">
+                         <div class="section-header"><span class="section-title">Ontology Snapshot</span></div>
+                         <div class="table-wrap">
+                             <table>
+                                 <thead><tr><th>Object Types</th><th>Link Types</th><th>Objects (OSv2)</th><th>Links (OSv2)</th></tr></thead>
+                                 <tbody id="gdeltSnapshotBody"><tr><td colspan="4"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody>
+                             </table>
+                         </div>
+                     </div>
+                     <div class="section">
+                         <div class="section-header"><span class="section-title">Objects (latest)</span></div>
+                         <div class="table-wrap">
+                             <table>
+                                 <thead><tr><th>Type</th><th>Title</th><th>Country</th><th>Seen</th><th>URL</th></tr></thead>
+                                 <tbody id="gdeltObjectsBody"><tr><td colspan="5"><div class="empty-state">No objects indexed yet.</div></td></tr></tbody>
+                             </table>
+                         </div>
+                     </div>
+                 </div>
+
+                 <div class="page" id="page-yono-providers">
                     <div class="section">
                         <div class="section-header">
                             <span class="section-title">Service Providers</span>
@@ -2236,6 +2278,7 @@ function loadPageData(page) {
         case 'sc-types': loadObjectTypes(); loadActionTypes(); break;
         case 'sc-objects': loadObjectTypeFilter(); loadObjects(); break;
         case 'sc-links': loadLinkTypes(); break;
+        case 'sc-gdelt': loadGdeltHealth(); loadGdeltSnapshot(); break;
         case 'yono-providers': loadProviders(); loadModels(); break;
         case 'yono-agents': loadAgents(); break;
         case 'yono-automations': loadAutomations(); break;
@@ -3158,6 +3201,78 @@ async function submitAgent(e) { e.preventDefault(); const f = new FormData(e.tar
 async function submitAutomation(e) { e.preventDefault(); const f = new FormData(e.target); let triggerConfig, effects, conditions; try { triggerConfig = JSON.parse(f.get('trigger_config')); } catch { toast('Invalid JSON in trigger config', 'error'); return; } try { effects = JSON.parse(f.get('effects') || '[]'); } catch { toast('Invalid JSON in effects', 'error'); return; } try { conditions = JSON.parse(f.get('conditions') || '[]'); } catch { toast('Invalid JSON in conditions', 'error'); return; } try { await api('/yono/automations', { method: 'POST', body: JSON.stringify({ name: f.get('name'), display_name: f.get('display_name'), trigger_type: f.get('trigger_type'), trigger_config: triggerConfig, effects, description: f.get('description') || null, conditions }) }); toast('Automation created'); closeModal(); loadAutomations(); } catch (e) { toast(e.message, 'error'); } }
 
 const TERRANEAN_ENGINE = '/api/v1/terranean';
+
+async function loadGdeltHealth() {
+    const dot = document.getElementById('gdeltHealthDot');
+    const txt = document.getElementById('gdeltHealthText');
+    try {
+        const h = await api('/spinal-cracker/gdelt/health');
+        dot.style.background = '#22c54e';
+        txt.textContent = 'Health: ' + (h.status || 'ok') + ' · GDELT DOC 2.0 feed';
+    } catch (e) {
+        dot.style.background = '#ef4444';
+        txt.textContent = 'Health: / ' + (e.message || 'unreachable');
+    }
+}
+
+async function loadGdeltSnapshot() {
+    try {
+        const snap = await api('/spinal-cracker/gdelt/ontology/snapshot');
+        const body = document.getElementById('gdeltSnapshotBody');
+        body.innerHTML = '<tr><td>' + (snap.object_types ? Object.keys(snap.object_types).length : 0) +
+            '</td><td>' + (snap.link_types ? Object.keys(snap.link_types).length : 0) +
+            '</td><td>' + (snap.node_count || 0) + '</td><td>' + (snap.edge_count || 0) + '</td></tr>';
+    } catch (e) {
+        document.getElementById('gdeltSnapshotBody').innerHTML =
+            '<tr><td colspan="4"><div class="empty-state">Snapshot unavailable: ' + (e.message || 'error') + '</div></td></tr>';
+    }
+    try {
+        const r = await api('/spinal-cracker/gdelt/objects?limit=50');
+        const body = document.getElementById('gdeltObjectsBody');
+        if (!r.objects || !r.objects.length) {
+            body.innerHTML = '<tr><td colspan="5"><div class="empty-state">No objects indexed yet.</div></td></tr>';
+            return;
+        }
+        body.innerHTML = r.objects.map(o => {
+            const t = o.title || '';
+            const g = o.guid || '';
+            const cc = (g.indexOf('geo_country:') === 0) ? g : ((o.sourcecountry || o.country_code || ''));
+            const seen = o.seendate || '';
+            const u = o.url || (o.properties && o.properties.url) || '';
+            return '<tr><td>' + (o.type || '') + '</td><td>' + (t.length > 60 ? t.slice(0, 60) + '…' : t) +
+                '</td><td>' + (cc || '') + '</td><td>' + (seen.slice(0, 10)) +
+                '</td><td><a href="' + u + '" target="_blank" rel="noopener">' + (u ? 'open' : '') + '</a></td></tr>';
+        }).join('');
+    } catch (e) {
+        document.getElementById('gdeltObjectsBody').innerHTML =
+            '<tr><td colspan="5"><div class="empty-state">Objects unavailable: ' + (e.message || 'error') + '</div></td></tr>';
+    }
+}
+
+async function runGdeltPipeline() {
+    const btn = event && event.target;
+    const status = document.getElementById('gdeltRunStatus');
+    const q = document.getElementById('gdeltQuery').value.trim() || '("military" OR "defense" OR "security")';
+    const timespan = document.getElementById('gdeltTimespan').value.trim() || '1m';
+    const max = Math.min(parseInt(document.getElementById('gdeltMax').value) || 50, 250);
+    if (btn) btn.disabled = true;
+    status.innerHTML = '<span class="loading"></span> Running GDELT pipeline (may take a few seconds due to rate limiting)...';
+    try {
+        const rep = await api('/spinal-cracker/gdelt/pipeline/run', {
+            method: 'POST',
+            body: JSON.stringify({ query: q, mode: 'artlist', timespan: timespan, maxrecords: max, api_key: '' }),
+        });
+        status.innerHTML = 'Done: <b>' + rep.gdelt.records_fetched + '</b> fetched, <b>' + rep.transform.valid_count +
+            '</b> valid, <b>' + rep.writeback.success_count + '</b> written (tx ' +
+            rep.writeback.transaction_id.slice(0, 8) + '). GDELT rate-limits to ~1 req/5s.';
+    } catch (e) {
+        status.innerHTML = '<b style="color:#ef4444">Pipeline error:</b> ' + (e.message || 'unknown') +
+            '. GDELT enforces ~1 request per 5 seconds; retries are automatic.';
+    } finally {
+        if (btn) btn.disabled = false;
+        loadGdeltSnapshot();
+    }
+}
 
 async function terraneanApi(path, opts = {}) {
     const url = API_BASE + '/terranean' + path;

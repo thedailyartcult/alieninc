@@ -13,13 +13,16 @@ import asyncio
 import json
 import logging
 import sys
+import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
 
-sys.path.insert(0, "/home/tablet/alieninc/panteon/backend")
+BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+if BACKEND_DIR not in sys.path:
+    sys.path.insert(0, BACKEND_DIR)
 
 from magritte_connector_gdelt import (
     GDELTConfig,

@@ -15,6 +15,52 @@ from contextlib import contextmanager
 logger = logging.getLogger("magritte.action.writeback")
 
 
+COUNTRY_CODE_TO_NAME = {
+    "US": "United States",
+    "GB": "United Kingdom",
+    "FR": "France",
+    "DE": "Germany",
+    "JP": "Japan",
+    "IN": "India",
+    "CN": "China",
+    "BR": "Brazil",
+    "AU": "Australia",
+    "CA": "Canada",
+    "KR": "South Korea",
+    "RU": "Russia",
+    "IL": "Israel",
+    "MX": "Mexico",
+    "EG": "Egypt",
+    "NG": "Nigeria",
+    "SE": "Sweden",
+    "NO": "Norway",
+    "IE": "Ireland",
+    "IT": "Italy",
+    "ES": "Spain",
+    "PT": "Portugal",
+    "NL": "Netherlands",
+    "CH": "Switzerland",
+    "BE": "Belgium",
+    "DK": "Denmark",
+    "FI": "Finland",
+    "CN": "China",
+    "CZ": "Czechia",
+    "UA": "Ukraine",
+    "PL": "Poland",
+    "TR": "Turkey",
+    "GR": "Greece",
+    "RO": "Romania",
+    "HU": "Hungary",
+    "PT": "Portugal",
+    "AT": "Austria",
+    "DK": "Denmark",
+}
+
+COUNTRY_NAME_TO_CODE = {v: k for k, v in COUNTRY_CODE_TO_NAME.items()}
+
+country_map = COUNTRY_CODE_TO_NAME
+
+
 class WritebackTransaction:
     """ACID transaction wrapper for writeback operations."""
 
@@ -252,12 +298,28 @@ class OSv2Manager:
     def get_all_objects(self) -> List[Dict[str, Any]]:
         return list(self._object_nodes.values())
 
-    def link_object_to_geo(self, article_guid: str, country_code: str) -> None:
-        """Create a link entry from an article to a geo_country node."""
+    def link_object_to_geo(self, article_guid: str, sourcecountry: str) -> None:
+        """Create a link entry from an article to a geo_country node.
+
+        ``sourcecountry`` may arrive from GDELT as a full country name (e.g.
+        "China"); it is normalized to a FIPS code for the geo_country node key.
+        """
+        code = self._resolve_country_code(sourcecountry) if hasattr(self, "_resolve_country_code") else sourcecountry
+        country_name = self._resolve_country_name(sourcecountry) if hasattr(self, "_resolve_country_name") else sourcecountry
+        target_guid = f"geo_country:{code}"
+        if target_guid not in self._object_nodes:
+            self.insert_object(target_guid, {
+                "country_code": code,
+                "country_name": country_name,
+                "properties": {"sourcecountry": sourcecountry},
+                "type": "geo_country",
+                "guid": target_guid,
+            })
         link_entry = {
-            "guid": f"link:article:{article_guid}:{country_code}",
+            "guid": f"link:article:{article_guid}:{code}",
             "article_guid": article_guid,
-            "country_code": country_code,
+            "country_code": code,
+            "country_name": country_name,
             "relationship": "ARTICLE_PUBLISHED_IN_COUNTRY",
             "target_type": "geo_country",
             "created_at": datetime.now(timezone.utc).isoformat(),
@@ -411,40 +473,23 @@ class WritebackService:
                 relationship="ARTICLE_PUBLISHED_IN_COUNTRY",
             )
 
+    def _resolve_country_code(self, country: str) -> str:
+        """Resolve a GDELT sourcecountry (FIPS code or full name) to a FIPS code.
+
+        GDELT DOC 2.0 returns full country names (e.g. "China"); the OSv2 graph
+        keys geo_country nodes on the FIPS two-letter code. Falls back to the
+        raw value uppercased when no mapping is known.
+        """
+        if not country:
+            return "XX"
+        code = country.strip().upper()
+        if len(code) == 2 and code.isalpha():
+            return code
+        return COUNTRY_NAME_TO_CODE.get(country.strip(), code)
+
     def _resolve_country_name(self, code: str) -> str:
-        """Resolve country name from code using a simple lookup table."""
-        country_map = {
-            "US": "United States",
-            "GB": "United Kingdom",
-            "FR": "France",
-            "DE": "Germany",
-            "JP": "Japan",
-            "IN": "India",
-            "CN": "China",
-            "BR": "Brazil",
-            "AU": "Australia",
-            "CA": "Canada",
-            "KR": "South Korea",
-            "RU": "Russia",
-            "IL": "Israel",
-            "MX": "Mexico",
-            "EG": "Egypt",
-            "NG": "Nigeria",
-            "SE": "Sweden",
-            "NO": "Norway",
-            "IE": "Ireland",
-            "IT": "Italy",
-            "ES": "Spain",
-            "PT": "Portugal",
-            "NL": "Netherlands",
-            "CH": "Switzerland",
-            "BE": "Belgium",
-            "DK": "Denmark",
-            "FI": "Finland",
-            "NO": "Norway",
-            "SE": "Sweden",
-        }
-        return country_map.get(code.upper(), "Unknown")
+        """Resolve a FIPS two-letter country code to a display name."""
+        return COUNTRY_CODE_TO_NAME.get(code.upper(), country_map.get(code.upper(), code))
 
 
 class GDELTWritebackPipeline:
@@ -575,12 +620,16 @@ class GDELTWritebackPipeline:
         return guid, row
 
     def get_ontology_snapshot(self) -> Dict[str, Any]:
-        """Return a snapshot of the ontology graph state."""
+        """Return a snapshot of the ontology graph state.
+
+        Schema (object/link type definitions) lives on the OntologyLayer while
+        the persisted OSv2 rows live on the manager, so both are surfaced.
+        """
         return {
             "object_types": getattr(self._ontology, "object_types", {}),
             "link_types": getattr(self._ontology, "link_types", {}),
-            "node_count": getattr(self._ontology, "count_nodes", lambda: 0)(),
-            "edge_count": getattr(self._ontology, "count_edges", lambda: 0)(),
+            "node_count": self._osv2.count_objects(),
+            "edge_count": self._osv2.count_links(),
         }
 
 

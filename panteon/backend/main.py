@@ -7,9 +7,13 @@ import asyncio
 import json
 import logging
 import sys
+import os
+from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
 
-sys.path.insert(0, "/home/tablet/alieninc/panteon/backend")
+BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+if BACKEND_DIR not in sys.path:
+    sys.path.insert(0, BACKEND_DIR)
 
 from magritte_connector_gdelt import (
     GDELTConfig,
@@ -168,17 +172,19 @@ def main():
         stream=sys.stdout,
     )
 
-    # Production config
+    # Production config — GDELT DOC 2.0 query parameters.
+    # The API is open (no key) and rate-limited to ~1 req / 5s; the connector's
+    # jittered backoff honours that. maxrecords is clamped to the 250 cap.
     config = {
-        "query": "select * from gdelt_v2 where sourcecountry IS NOT NULL",
-        "mode": "doc",
-        "timespan": "P1Y",
-        "maxrecords": 1000,
-        "api_key": "GDELT_API_KEY",
-        "base_url": "https://api.gdeltproject.org/api/gdeltv2",
+        "query": "(\"military\" OR \"defense\" OR \"security\")",
+        "mode": "artlist",
+        "timespan": "1m",
+        "maxrecords": 250,
+        "api_key": "",
+        "base_url": "https://api.gdeltproject.org/api/v2/doc",
         "request_timeout": 30,
         "max_retries": 5,
-        "base_backoff_ms": 1000,
+        "base_backoff_ms": 5000,
         "max_backoff_ms": 60000,
         "jitter_factor": 0.3,
     }

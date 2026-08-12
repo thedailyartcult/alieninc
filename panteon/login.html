@@ -730,6 +730,20 @@ function notify(msg, type) {
   });
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const stored = localStorage.getItem('hs_session');
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      supabase.auth.setSession({
+        access_token: parsed.access_token,
+        refresh_token: parsed.refresh_token
+      });
+    } catch (e) {}
+  }
+</script>
 
 </body>
 </html>

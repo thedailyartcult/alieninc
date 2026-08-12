@@ -2178,15 +2178,6 @@ async function doLogout() {
     window.location.href = '/login.html';
 }
 
-function showApp(user) {
-    if (user) {
-        const name = user.email || user.id;
-        document.getElementById('userName').textContent = name;
-        document.getElementById('userAvatar').textContent = name.charAt(0).toUpperCase();
-    }
-    init();
-}
-
 async function api(path, opts = {}) {
     const url = API_BASE + path;
     const headers = { 'Content-Type': 'application/json', ...opts.headers };
@@ -3442,38 +3433,29 @@ async function findLeveragePoints() {
     } catch (e) { document.getElementById('leverageResults').innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
 }
 
-document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
-document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
-
-document.querySelectorAll('.nav-item').forEach(item => {
-    item.addEventListener('click', () => {
-        navigate(item.dataset.page);
-        if (window.innerWidth <= 1024) {
-            document.querySelector('.sidebar').classList.remove('open');
-            document.getElementById('sidebarBackdrop').classList.remove('open');
+async function restoreSession() {
+    try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) return session;
+    } catch (e) {
+        console.warn('getSession failed, trying localStorage fallback', e);
+    }
+    const raw = localStorage.getItem('hs_session');
+    if (raw) {
+        try {
+            const stored = JSON.parse(raw);
+            if (stored.access_token && stored.refresh_token) {
+                const { data, error } = await supabaseClient.auth.setSession({ access_token: stored.access_token, refresh_token: stored.refresh_token });
+                if (!error && data.session) return data.session;
+            }
+        } catch (e) {
+            console.warn('setSession from localStorage failed', e);
         }
-    });
-});
-
-window.addEventListener('hashchange', () => {
-    const hash = window.location.hash.slice(1);
-    if (hash && PAGES[hash]) navigate(hash);
-});
-
-document.getElementById('sidebarToggle').addEventListener('click', function() {
-    document.querySelector('.sidebar').classList.toggle('open');
-    document.getElementById('sidebarBackdrop').classList.toggle('open');
-});
-
-document.getElementById('sidebarBackdrop').addEventListener('click', function() {
-    document.querySelector('.sidebar').classList.remove('open');
-    document.getElementById('sidebarBackdrop').classList.remove('open');
-});
+    }
+    return null;
+}
 
 function init() {
-    const hash = window.location.hash.slice(1);
-    if (hash && PAGES[hash]) navigate(hash);
-    else navigate('overview');
     checkHealth();
     updateCountdown();
     setInterval(updateCountdown, 1000);
@@ -3485,41 +3467,80 @@ function init() {
     }, 30000);
 }
 
-async function restoreSession() {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (session) return session;
-    const raw = localStorage.getItem('hs_session');
-    if (raw) {
-        try {
-            const stored = JSON.parse(raw);
-            if (stored.access_token && stored.refresh_token) {
-                const { data, error } = await supabaseClient.auth.setSession({ access_token: stored.access_token, refresh_token: stored.refresh_token });
-                if (!error && data.session) return data.session;
-            }
-        } catch (e) {}
+function showApp(user) {
+    if (user) {
+        const name = user.email || user.id;
+        document.getElementById('userName').textContent = name;
+        document.getElementById('userAvatar').textContent = name.charAt(0).toUpperCase();
     }
-    return null;
+    init();
 }
 
-restoreSession().then(session => {
-    if (session) {
-        authToken = session.access_token;
-        currentUser = { email: session.user.email, id: session.user.id };
-        showApp(currentUser);
-    } else {
-        window.location.href = '/login.html';
-    }
-});
-
-supabaseClient.auth.onAuthStateChange(async (event, session) => {
-    if (session) {
-        authToken = session.access_token;
-        currentUser = { email: session.user.email, id: session.user.id };
-        showApp(currentUser);
-    }
-});
-
 document.addEventListener('DOMContentLoaded', async () => {
+    // Show loading state
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'auth-loading';
+    loadingOverlay.style.cssText = 'position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;';
+    loadingOverlay.innerHTML = '<div style="text-align:center"><div class="loading" style="width:32px;height:32px;border-width:3px;margin:0 auto 16px"></div><div style="font-family:var(--font-tech);font-size:12px;color:var(--text-muted)">Restoring session...</div></div>';
+    document.body.appendChild(loadingOverlay);
+
+    try {
+        const session = await restoreSession();
+        if (session) {
+            authToken = session.access_token;
+            currentUser = { email: session.user.email, id: session.user.id };
+            showApp(currentUser);
+            const hash = window.location.hash.slice(1) || 'overview';
+            navigate(hash);
+        } else {
+            // No session - redirect to login with return URL
+            const returnUrl = window.location.pathname + (window.location.hash || '');
+            window.location.href = '/login.html?redirect=' + encodeURIComponent(returnUrl);
+            return;
+        }
+    } catch (err) {
+        console.error('Session restore failed:', err);
+        window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname + (window.location.hash || ''));
+        return;
+    } finally {
+        // Remove loading overlay
+        const overlay = document.getElementById('auth-loading');
+        if (overlay) overlay.remove();
+    }
+
+    // Setup nav clicks
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+            navigate(item.dataset.page);
+            if (window.innerWidth <= 1024) {
+                document.querySelector('.sidebar').classList.remove('open');
+                document.getElementById('sidebarBackdrop').classList.remove('open');
+            }
+        });
+    });
+
+    // Hash change handler
+    window.addEventListener('hashchange', () => {
+        const hash = window.location.hash.slice(1);
+        if (hash && PAGES[hash]) navigate(hash);
+    });
+
+    // Sidebar toggle
+    document.getElementById('sidebarToggle').addEventListener('click', function() {
+        document.querySelector('.sidebar').classList.toggle('open');
+        document.getElementById('sidebarBackdrop').classList.toggle('open');
+    });
+
+    document.getElementById('sidebarBackdrop').addEventListener('click', function() {
+        document.querySelector('.sidebar').classList.remove('open');
+        document.getElementById('sidebarBackdrop').classList.remove('open');
+    });
+
+    // Modal close handlers
+    document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
+
+    // Camera workspace
     const selectedCameraRegions = new Set();
     let cameraAll = [];
     let cameraPage = 0;

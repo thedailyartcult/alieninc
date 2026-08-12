@@ -30,6 +30,7 @@
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 
   <style>
+
     :root {
       --hg-font-primary: "Instrument Sans", system-ui, -apple-system, sans-serif;
       --hg-font-secondary: "Instrument Sans Condensed", var(--hg-font-primary);
@@ -118,6 +119,7 @@
       letter-spacing: 0.02em;
       color: #131920;
       line-height: 1;
+      -webkit-font-smoothing: antialiased;
     }
 
     .brand-logo__dot {
@@ -227,12 +229,6 @@
       position: relative;
     }
 
-    /* Live simulations reminder in the nav — identical rendering to the phrases nav
-       (nav__thinking): the "Simulations Live" label and the tally number are revealed
-       one word at a time with the same nav-word-in animation, the line uses the same
-       caret then ellipsis, and the number keeps counting while visible. Shown only
-       in "sims mode" (a random pop-up while scrolling); the nav links appear only
-       while hovering the nav. */
     .nav__sims {
       position: absolute;
       top: 50%;
@@ -278,11 +274,6 @@
       font-variant-numeric: tabular-nums;
     }
 
-    /* Sims mode (desktop only): the live counter is the only nav content; the
-       nav links stay hidden until the nav is hovered, then the counter swaps out.
-       The list stays in-flow (visibility:hidden, not display:none) so the nav keeps
-       its width and hit-testable area, and the swap is a pure visibility change —
-       zero reflow, so no one-frame top-left letter flash on hover. */
     @media (min-width: 901px) {
       .is-sims-nav .nav__sims {
         display: inline-flex;
@@ -399,9 +390,6 @@
       50%, 100% { opacity: 0; }
     }
 
-    /* Nav sets — a set is picked at random on each load; only the active set's list is displayed.
-       To add set N: add <ul class="nav__list nav__list--setN">, a rule pair below,
-       one selector line in the reveal rule, and one entry in ALIEN_NAV_SETS (head). */
     .nav__list--set2,
     .nav__list--set3,
     .nav__list--set4,
@@ -418,7 +406,6 @@
     html[data-nav-set="5"] .nav__list--set1 { display: none; }
     html[data-nav-set="5"] .nav__list--set5 { display: flex; }
 
-    /* JS-driven loading & reveal states (no-JS and reduced-motion skip to the default nav) */
     .js-nav:not(.reduced-motion) .nav__thinking {
       display: flex;
     }
@@ -1012,7 +999,7 @@
       background-color: var(--hg-color-secondary);
     }
 
-    /* ── Financial data login overlay ── */
+    /* Financial data login overlay */
     .eco-login-overlay {
       position: fixed;
       inset: 0;
@@ -1107,9 +1094,7 @@
       color: var(--ppl-color-text-default, #131920);
     }
 
-    /* ─────────────────────────────────────────────────────────────
-       Integrated fable Obscured Map Components
-       ───────────────────────────────────────────────────────────── */
+    /* Obscured Map Components */
     .retro-map-wrapper {
         position: relative;
         height: 700px;
@@ -1122,7 +1107,6 @@
         font-family: 'VT323', Courier, monospace;
     }
 
-    /* Unified HUD Panels */
     .retro-map-hud-panel {
         background: rgba(0, 0, 0, 0.9);
         border: 1px solid rgba(34, 211, 238, 0.35);
@@ -1184,7 +1168,6 @@
         text-transform: uppercase;
     }
 
-    /* Center Search Bar */
     .retro-map-hud-center {
         position: absolute;
         top: 15px;
@@ -1282,7 +1265,6 @@
         text-align: right;
     }
 
-    /* Left-side Drawer: Map Active Spectras */
     .retro-map-deck {
         position: absolute;
         top: 150px;
@@ -1331,7 +1313,6 @@
         box-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
     }
 
-    /* Legend component styled like fable's spectral gauge */
     .retro-map-legend {
         margin-top: 6px;
         display: flex;
@@ -1343,7 +1324,7 @@
         height: 8px;
         width: 100%;
         border-radius: 2px;
-        background: linear-gradient(to right, #4ade80, #f59e0b, #ef4444); /* emerald -> amber -> rose */
+        background: linear-gradient(to right, #4ade80, #f59e0b, #ef4444);
         border: 1px solid rgba(255, 255, 255, 0.15);
     }
 
@@ -1355,7 +1336,6 @@
         letter-spacing: 1px;
     }
 
-    /* Map interactive help controls banner */
     .retro-map-hint-banner {
         position: absolute;
         bottom: 75px;
@@ -1383,7 +1363,6 @@
         box-shadow: 0 4px 10px rgba(0,0,0,0.6);
     }
 
-    /* Preset controls command dock */
     .retro-map-toolbar {
         position: absolute;
         bottom: 12px;
@@ -1445,7 +1424,6 @@
         stroke: currentColor;
     }
 
-    /* Radar circular Mask minimap */
     .retro-map-radar-frame {
         position: absolute;
         bottom: 80px;
@@ -1467,7 +1445,6 @@
         border-radius: 50%;
     }
 
-    /* Radial Scanning sweep and sweeping target grids */
     .retro-map-radar-overlay {
         position: absolute;
         top: 0; left: 0; right: 0; bottom: 0;
@@ -1505,7 +1482,6 @@
         box-shadow: 0 0 8px #ef4444;
     }
 
-    /* Dynamic Node Decrypter inspector panel */
     .retro-map-inspector {
         position: absolute;
         bottom: 80px;
@@ -1629,7 +1605,6 @@
         text-align: right;
     }
 
-    /* Spatial HTML Custom 3D Marker Nodes */
     .retro-map-node-marker {
         cursor: pointer;
         display: flex;
@@ -1681,7 +1656,6 @@
         box-shadow: 0 0 10px #4ade80, 0 0 20px rgba(74, 222, 128, 0.6);
     }
 
-    /* Search selection pin — always green so the searched company stands out */
     .retro-map-search-marker .retro-map-marker-tag {
         color: #4ade80;
         border-color: #4ade80;
@@ -1700,7 +1674,6 @@
         50% { transform: scale(1.2); opacity: 0.8; }
     }
 
-    /* Obscured District Spatial labels */
     .retro-map-district-tag {
         font-family: 'VT323', Courier, monospace;
         font-size: 0.72rem;
@@ -1714,7 +1687,7 @@
         white-space: nowrap;
         transition: opacity 0.3s ease;
     }
-/* Homepage full-size network map zone */
+
     .network-map-zone {
       background: #000;
     }
@@ -1734,10 +1707,10 @@
         min-height: 480px;
       }
     }
-  .network-grid__item.view-switch-fade {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
+    .network-grid__item.view-switch-fade {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
   </style>
   <script>
     (function () {
@@ -1802,7 +1775,7 @@
           <a href="index.html" class="brand-logo" aria-label="visit the Alien Inc Homepage">
             <span class="brand-logo__text">Alien</span>
             <img src="logo.png" alt="•" class="brand-logo__dot">
-            <span class="brand-logo__text">Inc</span>
+            <span class="brand-logo__text">Inc.</span>
           </a>
         </div>
         <nav class="nav" aria-label="Primary">
@@ -1810,7 +1783,7 @@
             <span class="nav__thinking-pulse"><i></i><i></i><i></i></span>
             <span class="nav__thinking-line" id="nav-thinking-line"></span>
           </div>
-          <!-- Live simulations reminder — random pop-up while scrolling; renders exactly like the phrases nav -->
+          <!-- Live simulations reminder -->
           <div class="nav__sims" id="navSims" aria-hidden="true">
             <span class="nav__sims-pulse"><i></i><i></i><i></i></span>
             <span class="nav__thinking-line" id="navSimsLine"></span>
@@ -1838,7 +1811,7 @@
             <li class="nav__list-item"><a href="#" class="nav__list-item-link">Where</a></li>
             <li class="nav__list-item"><a href="#" class="nav__list-item-link">Who</a></li>
           </ul>
-          <!-- Sets 3-5: placeholders — replace hrefs, labels, and phrases -->
+          <!-- Sets 3-5: placeholders -->
           <ul class="nav__list nav__list--set3">
             <li class="nav__list-item"><a href="#" class="nav__list-item-link">Remember</a></li>
             <li class="nav__list-item"><a href="#" class="nav__list-item-link">Understand</a></li>
@@ -2049,7 +2022,7 @@
       <section id="network-map" class="network-map-zone">
         <div class="retro-map-wrapper">
 
-            <!-- HUD: Focused LGU Telemetry Card (fable top-left card adapted) -->
+            <!-- HUD: Focused LGU Telemetry Card -->
             <div class="retro-map-hud-panel retro-map-hud-left">
                 <div class="retro-map-hud-kicker">FOCUS SECTOR</div>
                 <div id="retro-focus-title" class="retro-map-hud-heading">LUZON ARRAY</div>
@@ -2060,13 +2033,13 @@
                 <div id="retro-focus-stat2" class="retro-map-hud-meta">GRID AREA ACTIVE</div>
             </div>
 
-            <!-- HUD: Company search (BGC directory + group companies from the source of truth) -->
+            <!-- HUD: Company search -->
             <div class="retro-map-hud-panel retro-map-hud-center retro-map-search">
                 <input id="retro-company-search" class="retro-map-search-input" type="text" autocomplete="off" spellcheck="false" placeholder="help me find the tech stack of this company" aria-label="Search BGC directory and group companies">
                 <div id="retro-search-results" class="retro-map-search-results"></div>
             </div>
 
-            <!-- HUD: Database Status Card (real counts + as-of date from source of truth) -->
+            <!-- HUD: Database Status Card -->
             <div class="retro-map-hud-panel retro-map-hud-right">
                 <div class="retro-map-hud-kicker">DATABASE STATUS</div>
                 <div id="hud-archive-count" class="retro-map-hud-heading">— COMPANIES</div>
@@ -2092,7 +2065,7 @@
             <!-- Map Render Port -->
             <div id="aliens-network-map" style="height: 100%; width: 100%;"></div>
 
-            <!-- Circular Radar-masked Minimap (fable Minimap adapted) -->
+            <!-- Circular Radar-masked Minimap -->
             <div class="retro-map-radar-frame">
                 <div id="retro-compass-radar-map" class="retro-map-radar-viewport"></div>
                 <div class="retro-map-radar-overlay">
@@ -2240,7 +2213,7 @@
 
   </div>
 
-  <!-- Server-injected ecosystem data (null when not authenticated) -->
+  <!-- Server-injected ecosystem data -->
   <script>
   /*[ECOSYSTEM_DATA]*/
   </script>
@@ -2248,7 +2221,7 @@
   <script src="data/ecosystem-data.js?v=20260731"></script>
   <script src="data/ecosystem-render.js"></script>
 
-  <!-- Login overlay — hidden unless ECOSYSTEM_DATA is null -->
+  <!-- Login overlay -->
   <div id="ecosystem-login-overlay" class="eco-login-overlay" style="display:none;">
     <div class="eco-login-modal">
       <div class="eco-login-modal__icon">
@@ -2334,7 +2307,7 @@
   })();
   </script>
 
-  <!-- Cookie Consent Banner (GDPR/CCPA/ePrivacy) -->
+  <!-- Cookie Consent Banner -->
   <div id="cookie-consent-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1a1a2e;color:#fff;padding:20px;z-index:9999;box-shadow:0 -4px 12px rgba(0,0,0,0.3);">
     <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:15px;">
       <div style="flex:1;min-width:300px;">
@@ -2371,15 +2344,9 @@
   })();
   </script>
 
-
   <!-- ALIEN.INC NETWORK MAP -->
   <script src="data/network-map-data.js?v=5"></script>
   <script>
-  // ── ALIEN.INC Network Map Data ──────────────────────────────────
-  // Node, district, and city data is loaded from the ecosystem JSON
-  // single source of truth (networkMap section) via network-map-data.js.
-  // No financial data is rendered on this map.
-  // GeoJSON Networks (fable Custom Railway Grids & Highway Segments)
   const luzonRailwaysGeoJSON = {
       "type": "FeatureCollection",
       "features": [
@@ -2389,15 +2356,15 @@
               "geometry": {
                   "type": "LineString",
                   "coordinates": [
-                      [121.0500, 14.5500], // BGC
-                      [121.0244, 14.5547], // Makati
-                      [120.9842, 14.5995], // Manila Tutuban
-                      [120.9800, 14.6100], // Caloocan
-                      [120.9100, 14.7500], // Meycauayan
-                      [120.8100, 14.8700], // Malolos
-                      [120.6000, 15.0200], // San Fernando
-                      [120.5518, 15.1761], // Clark Centra
-                      [120.5429, 15.3377]  // NCC
+                      [121.0500, 14.5500],
+                      [121.0244, 14.5547],
+                      [120.9842, 14.5995],
+                      [120.9800, 14.6100],
+                      [120.9100, 14.7500],
+                      [120.8100, 14.8700],
+                      [120.6000, 15.0200],
+                      [120.5518, 15.1761],
+                      [120.5429, 15.3377]
                   ]
               }
           },
@@ -2407,10 +2374,10 @@
               "geometry": {
                   "type": "LineString",
                   "coordinates": [
-                      [120.2833, 14.8250], // Subic
-                      [120.4500, 14.9700], // Dinalupihan
-                      [120.5200, 15.0500], // Floridablanca
-                      [120.5518, 15.1761]  // Clark
+                      [120.2833, 14.8250],
+                      [120.4500, 14.9700],
+                      [120.5200, 15.0500],
+                      [120.5518, 15.1761]
                   ]
               }
           },
@@ -2420,11 +2387,11 @@
               "geometry": {
                   "type": "LineString",
                   "coordinates": [
-                      [121.0400, 14.6500], // North Ave
-                      [121.0600, 14.5900], // Ortigas
-                      [121.0500, 14.5500], // BGC
-                      [121.0190, 14.5560], // Makati
-                      [121.0100, 14.5100]  // FTI
+                      [121.0400, 14.6500],
+                      [121.0600, 14.5900],
+                      [121.0500, 14.5500],
+                      [121.0190, 14.5560],
+                      [121.0100, 14.5100]
                   ]
               }
           }
@@ -2440,11 +2407,11 @@
               "geometry": {
                   "type": "LineString",
                   "coordinates": [
-                      [120.9950, 14.5467], // Pasay
-                      [121.0244, 14.5547], // Makati
-                      [121.0333, 14.5833], // Mandaluyong
-                      [121.0350, 14.6100], // Ortigas
-                      [121.0400, 14.6500]  // Quezon City
+                      [120.9950, 14.5467],
+                      [121.0244, 14.5547],
+                      [121.0333, 14.5833],
+                      [121.0350, 14.6100],
+                      [121.0400, 14.6500]
                   ]
               }
           },
@@ -2454,13 +2421,13 @@
               "geometry": {
                   "type": "LineString",
                   "coordinates": [
-                      [120.9800, 14.6100], // Caloocan
-                      [120.9600, 14.7000], // Valenzuela
-                      [120.8700, 14.8300], // Marilao
-                      [120.8100, 14.8700], // Malolos
-                      [120.7100, 14.9800], // Apalit
-                      [120.6900, 15.0300], // San Fernando
-                      [120.5900, 15.1500]  // Angeles
+                      [120.9800, 14.6100],
+                      [120.9600, 14.7000],
+                      [120.8700, 14.8300],
+                      [120.8100, 14.8700],
+                      [120.7100, 14.9800],
+                      [120.6900, 15.0300],
+                      [120.5900, 15.1500]
                   ]
               }
           },
@@ -2470,11 +2437,11 @@
               "geometry": {
                   "type": "LineString",
                   "coordinates": [
-                      [120.2833, 14.8250], // Subic
-                      [120.4500, 14.9700], // Dinalupihan
-                      [120.5200, 15.0500], // Floridablanca
-                      [120.5518, 15.1761], // Clark
-                      [120.5429, 15.3377]  // NCC
+                      [120.2833, 14.8250],
+                      [120.4500, 14.9700],
+                      [120.5200, 15.0500],
+                      [120.5518, 15.1761],
+                      [120.5429, 15.3377]
                   ]
               }
           }
@@ -2487,17 +2454,15 @@
   let districtMarkers = [];
   let searchMarkerInstance = null;
 
-  // Real building-height color ramp (meters, from OpenMapTiles render_height).
   const BUILDING_HEIGHT_RAMP = [
       'interpolate', ['linear'], ['get', 'render_height'],
-      0, '#062d18',      // Ground level
-      30, '#0f5132',     // Low-rise
-      100, '#198754',    // Mid-rise
-      250, '#4ade80',    // High-rise
-      500, '#22d3ee'     // Skyline peaks
+      0, '#062d18',
+      30, '#0f5132',
+      100, '#198754',
+      250, '#4ade80',
+      500, '#22d3ee'
   ];
 
-  // --- GRID FLOW: animated pulses along real Luzon corridors that color buildings as they cross ---
   const FLOW_DURATION_MS = 26000;
   const FLOW_BUFFER_M = 160;
   const FLOW_REVEAL_SCAN_MS = 100;
@@ -2608,7 +2573,7 @@
       ids.forEach(id => {
           try {
               activeMapInstance.setFeatureState({ source: 'openmaptiles', sourceLayer: 'building', id }, { reveal: false });
-          } catch (e) { /* tile may have been evicted */ }
+          } catch (e) {}
       });
   }
 
@@ -2644,7 +2609,6 @@
           cometSource.setData({ type: 'FeatureCollection', features: cometFeatures });
       }
 
-      // Reveal buildings as the pulse crosses them (feature-state opacity, throttled scan)
       if (revealBuildings && polys.length) {
           if (phase < flowPrevPhase) clearRevealedBuildings();
           const now = performance.now();
@@ -2671,7 +2635,7 @@
                       revealedBuildingIds.add(f.id);
                       try {
                           activeMapInstance.setFeatureState({ source: 'openmaptiles', sourceLayer: 'building', id: f.id }, { reveal: true });
-                      } catch (e) { /* ignore */ }
+                      } catch (e) {}
                   }
               });
           }
@@ -2681,7 +2645,6 @@
       flowRafId = requestAnimationFrame(flowTick);
   }
 
-  // Applies real group numbers from the ecosystem source of truth to the HUD.
   function applyEcosystemSummary() {
       const summary = window.ecosystemSummary;
       if (!summary) return;
@@ -2702,7 +2665,6 @@
       }
   }
 
-  // Company search: BGC directory entries + group network nodes, from the source of truth.
   function buildSearchIndex() {
       const index = [];
       const bgc = window.bgcDirectory;
@@ -2761,7 +2723,6 @@
           }
       });
 
-      // Keep focus on the input when interacting with the dropdown so clicks land.
       resultsEl.addEventListener('pointerdown', (e) => e.preventDefault());
 
       document.addEventListener('click', (e) => {
@@ -2858,7 +2819,6 @@
       }, 550);
   }
 
-  // Profile panel for a BGC directory entry (no group `company` record).
   function renderDirectoryProfile(item) {
       const stack = (item.techStack && item.techStack.length)
           ? item.techStack.map((t) => `<div class="retro-map-inspector-stack-row"><span>${t}</span></div>`).join('')
@@ -2907,7 +2867,6 @@
       return `<dl>${rows}</dl>${footer}`;
   }
 
-  // Search selection pin: a company-style dot with the searched company's name.
   function placeSearchMarker(item) {
       if (!activeMapInstance) return;
       if (searchMarkerInstance) searchMarkerInstance.remove();
@@ -2938,19 +2897,17 @@
       applyEcosystemSummary();
       initSearch();
 
-      // Integrates OpenFreeMap Dark style to serve vector tiles natively
       activeMapInstance = new maplibregl.Map({
           container: 'aliens-network-map',
           style: 'https://tiles.openfreemap.org/styles/dark',
           center: [120.7, 15.1],
           zoom: 8.2,
-          pitch: 55, // Immersive 3D camera angle
+          pitch: 55,
           bearing: -10,
           attributionControl: { compact: true },
           canvasContextAttributes: { antialias: true }
       });
 
-      // Initialize Synchronized Radar Minimap (clone style to avoid shared object issues)
       minimapInstance = new maplibregl.Map({
           container: 'retro-compass-radar-map',
           style: 'https://tiles.openfreemap.org/styles/dark',
@@ -2964,9 +2921,7 @@
 
       boundsInstance = new maplibregl.LngLatBounds();
 
-      // Setup layers after style is parsed
       activeMapInstance.on('style.load', () => {
-          // Adds cybernetic 3D building extrusions natively colored by height
           activeMapInstance.addLayer({
               'id': '3d-buildings',
               'source': 'openmaptiles',
@@ -2992,7 +2947,6 @@
               }
           });
 
-          // Add Luzon corridor network (real rail + highway alignments) for the GRID FLOW view
           const corridorFeatures = [
               ...luzonRailwaysGeoJSON.features.map(f => Object.assign({}, f, { properties: Object.assign({}, f.properties, { type: 'rail' }) })),
               ...luzonHighwaysGeoJSON.features.map(f => Object.assign({}, f, { properties: Object.assign({}, f.properties, { type: 'road' }) }))
@@ -3002,7 +2956,6 @@
               data: { type: 'FeatureCollection', features: corridorFeatures }
           });
 
-          // Dim base corridor underlay (identity colors: rail = cyan, road = emerald)
           activeMapInstance.addLayer({
               id: 'flow-base',
               type: 'line',
@@ -3015,7 +2968,6 @@
               }
           });
 
-          // Flowing dashes marching along the network
           activeMapInstance.addLayer({
               id: 'flow-dash',
               type: 'line',
@@ -3029,7 +2981,6 @@
               }
           });
 
-          // Traveling comet head (geometry rebuilt every frame up to the pulse position)
           activeMapInstance.addSource('flow-comet-source', {
               type: 'geojson',
               lineMetrics: true,
@@ -3053,7 +3004,6 @@
               }
           });
 
-          // Buildings get their real height colors once the pulse crosses them (feature-state opacity)
           activeMapInstance.addLayer({
               id: 'buildings-revealed',
               source: 'openmaptiles',
@@ -3083,7 +3033,6 @@
               }
           });
 
-          // Generate fable District labels
           fableDistricts.forEach(dist => {
               const el = document.createElement('div');
               el.className = 'retro-map-district-tag';
@@ -3096,7 +3045,6 @@
               districtMarkers.push(marker);
           });
 
-          // Hide district tags on zoomed out bounds to prevent cluttering
           function updateDistrictLabels() {
               const zoom = activeMapInstance.getZoom();
               districtMarkers.forEach(m => {
@@ -3109,11 +3057,9 @@
           if (minimapInstance) minimapInstance.resize();
       });
 
-      // Monitor map centering to update HUD Sector name dynamically based on nearest LGU
       activeMapInstance.on('move', () => {
           const center = activeMapInstance.getCenter();
 
-          // Track minimap coordinates
           minimapInstance.setCenter(center);
           minimapInstance.setZoom(Math.max(4.5, activeMapInstance.getZoom() - 3.8));
 
@@ -3130,7 +3076,6 @@
               }
           });
 
-          // Zoomed in enough to specify structures
           if (activeMapInstance.getZoom() > 9.5 && nearestLgu && minDistance < 0.25) {
                 document.getElementById('retro-focus-title').textContent = nearestLgu.name.toUpperCase();
                 document.getElementById('retro-focus-stat1-val').textContent = Number(nearestLgu.population).toLocaleString('en-US');
@@ -3154,7 +3099,6 @@
               <div class="retro-map-marker-glow"></div>
           `;
 
-          // Custom marker interaction triggers
           el.addEventListener('click', (e) => {
               e.stopPropagation();
               clearSearchMarker();
@@ -3168,7 +3112,6 @@
           boundsInstance.extend([node.lng, node.lat]);
       });
 
-      // Initial fitting bound alignment on map load
       activeMapInstance.once('load', () => {
           activeMapInstance.fitBounds(boundsInstance, { 
               padding: { top: 120, bottom: 120, left: 60, right: 60 }, 
@@ -3179,7 +3122,6 @@
       });
   }
 
-  // Map view toggle: DEFAULT shows height-colored buildings, GRID FLOW animates corridor pulses
   function toggleDataLayer(mode) {
       if (!activeMapInstance) return;
 
@@ -3193,7 +3135,6 @@
       const flowLayerIds = ['flow-base', 'flow-dash', 'flow-comet', 'buildings-revealed'];
 
       if (isFlow) {
-          // Dim base buildings so pulses' height-color reveal pops
           if (activeMapInstance.getLayer('3d-buildings')) {
               activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-color', '#0b1520');
               activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.55);
@@ -3219,7 +3160,6 @@
       if (highEl) highEl.textContent = 'HIGH-RISE';
   }
 
-  // Sector Preset action focusing
   function focusSector(lngLat, zoom, sectorName) {
       if (!activeMapInstance) return;
       activeMapInstance.flyTo({
@@ -3231,16 +3171,14 @@
           essential: true
       });
 
-      // If coordinates match a registered subsidiary, inspect it automatically
       const matchedNode = aliensNetworkNodes.find(n => Math.abs(n.lng - lngLat[0]) < 0.01 && Math.abs(n.lat - lngLat[1]) < 0.01);
       if (matchedNode) {
-          inspectNode(matchedNode, false); // Focus sector HUD update only
+          inspectNode(matchedNode, false);
       } else {
           updateHUD(sectorName, "SCANNING SECTOR", `COORDS: ${lngLat[1].toFixed(4)} / ${lngLat[0].toFixed(4)}`);
       }
   }
 
-  // Reset the main map back to its overall cluster viewpoint
   function resetMapView() {
       if (!activeMapInstance || !boundsInstance) return;
       activeMapInstance.fitBounds(boundsInstance, {
@@ -3255,7 +3193,6 @@
       clearSearchMarker();
   }
 
-  // Company profile inspector (real data from the ecosystem source of truth)
   function inspectNode(node, shouldFly = true) {
       if (shouldFly && activeMapInstance) {
           activeMapInstance.flyTo({
@@ -3267,10 +3204,8 @@
           });
       }
 
-      // Update top sector HUD metrics dynamically
       updateHUD(node.name, "GRID ACCESS GRANTED", `LAT/LNG: ${node.lat.toFixed(4)} / ${node.lng.toFixed(4)}`);
 
-      // Display loading state while the profile is assembled
       toggleInspector(true);
       const inspectorContent = document.getElementById('inspector-content');
       inspectorContent.innerHTML = `<p style="color: #22d3ee; animation: aliens-blink 1s step-end infinite; text-align: center; margin-top: 20px;">[ RETRIEVING COMPANY PROFILE... ]</p>`;
@@ -3280,7 +3215,6 @@
       }, 550);
   }
 
-  // Builds the real company profile panel for a network node.
   function renderCompanyProfile(node) {
       const company = node.company;
       const hc = company ? company.headcount : null;
@@ -3291,107 +3225,107 @@
       const established = company ? (company.foundingDate || company.yearFounded || '—') : '—';
       const category = company ? (company.category || '—') : 'Group headquarters';
       const mission = company ? company.mission : null;
-
       const stack = (node.techStack && node.techStack.length)
-          ? node.techStack.map(t => `<div class="retro-map-inspector-stack-row"><span>${t.name}</span><em>${t.role}</em></div>`).join('')
-          : '<div class="retro-map-inspector-stack-row"><span>Not yet ready to share</span></div>';
+              ? node.techStack.map(t => `<div class="retro-map-inspector-stack-row"><span>${t.name}</span><em>${t.role}</em></div>`).join('')
+              : '<div class="retro-map-inspector-stack-row"><span>Not yet ready to share</span></div>';
 
-      let rows = `
-          <div class="retro-map-inspector-row">
-              <dt class="retro-map-inspector-dt">SECTOR LOCATION</dt>
-              <dd class="retro-map-inspector-dd">${node.sector}</dd>
-          </div>
-          <div class="retro-map-inspector-row">
-              <dt class="retro-map-inspector-dt">COORDINATES</dt>
-              <dd class="retro-map-inspector-dd">${node.lat.toFixed(4)}N, ${node.lng.toFixed(4)}E</dd>
-          </div>
-          <div class="retro-map-inspector-row">
-              <dt class="retro-map-inspector-dt">CATEGORY</dt>
-              <dd class="retro-map-inspector-dd">${category}</dd>
-          </div>
-          <div class="retro-map-inspector-row">
-              <dt class="retro-map-inspector-dt">ESTABLISHED</dt>
-              <dd class="retro-map-inspector-dd">${established}</dd>
-          </div>
-          <div class="retro-map-inspector-row">
-              <dt class="retro-map-inspector-dt">HEADCOUNT 2026F</dt>
-              <dd class="retro-map-inspector-dd">${headcount2026} (${headcountFt} FULL-TIME)</dd>
-          </div>
-          <div class="retro-map-inspector-row">
-              <dt class="retro-map-inspector-dt">CLIENT COUNT</dt>
-              <dd class="retro-map-inspector-dd">${clients}</dd>
-          </div>
-          <div class="retro-map-inspector-row">
-              <dt class="retro-map-inspector-dt">ACTIVE PROJECTS</dt>
-              <dd class="retro-map-inspector-dd">${projects}</dd>
-          </div>
-          <div class="retro-map-inspector-row">
-              <dt class="retro-map-inspector-dt">TECH STACK</dt>
-              <dd class="retro-map-inspector-dd">${stack}</dd>
-          </div>`;
+          let rows = `
+              <div class="retro-map-inspector-row">
+                  <dt class="retro-map-inspector-dt">SECTOR LOCATION</dt>
+                  <dd class="retro-map-inspector-dd">${node.sector}</dd>
+              </div>
+              <div class="retro-map-inspector-row">
+                  <dt class="retro-map-inspector-dt">COORDINATES</dt>
+                  <dd class="retro-map-inspector-dd">${node.lat.toFixed(4)}N, ${node.lng.toFixed(4)}E</dd>
+              </div>
+              <div class="retro-map-inspector-row">
+                  <dt class="retro-map-inspector-dt">CATEGORY</dt>
+                  <dd class="retro-map-inspector-dd">${category}</dd>
+              </div>
+              <div class="retro-map-inspector-row">
+                  <dt class="retro-map-inspector-dt">ESTABLISHED</dt>
+                  <dd class="retro-map-inspector-dd">${established}</dd>
+              </div>
+              <div class="retro-map-inspector-row">
+                  <dt class="retro-map-inspector-dt">HEADCOUNT 2026F</dt>
+                  <dd class="retro-map-inspector-dd">${headcount2026} (${headcountFt} FULL-TIME)</dd>
+              </div>
+              <div class="retro-map-inspector-row">
+                  <dt class="retro-map-inspector-dt">CLIENT COUNT</dt>
+                  <dd class="retro-map-inspector-dd">${clients}</dd>
+              </div>
+              <div class="retro-map-inspector-row">
+                  <dt class="retro-map-inspector-dt">ACTIVE PROJECTS</dt>
+                  <dd class="retro-map-inspector-dd">${projects}</dd>
+              </div>
+              <div class="retro-map-inspector-row">
+                  <dt class="retro-map-inspector-dt">TECH STACK</dt>
+                  <dd class="retro-map-inspector-dd">${stack}</dd>
+              </div>`;
 
-      let footer = '';
-      if (mission) {
-          footer = `<div class="retro-map-inspector-intel">
-              <strong>MISSION:</strong><br>
-              ${mission}
-          </div>`;
+          let footer = '';
+          if (mission) {
+              footer = `<div class="retro-map-inspector-intel">
+                  <strong>MISSION:</strong><br>
+                  ${mission}
+              </div>`;
+          }
+
+          return `<dl>${rows}</dl>${footer}`;
       }
 
-      return `<dl>${rows}</dl>${footer}`;
-  }
+      // Sector HUD values update utility
+      function updateHUD(name, status, telemetry) {
+          const nameEl = document.getElementById('retro-focus-title');
+          const statusEl = document.getElementById('retro-focus-stat1-lbl');
+          const telemetryEl = document.getElementById('retro-focus-stat2');
 
-  // Sector HUD values update utility
-  function updateHUD(name, status, telemetry) {
-      const nameEl = document.getElementById('retro-focus-title');
-      const statusEl = document.getElementById('retro-focus-stat1-lbl');
-      const telemetryEl = document.getElementById('retro-focus-stat2');
-
-      if (nameEl) nameEl.textContent = name.toUpperCase();
-      if (statusEl) statusEl.textContent = status;
-      if (telemetryEl) telemetryEl.textContent = telemetry;
-  }
-
-  // Show/Hide Right Terminal Inspector panel
-  function toggleInspector(show) {
-      const panel = document.getElementById('node-inspector');
-      if (!panel) return;
-      if (show) {
-          panel.classList.remove('closed');
-      } else {
-          panel.classList.add('closed');
+          if (nameEl) nameEl.textContent = name.toUpperCase();
+          if (statusEl) statusEl.textContent = status;
+          if (telemetryEl) telemetryEl.textContent = telemetry;
       }
-  }
-(function () {
-  function startMapWhenVisible() {
-    var section = document.getElementById('network-map');
-    if (!section || typeof maplibregl === 'undefined') return;
-    var started = false;
-    if ('IntersectionObserver' in window) {
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (entry.isIntersecting && !started) {
-            started = true;
+
+      // Show/Hide Right Terminal Inspector panel
+      function toggleInspector(show) {
+          const panel = document.getElementById('node-inspector');
+          if (!panel) return;
+          if (show) {
+              panel.classList.remove('closed');
+          } else {
+              panel.classList.add('closed');
+          }
+      }
+
+      (function () {
+        function startMapWhenVisible() {
+          var section = document.getElementById('network-map');
+          if (!section || typeof maplibregl === 'undefined') return;
+          var started = false;
+          if ('IntersectionObserver' in window) {
+            var io = new IntersectionObserver(function (entries) {
+              entries.forEach(function (entry) {
+                if (entry.isIntersecting && !started) {
+                  started = true;
+                  NetworkMapData.load(function () {
+                    initNetworkMap();
+                  });
+                  io.disconnect();
+                }
+              });
+            }, { threshold: 0.05 });
+            io.observe(section);
+          } else {
             NetworkMapData.load(function () {
               initNetworkMap();
             });
-            io.disconnect();
           }
-        });
-      }, { threshold: 0.05 });
-      io.observe(section);
-    } else {
-      NetworkMapData.load(function () {
-        initNetworkMap();
-      });
-    }
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startMapWhenVisible);
-  } else {
-    startMapWhenVisible();
-  }
-})();
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', startMapWhenVisible);
+        } else {
+          startMapWhenVisible();
+        }
+      })();
   </script>
 
   <script>
@@ -3574,7 +3508,7 @@
   })();
   </script>
 
-  <!-- Thinking Navigation — analyze/generate sequence before revealing the nav links -->
+  <!-- Thinking Navigation -->
   <script>
   (function () {
     var html = document.documentElement;
@@ -3689,11 +3623,8 @@
   })();
   </script>
 
-  <!-- Live Simulations Output — shared engine drives the section counter and the nav counter -->
+  <!-- Live Simulations Output -->
   <script>
-  // To drive the counter from a real source, define before this script runs:
-  //   window.ALIEN_SIMS = { getValue: function () { return <number>; } };
-  // e.g. poll /api/simulations/today in the background and return the live tally.
   (function () {
     var reduced = document.documentElement.classList.contains('reduced-motion');
     var MAX = 1000000;
@@ -3744,29 +3675,21 @@
     emit();
     setInterval(tick, 190);
 
-    // Section display — the simulation tally lives in the "2026F standalone revenue"
-    // metric of the group operating model section.
     var sectionValue = document.getElementById('metricRevenue');
     if (sectionValue) {
       window.ALIEN_SIMS_TALLY.onTick(function (s) { sectionValue.textContent = s; });
     }
 
-    // Nav "sims reminder": pops up at random while the user scrolls, stays just
-    // long enough for the tally to count, then fades away. Rendering follows the
-    // phrases nav exactly — "Simulations Live" and the number are revealed one word
-    // at a time with nav-word-in, the line gets the same caret then ellipsis, and
-    // the number keeps counting while visible. Hovering the nav swaps in the
-    // standard nav (the random set already chosen on load).
     var simsLine = document.getElementById('navSimsLine');
     var htmlEl = document.documentElement;
     var isDesktop = !window.matchMedia || !window.matchMedia('(max-width: 900px)').matches;
 
     if (simsLine && window.ALIEN_SIMS_TALLY && !reduced && isDesktop) {
-      var WORD_DELAY = 260;      // same word cadence as the phrases nav
-      var HOLD_MS = 10400;       // long enough for the tally to visibly count (2x)
+      var WORD_DELAY = 260;
+      var HOLD_MS = 10400;
       var FADE_OUT_MS = 500;
-      var MIN_GAP_MS = 26000;    // never nag — at least this long between reminders
-      var TRIGGER_CHANCE = 0.35; // per scroll burst
+      var MIN_GAP_MS = 26000;
+      var TRIGGER_CHANCE = 0.35;
       var SCROLL_THROTTLE_MS = 160;
 
       var active = false;

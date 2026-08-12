@@ -41,7 +41,6 @@ class GDELTMode(Enum):
     WORDCLOUDENGLISH = "wordcloudenglish"
     WORDCLOUDIMAGETAGS = "wordcloudimagetags"
     IMAGECOLLAGESHARE = "imagecollageshare"
-    TIMELINEVOL = "timelinevol"
 
 
 @dataclass
@@ -121,11 +120,9 @@ class GDELTConnector:
         self,
         config: GDELTConfig,
         staging: StagingDataset,
-        aiohttp_session: Optional[aiohttp.ClientSession] = None,
     ):
         self.config = config
         self.staging = staging
-        self._session = aiohttp_session
 
     async def _build_request(self) -> Dict[str, Any]:
         """Construct a GDELT DOC 2.0 request payload (ArtList JSON mode)."""
@@ -149,10 +146,10 @@ class GDELTConnector:
         jitter = self.config.jitter_factor
 
         last_exc: Optional[Exception] = None
-        for attempt in range(max_retries + 1):
-            try:
-                if self._session:
-                    async with self._session.request(
+        async with aiohttp.ClientSession() as session:
+            for attempt in range(max_retries + 1):
+                try:
+                    async with session.request(
                         method, url, headers=headers, params=params,
                         timeout=aiohttp.ClientTimeout(total=self.config.request_timeout),
                     ) as resp:
@@ -167,10 +164,9 @@ class GDELTConnector:
                             raise Exception(f"HTTP {resp.status}: {body}")
                         data = await resp.json()
                         return data
-                raise Exception("No aiohttp session available")
-            except Exception as exc:
-                last_exc = exc
-                await asyncio.sleep(self._compute_backoff(attempt, max_retries, base_backoff, max_backoff, jitter))
+                except Exception as exc:
+                    last_exc = exc
+                    await asyncio.sleep(self._compute_backoff(attempt, max_retries, base_backoff, max_backoff, jitter))
 
         raise Exception(f"GDELT request failed after {max_retries + 1} attempts: {last_exc}")
 
@@ -203,9 +199,29 @@ class GDELTConnector:
         articles = data.get("articles", []) or []
         total_count = len(articles)
 
-        self._cache[str(page)] = articles
-
-        total_pages = 1
+        # TimelineVol mode — GDELT DOC 2.0 returns aggregated coverage volume
+        # instead of individual article metadata. The response structure is:
+        # {"timeline": {"timelinevol": [...], "timelinevolraw": [...]}}
+        # when mode=timelinevol. For this mode, we store time-step data
+        # rather than article records, and total_count reflects the number
+        # of time steps returned (not article count).
+        if self.config.mode == GDELTMode.TIMELINEVOL:
+            timeline_data = data.get("timeline", {})
+            if "timelinevol" in timeline_data:
+                # timelinevol mode: percent coverage by 15-min/hour/day intervals
+                articles = []
+                total_count = len(timeline_data["timelinevol"])
+            elif "timelinevolraw" in timeline_data:
+                # timelinevolraw mode: raw volume counts
+                articles = []
+                total_count = len(timeline_data["timelinevolraw"])
+            else:
+                articles = []
+                total_count = 0
+            total_pages = 1
+        else:
+            total_count = len(articles)
+            total_pages = 1
         return articles, total_count, total_pages
 
     async def persist_raw(
@@ -240,16 +256,10 @@ class GDELTConnector:
 class GDELTConnectorFactory:
     """Factory for creating GDELTConnector instances."""
 
-    _session: Optional[aiohttp.ClientSession] = None
-
     @classmethod
-    def create_session(cls) -> aiohttp.ClientSession:
-        if cls._session is None:
-            cls._session = aiohttp.ClientSession()
-        return cls._session
+    async def create_session(cls) -> aiohttp.ClientSession:
+        return aiohttp.ClientSession()
 
     @classmethod
     async def reset_session(cls) -> None:
-        if cls._session:
-            await cls._session.close()
-            cls._session = None
+        pass

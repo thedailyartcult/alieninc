@@ -3206,7 +3206,7 @@ async function loadGdeltHealth() {
     const dot = document.getElementById('gdeltHealthDot');
     const txt = document.getElementById('gdeltHealthText');
     try {
-        const h = await api('/spinal-cracker/gdelt/health');
+        const h = await api('/api/health');
         dot.style.background = '#22c54e';
         txt.textContent = 'Health: ' + (h.status || 'ok') + ' · GDELT DOC 2.0 feed';
     } catch (e) {
@@ -3217,7 +3217,7 @@ async function loadGdeltHealth() {
 
 async function loadGdeltSnapshot() {
     try {
-        const snap = await api('/spinal-cracker/gdelt/ontology/snapshot');
+        const snap = await api('/api/ontology/snapshot');
         const body = document.getElementById('gdeltSnapshotBody');
         body.innerHTML = '<tr><td>' + (snap.object_types ? Object.keys(snap.object_types).length : 0) +
             '</td><td>' + (snap.link_types ? Object.keys(snap.link_types).length : 0) +
@@ -3227,22 +3227,14 @@ async function loadGdeltSnapshot() {
             '<tr><td colspan="4"><div class="empty-state">Snapshot unavailable: ' + (e.message || 'error') + '</div></td></tr>';
     }
     try {
-        const r = await api('/spinal-cracker/gdelt/objects?limit=50');
         const body = document.getElementById('gdeltObjectsBody');
-        if (!r.objects || !r.objects.length) {
-            body.innerHTML = '<tr><td colspan="5"><div class="empty-state">No objects indexed yet.</div></td></tr>';
-            return;
+        // v2 API does not expose a raw /objects endpoint; use ontology snapshot data
+        body.innerHTML = '<tr><td colspan="5"><div class="empty-state">Object details not yet available via v2 API; showing snapshot.</div></td></tr>';
+        // optionally surface snapshot counts
+        if (snap && snap.object_types) {
+            const n = Object.keys(snap.object_types).length;
+            body.innerHTML = '<tr><td colspan="5"><div class="empty-state">Object types in snapshot: ' + n + '</div></td></tr>';
         }
-        body.innerHTML = r.objects.map(o => {
-            const t = o.title || '';
-            const g = o.guid || '';
-            const cc = (g.indexOf('geo_country:') === 0) ? g : ((o.sourcecountry || o.country_code || ''));
-            const seen = o.seendate || '';
-            const u = o.url || (o.properties && o.properties.url) || '';
-            return '<tr><td>' + (o.type || '') + '</td><td>' + (t.length > 60 ? t.slice(0, 60) + '…' : t) +
-                '</td><td>' + (cc || '') + '</td><td>' + (seen.slice(0, 10)) +
-                '</td><td><a href="' + u + '" target="_blank" rel="noopener">' + (u ? 'open' : '') + '</a></td></tr>';
-        }).join('');
     } catch (e) {
         document.getElementById('gdeltObjectsBody').innerHTML =
             '<tr><td colspan="5"><div class="empty-state">Objects unavailable: ' + (e.message || 'error') + '</div></td></tr>';
@@ -3258,7 +3250,7 @@ async function runGdeltPipeline() {
     if (btn) btn.disabled = true;
     status.innerHTML = '<span class="loading"></span> Running GDELT pipeline (may take a few seconds due to rate limiting)...';
     try {
-        const rep = await api('/spinal-cracker/gdelt/pipeline/run', {
+        const rep = await api('/api/pipeline/run', {
             method: 'POST',
             body: JSON.stringify({ query: q, mode: 'artlist', timespan: timespan, maxrecords: max, api_key: '' }),
         });

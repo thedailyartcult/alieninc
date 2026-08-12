@@ -102,7 +102,6 @@ async def run_complete_pipeline(config: Dict[str, Any]) -> Dict[str, Any]:
     connector = GDELTConnector(
         config=GDELTConfig(**config),
         staging=staging,
-        aiohttp_session=session,
     )
 
     try:

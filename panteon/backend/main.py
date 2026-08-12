@@ -11,9 +11,17 @@ import os
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
 
+from fastapi import FastAPI
+
 BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
+
+app = FastAPI(title="Spinal Cracker Main")
+
+# Mount the Spinal Cracker API v2 (provides /pipeline/run, /ontology/snapshot, /health)
+from api import app as api_app
+app.mount("/api", api_app)
 
 from magritte_connector_gdelt import (
     GDELTConfig,
@@ -197,4 +205,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import uvicorn
+
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

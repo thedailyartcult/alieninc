@@ -642,6 +642,134 @@ class GDELTWritebackPipeline:
         }
 
 
+class AviationWritebackPipeline:
+    """Writeback pipeline for the Aviation Domain (OpenSky Network).
+
+    Mirrors GDELTWritebackPipeline but registers aviation-specific object
+    types (aviation_flight, aviation_airport) and uses the WritebackService
+    for ACID batch commit.
+    """
+
+    def __init__(
+        self,
+        osv2: "OSv2Manager",
+        object_storage: Any,
+        ontology_graph: Optional[OntologyGraph] = None,
+    ):
+        self._osv2 = osv2
+        self._object_storage = object_storage
+        self._ontology = ontology_graph or OntologyGraph()
+        self._writeback_service = WritebackService(osv2, ontology_graph)
+
+    async def process_aviation_flights(
+        self,
+        classified_flights: Dict[str, Any],
+        config: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[WritebackResult, List[Dict[str, Any]]]:
+        """Main writeback pipeline for aviation flight data.
+
+        Flattens the classified-flights report (commercial_flights,
+        private_flights, private_jets, military_flights) into unified
+        aviation_flight records and commits them in a single ACID batch.
+        """
+        schema = {
+            "schema_version": "1.0.0",
+            "object_types": {
+                "aviation_flight": {
+                    "fields": [
+                        "icao24", "callsign", "lat", "lng", "alt", "heading",
+                        "speed_knots", "model", "registration", "squawk",
+                        "airline_code", "aircraft_category", "category",
+                        "grounded", "nac_p",
+                    ],
+                    "relationships": ["FLIGHT_TRACKED_IN_AIRSPACE"],
+                },
+                "aviation_airport": {
+                    "fields": ["icao_code", "name", "lat", "lon", "country"],
+                    "relationships": [],
+                },
+            },
+            "link_types": {
+                "FLIGHT_TRACKED_IN_AIRSPACE": {
+                    "target_type": "aviation_airspace",
+                },
+            },
+        }
+
+        # Flatten all flight categories into a single list of OSv2 records
+        flat_records: List[Dict[str, Any]] = []
+        for cat_key, category in [
+            ("commercial_flights", "commercial"),
+            ("private_flights", "private"),
+            ("private_jets", "jet"),
+            ("military_flights", "military"),
+        ]:
+            for flight in classified_flights.get(cat_key, []):
+                guid = str(uuid.uuid5(uuid.NAMESPACE_URL, f"flight:{flight.get('icao24', 'unknown')}"))
+                flat_records.append({
+                    "guid": guid,
+                    "icao24": flight.get("icao24", ""),
+                    "callsign": flight.get("callsign", ""),
+                    "lat": flight.get("lat"),
+                    "lng": flight.get("lng"),
+                    "alt": flight.get("alt"),
+                    "heading": flight.get("heading"),
+                    "speed_knots": flight.get("speed_knots"),
+                    "model": flight.get("model", ""),
+                    "registration": flight.get("registration", ""),
+                    "squawk": flight.get("squawk", ""),
+                    "airline_code": flight.get("airline_code", ""),
+                    "aircraft_category": flight.get("aircraft_category", "plane"),
+                    "category": category,
+                    "grounded": flight.get("grounded", False),
+                    "nac_p": flight.get("nac_p"),
+                    "type": "aviation_flight",
+                    "properties": flight,
+                })
+
+        result = await self._writeback_service._writeback_batch(flat_records, schema)
+        return result, []
+
+    async def _writeback_batch(
+        self, raw_records: List[Dict[str, Any]], schema: Optional[Dict[str, Any]] = None
+    ) -> WritebackResult:
+        """Delegate to WritebackService._writeback_batch with aviation schema."""
+        schema = schema or {"schema_version": "1.0.0"}
+        return await self._writeback_service._writeback_batch(raw_records, schema)
+
+    def get_ontology_snapshot(self) -> Dict[str, Any]:
+        """Return a snapshot of the aviation ontology graph state."""
+        return {
+            "object_types": {
+                "aviation_flight": {
+                    "name": "aviation_flight",
+                    "display_name": "Aviation Flight",
+                    "fields": [
+                        "icao24", "callsign", "lat", "lng", "alt", "heading",
+                        "speed_knots", "model", "registration", "squawk",
+                        "airline_code", "aircraft_category", "category",
+                        "grounded", "nac_p",
+                    ],
+                    "relationships": ["FLIGHT_TRACKED_IN_AIRSPACE"],
+                },
+                "aviation_airport": {
+                    "name": "aviation_airport",
+                    "display_name": "Aviation Airport",
+                    "fields": ["icao_code", "name", "lat", "lon", "country"],
+                    "relationships": [],
+                },
+            },
+            "link_types": {
+                "FLIGHT_TRACKED_IN_AIRSPACE": {
+                    "name": "FLIGHT_TRACKED_IN_AIRSPACE",
+                    "target_type": "aviation_airspace",
+                },
+            },
+            "node_count": self._osv2.count_objects(),
+            "edge_count": self._osv2.count_links(),
+        }
+
+
 # ============================================================================
 # Production entry point: main()
 # ============================================================================

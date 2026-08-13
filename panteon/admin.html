@@ -923,6 +923,46 @@
             display: block;
         }
 
+        .aviation-tab-content {
+            max-height: 520px;
+            overflow-y: auto;
+        }
+        .aviation-tab {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            padding: 8px 16px;
+            font-size: 11px;
+            font-family: var(--font-tech);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+            transition: all 0.2s;
+        }
+        .aviation-tab:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .aviation-tab.active {
+            color: var(--accent-cyan);
+            background: var(--bg-card);
+            border-color: var(--border-hover);
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.1);
+        }
+        .aviation-tab-content {
+            display: none;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0 4px 4px 4px;
+            padding: 20px;
+        }
+        .aviation-tab-content.active {
+            display: block;
+        }
+
         /* Threat Map Tab Styles */
         .threat-map-container {
             display: flex;
@@ -1393,6 +1433,10 @@
                     <div class="nav-item" data-page="sc-gdelt">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12l4-8 4 4 4-4v6H2z"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>
                         GDELT Pipeline
+                    </div>
+                    <div class="nav-item" data-page="sc-aviation">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8l3-3v2h6V5l3 3-3 3v-2H5v2z"/><circle cx="14" cy="8" r="1.5"/><path d="M1 12l2-2v4H1z"/></svg>
+                        Aviation Domain
                     </div>
                 </div>
                 <div class="nav-section">
@@ -2154,12 +2198,137 @@
                                </div>
                            </div>
                       </div>
+                    </div>
+
+                  <!-- Aviation Domain Page (OpenSky Network) -->
+                  <div class="page" id="page-sc-aviation">
+                      <div class="section">
+                          <div class="section-header">
+                              <span class="section-title">Aviation Domain</span>
+                              <div style="display:flex;gap:8px;align-items:center">
+                                  <span class="pulse-dot" id="aviationHealthDot" style="width:10px;height:10px;border-radius:50%;background:#555;"></span>
+                                  <span class="mono" id="aviationHealthText" style="font-size:12px">Health: …</span>
+                              </div>
+                          </div>
+                          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px">
+                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
+                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">OpenSky Sources</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:600;color:var(--accent-cyan)">4</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">Commercial, Private, Jet, Military</div>
+                              </div>
+                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
+                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Regions</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:600;color:var(--accent-cyan)">30</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">Major aviation corridors @ 250nm</div>
+                              </div>
+                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
+                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">GPS Jamming</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:600;color:var(--amber)" id="aviationJammingCount">—</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">Aggregated via NACp threshold</div>
+                              </div>
+                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
+                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Flights Tracked</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:600;color:var(--green)" id="aviationFlightCount">0</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">Live aircraft in OSv2</div>
+                              </div>
+                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
+                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Classification</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:600;color:var(--accent-purple)">AI</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">Callsign + ADS-B emitter + cruise profile</div>
+                              </div>
+                          </div>
+                          <div style="margin-bottom:16px">
+                              <div style="display:flex;gap:4px;margin-bottom:12px">
+                                  <button class="aviation-tab active" data-tab="pipeline" onclick="switchAviationTab('pipeline')">OpenSky Pipeline</button>
+                                  <button class="aviation-tab" data-tab="flights" onclick="switchAviationTab('flights')">Classified Flights</button>
+                                  <button class="aviation-tab" data-tab="jamming" onclick="switchAviationTab('jamming')">GPS Jamming</button>
+                                  <button class="aviation-tab" data-tab="airspace" onclick="switchAviationTab('airspace')">Airspace Map</button>
+                              </div>
+                              <!-- Pipeline Tab -->
+                              <div id="aviationTabPipeline" class="aviation-tab-content active">
+                                  <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+                                      <input id="aviationClientId" type="text" placeholder="OpenSky client ID (optional)" style="flex:1">
+                                      <input id="aviationClientSecret" type="password" placeholder="OpenSky client secret (optional)" style="flex:1">
+                                      <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:4px">
+                                          <input type="checkbox" id="aviationMilitary" checked> Military feed
+                                      </label>
+                                      <button class="btn btn-primary btn-sm" onclick="runAviationPipeline()">Run Pipeline</button>
+                                      <button class="btn btn-secondary btn-sm" onclick="loadAviationSnapshot()">Refresh</button>
+                                  </div>
+                                  <div id="aviationRunStatus" style="margin-bottom:12px;font-size:13px;color:#aaa"></div>
+                                  <div class="table-wrap">
+                                      <table>
+                                          <thead><tr><th>Object Types</th><th>Link Types</th><th>Flights (OSv2)</th><th>Links (OSv2)</th></tr></thead>
+                                          <tbody id="aviationSnapshotBody"><tr><td colspan="4"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody>
+                                      </table>
+                                  </div>
+                              </div>
+                              <!-- Classified Flights Tab -->
+                              <div id="aviationTabFlights" class="aviation-tab-content">
+                                  <div style="display:flex;gap:8px;margin-bottom:12px">
+                                      <button class="btn btn-sm" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;color:var(--accent-cyan)" onclick="loadAviationFlights('all')">All</button>
+                                      <button class="btn btn-sm" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;color:var(--green)" onclick="loadAviationFlights('commercial')">Commercial</button>
+                                      <button class="btn btn-sm" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;color:var(--amber)" onclick="loadAviationFlights('private')">Private</button>
+                                      <button class="btn btn-sm" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;color:var(--accent-cyan)" onclick="loadAviationFlights('jet')">Private Jets</button>
+                                      <button class="btn btn-sm" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;color:var(--red)" onclick="loadAviationFlights('military')">Military</button>
+                                  </div>
+                                  <div class="table-wrap">
+                                      <table>
+                                          <thead><tr><th>Callsign</th><th>ICAO24</th><th>Category</th><th>Model</th><th>Speed (kts)</th><th>Alt (ft)</th><th>Pos</th></tr></thead>
+                                          <tbody id="aviationFlightsBody"><tr><td colspan="7"><div class="empty-state">No flights loaded yet.</div></td></tr></tbody>
+                                      </table>
+                                  </div>
+                              </div>
+                              <!-- GPS Jamming Tab -->
+                              <div id="aviationTabJamming" class="aviation-tab-content">
+                                  <div id="aviationJammingStatus" style="margin-bottom:12px;font-size:13px;color:#aaa">No jamming clusters — run the pipeline to detect GPS spoofing.</div>
+                                  <div class="table-wrap">
+                                      <table>
+                                          <thead><tr><th>Lat</th><th>Lng</th><th>Aircraft</th><th>Severity</th></tr></thead>
+                                          <tbody id="aviationJammingBody"><tr><td colspan="4"><div class="empty-state">No GPS jamming detected.</div></td></tr></tbody>
+                                      </table>
+                                  </div>
+                                  <div class="card" style="margin-top:12px">
+                                      <div class="card-header">
+                                          <span class="card-title">GPS Jamming SOP</span>
+                                      </div>
+                                      <div style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">
+                                          <p>NACp &le; 4 with no ground flag indicates degraded navigation accuracy — a potential GPS jamming source. Aircraft clustering in a 2&deg; grid with 3+ members and low NACp are aggregated into severity clusters.</p>
+                                      </div>
+                                  </div>
+                              </div>
+                              <!-- Airspace Map Tab -->
+                              <div id="aviationTabAirspace" class="aviation-tab-content">
+                                  <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+                                      <button class="btn btn-primary btn-sm" onclick="renderAirspaceMap()">Render Airspace</button>
+                                      <button class="btn btn-secondary btn-sm" onclick="clearAirspaceMap()">Clear</button>
+                                  </div>
+                                  <div id="airspaceMapViz" class="retro-map-wrapper">
+                                      <div class="retro-map-canvas" id="aviationAirspaceMap"></div>
+                                      <div class="retro-map-hud-panel retro-map-hud-left">
+                                          <div class="retro-map-hud-kicker">Aviation Tactical View</div>
+                                          <div class="retro-map-hud-heading" id="airspaceMapTitle">LIVE AIRCRAFT TRACKING</div>
+                                          <div class="retro-map-hud-meta" id="airspaceMapMeta">Loading flight data from OpenSky Network</div>
+                                      </div>
+                                      <div class="retro-map-hud-panel retro-map-hud-right">
+                                          <div class="retro-map-hud-kicker">Source</div>
+                                          <div class="retro-map-hud-meta" id="airspaceMapSource">—</div>
+                                          <div class="retro-map-hud-meta" id="airspaceMapCount">0 aircraft</div>
+                                      </div>
+                                      <div class="retro-map-hint-banner">
+                                          <div class="retro-map-hint-text" id="airspaceMapHint">Render map to plot real-time aircraft positions from OpenSky Network</div>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
                   </div>
 
-                 <div class="page" id="page-yono-providers">
-                    <div class="section">
-                        <div class="section-header">
-                            <span class="section-title">Service Providers</span>
+                  <!-- Service Providers -->
+                  <div class="page" id="page-yono-providers">
+                     <div class="section">
+                         <div class="section-header">
+                             <span class="section-title">Service Providers</span>
                             <button class="btn btn-primary btn-sm" onclick="openModal('modalProvider')">+ Create Provider</button>
                         </div>
                         <div class="table-wrap">
@@ -3044,6 +3213,7 @@ const CMB_BASE_URL = '/panteon/cmb/';
 const PAGES = {
     'overview': 'Overview',
     'sc-gdelt': 'GDELT Intelligence Engine',
+    'sc-aviation': 'Aviation Domain',
     'sc-types': 'Object Types',
     'sc-objects': 'Objects',
     'sc-links': 'Link Types',
@@ -3187,6 +3357,7 @@ function loadPageData(page) {
         case 'sc-objects': loadObjectTypeFilter(); loadObjects(); break;
         case 'sc-links': loadLinkTypes(); break;
         case 'sc-gdelt': loadGdeltHealth(); loadGdeltSnapshot(); renderThreatPresets(); renderThreatMap(true); break;
+        case 'sc-aviation': loadAviationHealth(); loadAviationSnapshot(); loadAviationFlights(); break;
         case 'yono-providers': loadProviders(); loadModels(); break;
         case 'yono-agents': loadAgents(); break;
         case 'yono-automations': loadAutomations(); break;
@@ -4190,6 +4361,214 @@ function switchGdeltTab(tab) {
     if (tab === 'threatmap' && threatMapInitialized && threatMap) {
         requestAnimationFrame(() => threatMap.resize());
     }
+ }
+
+// ============================================================================
+// Aviation Domain — OpenSky Network integration
+// ============================================================================
+
+async function loadAviationHealth() {
+    const dot = document.getElementById('aviationHealthDot');
+    const txt = document.getElementById('aviationHealthText');
+    try {
+        const h = await api('/opensky/health');
+        dot.style.background = '#22c544';
+        txt.textContent = 'Health: ' + (h.status || 'ok') + ' · OpenSky Network feed';
+    } catch (e) {
+        dot.style.background = '#ef4444';
+        txt.textContent = 'Health: / ' + (e.message || 'unreachable');
+    }
+}
+
+async function loadAviationSnapshot() {
+    try {
+        const snap = await api('/opensky/ontology/snapshot');
+        const body = document.getElementById('aviationSnapshotBody');
+        body.innerHTML = '<tr><td>' + (snap.object_types ? Object.keys(snap.object_types).length : 0) +
+            '</td><td>' + (snap.link_types ? Object.keys(snap.link_types).length : 0) +
+            '</td><td>' + (snap.node_count || 0) + '</td><td>' + (snap.edge_count || 0) + '</td></tr>';
+        document.getElementById('aviationFlightCount').textContent = snap.node_count || 0;
+    } catch (e) {
+        document.getElementById('aviationSnapshotBody').innerHTML =
+            '<tr><td colspan="4"><div class="empty-state">Snapshot unavailable: ' + (e.message || 'error') + '</div></td></tr>';
+    }
+}
+
+async function runAviationPipeline() {
+    const btn = event && event.target;
+    const status = document.getElementById('aviationRunStatus');
+    const clientId = document.getElementById('aviationClientId').value.trim();
+    const clientSecret = document.getElementById('aviationClientSecret').value.trim();
+    const military = document.getElementById('aviationMilitary').checked;
+    if (btn) btn.disabled = true;
+    status.innerHTML = '<span class="loading"></span> Running OpenSky pipeline (fetching global state vector + adsb.fi military)...';
+    try {
+        const rep = await api('/opensky/pipeline/run', {
+            method: 'POST',
+            body: JSON.stringify({
+                client_id: clientId,
+                client_secret: clientSecret,
+                fetch_military: military,
+            }),
+        });
+        const cls = rep.classification;
+        const prov = rep.opensky.providers;
+        const jamming = rep.opensky.gps_jamming;
+        status.innerHTML = 'Done: <b>' + rep.opensky.total + '</b> total aircraft — ' +
+            '<b>' + cls.commercial + '</b> commercial, ' +
+            '<b>' + cls.private + '</b> private, ' +
+            '<b>' + cls.private_jets + '</b> jets, ' +
+            '<b>' + cls.military + '</b> military, ' +
+            '<b>' + cls.gps_jamming_count + '</b> GPS jamming suspects ' +
+            '(tx ' + (rep.writeback.transaction_id || '').slice(0, 8) + '). ' +
+            'Source: ' + (rep.opensky.source || 'unknown') + '. ' +
+            'OpenSky auth: ' + (prov.opensky_auth ? 'enabled' : 'anonymous') + '.';
+        document.getElementById('aviationJammingCount').textContent = cls.gps_jamming_count > 0 ? cls.gps_jamming_count : '—';
+        document.getElementById('aviationJammingBody').innerHTML = jamming.length
+            ? jamming.map(j => '<tr><td>' + j.lat + '</td><td>' + j.lng + '</td><td>' + j.count + '</td><td>' + j.severity + '%</td></tr>').join('')
+            : '<tr><td colspan="4"><div class="empty-state">No GPS jamming clusters detected.</div></td></tr>';
+    } catch (e) {
+        status.innerHTML = '<b style="color:#ef4444">Pipeline error:</b> ' + (e.message || 'unknown') +
+            '. OpenSky enforces ~1 request per 86s on the anonymous pool; retries are automatic.';
+    } finally {
+        if (btn) btn.disabled = false;
+        loadAviationSnapshot();
+    }
+}
+
+function switchAviationTab(tab) {
+    document.querySelectorAll('.aviation-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.aviation-tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelector(`.aviation-tab[data-tab="${tab}"]`).classList.add('active');
+    document.getElementById('aviationTab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+    if (tab === 'airspace' && aviationMapInitialized && aviationMap) {
+        requestAnimationFrame(() => aviationMap.resize());
+    }
+}
+
+async function loadAviationFlights(category) {
+    try {
+        const url = category ? ('/opensky/flights?limit=200&category=' + category) : '/opensky/flights?limit=200';
+        const data = await api(url);
+        const body = document.getElementById('aviationFlightsBody');
+        if (!data.flights || data.flights.length === 0) {
+            body.innerHTML = '<tr><td colspan="7"><div class="empty-state">No flights in this category.</div></td></tr>';
+            return;
+        }
+        body.innerHTML = data.flights.map(f => {
+            const props = f.properties || {};
+            const cat = props.category || '-';
+            const catColor = cat === 'commercial' ? 'var(--green)' :
+                             cat === 'private' ? 'var(--amber)' :
+                             cat === 'jet' ? 'var(--accent-cyan)' :
+                             cat === 'military' ? 'var(--red)' : 'var(--text)';
+            return '<tr>' +
+                '<td>' + (props.callsign || f.callsign || '-') + '</td>' +
+                '<td>' + (props.icao24 || f.icao24 || '-') + '</td>' +
+                '<td><span style="color:' + catColor + '">' + cat + '</span></td>' +
+                '<td>' + (props.model || '-') + '</td>' +
+                '<td>' + (props.speed_knots || '-') + '</td>' +
+                '<td>' + (props.alt || '-') + '</td>' +
+                '<td>' + (props.lat != null ? props.lat.toFixed(4) : '-') + ', ' + (props.lng != null ? props.lng.toFixed(4) : '-') + '</td>' +
+                '</tr>';
+        }).join('');
+        document.getElementById('aviationFlightCount').textContent = data.count || 0;
+    } catch (e) {
+        document.getElementById('aviationFlightsBody').innerHTML =
+            '<tr><td colspan="7"><div class="empty-state">Error: ' + (e.message || 'unknown') + '</div></td></tr>';
+    }
+}
+
+// ============================================================================
+// Aviation Airspace Map — MapLibre GL with aircraft markers
+// ============================================================================
+let aviationMap = null;
+let aviationMapInitialized = false;
+let aviationMarkers = [];
+
+function initAviationMap() {
+    if (aviationMapInitialized) { if (aviationMap) aviationMap.resize(); return aviationMap; }
+    if (typeof maplibregl === 'undefined' || !document.getElementById('aviationAirspaceMap')) return null;
+    aviationMap = new maplibregl.Map({
+        container: 'aviationAirspaceMap',
+        style: 'https://tiles.openfreemap.org/styles/dark',
+        center: [20, 20],
+        zoom: 1.5,
+        pitch: 55,
+        bearing: -10,
+        maxPitch: 85,
+        attributionControl: { compact: true },
+        canvasContextAttributes: { antialias: true },
+    });
+    aviationMap.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+    aviationMapInitialized = true;
+    return aviationMap;
+}
+
+function clearAviationMarkers() {
+    for (const m of aviationMarkers) {
+        m.remove();
+    }
+    aviationMarkers = [];
+}
+
+function getColorForCategory(cat) {
+    switch (cat) {
+        case 'commercial': return '#22c544';
+        case 'jet':        return '#22d3ee';
+        case 'private':    return '#f59e0b';
+        case 'military':   return '#ef4444';
+        default:           return '#9ca3af';
+    }
+}
+
+async function renderAirspaceMap() {
+    const map = initAviationMap();
+    if (!map) return;
+    clearAviationMarkers();
+    const status = document.getElementById('airspaceMapMeta');
+    status.textContent = 'Fetching aircraft from OSv2...';
+    try {
+        const data = await api('/opensky/flights?limit=500');
+        const flights = data.flights || [];
+        let plotted = 0;
+        for (const f of flights) {
+            const props = f.properties || {};
+            const lat = props.lat;
+            const lng = props.lng;
+            if (lat == null || lng == null) continue;
+            const color = getColorForCategory(props.category);
+            const el = document.createElement('div');
+            el.style.width = '12px';
+            el.style.height = '12px';
+            el.style.borderRadius = '50%';
+            el.style.background = color;
+            el.style.boxShadow = `0 0 6px ${color}`;
+            el.title = (props.callsign || '—') + ' [' + (props.category || '?') + ']' +
+                '\n' + (props.model || '?') + ' @ ' + (props.alt || '?') + 'ft' +
+                '\n' + (props.speed_knots || '?') + ' kts';
+            const marker = new maplibregl.Marker(el).setLngLat([lng, lat]);
+            marker.addTo(map);
+            aviationMarkers.push(marker);
+            plotted++;
+        }
+        document.getElementById('airspaceMapCount').textContent = plotted + ' aircraft plotted';
+        document.getElementById('airspaceMapSource').textContent = 'OpenSky Network + adsb.fi';
+        status.textContent = plotted > 0 ? 'Plotted ' + plotted + ' aircraft' : 'No aircraft with position data';
+        if (plotted > 0) {
+            const bounds = aviationMarkers.length > 0 ?
+                aviationMarkers.map(m => m.getLngLat()).reduce((b, c) => b.extend(c),
+                    aviationMarkers[0].getLngLat().convert ? null : null) : null;
+        }
+    } catch (e) {
+        status.textContent = 'Error: ' + (e.message || 'unknown');
+    }
+}
+
+function clearAirspaceMap() {
+    clearAviationMarkers();
+    document.getElementById('airspaceMapCount').textContent = '0 aircraft';
+    document.getElementById('airspaceMapMeta').textContent = 'Map cleared';
 }
 
 // ============================================================================

@@ -14,6 +14,7 @@ from panteon.core.security import (
 from panteon.api.routes_auth import router as auth_router
 from panteon.api.routes_spinal_craker import router as spinal_craker_router
 from panteon.api.routes_gdelt import router as gdelt_router
+from panteon.api.routes_opensky import router as opensky_router
 from panteon.api.routes_gkg import router as gkg_router
 from panteon.api.routes_yono import router as yono_router
 from panteon.api.routes_tdac import router as tdac_router
@@ -66,6 +67,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(spinal_craker_router, prefix="/api/v1")
 app.include_router(gdelt_router, prefix="/api/v1")
+app.include_router(opensky_router, prefix="/api/v1")
 app.include_router(gkg_router, prefix="/api/v1")
 app.include_router(yono_router, prefix="/api/v1")
 app.include_router(statham_router, prefix="/api/v1")

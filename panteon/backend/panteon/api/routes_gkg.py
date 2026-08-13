@@ -77,6 +77,9 @@ def _build_pipeline() -> tuple[OSv2Manager, OntologyLayer, GDELTWritebackPipelin
             "required_fields": ["name"],
             "relationships": ["ACTS_IN"],
         })
+        persisted = _load_osv2_store()
+        if persisted:
+            osv2._object_nodes.update(persisted)  # noqa: SLF001
         _build_pipeline._osv2 = osv2  # noqa: SLF001
 
     ontology = getattr(_build_pipeline, "_ontology", None)
@@ -91,6 +94,36 @@ def _build_pipeline() -> tuple[OSv2Manager, OntologyLayer, GDELTWritebackPipelin
 def _write_count(result) -> int:
     """Read success_count from a WritebackResult object or a plain dict."""
     return getattr(result, "success_count", None) or result.get("success_count", 0)
+
+
+# ---------------------------------------------------------------------------
+# OSv2 store persistence: the OSv2 manager is in-memory, so GKG events/actors
+# would be lost on every service restart. We persist the object nodes to a
+# JSON file after each successful run and reload them on startup.
+# ---------------------------------------------------------------------------
+_STORE_PATH = os.path.join(BACKEND_DIR, "panteon", "api", "gkg_osv2_store.json")
+
+
+def _load_osv2_store() -> dict:
+    if not os.path.exists(_STORE_PATH):
+        return {}
+    try:
+        with open(_STORE_PATH, encoding="utf-8") as fh:
+            return json.load(fh)
+    except (OSError, json.JSONDecodeError):
+        logger.warning("gkg_osv2_store.json unreadable; starting with empty store")
+        return {}
+
+
+def _save_osv2_store(nodes: dict) -> None:
+    try:
+        os.makedirs(os.path.dirname(_STORE_PATH), exist_ok=True)
+        tmp = _STORE_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(nodes, fh, default=str)
+        os.replace(tmp, _STORE_PATH)
+    except OSError as exc:
+        logger.warning("Could not persist GKG OSv2 store: %s", exc)
 
 
 async def _run_pipeline(config: PipelineConfig) -> dict:
@@ -161,6 +194,7 @@ async def _run_pipeline(config: PipelineConfig) -> dict:
             },
             "timestamp": __import__("datetime").datetime.now(timezone.utc).isoformat(),
         }
+        _save_osv2_store(osv2._object_nodes)  # noqa: SLF001
         logger.info("GKG pipeline run complete: %s", report)
     except Exception as exc:  # noqa: BLE001
         logger.exception("Pipeline failed: %s", exc)
@@ -251,7 +285,7 @@ async def pipeline_status():
 async def list_events(limit: int = 100):
     """List stored GKG events from OSv2."""
     osv2, _, _ = _build_pipeline()
-    events = osv2.get_all_objects()  # simplified - would need proper query
+    events = [n for n in osv2.get_all_objects() if n.get("type") == "gkg_event"]
     return JSONResponse(content={"events": events[-limit:], "count": len(events)}, status_code=200)
 
 
@@ -259,5 +293,5 @@ async def list_events(limit: int = 100):
 async def list_actors(limit: int = 100):
     """List stored GKG actors from OSv2."""
     osv2, _, _ = _build_pipeline()
-    actors = osv2.get_all_objects()
+    actors = [n for n in osv2.get_all_objects() if n.get("type") == "gkg_actor"]
     return JSONResponse(content={"actors": actors[-limit:], "count": len(actors)}, status_code=200)

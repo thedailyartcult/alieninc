@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panteon | Crackerbox Palace — The Integrated Enterprise Stack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        .platform-hero {
+            position: relative;
+            min-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 160px 40px 100px;
+            overflow: hidden;
+            background-color: var(--bg-dark);
+        }
+
+        .platform-hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            object-fit: cover;
+            filter: brightness(0.3) contrast(1.05);
+        }
+
+        .platform-hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 900px;
+        }
+
+        .platform-hero-content .tag {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .platform-hero-content h1 { font-family: var(--font-tech);
+            font-size: clamp(2.6rem, 6vw, 4.4rem);
+            font-weight: 300;
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+            margin-bottom: 24px;
+            color: var(--text-light);
+        }
+
+        .platform-hero-content p {
+            font-size: 1.15rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.65);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .platform-nav {
+            display: flex;
+            gap: 6px;
+            padding: 24px 40px;
+            border-bottom: 1px solid var(--border-dark);
+            max-width: 1400px;
+            margin: 0 auto;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .platform-nav::-webkit-scrollbar {
+            display: none;
+        }
+
+        .platform-nav a {
+            padding: 8px 18px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            border-radius: 0px;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .platform-nav a:hover {
+            color: var(--text-dark);
+        }
+
+        .platform-nav a.active {
+            color: var(--text-dark);
+            background-color: #ffffff;
+            border-color: rgba(0, 0, 0, 0.15);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .stack-layers {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+            margin: 40px 0;
+        }
+
+        .stack-layer {
+            background: var(--bg-gray);
+            padding: 40px 28px;
+            text-align: center;
+            border: 1px solid var(--border-dark);
+            transition: background 0.3s;
+        }
+
+        .stack-layer:hover {
+            background: #ffffff;
+        }
+
+        .stack-layer .stage-num {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .stack-layer h4 {
+            font-size: 1.05rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .stack-layer .layer-role {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .stack-layer p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .stack-core {
+            margin-top: 16px;
+            border: 1px solid var(--border-dark);
+            background: var(--bg-gray);
+            padding: 24px 28px;
+            text-align: center;
+        }
+
+        .stack-core .stage-num {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .stack-core h4 {
+            font-family: var(--font-tech);
+            font-size: 1.2rem;
+            font-weight: 400;
+            margin-bottom: 8px;
+        }
+
+        .stack-core p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .architecture-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 32px;
+        }
+
+        .architecture-card {
+            border: 1px solid var(--border-dark);
+            border-radius: 0px;
+            padding: 48px 40px;
+            background: var(--bg-light);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .architecture-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .architecture-card .card-tag {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .architecture-card h3 { font-family: var(--font-tech);
+            font-size: 1.3rem;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            margin-bottom: 16px;
+        }
+
+        .architecture-card p {
+            font-size: 0.95rem;
+            line-height: 1.55;
+            color: var(--text-muted);
+        }
+
+        .workflow-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .workflow-step {
+            display: grid;
+            grid-template-columns: 80px 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+            padding: 44px 20px;
+            border-top: 1px solid var(--border-dark);
+        }
+
+        .workflow-step:last-child { border-bottom: 1px solid var(--border-dark); }
+
+        .workflow-step .step-num {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .workflow-step h3 { font-family: var(--font-tech);
+            font-size: 1.2rem;
+            font-weight: 400;
+            margin-bottom: 8px;
+        }
+
+        .workflow-step p {
+            font-size: 0.95rem;
+            line-height: 1.55;
+            color: var(--text-muted);
+        }
+
+        .workflow-step .step-media {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-color: #000000;
+            border: 1px solid var(--border-dark);
+            border-radius: 0px;
+            overflow: hidden;
+        }
+
+        .workflow-step .step-media img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .logo svg { fill: currentColor; width: 118px; height: 34px; transition: transform 0.4s cubic-bezier(.16,1,.3,1); }
+        .logo:hover svg { transform: none; }
+
+        @media (max-width: 1024px) {
+            .architecture-grid { grid-template-columns: 1fr; }
+            .workflow-step { grid-template-columns: 1fr; gap: 16px; }
+            .stack-layers { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .platform-hero { padding: 120px 24px 60px; }
+            .platform-nav { padding: 16px 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Single-source brand lockup: the custom P and ANTEON share one SVG coordinate system. -->
+    <svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden">
+        <defs>
+            <filter id="panteon-brush" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.23" numOctaves="4" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="0.85" xChannelSelector="R" yChannelSelector="B"/></filter>
+            <mask id="panteon-roll"><rect width="100" height="100" fill="white"/><path d="M16 60 C20 58 24 59 27 63" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round"/></mask>
+            <g id="panteon-lockup" fill="currentColor"><g filter="url(#panteon-brush)"><path d="M63 19 C57 19 54 23 54 29 L54 55 C54 59 56 62 60 64 L46 64 C42 64 40 66 40 68 C41 70 44 70 48 70 L65 70 C69 70 72 67 72 63 L72 29 C72 23 69 19 63 19 Z"/><circle cx="20" cy="64" r="7" mask="url(#panteon-roll)"/></g><text x="82" y="67" fill="currentColor" font-family="Inter, Arial, sans-serif" font-size="40" font-weight="500" letter-spacing="1.5">PANTEON</text></g>
+        </defs>
+    </svg>
+
+    <div class="announcement-bar" id="top-announcement">
+        Read CEO Patrick Neil's <a href="../letters/shareholder-letter.html">Letter to Shareholders ↗</a>
+        <button class="close-btn" onclick="document.getElementById('top-announcement').style.display='none'">×</button>
+    </div>
+
+    <header id="main-header">
+        <a href="../index.html" class="logo">
+            <svg viewBox="0 0 295 100" role="img" aria-label="Panteon"><use href="#panteon-lockup"/></svg>
+        </a>
+        <div class="nav-right">
+            <button class="get-started-btn"><span>↖</span> Get Started</button>
+            <button class="header-icon-box" aria-label="Search button">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 16 16">
+                    <circle cx="9.5" cy="6.5" r="5.5" stroke-width="1.5"></circle>
+                    <path d="M5.5 10.5l-4.5 4.5" stroke-width="1.5"></path>
+                </svg>
+            </button>
+            <button class="header-icon-box" aria-label="Menu button">
+                <div class="burger-lines">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </button>
+        </div>
+    </header>
+
+    <section class="platform-hero">
+        <video class="platform-hero-bg" autoplay loop muted playsinline poster="../panteon-software.png">
+            <source src="../hero-bg-panteon.mp4" type="video/mp4">
+        </video>
+        <div class="platform-hero-content">
+            <span class="tag">Panteon Crackerbox Palace</span>
+            <h1>Raw Data In.<br>Decisive Action Out.</h1>
+            <p>Crackerbox Palace (CBP) is Panteon's integrated enterprise stack — Spinal Craker, Crackerbox, and YONO unified on a single Ontology, from raw data infrastructure to front-line tactical action.</p>
+            <a href="#overview" class="cta-link-arrow" style="margin-top: 40px; color: var(--text-light);">Explore the Stack <span>↓</span></a>
+        </div>
+    </section>
+
+    <main class="main-content">
+
+        <nav class="platform-nav">
+            <a href="crackerboxpalace.html" class="active">Crackerbox Palace</a>
+            <a href="spinal-craker.html">Spinal Craker</a>
+            <a href="crackerbox.html">Crackerbox</a>
+            <a href="yono.html">YONO</a>
+        </nav>
+
+        <div class="prose-section" id="overview">
+            <h2>One Core. Every Layer.</h2>
+            <p>Crackerbox Palace is the Spinal-Cracker-Crackerbox Integration: the combination of all our platforms into a single umbrella enterprise ecosystem. It bridges the gap between raw data infrastructure and front-end tactical action.</p>
+            <p>At a foundational engineering level, Spinal Craker and Crackerbox are no longer treated as isolated, separate products. They have been refactored to share the exact same database and logic core — <strong>the Ontology</strong>. Spinal Craker acts as the multi-tenant data operating system: ingestion, cleansing pipelines, and security tagging. Crackerbox renders that ontology as living operational interfaces. YONO wraps the entire stack with AI orchestration.</p>
+            <p>When an enterprise runs CBP, a data engineer can toggle a single capability switch — <strong>"Allow objects of this type to be accessed from Crackerbox applications."</strong> Once enabled, any entity resolved inside Spinal Craker instantly renders as a physical object inside Crackerbox's interactive GIS map interface or its link-analysis charts — without manual database synchronization or custom API bridging.</p>
+        </div>
+
+        <section class="section">
+            <h2>The Three Layers of the Palace</h2>
+            <p style="font-size: 1rem; color: var(--text-muted); margin-bottom: 24px; max-width: 640px;">CBP is not a viewing channel. It is a fully integrated loop of refinery, mission interface, and brain — all reading and writing to the same core.</p>
+            <div class="stack-layers">
+                <div class="stack-layer">
+                    <span class="stage-num">/01</span>
+                    <h4>Spinal Craker</h4>
+                    <span class="layer-role">The Refinery</span>
+                    <p>FDC ingestion and in-memory Spark cleansing pull raw sources — APIs, telemetry, silos — into a semantic Ontology that saves rows as Aircraft, Ship, and Vessel.</p>
+                </div>
+                <div class="stack-layer">
+                    <span class="stage-num">/02</span>
+                    <h4>Crackerbox</h4>
+                    <span class="layer-role">The Mission Interface</span>
+                    <p>Operational Gaia Maps and Tactical Sensor-Shooter workflows render every enabled object as a physical, actionable presence on the same live picture.</p>
+                </div>
+                <div class="stack-layer">
+                    <span class="stage-num">/03</span>
+                    <h4>YONO</h4>
+                    <span class="layer-role">The Brain</span>
+                    <p>LLM orchestration and deterministic AI agents sit on top of the Ontology, alerting, recommending, and — on approval — writing back to the live database.</p>
+                </div>
+            </div>
+            <div class="stack-core">
+                <span class="stage-num">SHARED CORE</span>
+                <h4>The Ontology</h4>
+                <p>One database. One logic core. One security boundary. Object types defined once, governed everywhere.</p>
+            </div>
+        </section>
+
+        <section class="editorial-callout">
+            <h2 class="editorial-callout-text">
+                Running the fully integrated loop of Spinal Craker (Refinery), Crackerbox (Mission Interface), and YONO (Brain) solves the core problem of modern enterprise and defense tracking: the crisis of operational meaning.
+            </h2>
+        </section>
+
+        <section class="section section-gray" style="max-width: 100%; padding-left: 0; padding-right: 0;">
+            <div style="max-width: 1400px; margin: 0 auto; padding: 0 40px;">
+                <h2>Core Capabilities</h2>
+                <div class="architecture-grid" style="margin-top: 32px;">
+                    <div class="architecture-card">
+                        <span class="card-tag">/01 The Ontology</span>
+                        <h3>One Core, Every Product</h3>
+                        <p>Spinal Craker and Crackerbox share the exact same database and logic core. Object types are defined once and governed by a single security model — no bridges, no duplication, no drift.</p>
+                    </div>
+                    <div class="architecture-card">
+                        <span class="card-tag">/02 Crackerbox Gaia</span>
+                        <h3>Objects Become Action</h3>
+                        <p>Any enabled entity — aircraft, ships, shipments — renders as a physical object on interactive GIS maps and link-analysis graphs without manual synchronization or custom API bridging.</p>
+                    </div>
+                    <div class="architecture-card">
+                        <span class="card-tag">/03 YONO Orchestration</span>
+                        <h3>AI Wrapped Around the Core</h3>
+                        <p>YONO's deterministic agents and LLM orchestration sit on top of CBP's security mechanics. The AI can only read and action the data objects an operator is cleared to see — safe, governed execution.</p>
+                    </div>
+                    <div class="architecture-card">
+                        <span class="card-tag">/04 Consumption Credits</span>
+                        <h3>Baseload &amp; Metered Compute</h3>
+                        <p>A predictable enterprise baseline covers storage, pipeline compute, and licensing. YONO credits are drawn dynamically — only on LLM inference, agent runtime, and embedding workloads.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>How CBP Works</h2>
+            <div class="workflow-steps">
+                <div class="workflow-step">
+                    <span class="step-num">/01</span>
+                    <div>
+                        <h3>Ingest &amp; Refine</h3>
+                        <p>Raw data flows through Spinal Craker — FDC ingestion and in-memory Spark cleansing — into the semantic Ontology, tagged and secured per object type.</p>
+                    </div>
+                    <div class="step-media">
+                        <img src="../panteon-software.png" alt="Spinal Craker ingestion and ontology interface">
+                    </div>
+                </div>
+                <div class="workflow-step">
+                    <span class="step-num">/02</span>
+                    <div>
+                        <h3>Render &amp; Act</h3>
+                        <p>Enabled objects appear live on Crackerbox Gaia operational maps and Graph link-analysis charts. The commander plans, coordinates, and decides on the same picture.</p>
+                    </div>
+                    <div class="step-media">
+                        <img src="../panteon-software.png" alt="Crackerbox Gaia operational map interface">
+                    </div>
+                </div>
+                <div class="workflow-step">
+                    <span class="step-num">/03</span>
+                    <div>
+                        <h3>Orchestrate &amp; Feedback</h3>
+                        <p>YONO agents alert and recommend. When the commander approves, Spinal Craker Actions write back to the live database — closing the loop from insight to kinetic effect.</p>
+                    </div>
+                    <div class="step-media">
+                        <img src="../panteon-software.png" alt="YONO orchestration and approval interface">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" style="text-align: center; padding-bottom: 140px;">
+            <h2>Deploy the Full Stack</h2>
+            <p style="color: var(--text-muted); max-width: 520px; margin: 0 auto 40px; font-size: 1rem;">From ₱10M to ₱100M+ multi-node deployments — an umbrella CBP license beats paying the premium for stitching the pieces together.</p>
+            <button class="get-started-btn" style="background-color: var(--text-dark); color: var(--text-light); border-color: var(--text-dark); padding: 14px 40px; font-size: 0.85rem;">Request a Demo</button>
+        </section>
+
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-left-branding">
+                <p>© 2026 Panteon Technologies Inc.</p>
+                <p class="all-rights">All rights reserved.</p>
+                <div class="footer-divider-line"></div>
+                <a href="../cookies.html" class="footer-cookie-btn" style="text-decoration:none;">Cookies Settings</a>
+                <div class="footer-divider-line"></div>
+                <div class="footer-divider-line"></div>
+                <div class="footer-social-container">
+                    <a href="#" class="social-capsule">Youtube</a>
+                    <a href="#" class="social-capsule">X</a>
+                    <a href="#" class="social-capsule">Linkedin</a>
+                    <a href="#" class="social-capsule">Github</a>
+                    <a href="#" class="social-capsule">Store</a>
+                </div>
+            </div>
+            <div class="footer-links-grid">
+                <div class="footer-links-col">
+                    <h4>Research</h4>
+                    <ul>
+                        <li><a href="../panteon-research-institute/index.html">Panteon Research Institute</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Alien Inc</h4>
+                    <ul>
+                        <li><a href="https://rousseau.alieninc.tech" target="_blank">Rousseau</a></li>
+                        <li><a href="https://thedailyartcult.alieninc.tech" target="_blank">The Daily Art Cult</a></li>
+                        <li><a href="https://kmt.alieninc.tech" target="_blank">KMT Consulting Group</a></li>
+                        <li><a href="https://immanuel.alieninc.tech" target="_blank">Immanuel</a></li>
+                        <li><a href="https://centra.alieninc.tech" target="_blank">Centra</a></li>
+                        <li><a href="https://thedailyartcult.alieninc.tech" target="_blank">The Daily Art Cult</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Capabilities</h4>
+                    <ul>
+                        <li><a href="../capabilities/ai-ml.html">AI + ML</a></li>
+                        <li><a href="../capabilities/yono-for-developers.html">YONO for Developers</a></li>
+                        <li><a href="../capabilities/data-integration.html">Data Integration</a></li>
+                        <li><a href="../capabilities/digital-twin.html">Digital Twin</a></li>
+                        <li><a href="../capabilities/dynamic-scheduling.html">Dynamic Scheduling</a></li>
+                        <li><a href="../capabilities/edge-ai.html">Edge AI</a></li>
+                        <li><a href="../capabilities/marketplace.html">Marketplace</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Documents</h4>
+                    <ul>
+                        <li><a href="../developers/community.html">Developer Community</a></li>
+                        <li><a href="../developers/documentation.html">Platform Documentation</a></li>
+                        <li><a href="../developers/panteon-developers.html">Panteon Developers</a></li>
+                        <li><a href="../panteon-research-institute/index.html">Panteon Research Institute</a></li>
+                        <li><a href="../trust/trust-center.html">Trust Center</a></li>
+                        <li><a href="../trust/modern-slavery.html">Modern Slavery Statement</a></li>
+                        <li><a href="../cookies.html">Cookies</a></li>
+                        <li><a href="../trust/privacy-civil-liberties.html">Privacy and Civil Liberties</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const header = document.getElementById('main-header');
+        const scrollThreshold = window.innerHeight * 0.4;
+        window.addEventListener('scroll', () => {
+            if (window.scrollY >= scrollThreshold) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -10,6 +10,7 @@ Each product page follows the unified Panteon design language. Use `../platform-
 
 | File | Domain | Product |
 |------|--------|---------|
+| `crackerboxpalace.html` | Flagship (CBP) | Crackerbox Palace — the integrated stack (Spinal Craker + Crackerbox + YONO) |
 | `yono.html` | Terra (Land) | YONO — AI Operations Platform |
 | `crackerbox.html` | Abyss (Sea) | Crackerbox |
 | `terranean-etiology.html` | Terra | Terranean Etiology — Causal Forensics |

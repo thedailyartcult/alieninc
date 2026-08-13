@@ -37,6 +37,8 @@ When adding a new product page, update the sibling nav links on related pages.
 5. Announcement bar → Header → Platform Hero → Main Content → Footer
 6. Scroll-handler script at bottom
 
+Media paths on product pages MUST be `../`-prefixed (`../hero-bg-panteon.mp4`, `../panteon-software.png`) — those assets live in `panteon/`, one level above `platforms/`. A bare `hero-bg-panteon.mp4` resolves into `platforms/` and 404s.
+
 ## Content Sections (in order)
 
 1. **Platform Hero**: tag, headline (2 lines max), description (1-2 sentences), CTA arrow

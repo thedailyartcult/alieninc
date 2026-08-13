@@ -2,6 +2,8 @@
 
 ## This folder contains product pages for the Five Elements domains
 
+`index.html` is the Platform Directory — a homepage-design-language landing page (self-contained, mirrors `../index.html` style/scripts) that catalogs every product grouped by the Five Elements domains: Terra (YONO, Terranean Etiology, Terranean Teleology), Abyss (Crackerbox), Stratos (Statham), Cosmos (Spinal Craker), Cyber (CMB). All paths are `../`-prefixed to resolve from this folder.
+
 Each product page follows the unified Panteon design language. Use `../platform-template.html` as the starting point.
 
 ## Existing Products

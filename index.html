@@ -228,7 +228,7 @@
     }
 
     /* Live simulations reminder in the nav — identical rendering to the phrases nav
-       (nav__thinking): the "Simulations Live" label and the tally number are revealed
+       (nav__thinking): a random phrase with the live tally embedded is revealed
        one word at a time with the same nav-word-in animation, the line uses the same
        caret then ellipsis, and the number keeps counting while visible. Shown only
        in "sims mode" (a random pop-up while scrolling); the nav links appear only
@@ -3754,9 +3754,9 @@
 
     // Nav "sims reminder": pops up at random while the user scrolls, stays just
     // long enough for the tally to count, then fades away. Rendering follows the
-    // phrases nav exactly — "Simulations Live" and the number are revealed one word
-    // at a time with nav-word-in, the line gets the same caret then ellipsis, and
-    // the number keeps counting while visible. Hovering the nav swaps in the
+    // phrases nav exactly — a random phrase with the live tally embedded is revealed
+    // one word at a time with nav-word-in, the line gets the same caret then ellipsis,
+    // and the number keeps counting while visible. Hovering the nav swaps in the
     // standard nav (the random set already chosen on load).
     var simsLine = document.getElementById('navSimsLine');
     var htmlEl = document.documentElement;
@@ -3775,18 +3775,33 @@
       var lastShown = 0;
       var currentNum = null;
 
+      var PHRASES = [
+        ['Right', 'now,', 'we\'re', 'testing', null, 'different', 'versions', 'of', 'today'],
+        [null, 'futures', 'ran', 'before', 'you', 'clicked', 'here'],
+        ['While', 'you', 'were', 'arriving,', 'we', 'simulated', null, 'outcomes'],
+        ['You\'re', 'one', 'visitor.', 'We\'ve', 'simulated', null, 'others', 'today.'],
+        ['We\'ve', 'run', null, 'versions', 'of', 'today', 'already.', 'Yours', 'in', 'next.']
+      ];
+
       function showReminder() {
         if (active) return;
         active = true;
         htmlEl.classList.add('is-sims-nav');
         simsLine.classList.add('is-visible', 'is-typing');
 
-        var words = ['Simulations', 'Live'];
+        var words = PHRASES[Math.floor(Math.random() * PHRASES.length)];
         var i = 0;
         var timer = setInterval(function () {
+          var token = words[i];
           var w = document.createElement('span');
-          w.className = 'nav__thinking-word';
-          w.textContent = words[i];
+          if (token === null) {
+            w.className = 'nav__thinking-word nav__sims-num';
+            currentNum = w;
+            window.ALIEN_SIMS_TALLY.onTick(function (s) { if (currentNum) currentNum.textContent = s; });
+          } else {
+            w.className = 'nav__thinking-word';
+            w.textContent = token;
+          }
           simsLine.appendChild(w);
           if (i < words.length - 1) simsLine.appendChild(document.createTextNode(' '));
           i += 1;
@@ -3794,11 +3809,6 @@
             clearInterval(timer);
             simsLine.classList.remove('is-typing');
             simsLine.classList.add('is-done');
-            simsLine.appendChild(document.createTextNode(' '));
-            currentNum = document.createElement('span');
-            currentNum.className = 'nav__thinking-word nav__sims-num';
-            simsLine.appendChild(currentNum);
-            window.ALIEN_SIMS_TALLY.onTick(function (s) { if (currentNum) currentNum.textContent = s; });
             setTimeout(hideReminder, HOLD_MS);
           }
         }, WORD_DELAY);

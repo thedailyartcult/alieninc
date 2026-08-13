@@ -9,6 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="/cmb_token.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -1096,7 +1098,203 @@
             color: var(--accent-cyan);
         }
 
+        /* GDELT Retro-Map Engine (ported from alieninc website map design, admin tokens) */
+        .retro-map-wrapper {
+            position: relative;
+            width: 100%;
+            height: 520px;
+            background: #000;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .retro-map-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .retro-map-canvas .maplibregl-canvas { outline: none; }
+
+        .retro-map-hud-panel {
+            position: absolute;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.92);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 10px 12px;
+            pointer-events: none;
+            backdrop-filter: blur(2px);
+        }
+        .retro-map-hud-left { top: 12px; left: 12px; }
+        .retro-map-hud-right { top: 12px; right: 12px; text-align: right; }
+        .retro-map-hud-kicker {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            color: var(--accent-cyan);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        .retro-map-hud-heading {
+            font-family: var(--font-tech);
+            font-size: 20px;
+            font-weight: 300;
+            color: var(--text);
+            letter-spacing: 1px;
+            margin-top: 2px;
+        }
+        .retro-map-hud-meta {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .retro-map-hud-meta b { color: var(--green); font-weight: 500; }
+
+        .retro-map-hint-banner {
+            position: absolute;
+            bottom: 62px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            width: 90%;
+            max-width: 440px;
+            text-align: center;
+            pointer-events: none;
+        }
+        .retro-map-hint-text {
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 4px 12px;
+            color: var(--green);
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+        }
+
+        .retro-map-toolbar {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 6px;
+            display: flex;
+            gap: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+            pointer-events: auto;
+            max-width: 95%;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .retro-map-toolbar::-webkit-scrollbar { display: none; }
+        .retro-map-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--accent-cyan);
+            padding: 4px 10px;
+            border-radius: 3px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .retro-map-btn:hover {
+            background: rgba(223, 241, 64, 0.1);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 8px rgba(223, 241, 64, 0.3);
+        }
+        .retro-map-btn-reset { color: var(--green); border-color: rgba(16, 185, 129, 0.3); }
+        .retro-map-btn-reset:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--green);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .retro-map-node-marker {
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.2s ease;
+        }
+        .retro-map-node-marker:hover { transform: scale(1.05); }
+        .retro-map-marker-tag {
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            font-size: 10px;
+            color: var(--accent-cyan);
+            border: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 1px 8px;
+            border-radius: 3px;
+            box-shadow: 0 0 10px rgba(223, 241, 64, 0.15);
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+        .retro-map-node-marker:hover .retro-map-marker-tag {
+            color: var(--green);
+            border-color: var(--green);
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+        }
+        .retro-map-marker-line { width: 1px; height: 12px; background: var(--border-color); }
+        .retro-map-node-marker:hover .retro-map-marker-line { background: rgba(16, 185, 129, 0.7); }
+        .retro-map-marker-glow {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            border: 2px solid #000;
+            box-shadow: 0 0 10px rgba(223, 241, 64, 0.7);
+            animation: retro-pulsing-marker 2s infinite ease-in-out;
+        }
+        .retro-map-node-marker.tone-red .retro-map-marker-glow { background: var(--red); box-shadow: 0 0 10px var(--red), 0 0 20px rgba(244, 63, 94, 0.6); }
+        .retro-map-node-marker.tone-red .retro-map-marker-tag { color: var(--red); border-color: rgba(244, 63, 94, 0.5); }
+        .retro-map-node-marker.tone-amber .retro-map-marker-glow { background: var(--amber); box-shadow: 0 0 10px var(--amber), 0 0 20px rgba(245, 158, 11, 0.6); }
+        .retro-map-node-marker.tone-amber .retro-map-marker-tag { color: var(--amber); border-color: rgba(245, 158, 11, 0.5); }
+        .retro-map-node-marker.tone-green .retro-map-marker-glow { background: var(--green); box-shadow: 0 0 10px var(--green), 0 0 20px rgba(16, 185, 129, 0.6); }
+        .retro-map-node-marker.tone-green .retro-map-marker-tag { color: var(--green); border-color: rgba(16, 185, 129, 0.5); }
+        @keyframes retro-pulsing-marker {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.35); opacity: 0.75; }
+        }
+
+        .maplibregl-ctrl-group {
+            background: rgba(0, 0, 0, 0.9) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+        .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(1); }
+        .maplibregl-ctrl-attrib {
+            background: rgba(0, 0, 0, 0.7) !important;
+            color: var(--text-muted) !important;
+            font-size: 9px !important;
+        }
+        .maplibregl-ctrl-attrib a { color: var(--text-dim) !important; }
+        .maplibregl-popup-content {
+            background: rgba(0, 0, 0, 0.95) !important;
+            border: 1px solid var(--border-color);
+            color: var(--text);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            border-radius: 4px;
+            padding: 10px 12px;
+        }
+        .maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color: var(--border-color); }
+
         /* GDELT Tab Styles */
+    </style>
 </head>
 <body>
 
@@ -1790,34 +1988,46 @@
                                        </div>
                                    </div>
                                </div>
-                               <!-- Map Visualization -->
-                               <div id="threatMapViz" style="display:flex;gap:12px;margin-top:12px">
-                                   <div style="flex:1;background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:16px">
-                                       <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">Geospatial View</div>
-                                       <svg id="threatMapSvg" viewBox="0 0 400 300" style="width:100%;height:250px;background:#000">
-                                           <!-- Threat map visualization -->
-                                           <rect x="50" y="50" width="120" height="80" rx="4" fill="rgba(244,63,94,0.2)" stroke="rgba(244,63,94,0.6)" stroke-width="1"/>
-                                           <rect x="200" y="80" width="130" height="90" rx="4" fill="rgba(245,158,11,0.2)" stroke="rgba(245,158,11,0.6)" stroke-width="1"/>
-                                           <rect x="80" y="180" width="110" height="70" rx="4" fill="rgba(16,185,129,0.2)" stroke="rgba(16,185,129,0.6)" stroke-width="1"/>
-                                           <circle cx="120" cy="100" r="3" fill="rgba(244,63,94,0.8)"/>
-                                           <circle cx="250" cy="120" r="4" fill="rgba(245,158,11,0.8)"/>
-                                           <circle cx="180" cy="200" r="3" fill="rgba(16,185,129,0.8)"/>
-                                           <text x="120" y="90" fill="#f43f5e" font-size="8" text-anchor="middle">THREAT 1</text>
-                                           <text x="250" y="110" fill="#f59e0b" font-size="8" text-anchor="middle">THREAT 2</text>
-                                           <text x="180" y="210" fill="#10b981" font-size="8" text-anchor="middle">THREAT 3</text>
-                                           <text x="200" y="260" fill="#DFF140" font-size="8" text-anchor="middle">COORD: [N 40.7128, W -74.0060]</text>
-                                       </svg>
-                                   </div>
-                                   <div style="flex:1;background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:16px">
-                                       <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">Actor Network</div>
-                                       <table style="width:100%;font-size:11px;border-collapse:collapse">
-                                           <thead><tr><th>Actor</th><th>CAMEO</th><th>Country</th><th>Threat</th></tr></thead>
-                                           <tbody id="actorMapBody">
-                                               <tr><td colspan="4"><div class="empty-state">No actor data loaded</div></td></tr>
-                                           </tbody>
-                                       </table>
-                                   </div>
-                               </div>
+                                <!-- Map Visualization -->
+                                <div class="card" style="margin-top:12px">
+                                    <div class="card-header">
+                                        <span class="card-title">◈ GEOSPATIAL THREAT MAP</span>
+                                        <span class="tag tag-red">LIVE</span>
+                                    </div>
+                                    <div id="threatMapViz" class="retro-map-wrapper">
+                                        <div class="retro-map-canvas" id="gdeltThreatMap"></div>
+                                        <div class="retro-map-hud-panel retro-map-hud-left">
+                                            <div class="retro-map-hud-kicker">Tactical Geospatial View</div>
+                                            <div class="retro-map-hud-heading" id="threatMapHudTitle">CRITICAL EVENT MAPPER</div>
+                                            <div class="retro-map-hud-meta" id="threatMapHudMeta">Drag to pan · Scroll to zoom · No events loaded</div>
+                                        </div>
+                                        <div class="retro-map-hud-panel retro-map-hud-right">
+                                            <div class="retro-map-hud-kicker">Database Status</div>
+                                            <div class="retro-map-hud-meta"><b id="threatMapEventCount">0</b> geocoded events</div>
+                                            <div class="retro-map-hud-meta"><b id="threatMapThreatCount">0</b> active threats</div>
+                                        </div>
+                                        <div class="retro-map-hint-banner">
+                                            <div class="retro-map-hint-text" id="threatMapHint">Render map to plot real GDELT GKG geocoded events</div>
+                                        </div>
+                                        <div class="retro-map-toolbar">
+                                            <button class="retro-map-btn retro-map-btn-reset" onclick="resetMapView()">Reset World View</button>
+                                            <button class="retro-map-btn" onclick="fitThreatBounds()">Fit Threat Clusters</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card" style="margin-top:12px">
+                                    <div class="card-header">
+                                        <span class="card-title">◈ ACTOR NETWORK</span>
+                                    </div>
+                                    <div class="table-wrap">
+                                        <table style="width:100%;font-size:11px;border-collapse:collapse">
+                                            <thead><tr><th>Actor</th><th>CAMEO</th><th>Country</th><th>Threat</th></tr></thead>
+                                            <tbody id="actorMapBody">
+                                                <tr><td colspan="4"><div class="empty-state">No actor data loaded</div></td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                                <div style="margin-top:16px;font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">
                                    <p>⚠ CRITICAL: All coordinates are lat/lng in [DMS] format. Threat levels are determined by the GDELT Event Database's real-time event classification. CAMEO codes are from the GDELT Document 2.0 API (see: https://api.gdeltproject.org/api/v2/doc/doc).</p>
                                    <p>SOP: For each threat event, log the [LAT, LNG] coordinate, THREAT_LEVEL, and CAMEO code. Then route the event to the Entity Fusion Tab for actor relationship mapping.</p>
@@ -1827,12 +2037,13 @@
                            <div id="gdeltTabIntelNode" class="gdelt-tab-content">
                                <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
                                    <input id="intelNodeQuery" type="text" placeholder='Intelligence query e.g. "military defense" OR "defense threat"' style="flex:1">
-                                   <button class="btn btn-primary btn-sm" onclick="runIntelNode()">Run Intelligence Node</button>
-                                   <button class="btn btn-secondary btn-sm" onclick="clearIntelNode()">Reset</button>
-                               </div>
-                               <div class="card" style="margin-bottom:12px">
-                                   <div class="card-header">
-                                       <span class="card-title">📡 INTELLIGENCE PROCESSING NODE</span>
+                                    <button class="btn btn-primary btn-sm" onclick="runIntelNode()">Run Intelligence Node</button>
+                                    <button class="btn btn-secondary btn-sm" onclick="clearIntelNode()">Reset</button>
+                                </div>
+                                <div id="intelRunStatus" style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-bottom:12px">Ready — run an intelligence query to aggregate real GDELT GKG data.</div>
+                                <div class="card" style="margin-bottom:12px">
+                                    <div class="card-header">
+                                        <span class="card-title">📡 INTELLIGENCE PROCESSING NODE</span>
                                        <span class="tag tag-green">ACTIVE</span>
                                    </div>
                                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px">
@@ -2799,6 +3010,7 @@ const CMB_BASE_URL = '/panteon/cmb/';
 
 const PAGES = {
     'overview': 'Overview',
+    'sc-gdelt': 'GDELT Intelligence Engine',
     'sc-types': 'Object Types',
     'sc-objects': 'Objects',
     'sc-links': 'Link Types',
@@ -3942,105 +4154,268 @@ function switchGdeltTab(tab) {
     const tabId = tabIdMap[tab] || tab.charAt(0).toUpperCase() + tab.slice(1);
     const el = document.getElementById('gdeltTab' + tabId);
     if (el) el.classList.add('active');
+    if (tab === 'threatmap' && threatMapInitialized && threatMap) {
+        requestAnimationFrame(() => threatMap.resize());
+    }
 }
 
-function renderThreatMap() {
-    const query = document.getElementById('threatMapQuery').value.trim() || 'military';
+// ============================================================================
+// Threat Map — real GDELT GKG geospatial engine (MapLibre GL)
+// ============================================================================
+let threatMap = null;
+let threatMapInitialized = false;
+let threatMapMarkers = [];
+let threatMapEvents = [];
+
+function initThreatMap() {
+    if (threatMapInitialized) { if (threatMap) threatMap.resize(); return threatMap; }
+    if (typeof maplibregl === 'undefined' || !document.getElementById('gdeltThreatMap')) return null;
+    threatMap = new maplibregl.Map({
+        container: 'gdeltThreatMap',
+        style: 'https://tiles.openfreemap.org/styles/dark',
+        center: [20, 20],
+        zoom: 1.5,
+        attributionControl: { compact: true },
+        canvasContextAttributes: { antialias: true },
+    });
+    threatMap.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
+    threatMapInitialized = true;
+    return threatMap;
+}
+
+function threatLevelForTone(avgTone) {
+    if (avgTone == null) return 'amber';
+    if (avgTone < -5) return 'red';
+    if (avgTone < 0) return 'amber';
+    return 'green';
+}
+const THREAT_LABEL = { red: 'RED', amber: 'AMBER', green: 'GREEN' };
+
+function parseActionGeo(obj) {
+    let geo = obj && obj.action_geo;
+    if (typeof geo === 'string') { try { geo = JSON.parse(geo); } catch (e) { geo = {}; } }
+    geo = geo || {};
+    const lat = parseFloat(geo.latitude);
+    const lng = parseFloat(geo.longitude);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        return { latitude: lat, longitude: lng, country: geo.country || '' };
+    }
+    return null;
+}
+
+function gkgEventsFrom(events) {
+    return (events || []).filter(e => e && e.type === 'gkg_event');
+}
+
+function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+
+function computeIntelMetrics(events) {
+    const geoCoded = events.filter(e => parseActionGeo(e));
+    const neg = events.filter(e => e.avg_tone != null && e.avg_tone < 0);
+    const total = events.length || 1;
+    const articles = events.reduce((s, e) => s + (parseFloat(e.num_articles) || 0), 0);
+    let geoSpread = 0;
+    if (geoCoded.length >= 2) {
+        const lats = geoCoded.map(e => parseActionGeo(e).latitude);
+        const lngs = geoCoded.map(e => parseActionGeo(e).longitude);
+        geoSpread = Math.min(1, (Math.max(...lats) - Math.min(...lats) + Math.max(...lngs) - Math.min(...lngs)) / 180);
+    }
+    const toneMean = events.length ? events.reduce((s, e) => s + (parseFloat(e.avg_tone) || 0), 0) / events.length : 0;
+    const systemic = clamp01(0.15 + 0.6 * (neg.length / total) + 0.25 * Math.min(1, events.length / 25));
+    const propagation = clamp01(0.15 + 0.5 * Math.min(1, events.length / 20) + 0.35 * geoSpread);
+    const sensitivity = clamp01(0.15 + 0.55 * Math.min(1, articles / 800) + 0.3 * Math.min(1, Math.abs(toneMean) / 10));
+    return {
+        systemic: systemic.toFixed(2),
+        propagation: propagation.toFixed(2),
+        sensitivity: sensitivity.toFixed(2),
+        total: events.length,
+        geoCoded: geoCoded.length,
+        negative: neg.length,
+        articles: Math.round(articles),
+    };
+}
+
+function clearMapMarkers() {
+    threatMapMarkers.forEach(m => { try { m.remove(); } catch (e) {} });
+    threatMapMarkers = [];
+}
+
+function resetMapView() {
+    if (!threatMap) return;
+    threatMap.flyTo({ center: [20, 20], zoom: 1.5, duration: 1200 });
+}
+
+function fitThreatBounds() {
+    if (!threatMap) return;
+    const pts = threatMapEvents.map(parseActionGeo).filter(Boolean);
+    if (!pts.length) { resetMapView(); return; }
+    const b = pts.reduce((bb, p) => ({
+        minX: Math.min(bb.minX, p.longitude), maxX: Math.max(bb.maxX, p.longitude),
+        minY: Math.min(bb.minY, p.latitude), maxY: Math.max(bb.maxY, p.latitude),
+    }), { minX: 180, maxX: -180, minY: 90, maxY: -90 });
+    threatMap.fitBounds([[b.minX, b.minY], [b.maxX, b.maxY]], { padding: 60, maxZoom: 8, duration: 1200 });
+}
+
+async function renderThreatMap() {
+    const query = document.getElementById('threatMapQuery').value.trim() || '("military" OR "defense" OR "conflict")';
     const layer = document.getElementById('threatMapLayer').value;
-    const mapContainer = document.getElementById('threatMapViz');
-    if (!mapContainer) return;
-    const layerName = layer === 'all' ? 'All Layers' : layer.charAt(0).toUpperCase() + layer.slice(1);
-    const svgContent = `
-        <svg viewBox="0 0 400 300" style="width:100%;height:250px;background:#000">
-            <defs>
-                <filter id="panteon-brush"><feTurbulence type="fractalNoise" baseFrequency="0.23" numOctaves="4" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="0.85" xChannelSelector="R" yChannelSelector="B"/></filter>
-            </defs>
-            <rect x="50" y="50" width="120" height="80" rx="4" fill="rgba(244,63,94,0.2)" stroke="rgba(244,63,94,0.6)" stroke-width="1"/>
-            <rect x="200" y="80" width="130" height="90" rx="4" fill="rgba(245,158,11,0.2)" stroke="rgba(245,158,11,0.6)" stroke-width="1"/>
-            <rect x="80" y="180" width="110" height="70" rx="4" fill="rgba(16,185,129,0.2)" stroke="rgba(16,185,129,0.6)" stroke-width="1"/>
-            <circle cx="120" cy="100" r="3" fill="rgba(244,63,94,0.8)"/>
-            <circle cx="250" cy="120" r="4" fill="rgba(245,158,11,0.8)"/>
-            <circle cx="180" cy="200" r="3" fill="rgba(16,185,129,0.8)"/>
-            <text x="120" y="90" fill="#f43f5e" font-size="8" text-anchor="middle">THREAT 1</text>
-            <text x="250" y="110" fill="#f59e0b" font-size="8" text-anchor="middle">THREAT 2</text>
-            <text x="180" y="210" fill="#10b981" font-size="8" text-anchor="middle">THREAT 3</text>
-            <text x="200" y="260" fill="#DFF140" font-size="8" text-anchor="middle">COORD: [N 40.7128, W -74.0060]</text>
-        </svg>
-    `;
-    mapContainer.innerHTML = `
-        <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
-            <span style="font-size:11px;color:var(--text-light);font-family:var(--font-tech);font-weight:600">Threat Map — ${layerName}</span>
-            <span class="tag tag-red">LIVE</span>
-        </div>
-        ${svgContent}
-        <div class="threat-detail" style="margin-top:8px">
-            <span class="coordinate">[40.7128, -74.0060] // THREAT_LEVEL: RED — CAMEO: 3010</span><br>
-            <span class="coordinate">[40.7580, -73.9855] // THREAT_LEVEL: AMBER — CAMEO: 190</span><br>
-            <span class="coordinate">[40.6892, -73.9445] // THREAT_LEVEL: GREEN — CAMEO: 5010</span>
-        </div>
-    `;
-    document.getElementById('linkMatrixBody').innerHTML = `
-        <tr><td colspan="5"><div class="empty-state">Render threat map to populate the link matrix table</div></td></tr>
-    `;
-    document.getElementById('metricSystemicImportance').textContent = '0.72';
-    document.getElementById('metricPropagationPotential').textContent = '0.85';
-    document.getElementById('metricMarketSensitivity').textContent = '0.63';
-    document.getElementById('actorMapBody').innerHTML = `
-        <tr><td>Target: Actor1</td><td>190</td><td>US</td><td>CRITICAL</td></tr>
-        <tr><td>Target: Actor2</td><td>3010</td><td>RU</td><td>AMBER</td></tr>
-        <tr><td>Target: Actor3</td><td>5010</td><td>CN</td><td>GREEN</td></tr>
-        <tr><td>Source: Actor1</td><td>190</td><td>US</td><td>CRITICAL</td></tr>
-    `;
+    const map = initThreatMap();
+    const hudMeta = document.getElementById('threatMapHudMeta');
+    const hint = document.getElementById('threatMapHint');
+    if (hudMeta) hudMeta.textContent = 'Loading events from OSv2 / GKG pipeline...';
+    if (hint) hint.textContent = 'QUERY: ' + query + ' — pulling events';
+
+    let data;
+    try {
+        data = await api('/gkg/events?limit=250');
+    } catch (e) {
+        data = { events: [] };
+    }
+    let events = gkgEventsFrom(data && data.events);
+    if (!events.length) {
+        try {
+            await api('/gkg/pipeline/run', { method: 'POST', body: JSON.stringify({ query: query, mode: 'events', timespan: '24h', maxrecords: 50, api_key: '' }) });
+            data = await api('/gkg/events?limit=250');
+            events = gkgEventsFrom(data && data.events);
+        } catch (e) {
+            // rate-limited; render whatever is stored
+        }
+    }
+    threatMapEvents = events;
+
+    let filtered = events;
+    if (layer === 'geospatial') filtered = events.filter(e => parseActionGeo(e));
+    else if (layer === 'actors') filtered = events.filter(e => e.actor1 || e.event_type);
+    else if (layer === 'tone') filtered = events.filter(e => e.avg_tone != null);
+
+    renderThreatMarkers(filtered);
+    renderThreatTables(filtered);
+    const m = computeIntelMetrics(filtered);
+    document.getElementById('metricSystemicImportance').textContent = m.systemic;
+    document.getElementById('metricPropagationPotential').textContent = m.propagation;
+    document.getElementById('metricMarketSensitivity').textContent = m.sensitivity;
+    document.getElementById('threatMapEventCount').textContent = m.geoCoded;
+    document.getElementById('threatMapThreatCount').textContent = m.negative;
+    if (hudMeta) hudMeta.textContent = filtered.length + ' events analyzed · ' + m.geoCoded + ' geocoded · layer: ' + layer;
+    if (hint) hint.textContent = m.geoCoded ? m.geoCoded + ' threat markers plotted' : 'No geocoded events yet — run the GKG pipeline';
+    requestAnimationFrame(() => { if (threatMap) threatMap.resize(); });
+    if (filtered.length) fitThreatBounds();
+}
+
+function renderThreatMarkers(events) {
+    clearMapMarkers();
+    if (!threatMap) return;
+    events.forEach(ev => {
+        const geo = parseActionGeo(ev);
+        if (!geo) return;
+        const tone = threatLevelForTone(ev.avg_tone);
+        const el = document.createElement('div');
+        el.className = 'retro-map-node-marker tone-' + tone;
+        el.innerHTML =
+            '<div class="retro-map-marker-tag">CAMEO ' + (ev.event_code || '?') + ' · ' + geo.latitude.toFixed(1) + ',' + geo.longitude.toFixed(1) + '</div>' +
+            '<div class="retro-map-marker-line"></div><div class="retro-map-marker-glow"></div>';
+        const popup = new maplibregl.Popup({ closeButton: false, offset: 8 }).setHTML(
+            '<b>' + THREAT_LABEL[tone] + '</b> · CAMEO ' + (ev.event_code || '?') +
+            '<br>THREAT_LEVEL: ' + THREAT_LABEL[tone] +
+            '<br>TONE: ' + (ev.avg_tone != null ? Number(ev.avg_tone).toFixed(2) : 'n/a') +
+            '<br>ARTICLES: ' + (ev.num_articles || 0) +
+            '<br>DATE: ' + (ev.event_date || '') +
+            '<br>COORD: [' + geo.latitude + ', ' + geo.longitude + ']'
+        );
+        const mk = new maplibregl.Marker({ element: el }).setLngLat([geo.longitude, geo.latitude]).setPopup(popup).addTo(threatMap);
+        threatMapMarkers.push(mk);
+    });
+}
+
+function renderThreatTables(events) {
+    const mapper = document.getElementById('threatEventMap');
+    const matrix = document.getElementById('linkMatrixBody');
+    const actors = document.getElementById('actorMapBody');
+    if (!events.length) {
+        mapper.innerHTML = '<div class="empty-state">No threat events found. Render the map to pull GDELT GKG events.</div>';
+        matrix.innerHTML = '<tr><td colspan="5"><div class="empty-state">No threat events loaded</div></td></tr>';
+        actors.innerHTML = '<tr><td colspan="4"><div class="empty-state">No actor data loaded</div></td></tr>';
+        return;
+    }
+    mapper.innerHTML = events.slice(0, 25).map(ev => {
+        const geo = parseActionGeo(ev);
+        const tone = threatLevelForTone(ev.avg_tone);
+        const coord = geo ? '[' + geo.latitude + ', ' + geo.longitude + ']' : '[no geo]';
+        const color = tone === 'red' ? 'var(--red)' : tone === 'amber' ? 'var(--amber)' : 'var(--green)';
+        return '<div style="margin-bottom:2px"><span class="coordinate" style="color:' + color + '">' + coord +
+            ' // THREAT_LEVEL: ' + THREAT_LABEL[tone] + ' — CAMEO: ' + (ev.event_code || '?') + '</span></div>';
+    }).join('') +
+    '<div style="margin-top:6px;font-size:9px;color:var(--text-muted)">Target: Actor1 -> Action: ' + (events[0] ? events[0].event_code : '?') + ' -> Receiver: Actor2</div>';
+
+    matrix.innerHTML = events.slice(0, 50).map(ev => {
+        const geo = parseActionGeo(ev);
+        return '<tr><td>' + (ev.event_date || '') + '</td><td>' + (ev.actor1 || ev.event_type || 'GDELT') +
+            '</td><td>' + (ev.event_code || '') + '</td><td>' + (ev.actor2 || (geo ? geo.country : '') || 'GLOBAL') +
+            '</td><td>' + (ev.avg_tone != null ? Number(ev.avg_tone).toFixed(2) : 'n/a') + '</td></tr>';
+    }).join('');
+
+    const counts = {};
+    events.forEach(ev => {
+        const geo = parseActionGeo(ev);
+        const name = ev.actor1 || ev.event_type || ev.event_code || 'GDELT';
+        const key = name + '|' + (ev.event_code || '');
+        if (!counts[key]) counts[key] = { name: name, cameo: ev.event_code || '', country: geo ? geo.country : '', tones: [] };
+        if (ev.avg_tone != null) counts[key].tones.push(ev.avg_tone);
+    });
+    actors.innerHTML = Object.values(counts).slice(0, 50).map(a => {
+        const tone = threatLevelForTone(a.tones.length ? a.tones.reduce((x, y) => x + y, 0) / a.tones.length : null);
+        return '<tr><td>' + a.name + '</td><td>' + a.cameo + '</td><td>' + (a.country || '—') + '</td><td>' + THREAT_LABEL[tone] + '</td></tr>';
+    }).join('');
 }
 
 function clearThreatMap() {
-    document.getElementById('threatMapViz').innerHTML = `
-        <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
-            <span style="font-size:11px;color:var(--text-light);font-family:var(--font-tech);font-weight:600">Threat Map</span>
-            <span class="tag tag-red">LIVE</span>
-        </div>
-        <div style="width:100%;height:250px;background:#000;border:1px solid rgba(255,255,255,0.04);border-radius:4px;margin-bottom:8px">
-            <div class="empty-state" style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted)">Map rendered — Click "Render Map" to populate</div>
-        </div>
-        <div class="threat-detail">
-            <span style="font-size:10px;color:var(--text-muted)">No threat events loaded. Run a search or add an event.</span>
-        </div>
-        <div style="display:flex;gap:12px;align-items:center;margin-top:8px">
-            <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">Coordinates: [LAT, LNG] // THREAT_LEVEL: [RED|AMBER|GREEN]</span>
-            <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">CAMEO: Actor1 -> Action: 190 [Use conventional force] -> Receiver: Actor2</span>
-        </div>
-    `;
-    document.getElementById('linkMatrixBody').innerHTML = `
-        <tr><td colspan="5"><div class="empty-state">No threat events loaded. Run a search or add an event.</div></td></tr>
-    `;
+    clearMapMarkers();
+    threatMapEvents = [];
+    document.getElementById('threatEventMap').innerHTML = '<div class="empty-state">Render threat map to see geocoded security spikes with CAMEO actor codes</div>';
+    document.getElementById('linkMatrixBody').innerHTML = '<tr><td colspan="5"><div class="empty-state">No threat events loaded. Run a search or add an event.</div></td></tr>';
+    document.getElementById('actorMapBody').innerHTML = '<tr><td colspan="4"><div class="empty-state">No actor data loaded</div></td></tr>';
     document.getElementById('metricSystemicImportance').textContent = '—';
     document.getElementById('metricPropagationPotential').textContent = '—';
     document.getElementById('metricMarketSensitivity').textContent = '—';
-    document.getElementById('actorMapBody').innerHTML = `
-        <tr><td colspan="4"><div class="empty-state">No actor data loaded</div></td></tr>
-    `;
+    document.getElementById('threatMapEventCount').textContent = '0';
+    document.getElementById('threatMapThreatCount').textContent = '0';
+    const meta = document.getElementById('threatMapHudMeta');
+    if (meta) meta.textContent = 'Drag to pan · Scroll to zoom · No events loaded';
+    const hint = document.getElementById('threatMapHint');
+    if (hint) hint.textContent = 'Render map to plot real GDELT GKG geocoded events';
+    if (threatMap) requestAnimationFrame(() => threatMap.resize());
 }
 
+// ============================================================================
+// Intelligence Node — aggregates real GDELT / GKG data for tactical metrics
+// ============================================================================
 async function runIntelNode() {
-    const query = document.getElementById('intelNodeQuery').value.trim() || 'military defense';
-    const status = document.getElementById('intelNodeQuery');
-    const btn = event.target;
+    const query = document.getElementById('intelNodeQuery').value.trim() || '("military" OR "defense" OR "conflict")';
+    const status = document.getElementById('intelRunStatus');
+    const btn = event && event.target;
     if (btn) btn.disabled = true;
-    document.getElementById('intelNodeQuery').innerHTML = '<span class="loading"></span> Running intelligence node...';
+    if (status) status.innerHTML = '<span class="loading"></span> Running GKG intelligence node...';
     try {
-        const rep = await api('/intel/node/run', {
+        const rep = await api('/gkg/pipeline/run', {
             method: 'POST',
-            body: JSON.stringify({ query: query, mode: 'geospatial', timespan: '1m' }),
+            body: JSON.stringify({ query: query, mode: 'events', timespan: '24h', maxrecords: 50, api_key: '' }),
         });
-        document.getElementById('intelSystemicImportance').textContent = rep.intelligence.systemic_importance;
-        document.getElementById('intelPropagationPotential').textContent = rep.intelligence.propagation_potential;
-        document.getElementById('intelMarketSensitivity').textContent = rep.intelligence.market_sensitivity;
-        document.getElementById('intelRunStatus').textContent = 'Done: ' + rep.intelligence.query + ' — ' + rep.intelligence.categories + ' categories analyzed';
+        if (status) status.textContent = 'GKG pull: ' + ((rep && rep.gkg && rep.gkg.total_events) || 0) +
+            ' fetched, ' + ((rep && rep.gkg && rep.gkg.events_written) || 0) + ' written';
     } catch (e) {
-        document.getElementById('intelRunStatus').textContent = 'Error: ' + (e.message || 'unknown');
-    } finally {
-        if (btn) btn.disabled = false;
+        if (status) status.textContent = 'Pipeline rate-limited, aggregating stored events: ' + (e.message || '');
     }
+    let events = [];
+    try {
+        const data = await api('/gkg/events?limit=250');
+        events = gkgEventsFrom(data && data.events);
+    } catch (e) {}
+    const m = computeIntelMetrics(events);
+    document.getElementById('intelSystemicImportance').textContent = m.systemic;
+    document.getElementById('intelPropagationPotential').textContent = m.propagation;
+    document.getElementById('intelMarketSensitivity').textContent = m.sensitivity;
+    if (status) status.textContent = 'Done: ' + query + ' — ' + m.total + ' events, ' + m.geoCoded +
+        ' geocoded, ' + m.negative + ' negative-tone threats analyzed';
 }
 
 function clearIntelNode() {
@@ -4048,18 +4423,8 @@ function clearIntelNode() {
     document.getElementById('intelSystemicImportance').textContent = '—';
     document.getElementById('intelPropagationPotential').textContent = '—';
     document.getElementById('intelMarketSensitivity').textContent = '—';
-    document.getElementById('intelRunStatus').textContent = '';
-}
-
-async function loadGdeltSnapshot() {
-    try {
-        const data = await api('/gdelt/snapshot');
-        document.getElementById('gdeltSnapshotBody').innerHTML = data.items.map((item, i) =>
-            `<tr><td>${item.timestamp}</td><td>${item.primary_actor}</td><td>${item.kinetic_reaction_code}</td><td>${item.target_field}</td><td>${item.tone_score}</td></tr>`
-        ).join('');
-    } catch (e) {
-        document.getElementById('gdeltSnapshotBody').innerHTML = '<tr><td colspan="4"><div class="empty-state">Snapshot unavailable: ' + (e.message || 'error') + '</div></td></tr>';
-    }
+    const status = document.getElementById('intelRunStatus');
+    if (status) status.textContent = '';
 }
 
 async function runGkgPipeline() {

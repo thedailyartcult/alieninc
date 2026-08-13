@@ -22,7 +22,7 @@ BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__
 if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
-from gkg_connector import GKGConnector, GKGConfig, GKGEvent, GKGEventType  # noqa: E402
+from gkg_connector import GKGConnector, GKGConfig, GKGEvent, GKGEventType, GKGConnectorFactory  # noqa: E402
 from transform_gdelt_to_ontology import (  # noqa: E402
     GDELTTransformEngine,
     OntologyLayer,
@@ -109,7 +109,7 @@ async def _run_pipeline(config: PipelineConfig) -> dict:
         for event in gkg_events:
             writeback_records.append({
                 "event_code": event.event_code,
-                "event_type": event.event_code,  # reuse code as type for now
+                "event_type": event.event_type.name if event.event_type else event.event_code,
                 "action_geo": json.dumps(event.action_geo),
                 "avg_tone": event.avg_tone,
                 "num_articles": event.num_articles,
@@ -128,7 +128,7 @@ async def _run_pipeline(config: PipelineConfig) -> dict:
             country = event.action_geo.get("country", "")
             if country:
                 actor_records.append({
-                    "name": event.event_code,  # reuse event code as placeholder actor name
+                    "name": event.event_type.name if event.event_type else event.event_code,
                     "actor_type": event.event_type.value if event.event_type else "unknown",
                     "country": country,
                     "type": "gkg_actor",

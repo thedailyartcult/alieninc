@@ -68,7 +68,7 @@ class GKGConfig:
     timespan: str = "1m"
     maxrecords: int = 250
     api_key: str = ""
-    base_url: str = "https://api.gdeltproject.org/api/v2/events"
+    base_url: str = "https://api.gdeltproject.org/api/v2/doc"
 
 
 class GKGConnector:
@@ -78,12 +78,13 @@ class GKGConnector:
         self.config = config
 
     async def _build_request(self) -> Dict[str, Any]:
-        """Construct a GDELT Events API request payload."""
+        """Construct a GDELT DOC 2.0 API request payload."""
         payload: Dict[str, Any] = {
             "query": self.config.query,
             "timespan": self.config.timespan,
             "maxrecords": self.config.maxrecords,
-            "format": "V2",
+            "format": "json",
+            "mode": "artlist",
         }
         if self.config.api_key:
             payload["api_key"] = self.config.api_key
@@ -99,7 +100,7 @@ class GKGConnector:
         max_backoff = 60000
         jitter = 0.3
 
-        session = await self._get_shared_session()
+        session = await GKGConnectorFactory.create_session()
         last_exc: Optional[Exception] = None
         for attempt in range(max_retries + 1):
             try:
@@ -140,11 +141,29 @@ class GKGConnector:
 
         raise Exception(f"GDELT Events request failed after {max_retries + 1} attempts: {last_exc}")
 
+    @staticmethod
+    def _cameo_for_tone(tone_raw: Any) -> tuple[str, str]:
+        """Coarse CAMEO bucket derived from article tone.
+
+        The classic GDELT Events API (which supplied native CAMEO codes) is
+        retired (404 since 2026); DOC 2.0 articles carry tone but no codes, so
+        we bucket by tone to keep event_type/actor names meaningful.
+        """
+        try:
+            tone = float(tone_raw or 0)
+        except (TypeError, ValueError):
+            tone = 0.0
+        if tone < -5:
+            return "3010", "3010"
+        if tone < -1:
+            return "2010", "2010"
+        if tone > 1:
+            return "5010", "5010"
+        return "4010", "4010"
+
     def _parse_gkg_event(self, raw: Dict[str, Any]) -> GKGEvent:
-        """Parse raw GDELT Events API response into GKGEvent."""
-        # Extract event codes
-        event_root_code = raw.get("EventRootCode", "9999")
-        event_code = raw.get("EventCode", "9999")
+        """Parse raw GDELT DOC 2.0 article record into GKGEvent."""
+        event_root_code, event_code = self._cameo_for_tone(raw.get("tone", ""))
 
         # Map to CAMEO types
         try:
@@ -152,43 +171,50 @@ class GKGConnector:
         except ValueError:
             event_type = GKGEventType.UNKNOWN
 
-        # Extract geospatial data
-        action_geo = raw.get("ActionGeo", {})
-        globe = action_geo.get("GLOBE", {})
-        location = {
-            "latitude": globe.get("latitude"),
-            "longitude": globe.get("longitude"),
-            "country": globe.get("country"),
-            "city": globe.get("city"),
-        }
+        # Extract geospatial data from the article's first resolved location
+        action_geo: Dict[str, Any] = {}
+        locations = raw.get("locations") or []
+        if locations:
+            loc = locations[0]
+            action_geo = {
+                "latitude": loc.get("lat"),
+                "longitude": loc.get("lon"),
+                "country": loc.get("countrycode", ""),
+                "city": loc.get("name", ""),
+            }
 
-        # Extract tone
-        avg_tone = raw.get("AvgTone", 0)
+        # Extract tone (DOC JSON carries it as a string)
+        try:
+            avg_tone = float(raw.get("tone") or 0)
+        except (TypeError, ValueError):
+            avg_tone = 0.0
 
-        # Extract article count
-        num_articles = raw.get("NumArticles", 0)
+        # DOC records are single articles; treat each as one event
+        num_articles = 1
 
-        # Extract event date
-        event_date = raw.get("EventDate", "")
+        # Extract event date (YYYYMMDDHHMMSS)
+        event_date = raw.get("seendate", "")
 
         # Build guid
-        guid = str(uuid.uuid5(uuid.NAMESPACE_URL, raw.get("EventID", "unknown")))
+        url = raw.get("url", "")
+        guid = str(uuid.uuid5(uuid.NAMESPACE_URL, url or raw.get("title", "unknown")))
 
         return GKGEvent(
             guid=guid,
             event_root_code=event_root_code,
             event_code=event_code,
             event_type=event_type,
-            action_geo=location,
-            source_event_id=raw.get("EventID", ""),
+            action_geo=action_geo,
+            source_event_id=raw.get("guid", ""),
             event_date=event_date,
             avg_tone=avg_tone,
             num_articles=num_articles,
+            source_url=url,
         )
 
     async def pull(self) -> List[GKGEvent]:
-        """Pull GDELT Events API data and return parsed GKGEvents."""
-        url = f"{self.config.base_url}/events"
+        """Pull GDELT DOC 2.0 article data and return parsed GKGEvents."""
+        url = f"{self.config.base_url}/doc"
         headers: Dict[str, str] = {}
         if self.config.api_key:
             headers["Authorization"] = f"Bearer {self.config.api_key}"
@@ -196,7 +222,7 @@ class GKGConnector:
         payload = await self._build_request()
         raw_data = await self._request_with_retry(url, headers=headers, params=payload)
 
-        events_raw = raw_data.get("events", []) or []
+        events_raw = raw_data.get("articles", []) or []
         gkg_events: List[GKGEvent] = []
 
         for raw in events_raw:

@@ -15,6 +15,7 @@ import json
 import logging
 import os
 import sys
+import uuid
 from datetime import datetime, timezone
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import JSONResponse
@@ -109,7 +110,18 @@ def _load_osv2_store() -> dict:
         return {}
     try:
         with open(_STORE_PATH, encoding="utf-8") as fh:
-            return json.load(fh)
+            data = json.load(fh)
+        # Prune the legacy actor node created when actor records carried neither
+        # guid nor url (every actor collapsed onto uuid5("unknown")). Those
+        # guids are meaningless; drop them so the store reflects real actors.
+        legacy_actor_guid = str(uuid.uuid5(uuid.NAMESPACE_URL, "unknown"))
+        pruned = {
+            k: v for k, v in data.items()
+            if not (v.get("type") == "gkg_actor" and k == legacy_actor_guid)
+        }
+        if len(pruned) != len(data):
+            logger.info("Pruned %s legacy collapsed actor node(s) from store", len(data) - len(pruned))
+        return pruned
     except (OSError, json.JSONDecodeError):
         logger.warning("gkg_osv2_store.json unreadable; starting with empty store")
         return {}
@@ -168,24 +180,38 @@ async def _run_pipeline(config: PipelineConfig) -> dict:
 
         result = await writeback_pipeline._writeback_batch(writeback_records, {})
 
-        # Also extract actors from events and writeback
-        # (simple extraction: event codes can imply actor types)
+        # Also extract actors from events and writeback.
+        # Actor identity is derived deterministically from (name, country, type)
+        # so the same actor merges across runs while distinct actors map to
+        # distinct OSv2 nodes. The writeback service falls back to
+        # uuid5(NAMESPACE_URL, url-or-"unknown") when a record carries neither
+        # guid nor url — which made every actor collapse into ONE node; an
+        # explicit guid here fixes that.
         actor_records = []
         for event in gkg_events:
             # Extract country from action_geo if available
             country = event.action_geo.get("country", "")
-            if country:
-                actor_records.append({
-                    "name": event.event_type.name if event.event_type else event.event_code,
-                    "actor_type": event.event_type.value if event.event_type else "unknown",
-                    "country": country,
-                    "type": "gkg_actor",
-                })
+            etype = event.event_type if event.event_type else GKGEventType.UNKNOWN
+            name = f"{country} {etype.name}".strip() if country else etype.name
+            actor_guid = str(uuid.uuid5(
+                uuid.NAMESPACE_URL, f"gkg_actor:{name}:{etype.value}:{country}"
+            ))
+            actor_records.append({
+                "guid": actor_guid,
+                "name": name,
+                "actor_type": etype.value,
+                "country": country,
+                "type": "gkg_actor",
+            })
 
         if actor_records:
             result2 = await writeback_pipeline._writeback_batch(actor_records, {})
         else:
             result2 = {"success_count": 0, "failure_count": 0, "transaction_id": ""}
+
+        # Report the number of DISTINCT actor nodes actually stored, not the raw
+        # record count (records are deduped onto shared actor nodes).
+        unique_actors = len({r["guid"] for r in actor_records}) if actor_records else 0
 
         report = {
             "phase": "complete",
@@ -193,7 +219,7 @@ async def _run_pipeline(config: PipelineConfig) -> dict:
                 "total_events": len(gkg_events),
                 "events_written": _write_count(result),
                 "actor_records": len(actor_records),
-                "actors_written": _write_count(result2),
+                "actors_written": min(_write_count(result2), unique_actors),
             },
             "ontology": {
                 "object_type_count": len(ontology.object_types),

@@ -150,12 +150,19 @@ async def _run_pipeline(config: PipelineConfig) -> dict:
         for event in gkg_events:
             writeback_records.append({
                 "event_code": event.event_code,
+                "event_root_code": event.event_root_code,
                 "event_type": event.event_type.name if event.event_type else event.event_code,
                 "action_geo": json.dumps(event.action_geo),
                 "avg_tone": event.avg_tone,
                 "num_articles": event.num_articles,
                 "event_date": event.event_date,
                 "guid": event.guid,
+                "url": event.source_url,
+                "title": event.title,
+                "sourcecountry": event.sourcecountry,
+                "domain": event.domain,
+                "language": event.language,
+                "seendate": event.event_date,
                 "type": "gkg_event",
             })
 

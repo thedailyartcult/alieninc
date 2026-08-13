@@ -1957,17 +1957,21 @@
                            </div>
                            <!-- Threat Map Tab Content -->
                            <div id="gdeltTabThreatMap" class="gdelt-tab-content">
-                               <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
-                                   <input id="threatMapQuery" type="text" placeholder='Search threat by keyword e.g. "military" OR "defense"' style="flex:1">
-                                   <select id="threatMapLayer" style="padding:4px 8px;font-size:12px;border:1px solid var(--border-light);border-radius:4px;background:var(--bg);color:var(--text);min-width:140px">
-                                       <option value="all">All Layers</option>
-                                       <option value="geospatial">Geospatial Spikes</option>
-                                       <option value="actors">Actor Networks</option>
-                                       <option value="tone">Tone Analysis</option>
-                                   </select>
-                                   <button class="btn btn-primary btn-sm" onclick="renderThreatMap()">Render Map</button>
-                                   <button class="btn btn-secondary btn-sm" onclick="clearThreatMap()">Clear</button>
-                               </div>
+                                <div id="threatPresetBar" style="display:none;gap:6px;align-items:center;margin-bottom:10px">
+                                    <span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;color:var(--text-muted)">Conflict presets:</span>
+                                    <span id="threatPresets"></span>
+                                </div>
+                                <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+                                    <input id="threatMapQuery" type="text" placeholder='Search threat by keyword e.g. "military" OR "defense"' style="flex:1">
+                                    <select id="threatMapLayer" style="padding:4px 8px;font-size:12px;border:1px solid var(--border-light);border-radius:4px;background:var(--bg);color:var(--text);min-width:140px">
+                                        <option value="all">All Layers</option>
+                                        <option value="geospatial">Geospatial Spikes</option>
+                                        <option value="actors">Actor Networks</option>
+                                        <option value="tone">Tone Analysis</option>
+                                    </select>
+                                    <button class="btn btn-primary btn-sm" onclick="renderThreatMap()">Render Map</button>
+                                    <button class="btn btn-secondary btn-sm" onclick="clearThreatMap()">Clear</button>
+                                </div>
                                <!-- CRITICAL EVENT MAPPER -->
                                <div class="card" style="margin-bottom:12px">
                                    <div class="card-header">
@@ -3182,7 +3186,7 @@ function loadPageData(page) {
         case 'sc-types': loadObjectTypes(); loadActionTypes(); break;
         case 'sc-objects': loadObjectTypeFilter(); loadObjects(); break;
         case 'sc-links': loadLinkTypes(); break;
-        case 'sc-gdelt': loadGdeltHealth(); loadGdeltSnapshot(); break;
+        case 'sc-gdelt': loadGdeltHealth(); loadGdeltSnapshot(); renderThreatPresets(); renderThreatMap(true); break;
         case 'yono-providers': loadProviders(); loadModels(); break;
         case 'yono-agents': loadAgents(); break;
         case 'yono-automations': loadAutomations(); break;
@@ -4354,13 +4358,129 @@ function parseActionGeo(obj) {
 
 function gkgEventsFrom(events) {
     return (events || []).filter(e => e && e.type === 'gkg_event');
-}
+ }
 
 function clamp01(v) { return Math.max(0, Math.min(1, v)); }
 
+// Build the conflict-presets chip row under the query bar.
+function renderThreatPresets() {
+    const bar = document.getElementById('threatPresetBar');
+    if (!bar) return;
+    const box = document.getElementById('threatPresets');
+    if (!box) return;
+    if (!box.innerHTML.trim()) {
+        box.innerHTML = QUERY_PRESETS.map(p =>
+            '<button type="button" onclick="applyThreatPreset(' + JSON.stringify(p.name) + ')" style="font-family:var(--font-mono);font-size:10px;padding:2px 8px;border:1px solid var(--border-light);border-radius:4px;background:var(--bg-card);color:' + p.color + ';cursor:pointer">' + p.name + '</button>'
+        ).join('');
+        bar.style.display = 'flex';
+        requestAnimationFrame(() => { if (threatMap) threatMap.resize(); });
+    }
+}
+
+function applyThreatPreset(name, query, intent) {
+    const preset = QUERY_PRESETS.find(p => p.name === name) || {};
+    if (!query) query = preset.query;
+    if (!intent) intent = preset.intent || queryIntent(query);
+    threatQueryIntent = intent;
+    threat3dEnabled = true; // keep 3D on so buildings show at conflict cities
+    const btn = document.getElementById('threat3dToggle');
+    if (btn) btn.className = 'retro-map-btn retro-map-btn-active';
+    document.getElementById('threatMapQuery').value = query;
+    renderThreatMap();
+}
+
+// --- Conflict classification & query presets --------------------------------
+// GDELT DOC 2.0 article JSON no longer exposes a per-article tone value, so the
+// previous "threat = negative tone" logic always reported 0 active threats.
+// DOC headlines are in the article's local language and GDELT matches queries
+// against its machine-translated index, so headline keyword matching is
+// unreliable. Instead we use the active QUERY as the classifier: coverage
+// pulled by a conflict/terror/protest query is conflict-relevant by
+// construction. Tone is still used when available; headline keywords are the
+// last-resort fallback.
+const CONFLICT_KEYWORDS = {
+    violence: ["attack", "airstrike", "assault", "bomb", "explosion", "killed", "kill",
+               "dead", "death", "offensive", "raid", "shelling", "strike", "battle",
+               "war", "fighting", "clash", "combat", "gunfire", "ambush", "terrorist",
+               "terror", "insurgent", "militant", "hostage", "siege", "massacre"],
+    coerce: ["sanction", "embargo", "coerce", "threat", "ultimatum", "blackmail"],
+    protest: ["protest", "protests", "demonstration", "demonstrations", "rally",
+              "march", "riot", "unrest", "uprising", "sit-in"],
+    arrest: ["arrest", "detain", "deport", "arrests", "extradite", "exile"],
+};
+
+// Preset query buttons (GDELT DOC 2.0 query operators, per GDELTProjectInstruction manual).
+const QUERY_PRESETS = [
+    { name: "Conflicts", query: '("military" OR "war" OR "battle" OR "conflict" OR "offensive")', intent: "attack", color: "var(--red)" },
+    { name: "Terrorism", query: '(theme:TERROR OR "terrorist" OR "insurgent" OR "militant")', intent: "attack", color: "var(--red)" },
+    { name: "Attacks",   query: '(theme:ATTACK OR ("airstrike" OR "bomb" OR "explosion" OR "killed"))', intent: "attack", color: "var(--orange)" },
+    { name: "Protests",  query: '("protest" OR "demonstration" OR "unrest" OR theme:PROTEST)', intent: "protest", color: "var(--amber)" },
+    { name: "Negative",  query: "tone<-5", intent: "attack", color: "var(--orange)" },
+];
+
+let threatQueryIntent = null; // set by presets / inferred in renderThreatMap
+
+function queryIntent(query) {
+    const q = (query || "").toLowerCase();
+    if (!q) return null;
+    // tone<-N queries select negative-tone coverage; DOC has no per-article tone
+    // value to read back, but the query itself guarantees negative framing, so
+    // we treat the batch as threat-level 'attack'.
+    if (/tone<-/.test(q)) return "attack";
+    if (/tone>/.test(q)) return "protest";
+    if (/(theme:terror|terrorist|insurgent|militant|airstrike|bomb|attack|battlefield|offensive|combat|siege|weapon|troop|conflict|war)/.test(q)) return "attack";
+    if (/(theme:protest|protest|demonstration|march|riot|unrest|uprising)/.test(q)) return "protest";
+    return null;
+}
+
+// Classify an event's threat level. The active query intent is used first
+// (query == classifier, since DOC 2.0 has no per-article tone/theme); tone is
+// used when present; headline keywords are the last fallback.
+function classifyEvent(ev) {
+    if (threatQueryIntent === "attack") return "red";
+    if (threatQueryIntent === "protest") return "amber";
+    const tone = parseFloat(ev.avg_tone);
+    if (!isNaN(tone)) {
+        if (tone < -5) return "red";
+        if (tone < 0) return "amber";
+    }
+    const title = (ev.title || "").toLowerCase();
+    const evt = (ev.event_type || "").toLowerCase();
+    const hay = title + " " + evt;
+    if (hay.trim()) {
+        for (const w of CONFLICT_KEYWORDS.violence) if (hay.includes(w)) return "red";
+        for (const w of CONFLICT_KEYWORDS.coerce) if (hay.includes(w)) return "amber";
+        for (const w of CONFLICT_KEYWORDS.protest) if (hay.includes(w)) return "amber";
+        for (const w of CONFLICT_KEYWORDS.arrest) if (hay.includes(w)) return "amber";
+    }
+    return "green";
+}
+
+// Threat tier for an event, honoring tone first then headline classification.
+function threatLevelForEvent(ev) {
+    return classifyEvent(ev);
+}
+
+// Extract searchable bare terms from a GDELT DOC query (strip operators/quotes).
+function queryTerms(query) {
+    const q = (query || "").toLowerCase();
+    if (!q) return [];
+    const ops = q.replace(/\b(theme|sourcecountry|sourcelang|domain|domainis|tone|sourcelang|sort|mode|format|timespan|maxrecords|startdatetime|enddatetime|timelinesmooth|near|repeat|imagetag|imagewebtag|imagewebcount|imagefacetone|imagenumfaces|imageocrmeta|trans|googtrans|date)\b:[^\s]+/gi, " ");
+    const cleaned = ops.replace(/[\(\)"\-\*<>]/g, " ");
+    return Array.from(new Set(cleaned.split(/\s+/).filter(t => t.length > 2)));
+}
+
+// Does a stored event match the current query (term OR, case-insensitive on title/domain/country/event_type)?
+function matchesQuery(ev, terms, query) {
+    if (!terms || !terms.length) return true;
+    const hay = [ev.title, ev.domain, ev.sourcecountry, ev.event_type, ev.url].join(" ").toLowerCase();
+    return terms.some(t => hay.includes(t));
+}
+
 function computeIntelMetrics(events) {
     const geoCoded = events.filter(e => parseActionGeo(e));
-    const neg = events.filter(e => e.avg_tone != null && e.avg_tone < 0);
+    const threatEvents = events.filter(e => { const t = threatLevelForEvent(e); return t === 'red' || t === 'amber'; });
+    const red = events.filter(e => threatLevelForEvent(e) === 'red');
     const total = events.length || 1;
     const articles = events.reduce((s, e) => s + (parseFloat(e.num_articles) || 0), 0);
     let geoSpread = 0;
@@ -4370,7 +4490,7 @@ function computeIntelMetrics(events) {
         geoSpread = Math.min(1, (Math.max(...lats) - Math.min(...lats) + Math.max(...lngs) - Math.min(...lngs)) / 180);
     }
     const toneMean = events.length ? events.reduce((s, e) => s + (parseFloat(e.avg_tone) || 0), 0) / events.length : 0;
-    const systemic = clamp01(0.15 + 0.6 * (neg.length / total) + 0.25 * Math.min(1, events.length / 25));
+    const systemic = clamp01(0.15 + 0.6 * (threatEvents.length / total) + 0.25 * Math.min(1, events.length / 25));
     const propagation = clamp01(0.15 + 0.5 * Math.min(1, events.length / 20) + 0.35 * geoSpread);
     const sensitivity = clamp01(0.15 + 0.55 * Math.min(1, articles / 800) + 0.3 * Math.min(1, Math.abs(toneMean) / 10));
     return {
@@ -4379,7 +4499,8 @@ function computeIntelMetrics(events) {
         sensitivity: sensitivity.toFixed(2),
         total: events.length,
         geoCoded: geoCoded.length,
-        negative: neg.length,
+        negative: threatEvents.length,
+        red: red.length,
         articles: Math.round(articles),
     };
 }
@@ -4405,9 +4526,12 @@ function fitThreatBounds() {
     threatMap.fitBounds([[b.minX, b.minY], [b.maxX, b.maxY]], { padding: 60, maxZoom: 8, duration: 1200 });
 }
 
-async function renderThreatMap() {
+async function renderThreatMap(auto) {
     const query = document.getElementById('threatMapQuery').value.trim() || '("military" OR "defense" OR "conflict")';
     const layer = document.getElementById('threatMapLayer').value;
+    // Infer threat intent from the query so markers/tables/threat count reflect
+    // conflict coverage even on the default "Render Map" action.
+    threatQueryIntent = queryIntent(query);
     const map = initThreatMap();
     const hudMeta = document.getElementById('threatMapHudMeta');
     const hint = document.getElementById('threatMapHint');
@@ -4421,7 +4545,11 @@ async function renderThreatMap() {
         data = { events: [] };
     }
     let events = gkgEventsFrom(data && data.events);
-    if (!events.length) {
+    // Stored events are query-agnostic (DOC headlines are multi-language, so we
+    // do not keyword-filter the store). The query box drives fresh pipeline
+    // pulls (below) and the threat-intent coloring, while the Layer dropdown
+    // filters what is plotted from the store.
+    if (!events.length && !auto) {
         const st = await startGkgPipeline({ query: query, mode: 'events', timespan: '24h', maxrecords: 50, api_key: '' }, (s) => {
             if (!hudMeta) return;
             if (s.status === 'running') {
@@ -4441,6 +4569,9 @@ async function renderThreatMap() {
         if (hudMeta) hudMeta.textContent = events.length
             ? 'Loaded ' + events.length + ' events from GDELT'
             : 'No geocoded events yet — run the GKG pipeline';
+    } else if (!events.length && auto) {
+        if (hudMeta) hudMeta.textContent = 'No events stored yet — click "Render Map" to pull GDELT GKG coverage, or pick a conflict preset';
+        if (hint) hint.textContent = 'No stored events. Use the presets above to seed a conflict search.';
     }
     threatMapEvents = events;
 
@@ -4457,8 +4588,8 @@ async function renderThreatMap() {
     document.getElementById('metricMarketSensitivity').textContent = m.sensitivity;
     document.getElementById('threatMapEventCount').textContent = m.geoCoded;
     document.getElementById('threatMapThreatCount').textContent = m.negative;
-    if (hudMeta) hudMeta.textContent = filtered.length + ' events analyzed · ' + m.geoCoded + ' geocoded · layer: ' + layer;
-    if (hint) hint.textContent = m.geoCoded ? m.geoCoded + ' threat markers plotted' : 'No geocoded events yet — run the GKG pipeline';
+    if (hudMeta) hudMeta.textContent = filtered.length + ' events analyzed · ' + m.geoCoded + ' geocoded · ' + m.negative + ' active threats · layer: ' + layer;
+    if (hint) hint.textContent = m.geoCoded ? (m.negative ? m.negative + ' conflict markers plotted' : m.geoCoded + ' markers plotted') : 'No geocoded events — run the GKG pipeline';
     requestAnimationFrame(() => { if (threatMap) threatMap.resize(); });
     if (filtered.length) fitThreatBounds();
 }
@@ -4469,16 +4600,18 @@ function renderThreatMarkers(events) {
     events.forEach(ev => {
         const geo = parseActionGeo(ev);
         if (!geo) return;
-        const tone = threatLevelForTone(ev.avg_tone);
+        const tone = threatLevelForEvent(ev);
         const el = document.createElement('div');
         el.className = 'retro-map-node-marker tone-' + tone;
         el.innerHTML =
             '<div class="retro-map-marker-tag">CAMEO ' + (ev.event_code || '?') + ' · ' + geo.latitude.toFixed(1) + ',' + geo.longitude.toFixed(1) + '</div>' +
             '<div class="retro-map-marker-line"></div><div class="retro-map-marker-glow"></div>';
         const popup = new maplibregl.Popup({ closeButton: false, offset: 8 }).setHTML(
-            '<b>' + THREAT_LABEL[tone] + '</b> · CAMEO ' + (ev.event_code || '?') +
-            '<br>THREAT_LEVEL: ' + THREAT_LABEL[tone] +
+            '<b>' + THREAT_LABEL[tone] + '</b> · CAMEO ' + (ev.event_code || '?') + ' · ' + (ev.event_type || '') +
             '<br>TONE: ' + (ev.avg_tone != null ? Number(ev.avg_tone).toFixed(2) : 'n/a') +
+            '<br>COUNTRY: ' + (geo.country || '-') +
+            '<br>TITLE: ' + (ev.title ? (ev.title.length > 90 ? ev.title.slice(0, 90) + '…' : ev.title) : ' — ') +
+            '<br>SOURCE: ' + (ev.domain || '-') +
             '<br>ARTICLES: ' + (ev.num_articles || 0) +
             '<br>DATE: ' + (ev.event_date || '') +
             '<br>COORD: [' + geo.latitude + ', ' + geo.longitude + ']'
@@ -4500,13 +4633,18 @@ function renderThreatTables(events) {
     }
     mapper.innerHTML = events.slice(0, 25).map(ev => {
         const geo = parseActionGeo(ev);
-        const tone = threatLevelForTone(ev.avg_tone);
+        const tone = threatLevelForEvent(ev);
         const coord = geo ? '[' + geo.latitude + ', ' + geo.longitude + ']' : '[no geo]';
         const color = tone === 'red' ? 'var(--red)' : tone === 'amber' ? 'var(--amber)' : 'var(--green)';
+        const threat = THREAT_LABEL[tone];
+        const label = ev.event_type || 'GDELT';
         return '<div style="margin-bottom:2px"><span class="coordinate" style="color:' + color + '">' + coord +
-            ' // THREAT_LEVEL: ' + THREAT_LABEL[tone] + ' — CAMEO: ' + (ev.event_code || '?') + '</span></div>';
+            ' // ' + threat + ' ' + label + ' ' + (ev.event_code || '') +
+            (ev.sourcecountry ? ' (' + ev.sourcecountry + ')' : '') + '</span>' +
+            (ev.title ? '<div style="font-size:10px;color:var(--text-muted)">' + (ev.title.length > 120 ? ev.title.slice(0, 120) + '…' : ev.title) + '</div>' : '') +
+            '</div>';
     }).join('') +
-    '<div style="margin-top:6px;font-size:9px;color:var(--text-muted)">Target: Actor1 -> Action: ' + (events[0] ? events[0].event_code : '?') + ' -> Receiver: Actor2</div>';
+    '<div style="margin-top:6px;font-size:9px;color:var(--text-muted)">Showing top ' + Math.min(25, events.length) + ' of ' + events.length + ' events · Threat: ' + events.filter(e=>threatLevelForEvent(e)!=='green').length + ' active</div>';
 
     matrix.innerHTML = events.slice(0, 50).map(ev => {
         const geo = parseActionGeo(ev);
@@ -4532,6 +4670,7 @@ function renderThreatTables(events) {
 function clearThreatMap() {
     clearMapMarkers();
     threatMapEvents = [];
+    threatQueryIntent = null;
     document.getElementById('threatEventMap').innerHTML = '<div class="empty-state">Render threat map to see geocoded security spikes with CAMEO actor codes</div>';
     document.getElementById('linkMatrixBody').innerHTML = '<tr><td colspan="5"><div class="empty-state">No threat events loaded. Run a search or add an event.</div></td></tr>';
     document.getElementById('actorMapBody').innerHTML = '<tr><td colspan="4"><div class="empty-state">No actor data loaded</div></td></tr>';
@@ -4595,7 +4734,7 @@ async function runIntelNode() {
     document.getElementById('intelMarketSensitivity').textContent = m.sensitivity;
     const errNote = st && st.error ? ' [' + st.error + ']' : '';
     if (status) status.textContent = 'Done: ' + query + ' — ' + m.total + ' events, ' + m.geoCoded +
-        ' geocoded, ' + m.negative + ' negative-tone threats analyzed' + errNote;
+        ' geocoded, ' + m.negative + ' active threats (' + m.red + ' red threat / ' + (m.total - m.negative) + ' green)' + errNote;
     if (btn) btn.disabled = false;
 }
 
@@ -4638,7 +4777,8 @@ const HELP_BUTTONS = {
     'runNgramAnalysis': 'Analyze keyword frequency and confidence via the GDELT Ngram API.',
     'addActorEvent': 'Register a manual actor event (CAMEO code, source, target, country) into the actor graph.',
     'loadActorGraph': 'Load the current actor graph from the store and refresh the graph table.',
-    'renderThreatMap': 'Plot geolocated GKG events as threat markers on the global map (tone < -5 = red, < 0 = amber, else green). Auto-runs the GKG pipeline when no events are stored.',
+    'renderThreatMap': 'Plot geolocated GKG events as conflict markers on the global 3D map. The query box accepts GDELT DOC 2.0 operators (quotes, (a OR b), theme:TERROR, tone<-5, sourcecountry:). Marker color = threat level: RED = attack/conflict, AMBER = protests/coercion, GREEN = neutral. Counts stored events immediately on the GDELT tab; click "Render Map" to auto-run a fresh pull when none are stored.',
+    'applyThreatPreset': 'Apply a conflict preset query (Conflicts / Terrorism / Attacks / Protests / Negative) and render. Each preset uses GDELT DOC 2.0 query operators documented in gdelt/gdeltprojectinstruction.html.',
     'clearThreatMap': 'Remove all markers from the map and reset the HUD counters.',
     'resetMapView': 'Reset the map to the global world view.',
     'fitThreatBounds': 'Zoom the map to fit all currently plotted threat markers.',

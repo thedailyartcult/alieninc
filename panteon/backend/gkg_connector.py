@@ -58,6 +58,10 @@ class GKGEvent:
     num_media_files: int = 0
     num_sources: int = 0
     source_url: str = ""
+    title: str = ""
+    domain: str = ""
+    sourcecountry: str = ""
+    language: str = ""
     translated_text: str = ""
 
 
@@ -125,6 +129,20 @@ class GKGConnector:
                     if resp.status >= 400:
                         body = await resp.text()
                         raise Exception(f"HTTP {resp.status}: {body}")
+                    # GDELT occasionally returns its "please limit requests" landing
+                    # page with HTTP 200 + text/html when rate-limited; detect that
+                    # so the backoff/retry kicks in instead of failing on JSON parse.
+                    ctype = resp.headers.get("Content-Type", "")
+                    if "json" not in ctype:
+                        raw_body = await resp.text()
+                        if "limit requests" in raw_body.lower() or "rate" in raw_body.lower():
+                            last_exc = Exception("HTTP 200 rate-limit landing page (GDELT ~1 req/5s)")
+                            backoff = base_backoff * (2 ** attempt) * (1 + jitter * (attempt / max_retries))
+                            backoff = min(backoff, max_backoff)
+                            logger.warning(f"GDELT returning rate-limit page, retrying in {backoff/1000:.1f}s")
+                            await asyncio.sleep(backoff / 1000)
+                            continue
+                        raise Exception(f"Non-JSON GDELT response (Content-Type={ctype}): {raw_body[:200]}")
                     data = await resp.json()
                     return data
             except asyncio.TimeoutError as exc:
@@ -313,28 +331,73 @@ class GKGConnector:
         return {"latitude": coord[0], "longitude": coord[1], "country": key}
 
     @staticmethod
-    def _cameo_for_tone(tone_raw: Any) -> tuple[str, str]:
-        """Coarse CAMEO bucket derived from article tone.
+    def _cameo_for_tone(tone_raw: Any, title: str = "") -> tuple[str, str]:
+        """Coarse CAMEO bucket derived from article tone, with a title keyword
+        fallback for the tone.
 
         The classic GDELT Events API (which supplied native CAMEO codes) is
-        retired (404 since 2026); DOC 2.0 articles carry tone but no codes, so
-        we bucket by tone to keep event_type/actor names meaningful.
+        retired (404 since 2026); DOC 2.0 article JSON carries no tone value and
+        no native CAMEO codes, so we bucket by tone when it is meaningful and
+        otherwise classify the article headline into a conflict-relevant CAMEO
+        family so the threat map can surface real security events.
+
+        CAMEO buckets: 3010 = Attack, 2010 = Demonstrations, 3041 = Protest
+        engagement, 3230 = Demonstrate force, 4010 = Propaganda/Neutral.
         """
         try:
             tone = float(tone_raw or 0)
         except (TypeError, ValueError):
             tone = 0.0
         if tone < -5:
-            return "3010", "3010"
+            return "3010", "3010"  # Attack
         if tone < -1:
-            return "2010", "2010"
+            return "2010", "2010"  # Demonstrate
         if tone > 1:
-            return "5010", "5010"
+            return "5010", "5010"  # Neutral positive
+        # No usable tone from DOC 2.0 -> classify the headline instead.
+        code, _ = GKGConnector._classify_title(title)
+        return code, code
+
+    # Keyword families keyed to CAMEO event codes. Ordered most-threat first.
+    _TITLE_KEYWORDS = {
+        "3010": ["attack", "airstrike", "assault", "bomb", "explosion", "killed",
+                  "kill", "dead", "death", "offensive", "raid", "shelling",
+                  "strike", "battle", "war", "fighting", "clash", "combat",
+                  "gunfire", "ambush", "terrorist", "terror", "insurgent",
+                  "militant", "court", "hostage", "siege", "massacre"],
+        "3041": ["protest", "protests", "demonstration", "demonstrations",
+                  "rally", "march", "riot", "unrest", "uprising", "sit-in"],
+        "3230": ["sanction", "embargo", "coerce", "coercion", "threat",
+                  "ultimatum", "demand", "warn", "blackmail"],
+        "3001": ["arrest", "detain", "deport", "deportation", "arrests",
+                  "extradite", "exile"],
+        "5010": ["peace", "agreement", "ceasefire", "negotiation", "treaty",
+                  "dialogue", "summit", "diplomatic"],
+    }
+
+    @classmethod
+    def _classify_title(cls, title: str) -> tuple[str, str]:
+        """Classify an article headline into a CAMEO event code.
+
+        Returns (code, code). Falls back to 4010 (Propaganda) when no keyword
+        matches, or when the title is empty.
+        """
+        if not title:
+            return "4010", "4010"
+        lowered = title.lower()
+        for code in cls._TITLE_KEYWORDS:
+            for kw in cls._TITLE_KEYWORDS[code]:
+                if kw in lowered:
+                    return code, code
         return "4010", "4010"
 
     def _parse_gkg_event(self, raw: Dict[str, Any]) -> GKGEvent:
         """Parse raw GDELT DOC 2.0 article record into GKGEvent."""
-        event_root_code, event_code = self._cameo_for_tone(raw.get("tone", ""))
+        title = raw.get("title", "") or ""
+        # DOC 2.0 provides no per-article tone; classify from the headline so
+        # the threat map surfaces real conflict/security events instead of a
+        # flat PROPAGANDA bucket for everything.
+        event_root_code, event_code = self._cameo_for_tone(raw.get("tone", ""), title)
 
         # Map to CAMEO types
         try:
@@ -371,7 +434,7 @@ class GKGConnector:
         event_date = raw.get("seendate", "")
 
         # Build guid
-        url = raw.get("url", "")
+        url = raw.get("url", "") or raw.get("url_mobile", "")
         guid = str(uuid.uuid5(uuid.NAMESPACE_URL, url or raw.get("title", "unknown")))
 
         return GKGEvent(
@@ -385,6 +448,11 @@ class GKGConnector:
             avg_tone=avg_tone,
             num_articles=num_articles,
             source_url=url,
+            title=raw.get("title", "") or "",
+            domain=raw.get("domain", "") or "",
+            sourcecountry=raw.get("sourcecountry", "") or "",
+            language=raw.get("language", "") or "",
+            translated_text=raw.get("translated_text", "") or "",
         )
 
     async def pull(self) -> List[GKGEvent]:

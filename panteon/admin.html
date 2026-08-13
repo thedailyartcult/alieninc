@@ -705,6 +705,43 @@
             .topbar-title { display: none; }
             .topbar-title-divider { display: none; }
         }
+
+        /* GDELT Tab Styles */
+        .gdelt-tab {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            padding: 8px 16px;
+            font-size: 11px;
+            font-family: var(--font-tech);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+            transition: all 0.2s;
+        }
+        .gdelt-tab:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .gdelt-tab.active {
+            color: var(--accent-cyan);
+            background: var(--bg-card);
+            border-color: var(--border-hover);
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.1);
+        }
+        .gdelt-tab-content {
+            display: none;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0 4px 4px 4px;
+            padding: 20px;
+        }
+        .gdelt-tab-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -1203,42 +1240,141 @@
                  </div>
 
                  <div class="page" id="page-sc-gdelt">
-                     <div class="section">
-                         <div class="section-header">
-                             <span class="section-title">GDELT DOC 2.0 Pipeline</span>
-                             <div style="display:flex;gap:8px;align-items:center">
-                                 <span class="pulse-dot" id="gdeltHealthDot" style="width:10px;height:10px;border-radius:50%;background:#555;"></span>
-                                 <span class="mono" id="gdeltHealthText" style="font-size:12px">Health: …</span>
-                             </div>
-                         </div>
-                         <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
-                             <input id="gdeltQuery" type="text" placeholder='GDELT query e.g. ("military" OR "defense")' style="flex:1">
-                             <input id="gdeltTimespan" type="text" placeholder="timespan e.g. 1m" value="1m" style="width:110px">
-                             <input id="gdeltMax" type="number" min="1" max="250" value="50" style="width:80px">
-                             <button class="btn btn-primary btn-sm" onclick="runGdeltPipeline()">Run Pipeline</button>
-                             <button class="btn btn-secondary btn-sm" onclick="loadGdeltSnapshot()">Refresh Snapshot</button>
-                         </div>
-                         <div id="gdeltRunStatus" style="margin-bottom:12px;font-size:13px;color:#aaa"></div>
-                     </div>
-                     <div class="section">
-                         <div class="section-header"><span class="section-title">Ontology Snapshot</span></div>
-                         <div class="table-wrap">
-                             <table>
-                                 <thead><tr><th>Object Types</th><th>Link Types</th><th>Objects (OSv2)</th><th>Links (OSv2)</th></tr></thead>
-                                 <tbody id="gdeltSnapshotBody"><tr><td colspan="4"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody>
-                             </table>
-                         </div>
-                     </div>
-                     <div class="section">
-                         <div class="section-header"><span class="section-title">Objects (latest)</span></div>
-                         <div class="table-wrap">
-                             <table>
-                                 <thead><tr><th>Type</th><th>Title</th><th>Country</th><th>Seen</th><th>URL</th></tr></thead>
-                                 <tbody id="gdeltObjectsBody"><tr><td colspan="5"><div class="empty-state">No objects indexed yet.</div></td></tr></tbody>
-                             </table>
-                         </div>
-                     </div>
-                 </div>
+                      <div class="section">
+                          <div class="section-header">
+                              <span class="section-title">GDELT Intelligence Engine</span>
+                              <div style="display:flex;gap:8px;align-items:center">
+                                  <span class="pulse-dot" id="gdeltHealthDot" style="width:10px;height:10px;border-radius:50%;background:#555;"></span>
+                                  <span class="mono" id="gdeltHealthText" style="font-size:12px">Health: …</span>
+                              </div>
+                          </div>
+                          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
+                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">DOC 2.0 Modes</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:600;color:var(--accent-cyan)">8</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">artlist, art, imagecollage, timelinevol, tonechart, wordcloud*</div>
+                              </div>
+                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
+                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">GKG Events</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:600;color:var(--green)">CAMEO</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">Conflict, cooperation, verbal, material</div>
+                              </div>
+                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
+                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Ngram Analysis</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:600;color:var(--amber)">2</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">Context + Web keyword co-occurrence</div>
+                              </div>
+                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
+                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Actor Graph</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:600;color:var(--accent-purple)">6</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">Relationship types with subgraphs</div>
+                              </div>
+                          </div>
+                          <div style="margin-bottom:16px">
+                              <div style="display:flex;gap:4px;margin-bottom:12px">
+                                  <button class="gdelt-tab active" data-tab="doc2" onclick="switchGdeltTab('doc2')">DOC 2.0 Pipeline</button>
+                                  <button class="gdelt-tab" data-tab="gkg" onclick="switchGdeltTab('gkg')">GKG Events</button>
+                                  <button class="gdelt-tab" data-tab="ngram" onclick="switchGdeltTab('ngram')">Ngram Analysis</button>
+                                  <button class="gdelt-tab" data-tab="actor" onclick="switchGdeltTab('actor')">Actor Graph</button>
+                              </div>
+                              <div id="gdeltTabDoc2" class="gdelt-tab-content active">
+                                  <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+                                      <input id="gdeltQuery" type="text" placeholder='GDELT query e.g. ("military" OR "defense")' style="flex:1">
+                                      <input id="gdeltTimespan" type="text" placeholder="timespan e.g. 1m" value="1m" style="width:110px">
+                                      <select id="gdeltMode" style="padding:4px 8px;font-size:12px;border:1px solid var(--border-light);border-radius:4px;background:var(--bg);color:var(--text);min-width:140px">
+                                          <option value="artlist">artlist</option>
+                                          <option value="art">art</option>
+                                          <option value="imagecollage">imagecollage</option>
+                                          <option value="timelinevol">timelinevol</option>
+                                          <option value="tonechart">tonechart</option>
+                                          <option value="wordcloudenglish">wordcloudenglish</option>
+                                          <option value="wordcloudimagetags">wordcloudimagetags</option>
+                                          <option value="imagecollageshare">imagecollageshare</option>
+                                      </select>
+                                      <input id="gdeltMax" type="number" min="1" max="250" value="50" style="width:80px">
+                                      <button class="btn btn-primary btn-sm" onclick="runGdeltPipeline()">Run Pipeline</button>
+                                      <button class="btn btn-secondary btn-sm" onclick="loadGdeltSnapshot()">Refresh</button>
+                                  </div>
+                                  <div id="gdeltRunStatus" style="margin-bottom:12px;font-size:13px;color:#aaa"></div>
+                                  <div class="table-wrap">
+                                      <table>
+                                          <thead><tr><th>Object Types</th><th>Link Types</th><th>Objects (OSv2)</th><th>Links (OSv2)</th></tr></thead>
+                                          <tbody id="gdeltSnapshotBody"><tr><td colspan="4"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody>
+                                      </table>
+                                  </div>
+                              </div>
+                              <div id="gdeltTabGkg" class="gdelt-tab-content">
+                                  <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+                                      <input id="gkgQuery" type="text" placeholder='GKG query e.g. ("military" OR "conflict")' style="flex:1">
+                                      <input id="gkgTimespan" type="text" placeholder="timespan e.g. 24h" value="24h" style="width:110px">
+                                      <input id="gkgMax" type="number" min="1" max="250" value="50" style="width:80px">
+                                      <button class="btn btn-primary btn-sm" onclick="runGkgPipeline()">Run GKG</button>
+                                      <button class="btn btn-secondary btn-sm" onclick="loadGkgActors()">Load Actors</button>
+                                  </div>
+                                  <div id="gkgRunStatus" style="margin-bottom:12px;font-size:13px;color:#aaa"></div>
+                                  <div class="table-wrap">
+                                      <table>
+                                          <thead><tr><th>Event Code</th><th>Type</th><th>Country</th><th>Tone</th><th>Articles</th></tr></thead>
+                                          <tbody id="gkgEventsBody"><tr><td colspan="5"><div class="empty-state">No GKG events loaded yet.</div></td></tr></tbody>
+                                      </table>
+                                  </div>
+                              </div>
+                              <div id="gdeltTabNgram" class="gdelt-tab-content">
+                                  <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+                                      <input id="ngramKeyword" type="text" placeholder="Keyword e.g. military" style="flex:1">
+                                      <select id="ngramType" style="padding:4px 8px;font-size:12px;border:1px solid var(--border-light);border-radius:4px;background:var(--bg);color:var(--text);min-width:120px">
+                                          <option value="context">context</option>
+                                          <option value="web">web</option>
+                                      </select>
+                                      <input id="ngramTimespan" type="text" placeholder="timespan e.g. 30d" value="30d" style="width:110px">
+                                      <button class="btn btn-primary btn-sm" onclick="runNgramAnalysis()">Analyze</button>
+                                  </div>
+                                  <div id="ngramResult" style="margin-bottom:12px;font-size:13px;color:#aaa"></div>
+                                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                                      <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:16px">
+                                          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">Frequency</div>
+                                          <div id="ngramFrequency" style="font-family:var(--font-tech);font-size:24px;font-weight:600;color:var(--accent-cyan)">—</div>
+                                      </div>
+                                      <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:16px">
+                                          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">Confidence</div>
+                                          <div id="ngramConfidence" style="font-family:var(--font-tech);font-size:24px;font-weight:600;color:var(--accent-purple)">—</div>
+                                      </div>
+                                  </div>
+                                  <div style="margin-top:12px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:16px">
+                                      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">Correlation Keywords</div>
+                                      <div id="ngramCorrelations" style="font-size:12px;color:var(--text-muted)">—</div>
+                                  </div>
+                              </div>
+                              <div id="gdeltTabActor" class="gdelt-tab-content">
+                                  <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+                                      <input id="actorEventCode" type="text" placeholder="CAMEO code e.g. 3010" style="width:150px">
+                                      <input id="actorSource" type="text" placeholder="Source actor" style="flex:1">
+                                      <input id="actorTarget" type="text" placeholder="Target actor" style="flex:1">
+                                      <input id="actorCountry" type="text" placeholder="Country" style="width:120px">
+                                      <button class="btn btn-primary btn-sm" onclick="addActorEvent()">Add Event</button>
+                                      <button class="btn btn-secondary btn-sm" onclick="loadActorGraph()">Load Graph</button>
+                                  </div>
+                                  <div id="actorStatus" style="margin-bottom:12px;font-size:13px;color:#aaa"></div>
+                                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                                      <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:16px">
+                                          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">Total Actors</div>
+                                          <div id="actorCount" style="font-family:var(--font-tech);font-size:24px;font-weight:600;color:var(--accent-cyan)">0</div>
+                                      </div>
+                                      <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:16px">
+                                          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">Relationships</div>
+                                          <div id="actorRelations" style="font-family:var(--font-tech);font-size:24px;font-weight:600;color:var(--accent-purple)">0</div>
+                                      </div>
+                                  </div>
+                                  <div style="margin-top:12px" class="table-wrap">
+                                      <table>
+                                          <thead><tr><th>Actor</th><th>Type</th><th>Country</th><th>Relations</th></tr></thead>
+                                          <tbody id="actorTableBody"><tr><td colspan="4"><div class="empty-state">No actors loaded yet.</div></td></tr></tbody>
+                                      </table>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
 
                  <div class="page" id="page-yono-providers">
                     <div class="section">
@@ -3197,7 +3333,7 @@ async function loadGdeltHealth() {
     const dot = document.getElementById('gdeltHealthDot');
     const txt = document.getElementById('gdeltHealthText');
     try {
-        const h = await api('/spinal-cracker/gdelt/health');
+        const h = await api('/gdelt/health');
         dot.style.background = '#22c54e';
         txt.textContent = 'Health: ' + (h.status || 'ok') + ' · GDELT DOC 2.0 feed';
     } catch (e) {
@@ -3208,7 +3344,7 @@ async function loadGdeltHealth() {
 
 async function loadGdeltSnapshot() {
     try {
-        const snap = await api('/spinal-cracker/gdelt/ontology/snapshot');
+        const snap = await api('/gdelt/ontology/snapshot');
         const body = document.getElementById('gdeltSnapshotBody');
         body.innerHTML = '<tr><td>' + (snap.object_types ? Object.keys(snap.object_types).length : 0) +
             '</td><td>' + (snap.link_types ? Object.keys(snap.link_types).length : 0) +
@@ -3216,19 +3352,6 @@ async function loadGdeltSnapshot() {
     } catch (e) {
         document.getElementById('gdeltSnapshotBody').innerHTML =
             '<tr><td colspan="4"><div class="empty-state">Snapshot unavailable: ' + (e.message || 'error') + '</div></td></tr>';
-    }
-    try {
-        const body = document.getElementById('gdeltObjectsBody');
-        // v2 API does not expose a raw /objects endpoint; use ontology snapshot data
-        body.innerHTML = '<tr><td colspan="5"><div class="empty-state">Object details not yet available via v2 API; showing snapshot.</div></td></tr>';
-        // optionally surface snapshot counts
-        if (snap && snap.object_types) {
-            const n = Object.keys(snap.object_types).length;
-            body.innerHTML = '<tr><td colspan="5"><div class="empty-state">Object types in snapshot: ' + n + '</div></td></tr>';
-        }
-    } catch (e) {
-        document.getElementById('gdeltObjectsBody').innerHTML =
-            '<tr><td colspan="5"><div class="empty-state">Objects unavailable: ' + (e.message || 'error') + '</div></td></tr>';
     }
 }
 
@@ -3238,22 +3361,166 @@ async function runGdeltPipeline() {
     const q = document.getElementById('gdeltQuery').value.trim() || '("military" OR "defense" OR "security")';
     const timespan = document.getElementById('gdeltTimespan').value.trim() || '1m';
     const max = Math.min(parseInt(document.getElementById('gdeltMax').value) || 50, 250);
+    const mode = document.getElementById('gdeltMode').value || 'artlist';
     if (btn) btn.disabled = true;
     status.innerHTML = '<span class="loading"></span> Running GDELT pipeline (may take a few seconds due to rate limiting)...';
     try {
-        const rep = await api('/spinal-cracker/gdelt/pipeline/run', {
+        const rep = await api('/gdelt/pipeline/run', {
             method: 'POST',
-            body: JSON.stringify({ query: q, mode: 'artlist', timespan: timespan, maxrecords: max, api_key: '' }),
+            body: JSON.stringify({ query: q, mode: mode, timespan: timespan, maxrecords: max, api_key: '' }),
         });
-        status.innerHTML = 'Done: <b>' + rep.gdelt.records_fetched + '</b> fetched, <b>' + rep.transform.valid_count +
-            '</b> valid, <b>' + rep.writeback.success_count + '</b> written (tx ' +
-            rep.writeback.transaction_id.slice(0, 8) + '). GDELT rate-limits to ~1 req/5s.';
+        if (mode === 'tonechart') {
+            status.innerHTML = 'Done: <b>' + rep.gdelt.records_fetched + '</b> fetched, <b>' + rep.transform.valid_count +
+                '</b> valid, <b>' + rep.writeback.success_count + '</b> written (tx ' +
+                rep.writeback.transaction_id.slice(0, 8) + '). Tones analyzed: sentiment, anger, fear, joy, sadness.';
+        } else if (mode === 'wordcloudenglish' || mode === 'wordcloudimagetags') {
+            status.innerHTML = 'Done: <b>' + rep.gdelt.records_fetched + '</b> fetched, <b>' + rep.transform.valid_count +
+                '</b> valid, <b>' + rep.writeback.success_count + '</b> written (tx ' +
+                rep.writeback.transaction_id.slice(0, 8) + '). Word frequencies updated.';
+        } else if (mode === 'imagecollageshare') {
+            status.innerHTML = 'Done: <b>' + rep.gdelt.records_fetched + '</b> fetched, <b>' + rep.transform.valid_count +
+                '</b> valid, <b>' + rep.writeback.success_count + '</b> written (tx ' +
+                rep.writeback.transaction_id.slice(0, 8) + '). Sharing metrics updated.';
+        } else {
+            status.innerHTML = 'Done: <b>' + rep.gdelt.records_fetched + '</b> fetched, <b>' + rep.transform.valid_count +
+                '</b> valid, <b>' + rep.writeback.success_count + '</b> written (tx ' +
+                rep.writeback.transaction_id.slice(0, 8) + '). GDELT rate-limits to ~1 req/5s.';
+        }
     } catch (e) {
         status.innerHTML = '<b style="color:#ef4444">Pipeline error:</b> ' + (e.message || 'unknown') +
             '. GDELT enforces ~1 request per 5 seconds; retries are automatic.';
     } finally {
         if (btn) btn.disabled = false;
         loadGdeltSnapshot();
+    }
+}
+
+function switchGdeltTab(tab) {
+    document.querySelectorAll('.gdelt-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.gdelt-tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelector(`.gdelt-tab[data-tab="${tab}"]`).classList.add('active');
+    document.getElementById('gdeltTab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+}
+
+async function runGkgPipeline() {
+    const btn = event && event.target;
+    const status = document.getElementById('gkgRunStatus');
+    const q = document.getElementById('gkgQuery').value.trim() || '("military" OR "defense" OR "conflict")';
+    const timespan = document.getElementById('gkgTimespan').value.trim() || '24h';
+    const max = Math.min(parseInt(document.getElementById('gkgMax').value) || 50, 250);
+    if (btn) btn.disabled = true;
+    status.innerHTML = '<span class="loading"></span> Running GKG pipeline...';
+    try {
+        const rep = await api('/gkg/pipeline/run', {
+            method: 'POST',
+            body: JSON.stringify({ query: q, timespan: timespan, maxrecords: max, api_key: '' }),
+        });
+        status.innerHTML = 'Done: <b>' + rep.gkg.total_events + '</b> events, <b>' + rep.gkg.events_written +
+            '</b> written, <b>' + rep.gkg.actors_written + '</b> actors indexed.';
+    } catch (e) {
+        status.innerHTML = '<b style="color:#ef4444">GKG error:</b> ' + (e.message || 'unknown');
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+async function loadGkgActors() {
+    try {
+        const data = await api('/gkg/actors');
+        const body = document.getElementById('gkgEventsBody');
+        if (data.actors && data.actors.length > 0) {
+            body.innerHTML = data.actors.slice(0, 20).map(a =>
+                '<tr><td>' + (a.event_code || '—') + '</td><td>' + (a.actor_type || '—') +
+                '</td><td>' + (a.country || '—') + '</td><td>—</td><td>—</td></tr>'
+            ).join('');
+        } else {
+            body.innerHTML = '<tr><td colspan="5"><div class="empty-state">No actors loaded yet. Run GKG pipeline first.</div></td></tr>';
+        }
+    } catch (e) {
+        document.getElementById('gkgEventsBody').innerHTML =
+            '<tr><td colspan="5"><div class="empty-state">Actors unavailable: ' + (e.message || 'error') + '</div></td></tr>';
+    }
+}
+
+async function runNgramAnalysis() {
+    const btn = event && event.target;
+    const result = document.getElementById('ngramResult');
+    const keyword = document.getElementById('ngramKeyword').value.trim() || 'military';
+    const type = document.getElementById('ngramType').value || 'context';
+    const timespan = document.getElementById('ngramTimespan').value.trim() || '30d';
+    if (btn) btn.disabled = true;
+    result.innerHTML = '<span class="loading"></span> Analyzing ngrams...';
+    try {
+        const rep = await api('/ngram/analyze', {
+            method: 'POST',
+            body: JSON.stringify({ keyword: keyword, ngram_type: type, timespan: timespan, maxrecords: 250 }),
+        });
+        result.innerHTML = 'Done: keyword "<b>' + rep.keyword + '</b>" analyzed across ' + rep.timespan + '.';
+        document.getElementById('ngramFrequency').textContent = rep.frequency || '0';
+        document.getElementById('ngramConfidence').textContent = rep.confidence ? (rep.confidence * 100).toFixed(1) + '%' : '—';
+        document.getElementById('ngramCorrelations').textContent = rep.correlation_keywords ? rep.correlation_keywords.join(', ') : '—';
+    } catch (e) {
+        result.innerHTML = '<b style="color:#ef4444">Ngram error:</b> ' + (e.message || 'unknown');
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+async function addActorEvent() {
+    const status = document.getElementById('actorStatus');
+    const code = document.getElementById('actorEventCode').value.trim() || '3010';
+    const source = document.getElementById('actorSource').value.trim();
+    const target = document.getElementById('actorTarget').value.trim();
+    const country = document.getElementById('actorCountry').value.trim();
+    if (!source || !target) {
+        status.innerHTML = '<b style="color:#ef4444">Error:</b> Source and target actors required.';
+        return;
+    }
+    status.innerHTML = '<span class="loading"></span> Adding event to graph...';
+    try {
+        await api('/actor-graph/build', {
+            method: 'POST',
+            body: JSON.stringify({
+                events: [{
+                    event_code: code,
+                    event_type: code,
+                    source_actor: { name: source, actor_type: 'unknown' },
+                    target_actor: { name: target, actor_type: 'unknown' },
+                    geo_data: country ? { country: country } : {}
+                }],
+                force_reset: false
+            }),
+        });
+        status.innerHTML = 'Event added to graph. Reload graph to see changes.';
+        document.getElementById('actorEventCode').value = '';
+        document.getElementById('actorSource').value = '';
+        document.getElementById('actorTarget').value = '';
+        document.getElementById('actorCountry').value = '';
+    } catch (e) {
+        status.innerHTML = '<b style="color:#ef4444">Actor error:</b> ' + (e.message || 'unknown');
+    }
+}
+
+async function loadActorGraph() {
+    const status = document.getElementById('actorStatus');
+    status.innerHTML = '<span class="loading"></span> Loading actor graph...';
+    try {
+        const actors = await api('/actor-graph/actors');
+        const strength = await api('/actor-graph/strength');
+        document.getElementById('actorCount').textContent = actors.total || 0;
+        const totalRels = (strength.high || 0) + (strength.medium || 0) + (strength.low || 0);
+        document.getElementById('actorRelations').textContent = totalRels;
+        if (actors.actors && actors.actors.length > 0) {
+            document.getElementById('actorTableBody').innerHTML = actors.actors.slice(0, 20).map(a =>
+                '<tr><td>' + (a.name || '—') + '</td><td>' + (a.actor_type || '—') +
+                '</td><td>' + (a.country || '—') + '</td><td>—</td></tr>'
+            ).join('');
+        } else {
+            document.getElementById('actorTableBody').innerHTML = '<tr><td colspan="4"><div class="empty-state">No actors loaded yet. Add events first.</div></td></tr>';
+        }
+        status.innerHTML = 'Graph loaded: <b>' + actors.total + '</b> actors, <b>' + totalRels + '</b> relationships.';
+    } catch (e) {
+        status.innerHTML = '<b style="color:#ef4444">Actor error:</b> ' + (e.message || 'unknown');
     }
 }
 

@@ -39,7 +39,7 @@ from action_writeback_service import (  # noqa: E402
 logger = logging.getLogger("spinal_cracker.gdelt_router")
 
 router = APIRouter(
-    prefix="/spinal-cracker/gdelt",
+    prefix="/gdelt",
     tags=["Spinal Cracker GDELT"],
 )
 

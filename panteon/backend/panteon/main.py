@@ -14,6 +14,7 @@ from panteon.core.security import (
 from panteon.api.routes_auth import router as auth_router
 from panteon.api.routes_spinal_craker import router as spinal_craker_router
 from panteon.api.routes_gdelt import router as gdelt_router
+from panteon.api.routes_gkg import router as gkg_router
 from panteon.api.routes_yono import router as yono_router
 from panteon.api.routes_tdac import router as tdac_router
 from panteon.api.routes_webhooks import router as webhooks_router
@@ -29,6 +30,8 @@ from panteon.api.routes_aip import router as aip_router
 from panteon.api.routes_terranean import router as terranean_router
 from panteon.api.routes_yono_functions import router as yono_functions_router
 from panteon.api.routes_research import router as research_router
+from panteon.api.routes_ngram import router as ngram_router
+from panteon.api.routes_actor_graph import router as actor_graph_router
 
 PANTEON_SITE = Path(os.path.dirname(__file__)).parent.parent
 
@@ -63,6 +66,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(spinal_craker_router, prefix="/api/v1")
 app.include_router(gdelt_router, prefix="/api/v1")
+app.include_router(gkg_router, prefix="/api/v1")
 app.include_router(yono_router, prefix="/api/v1")
 app.include_router(statham_router, prefix="/api/v1")
 app.include_router(tdac_router, prefix="/api/v1")
@@ -78,6 +82,8 @@ app.include_router(aip_router, prefix="/api/v1")
 app.include_router(terranean_router, prefix="/api/v1")
 app.include_router(yono_functions_router, prefix="/api/v1")
 app.include_router(research_router, prefix="/api/v1")
+app.include_router(ngram_router, prefix="/api/v1")
+app.include_router(actor_graph_router, prefix="/api/v1")
 
 
 @app.get("/")

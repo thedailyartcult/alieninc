@@ -279,8 +279,13 @@ class OSv2Manager:
         return self._link_definitions.get(name)
 
     def insert_object(self, guid: str, record: Dict[str, Any]) -> None:
-        """Insert an object node into the OSv2 store."""
-        self._object_nodes[guid] = {
+        """Insert an object node into the OSv2 store.
+
+        Standard article fields are flattened for the DOC pipeline; any extra
+        top-level fields (e.g. GKG event_code / action_geo / avg_tone) are
+        preserved so the admin frontend can read them directly.
+        """
+        node = {
             "guid": guid,
             "type": record.get("type", "gdelt_article"),
             "payload": record.get("properties", {}),
@@ -291,6 +296,10 @@ class OSv2Manager:
             "domain": record.get("domain", ""),
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
+        for key, value in record.items():
+            if key not in node:
+                node[key] = value
+        self._object_nodes[guid] = node
 
     def get_object(self, guid: str) -> Optional[Dict[str, Any]]:
         return self._object_nodes.get(guid)

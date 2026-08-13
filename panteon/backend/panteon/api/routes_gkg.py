@@ -10,9 +10,12 @@ The pipeline is intentionally lightweight and runs in-process (the OSv2 manager
 in the same process).
 """
 
+import asyncio
+import json
 import logging
 import os
 import sys
+from datetime import datetime, timezone
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -85,6 +88,11 @@ def _build_pipeline() -> tuple[OSv2Manager, OntologyLayer, GDELTWritebackPipelin
     return osv2, ontology, pipeline
 
 
+def _write_count(result) -> int:
+    """Read success_count from a WritebackResult object or a plain dict."""
+    return getattr(result, "success_count", None) or result.get("success_count", 0)
+
+
 async def _run_pipeline(config: PipelineConfig) -> dict:
     """Execute pull -> parse -> writeback and return the report dict."""
     osv2, ontology, writeback_pipeline = _build_pipeline()
@@ -143,9 +151,9 @@ async def _run_pipeline(config: PipelineConfig) -> dict:
             "phase": "complete",
             "gkg": {
                 "total_events": len(gkg_events),
-                "events_written": result.success_count,
+                "events_written": _write_count(result),
                 "actor_records": len(actor_records),
-                "actors_written": result2.success_count,
+                "actors_written": _write_count(result2),
             },
             "ontology": {
                 "object_type_count": len(ontology.object_types),
@@ -163,19 +171,80 @@ async def _run_pipeline(config: PipelineConfig) -> dict:
     return report
 
 
+_run_state: dict = {
+    "status": "idle",
+    "started_at": None,
+    "finished_at": None,
+    "report": None,
+    "error": None,
+}
+
+
+def _is_rate_limited(err: str) -> bool:
+    return "429" in err or "rate limit" in err.lower()
+
+
+async def _run_pipeline_bg(config: PipelineConfig) -> dict:
+    """Run the GKG pipeline in the background and publish state for polling.
+
+    GDELT rate-limits request bursts from an IP; on a rate-limit failure we wait
+    once for the throttle window and retry, so a single "Run" click usually lands.
+    """
+    global _run_state
+    _run_state = {
+        "status": "running",
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "finished_at": None,
+        "report": None,
+        "error": None,
+    }
+    try:
+        report = await _run_pipeline(config)
+        phase = report.get("phase")
+        if phase != "complete" and _is_rate_limited(report.get("error", "")):
+            _run_state["error"] = "rate limited by GDELT — retrying once in 60s"
+            await asyncio.sleep(60)
+            report = await _run_pipeline(config)
+            phase = report.get("phase")
+        _run_state["report"] = report
+        _run_state["status"] = "complete" if phase == "complete" else "failed"
+        if phase != "complete":
+            _run_state["error"] = report.get("error") or "pipeline failed"
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("GKG background pipeline crashed: %s", exc)
+        _run_state["status"] = "failed"
+        _run_state["error"] = str(exc)
+    _run_state["finished_at"] = datetime.now(timezone.utc).isoformat()
+    return _run_state
+
+
 @router.get("/health")
 async def health_check():
     return {"status": "ok", "source": "panteon spinal-cracker gkg"}
 
 
 @router.post("/pipeline/run")
-async def run_pipeline(payload: PipelineConfig = None, _bg: BackgroundTasks = None):
-    """Run the GDELT GKG Events API pipeline."""
+async def run_pipeline(payload: PipelineConfig = None, background_tasks: BackgroundTasks = None):
+    """Run the GKG pipeline as a background task; poll /pipeline/status for the result.
+
+    GDELT pulls can take minutes (429 retry backoff), which exceeds the reverse-proxy
+    read timeout and surfaced as HTTP 504 in the admin UI. Returning immediately with
+    a job status avoids that — the frontend polls until complete/failed.
+    """
+    if _run_state.get("status") == "running":
+        return JSONResponse(content={"status": "already_running", "state": _run_state}, status_code=200)
     config = payload or PipelineConfig()
-    report = await _run_pipeline(config)
-    if report.get("phase") == "failed":
-        raise HTTPException(status_code=502, detail=report.get("error", "pipeline failed"))
-    return JSONResponse(content=report, status_code=200)
+    if background_tasks is not None:
+        background_tasks.add_task(_run_pipeline_bg, config)
+    else:
+        await _run_pipeline_bg(config)
+    return JSONResponse(content={"status": "started", "state": _run_state}, status_code=202)
+
+
+@router.get("/pipeline/status")
+async def pipeline_status():
+    """Return the current background pipeline run state (idle/running/complete/failed)."""
+    return JSONResponse(content=_run_state, status_code=200)
 
 
 @router.get("/events")

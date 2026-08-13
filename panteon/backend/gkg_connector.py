@@ -109,12 +109,16 @@ class GKGConnector:
                     timeout=aiohttp.ClientTimeout(total=30),
                 ) as resp:
                     if resp.status == 429:
+                        last_exc = Exception(f"HTTP {resp.status} rate limited (GDELT ~1 req/5s)")
                         backoff = base_backoff * (2 ** attempt) * (1 + jitter * (attempt / max_retries))
+                        backoff = min(backoff, max_backoff)
                         logger.warning(f"GDELT rate limited (429), retrying in {backoff/1000:.1f}s")
                         await asyncio.sleep(backoff / 1000)
                         continue
                     if resp.status >= 500:
+                        last_exc = Exception(f"HTTP {resp.status} server error")
                         backoff = base_backoff * (2 ** attempt) * (1 + jitter * (attempt / max_retries))
+                        backoff = min(backoff, max_backoff)
                         logger.warning(f"GDELT server error ({resp.status}), retrying in {backoff/1000:.1f}s")
                         await asyncio.sleep(backoff / 1000)
                         continue
@@ -140,6 +144,173 @@ class GKGConnector:
                 await asyncio.sleep(backoff / 1000)
 
         raise Exception(f"GDELT Events request failed after {max_retries + 1} attempts: {last_exc}")
+
+    # Approximate country centroids (lat, lon) keyed by the full country name
+    # GDELT DOC 2.0 returns in ``sourcecountry``. Used as a geocoding fallback
+    # because DOC articles carry no per-article locations.
+    _COUNTRY_CENTROIDS: Dict[str, tuple[float, float]] = {
+        "United States": (39.8283, -98.5795), "USA": (39.8283, -98.5795),
+        "China": (35.8617, 104.1954),
+        "Vietnam": (14.0583, 108.2772),
+        "Russia": (61.5240, 105.3188), "Russia Federation": (61.5240, 105.3188),
+        "United Kingdom": (55.3781, -3.4360), "UK": (55.3781, -3.4360), "Great Britain": (55.3781, -3.4360),
+        "Germany": (51.1657, 10.4515),
+        "France": (46.2276, 2.2137),
+        "Japan": (36.2048, 138.2529),
+        "India": (20.5937, 78.9629),
+        "Brazil": (-14.2350, -51.9253),
+        "Canada": (56.1304, -106.3468),
+        "Australia": (-25.2744, 133.7751),
+        "South Korea": (35.9078, 127.7669), "Korea, South": (35.9078, 127.7669), "South Korea (Republic of Korea)": (35.9078, 127.7669),
+        "North Korea": (40.3399, 127.5101), "Korea, North": (40.3399, 127.5101),
+        "Italy": (41.8719, 12.5674),
+        "Spain": (40.4637, -3.7492),
+        "Ukraine": (48.3794, 31.1656),
+        "Poland": (51.9194, 19.1451),
+        "Turkey": (38.9637, 35.2433), "Turkiye": (38.9637, 35.2433),
+        "Iran": (32.4279, 53.6880), "Iran, Islamic Republic of": (32.4279, 53.6880),
+        "Iraq": (33.2232, 43.6793),
+        "Israel": (31.0461, 34.8516),
+        "Saudi Arabia": (23.8859, 45.0792),
+        "Egypt": (26.8206, 30.8025),
+        "Pakistan": (30.3753, 69.3451),
+        "Afghanistan": (33.9391, 67.7100),
+        "Indonesia": (-0.7893, 113.9213),
+        "Philippines": (12.8797, 121.7740),
+        "Thailand": (15.8700, 100.9925),
+        "Taiwan": (23.6978, 120.9605), "Taiwan (Republic of China)": (23.6978, 120.9605),
+        "Hong Kong": (22.3193, 114.1694),
+        "Mexico": (23.6345, -102.5528),
+        "Argentina": (-38.4161, -63.6167),
+        "Chile": (-35.6751, -71.5430),
+        "Colombia": (4.5709, -74.2973),
+        "Peru": (-9.1900, -75.0152),
+        "Venezuela": (6.4238, -66.5897),
+        "South Africa": (-30.5595, 22.9375),
+        "Nigeria": (9.0820, 8.6753),
+        "Kenya": (-0.0236, 37.9062),
+        "Ethiopia": (9.1450, 40.4897),
+        "Morocco": (31.7917, -7.0926),
+        "Algeria": (28.0339, 1.6596),
+        "Libya": (26.3351, 17.2283),
+        "Syria": (34.8021, 38.9968),
+        "Lebanon": (33.8547, 35.8623),
+        "Jordan": (30.5852, 36.2384),
+        "Yemen": (15.5527, 48.5164),
+        "United Arab Emirates": (23.4241, 53.8478), "UAE": (23.4241, 53.8478),
+        "Qatar": (25.3548, 51.1839),
+        "Kuwait": (29.3117, 47.4818),
+        "Oman": (21.5126, 55.9233),
+        "Kazakhstan": (48.0196, 66.9237),
+        "Uzbekistan": (41.3775, 64.5853),
+        "Mongolia": (46.8625, 103.8467),
+        "Nepal": (28.3949, 84.1240),
+        "Sri Lanka": (7.8731, 80.7718),
+        "Bangladesh": (23.6850, 90.3563),
+        "Malaysia": (4.2105, 101.9758),
+        "Singapore": (1.3521, 103.8198),
+        "Myanmar": (21.9162, 95.9560),
+        "Cambodia": (12.5657, 104.9910),
+        "Laos": (19.8563, 102.4955),
+        "New Zealand": (-40.9006, 174.8860),
+        "Fiji": (-17.7134, 178.0650),
+        "Greece": (39.0742, 21.8243),
+        "Netherlands": (52.1326, 5.2913),
+        "Belgium": (50.5039, 4.4699),
+        "Switzerland": (46.8182, 8.2275),
+        "Austria": (47.5162, 14.5501),
+        "Sweden": (60.1282, 18.6435),
+        "Norway": (60.4720, 8.4689),
+        "Finland": (61.9241, 25.7482),
+        "Denmark": (56.2639, 9.5018),
+        "Portugal": (39.3999, -8.2245),
+        "Ireland": (53.4129, -8.2439),
+        "Czech Republic": (49.8175, 15.4730),
+        "Czechia": (49.8175, 15.4730),
+        "Hungary": (47.1625, 19.5033),
+        "Romania": (45.9432, 24.9668),
+        "Bulgaria": (42.7339, 25.4858),
+        "Serbia": (44.0165, 21.0059),
+        "Croatia": (45.1000, 15.2000),
+        "Belarus": (53.7098, 27.9534),
+        "Georgia": (42.3154, 43.3569),
+        "Armenia": (40.0691, 45.0382),
+        "Azerbaijan": (40.1431, 47.5769),
+        "Tajikistan": (38.8610, 71.2761),
+        "Turkmenistan": (38.9697, 59.5563),
+        "Kyrgyzstan": (41.2044, 74.7661),
+        "Somalia": (5.1521, 46.1996),
+        "Sudan": (12.8628, 30.2176),
+        "Tunisia": (33.8869, 9.5375),
+        "Ghana": (7.9465, -1.0232),
+        "Ivory Coast": (7.5400, -5.5471), "Cote d'Ivoire": (7.5400, -5.5471),
+        "Uganda": (1.3733, 32.2903),
+        "Tanzania": (-6.3690, 34.8888),
+        "Zimbabwe": (-19.0154, 29.1549),
+        "Angola": (-11.2027, 17.8739),
+        "Cuba": (21.5218, -77.7812),
+        "Haiti": (18.9712, -72.2852),
+        "Dominican Republic": (18.7357, -70.1627),
+        "Panama": (8.5380, -80.7821),
+        "Costa Rica": (9.7489, -83.7534),
+        "Guatemala": (15.7835, -90.2308),
+        "Ecuador": (-1.8312, -78.1834),
+        "Bolivia": (-16.2902, -63.5887),
+        "Paraguay": (-23.4425, -58.4438),
+        "Uruguay": (-32.5228, -55.7658),
+        "Greenland": (71.7069, -42.6043),
+        "Iceland": (64.9631, -19.0208),
+    }
+
+    # Same fallback for the FIPS/ISO 2-letter codes GDELT sometimes emits.
+    _COUNTRY_CENTROID_CODES: Dict[str, tuple[float, float]] = {
+        "US": (39.8283, -98.5795), "CN": (35.8617, 104.1954), "VN": (14.0583, 108.2772),
+        "RU": (61.5240, 105.3188), "UK": (55.3781, -3.4360), "GB": (55.3781, -3.4360),
+        "DE": (51.1657, 10.4515), "FR": (46.2276, 2.2137), "JP": (36.2048, 138.2529),
+        "IN": (20.5937, 78.9629), "BR": (-14.2350, -51.9253), "CA": (56.1304, -106.3468),
+        "AU": (-25.2744, 133.7751), "KR": (35.9078, 127.7669), "KP": (40.3399, 127.5101),
+        "IT": (41.8719, 12.5674), "ES": (40.4637, -3.7492), "UA": (48.3794, 31.1656),
+        "PL": (51.9194, 19.1451), "TR": (38.9637, 35.2433), "IR": (32.4279, 53.6880),
+        "IQ": (33.2232, 43.6793), "IL": (31.0461, 34.8516), "SA": (23.8859, 45.0792),
+        "EG": (26.8206, 30.8025), "PK": (30.3753, 69.3451), "AF": (33.9391, 67.7100),
+        "ID": (-0.7893, 113.9213), "PH": (12.8797, 121.7740), "TH": (15.8700, 100.9925),
+        "TW": (23.6978, 120.9605), "HK": (22.3193, 114.1694), "MX": (23.6345, -102.5528),
+        "AR": (-38.4161, -63.6167), "CL": (-35.6751, -71.5430), "CO": (4.5709, -74.2973),
+        "PE": (-9.1900, -75.0152), "VE": (6.4238, -66.5897), "ZA": (-30.5595, 22.9375),
+        "NG": (9.0820, 8.6753), "KE": (-0.0236, 37.9062), "ET": (9.1450, 40.4897),
+        "MA": (31.7917, -7.0926), "DZ": (28.0339, 1.6596), "LY": (26.3351, 17.2283),
+        "SY": (34.8021, 38.9968), "LB": (33.8547, 35.8623), "JO": (30.5852, 36.2384),
+        "YE": (15.5527, 48.5164), "AE": (23.4241, 53.8478), "QA": (25.3548, 51.1839),
+        "KW": (29.3117, 47.4818), "OM": (21.5126, 55.9233), "KZ": (48.0196, 66.9237),
+        "UZ": (41.3775, 64.5853), "MN": (46.8625, 103.8467), "NP": (28.3949, 84.1240),
+        "LK": (7.8731, 80.7718), "BD": (23.6850, 90.3563), "MY": (4.2105, 101.9758),
+        "SG": (1.3521, 103.8198), "MM": (21.9162, 95.9560), "KH": (12.5657, 104.9910),
+        "GR": (39.0742, 21.8243), "NL": (52.1326, 5.2913), "BE": (50.5039, 4.4699),
+        "CH": (46.8182, 8.2275), "AT": (47.5162, 14.5501), "SE": (60.1282, 18.6435),
+        "NO": (60.4720, 8.4689), "FI": (61.9241, 25.7482), "DK": (56.2639, 9.5018),
+        "PT": (39.3999, -8.2245), "IE": (53.4129, -8.2439), "CZ": (49.8175, 15.4730),
+        "HU": (47.1625, 19.5033), "RO": (45.9432, 24.9668), "BG": (42.7339, 25.4858),
+        "RS": (44.0165, 21.0059), "BY": (53.7098, 27.9534), "GE": (42.3154, 43.3569),
+        "AM": (40.0691, 45.0382), "AZ": (40.1431, 47.5769), "TJ": (38.8610, 71.2761),
+        "TM": (38.9697, 59.5563), "KG": (41.2044, 74.7661), "SO": (5.1521, 46.1996),
+        "SD": (12.8628, 30.2176), "TN": (33.8869, 9.5375), "GH": (7.9465, -1.0232),
+        "UG": (1.3733, 32.2903), "TZ": (-6.3690, 34.8888), "ZW": (-19.0154, 29.1549),
+        "AO": (-11.2027, 17.8739), "CU": (21.5218, -77.7812), "HT": (18.9712, -72.2852),
+        "PA": (8.5380, -80.7821), "EC": (-1.8312, -78.1834), "BO": (-16.2902, -63.5887),
+        "PY": (-23.4425, -58.4438), "UY": (-32.5228, -55.7658), "IS": (64.9631, -19.0208),
+        "NZ": (-40.9006, 174.8860),
+    }
+
+    @classmethod
+    def _country_centroid(cls, sourcecountry: str) -> Optional[Dict[str, Any]]:
+        """Resolve a country name/code to an approximate centroid."""
+        key = (sourcecountry or "").strip()
+        if not key:
+            return None
+        coord = cls._COUNTRY_CENTROIDS.get(key) or cls._COUNTRY_CENTROID_CODES.get(key.upper())
+        if not coord:
+            return None
+        return {"latitude": coord[0], "longitude": coord[1], "country": key}
 
     @staticmethod
     def _cameo_for_tone(tone_raw: Any) -> tuple[str, str]:
@@ -182,6 +353,10 @@ class GKGConnector:
                 "country": loc.get("countrycode", ""),
                 "city": loc.get("name", ""),
             }
+        else:
+            # DOC 2.0 JSON articles carry no locations; fall back to the
+            # publishing country's centroid so events remain map-plottable.
+            action_geo = self._country_centroid(raw.get("sourcecountry", "")) or {}
 
         # Extract tone (DOC JSON carries it as a string)
         try:

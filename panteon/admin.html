@@ -1293,6 +1293,28 @@
         }
         .maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color: var(--border-color); }
 
+        /* Inspector help chips — circular info icons with hover tooltips */
+        .help-wrap { display:inline-flex; align-items:center; gap:4px; position:relative; }
+        .help-chip {
+            position:relative; flex:0 0 auto; width:16px; height:16px; border-radius:50%;
+            border:1px solid var(--border-light); background:transparent; color:var(--text-muted);
+            font-family:var(--font-mono); font-size:10px; font-weight:600; line-height:1;
+            display:inline-flex; align-items:center; justify-content:center; cursor:help; user-select:none;
+            transition:border-color .15s, color .15s;
+        }
+        .help-chip:hover, .help-chip:focus-visible { border-color:var(--accent-cyan); color:var(--accent-cyan); outline:none; }
+        .help-tip {
+            visibility:hidden; opacity:0; pointer-events:none; position:absolute; left:50%; top:calc(100% + 8px);
+            transform:translateX(-50%) translateY(-4px); width:max-content; max-width:280px; white-space:normal;
+            background:var(--bg-card); border:1px solid var(--border-color); border-radius:6px;
+            padding:8px 10px; font-size:11px; line-height:1.5; color:var(--text-light);
+            box-shadow:0 4px 16px rgba(0,0,0,.5); z-index:320; transition:opacity .15s, transform .15s;
+            font-family:var(--font-sans);
+        }
+        .help-chip:hover .help-tip, .help-chip:focus-visible .help-tip {
+            visibility:visible; opacity:1; transform:translateX(-50%) translateY(0);
+        }
+
         /* GDELT Tab Styles */
     </style>
 </head>
@@ -4273,13 +4295,25 @@ async function renderThreatMap() {
     }
     let events = gkgEventsFrom(data && data.events);
     if (!events.length) {
-        try {
-            await api('/gkg/pipeline/run', { method: 'POST', body: JSON.stringify({ query: query, mode: 'events', timespan: '24h', maxrecords: 50, api_key: '' }) });
-            data = await api('/gkg/events?limit=250');
-            events = gkgEventsFrom(data && data.events);
-        } catch (e) {
-            // rate-limited; render whatever is stored
+        const st = await startGkgPipeline({ query: query, mode: 'events', timespan: '24h', maxrecords: 50, api_key: '' }, (s) => {
+            if (!hudMeta) return;
+            if (s.status === 'running') {
+                const secs = Math.round((Date.now() - new Date(s.started_at || Date.now()).getTime()) / 1000);
+                hudMeta.textContent = 'GKG pipeline running... ' + secs + 's';
+            } else if (s.error) {
+                hudMeta.textContent = 'GKG pipeline error: ' + s.error;
+            }
+        });
+        if (st && (st.status === 'complete' || st.status === 'failed')) {
+            try {
+                const d2 = await api('/gkg/events?limit=250');
+                const ev2 = gkgEventsFrom(d2 && d2.events);
+                if (ev2.length) events = ev2;
+            } catch (e) { /* keep stored events */ }
         }
+        if (hudMeta) hudMeta.textContent = events.length
+            ? 'Loaded ' + events.length + ' events from GDELT'
+            : 'No geocoded events yet — run the GKG pipeline';
     }
     threatMapEvents = events;
 
@@ -4389,22 +4423,40 @@ function clearThreatMap() {
 // ============================================================================
 // Intelligence Node — aggregates real GDELT / GKG data for tactical metrics
 // ============================================================================
+async function startGkgPipeline(config, onUpdate) {
+    try {
+        await api('/gkg/pipeline/run', { method: 'POST', body: JSON.stringify(config) });
+    } catch (e) {
+        if (onUpdate) onUpdate({ error: e.message || 'pipeline failed to start' });
+        return null;
+    }
+    const t0 = Date.now();
+    while (Date.now() - t0 < 900000) {
+        await new Promise(r => setTimeout(r, 3000));
+        let st;
+        try { st = await api('/gkg/pipeline/status'); } catch (e) { continue; }
+        if (onUpdate) onUpdate(st);
+        if (st.status !== 'running') return st;
+    }
+    if (onUpdate) onUpdate({ error: 'pipeline status timed out' });
+    return null;
+}
+
 async function runIntelNode() {
     const query = document.getElementById('intelNodeQuery').value.trim() || '("military" OR "defense" OR "conflict")';
     const status = document.getElementById('intelRunStatus');
     const btn = event && event.target;
     if (btn) btn.disabled = true;
-    if (status) status.innerHTML = '<span class="loading"></span> Running GKG intelligence node...';
-    try {
-        const rep = await api('/gkg/pipeline/run', {
-            method: 'POST',
-            body: JSON.stringify({ query: query, mode: 'events', timespan: '24h', maxrecords: 50, api_key: '' }),
-        });
-        if (status) status.textContent = 'GKG pull: ' + ((rep && rep.gkg && rep.gkg.total_events) || 0) +
-            ' fetched, ' + ((rep && rep.gkg && rep.gkg.events_written) || 0) + ' written';
-    } catch (e) {
-        if (status) status.textContent = 'Pipeline rate-limited, aggregating stored events: ' + (e.message || '');
-    }
+    if (status) status.innerHTML = '<span class="loading"></span> Starting GKG intelligence node (background)...';
+    const st = await startGkgPipeline({ query: query, mode: 'events', timespan: '24h', maxrecords: 50, api_key: '' }, (s) => {
+        if (!status) return;
+        if (s.status === 'running') {
+            const secs = Math.round((Date.now() - new Date(s.started_at || Date.now()).getTime()) / 1000);
+            status.innerHTML = '<span class="loading"></span> GKG pipeline running... ' + secs + 's (GDELT can be slow)';
+        } else if (s.error) {
+            status.textContent = 'Pipeline rate-limited, aggregating stored events: ' + s.error;
+        }
+    });
     let events = [];
     try {
         const data = await api('/gkg/events?limit=250');
@@ -4414,8 +4466,10 @@ async function runIntelNode() {
     document.getElementById('intelSystemicImportance').textContent = m.systemic;
     document.getElementById('intelPropagationPotential').textContent = m.propagation;
     document.getElementById('intelMarketSensitivity').textContent = m.sensitivity;
+    const errNote = st && st.error ? ' [' + st.error + ']' : '';
     if (status) status.textContent = 'Done: ' + query + ' — ' + m.total + ' events, ' + m.geoCoded +
-        ' geocoded, ' + m.negative + ' negative-tone threats analyzed';
+        ' geocoded, ' + m.negative + ' negative-tone threats analyzed' + errNote;
+    if (btn) btn.disabled = false;
 }
 
 function clearIntelNode() {
@@ -4427,6 +4481,78 @@ function clearIntelNode() {
     if (status) status.textContent = '';
 }
 
+// ============================================================================
+// Inspector help chips — circular info icons with hover tooltips
+// ============================================================================
+const HELP_FIELDS = {
+    'gdeltQuery': 'GDELT DOC 2.0 query. Terms, quotes and boolean operators are supported, e.g. ("military" OR "conflict").',
+    'gdeltTimespan': 'Lookback window for the DOC 2.0 query, e.g. 1h, 24h, 1m (one month).',
+    'gdeltMode': 'DOC 2.0 output mode: artlist = article metadata list (recommended), art = full text, timelinevol = volume over time, tonechart = tone over time, imagecollage = related images, wordcloud* = keyword clouds.',
+    'gdeltMax': 'Maximum records to pull (1-250).',
+    'gkgQuery': 'GKG intelligence query. Same DOC 2.0 syntax — e.g. ("military" OR "conflict") or a single term such as military.',
+    'gkgTimespan': 'Lookback window for the GKG query, e.g. 24h, 1d, 1w.',
+    'gkgMax': 'Maximum events to pull (1-250).',
+    'ngramKeyword': 'Keyword to analyze frequency and confidence for, e.g. military.',
+    'ngramType': 'Ngram dataset: context (news co-occurrence) or web (web-scale co-occurrence).',
+    'ngramTimespan': 'Ngram lookback window, e.g. 30d.',
+    'actorEventCode': 'CAMEO event code for the manual event, e.g. 3010 (attack), 2010 (demonstrations).',
+    'actorSource': 'Source actor name for the manual event.',
+    'actorTarget': 'Target actor name for the manual event.',
+    'actorCountry': 'Country for the manual event.',
+    'threatMapQuery': 'Keyword seed for the threat map when no GKG events are stored, e.g. "military" OR "defense".',
+    'threatMapLayer': 'Filter the plotted events: All Layers, Geospatial Spikes (geocoded only), Actor Networks, or Tone Analysis.',
+    'intelNodeQuery': 'Intelligence Node query used to seed a GKG pull, e.g. ("military" OR "conflict").',
+};
+const HELP_BUTTONS = {
+    'runGdeltPipeline': 'Run the GDELT DOC 2.0 pull-and-store pipeline using the query, timespan, mode and maxrecords above.',
+    'loadGdeltSnapshot': 'Refresh the DOC 2.0 snapshot table (OSv2 object and link counts).',
+    'runGkgPipeline': 'Run the GKG intelligence pipeline: pulls geolocated GDELT articles, classifies them by tone (ATTACK / DEMONSTRATIONS / POLITICAL / PROPAGANDA), and writes events + actors to the store. Runs in the background — watch the status line.',
+    'loadGkgActors': 'Load actor records extracted from GKG events into the table below.',
+    'runNgramAnalysis': 'Analyze keyword frequency and confidence via the GDELT Ngram API.',
+    'addActorEvent': 'Register a manual actor event (CAMEO code, source, target, country) into the actor graph.',
+    'loadActorGraph': 'Load the current actor graph from the store and refresh the graph table.',
+    'renderThreatMap': 'Plot geolocated GKG events as threat markers on the global map (tone < -5 = red, < 0 = amber, else green). Auto-runs the GKG pipeline when no events are stored.',
+    'clearThreatMap': 'Remove all markers from the map and reset the HUD counters.',
+    'resetMapView': 'Reset the map to the global world view.',
+    'fitThreatBounds': 'Zoom the map to fit all currently plotted threat markers.',
+    'runIntelNode': 'Run the Intelligence Node: pulls GKG data and aggregates the tactical metrics (Systemic Importance, Propagation Potential, Market Sensitivity) plus the event/actor tables.',
+    'clearIntelNode': 'Reset the Intelligence Node query and metric values.',
+};
+
+function attachHelpChip(el, text) {
+    if (!el || !text || el.hasAttribute('data-help')) return;
+    const flexGrow = parseFloat(window.getComputedStyle(el).flexGrow) || 0;
+    const wrap = document.createElement('span');
+    wrap.className = 'help-wrap';
+    if (flexGrow > 0) {
+        wrap.style.flex = flexGrow + ' 1 0px';
+        el.style.flex = '0 1 auto';
+        el.style.width = '100%';
+    }
+    el.parentNode.insertBefore(wrap, el);
+    wrap.appendChild(el);
+    const chip = document.createElement('span');
+    chip.className = 'help-chip';
+    chip.textContent = 'i';
+    chip.setAttribute('role', 'img');
+    chip.setAttribute('aria-label', 'About this control: ' + text);
+    chip.setAttribute('tabindex', '0');
+    const tip = document.createElement('span');
+    tip.className = 'help-tip';
+    tip.textContent = text;
+    chip.appendChild(tip);
+    wrap.appendChild(chip);
+    el.setAttribute('data-help', '1');
+}
+
+function initHelpChips() {
+    Object.keys(HELP_FIELDS).forEach(id => attachHelpChip(document.getElementById(id), HELP_FIELDS[id]));
+    document.querySelectorAll('[onclick]').forEach(btn => {
+        const m = /^\s*(?:async\s+)?(\w+)\s*\(/.exec(btn.getAttribute('onclick') || '');
+        if (m && HELP_BUTTONS[m[1]]) attachHelpChip(btn, HELP_BUTTONS[m[1]]);
+    });
+}
+
 async function runGkgPipeline() {
     const btn = event && event.target;
     const status = document.getElementById('gkgRunStatus');
@@ -4434,18 +4560,44 @@ async function runGkgPipeline() {
     const timespan = document.getElementById('gkgTimespan').value.trim() || '24h';
     const max = Math.min(parseInt(document.getElementById('gkgMax').value) || 50, 250);
     if (btn) btn.disabled = true;
-    status.innerHTML = '<span class="loading"></span> Running GKG pipeline...';
+    status.innerHTML = '<span class="loading"></span> Starting GKG pipeline (background)...';
+    const st = await startGkgPipeline({ query: q, timespan: timespan, maxrecords: max, api_key: '' }, (s) => {
+        if (s.error) status.innerHTML = '<b style="color:#ef4444">GKG error:</b> ' + s.error;
+        else if (s.status === 'running') {
+            const secs = Math.round((Date.now() - new Date(s.started_at || Date.now()).getTime()) / 1000);
+            status.innerHTML = '<span class="loading"></span> GKG pipeline running... ' + secs + 's (GDELT can be slow)';
+        }
+    });
+    if (st && st.report && st.report.gkg) {
+        status.innerHTML = 'Done: <b>' + st.report.gkg.total_events + '</b> events, <b>' + st.report.gkg.events_written +
+            '</b> written, <b>' + st.report.gkg.actors_written + '</b> actors indexed.';
+    } else if (st && st.status === 'failed') {
+        status.innerHTML = '<b style="color:#ef4444">GKG error:</b> ' + (st.error || 'pipeline failed');
+    }
+    if (btn) btn.disabled = false;
+    loadGkgEvents();
+}
+
+async function loadGkgEvents() {
+    const body = document.getElementById('gkgEventsBody');
+    if (!body) return;
     try {
-        const rep = await api('/gkg/pipeline/run', {
-            method: 'POST',
-            body: JSON.stringify({ query: q, timespan: timespan, maxrecords: max, api_key: '' }),
-        });
-        status.innerHTML = 'Done: <b>' + rep.gkg.total_events + '</b> events, <b>' + rep.gkg.events_written +
-            '</b> written, <b>' + rep.gkg.actors_written + '</b> actors indexed.';
+        const data = await api('/gkg/events?limit=250');
+        const events = gkgEventsFrom(data && data.events);
+        if (!events.length) {
+            body.innerHTML = '<tr><td colspan="5"><div class="empty-state">No GKG events loaded yet. Run the GKG pipeline first.</div></td></tr>';
+            return;
+        }
+        body.innerHTML = events.slice(0, 20).map(e => {
+            const g = parseActionGeo(e) || {};
+            const tone = (e.avg_tone != null) ? Number(e.avg_tone).toFixed(2) : '—';
+            const color = (e.avg_tone != null && e.avg_tone < 0) ? '#f43f5e' : 'var(--text-light)';
+            return '<tr><td>' + (e.event_code || '—') + '</td><td>' + (e.event_type || '—') + '</td><td>' +
+                (g.country || '—') + '</td><td style="color:' + color + '">' + tone + '</td><td>' +
+                (e.num_articles || 1) + '</td></tr>';
+        }).join('');
     } catch (e) {
-        status.innerHTML = '<b style="color:#ef4444">GKG error:</b> ' + (e.message || 'unknown');
-    } finally {
-        if (btn) btn.disabled = false;
+        body.innerHTML = '<tr><td colspan="5"><div class="empty-state">GKG events unavailable: ' + (e.message || 'error') + '</div></td></tr>';
     }
 }
 
@@ -4775,6 +4927,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadingOverlay.style.cssText = 'position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;';
     loadingOverlay.innerHTML = '<div style="text-align:center"><div class="loading" style="width:32px;height:32px;border-width:3px;margin:0 auto 16px"></div><div style="font-family:var(--font-tech);font-size:12px;color:var(--text-muted)">Restoring session...</div></div>';
     document.body.appendChild(loadingOverlay);
+
+    initHelpChips();
 
     try {
         const session = await restoreSession();

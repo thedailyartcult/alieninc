@@ -727,15 +727,15 @@ class AviationWritebackPipeline:
                     "properties": flight,
                 })
 
-        result = await self._writeback_service._writeback_batch(flat_records, schema)
+        result = await self._writeback_service.writeback_batch(flat_records, schema)
         return result, []
 
     async def _writeback_batch(
         self, raw_records: List[Dict[str, Any]], schema: Optional[Dict[str, Any]] = None
     ) -> WritebackResult:
-        """Delegate to WritebackService._writeback_batch with aviation schema."""
+        """Delegate to WritebackService.writeback_batch with aviation schema."""
         schema = schema or {"schema_version": "1.0.0"}
-        return await self._writeback_service._writeback_batch(raw_records, schema)
+        return await self._writeback_service.writeback_batch(raw_records, schema)
 
     def get_ontology_snapshot(self) -> Dict[str, Any]:
         """Return a snapshot of the aviation ontology graph state."""

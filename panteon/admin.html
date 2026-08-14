@@ -1875,6 +1875,7 @@
                               <div style="display:flex;gap:10px;align-items:center">
                                   <span class="tag tag-green" id="fusionGdeltDot">GDELT</span>
                                   <span class="tag tag-blue" id="fusionOpenSkyDot">OpenSky</span>
+                                  <span class="tag" id="fusionBqDot" style="font-size:9px">BQ: ?</span>
                               </div>
                           </div>
                           <p class="section-subtitle">One cohesive map overlaying GDELT threat events and OpenSky live aircraft. Toggle layers, run either pipeline, and inspect any marker.</p>
@@ -5286,6 +5287,25 @@ function fitFusionBounds() {
     fusionMap.fitBounds([[b.minX, b.minY], [b.maxX, b.maxY]], { padding: 60, maxZoom: 7, duration: 1200 });
 }
 
+async function refreshFusionBqStatus() {
+    const dot = document.getElementById('fusionBqDot');
+    if (!dot) return;
+    try {
+        const s = await api('/gkg/bigquery/status');
+        if (s.available) {
+            dot.textContent = 'BQ: ON';
+            dot.style.background = 'var(--green)';
+            dot.style.color = '#000';
+            dot.title = 'GDELT BigQuery is active — production backend (no per-IP throttle)';
+        } else {
+            dot.textContent = 'BQ: OFF';
+            dot.style.background = 'var(--amber)';
+            dot.style.color = '#000';
+            dot.title = 'Using DOC 2.0 API only — set GDELT_BQ_CREDENTIALS for the production backend';
+        }
+    } catch (e) { dot.textContent = 'BQ: ?'; }
+}
+
 async function refreshFusionRateMeter() {
     const el = document.getElementById('fusionRateMeter');
     if (!el) return;
@@ -5369,6 +5389,7 @@ async function renderFusionMap() {
     renderFusionAviationLayer();
     updateFusionKpis();
     refreshFusionRateMeter();
+    refreshFusionBqStatus();
     if (hud) hud.textContent = fusionThreatMarkers.length + ' threats · ' + fusionAviationMarkers.length + ' aircraft plotted';
     requestAnimationFrame(() => { if (fusionMap) fusionMap.resize(); });
     fitFusionBounds();

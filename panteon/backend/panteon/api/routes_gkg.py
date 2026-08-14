@@ -37,6 +37,11 @@ from gkg_connector import (  # noqa: E402
     get_rate_state,
     reset_cooldown,
 )
+from gdelt_bigquery_connector import (  # noqa: E402
+    GDELTBigQueryConnector,
+    GDELTBigQueryConfig,
+    is_bigquery_available,
+)
 from transform_gdelt_to_ontology import (  # noqa: E402
     GDELTTransformEngine,
     OntologyLayer,
@@ -165,7 +170,29 @@ async def _run_pipeline(config: PipelineConfig) -> dict:
 
     report: dict = {"phase": "pending"}
     try:
-        gkg_events = await connector.pull()
+        # BigQuery-first: try the production-grade GDELT GKG table (rich tone +
+        # actors + precise geocoding, no per-IP throttle). Fall back to the DOC
+        # 2.0 API if BigQuery is unavailable (no creds / quota / error).
+        gkg_events = []
+        source_used = "unknown"
+        bq_error = None
+        if is_bigquery_available():
+            try:
+                import asyncio as _asyncio
+                bq_config = GDELTBigQueryConfig(max_results=config.maxrecords)
+                bq_connector = GDELTBigQueryConnector(config=bq_config)
+                # BigQuery client is blocking — run in a thread.
+                gkg_events = await _asyncio.to_thread(bq_connector.pull)
+                source_used = "bigquery"
+                logger.info("GDELT BigQuery pull succeeded: %d events", len(gkg_events))
+            except Exception as bq_exc:
+                bq_error = str(bq_exc)
+                logger.warning("GDELT BigQuery failed, falling back to DOC 2.0: %s", bq_exc)
+
+        if not gkg_events:
+            # DOC 2.0 fallback (or BigQuery unavailable).
+            gkg_events = await connector.pull()
+            source_used = "doc2_fallback" if bq_error else "doc2"
 
         # Transform events into OSv2 writeback payloads
         writeback_records = []
@@ -230,10 +257,16 @@ async def _run_pipeline(config: PipelineConfig) -> dict:
                 "events_written": _write_count(result),
                 "actor_records": len(actor_records),
                 "actors_written": min(_write_count(result2), unique_actors),
+                "source": source_used,
             },
             "ontology": {
                 "object_type_count": len(ontology.object_types),
                 "link_type_count": len(ontology.link_types),
+            },
+            "bigquery": {
+                "available": is_bigquery_available(),
+                "used": source_used == "bigquery",
+                "error": bq_error,
             },
             "timestamp": __import__("datetime").datetime.now(timezone.utc).isoformat(),
         }
@@ -388,6 +421,31 @@ async def validate_pipeline(payload: PipelineConfig = None):
     # Always 200: the verdict (valid true/false) lives in the body so the admin
     # UI's shared api() helper (which drops non-2xx bodies) receives it intact.
     return JSONResponse(content=result, status_code=200)
+
+
+@router.get("/bigquery/status")
+async def bigquery_status():
+    """Report whether the GDELT BigQuery backend is configured and available.
+
+    BigQuery is the production-grade GDELT path (no per-IP throttle, rich tone
+    + actors + precise geocoding). This endpoint tells the admin UI whether
+    the BigQuery-first path is active or whether the system will use the DOC
+    2.0 API fallback.
+    """
+    available = is_bigquery_available()
+    return JSONResponse(content={
+        "available": available,
+        "credentials_path": os.environ.get("GDELT_BQ_CREDENTIALS", ""),
+        "mode": "bigquery-first" if available else "doc2-only",
+        "note": (
+            "GDELT BigQuery is configured — the pipeline will query the GKG "
+            "table (tone + actors + geocoding) and fall back to DOC 2.0 on error."
+            if available else
+            "GDELT BigQuery is NOT configured — set GDELT_BQ_CREDENTIALS to a "
+            "Google Cloud service-account JSON key to enable the production "
+            "backend (no per-IP throttle). Currently using DOC 2.0 only."
+        ),
+    }, status_code=200)
 
 
 @router.get("/pipeline/rate")

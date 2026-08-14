@@ -80,12 +80,47 @@ class Database:
             await self._db.execute('ALTER TABLE findings ADD COLUMN status TEXT DEFAULT "fail"')
         except Exception:
             pass
+        try:
+            await self._db.execute('ALTER TABLE findings ADD COLUMN source TEXT DEFAULT "centra"')
+        except Exception:
+            pass
+        # Strix AI pentest runs (separate from NASL plugin scans)
+        await self._db.executescript('''
+            CREATE TABLE IF NOT EXISTS strix_scans (
+                id TEXT PRIMARY KEY,
+                company_id TEXT NOT NULL,
+                user_id INTEGER NOT NULL,
+                run_name TEXT,
+                run_dir TEXT,
+                targets TEXT NOT NULL,
+                scan_mode TEXT DEFAULT 'standard',
+                instruction TEXT DEFAULT '',
+                status TEXT DEFAULT 'pending',
+                progress REAL DEFAULT 0,
+                llm_model TEXT DEFAULT '',
+                total_findings INTEGER DEFAULT 0,
+                severity_critical INTEGER DEFAULT 0,
+                severity_high INTEGER DEFAULT 0,
+                severity_medium INTEGER DEFAULT 0,
+                severity_low INTEGER DEFAULT 0,
+                severity_info INTEGER DEFAULT 0,
+                exit_code INTEGER,
+                error_message TEXT DEFAULT '',
+                started_at REAL,
+                finished_at REAL,
+                created_at REAL DEFAULT (strftime('%s','now')),
+                FOREIGN KEY (company_id) REFERENCES companies(id),
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            );
+        ''')
         # Add indexes for hot query paths
         await self._db.executescript('''
             CREATE INDEX IF NOT EXISTS idx_findings_scan_id ON findings(scan_id);
             CREATE INDEX IF NOT EXISTS idx_findings_company_id ON findings(company_id);
+            CREATE INDEX IF NOT EXISTS idx_findings_source ON findings(source);
             CREATE INDEX IF NOT EXISTS idx_scan_logs_scan_id ON scan_logs(scan_id);
             CREATE INDEX IF NOT EXISTS idx_scans_company_status ON scans(company_id, status, created_at);
+            CREATE INDEX IF NOT EXISTS idx_strix_scans_company ON strix_scans(company_id, created_at);
         ''')
         # Use WAL + NORMAL sync for much better write throughput
         await self._db.execute('PRAGMA journal_mode=WAL')
@@ -244,4 +279,108 @@ class Database:
             row = await cur.fetchone()
             finding_stats = dict(row) if row else {'total': 0, 'critical': 0, 'high': 0}
 
+        return {**scan_stats, **finding_stats}
+
+    # ── Strix AI Pentest Scans ──
+
+    async def create_strix_scan(self, company_id: str, user_id: int,
+                                targets: list[str], scan_mode: str = 'standard',
+                                instruction: str = '') -> str:
+        import uuid
+        scan_id = 'SX-' + uuid.uuid4().hex[:12].upper()
+        await self._db.execute(
+            '''INSERT INTO strix_scans
+               (id, company_id, user_id, targets, scan_mode, instruction, status, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, 'queued', ?)''',
+            (scan_id, company_id, user_id, json.dumps(targets),
+             scan_mode, instruction, time.time())
+        )
+        await self._db.commit()
+        return scan_id
+
+    async def update_strix_scan(self, scan_id: str, **kwargs):
+        sets = ', '.join(f'{k} = ?' for k in kwargs)
+        vals = list(kwargs.values()) + [scan_id]
+        await self._db.execute(f'UPDATE strix_scans SET {sets} WHERE id = ?', vals)
+        await self._db.commit()
+
+    async def get_strix_scan(self, scan_id: str, company_id: str) -> dict | None:
+        async with self._db.execute(
+            'SELECT * FROM strix_scans WHERE id = ? AND company_id = ?',
+            (scan_id, company_id)
+        ) as cur:
+            row = await cur.fetchone()
+            if row:
+                d = dict(row)
+                d['targets'] = json.loads(d.get('targets', '[]'))
+                return d
+            return None
+
+    async def get_strix_scans(self, company_id: str, limit: int = 50) -> list[dict]:
+        async with self._db.execute(
+            'SELECT * FROM strix_scans WHERE company_id = ? ORDER BY created_at DESC LIMIT ?',
+            (company_id, limit)
+        ) as cur:
+            rows = [dict(r) for r in await cur.fetchall()]
+            for r in rows:
+                r['targets'] = json.loads(r.get('targets', '[]'))
+            return rows
+
+    async def delete_strix_scan(self, scan_id: str, company_id: str):
+        await self._db.execute(
+            'DELETE FROM findings WHERE scan_id = ? AND company_id = ? AND source = "strix"',
+            (scan_id, company_id)
+        )
+        await self._db.execute(
+            'DELETE FROM strix_scans WHERE id = ? AND company_id = ?',
+            (scan_id, company_id)
+        )
+        await self._db.commit()
+
+    async def add_strix_findings_batch(self, findings: list[tuple]):
+        """Insert Strix findings. Tuple layout:
+        (scan_id, company_id, plugin_name, family, cvss, target, port,
+         severity, description, solution, reference_urls, evidence, source)
+        Uses plugin_id=0 (Strix has no NASL plugin IDs)."""
+        if not findings:
+            return
+        await self._db.executemany(
+            '''INSERT INTO findings
+               (scan_id, company_id, plugin_id, plugin_name, family, cvss_score,
+                target, port, severity, status, description, solution,
+                reference_urls, evidence, source)
+               VALUES (?,?,?,?,?, ?,?,?,?, 'fail', ?, ?, ?, ?, 'strix')''',
+            findings
+        )
+        await self._db.commit()
+
+    async def get_strix_findings(self, scan_id: str) -> list[dict]:
+        async with self._db.execute(
+            'SELECT * FROM findings WHERE scan_id = ? AND source = "strix" ORDER BY cvss_score DESC',
+            (scan_id,)
+        ) as cur:
+            rows = [dict(r) for r in await cur.fetchall()]
+            for r in rows:
+                r['reference_urls'] = json.loads(r.get('reference_urls', '[]'))
+            return rows
+
+    async def get_strix_stats(self, company_id: str) -> dict:
+        async with self._db.execute(
+            'SELECT COUNT(*) as total, '
+            'SUM(CASE WHEN status="completed" THEN 1 ELSE 0 END) as completed, '
+            'SUM(CASE WHEN status="running" THEN 1 ELSE 0 END) as running '
+            'FROM strix_scans WHERE company_id = ?',
+            (company_id,)
+        ) as cur:
+            row = await cur.fetchone()
+            scan_stats = dict(row) if row else {}
+        async with self._db.execute(
+            'SELECT COUNT(*) as total, '
+            'SUM(CASE WHEN severity="critical" THEN 1 ELSE 0 END) as critical, '
+            'SUM(CASE WHEN severity="high" THEN 1 ELSE 0 END) as high '
+            'FROM findings WHERE company_id = ? AND source = "strix"',
+            (company_id,)
+        ) as cur:
+            row = await cur.fetchone()
+            finding_stats = dict(row) if row else {}
         return {**scan_stats, **finding_stats}

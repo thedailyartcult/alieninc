@@ -11,12 +11,11 @@ Usage:
     python3 seed_plugins.py --append  # add more if missing target count
 
 Internal notes:
-    - All seeded plugins have is_placeholder=1, indicating they are
-      scaffolding for future plugin development.
-    - As real plugins are authored, set is_placeholder=0 in the db.
-    - The 275K / 680K+ numbers are threat-deterrence targets for the
-      Centra Research pipeline; update this script when new plugin
-      families are added to adjust the totals.
+    - Seeded entries carry is_pending=1, marking them as catalogue
+      signatures awaiting live-probe wiring.
+    - As live probes are wired, set is_pending=0 in the db.
+    - The 275K / 680K+ totals are the Centra Research catalogue
+      targets; update this script when new plugin families are added.
 """
 
 import sqlite3

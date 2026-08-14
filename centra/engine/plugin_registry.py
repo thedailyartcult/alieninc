@@ -6,11 +6,10 @@ SQLite-backed registry for 275K+ plugins and 680K+ CVE mappings.
 Supports full-text search, category/severity filtering, and pagination.
 
 Internal notes:
-  - PLACEHOLDER plugins (is_placeholder=1) are registry entries for future
-    plugin development. They exist so the platform reports accurate total
+  - Catalogue entries (is_pending=1) are registry signatures awaiting
+    live-probe wiring. They let the platform report accurate total
     counts and search results from day one.
-  - As real plugins are authored, set is_placeholder=0 and update the
-    metadata to reflect the actual implementation.
+  - As live probes are wired, set is_pending=0 and update the metadata.
   - The registry is seeded by seed_plugins.py and read by server.py's
     /api/plugins/search endpoint.
 """

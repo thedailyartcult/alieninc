@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Strix AI Penetration Testing on Centra — autonomous AI agents that find and validate vulnerabilities with working proof-of-concept exploits. Powered by Strix and integrated into the Centra security engine. A subsidiary of Alien Inc.">
+    <meta name="compliance" content="verified; report=/trust/; frameworks=CIS,DISA,PCI-DSS,OWASP,NIST,GDPR,SOC2,ISO27001,CCPA,HIPAA,FedRAMP,CMMC,CSA,SOX,TISAX,VPAT">
+    <meta name="security" content="monitored; CSP; HSTS-preload; X-Frame-Options-DENY; X-Content-Type-Options-nosniff; Referrer-Policy-strict; Permissions-Policy-restricted">
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Centra","url":"https://centra.alieninc.tech","description":"Centra provides automated security scanning, vulnerability assessment, bot defense, intrusion detection, and compliance monitoring. Home of the group-wide compliance scanning engine. Protects the Alien Inc ecosystem and external clients. A subsidiary of Alien Inc.","headline":"Cybersecurity defense, vulnerability scanning, and compliance monitoring.","parentOrganization":{"@type":"Organization","name":"Alien Inc","url":"https://alieninc.tech"},"subjectOf":{"@type":"WebSite","url":"https://centra.alieninc.tech","description":"Compliance-verified as part of the Alien Inc group."}}</script>
+    <title>Centra — Strix AI Penetration Testing | Alien Inc</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ultra&family=Alfa+Slab+One&family=Inter:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Sans+Condensed:wght@700;800&family=Orbitron:wght@900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/logo.png">
+    <style>
+        :root { --aliendot: #ffd400; }
+        body { font-family: 'Inter', sans-serif; background-color: #f9fafb; color: #101828; }
+        .font-display { font-family: 'Instrument Sans Condensed', 'Instrument Sans', sans-serif; }
+        .font-body { font-family: 'Instrument Sans', 'Inter', sans-serif; }
+        .brand-logo { display: flex; align-items: center; gap: 0.12rem; text-decoration: none; }
+        .brand-logo__text { font-family: "Ultra", "Alfa Slab One", "Clarendon", "Egyptian 714", "Rockwell Extra Bold", serif; font-size: clamp(24px, 5vw, 29px); font-weight: 500; letter-spacing: 0.02em; color: #131920; line-height: 1; }
+        .brand-logo__dot { height: 0.56em; width: 0.56em; position: relative; top: calc(0.30 * clamp(24px, 5vw, 29px)); display: block; }
+        .centra-mark { display: inline-block; width: 8px; height: 8px; background: var(--aliendot); border-radius: 1px; margin-left: 2px; vertical-align: baseline; }
+        .score-fade { animation: scoreFade 0.6s ease-out both; }
+        @keyframes scoreFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        .cert-badge { transition: all 0.15s ease; }
+        .cert-badge:hover { border-color: #1e2124; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .plugin-grid-item { transition: all 0.15s ease; }
+        .plugin-grid-item:hover { background: #f0fdf4; border-color: #10b981; }
+
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+<header class="bg-white border-b border-[#eaecf0] sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="/" class="brand-logo" aria-label="visit the Alien Inc Homepage">
+                    <span class="brand-logo__text">Alien</span>
+                    <img src="/logo.png" alt="•" class="brand-logo__dot">
+                    <span class="brand-logo__text">Inc</span>
+                </a>
+                <span class="text-gray-200 text-lg">/</span>
+                <a href="https://centra.alieninc.tech" class="flex items-center gap-2" aria-label="Centra — home">
+                    <svg viewBox="0 0 360 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CENTRA" style="height:28px;width:auto;">
+                        <defs>
+                            <style>
+                                .centra-logo-text {
+                                    font-family: 'Orbitron', sans-serif;
+                                    font-weight: 900;
+                                }
+                            </style>
+                        </defs>
+                        <g transform="translate(8, 6) scale(0.104)">
+                            <path d="m 33.676246,364.82 c 0.53628,-7.2677 1.7767,-14.482 5.0286,-21.276 9.4786,-19.803 33.963,-29.34 53.026,-19.284 15.333004,8.0885 22.563004,29.331 13.578004,45.149 -6.873004,12.099 -23.072004,18.235 -35.622004,10.228 -4.4328,-2.828 -7.6343,-7.2793 -8.9938,-12.286 -1.3595,-5.0063 -0.68452,-10.798 2.9392,-15.401 2.2364,-2.8407 5.4473,-4.7654 9.1114,-5.408 3.664,-0.64263 8.1708,0.40388 10.875,3.9972 1.7829,2.3692 1.91,4.5449 1.4108,7.1127 -0.24961,1.2839 -0.78116,2.8399 -2.3513,3.9972 -1.5702,1.1573 -4.2926,1.9424 -5.5844,0.58783 -1.1069,-1.1607 0.67477,-3.153 0.73029,-4.7559 0.0388,-0.83158 0.0772,-1.7317 -0.26004,-2.4745 -0.89679,-1.1463 -1.8493,-1.342 -3.4682,-1.0581 -1.6548,0.29023 -3.6474,1.4542 -4.5851,2.6452 l 0,0.0588 c -2.0224,2.5986 -2.3717,5.5943 -1.5284,8.6999 0.81645,3.0066 2.8568,5.919 5.4668,7.7006 l 0.29391,0.23513 c 8.5452,5.4516 18.484,0.70317 23.392,-7.9366 6.716204,-11.823 1.5113,-26.282 -10.285,-32.505 -15.078,-7.9537 -35.744,1.451 -40.36,17.085 -4.566,15.464 -2.8715,30.938 -0.27385,37.511 l -10.609,0.073 c -2.5579,-12.089 -1.9287,-15.035 -1.9287,-22.696 z" fill="#131920"/>
+                            <path d="m 471.54625,260.66 c 17.668,-13.594 26.097,-35.697 29.523,-57.078 1.4645,-9.3951 1.9746,-19.069 0.14154,-28.452 14.1,0.29894 25.825,9.3358 36.433,17.663 18.603,15.53 35.228,33.824 47.215,54.967 3.6321,6.1751 -5.3435,4.6337 -8.8069,5.9233 -30.729,5.8422 -62.032,11.753 -93.438,8.9164 -3.7237,-0.42453 -7.428,-1.0454 -11.069,-1.9403 z" fill="#131920" opacity="0.15"/>
+                            <path d="m 288.00625,210.87 c 10.816,-13.823 26.523,-22.816 42.335,-29.821 12.478,-5.3611 25.719,-9.195 39.307,-10.133 3.6006,-0.49169 7.2012,-0.98339 10.802,-1.4751 -5.8862,13.4 -9.3342,29.076 -3.9503,43.223 5.7766,15.238 17.145,27.376 24.994,41.49 4.6019,5.2258 -5.3217,2.7679 -8.4635,3.5354 -25.451,-0.0247 -51.385,-4.4738 -74.255,-16.006 -13.053,-6.7549 -25.175,-16.863 -30.769,-30.813 z" fill="#131920" opacity="0.15"/>
+                            <path d="m 495.40625,157 a 70.231,70.231 0 0 1 14.44,42.81 70.235,70.235 0 0 1 -140.47,0 70.231,70.231 0 0 1 14.28,-42.81 l 111.75,0 z" fill="#00FFFF"/>
+                            <path d="m 513.20625,465.53 c 6.7333,0 8.7137,-5.4462 12.181,-25.899 2.4479,-14.774 7.1068,-28.463 10.502,-43.043 3.0219,-13.117 5.6425,-20.332 9.6694,-26.618 6.5526,-10.229 6.3011,-20.921 -0.71691,-30.481 -6.33,-8.6232 -6.827,-11.121 -6.5471,-32.901 0.13783,-10.725 0.56403,-21.286 0.94711,-23.468 0.88077,-5.0179 4.6148,-7.6923 13.904,-9.9586 8.4827,-2.0695 16.525,-2.2933 41.967,-1.1681 18.144,0.80245 20.457,0.72323 22.75,-0.77901 5.627,-3.687 2.9527,-8.8405 -12.261,-23.626 -15.69,-15.249 -23.876,-24.688 -38.811,-44.75 -26.839,-36.053 -30.927,-40.83 -57.501,-49.189 -19.575,-6.1582 -26.691,-9.0119 -62.031,-10.06 -24.654,-0.7309 -38.767,2.5963 -45.357,3.3466 -25.219,2.8716 -66.247,14.877 -91.933,26.083 -13.581,5.9249 -14.042,6.1723 -30.115,16.152 -11.981,7.4391 -18.733,10.459 -35.44,15.034 -34.886,9.553 -56.753,7.7583 -92,10.378 -9.2579,0.68808 -49.298,3.5149 -74.500004,4.4784 -30.689,1.1732 -35.835,-2.0376 -38.423,0.54994 -2.0315,2.0315 -0.5636,8.1815 -0.6024,14.306 -0.0237,3.7378 0.18399,7.6642 0.48569,11.602 8.1923,-1.424 8.0353,-1.3676 26.54,-2.9165 1.6808,-0.14069 16.718,-1.6695 44.500004,-4.1726 11.867,-1.0692 70.326,-2.8448 105.5,-3.9248 16.997,-0.52189 34.357,-4.7228 51,-1.2347 5.7624,1.2076 -2.387,-1.1161 16,7.4812 36.313,14.051 55.853,23.79 104.5,32.83 30.774,4.5201 33.208,4.9745 36.376,7.2909 1.7456,1.2764 1.662,1.6171 -1.6767,6.8363 -3.5642,5.5717 -14.275,15.81 -29.699,28.389 -51.619,43.564 -115.05,77.431 -162.89,98.598 -22.221,9.5122 -37.55,14.655 -50.108,16.811 -61.892,13.654 -134.260004,-9.4938 -136.110004,-56.959 -0.0489,-1.256 -0.49928,-6.001 0.1398,-12.079 0.44539,-4.2357 0.89625,-7.3216 2.2932,-11.095 3.9795,-10.75 12.413,-20.407 28.672,-21.755 11.746,0.022 20.375,6.1561 23.95,16.17 4.562204,12.78 -1.3185,27.071 -14.023,29.565 -6.6403,1.3038 -11.222,-0.5256 -14.271,-4.4679 -3.3424,-4.3221 -3.72,-12.026 -1.3559,-15.634 2.2757,-3.4732 7.2459,-5.2754 10.824,-3.9248 3.6125,1.3636 4.9933,0.36555 0.6538,-3.1839 -0.38036,-0.24867 -0.77844,-0.4586 -1.191,-0.63136 -6.6675,-2.7918 -17.127,4.1226 -17.913,14.135 -0.7119,11.495 7.7045,20.279 19.249,20.94 6.5659,0.37574 14.594,-1.9665 20.026004,-7.8035 13.425,-14.428 9.1712,-34.885 -2.958604,-45.762 -4.6131,-4.1366 -7.7535,-6.0583 -14.065,-7.4773 -19.37,-4.3554 -37.69,4.5134 -45.528,24.301 -3.5645,8.9992 -3.7675,16.201 -3.8515,23.221 -0.70438,58.895 65.742,87.202 131.950004,82.517 28.009,-2.4123 46.229,-6.8095 80.495,-20.915 36.58,-12.09 143.44,-68.32 207.96,-120.33 18.846,-15.317 30.511,-22.813 33.055,-21.24 0.61585,0.38062 0.98989,11.992 0.99221,30.802 0.004,28.758 0.1019,30.352 2.0717,33.583 3.2793,5.3791 4.935,17.725 5.9822,44.608 1.6327,41.914 2.675,60.915 3.4439,62.778 1.3963,3.383 7.0306,4.6642 13.289,4.6642 z m -221.62,-252.27 c -0.41803,-2.1707 4.6044,-8.6243 11.231,-13.08 10.396,-6.9893 22.385,-11.512 34.092,-15.96 71.934,-23.518 145.08,-20.065 174.03,-4.962 10.593,5.1512 14.126,7.777 22.813,15.582 4.1291,3.7102 9.5939,9.7305 12.144,13.379 5.133,7.3428 10.014,13.339 19.014,23.362 9.3026,10.359 14.5,16.774 14.5,17.897 0,1.5721 -7.8962,3.1488 -17.5,3.5809 -81.15,10.292 -230.44,14.198 -270.32,-39.799 z M 67.406246,143.909 c 16.558,-0.50003 42.467004,-2.0158 63.500004,-4.8954 19.525,-2.6732 39.047,-6.067 58,-11.467 17.982,-5.123 35.124,-12.85 52.5,-19.754 7.7243,-3.0694 15.32,-6.4533 23,-9.6318 8.319,-3.4429 16.53,-7.1723 25,-10.224 15.523,-5.5928 30.986,-11.946 47.239,-14.789 41.988,-7.3464 85.261,-8.7793 127.76,-5.4986 23.554,1.8182 46.695,7.7124 69.5,13.878 17.863,4.8293 35.019,11.972 52.5,18.041 5.069,1.761 10.039,6.841 15.177,5.321 5.396,-1.6 10.73,-7.749 10.317,-13.361 -0.434,-5.884 -7.835,-9.014 -12.753,-12.272 -16.823,-11.146 -36.498,-17.485 -55.661,-23.803 -19.219,-6.3349 -38.923,-12.127 -59.072,-14.001 -54.326,-5.0532 -110.09,-3.4301 -163.5,7.7269 -28.29,5.9098 -53.945,20.759 -81,30.92 -31.437,11.806 -61.76,27.444 -94.5,34.909 -33.045,7.534 -83.745004,9.6292 -101.220004,9.5911 -6.5425,-0.0143 -6.7685,0.0708 -8.3595,3.1475 -1.8515,3.5805 -3.1256,14.296 -1.7926,15.077 1.3395,0.78418 21.593,1.4453 33.376,1.0894 z" fill="#131920"/>
+                        </g>
+                        <text x="84" y="44" class="centra-logo-text" fill="#131920" letter-spacing="1">CENTR<tspan fill="#00FFFF">A</tspan><tspan font-size="12" dy="-14" fill="#00FFFF">™</tspan></text>
+                    </svg>
+                </a>
+                <span class="text-gray-200 text-lg">|</span>
+                <h1 class="text-sm font-medium text-[#475467]">Strix AI Penetration Testing</h1>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="/" class="border border-[#d0d5dd] hover:bg-gray-50 text-[#344054] text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    Portal
+                </a>
+                <a href="/scan" class="border border-[#d0d5dd] hover:bg-gray-50 text-[#344054] text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    Scan Console
+                </a>
+                <span id="strixUserBadge" class="hidden text-xs text-gray-400 font-medium"></span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-8 w-full flex-grow">
+
+        <!-- Auth gate notice -->
+        <div id="authNotice" class="hidden bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 flex items-center gap-3">
+            <svg class="w-5 h-5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            <div class="flex-1">
+                <span class="text-sm font-semibold text-amber-800">Not signed in</span>
+                <span class="text-sm text-amber-700 ml-1">Scans require authentication.</span>
+            </div>
+            <a href="/login" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition">Sign In</a>
+        </div>
+
+        <!-- Hero banner -->
+        <div class="bg-white border-t-4 border-[#1e2124] border-x border-b border-[#d0d5dd] rounded-lg p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 shadow-sm">
+            <div>
+                <h2 class="text-lg font-semibold text-[#101828]">Strix AI Penetration Testing</h2>
+                <p class="text-sm text-gray-500 mt-1">Autonomous AI agents that find and validate vulnerabilities with working proof-of-concept exploits — integrated into the Centra security engine.</p>
+            </div>
+            <button onclick="document.getElementById('scanFormCard').scrollIntoView({behavior:'smooth'})" class="bg-[#1e2124] hover:bg-[#353a40] text-white text-sm font-semibold px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition whitespace-nowrap self-start md:self-center">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                Start New AI Pentest
+            </button>
+        </div>
+
+        <!-- Strix status card -->
+        <div class="bg-white border border-[#d0d5dd] rounded-lg p-6 mb-8 shadow-sm">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="text-[#19256e]">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                </span>
+                <h3 class="text-base font-semibold text-[#101828]">Strix Engine Status</h3>
+                <span id="strixReadyBadge" class="ml-auto text-[10px] font-semibold px-2 py-1 rounded"></span>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="strixStatusGrid">
+                <div class="flex items-center gap-2">
+                    <span id="statusCliIcon" class="text-gray-300"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></span>
+                    <div>
+                        <div class="text-[10px] font-medium text-gray-400 uppercase tracking-wide">CLI</div>
+                        <div class="text-xs text-[#101828] font-medium" id="statusCliText">Checking…</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="statusDockerIcon" class="text-gray-300"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></span>
+                    <div>
+                        <div class="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Docker</div>
+                        <div class="text-xs text-[#101828] font-medium" id="statusDockerText">Checking…</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="statusLlmIcon" class="text-gray-300"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></span>
+                    <div>
+                        <div class="text-[10px] font-medium text-gray-400 uppercase tracking-wide">LLM</div>
+                        <div class="text-xs text-[#101828] font-medium" id="statusLlmText">Checking…</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[#19256e]"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg></span>
+                    <div>
+                        <div class="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Reasoning</div>
+                        <div class="text-xs text-[#101828] font-medium" id="statusReasoningText">—</div>
+                    </div>
+                </div>
+            </div>
+            <div id="strixStatusMsg" class="mt-4 text-xs text-gray-500 hidden bg-gray-50 border border-[#eaecf0] rounded-lg p-3"></div>
+        </div>
+
+        <!-- Two-column: form + live scan -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Start scan form -->
+            <div class="bg-white border border-[#d0d5dd] rounded-lg p-6 shadow-sm" id="scanFormCard">
+                <div class="flex items-center gap-2 mb-5">
+                    <span class="text-[#19256e]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </span>
+                    <h3 class="text-base font-semibold text-[#101828]">Configure AI Pentest</h3>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-semibold text-[#344054] uppercase tracking-wide">Target URL</label>
+                        <input type="text" id="targetInput" placeholder="https://example.com" class="w-full bg-white border border-[#d0d5dd] rounded-lg px-3 py-2.5 text-sm mt-1.5 focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124] placeholder-gray-400">
+                        <p class="text-[11px] text-gray-400 mt-1">Live URL, GitHub repo, local directory, or OpenAPI spec.</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-xs font-semibold text-[#344054] uppercase tracking-wide">Scan Mode</label>
+                            <select id="modeSelect" class="w-full bg-white border border-[#d0d5dd] rounded-lg px-3 py-2.5 text-sm mt-1.5 focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124]">
+                                <option value="quick">Quick — fast reconnaissance</option>
+                                <option value="standard" selected>Standard — balanced depth</option>
+                                <option value="deep">Deep — full exploitation chain</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-[#344054] uppercase tracking-wide">Reasoning Effort</label>
+                            <select id="effortSelect" disabled class="w-full bg-gray-50 border border-[#d0d5dd] rounded-lg px-3 py-2.5 text-sm mt-1.5 text-gray-500">
+                                <option id="effortValue">high</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-[#344054] uppercase tracking-wide">Instructions <span class="text-gray-400 normal-case font-normal">(optional)</span></label>
+                        <textarea id="instructionInput" rows="3" placeholder="Focus on IDOR and authentication flaws. Credentials: admin:password123" class="w-full bg-white border border-[#d0d5dd] rounded-lg px-3 py-2.5 text-sm mt-1.5 focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124] placeholder-gray-400 resize-none"></textarea>
+                        <p class="text-[11px] text-gray-400 mt-1">Test credentials, scope directives, or vulnerability focus areas.</p>
+                    </div>
+                    <button id="startScanBtn" onclick="startScan()" class="w-full bg-[#1e2124] hover:bg-[#353a40] disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Launch AI Pentest
+                    </button>
+                </div>
+            </div>
+
+            <!-- Live scan panel -->
+            <div class="bg-white border border-[#d0d5dd] rounded-lg p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-5">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[#19256e]">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </span>
+                        <h3 class="text-base font-semibold text-[#101828]">Live Scan</h3>
+                    </div>
+                    <span id="liveStatus" class="text-[10px] font-semibold px-2 py-1 rounded bg-gray-100 text-gray-500">Idle</span>
+                </div>
+                <!-- Progress bar -->
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs text-gray-500" id="liveLabel">No active scan</span>
+                        <span class="text-xs font-mono text-[#1e2124] font-semibold" id="livePct">0%</span>
+                    </div>
+                    <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div id="liveProgress" class="h-full bg-[#1e2124] rounded-full transition-all duration-500" style="width:0%"></div>
+                    </div>
+                </div>
+                <!-- Severity pills -->
+                <div class="grid grid-cols-5 gap-2 mb-4">
+                    <div class="text-center p-2 rounded-lg border border-[#eaecf0] bg-white">
+                        <div class="text-base font-bold text-red-600" id="sevC">0</div>
+                        <div class="text-[9px] uppercase tracking-wide text-gray-400 mt-0.5">Crit</div>
+                    </div>
+                    <div class="text-center p-2 rounded-lg border border-[#eaecf0] bg-white">
+                        <div class="text-base font-bold text-orange-600" id="sevH">0</div>
+                        <div class="text-[9px] uppercase tracking-wide text-gray-400 mt-0.5">High</div>
+                    </div>
+                    <div class="text-center p-2 rounded-lg border border-[#eaecf0] bg-white">
+                        <div class="text-base font-bold text-yellow-600" id="sevM">0</div>
+                        <div class="text-[9px] uppercase tracking-wide text-gray-400 mt-0.5">Med</div>
+                    </div>
+                    <div class="text-center p-2 rounded-lg border border-[#eaecf0] bg-white">
+                        <div class="text-base font-bold text-blue-600" id="sevL">0</div>
+                        <div class="text-[9px] uppercase tracking-wide text-gray-400 mt-0.5">Low</div>
+                    </div>
+                    <div class="text-center p-2 rounded-lg border border-[#eaecf0] bg-white">
+                        <div class="text-base font-bold text-gray-500" id="sevI">0</div>
+                        <div class="text-[9px] uppercase tracking-wide text-gray-400 mt-0.5">Info</div>
+                    </div>
+                </div>
+                <!-- Live log feed -->
+                <div class="bg-gray-50 border border-[#eaecf0] rounded-lg p-3 h-48 overflow-y-auto font-mono text-[11px] leading-relaxed" id="liveLog">
+                    <div class="text-gray-400">Agent activity will appear here when a scan is running.</div>
+                </div>
+                <button id="cancelScanBtn" onclick="cancelScan()" class="hidden mt-3 w-full border border-red-200 hover:bg-red-50 text-red-600 text-xs font-semibold px-4 py-2 rounded-lg transition">Cancel Scan</button>
+            </div>
+        </div>
+
+        <!-- Findings -->
+        <div class="bg-white border border-[#d0d5dd] rounded-lg p-6 mb-8 shadow-sm">
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center gap-2">
+                    <span class="text-[#19256e]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </span>
+                    <h3 class="text-base font-semibold text-[#101828]">Validated Findings</h3>
+                    <span id="findingsCount" class="text-xs text-gray-400 ml-1">(0)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="findingFilter" placeholder="Filter findings…" oninput="renderFindings()" class="bg-white border border-[#d0d5dd] rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124] placeholder-gray-400 w-40">
+                </div>
+            </div>
+            <div id="findingsList" class="space-y-3">
+                <div class="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-10 text-center">
+                    <svg class="w-10 h-10 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    <h4 class="text-sm font-semibold text-gray-500 mb-1">No findings yet</h4>
+                    <p class="text-xs text-gray-400 max-w-md mx-auto leading-relaxed">Launch an AI pentest to see validated vulnerabilities with proof-of-concept exploits here.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scan history -->
+        <div class="bg-white border border-[#d0d5dd] rounded-lg p-6 mb-8 shadow-sm">
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center gap-2">
+                    <span class="text-[#19256e]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </span>
+                    <h3 class="text-base font-semibold text-[#101828]">Scan History</h3>
+                </div>
+                <button onclick="loadHistory()" class="text-xs text-[#1e2124] hover:underline font-medium">Refresh</button>
+            </div>
+            <div id="historyList" class="space-y-3">
+                <div class="text-center text-xs text-gray-400 py-6">No scans yet</div>
+            </div>
+        </div>
+
+    </main>
+
+<footer class="bg-white border-t border-[#eaecf0] py-8 text-center">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex items-center justify-center gap-2 mb-2">
+                <a href="/" class="brand-logo" aria-label="visit the Alien Inc Homepage">
+                    <span class="brand-logo__text" style="font-size:18px;">Alien</span>
+                    <img src="/logo.png" alt="•" class="brand-logo__dot" style="height:0.35em;width:0.35em;top:calc(0.30*18px);">
+                    <span class="brand-logo__text" style="font-size:18px;">Inc</span>
+                </a>
+                <span class="text-gray-200">/</span>
+                <svg viewBox="0 0 360 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CENTRA" style="height:18px;width:auto;">
+                    <defs><style>.centra-logo-text{font-family:'Orbitron',sans-serif;font-weight:900;}</style></defs>
+                    <g transform="translate(8, 6) scale(0.104)">
+                        <path d="m 33.676246,364.82 c 0.53628,-7.2677 1.7767,-14.482 5.0286,-21.276 9.4786,-19.803 33.963,-29.34 53.026,-19.284 15.333004,8.0885 22.563004,29.331 13.578004,45.149 -6.873004,12.099 -23.072004,18.235 -35.622004,10.228 -4.4328,-2.828 -7.6343,-7.2793 -8.9938,-12.286 -1.3595,-5.0063 -0.68452,-10.798 2.9392,-15.401 2.2364,-2.8407 5.4473,-4.7654 9.1114,-5.408 3.664,-0.64263 8.1708,0.40388 10.875,3.9972 1.7829,2.3692 1.91,4.5449 1.4108,7.1127 -0.24961,1.2839 -0.78116,2.8399 -2.3513,3.9972 -1.5702,1.1573 -4.2926,1.9424 -5.5844,0.58783 -1.1069,-1.1607 0.67477,-3.153 0.73029,-4.7559 0.0388,-0.83158 0.0772,-1.7317 -0.26004,-2.4745 -0.89679,-1.1463 -1.8493,-1.342 -3.4682,-1.0581 -1.6548,0.29023 -3.6474,1.4542 -4.5851,2.6452 l 0,0.0588 c -2.0224,2.5986 -2.3717,5.5943 -1.5284,8.6999 0.81645,3.0066 2.8568,5.919 5.4668,7.7006 l 0.29391,0.23513 c 8.5452,5.4516 18.484,0.70317 23.392,-7.9366 6.716204,-11.823 1.5113,-26.282 -10.285,-32.505 -15.078,-7.9537 -35.744,1.451 -40.36,17.085 -4.566,15.464 -2.8715,30.938 -0.27385,37.511 l -10.609,0.073 c -2.5579,-12.089 -1.9287,-15.035 -1.9287,-22.696 z" fill="#131920"/>
+                        <path d="m 495.40625,157 a 70.231,70.231 0 0 1 14.44,42.81 70.235,70.235 0 0 1 -140.47,0 70.231,70.231 0 0 1 14.28,-42.81 l 111.75,0 z" fill="#00FFFF"/>
+                        <path d="m 513.20625,465.53 c 6.7333,0 8.7137,-5.4462 12.181,-25.899 2.4479,-14.774 7.1068,-28.463 10.502,-43.043 3.0219,-13.117 5.6425,-20.332 9.6694,-26.618 6.5526,-10.229 6.3011,-20.921 -0.71691,-30.481 -6.33,-8.6232 -6.827,-11.121 -6.5471,-32.901 0.13783,-10.725 0.56403,-21.286 0.94711,-23.468 0.88077,-5.0179 4.6148,-7.6923 13.904,-9.9586 8.4827,-2.0695 16.525,-2.2933 41.967,-1.1681 18.144,0.80245 20.457,0.72323 22.75,-0.77901 5.627,-3.687 2.9527,-8.8405 -12.261,-23.626 -15.69,-15.249 -23.876,-24.688 -38.811,-44.75 -26.839,-36.053 -30.927,-40.83 -57.501,-49.189 -19.575,-6.1582 -26.691,-9.0119 -62.031,-10.06 -24.654,-0.7309 -38.767,2.5963 -45.357,3.3466 -25.219,2.8716 -66.247,14.877 -91.933,26.083 -13.581,5.9249 -14.042,6.1723 -30.115,16.152 -11.981,7.4391 -18.733,10.459 -35.44,15.034 -34.886,9.553 -56.753,7.7583 -92,10.378 -9.2579,0.68808 -49.298,3.5149 -74.500004,4.4784 -30.689,1.1732 -35.835,-2.0376 -38.423,0.54994 -2.0315,2.0315 -0.5636,8.1815 -0.6024,14.306 -0.0237,3.7378 0.18399,7.6642 0.48569,11.602 8.1923,-1.424 8.0353,-1.3676 26.54,-2.9165 1.6808,-0.14069 16.718,-1.6695 44.500004,-4.1726 11.867,-1.0692 70.326,-2.8448 105.5,-3.9248 16.997,-0.52189 34.357,-4.7228 51,-1.2347 5.7624,1.2076 -2.387,-1.1161 16,7.4812 36.313,14.051 55.853,23.79 104.5,32.83 30.774,4.5201 33.208,4.9745 36.376,7.2909 1.7456,1.2764 1.662,1.6171 -1.6767,6.8363 -3.5642,5.5717 -14.275,15.81 -29.699,28.389 -51.619,43.564 -115.05,77.431 -162.89,98.598 -22.221,9.5122 -37.55,14.655 -50.108,16.811 -61.892,13.654 -134.260004,-9.4938 -136.110004,-56.959 -0.0489,-1.256 -0.49928,-6.001 0.1398,-12.079 0.44539,-4.2357 0.89625,-7.3216 2.2932,-11.095 3.9795,-10.75 12.413,-20.407 28.672,-21.755 11.746,0.022 20.375,6.1561 23.95,16.17 4.562204,12.78 -1.3185,27.071 -14.023,29.565 -6.6403,1.3038 -11.222,-0.5256 -14.271,-4.4679 -3.3424,-4.3221 -3.72,-12.026 -1.3559,-15.634 2.2757,-3.4732 7.2459,-5.2754 10.824,-3.9248 3.6125,1.3636 4.9933,0.36555 0.6538,-3.1839 -0.38036,-0.24867 -0.77844,-0.4586 -1.191,-0.63136 -6.6675,-2.7918 -17.127,4.1226 -17.913,14.135 -0.7119,11.495 7.7045,20.279 19.249,20.94 6.5659,0.37574 14.594,-1.9665 20.026004,-7.8035 13.425,-14.428 9.1712,-34.885 -2.958604,-45.762 -4.6131,-4.1366 -7.7535,-6.0583 -14.065,-7.4773 -19.37,-4.3554 -37.69,4.5134 -45.528,24.301 -3.5645,8.9992 -3.7675,16.201 -3.8515,23.221 -0.70438,58.895 65.742,87.202 131.950004,82.517 28.009,-2.4123 46.229,-6.8095 80.495,-20.915 36.58,-12.09 143.44,-68.32 207.96,-120.33 18.846,-15.317 30.511,-22.813 33.055,-21.24 0.61585,0.38062 0.98989,11.992 0.99221,30.802 0.004,28.758 0.1019,30.352 2.0717,33.583 3.2793,5.3791 4.935,17.725 5.9822,44.608 1.6327,41.914 2.675,60.915 3.4439,62.778 1.3963,3.383 7.0306,4.6642 13.289,4.6642 z m -221.62,-252.27 c -0.41803,-2.1707 4.6044,-8.6243 11.231,-13.08 10.396,-6.9893 22.385,-11.512 34.092,-15.96 71.934,-23.518 145.08,-20.065 174.03,-4.962 10.593,5.1512 14.126,7.777 22.813,15.582 4.1291,3.7102 9.5939,9.7305 12.144,13.379 5.133,7.3428 10.014,13.339 19.014,23.362 9.3026,10.359 14.5,16.774 14.5,17.897 0,1.5721 -7.8962,3.1488 -17.5,3.5809 -81.15,10.292 -230.44,14.198 -270.32,-39.799 z M 67.406246,143.909 c 16.558,-0.50003 42.467004,-2.0158 63.500004,-4.8954 19.525,-2.6732 39.047,-6.067 58,-11.467 17.982,-5.123 35.124,-12.85 52.5,-19.754 7.7243,-3.0694 15.32,-6.4533 23,-9.6318 8.319,-3.4429 16.53,-7.1723 25,-10.224 15.523,-5.5928 30.986,-11.946 47.239,-14.789 41.988,-7.3464 85.261,-8.7793 127.76,-5.4986 23.554,1.8182 46.695,7.7124 69.5,13.878 17.863,4.8293 35.019,11.972 52.5,18.041 5.069,1.761 10.039,6.841 15.177,5.321 5.396,-1.6 10.73,-7.749 10.317,-13.361 -0.434,-5.884 -7.835,-9.014 -12.753,-12.272 -16.823,-11.146 -36.498,-17.485 -55.661,-23.803 -19.219,-6.3349 -38.923,-12.127 -59.072,-14.001 -54.326,-5.0532 -110.09,-3.4301 -163.5,7.7269 -28.29,5.9098 -53.945,20.759 -81,30.92 -31.437,11.806 -61.76,27.444 -94.5,34.909 -33.045,7.534 -83.745004,9.6292 -101.220004,9.5911 -6.5425,-0.0143 -6.7685,0.0708 -8.3595,3.1475 -1.8515,3.5805 -3.1256,14.296 -1.7926,15.077 1.3395,0.78418 21.593,1.4453 33.376,1.0894 z" fill="#131920"/>
+                    </g>
+                    <text x="84" y="44" class="centra-logo-text" fill="#131920" letter-spacing="1">CENTR<tspan fill="#00FFFF">A</tspan><tspan font-size="12" dy="-14" fill="#00FFFF">™</tspan></text>
+                </svg>
+            </div>
+            <span class="text-xs text-gray-400">Secured by Centra</span>
+            <span class="text-xs text-gray-300 mx-2">&middot;</span>
+            <span class="text-xs text-gray-400">Vulnerability Scanning &amp; Compliance Monitoring</span>
+            <div class="mt-2 text-[10px] text-gray-300">A subsidiary of Alien Inc &reg;</div>
+        </div>
+    </footer>
+
+    <script>
+    (function() {
+        var SEV_COLORS = {critical:'bg-red-100 text-red-700', high:'bg-orange-100 text-orange-700', medium:'bg-yellow-100 text-yellow-700', low:'bg-blue-100 text-blue-700', info:'bg-gray-100 text-gray-500'};
+        var SEV_DOT = {critical:'#dc2626', high:'#ea580c', medium:'#ca8a04', low:'#2563eb', info:'#6b7280'};
+
+        // ── Auth ──
+        var session = null;
+        try { session = JSON.parse(localStorage.getItem('hs_session')); } catch(e) {}
+        var token = (session && session.access_token) || '';
+        var companyId = (session && session.company_id) || 'alieninc';
+        var authHeaders = {'Content-Type':'application/json', 'X-Company-Id': companyId};
+        if (token) authHeaders['Authorization'] = 'Bearer ' + token;
+
+        if (!session) {
+            document.getElementById('authNotice').classList.remove('hidden');
+            document.getElementById('startScanBtn').disabled = true;
+        } else {
+            var badge = document.getElementById('strixUserBadge');
+            badge.textContent = (session.username || 'user') + ' @ ' + companyId;
+            badge.classList.remove('hidden');
+        }
+
+        function api(path, opts) {
+            opts = opts || {};
+            opts.headers = Object.assign({}, authHeaders, opts.headers || {});
+            return fetch(path, opts).then(function(r) {
+                if (!r.ok) return r.text().then(function(t){ throw new Error(t || r.statusText); });
+                return r.json();
+            });
+        }
+
+        function esc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):'';}
+
+        // ── Health ──
+        function loadHealth() {
+            fetch('/api/strix/health').then(function(r){return r.json();}).then(function(h){
+                var ready = h.ready;
+                var badge = document.getElementById('strixReadyBadge');
+                badge.textContent = ready ? 'Ready' : 'Not Ready';
+                badge.className = 'ml-auto text-[10px] font-semibold px-2 py-1 rounded ' + (ready ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700');
+
+                setStat('Cli', h.cli_installed, h.cli_version || 'Not installed');
+                setStat('Docker', h.docker_available, h.docker_available ? 'Available' : 'Missing');
+                setStat('Llm', h.llm_configured, h.llm_configured ? (h.llm_model || 'Configured') : 'Key missing');
+                document.getElementById('statusReasoningText').textContent = h.reasoning_effort || 'high';
+                var ev = document.getElementById('effortValue');
+                if (ev) ev.textContent = h.reasoning_effort || 'high';
+
+                var btn = document.getElementById('startScanBtn');
+                if (!ready) {
+                    btn.disabled = true;
+                    var msg = document.getElementById('strixStatusMsg');
+                    msg.textContent = h.message;
+                    msg.classList.remove('hidden');
+                }
+            }).catch(function(){});
+        }
+        function setStat(name, ok, text) {
+            var icon = document.getElementById('status'+name+'Icon');
+            var txt = document.getElementById('status'+name+'Text');
+            txt.textContent = text;
+            icon.className = ok ? 'text-[#4ca30d]' : 'text-gray-300';
+            icon.innerHTML = ok
+                ? '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
+                : '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+        }
+
+        // ── Scan lifecycle ──
+        var currentScanId = null;
+        var ws = null;
+        var findings = [];
+
+        function startScan() {
+            var target = document.getElementById('targetInput').value.trim();
+            if (!target) { alert('Enter a target URL'); return; }
+            var mode = document.getElementById('modeSelect').value;
+            var instruction = document.getElementById('instructionInput').value.trim();
+
+            var btn = document.getElementById('startScanBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Launching…';
+
+            api('/api/strix/scans', {
+                method: 'POST',
+                body: JSON.stringify({targets:[target], scan_mode:mode, instruction:instruction})
+            }).then(function(res){
+                currentScanId = res.scan_id;
+                findings = [];
+                resetSev();
+                document.getElementById('findingsList').innerHTML = '';
+                document.getElementById('findingsCount').textContent = '(0)';
+                document.getElementById('liveLog').innerHTML = '';
+                setLive('running', 'Scan '+res.scan_id+' started', 0);
+                document.getElementById('cancelScanBtn').classList.remove('hidden');
+                connectWS(res.scan_id);
+                loadHistory();
+            }).catch(function(err){
+                alert('Failed to start scan: ' + err.message);
+            }).finally(function(){
+                btn.disabled = false;
+                btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Launch AI Pentest';
+            });
+        }
+
+        function cancelScan() {
+            if (!currentScanId) return;
+            api('/api/strix/scans/'+currentScanId, {method:'DELETE'}).then(function(){
+                logLine('Scan cancelled', 'warn');
+                setLive('done', 'Cancelled', 100);
+                document.getElementById('cancelScanBtn').classList.add('hidden');
+            }).catch(function(){});
+        }
+
+        // ── WebSocket ──
+        function connectWS(scanId) {
+            var proto = location.protocol === 'https:' ? 'wss' : 'ws';
+            ws = new WebSocket(proto + '://' + location.host + '/ws/scan');
+            ws.onopen = function() {
+                ws.send(JSON.stringify({type:'auth', token: token || 'anon', company_id: companyId}));
+            };
+            ws.onmessage = function(ev) {
+                var msg = JSON.parse(ev.data);
+                if (msg.type === 'authenticated') {
+                    ws.send(JSON.stringify({type:'subscribe_scan', scan_id: scanId}));
+                    return;
+                }
+                handleWS(msg);
+            };
+            ws.onclose = function() { setTimeout(function(){ if(currentScanId===scanId && ws===null) {} }, 1000); };
+        }
+
+        function handleWS(msg) {
+            switch(msg.type) {
+                case 'strix_scan_started':
+                    logLine('AI pentest started — mode '+msg.scan_mode+', targets: '+msg.targets.join(', '), 'info');
+                    break;
+                case 'strix_run_discovered':
+                    logLine('Strix run directory: '+msg.run_name, 'info');
+                    break;
+                case 'strix_progress':
+                    setLive('running', 'Agents working…', msg.progress);
+                    break;
+                case 'strix_log':
+                    logLine(msg.line, msg.line.match(/error|fail/i) ? 'err' : 'info');
+                    break;
+                case 'strix_findings':
+                    logLine(msg.new_count + ' new finding(s) discovered (total: '+msg.total+')', 'find');
+                    refreshFindings(msg.scan_id || currentScanId);
+                    break;
+                case 'strix_scan_completed':
+                    logLine('Scan '+msg.status+' — '+msg.total_findings+' findings (exit '+msg.exit_code+')', msg.status==='completed'?'ok':'err');
+                    setLive('done', 'Completed', 100);
+                    document.getElementById('cancelScanBtn').classList.add('hidden');
+                    if (msg.severity) updateSev(msg.severity);
+                    refreshFindings(msg.scan_id || currentScanId);
+                    loadHistory();
+                    if (ws) { ws.close(); ws = null; }
+                    break;
+                case 'strix_scan_error':
+                    logLine('Error: '+msg.error, 'err');
+                    setLive('error', 'Failed', 0);
+                    document.getElementById('cancelScanBtn').classList.add('hidden');
+                    break;
+                case 'strix_scan_cancelled':
+                    setLive('done', 'Cancelled', 100);
+                    document.getElementById('cancelScanBtn').classList.add('hidden');
+                    break;
+            }
+        }
+
+        function logLine(text, cls) {
+            var box = document.getElementById('liveLog');
+            var colors = {info:'#475467', ok:'#16a34a', warn:'#ca8a04', err:'#dc2626', find:'#ea580c'};
+            var d = document.createElement('div');
+            d.style.color = colors[cls] || '#475467';
+            d.style.borderLeft = '2px solid ' + (colors[cls] || '#475467');
+            d.style.paddingLeft = '6px';
+            d.style.marginBottom = '2px';
+            d.textContent = text;
+            box.appendChild(d);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function setLive(status, label, pct) {
+            var pill = document.getElementById('liveStatus');
+            var map = {running:'bg-blue-100 text-blue-700', done:'bg-green-100 text-green-700', error:'bg-red-100 text-red-700', idle:'bg-gray-100 text-gray-500'};
+            pill.className = 'text-[10px] font-semibold px-2 py-1 rounded ' + (map[status]||map.idle);
+            pill.textContent = status.charAt(0).toUpperCase()+status.slice(1);
+            document.getElementById('liveLabel').textContent = label;
+            document.getElementById('livePct').textContent = Math.round(pct)+'%';
+            document.getElementById('liveProgress').style.width = pct+'%';
+        }
+
+        // ── Findings ──
+        function refreshFindings(scanId) {
+            api('/api/strix/scans/'+scanId).then(function(data){
+                findings = data.findings || [];
+                renderFindings();
+                var sevs = {critical:0,high:0,medium:0,low:0,info:0};
+                findings.forEach(function(f){ if(sevs[f.severity]!==undefined) sevs[f.severity]++; });
+                updateSev(sevs);
+            }).catch(function(){});
+        }
+
+        function renderFindings() {
+            var list = document.getElementById('findingsList');
+            var filter = (document.getElementById('findingFilter').value || '').toLowerCase();
+            document.getElementById('findingsCount').textContent = '('+findings.length+')';
+
+            var filtered = findings.filter(function(f){
+                if (!filter) return true;
+                return (f.plugin_name||'').toLowerCase().indexOf(filter) !== -1 ||
+                       (f.description||'').toLowerCase().indexOf(filter) !== -1 ||
+                       (f.family||'').toLowerCase().indexOf(filter) !== -1;
+            });
+
+            if (!filtered.length) {
+                list.innerHTML = '<div class="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-10 text-center"><p class="text-xs text-gray-400">'+(findings.length?'No findings match filter':'No findings yet')+'</p></div>';
+                return;
+            }
+
+            list.innerHTML = filtered.map(function(f){
+                var sc = SEV_COLORS[f.severity] || SEV_COLORS.info;
+                var cvss = f.cvss_score ? f.cvss_score.toFixed(1) : '—';
+                var refs = (f.reference_urls||[]).map(function(r){ return '<a href="'+esc(r)+'" target="_blank" rel="noopener" class="text-[#19256e] hover:underline">'+esc(r.replace(/^https?:\/\//,'').split('/')[0])+'</a>'; }).join(' · ');
+                var evidence = f.evidence ? '<div class="mt-2 bg-gray-50 border border-[#eaecf0] rounded p-2 font-mono text-[10px] text-gray-600 whitespace-pre-wrap max-h-32 overflow-y-auto">'+esc(f.evidence)+'</div>' : '';
+                var solution = f.solution ? '<div class="mt-2 text-xs text-gray-600"><span class="font-semibold text-[#4ca30d]">Remediation:</span> '+esc(f.solution)+'</div>' : '';
+                return '<div class="border border-[#eaecf0] rounded-lg p-4 bg-gray-50">' +
+                    '<div class="flex items-start justify-between gap-3 mb-2">' +
+                        '<div class="flex items-center gap-2 flex-1 min-w-0">' +
+                            '<span class="w-2 h-2 rounded-full flex-shrink-0" style="background:'+(SEV_DOT[f.severity]||'#6b7280')+'"></span>' +
+                            '<span class="text-sm font-semibold text-[#101828] truncate">'+esc(f.plugin_name||'Untitled')+'</span>' +
+                            '<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded '+sc+' flex-shrink-0">'+esc(f.severity)+'</span>' +
+                        '</div>' +
+                        '<div class="flex items-center gap-2 flex-shrink-0">' +
+                            '<span class="font-mono text-xs font-semibold" style="color:'+(SEV_DOT[f.severity]||'#6b7280')+'">CVSS '+esc(cvss)+'</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="text-xs text-gray-500 mb-1">'+esc(f.family||'AI Pentest')+(f.target?' · '+esc(f.target)+(f.port?':'+f.port:''):'')+'</div>' +
+                    (f.description?'<div class="text-xs text-gray-600 leading-relaxed">'+esc(f.description)+'</div>':'') +
+                    solution + evidence +
+                    (refs?'<div class="mt-2 text-[10px] text-gray-400">'+refs+'</div>':'') +
+                '</div>';
+            }).join('');
+        }
+
+        function updateSev(sevs) {
+            document.getElementById('sevC').textContent = sevs.critical||0;
+            document.getElementById('sevH').textContent = sevs.high||0;
+            document.getElementById('sevM').textContent = sevs.medium||0;
+            document.getElementById('sevL').textContent = sevs.low||0;
+            document.getElementById('sevI').textContent = sevs.info||0;
+        }
+        function resetSev(){ updateSev({}); }
+
+        // ── History ──
+        function loadHistory() {
+            api('/api/strix/scans').then(function(scans){
+                var list = document.getElementById('historyList');
+                if (!scans.length) { list.innerHTML = '<div class="text-center text-xs text-gray-400 py-6">No scans yet</div>'; return; }
+                list.innerHTML = scans.map(function(s){
+                    var statusColors = {completed:'bg-green-100 text-green-700', running:'bg-blue-100 text-blue-700', failed:'bg-red-100 text-red-700', queued:'bg-gray-100 text-gray-500', interrupted:'bg-amber-100 text-amber-700', partial:'bg-yellow-100 text-yellow-700'};
+                    var sc = statusColors[s.status] || 'bg-gray-100 text-gray-500';
+                    var d = s.finished_at ? new Date(s.finished_at*1000) : new Date(s.created_at*1000);
+                    var ds = d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+                    var sev = [s.severity_critical||0, s.severity_high||0, s.severity_medium||0, s.severity_low||0];
+                    return '<div class="border border-[#eaecf0] rounded-lg p-4 bg-gray-50 flex items-center justify-between gap-3 cursor-pointer hover:border-[#1e2124] transition" onclick="viewScan(\''+s.id+'\')">' +
+                        '<div class="min-w-0">' +
+                            '<div class="flex items-center gap-2 mb-1">' +
+                                '<span class="font-mono text-xs text-[#1e2124] font-semibold">'+esc(s.id)+'</span>' +
+                                '<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded '+sc+'">'+esc(s.status)+'</span>' +
+                                '<span class="text-[10px] text-gray-400 uppercase">'+esc(s.scan_mode)+'</span>' +
+                            '</div>' +
+                            '<div class="text-xs text-gray-500 truncate">'+esc((s.targets||[]).join(', '))+'</div>' +
+                            '<div class="text-[10px] text-gray-400 mt-0.5">'+ds+'</div>' +
+                        '</div>' +
+                        '<div class="flex items-center gap-1.5 flex-shrink-0">' +
+                            (sev[0]?('<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-100 text-red-700">'+sev[0]+' C</span>'):'') +
+                            (sev[1]?('<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">'+sev[1]+' H</span>'):'') +
+                            (sev[2]?('<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700">'+sev[2]+' M</span>'):'') +
+                            (sev[3]?('<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">'+sev[3]+' L</span>'):'') +
+                            '<span class="text-[10px] font-semibold text-gray-500 ml-1">'+(s.total_findings||0)+' total</span>' +
+                            '<button onclick="event.stopPropagation();deleteScan(\''+s.id+'\')" class="ml-2 text-gray-300 hover:text-red-500" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>' +
+                        '</div>' +
+                    '</div>';
+                }).join('');
+            }).catch(function(){});
+        }
+
+        function viewScan(id) {
+            api('/api/strix/scans/'+id).then(function(data){
+                findings = data.findings || [];
+                renderFindings();
+                var sevs = {critical:0,high:0,medium:0,low:0,info:0};
+                findings.forEach(function(f){ if(sevs[f.severity]!==undefined) sevs[f.severity]++; });
+                updateSev(sevs);
+                setLive('done', 'Viewing '+id, 100);
+                document.getElementById('liveLog').innerHTML = '';
+                logLine('Loaded scan '+id+' — '+findings.length+' findings', 'info');
+                document.getElementById('scanFormCard').scrollIntoView({behavior:'smooth'});
+            }).catch(function(){});
+        }
+
+        function deleteScan(id) {
+            if (!confirm('Delete scan '+id+' and its findings?')) return;
+            api('/api/strix/scans/'+id, {method:'DELETE'}).then(function(){
+                loadHistory();
+                if (currentScanId === id) { findings = []; renderFindings(); resetSev(); }
+            }).catch(function(){});
+        }
+
+        // ── Init ──
+        window.startScan = startScan;
+        window.cancelScan = cancelScan;
+        window.loadHistory = loadHistory;
+        window.viewScan = viewScan;
+        window.deleteScan = deleteScan;
+        window.renderFindings = renderFindings;
+
+        loadHealth();
+        loadHistory();
+    })();
+    </script>
+
+</body>
+</html>

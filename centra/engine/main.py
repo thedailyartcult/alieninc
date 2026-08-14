@@ -26,6 +26,7 @@ from database import Database
 from engine import ScanEngine
 from ws_manager import ConnectionManager
 from plugins.plugin_loader import load_all_plugins
+from strix_connector import StrixConnector
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger('centra')
@@ -46,6 +47,7 @@ DATA_DIR.mkdir(exist_ok=True)
 
 db = None
 engine = None
+strix = None
 manager = ConnectionManager()
 plugins = []
 
@@ -60,6 +62,12 @@ class ScanRequest(BaseModel):
     plugins: list[str] | None = None
 
 
+class StrixScanRequest(BaseModel):
+    targets: list[str]
+    scan_mode: str = 'standard'
+    instruction: str = ''
+
+
 class RegisterRequest(BaseModel):
     username: str
     password: str
@@ -69,7 +77,7 @@ class RegisterRequest(BaseModel):
 
 @app.on_event('startup')
 async def startup():
-    global db, engine, plugins
+    global db, engine, strix, plugins
 
     db = Database(DATA_DIR / 'centra.db')
     await db.init()
@@ -79,6 +87,9 @@ async def startup():
     logger.info(f'Loaded {len(plugins)} plugins')
 
     engine = ScanEngine(db, manager, plugins)
+    strix = StrixConnector(db, manager)
+    strix_health = strix.health()
+    logger.info(f'Strix connector: {strix_health["message"]} ({strix_health["cli_version"]})')
 
     await seed_defaults()
     logger.info('Hawskight Engine started')
@@ -244,6 +255,79 @@ async def get_stats(company_id: str):
     return await db.get_stats(company_id)
 
 
+# ── Strix AI Pentest Routes ──
+
+def _strix_auth(request: Request) -> tuple[str, int]:
+    """Dual-path auth: Centra JWT first, then fall back to X-Company-Id header.
+
+    The Centra portal login (login.html) stores a Supabase access_token in
+    hs_session; the engine issues its own JWTs via /api/auth/login. This helper
+    accepts either: a valid Centra Bearer token, or an X-Company-Id header so
+    the existing portal session can drive Strix scans without a separate login.
+    """
+    auth = request.headers.get('Authorization', '')
+    if auth.startswith('Bearer '):
+        payload = decode_token(auth[7:])
+        if payload:
+            return payload['company_id'], payload['user_id']
+    cid = request.headers.get('X-Company-Id', 'alieninc')
+    return cid, 0
+
+
+@app.get('/api/strix/health')
+async def strix_health():
+    return strix.health()
+
+
+@app.post('/api/strix/scans')
+async def start_strix_scan(req: StrixScanRequest, request: Request):
+    company_id, user_id = _strix_auth(request)
+    if not req.targets:
+        raise HTTPException(status_code=400, detail='At least one target is required')
+
+    h = strix.health()
+    if not h['ready']:
+        raise HTTPException(status_code=503, detail=h['message'])
+
+    scan_id = await db.create_strix_scan(
+        company_id, user_id, req.targets, req.scan_mode, req.instruction
+    )
+    asyncio.create_task(strix.run_scan(
+        scan_id, company_id, user_id, req.targets, req.scan_mode, req.instruction
+    ))
+    return {'scan_id': scan_id, 'status': 'started', 'targets': req.targets, 'scan_mode': req.scan_mode}
+
+
+@app.get('/api/strix/scans')
+async def list_strix_scans(request: Request):
+    company_id, _ = _strix_auth(request)
+    return await db.get_strix_scans(company_id)
+
+
+@app.get('/api/strix/stats')
+async def get_strix_stats(request: Request):
+    company_id, _ = _strix_auth(request)
+    return await db.get_strix_stats(company_id)
+
+
+@app.get('/api/strix/scans/{scan_id}')
+async def get_strix_scan(scan_id: str, request: Request):
+    company_id, _ = _strix_auth(request)
+    scan = await db.get_strix_scan(scan_id, company_id)
+    if not scan:
+        raise HTTPException(status_code=404, detail='Strix scan not found')
+    findings = await db.get_strix_findings(scan_id)
+    return {'scan': scan, 'findings': findings}
+
+
+@app.delete('/api/strix/scans/{scan_id}')
+async def delete_strix_scan(scan_id: str, request: Request):
+    company_id, _ = _strix_auth(request)
+    await strix.cancel_scan(scan_id, company_id)
+    await db.delete_strix_scan(scan_id, company_id)
+    return {'deleted': True}
+
+
 # ── WebSocket ──
 
 @app.websocket('/ws/scan')
@@ -293,7 +377,10 @@ async def ws_scan(websocket: WebSocket):
             elif msg.get('type') == 'cancel_scan':
                 scan_id = msg.get('scan_id')
                 if scan_id:
-                    await engine.cancel_scan(scan_id, company_id)
+                    if scan_id.startswith('SX-'):
+                        await strix.cancel_scan(scan_id, company_id)
+                    else:
+                        await engine.cancel_scan(scan_id, company_id)
 
     except (WebSocketDisconnect, asyncio.TimeoutError):
         pass
@@ -321,6 +408,11 @@ async def root():
 @app.get('/scan')
 async def scan_page():
     return FileResponse(str(CENTRA_DIR / 'scan.html'))
+
+
+@app.get('/strix')
+async def strix_page():
+    return FileResponse(str(CENTRA_DIR / 'strix.html'))
 
 
 @app.get('/login')

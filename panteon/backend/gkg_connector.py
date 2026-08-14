@@ -12,19 +12,98 @@ GDELT Events API: https://api.gdeltproject.org/api/v2/events
   * ActionGeo: {GLOBE: {latitude, longitude, country}, ...}
 """
 
-import uuid
-import hashlib
-import json
-import time
-import logging
 import asyncio
+import json
+import logging
+import os
+import re
+import time
+import uuid
 import aiohttp
-from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime, timezone
+from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger("gkg.connector.gdelt")
+
+
+class GDELTError(Exception):
+    """A classified GDELT request error.
+
+    ``kind`` is one of: phrase_too_short, or_not_parenthesized, nested_or,
+    rate_limited, server_error, network, timeout, generic.
+    Structural kinds (phrase_too_short / or_not_parenthesized / nested_or) are
+    never retried — retrying will not change GDELT's answer.
+    """
+
+    STRUCTURAL = {"phrase_too_short", "or_not_parenthesized", "nested_or"}
+
+    def __init__(self, kind: str, message: str = "", wait_s: float = 0.0):
+        super().__init__(message or kind)
+        self.kind = kind
+        self.message = message or kind
+        self.wait_s = wait_s
+
+    @property
+    def is_structural(self) -> bool:
+        return self.kind in self.STRUCTURAL
+
+
+def validate_query_syntax(query: str) -> List[Dict[str, str]]:
+    """Static, network-free GDELT DOC 2.0 query validation.
+
+    Returns a list of issues, each {"kind", "severity", "message"}. severity is
+    "error" (blocks Run) or "warning" (advisory; the live probe is authoritative).
+    Mirrors the rules enforced by GDELT's DOC 2.0 API:
+      * OR'd terms must be inside one flat (...) group.
+      * Boolean OR blocks cannot be nested.
+      * Short quoted single words are rejected ("The specified phrase is too short");
+        the official convention is single words UNQUOTED, multi-word phrases quoted.
+    """
+    issues: List[Dict[str, str]] = []
+    q = (query or "").strip()
+    if not q:
+        issues.append({"kind": "empty", "severity": "error", "message": "Query is empty."})
+        return issues
+
+    # Quote-stripped copy for OR/paren analysis (quotes preserved as "" markers).
+    stripped = re.sub(r'"[^"]*"', '""', q)
+
+    # Paren depth at each OR token (outside quotes).
+    or_depths: List[int] = []
+    depth = 0
+    for m in re.finditer(r'\bOR\b', stripped):
+        depth = stripped.count("(", 0, m.start()) - stripped.count(")", 0, m.start())
+        or_depths.append(depth)
+
+    if or_depths:
+        if any(d <= 0 for d in or_depths):
+            issues.append({
+                "kind": "or_not_parenthesized",
+                "severity": "error",
+                "message": "OR'd terms must be surrounded by () — e.g. (a OR b OR c).",
+            })
+        elif len(set(or_depths)) > 1:
+            issues.append({
+                "kind": "nested_or",
+                "severity": "error",
+                "message": "Boolean OR blocks cannot be nested — use a single flat "
+                           "(a OR b OR c) group.",
+            })
+
+    # Quoted single words: official convention is to leave single words unquoted.
+    for m in re.finditer(r'"([^"]*)"', q):
+        token = m.group(1)
+        if token and " " not in token:
+            issues.append({
+                "kind": "quoted_single_word",
+                "severity": "warning",
+                "message": f'GDELT prefers single words unquoted — use {token} not "{token}" '
+                           '(short quoted words are rejected as "too short").',
+            })
+
+    return issues
 
 
 class GKGEventType(Enum):
@@ -94,74 +173,103 @@ class GKGConnector:
             payload["api_key"] = self.config.api_key
         return payload
 
-    async def _request_with_retry(
-        self, url: str, method: str = "GET", headers: Optional[Dict[str, str]] = None,
-        params: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
-        """Retry with jittered backoff (GDELT ~1 req/5s)."""
-        max_retries = 5
-        base_backoff = 5000
-        max_backoff = 60000
-        jitter = 0.3
+    @staticmethod
+    def _classify_html(body: str, ctype: str) -> "GDELTError":
+        """Classify a 200/text-html GDELT response (rate-limit page or query error)."""
+        low = body.lower()
+        if "limit requests" in low or ("one every" in low and "second" in low):
+            return GDELTError("rate_limited", "GDELT rate-limit landing page (~1 req/5s).")
+        if "too short" in low:
+            return GDELTError("phrase_too_short", "The specified phrase is too short.")
+        if "must be surrounded" in low:
+            return GDELTError("or_not_parenthesized", "OR'd terms must be surrounded by ().")
+        if "cannot be nested" in low:
+            return GDELTError("nested_or", "Boolean OR blocks cannot be nested.")
+        return GDELTError(
+            "generic", f"Non-JSON GDELT response (Content-Type={ctype}): {body[:200]}"
+        )
 
+    @staticmethod
+    def _backoff_ms(attempt: int, max_retries: int) -> int:
+        base = 5000
+        jitter = 0.3
+        return int(base * (2 ** attempt) * (1 + jitter * (attempt / max(1, max_retries))))
+
+    async def _request_with_retry(
+        self, *, max_retries: int = 2, max_backoff_ms: int = 20000, block: bool = True,
+    ) -> Dict[str, Any]:
+        """Make one GDELT DOC request with classified, tame retries.
+
+        - ``max_retries``: extra attempts (probe=0, pull=2).
+        - ``block``: if False, an active cooldown raises immediately instead of
+          waiting (used by the Validate probe so the UI gets fast feedback).
+        - Structural errors (phrase_too_short / or_not_parenthesized / nested_or)
+          are never retried — retrying cannot change GDELT's answer.
+        Every attempt acquires a rate-governance slot (spacing + budget + cooldown).
+        """
         session = await GKGConnectorFactory.create_session()
-        last_exc: Optional[Exception] = None
+        url = f"{self.config.base_url}/doc"
+        headers: Dict[str, str] = {}
+        if self.config.api_key:
+            headers["Authorization"] = f"Bearer {self.config.api_key}"
+        params = await self._build_request()
+        last_err: Optional[GDELTError] = None
         for attempt in range(max_retries + 1):
+            await _gate_acquire(block=block)
             try:
                 async with session.request(
-                    method, url, headers=headers, params=params,
+                    "GET", url, headers=headers, params=params,
                     timeout=aiohttp.ClientTimeout(total=30),
                 ) as resp:
                     if resp.status == 429:
-                        last_exc = Exception(f"HTTP {resp.status} rate limited (GDELT ~1 req/5s)")
-                        backoff = base_backoff * (2 ** attempt) * (1 + jitter * (attempt / max_retries))
-                        backoff = min(backoff, max_backoff)
-                        logger.warning(f"GDELT rate limited (429), retrying in {backoff/1000:.1f}s")
-                        await asyncio.sleep(backoff / 1000)
-                        continue
-                    if resp.status >= 500:
-                        last_exc = Exception(f"HTTP {resp.status} server error")
-                        backoff = base_backoff * (2 ** attempt) * (1 + jitter * (attempt / max_retries))
-                        backoff = min(backoff, max_backoff)
-                        logger.warning(f"GDELT server error ({resp.status}), retrying in {backoff/1000:.1f}s")
-                        await asyncio.sleep(backoff / 1000)
-                        continue
-                    if resp.status >= 400:
+                        _enter_cooldown()
+                        last_err = GDELTError("rate_limited", "HTTP 429 rate limited.")
+                    elif resp.status >= 500:
+                        last_err = GDELTError("server_error", f"HTTP {resp.status} server error.")
+                    elif resp.status >= 400:
                         body = await resp.text()
-                        raise Exception(f"HTTP {resp.status}: {body}")
-                    # GDELT occasionally returns its "please limit requests" landing
-                    # page with HTTP 200 + text/html when rate-limited; detect that
-                    # so the backoff/retry kicks in instead of failing on JSON parse.
-                    ctype = resp.headers.get("Content-Type", "")
-                    if "json" not in ctype:
-                        raw_body = await resp.text()
-                        if "limit requests" in raw_body.lower() or "rate" in raw_body.lower():
-                            last_exc = Exception("HTTP 200 rate-limit landing page (GDELT ~1 req/5s)")
-                            backoff = base_backoff * (2 ** attempt) * (1 + jitter * (attempt / max_retries))
-                            backoff = min(backoff, max_backoff)
-                            logger.warning(f"GDELT returning rate-limit page, retrying in {backoff/1000:.1f}s")
-                            await asyncio.sleep(backoff / 1000)
-                            continue
-                        raise Exception(f"Non-JSON GDELT response (Content-Type={ctype}): {raw_body[:200]}")
-                    data = await resp.json()
-                    return data
+                        last_err = self._classify_html(
+                            body, resp.headers.get("Content-Type", "text/html")
+                        )
+                    else:
+                        ctype = resp.headers.get("Content-Type", "")
+                        if "json" not in ctype:
+                            raw_body = await resp.text()
+                            last_err = self._classify_html(raw_body, ctype)
+                        else:
+                            _clear_cooldown_on_success()
+                            return await resp.json()
+                    if last_err.is_structural:
+                        raise last_err
+                    if last_err.kind == "rate_limited":
+                        _enter_cooldown()
+                    if attempt < max_retries:
+                        backoff = min(self._backoff_ms(attempt, max_retries), max_backoff_ms)
+                        logger.warning("GDELT %s, retrying in %.1fs", last_err.kind, backoff / 1000)
+                        await asyncio.sleep(backoff / 1000)
+                        continue
+                    raise last_err
             except asyncio.TimeoutError as exc:
-                last_exc = exc
-                backoff = base_backoff * (2 ** attempt) * (1 + jitter * (attempt / max_retries))
-                logger.warning(f"GDELT request timeout, retrying in {backoff/1000:.1f}s")
-                await asyncio.sleep(backoff / 1000)
+                last_err = GDELTError("timeout", f"Request timeout: {exc}")
+                if attempt < max_retries:
+                    backoff = min(self._backoff_ms(attempt, max_retries), max_backoff_ms)
+                    logger.warning("GDELT timeout, retrying in %.1fs", backoff / 1000)
+                    await asyncio.sleep(backoff / 1000)
+                    continue
+                raise last_err
             except aiohttp.ClientError as exc:
-                last_exc = exc
-                backoff = base_backoff * (2 ** attempt) * (1 + jitter * (attempt / max_retries))
-                logger.warning(f"GDELT connection error ({exc}), retrying in {backoff/1000:.1f}s")
-                await asyncio.sleep(backoff / 1000)
-            except Exception as exc:
-                last_exc = exc
-                backoff = base_backoff * (2 ** attempt) * (1 + jitter * (attempt / max_retries))
-                logger.warning(f"GDELT request failed ({exc}), retrying in {backoff/1000:.1f}s")
-                await asyncio.sleep(backoff / 1000)
-
-        raise Exception(f"GDELT Events request failed after {max_retries + 1} attempts: {last_exc}")
+                last_err = GDELTError("network", f"Connection error: {exc}")
+                if attempt < max_retries:
+                    backoff = min(self._backoff_ms(attempt, max_retries), max_backoff_ms)
+                    logger.warning(
+                        "GDELT connection error (%s), retrying in %.1fs", exc, backoff / 1000
+                    )
+                    await asyncio.sleep(backoff / 1000)
+                    continue
+                raise last_err
+            except GDELTError:
+                raise
+        raise last_err or GDELTError("generic", "GDELT request failed")
 
     # Approximate country centroids (lat, lon) keyed by the full country name
     # GDELT DOC 2.0 returns in ``sourcecountry``. Used as a geocoding fallback
@@ -457,13 +565,7 @@ class GKGConnector:
 
     async def pull(self) -> List[GKGEvent]:
         """Pull GDELT DOC 2.0 article data and return parsed GKGEvents."""
-        url = f"{self.config.base_url}/doc"
-        headers: Dict[str, str] = {}
-        if self.config.api_key:
-            headers["Authorization"] = f"Bearer {self.config.api_key}"
-
-        payload = await self._build_request()
-        raw_data = await self._request_with_retry(url, headers=headers, params=payload)
+        raw_data = await self._request_with_retry(max_retries=2, block=True)
 
         events_raw = raw_data.get("articles", []) or []
         gkg_events: List[GKGEvent] = []
@@ -478,6 +580,22 @@ class GKGConnector:
 
         logger.info(f"GKG pull complete: {len(gkg_events)} events parsed from {len(events_raw)} raw events")
         return gkg_events
+
+    async def probe(self) -> Dict[str, Any]:
+        """Single lightweight GDELT request (maxrecords=1) to validate the query.
+
+        Uses no retries and non-blocking cooldown so the admin "Validate" button
+        gets fast feedback. Returns {"valid": True, "sample_count": N}. Raises
+        GDELTError (classified) on any failure.
+        """
+        saved = self.config.maxrecords
+        self.config.maxrecords = 1
+        try:
+            data = await self._request_with_retry(max_retries=0, block=False)
+            articles = data.get("articles", []) or []
+            return {"valid": True, "sample_count": len(articles)}
+        finally:
+            self.config.maxrecords = saved
 
     async def execute(self) -> List[GKGEvent]:
         """Execute full GKG pull pipeline. Returns list of staged GKGEvents."""
@@ -507,3 +625,112 @@ class GKGConnectorFactory:
     @classmethod
     async def close_session(cls) -> None:
         await cls.reset_session()
+
+
+# ---------------------------------------------------------------------------
+# Rate governance — every GDELT HTTP request (probe or pull) flows through
+# _gate_acquire inside _request_with_retry. The free GDELT DOC 2.0 API has NO
+# monthly cap — only a ~1 req/5s per-IP throttle — so we enforce client-side
+# spacing and an escalating cooldown on rate-limit responses to avoid bursting
+# and getting the IP throttled. (No monthly budget: we are on the free API,
+# not GDELT Cloud's metered monthly allowance.)
+# ---------------------------------------------------------------------------
+_RATE_STATE_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "gkg_gdelt_rate_state.json"
+)
+_MIN_SPACING_S = float(os.environ.get("GDELT_MIN_SPACING_S", "6"))
+
+_rate_state: Dict[str, Any] = {
+    "last_request_ts": 0.0,
+    "cooldown_until": 0.0,
+    "cooldown_level": 0,
+    "total_requests": 0,
+}
+
+
+def _load_rate_state() -> None:
+    global _rate_state
+    try:
+        with open(_RATE_STATE_PATH, encoding="utf-8") as fh:
+            saved = json.load(fh)
+        _rate_state.update({k: saved.get(k, _rate_state[k]) for k in _rate_state})
+    except (OSError, json.JSONDecodeError):
+        pass
+
+
+def _persist_rate_state() -> None:
+    try:
+        os.makedirs(os.path.dirname(_RATE_STATE_PATH), exist_ok=True)
+        tmp = _RATE_STATE_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(_rate_state, fh)
+        os.replace(tmp, _RATE_STATE_PATH)
+    except OSError as exc:
+        logger.warning("Could not persist GDELT rate state: %s", exc)
+
+
+def get_rate_state() -> Dict[str, Any]:
+    """Snapshot of the rate-governance state for the admin UI / rate endpoint."""
+    now = time.time()
+    return {
+        "total_requests": _rate_state["total_requests"],
+        "cooldown_until": _rate_state["cooldown_until"],
+        "cooldown_active": _rate_state["cooldown_until"] > now,
+        "cooldown_seconds_left": max(0.0, _rate_state["cooldown_until"] - now),
+        "min_spacing_s": _MIN_SPACING_S,
+    }
+
+
+def reset_cooldown() -> None:
+    """Admin escape hatch: clear an active cooldown."""
+    _rate_state["cooldown_until"] = 0.0
+    _rate_state["cooldown_level"] = 0
+    _persist_rate_state()
+
+
+async def _gate_acquire(block: bool = True) -> None:
+    """Acquire one GDELT request slot. Raises GDELTError if unavailable.
+
+    - In cooldown -> if block, wait it out; else raise rate_limited immediately
+      (so the Validate probe reports throttle instead of hanging the UI).
+    - Spacing (< MIN_SPACING_S since last request) -> sleep the small remainder.
+    Increments the total request counter exactly once per dispatched request.
+    """
+    now = time.time()
+    cooldown_left = _rate_state["cooldown_until"] - now
+    if cooldown_left > 0:
+        if block:
+            logger.info("GDELT cooldown active: waiting %.1fs", cooldown_left)
+            await asyncio.sleep(cooldown_left)
+        else:
+            raise GDELTError(
+                "rate_limited",
+                f"GDELT is throttling this IP — try again in {int(cooldown_left)}s.",
+                wait_s=cooldown_left,
+            )
+    spacing = _MIN_SPACING_S - (time.time() - _rate_state["last_request_ts"])
+    if spacing > 0:
+        await asyncio.sleep(spacing)
+    _rate_state["last_request_ts"] = time.time()
+    _rate_state["total_requests"] += 1
+    _persist_rate_state()
+
+
+def _enter_cooldown() -> None:
+    """Escalating cooldown after a rate-limit response: 30, 60, 120, 240, 300 cap."""
+    lvl = _rate_state["cooldown_level"]
+    secs = min(30 * (2 ** lvl), 300)
+    _rate_state["cooldown_until"] = time.time() + secs
+    _rate_state["cooldown_level"] = lvl + 1
+    _persist_rate_state()
+    logger.warning("GDELT rate limit detected — entering %ss cooldown", secs)
+
+
+def _clear_cooldown_on_success() -> None:
+    if _rate_state["cooldown_level"] != 0:
+        _rate_state["cooldown_level"] = 0
+        _persist_rate_state()
+
+
+# Load persisted rate state on import so cooldowns survive restarts.
+_load_rate_state()

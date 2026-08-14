@@ -2005,17 +2005,20 @@
                                     <span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;color:var(--text-muted)">Conflict presets:</span>
                                     <span id="threatPresets"></span>
                                 </div>
-                                <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
-                                    <input id="threatMapQuery" type="text" placeholder='Search threat by keyword e.g. "military" OR "defense"' style="flex:1">
-                                    <select id="threatMapLayer" style="padding:4px 8px;font-size:12px;border:1px solid var(--border-light);border-radius:4px;background:var(--bg);color:var(--text);min-width:140px">
-                                        <option value="all">All Layers</option>
-                                        <option value="geospatial">Geospatial Spikes</option>
-                                        <option value="actors">Actor Networks</option>
-                                        <option value="tone">Tone Analysis</option>
-                                    </select>
-                                    <button class="btn btn-primary btn-sm" onclick="renderThreatMap()">Render Map</button>
-                                    <button class="btn btn-secondary btn-sm" onclick="clearThreatMap()">Clear</button>
-                                </div>
+                                 <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+                                     <input id="threatMapQuery" type="text" placeholder='Search threat by keyword e.g. "military" OR "defense"' style="flex:1">
+                                     <select id="threatMapLayer" style="padding:4px 8px;font-size:12px;border:1px solid var(--border-light);border-radius:4px;background:var(--bg);color:var(--text);min-width:140px">
+                                         <option value="all">All Layers</option>
+                                         <option value="geospatial">Geospatial Spikes</option>
+                                         <option value="actors">Actor Networks</option>
+                                         <option value="tone">Tone Analysis</option>
+                                     </select>
+                                     <button class="btn btn-secondary btn-sm" onclick="validateGkgQuery()">Validate</button>
+                                     <button class="btn btn-primary btn-sm" onclick="renderThreatMap()">Render Map</button>
+                                     <button class="btn btn-secondary btn-sm" onclick="clearThreatMap()">Clear</button>
+                                 </div>
+                                 <div id="gkgValidateStatus" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-family:var(--font-mono);font-size:10px;margin-bottom:10px;min-height:18px;color:var(--text-muted)"></div>
+                                 <div id="gkgBudgetMeter" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-family:var(--font-mono);font-size:9px;margin-bottom:10px;color:var(--text-muted)"></div>
                                <!-- CRITICAL EVENT MAPPER -->
                                <div class="card" style="margin-bottom:12px">
                                    <div class="card-header">
@@ -3356,7 +3359,7 @@ function loadPageData(page) {
         case 'sc-types': loadObjectTypes(); loadActionTypes(); break;
         case 'sc-objects': loadObjectTypeFilter(); loadObjects(); break;
         case 'sc-links': loadLinkTypes(); break;
-        case 'sc-gdelt': loadGdeltHealth(); loadGdeltSnapshot(); renderThreatPresets(); renderThreatMap(true); break;
+        case 'sc-gdelt': loadGdeltHealth(); loadGdeltSnapshot(); renderThreatPresets(); renderThreatMap(true); gkgLiveStructuralCheck(); refreshGkgBudget(); break;
         case 'sc-aviation': loadAviationHealth(); loadAviationSnapshot(); loadAviationFlights(); break;
         case 'yono-providers': loadProviders(); loadModels(); break;
         case 'yono-agents': loadAgents(); break;
@@ -4765,6 +4768,7 @@ function applyThreatPreset(name, query, intent) {
     const btn = document.getElementById('threat3dToggle');
     if (btn) btn.className = 'retro-map-btn retro-map-btn-active';
     document.getElementById('threatMapQuery').value = query;
+    gkgLiveStructuralCheck();
     renderThreatMap();
 }
 
@@ -4789,11 +4793,16 @@ const CONFLICT_KEYWORDS = {
 };
 
 // Preset query buttons (GDELT DOC 2.0 query operators, per GDELTProjectInstruction manual).
+// GDELT DOC 2.0 constraints (verified against the official API guide):
+//   * "Boolean OR blocks cannot be nested at this time" -> single flat (...) OR group.
+//   * Quoting a short single word yields "The specified phrase is too short"; the
+//     official examples leave single words UNQUOTED and quote only multi-word phrases
+//     (e.g. ("islamic state" OR isis OR daesh)). We follow that convention here.
 const QUERY_PRESETS = [
-    { name: "Conflicts", query: '("military" OR "war" OR "battle" OR "conflict" OR "offensive")', intent: "attack", color: "var(--red)" },
-    { name: "Terrorism", query: '(theme:TERROR OR "terrorist" OR "insurgent" OR "militant")', intent: "attack", color: "var(--red)" },
-    { name: "Attacks",   query: '(theme:ATTACK OR ("airstrike" OR "bomb" OR "explosion" OR "killed"))', intent: "attack", color: "var(--orange)" },
-    { name: "Protests",  query: '("protest" OR "demonstration" OR "unrest" OR theme:PROTEST)', intent: "protest", color: "var(--amber)" },
+    { name: "Conflicts", query: '(military OR war OR battle OR conflict OR offensive)', intent: "attack", color: "var(--red)" },
+    { name: "Terrorism", query: '(theme:TERROR OR terrorist OR insurgent OR militant)', intent: "attack", color: "var(--red)" },
+    { name: "Attacks",   query: '(theme:ATTACK OR airstrike OR bombing OR explosion OR killed)', intent: "attack", color: "var(--orange)" },
+    { name: "Protests",  query: '(protest OR demonstration OR unrest OR theme:PROTEST)', intent: "protest", color: "var(--amber)" },
     { name: "Negative",  query: "tone<-5", intent: "attack", color: "var(--orange)" },
 ];
 
@@ -4810,6 +4819,173 @@ function queryIntent(query) {
     if (/(theme:terror|terrorist|insurgent|militant|airstrike|bomb|attack|battlefield|offensive|combat|siege|weapon|troop|conflict|war)/.test(q)) return "attack";
     if (/(theme:protest|protest|demonstration|march|riot|unrest|uprising)/.test(q)) return "protest";
     return null;
+}
+
+// ============================================================================
+// Verification-first GDELT query flow
+// ----------------------------------------------------------------------------
+// A query is verified BEFORE it reaches the background pipeline so a bad query
+// can never trigger a GDELT retry storm / IP throttle. Layer 1 is an instant
+// client-side structural check (mirrors GDELT DOC 2.0 rules); Layer 2 is a
+// single live probe (maxrecords=1) via /gkg/pipeline/validate. "Render Map"
+// only starts a pull once the exact query has passed verification.
+// ============================================================================
+function validateQuerySyntax(query) {
+    // Returns {errors:[...], warnings:[...]} — severity "error" blocks Run.
+    const issues = [];
+    const q = (query || '').trim();
+    if (!q) return { errors: [{ kind: 'empty', message: 'Query is empty.' }], warnings: [] };
+    // Quote-stripped copy for OR/paren analysis (quotes preserved as "" markers).
+    const stripped = q.replace(/"[^"]*"/g, '""');
+    // Paren depth at each OR token (outside quotes).
+    const orDepths = [];
+    for (const m of stripped.matchAll(/\bOR\b/g)) {
+        const before = stripped.slice(0, m.index);
+        orDepths.push((before.match(/\(/g) || []).length - (before.match(/\)/g) || []).length);
+    }
+    if (orDepths.length) {
+        if (orDepths.some(d => d <= 0)) {
+            issues.push({ kind: 'or_not_parenthesized', severity: 'error',
+                message: "OR'd terms must be surrounded by () — e.g. (a OR b OR c)." });
+        } else if (new Set(orDepths).size > 1) {
+            issues.push({ kind: 'nested_or', severity: 'error',
+                message: "Boolean OR blocks cannot be nested — use a single flat (a OR b OR c) group." });
+        }
+    }
+    // Quoted single words: official GDELT convention is single words UNQUOTED.
+    for (const m of q.matchAll(/"([^"]*)"/g)) {
+        const tok = m[1];
+        if (tok && !tok.includes(' ')) {
+            issues.push({ kind: 'quoted_single_word', severity: 'warning',
+                message: 'GDELT prefers single words unquoted — use ' + tok + ' not "' + tok +
+                         '" (short quoted words are rejected as "too short").' });
+        }
+    }
+    return { errors: issues.filter(i => i.severity === 'error'), warnings: issues.filter(i => i.severity === 'warning') };
+}
+
+function gkgValidateStatusEl() { return document.getElementById('gkgValidateStatus'); }
+function gkgBudgetMeterEl() { return document.getElementById('gkgBudgetMeter'); }
+
+function renderGkgValidation(result) {
+    const el = gkgValidateStatusEl();
+    window._lastGkgValidation = result || null;
+    if (!el) return;
+    if (!result) { el.innerHTML = ''; return; }
+    const errors = result.errors || [];
+    const warnings = result.warnings || [];
+    const parts = [];
+    if (result.valid) {
+        const live = result.live === 'cached' ? 'cached' : 'live OK';
+        const sample = result.sample_count != null ? ' · ' + result.sample_count + ' sample articles' : '';
+        parts.push('<span style="color:var(--green)">✓ QUERY VERIFIED (' + live + sample + ')</span>');
+    } else {
+        parts.push('<span style="color:var(--red)">✗ QUERY REJECTED' + (result.error_kind ? ' · ' + result.error_kind : '') + '</span>');
+    }
+    errors.forEach(e => parts.push('<span style="color:var(--red)">• ' + escapeHtml(e.message) + '</span>'));
+    warnings.forEach(w => parts.push('<span style="color:var(--amber)">• ' + escapeHtml(w.message) + '</span>'));
+    if (result.message && !result.valid) parts.push('<span style="color:var(--red)">' + escapeHtml(result.message) + '</span>');
+    if (result.wait_s) parts.push('<span style="color:var(--amber)">cooldown: ' + Math.ceil(result.wait_s) + 's</span>');
+    el.innerHTML = parts.join(' ');
+}
+
+function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+async function refreshGkgBudget() {
+    try {
+        const b = await api('/gkg/pipeline/rate');
+        renderGkgRate(b);
+        return b;
+    } catch (e) { return null; }
+}
+
+function renderGkgRate(b) {
+    const el = gkgBudgetMeterEl();
+    if (!el || !b) return;
+    const cool = b.cooldown_active
+        ? '<span style="color:var(--red)">⏸ THROTTLED ' + Math.ceil(b.cooldown_seconds_left) + 's</span>'
+        : '<span style="color:var(--green)">● ready</span>';
+    el.innerHTML =
+        '<span>GDELT (free API): <b style="color:var(--text)">' + b.total_requests + '</b> requests total</span>' +
+        '<span>' + cool + '</span>' +
+        '<span>spacing ' + b.min_spacing_s + 's</span>' +
+        (b.cooldown_active ? '<button class="btn btn-secondary btn-sm" style="font-size:9px;padding:1px 6px" onclick="resetGkgCooldown()">Reset cooldown</button>' : '');
+}
+
+async function resetGkgCooldown() {
+    try { await api('/gkg/pipeline/cooldown/reset', { method: 'POST' }); } catch (e) {}
+    refreshGkgBudget();
+}
+
+// Layer 1: instant structural feedback, called on preset select + query edits.
+function gkgLiveStructuralCheck() {
+    const q = document.getElementById('threatMapQuery').value.trim();
+    const res = validateQuerySyntax(q);
+    if (res.errors.length) {
+        renderGkgValidation({ valid: false, errors: res.errors, warnings: res.warnings, live: 'skipped' });
+    } else if (res.warnings.length) {
+        renderGkgValidation({ valid: true, errors: [], warnings: res.warnings, live: 'structural' });
+    } else {
+        gkgValidateStatusEl().innerHTML = '<span style="color:var(--text-muted)">structural OK — click Validate for a live GDELT probe</span>';
+    }
+    return res;
+}
+
+// Wire the query box to live structural feedback (debounced) once on load.
+(function () {
+    const attach = () => {
+        const inp = document.getElementById('threatMapQuery');
+        if (!inp) { setTimeout(attach, 200); return; }
+        let t = null;
+        inp.addEventListener('input', () => {
+            clearTimeout(t);
+            t = setTimeout(gkgLiveStructuralCheck, 250);
+        });
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
+    else attach();
+})();
+
+// Layer 2: explicit "Validate" button -> single live GDELT probe (maxrecords=1).
+async function validateGkgQuery() {
+    const q = document.getElementById('threatMapQuery').value.trim() || '(military OR defense OR conflict)';
+    const config = { query: q, mode: 'events', timespan: '24h', maxrecords: 50, api_key: '' };
+    const el = gkgValidateStatusEl();
+    if (el) el.innerHTML = '<span style="color:var(--amber)">⟳ validating against GDELT…</span>';
+    try {
+        const result = await api('/gkg/pipeline/validate', { method: 'POST', body: JSON.stringify(config) });
+        renderGkgValidation(result);
+        refreshGkgBudget();
+    } catch (e) {
+        renderGkgValidation({ valid: false, errors: [], warnings: [], live: 'probed', error_kind: 'generic', message: e.message || 'validate failed' });
+        refreshGkgBudget();
+    }
+}
+
+// Verification-first guard for the background pull. Returns the verified query
+// config or null if the query is invalid / unverified. Used by renderThreatMap
+// and any other path that starts a GDELT pull.
+async function gkgEnsureVerified(query, maxrecords) {
+    const config = { query: query, mode: 'events', timespan: '24h', maxrecords: maxrecords || 50, api_key: '' };
+    // Structural check first (no network).
+    const res = validateQuerySyntax(query);
+    if (res.errors.length) {
+        renderGkgValidation({ valid: false, errors: res.errors, warnings: res.warnings, live: 'skipped' });
+        return null;
+    }
+    // Live probe (cached server-side for 120s, so re-rendering is cheap).
+    try {
+        const result = await api('/gkg/pipeline/validate', { method: 'POST', body: JSON.stringify(config) });
+        renderGkgValidation(result);
+        refreshGkgBudget();
+        return result.valid ? config : null;
+    } catch (e) {
+        renderGkgValidation({ valid: false, errors: [], warnings: [], live: 'probed', error_kind: 'generic', message: e.message || 'validate failed' });
+        refreshGkgBudget();
+        return null;
+    }
 }
 
 // Classify an event's threat level. The active query intent is used first
@@ -4906,7 +5082,7 @@ function fitThreatBounds() {
 }
 
 async function renderThreatMap(auto) {
-    const query = document.getElementById('threatMapQuery').value.trim() || '("military" OR "defense" OR "conflict")';
+    const query = document.getElementById('threatMapQuery').value.trim() || '(military OR defense OR conflict)';
     const layer = document.getElementById('threatMapLayer').value;
     // Infer threat intent from the query so markers/tables/threat count reflect
     // conflict coverage even on the default "Render Map" action.
@@ -5069,10 +5245,27 @@ function clearThreatMap() {
 // Intelligence Node — aggregates real GDELT / GKG data for tactical metrics
 // ============================================================================
 async function startGkgPipeline(config, onUpdate) {
+    // Verification-first: never send an unverified query to the background pull.
+    const verified = await gkgEnsureVerified(config.query, config.maxrecords);
+    if (!verified) {
+        const lv = window._lastGkgValidation;
+        const msg = (lv && lv.errors && lv.errors.length) ? lv.errors[0].message
+                  : (lv && lv.message) ? lv.message
+                  : 'query rejected by verification';
+        if (onUpdate) onUpdate({ error: '✗ ' + msg });
+        return null;
+    }
     try {
-        await api('/gkg/pipeline/run', { method: 'POST', body: JSON.stringify(config) });
+        const startResp = await api('/gkg/pipeline/run', { method: 'POST', body: JSON.stringify(config) });
+        if (startResp && startResp.status === 'rejected') {
+            renderGkgValidation(startResp.verification || { valid: false, errors: [], warnings: [], live: 'skipped' });
+            if (onUpdate) onUpdate({ error: 'query rejected by verification — see status above' });
+            refreshGkgBudget();
+            return null;
+        }
     } catch (e) {
         if (onUpdate) onUpdate({ error: e.message || 'pipeline failed to start' });
+        refreshGkgBudget();
         return null;
     }
     const t0 = Date.now();
@@ -5088,7 +5281,7 @@ async function startGkgPipeline(config, onUpdate) {
 }
 
 async function runIntelNode() {
-    const query = document.getElementById('intelNodeQuery').value.trim() || '("military" OR "defense" OR "conflict")';
+    const query = document.getElementById('intelNodeQuery').value.trim() || '(military OR defense OR conflict)';
     const status = document.getElementById('intelRunStatus');
     const btn = event && event.target;
     if (btn) btn.disabled = true;
@@ -5203,7 +5396,7 @@ function initHelpChips() {
 async function runGkgPipeline() {
     const btn = event && event.target;
     const status = document.getElementById('gkgRunStatus');
-    const q = document.getElementById('gkgQuery').value.trim() || '("military" OR "defense" OR "conflict")';
+    const q = document.getElementById('gkgQuery').value.trim() || '(military OR defense OR conflict)';
     const timespan = document.getElementById('gkgTimespan').value.trim() || '24h';
     const max = Math.min(parseInt(document.getElementById('gkgMax').value) || 50, 250);
     if (btn) btn.disabled = true;

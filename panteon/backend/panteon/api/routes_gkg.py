@@ -26,7 +26,17 @@ BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__
 if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
-from gkg_connector import GKGConnector, GKGConfig, GKGEvent, GKGEventType, GKGConnectorFactory  # noqa: E402
+from gkg_connector import (  # noqa: E402
+    GKGConnector,
+    GKGConfig,
+    GKGEvent,
+    GKGEventType,
+    GKGConnectorFactory,
+    GDELTError,
+    validate_query_syntax,
+    get_rate_state,
+    reset_cooldown,
+)
 from transform_gdelt_to_ontology import (  # noqa: E402
     GDELTTransformEngine,
     OntologyLayer,
@@ -232,6 +242,8 @@ async def _run_pipeline(config: PipelineConfig) -> dict:
     except Exception as exc:  # noqa: BLE001
         logger.exception("Pipeline failed: %s", exc)
         report = {"phase": "failed", "error": str(exc)}
+        if isinstance(exc, GDELTError):
+            report["error_kind"] = exc.kind
     finally:
         await GKGConnectorFactory.reset_session()
 
@@ -246,9 +258,76 @@ _run_state: dict = {
     "error": None,
 }
 
+# Transient GDELT failures worth one background retry (structural errors are
+# never retried — retrying cannot change the outcome).
+_TRANSIENT_KINDS = {"rate_limited", "server_error", "network", "timeout"}
+
 
 def _is_rate_limited(err: str) -> bool:
     return "429" in err or "rate limit" in err.lower()
+
+
+# Validation cache: {query: {"ts": float, "result": dict}}. A successfully
+# probed query is reused for VALID_CACHE_TTL_S so re-clicking Run doesn't burn
+# another GDELT request against the per-IP throttle.
+_validation_cache: dict = {}
+_VALID_CACHE_TTL_S = 120.0
+
+
+async def _validate_query(config: PipelineConfig, force_live: bool = False) -> dict:
+    """Verify a query structurally, then with a single live GDELT probe.
+
+    Returns {valid, errors, warnings, live, sample_count?, error_kind?, message?,
+    rate}. ``live`` is "skipped" (structural failure), "cached" or "probed".
+    Never raises — callers get a JSON-serialisable result.
+    """
+    issues = validate_query_syntax(config.query)
+    errors = [i for i in issues if i["severity"] == "error"]
+    warnings = [i for i in issues if i["severity"] == "warning"]
+    rate = get_rate_state()
+
+    if errors:
+        return {
+            "valid": False, "errors": errors, "warnings": warnings,
+            "live": "skipped", "rate": rate,
+        }
+
+    now = datetime.now(timezone.utc).timestamp()
+    cached = _validation_cache.get(config.query)
+    if cached and not force_live and (now - cached["ts"]) < _VALID_CACHE_TTL_S:
+        return {
+            "valid": cached["result"]["valid"], "errors": errors, "warnings": warnings,
+            "live": "cached", "sample_count": cached["result"].get("sample_count"),
+            "rate": rate,
+        }
+
+    gdconfig = GKGConfig(
+        query=config.query, timespan=config.timespan,
+        maxrecords=config.maxrecords, api_key=config.api_key,
+    )
+    connector = GKGConnector(config=gdconfig)
+    try:
+        result = await connector.probe()
+        _validation_cache[config.query] = {"ts": now, "result": result}
+        return {
+            "valid": True, "errors": errors, "warnings": warnings,
+            "live": "probed", "sample_count": result["sample_count"], "rate": get_rate_state(),
+        }
+    except GDELTError as exc:
+        return {
+            "valid": False, "errors": errors, "warnings": warnings,
+            "live": "probed", "error_kind": exc.kind, "message": exc.message,
+            "wait_s": exc.wait_s, "rate": get_rate_state(),
+        }
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("GKG validate probe crashed: %s", exc)
+        return {
+            "valid": False, "errors": errors, "warnings": warnings,
+            "live": "probed", "error_kind": "generic", "message": str(exc),
+            "rate": get_rate_state(),
+        }
+    finally:
+        await GKGConnectorFactory.reset_session()
 
 
 async def _run_pipeline_bg(config: PipelineConfig) -> dict:
@@ -268,11 +347,17 @@ async def _run_pipeline_bg(config: PipelineConfig) -> dict:
     try:
         report = await _run_pipeline(config)
         phase = report.get("phase")
-        if phase != "complete" and _is_rate_limited(report.get("error", "")):
-            _run_state["error"] = "rate limited by GDELT — retrying once in 60s"
-            await asyncio.sleep(60)
-            report = await _run_pipeline(config)
-            phase = report.get("phase")
+        # One background retry, but ONLY for transient failures. Structural
+        # errors (phrase_too_short / or_not_parenthesized / nested_or) never
+        # change on retry, so we surface them immediately instead of burning
+        # another request against the per-IP throttle.
+        if phase != "complete":
+            kind = report.get("error_kind", "")
+            if kind in _TRANSIENT_KINDS or (not kind and _is_rate_limited(report.get("error", ""))):
+                _run_state["error"] = "transient GDELT failure — retrying once in 60s"
+                await asyncio.sleep(60)
+                report = await _run_pipeline(config)
+                phase = report.get("phase")
         _run_state["report"] = report
         _run_state["status"] = "complete" if phase == "complete" else "failed"
         if phase != "complete":
@@ -290,17 +375,59 @@ async def health_check():
     return {"status": "ok", "source": "panteon spinal-cracker gkg"}
 
 
+@router.post("/pipeline/validate")
+async def validate_pipeline(payload: PipelineConfig = None):
+    """Verify a query before running: structural rules + a single live GDELT probe.
+
+    This is the verification-first gate. The admin UI calls this from the
+    "Validate" button and (optionally) before "Run" so a bad query never reaches
+    the background pipeline and never triggers a retry storm / IP throttle.
+    """
+    config = payload or PipelineConfig()
+    result = await _validate_query(config, force_live=True)
+    # Always 200: the verdict (valid true/false) lives in the body so the admin
+    # UI's shared api() helper (which drops non-2xx bodies) receives it intact.
+    return JSONResponse(content=result, status_code=200)
+
+
+@router.get("/pipeline/rate")
+async def pipeline_rate():
+    """GDELT rate-governance snapshot: cooldown state, spacing, total requests.
+
+    The free GDELT DOC 2.0 API has no monthly cap — only a ~1 req/5s per-IP
+    throttle — so this reports throttle/cooldown status, not a budget.
+    """
+    return JSONResponse(content=get_rate_state(), status_code=200)
+
+
+@router.post("/pipeline/cooldown/reset")
+async def pipeline_cooldown_reset():
+    """Admin escape hatch: clear an active GDELT cooldown immediately."""
+    reset_cooldown()
+    return JSONResponse(content=get_rate_state(), status_code=200)
+
+
 @router.post("/pipeline/run")
 async def run_pipeline(payload: PipelineConfig = None, background_tasks: BackgroundTasks = None):
     """Run the GKG pipeline as a background task; poll /pipeline/status for the result.
 
-    GDELT pulls can take minutes (429 retry backoff), which exceeds the reverse-proxy
-    read timeout and surfaced as HTTP 504 in the admin UI. Returning immediately with
-    a job status avoids that — the frontend polls until complete/failed.
+    Verification-first: the EXACT query is validated (structural + live probe,
+    cached for _VALID_CACHE_TTL_S) before any background pull is scheduled. A bad
+    query is rejected here with 422 and never starts a job, so it cannot trigger a
+    retry storm or IP throttle. GDELT pulls can still take minutes (rate-limit
+    backoff), so we return immediately with a job status and the frontend polls.
     """
     if _run_state.get("status") == "running":
         return JSONResponse(content={"status": "already_running", "state": _run_state}, status_code=200)
     config = payload or PipelineConfig()
+    verification = await _validate_query(config, force_live=False)
+    if not verification["valid"]:
+        # 200 with status:"rejected" — the body carries the verification detail
+        # so the admin UI (shared api() drops non-2xx bodies) can render it.
+        return JSONResponse(
+            content={"status": "rejected", "verification": verification},
+            status_code=200,
+        )
     if background_tasks is not None:
         background_tasks.add_task(_run_pipeline_bg, config)
     else:

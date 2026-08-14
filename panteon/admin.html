@@ -1889,6 +1889,9 @@
                           </div>
                           <div id="fusionValidateStatus" style="font-family:var(--font-mono);font-size:10px;margin-bottom:8px;min-height:16px;color:var(--text-muted)"></div>
 
+                          <!-- Unified rate meter: both GDELT + OpenSky -->
+                          <div id="fusionRateMeter" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-family:var(--font-mono);font-size:9px;margin-bottom:8px;color:var(--text-muted)"></div>
+
                           <!-- Layer toggle chips with live counts -->
                           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
                               <span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--text-muted)">Layers:</span>
@@ -1905,6 +1908,15 @@
                               <span style="color:var(--red)">Military: <b id="fusionKpiMilitary">0</b></span>
                               <span style="color:var(--amber)">Jamming: <b id="fusionKpiJamming">0</b></span>
                               <span>Countries: <b style="color:var(--text)" id="fusionKpiCountries">0</b></span>
+                          </div>
+
+                          <!-- Marker legend -->
+                          <div style="display:flex;gap:14px;flex-wrap:wrap;font-family:var(--font-mono);font-size:9px;color:var(--text-muted);margin-bottom:8px">
+                              <span style="font-transform:uppercase;opacity:0.7">LEGEND:</span>
+                              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;box-shadow:0 0 4px #ef4444"></span> Threat-RED / Military</span>
+                              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b;box-shadow:0 0 4px #f59e0b"></span> Threat-AMBER / Private</span>
+                              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c544;box-shadow:0 0 4px #22c544"></span> Threat-GREEN / Commercial</span>
+                              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22d3ee;box-shadow:0 0 4px #22d3ee"></span> Jet</span>
                           </div>
 
                           <!-- The single unified map -->
@@ -5274,6 +5286,37 @@ function fitFusionBounds() {
     fusionMap.fitBounds([[b.minX, b.minY], [b.maxX, b.maxY]], { padding: 60, maxZoom: 7, duration: 1200 });
 }
 
+async function refreshFusionRateMeter() {
+    const el = document.getElementById('fusionRateMeter');
+    if (!el) return;
+    try {
+        const [g, o] = await Promise.all([
+            api('/gkg/pipeline/rate').catch(() => null),
+            api('/opensky/pipeline/rate').catch(() => null),
+        ]);
+        const parts = [];
+        if (g) {
+            const gc = g.cooldown_active ? '<span style="color:var(--red)">⏸ GDELT ' + Math.ceil(g.cooldown_seconds_left) + 's</span>' : '<span style="color:var(--green)">● GDELT ready</span>';
+            parts.push('<span>GDELT: ' + g.total_requests + ' reqs · ' + gc + '</span>');
+        }
+        if (o) {
+            const oc = o.cooldown_active ? '<span style="color:var(--red)">⏸ OpenSky ' + Math.ceil(o.cooldown_seconds_left) + 's</span>'
+                : !o.can_pull_now ? '<span style="color:var(--amber)">⏳ OpenSky ' + Math.ceil(o.anon_seconds_left) + 's</span>'
+                : '<span style="color:var(--green)">● OpenSky ready</span>';
+            parts.push('<span>OpenSky: ' + o.total_pulls + ' pulls · ' + oc + '</span>');
+            if (!o.can_pull_now || o.cooldown_active) {
+                parts.push('<button class="btn btn-secondary btn-sm" style="font-size:9px;padding:1px 6px" onclick="resetFusionOpenSkyCooldown()">Reset OpenSky</button>');
+            }
+        }
+        el.innerHTML = parts.join(' ') || '<span>rate status unavailable</span>';
+    } catch (e) { el.innerHTML = ''; }
+}
+
+async function resetFusionOpenSkyCooldown() {
+    try { await api('/opensky/pipeline/cooldown/reset', { method: 'POST' }); } catch (e) {}
+    refreshFusionRateMeter();
+}
+
 function updateFusionKpis() {
     const m = computeIntelMetrics(fusionThreatEvents);
     document.getElementById('fusionKpiEvents').textContent = m.total;
@@ -5325,6 +5368,7 @@ async function renderFusionMap() {
     renderFusionThreatLayer();
     renderFusionAviationLayer();
     updateFusionKpis();
+    refreshFusionRateMeter();
     if (hud) hud.textContent = fusionThreatMarkers.length + ' threats · ' + fusionAviationMarkers.length + ' aircraft plotted';
     requestAnimationFrame(() => { if (fusionMap) fusionMap.resize(); });
     fitFusionBounds();

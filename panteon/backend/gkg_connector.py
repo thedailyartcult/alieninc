@@ -222,7 +222,6 @@ class GKGConnector:
                     timeout=aiohttp.ClientTimeout(total=30),
                 ) as resp:
                     if resp.status == 429:
-                        _enter_cooldown()
                         last_err = GDELTError("rate_limited", "HTTP 429 rate limited.")
                     elif resp.status >= 500:
                         last_err = GDELTError("server_error", f"HTTP {resp.status} server error.")
@@ -242,7 +241,11 @@ class GKGConnector:
                     if last_err.is_structural:
                         raise last_err
                     if last_err.kind == "rate_limited":
+                        # Never retry a rate-limit — retrying just pokes GDELT
+                        # again and extends the IP's abuse-cooldown. Enter the
+                        # escalating cooldown and surface immediately.
                         _enter_cooldown()
+                        raise last_err
                     if attempt < max_retries:
                         backoff = min(self._backoff_ms(attempt, max_retries), max_backoff_ms)
                         logger.warning("GDELT %s, retrying in %.1fs", last_err.kind, backoff / 1000)
@@ -717,13 +720,21 @@ async def _gate_acquire(block: bool = True) -> None:
 
 
 def _enter_cooldown() -> None:
-    """Escalating cooldown after a rate-limit response: 30, 60, 120, 240, 300 cap."""
+    """Escalating cooldown after a rate-limit response.
+
+    Scales up aggressively so we stop poking GDELT while it is in a longer
+    abuse-cooldown on this IP (datacenter IPs that have burst-requested get a
+    multi-hour throttle). 30s -> 60 -> 120 -> 240 -> 600 -> 1800 (30min cap).
+    Repeated rate-limit responses keep extending the cooldown so the system
+    self-quarantines instead of worsening the throttle.
+    """
     lvl = _rate_state["cooldown_level"]
-    secs = min(30 * (2 ** lvl), 300)
+    ramp = [30, 60, 120, 240, 600, 1800]
+    secs = ramp[lvl] if lvl < len(ramp) else ramp[-1]
     _rate_state["cooldown_until"] = time.time() + secs
     _rate_state["cooldown_level"] = lvl + 1
     _persist_rate_state()
-    logger.warning("GDELT rate limit detected — entering %ss cooldown", secs)
+    logger.warning("GDELT rate limit detected — entering %ss cooldown (level %d)", secs, lvl + 1)
 
 
 def _clear_cooldown_on_success() -> None:

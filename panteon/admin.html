@@ -1317,6 +1317,80 @@
             50% { transform: scale(1.35); opacity: 0.75; }
         }
 
+        /* ── Spinal Cracker fusion dashboard ── */
+        .sc-control-rail { margin-bottom: 10px; }
+        .sc-preset-bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+        .sc-preset-btn {
+            font-family: var(--font-mono); font-size: 10px; text-transform: uppercase;
+            padding: 3px 10px; border: 1px solid var(--border-color); border-radius: 3px;
+            background: var(--bg-card); color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+        }
+        .sc-preset-btn:hover { border-color: var(--accent-neon); color: var(--text); }
+        .sc-preset-btn.active { background: var(--accent-neon); color: #000; border-color: var(--accent-neon); }
+        .sc-query-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .sc-query-input {
+            flex: 1; min-width: 200px; padding: 6px 10px; font-size: 12px;
+            background: var(--bg-input); color: var(--text); border: 1px solid var(--border-color);
+            border-radius: 4px; font-family: var(--font-mono);
+        }
+        .sc-query-input:focus { outline: none; border-color: var(--accent-neon); }
+        .sc-rate-meter {
+            display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+            font-family: var(--font-mono); font-size: 9px; margin-bottom: 8px; color: var(--text-muted);
+        }
+        .sc-layer-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+        .sc-layer-label { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; color: var(--text-muted); }
+        .sc-kpi-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 8px; margin-bottom: 10px;
+        }
+        .sc-kpi-card {
+            background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 4px;
+            padding: 8px 10px; text-align: center;
+        }
+        .sc-kpi-card.sc-kpi-red { border-left: 3px solid var(--red); }
+        .sc-kpi-card.sc-kpi-amber { border-left: 3px solid var(--amber); }
+        .sc-kpi-label { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px; }
+        .sc-kpi-value { font-family: var(--font-tech); font-size: 18px; font-weight: 300; color: var(--text); }
+        .sc-legend {
+            display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+            font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-bottom: 8px;
+        }
+        .sc-legend-label { text-transform: uppercase; opacity: 0.7; }
+        .sc-legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 3px; }
+        .sc-map-wrapper {
+            position: relative; height: clamp(360px, 60vh, 600px);
+            border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;
+        }
+        .sc-map-hud {
+            position: absolute; top: 10px; left: 10px; z-index: 5;
+            font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);
+            background: rgba(0, 0, 0, 0.6); padding: 4px 8px; border-radius: 4px; pointer-events: none;
+        }
+        .sc-intel-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px; margin-top: 12px;
+        }
+        .sc-data-list {
+            font-family: var(--font-mono); font-size: 10px; line-height: 1.6;
+            color: var(--text-muted); max-height: 240px; overflow-y: auto;
+        }
+        .sc-metrics-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px; margin-top: 12px;
+        }
+        .sc-metric-value { font-family: var(--font-tech); font-size: 24px; font-weight: 300; color: var(--accent-neon); padding: 8px 0; }
+
+        @media (max-width: 768px) {
+            .sc-query-row { flex-direction: column; align-items: stretch; }
+            .sc-query-input { min-width: unset; }
+            .sc-query-row .btn { width: 100%; }
+            .sc-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .sc-intel-grid { grid-template-columns: 1fr; }
+            .sc-metrics-grid { grid-template-columns: 1fr; }
+            .sc-map-wrapper { height: clamp(300px, 50vh, 400px); }
+        }
+
         .maplibregl-ctrl-group {
             background: rgba(0, 0, 0, 0.9) !important;
             border: 1px solid var(--border-color) !important;
@@ -1878,63 +1952,88 @@
                                   <span class="tag" id="fusionBqDot" style="font-size:9px">BQ: ?</span>
                               </div>
                           </div>
-                          <p class="section-subtitle">One cohesive map overlaying GDELT threat events and OpenSky live aircraft. Toggle layers, run either pipeline, and inspect any marker.</p>
+                          <p class="section-subtitle" style="font-size:11px;color:var(--text-muted);margin-bottom:16px">One cohesive map overlaying GDELT threat events and OpenSky live aircraft. Toggle layers, run either pipeline, and inspect any marker.</p>
 
-                          <!-- Control rail: query + validate + run + layer toggles -->
-                          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
-                              <input id="fusionQuery" type="text" placeholder='GDELT query e.g. (military OR defense OR conflict)' style="flex:1;min-width:240px">
-                              <button class="btn btn-secondary btn-sm" onclick="fusionValidate()">Validate</button>
-                              <button class="btn btn-primary btn-sm" onclick="fusionRunGdelt()">Run GDELT</button>
-                              <button class="btn btn-primary btn-sm" onclick="fusionRunOpenSky()">Run OpenSky</button>
-                              <button class="btn btn-secondary btn-sm" onclick="renderFusionMap()">Refresh Map</button>
+                          <!-- Control rail: presets + query + validate + run -->
+                          <div class="sc-control-rail">
+                              <div class="sc-preset-bar" id="fusionPresetBar"></div>
+                              <div class="sc-query-row">
+                                  <input id="fusionQuery" type="text" placeholder='GDELT query e.g. (military OR defense OR conflict)' class="sc-query-input">
+                                  <button class="btn btn-secondary btn-sm" onclick="fusionValidate()">Validate</button>
+                                  <button class="btn btn-primary btn-sm" onclick="fusionRunGdelt()">Run GDELT</button>
+                                  <button class="btn btn-primary btn-sm" onclick="fusionRunOpenSky()">Run OpenSky</button>
+                                  <button class="btn btn-secondary btn-sm" onclick="renderFusionMap()">Refresh</button>
+                              </div>
                           </div>
                           <div id="fusionValidateStatus" style="font-family:var(--font-mono);font-size:10px;margin-bottom:8px;min-height:16px;color:var(--text-muted)"></div>
 
                           <!-- Unified rate meter: both GDELT + OpenSky -->
-                          <div id="fusionRateMeter" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-family:var(--font-mono);font-size:9px;margin-bottom:8px;color:var(--text-muted)"></div>
+                          <div id="fusionRateMeter" class="sc-rate-meter"></div>
 
                           <!-- Layer toggle chips with live counts -->
-                          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
-                              <span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--text-muted)">Layers:</span>
-                              <button class="retro-map-btn retro-map-btn-active" id="fusionLayerThreats" onclick="fusionToggleLayer('threats')">☠ Threats <b id="fusionThreatCount">0</b></button>
-                              <button class="retro-map-btn retro-map-btn-active" id="fusionLayerAviation" onclick="fusionToggleLayer('aviation')">✈ Aircraft <b id="fusionAircraftCount">0</b></button>
-                              <button class="retro-map-btn" id="fusionLayer3d" onclick="fusionToggle3D()">▢ 3D</button>
+                          <div class="sc-layer-bar">
+                              <span class="sc-layer-label">Layers:</span>
+                              <button class="retro-map-btn retro-map-btn-active" id="fusionLayerThreats" onclick="fusionToggleLayer('threats')">Threats <b id="fusionThreatCount">0</b></button>
+                              <button class="retro-map-btn retro-map-btn-active" id="fusionLayerAviation" onclick="fusionToggleLayer('aviation')">Aircraft <b id="fusionAircraftCount">0</b></button>
+                              <button class="retro-map-btn" id="fusionLayer3d" onclick="fusionToggle3D()">3D</button>
                           </div>
 
-                          <!-- KPI rail: both sources -->
-                          <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px;font-family:var(--font-mono);font-size:11px">
-                              <span>Events: <b style="color:var(--text)" id="fusionKpiEvents">0</b></span>
-                              <span style="color:var(--red)">Threats: <b id="fusionKpiThreats">0</b></span>
-                              <span>Aircraft: <b style="color:var(--text)" id="fusionKpiAircraft">0</b></span>
-                              <span style="color:var(--red)">Military: <b id="fusionKpiMilitary">0</b></span>
-                              <span style="color:var(--amber)">Jamming: <b id="fusionKpiJamming">0</b></span>
-                              <span>Countries: <b style="color:var(--text)" id="fusionKpiCountries">0</b></span>
+                          <!-- KPI grid: both sources + BigQuery metrics -->
+                          <div class="sc-kpi-grid">
+                              <div class="sc-kpi-card"><div class="sc-kpi-label">Events</div><div class="sc-kpi-value" id="fusionKpiEvents">0</div></div>
+                              <div class="sc-kpi-card sc-kpi-red"><div class="sc-kpi-label">Threats</div><div class="sc-kpi-value" id="fusionKpiThreats">0</div></div>
+                              <div class="sc-kpi-card"><div class="sc-kpi-label">Aircraft</div><div class="sc-kpi-value" id="fusionKpiAircraft">0</div></div>
+                              <div class="sc-kpi-card sc-kpi-red"><div class="sc-kpi-label">Military</div><div class="sc-kpi-value" id="fusionKpiMilitary">0</div></div>
+                              <div class="sc-kpi-card sc-kpi-amber"><div class="sc-kpi-label">Jamming</div><div class="sc-kpi-value" id="fusionKpiJamming">0</div></div>
+                              <div class="sc-kpi-card"><div class="sc-kpi-label">Countries</div><div class="sc-kpi-value" id="fusionKpiCountries">0</div></div>
+                              <div class="sc-kpi-card"><div class="sc-kpi-label">Avg Tone</div><div class="sc-kpi-value" id="fusionKpiTone">--</div></div>
+                              <div class="sc-kpi-card"><div class="sc-kpi-label">Avg Goldstein</div><div class="sc-kpi-value" id="fusionKpiGoldstein">--</div></div>
                           </div>
 
                           <!-- Marker legend -->
-                          <div style="display:flex;gap:14px;flex-wrap:wrap;font-family:var(--font-mono);font-size:9px;color:var(--text-muted);margin-bottom:8px">
-                              <span style="font-transform:uppercase;opacity:0.7">LEGEND:</span>
-                              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;box-shadow:0 0 4px #ef4444"></span> Threat-RED / Military</span>
-                              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b;box-shadow:0 0 4px #f59e0b"></span> Threat-AMBER / Private</span>
-                              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c544;box-shadow:0 0 4px #22c544"></span> Threat-GREEN / Commercial</span>
-                              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22d3ee;box-shadow:0 0 4px #22d3ee"></span> Jet</span>
+                          <div class="sc-legend">
+                              <span class="sc-legend-label">LEGEND:</span>
+                              <span><span class="sc-legend-dot" style="background:#ef4444;box-shadow:0 0 4px #ef4444"></span> Threat-RED / Military</span>
+                              <span><span class="sc-legend-dot" style="background:#f59e0b;box-shadow:0 0 4px #f59e0b"></span> Threat-AMBER / Private</span>
+                              <span><span class="sc-legend-dot" style="background:#22c544;box-shadow:0 0 4px #22c544"></span> Threat-GREEN / Commercial</span>
+                              <span><span class="sc-legend-dot" style="background:#22d3ee;box-shadow:0 0 4px #22d3ee"></span> Jet</span>
                           </div>
 
                           <!-- The single unified map -->
-                          <div style="position:relative;height:560px;border:1px solid var(--border-light);border-radius:8px;overflow:hidden">
-                              <div class="retro-map-canvas" id="fusionMap" style="width:100%;height:100%"></div>
-                              <div id="fusionMapHud" style="position:absolute;top:10px;left:10px;font-family:var(--font-mono);font-size:10px;color:var(--text-muted);background:rgba(0,0,0,0.6);padding:4px 8px;border-radius:4px;pointer-events:none">Loading unified map…</div>
+                          <div class="sc-map-wrapper">
+                              <div class="retro-map-canvas" id="fusionMap"></div>
+                              <div id="fusionMapHud" class="sc-map-hud">Loading unified map...</div>
                           </div>
 
-                          <!-- Recent activity tables side by side -->
-                          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+                          <!-- Intelligence panels: 3-column responsive grid -->
+                          <div class="sc-intel-grid">
                               <div class="card">
                                   <div class="card-header"><span class="card-title">Recent Threat Events</span><span class="tag tag-red">GDELT</span></div>
-                                  <div id="fusionThreatTable" style="font-family:var(--font-mono);font-size:10px;line-height:1.6;color:var(--text-muted);max-height:240px;overflow:auto"></div>
+                                  <div id="fusionThreatTable" class="sc-data-list"></div>
                               </div>
                               <div class="card">
-                                  <div class="card-header"><span class="card-title">Recent Military Aircraft</span><span class="tag tag-blue">OpenSky</span></div>
-                                  <div id="fusionAircraftTable" style="font-family:var(--font-mono);font-size:10px;line-height:1.6;color:var(--text-muted);max-height:240px;overflow:auto"></div>
+                                  <div class="card-header"><span class="card-title">Military Aircraft</span><span class="tag tag-blue">OpenSky</span></div>
+                                  <div id="fusionAircraftTable" class="sc-data-list"></div>
+                              </div>
+                              <div class="card">
+                                  <div class="card-header"><span class="card-title">Actor Network</span><span class="tag tag-green">CAMEO</span></div>
+                                  <div id="fusionActorTable" class="sc-data-list"></div>
+                              </div>
+                          </div>
+
+                          <!-- Tactical metrics -->
+                          <div class="sc-metrics-grid">
+                              <div class="card">
+                                  <div class="card-header"><span class="card-title">Systemic Importance</span></div>
+                                  <div class="sc-metric-value" id="fusionMetricSystemic">--</div>
+                              </div>
+                              <div class="card">
+                                  <div class="card-header"><span class="card-title">Propagation Potential</span></div>
+                                  <div class="sc-metric-value" id="fusionMetricPropagation">--</div>
+                              </div>
+                              <div class="card">
+                                  <div class="card-header"><span class="card-title">Event Momentum</span></div>
+                                  <div class="sc-metric-value" id="fusionMetricMomentum">--</div>
                               </div>
                           </div>
                       </div>
@@ -1949,36 +2048,33 @@
                                   <span class="mono" id="gdeltHealthText" style="font-size:12px">Health: …</span>
                               </div>
                           </div>
-                          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+                          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px">
                               <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
                                   <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">DOC 2.0 Modes</div>
-                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:600;color:var(--accent-cyan)">8</div>
-                                  <div style="font-size:10px;color:var(--text-muted)">artlist, art, imagecollage, timelinevol, tonechart, wordcloud*</div>
-                              </div>
-                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
-                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">GKG Events</div>
-                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:600;color:var(--green)">CAMEO</div>
-                                  <div style="font-size:10px;color:var(--text-muted)">Conflict, cooperation, verbal, material</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:300;color:var(--accent-neon)">8</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">artlist, tonechart, wordcloud, imagecollage</div>
                               </div>
                               <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
                                   <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Ngram Analysis</div>
-                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:600;color:var(--amber)">2</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:300;color:var(--amber)">2</div>
                                   <div style="font-size:10px;color:var(--text-muted)">Context + Web keyword co-occurrence</div>
                               </div>
                               <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
                                   <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Actor Graph</div>
-                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:600;color:var(--accent-purple)">6</div>
-                                  <div style="font-size:10px;color:var(--text-muted)">Relationship types with subgraphs</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:300;color:var(--accent-neon)">CAMEO</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">Manual event entry + relationship queries</div>
+                              </div>
+                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
+                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">BigQuery Backend</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:300;color:var(--green)" id="gdeltBqStatus">--</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">Production GDELT access (tone + actors + geocoding)</div>
                               </div>
                           </div>
                           <div style="margin-bottom:16px">
                               <div style="display:flex;gap:4px;margin-bottom:12px">
                                   <button class="gdelt-tab active" data-tab="doc2" onclick="switchGdeltTab('doc2')">DOC 2.0 Pipeline</button>
-                                  <button class="gdelt-tab" data-tab="gkg" onclick="switchGdeltTab('gkg')">GKG Events</button>
                                   <button class="gdelt-tab" data-tab="ngram" onclick="switchGdeltTab('ngram')">Ngram Analysis</button>
                                   <button class="gdelt-tab" data-tab="actor" onclick="switchGdeltTab('actor')">Actor Graph</button>
-                                <button class="gdelt-tab" data-tab="threatmap" onclick="switchGdeltTab('threatmap')">Threat Map</button>
-                                <button class="gdelt-tab" data-tab="intelnode" onclick="switchGdeltTab('intelnode')">Intelligence Node</button>
                               </div>
                               <div id="gdeltTabDoc2" class="gdelt-tab-content active">
                                   <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
@@ -2006,23 +2102,6 @@
                                       </table>
                                   </div>
                               </div>
-                              <div id="gdeltTabGkg" class="gdelt-tab-content">
-                                  <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
-                                      <input id="gkgQuery" type="text" placeholder='GKG query e.g. ("military" OR "conflict")' style="flex:1">
-                                      <input id="gkgTimespan" type="text" placeholder="timespan e.g. 24h" value="24h" style="width:110px">
-                                      <input id="gkgMax" type="number" min="1" max="250" value="50" style="width:80px">
-                                      <button class="btn btn-primary btn-sm" onclick="runGkgPipeline()">Run GKG</button>
-                                      <button class="btn btn-secondary btn-sm" onclick="loadGkgActors()">Load Actors</button>
-                                  </div>
-                                  <div id="gkgRunStatus" style="margin-bottom:12px;font-size:13px;color:#aaa"></div>
-                                  <div class="table-wrap">
-                                      <table>
-                                          <thead><tr><th>Event Code</th><th>Type</th><th>Country</th><th>Tone</th><th>Articles</th></tr></thead>
-                                          <tbody id="gkgEventsBody"><tr><td colspan="5"><div class="empty-state">No GKG events loaded yet.</div></td></tr></tbody>
-                                      </table>
-                                  </div>
-                              </div>
-                              <div id="gdeltTabNgram" class="gdelt-tab-content">
                                   <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
                                       <input id="ngramKeyword" type="text" placeholder="Keyword e.g. military" style="flex:1">
                                       <select id="ngramType" style="padding:4px 8px;font-size:12px;border:1px solid var(--border-light);border-radius:4px;background:var(--bg);color:var(--text);min-width:120px">
@@ -2077,207 +2156,6 @@
                                </div>
                            </div>
                            <!-- Threat Map Tab Content -->
-                           <div id="gdeltTabThreatMap" class="gdelt-tab-content">
-                                <div id="threatPresetBar" style="display:none;gap:6px;align-items:center;margin-bottom:10px">
-                                    <span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;color:var(--text-muted)">Conflict presets:</span>
-                                    <span id="threatPresets"></span>
-                                </div>
-                                 <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
-                                     <input id="threatMapQuery" type="text" placeholder='Search threat by keyword e.g. "military" OR "defense"' style="flex:1">
-                                     <select id="threatMapLayer" style="padding:4px 8px;font-size:12px;border:1px solid var(--border-light);border-radius:4px;background:var(--bg);color:var(--text);min-width:140px">
-                                         <option value="all">All Layers</option>
-                                         <option value="geospatial">Geospatial Spikes</option>
-                                         <option value="actors">Actor Networks</option>
-                                         <option value="tone">Tone Analysis</option>
-                                     </select>
-                                     <button class="btn btn-secondary btn-sm" onclick="validateGkgQuery()">Validate</button>
-                                     <button class="btn btn-primary btn-sm" onclick="renderThreatMap()">Render Map</button>
-                                     <button class="btn btn-secondary btn-sm" onclick="clearThreatMap()">Clear</button>
-                                 </div>
-                                 <div id="gkgValidateStatus" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-family:var(--font-mono);font-size:10px;margin-bottom:10px;min-height:18px;color:var(--text-muted)"></div>
-                                 <div id="gkgBudgetMeter" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-family:var(--font-mono);font-size:9px;margin-bottom:10px;color:var(--text-muted)"></div>
-                               <!-- CRITICAL EVENT MAPPER -->
-                               <div class="card" style="margin-bottom:12px">
-                                   <div class="card-header">
-                                       <span class="card-title">⚠ CRITICAL EVENT MAPPER</span>
-                                       <span class="tag tag-red">LIVE</span>
-                                   </div>
-                                   <div id="threatEventMap" style="font-family:var(--font-mono);font-size:11px;line-height:1.6;color:var(--text-muted)">
-                                       <div class="empty-state">Render threat map to see geocoded security spikes with CAMEO actor codes</div>
-                                   </div>
-                               </div>
-                               <!-- LINK MATRIX TABLE -->
-                               <div class="card" style="margin-bottom:12px">
-                                   <div class="card-header">
-                                       <span class="card-title">🔗 LINK MATRIX TABLE</span>
-                                       <span class="tag tag-blue">SEARCHABLE</span>
-                                   </div>
-                                   <div class="table-wrap">
-                                       <table>
-                                           <thead><tr><th>TIMESTAMP</th><th>PRIMARY ACTOR</th><th>KINETIC REACTION CODE</th><th>TARGET FIELD</th><th>TONE SCORE</th></tr></thead>
-                                           <tbody id="linkMatrixBody">
-                                               <tr><td colspan="5"><div class="empty-state">No threat events loaded. Run a search or add an event.</div></td></tr>
-                                           </tbody>
-                                       </table>
-                                   </div>
-                               </div>
-                               <!-- TACTICAL DATA METRICS -->
-                               <div class="card">
-                                   <div class="card-header">
-                                       <span class="card-title">📊 TACTICAL DATA METRICS</span>
-                                   </div>
-                                   <div class="cmb-grid-2" style="margin-top:12px">
-                                       <div class="cmb-stat-card">
-                                           <div class="cmb-stat-label">Systemic Importance</div>
-                                           <div class="cmb-stat-value" id="metricSystemicImportance">—</div>
-                                           <div class="cmb-stat-sub">0.0 – 1.0</div>
-                                       </div>
-                                       <div class="cmb-stat-card">
-                                           <div class="cmb-stat-label">Propagation Potential</div>
-                                           <div class="cmb-stat-value" id="metricPropagationPotential">—</div>
-                                           <div class="cmb-stat-sub">0.0 – 1.0</div>
-                                       </div>
-                                       <div class="cmb-stat-card">
-                                           <div class="cmb-stat-label">Market Sensitivity</div>
-                                           <div class="cmb-stat-value" id="metricMarketSensitivity">—</div>
-                                           <div class="cmb-stat-sub">0.0 – 1.0</div>
-                                       </div>
-                                   </div>
-                               </div>
-                                <!-- Map Visualization -->
-                                <div class="card" style="margin-top:12px">
-                                    <div class="card-header">
-                                        <span class="card-title">◈ GEOSPATIAL THREAT MAP</span>
-                                        <span class="tag tag-red">LIVE</span>
-                                    </div>
-                                    <div id="threatMapViz" class="retro-map-wrapper">
-                                        <div class="retro-map-canvas" id="gdeltThreatMap"></div>
-                                        <div class="retro-map-hud-panel retro-map-hud-left">
-                                            <div class="retro-map-hud-kicker">Tactical Geospatial View</div>
-                                            <div class="retro-map-hud-heading" id="threatMapHudTitle">CRITICAL EVENT MAPPER</div>
-                                             <div class="retro-map-hud-meta" id="threatMapHudMeta">DRAG: PAN • SCROLL: ZOOM • SHIFT+DRAG: TILT 3D • No events loaded</div>
-                                        </div>
-                                        <div class="retro-map-hud-panel retro-map-hud-right">
-                                            <div class="retro-map-hud-kicker">Database Status</div>
-                                            <div class="retro-map-hud-meta"><b id="threatMapEventCount">0</b> geocoded events</div>
-                                            <div class="retro-map-hud-meta"><b id="threatMapThreatCount">0</b> active threats</div>
-                                        </div>
-                                        <div class="retro-map-hint-banner">
-                                            <div class="retro-map-hint-text" id="threatMapHint">Render map to plot real GDELT GKG geocoded events</div>
-                                        </div>
-                                        <div class="retro-map-toolbar">
-                                            <button class="retro-map-btn retro-map-btn-reset" onclick="resetMapView()">Reset World View</button>
-                                            <button class="retro-map-btn" onclick="fitThreatBounds()">Fit Threat Clusters</button>
-                                            <button class="retro-map-btn retro-map-btn-active" id="threat3dToggle" onclick="toggleThreat3D()">3D Buildings</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="card" style="margin-top:12px">
-                                    <div class="card-header">
-                                        <span class="card-title">◈ ACTOR NETWORK</span>
-                                    </div>
-                                    <div class="table-wrap">
-                                        <table style="width:100%;font-size:11px;border-collapse:collapse">
-                                            <thead><tr><th>Actor</th><th>CAMEO</th><th>Country</th><th>Threat</th></tr></thead>
-                                            <tbody id="actorMapBody">
-                                                <tr><td colspan="4"><div class="empty-state">No actor data loaded</div></td></tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                               <div style="margin-top:16px;font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">
-                                   <p>⚠ CRITICAL: All coordinates are lat/lng in [DMS] format. Threat levels are determined by the GDELT Event Database's real-time event classification. CAMEO codes are from the GDELT Document 2.0 API (see: https://api.gdeltproject.org/api/v2/doc/doc).</p>
-                                   <p>SOP: For each threat event, log the [LAT, LNG] coordinate, THREAT_LEVEL, and CAMEO code. Then route the event to the Entity Fusion Tab for actor relationship mapping.</p>
-                               </div>
-                           </div>
-                           <!-- Intelligence Processing Node Tab Content -->
-                           <div id="gdeltTabIntelNode" class="gdelt-tab-content">
-                               <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
-                                   <input id="intelNodeQuery" type="text" placeholder='Intelligence query e.g. "military defense" OR "defense threat"' style="flex:1">
-                                    <button class="btn btn-primary btn-sm" onclick="runIntelNode()">Run Intelligence Node</button>
-                                    <button class="btn btn-secondary btn-sm" onclick="clearIntelNode()">Reset</button>
-                                </div>
-                                <div id="intelRunStatus" style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-bottom:12px">Ready — run an intelligence query to aggregate real GDELT GKG data.</div>
-                                <div class="card" style="margin-bottom:12px">
-                                    <div class="card-header">
-                                        <span class="card-title">📡 INTELLIGENCE PROCESSING NODE</span>
-                                       <span class="tag tag-green">ACTIVE</span>
-                                   </div>
-                                   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px">
-                                       <div class="cmb-stat-card">
-                                           <div class="cmb-stat-label">Systemic Importance</div>
-                                           <div class="cmb-stat-value" id="intelSystemicImportance">—</div>
-                                           <div class="cmb-stat-sub">0.0 – 1.0</div>
-                                           <div class="cmb-stat-sub" style="margin-top:4px">Computed via GDELT Event DB query</div>
-                                       </div>
-                                       <div class="cmb-stat-card">
-                                           <div class="cmb-stat-label">Propagation Potential</div>
-                                           <div class="cmb-stat-value" id="intelPropagationPotential">—</div>
-                                           <div class="cmb-stat-sub">0.0 – 1.0</div>
-                                           <div class="cmb-stat-sub" style="margin-top:4px">Anomaly detection score</div>
-                                       </div>
-                                       <div class="cmb-stat-card">
-                                           <div class="cmb-stat-label">Market Sensitivity</div>
-                                           <div class="cmb-stat-value" id="intelMarketSensitivity">—</div>
-                                           <div class="cmb-stat-sub">0.0 – 1.0</div>
-                                           <div class="cmb-stat-sub" style="margin-top:4px">Confidence index</div>
-                                       </div>
-                                   </div>
-                               </div>
-                               <!-- SOP: Intell Processing Node -->
-                               <div class="card" style="margin-bottom:12px">
-                                   <div class="card-header">
-                                       <span class="card-title">📋 SOP: Intelligence Node Data Extraction</span>
-                                   </div>
-                                   <div style="display:flex;gap:12px;flex-wrap:wrap">
-                                       <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:10px 14px;flex:1;min-width:200px">
-                                           <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">STEP 1: DATA INGESTION VERIFICATION</div>
-                                           <div style="font-size:11px;color:var(--text-light);margin-bottom:4px">Verify the incoming GDELT event stream matches our backend query indices. Confirm the query parameters match the pattern: query, timespan, mode.</div>
-                                           <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">Run the pipeline with: runIntelNode() — confirm response matches cached indices</div>
-                                       </div>
-                                       <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:10px 14px;flex:1;min-width:200px">
-                                           <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">STEP 2: TACTICAL PIVOT</div>
-                                           <div style="font-size:11px;color:var(--text-light);margin-bottom:4px">Extract the Primary Actor strings and drop them into the Entity Fusion Tab. Extract the CAMEO code, target field, and tone score.</div>
-                                           <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">Action: Run `loadGdeltSnapshot()` to populate the Entity Fusion Tab with the extracted entities</div>
-                                       </div>
-                                       <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:10px 14px;flex:1;min-width:200px">
-                                           <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">STEP 3: TRIPWIRE ACTIVATION</div>
-                                           <div style="font-size:11px;color:var(--text-light);margin-bottom:4px">Set an automated threshold alert on this tone/intensity variance. Configure the alert to trigger when the propagation potential exceeds 0.75 or systemic importance drops below 0.3.</div>
-                                           <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">Action: Set `alertThresholdPropagation: 0.75` and `alertThresholdSystemic: 0.3` in the Intelligence Node settings</div>
-                                       </div>
-                                   </div>
-                                   <div style="margin-top:12px;font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">
-                                       <p>SOP: If a threat event is detected, immediately route it to the Entity Fusion Tab with the CAMEO code. Then trigger the tripwire alert on tone/intensity variance. The Intelligence Processing Node will cross-reference the incoming event against the backend query indices and update the tactical metrics in real-time.</p>
-                                   </div>
-                               </div>
-                               <!-- SOP: Map Data Extraction -->
-                               <div class="card">
-                                   <div class="card-header">
-                                       <span class="card-title">📋 SOP: Threat Map Data Extraction</span>
-                                   </div>
-                                   <div style="display:flex;gap:12px;flex-wrap:wrap">
-                                       <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:10px 14px;flex:1;min-width:200px">
-                                           <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">STEP 1: DATA INGESTION VERIFICATION</div>
-                                           <div style="font-size:11px;color:var(--text-light);margin-bottom:4px">Verify the incoming threat event stream matches our backend query indices. Confirm the query parameters match the pattern: threat keyword, timespan, layer.</div>
-                                           <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">Run the map render with: renderThreatMap() — confirm response matches cached indices</div>
-                                       </div>
-                                       <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:10px 14px;flex:1;min-width:200px">
-                                           <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">STEP 2: TACTICAL PIVOT</div>
-                                           <div style="font-size:11px;color:var(--text-light);margin-bottom:4px">Extract the Primary Actor strings and drop them into the Entity Fusion Tab. Extract the CAMEO code, target field, and tone score.</div>
-                                           <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">Action: Run `loadGdeltSnapshot()` to populate the Entity Fusion Tab with the extracted entities</div>
-                                       </div>
-                                       <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:10px 14px;flex:1;min-width:200px">
-                                           <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">STEP 3: TRIPWIRE ACTIVATION</div>
-                                           <div style="font-size:11px;color:var(--text-light);margin-bottom:4px">Set an automated threshold alert on this tone/intensity variance. Configure the alert to trigger when the propagation potential exceeds 0.75 or systemic importance drops below 0.3.</div>
-                                           <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">Action: Set `alertThresholdPropagation: 0.75` and `alertThresholdSystemic: 0.3` in the Threat Map settings</div>
-                                       </div>
-                                   </div>
-                                   <div style="margin-top:12px;font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">
-                                       <p>SOP: If a threat event is detected, immediately route it to the Entity Fusion Tab with the CAMEO code. Then trigger the tripwire alert on tone/intensity variance. The Threat Map will cross-reference the incoming event against the backend query indices and update the tactical metrics in real-time.</p>
-                                   </div>
-                               </div>
-                           </div>
-                      </div>
                     </div>
 
                   <!-- Aviation Domain Page (OpenSky Network) -->
@@ -2322,7 +2200,6 @@
                                   <button class="aviation-tab active" data-tab="pipeline" onclick="switchAviationTab('pipeline')">OpenSky Pipeline</button>
                                   <button class="aviation-tab" data-tab="flights" onclick="switchAviationTab('flights')">Classified Flights</button>
                                   <button class="aviation-tab" data-tab="jamming" onclick="switchAviationTab('jamming')">GPS Jamming</button>
-                                  <button class="aviation-tab" data-tab="airspace" onclick="switchAviationTab('airspace')">Airspace Map</button>
                               </div>
                               <!-- Pipeline Tab -->
                               <div id="aviationTabPipeline" class="aviation-tab-content active">
@@ -2378,28 +2255,6 @@
                                   </div>
                               </div>
                               <!-- Airspace Map Tab -->
-                              <div id="aviationTabAirspace" class="aviation-tab-content">
-                                  <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
-                                      <button class="btn btn-primary btn-sm" onclick="renderAirspaceMap()">Render Airspace</button>
-                                      <button class="btn btn-secondary btn-sm" onclick="clearAirspaceMap()">Clear</button>
-                                  </div>
-                                  <div id="airspaceMapViz" class="retro-map-wrapper">
-                                      <div class="retro-map-canvas" id="aviationAirspaceMap"></div>
-                                      <div class="retro-map-hud-panel retro-map-hud-left">
-                                          <div class="retro-map-hud-kicker">Aviation Tactical View</div>
-                                          <div class="retro-map-hud-heading" id="airspaceMapTitle">LIVE AIRCRAFT TRACKING</div>
-                                          <div class="retro-map-hud-meta" id="airspaceMapMeta">Loading flight data from OpenSky Network</div>
-                                      </div>
-                                      <div class="retro-map-hud-panel retro-map-hud-right">
-                                          <div class="retro-map-hud-kicker">Source</div>
-                                          <div class="retro-map-hud-meta" id="airspaceMapSource">—</div>
-                                          <div class="retro-map-hud-meta" id="airspaceMapCount">0 aircraft</div>
-                                      </div>
-                                      <div class="retro-map-hint-banner">
-                                          <div class="retro-map-hint-text" id="airspaceMapHint">Render map to plot real-time aircraft positions from OpenSky Network</div>
-                                      </div>
-                                  </div>
-                              </div>
                           </div>
                       </div>
                   </div>
@@ -3438,7 +3293,7 @@ function loadPageData(page) {
         case 'sc-objects': loadObjectTypeFilter(); loadObjects(); break;
         case 'sc-links': loadLinkTypes(); break;
         case 'sc-fusion': renderFusionMap(); break;
-        case 'sc-gdelt': loadGdeltHealth(); loadGdeltSnapshot(); renderThreatPresets(); renderThreatMap(true); gkgLiveStructuralCheck(); refreshGkgBudget(); break;
+        case 'sc-gdelt': loadGdeltHealth(); loadGdeltSnapshot(); refreshGdeltBqStatus(); break;
         case 'sc-aviation': loadAviationHealth(); loadAviationSnapshot(); loadAviationFlights(); break;
         case 'yono-providers': loadProviders(); loadModels(); break;
         case 'yono-agents': loadAgents(); break;
@@ -4369,11 +4224,21 @@ async function loadGdeltHealth() {
     try {
         const h = await api('/gdelt/health');
         dot.style.background = '#22c54e';
-        txt.textContent = 'Health: ' + (h.status || 'ok') + ' · GDELT DOC 2.0 feed';
+        txt.textContent = 'Health: ' + (h.status || 'ok') + ' - GDELT DOC 2.0 feed';
     } catch (e) {
         dot.style.background = '#ef4444';
         txt.textContent = 'Health: / ' + (e.message || 'unreachable');
     }
+}
+
+async function refreshGdeltBqStatus() {
+    const el = document.getElementById('gdeltBqStatus');
+    if (!el) return;
+    try {
+        const s = await api('/gkg/bigquery/status');
+        el.textContent = s.available ? 'ON' : 'OFF';
+        el.style.color = s.available ? 'var(--green)' : 'var(--amber)';
+    } catch (e) { el.textContent = '--'; }
 }
 
 async function loadGdeltSnapshot() {
@@ -4433,16 +4298,9 @@ function switchGdeltTab(tab) {
     document.querySelectorAll('.gdelt-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.gdelt-tab-content').forEach(c => c.classList.remove('active'));
     document.querySelector(`.gdelt-tab[data-tab="${tab}"]`).classList.add('active');
-    const tabIdMap = {
-        'threatmap': 'ThreatMap',
-        'intelnode': 'IntelNode',
-    };
-    const tabId = tabIdMap[tab] || tab.charAt(0).toUpperCase() + tab.slice(1);
+    const tabId = tab.charAt(0).toUpperCase() + tab.slice(1);
     const el = document.getElementById('gdeltTab' + tabId);
     if (el) el.classList.add('active');
-    if (tab === 'threatmap' && threatMapInitialized && threatMap) {
-        requestAnimationFrame(() => threatMap.resize());
-    }
  }
 
 // ============================================================================
@@ -4523,9 +4381,6 @@ function switchAviationTab(tab) {
     document.querySelectorAll('.aviation-tab-content').forEach(c => c.classList.remove('active'));
     document.querySelector(`.aviation-tab[data-tab="${tab}"]`).classList.add('active');
     document.getElementById('aviationTab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
-    if (tab === 'airspace' && aviationMapInitialized && aviationMap) {
-        requestAnimationFrame(() => aviationMap.resize());
-    }
 }
 
 async function loadAviationFlights(category) {
@@ -5342,34 +5197,85 @@ function updateFusionKpis() {
     document.getElementById('fusionKpiEvents').textContent = m.total;
     document.getElementById('fusionKpiThreats').textContent = m.negative;
     document.getElementById('fusionThreatCount').textContent = fusionThreatMarkers.length;
-    let military = 0, jamming = 0;
+    let military = 0;
     const cats = { commercial: 0, private: 0, jet: 0, military: 0 };
     fusionFlights.forEach(f => { const c = (f.properties || {}).category || '?'; if (cats[c] != null) cats[c]++; if (c === 'military') military++; });
-    const total = fusionFlights.length;
-    document.getElementById('fusionKpiAircraft').textContent = total;
+    document.getElementById('fusionKpiAircraft').textContent = fusionFlights.length;
     document.getElementById('fusionKpiMilitary').textContent = military;
     document.getElementById('fusionAircraftCount').textContent = fusionAviationMarkers.length;
     const countries = new Set(fusionThreatEvents.map(e => { const g = parseActionGeo(e); return g ? g.country : null; }).filter(Boolean));
     document.getElementById('fusionKpiCountries').textContent = countries.size;
-    // Recent tables
-    document.getElementById('fusionThreatTable').innerHTML = fusionThreatEvents.slice(0, 15).map(ev => {
+    // BigQuery-enhanced metrics: avg tone + Goldstein scale
+    const tones = fusionThreatEvents.map(e => e.avg_tone).filter(t => t && t !== 0);
+    const avgTone = tones.length ? (tones.reduce((a, b) => a + b, 0) / tones.length).toFixed(1) : '--';
+    document.getElementById('fusionKpiTone').textContent = avgTone;
+    // Goldstein from payload (BigQuery stores it); fallback to tone-derived estimate
+    const goldsteins = fusionThreatEvents.map(e => (e.payload && e.payload.GoldsteinScale) || null).filter(Boolean);
+    const avgGold = goldsteins.length ? (goldsteins.reduce((a, b) => a + b, 0) / goldsteins.length).toFixed(1) : '--';
+    document.getElementById('fusionKpiGoldstein').textContent = avgGold;
+    // Tactical metrics
+    document.getElementById('fusionMetricSystemic').textContent = m.systemic || '--';
+    document.getElementById('fusionMetricPropagation').textContent = m.propagation || '--';
+    // Event momentum: avg NumMentions (from BigQuery) or fallback to event count
+    const mentions = fusionThreatEvents.map(e => (e.payload && e.payload.NumMentions) || null).filter(Boolean);
+    const momentum = mentions.length ? (mentions.reduce((a, b) => a + b, 0) / mentions.length).toFixed(0) : m.total;
+    document.getElementById('fusionMetricMomentum').textContent = momentum;
+    // Recent threat events table (with real tone + actors)
+    document.getElementById('fusionThreatTable').innerHTML = fusionThreatEvents.slice(0, 20).map(ev => {
         const g = parseActionGeo(ev); const tone = threatLevelForEvent(ev);
         const c = tone === 'red' ? 'var(--red)' : tone === 'amber' ? 'var(--amber)' : 'var(--green)';
-        return '<div style="margin-bottom:2px"><span style="color:' + c + '">[' + (g ? g.country : '-') + '] ' +
-            (ev.event_type || 'GDELT') + ' ' + (ev.event_code || '') + '</span>' +
-            (ev.title ? '<div style="font-size:9px;color:var(--text-muted)">' + (ev.title.length > 80 ? ev.title.slice(0, 80) + '…' : ev.title) + '</div>' : '') + '</div>';
-    }).join('') || '<div class="empty-state">No threat events — run the GDELT pipeline</div>';
+        const toneStr = ev.avg_tone ? ev.avg_tone.toFixed(1) : '--';
+        return '<div style="margin-bottom:3px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
+            '<span style="color:' + c + '">[' + (g ? g.country : '-') + '] ' + (ev.event_type || 'GDELT') + '</span>' +
+            ' <span style="color:var(--text-muted)">tone:' + toneStr + '</span>' +
+            (ev.title ? '<div style="font-size:9px;color:var(--text-muted)">' + (ev.title.length > 70 ? ev.title.slice(0, 70) + '...' : ev.title) + '</div>' : '') +
+            '</div>';
+    }).join('') || '<div class="empty-state">No threat events - run the GDELT pipeline</div>';
+    // Military aircraft table
     document.getElementById('fusionAircraftTable').innerHTML = fusionFlights
-        .filter(f => (f.properties || {}).category === 'military').slice(0, 15).map(f => {
+        .filter(f => (f.properties || {}).category === 'military').slice(0, 20).map(f => {
             const p = f.properties || {};
-            return '<div style="margin-bottom:2px"><span style="color:var(--red)">' + (p.callsign || '—') + ' · ' + (p.model || '?') +
-                '</span><div style="font-size:9px;color:var(--text-muted)">' + (p.alt || '?') + 'ft · ' + (p.speed_knots || '?') + 'kts · [' + (p.lat || '?') + ', ' + (p.lng || '?') + ']</div></div>';
-        }).join('') || '<div class="empty-state">No military aircraft — run the OpenSky pipeline</div>';
+            return '<div style="margin-bottom:3px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
+                '<span style="color:var(--red)">' + (p.callsign || '---') + ' - ' + (p.model || '?') + '</span>' +
+                '<div style="font-size:9px;color:var(--text-muted)">' + (p.alt || '?') + 'ft - ' + (p.speed_knots || '?') + 'kts - [' + (p.lat || '?') + ', ' + (p.lng || '?') + ']</div></div>';
+        }).join('') || '<div class="empty-state">No military aircraft - run the OpenSky pipeline</div>';
+    // Actor network table (from GDELT actors)
+    const actors = fusionThreatEvents.map(ev => {
+        const title = ev.title || '';
+        const parts = title.split(' -> ');
+        return { actor1: parts[0] || '', actor2: parts[1] || '', type: ev.event_type || '', country: (parseActionGeo(ev) || {}).country || '' };
+    }).filter(a => a.actor1);
+    const actorCounts = {};
+    actors.forEach(a => { actorCounts[a.actor1] = (actorCounts[a.actor1] || 0) + 1; });
+    const topActors = Object.entries(actorCounts).sort((a, b) => b[1] - a[1]).slice(0, 20);
+    document.getElementById('fusionActorTable').innerHTML = topActors.map(([name, count]) =>
+        '<div style="margin-bottom:3px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
+        '<span style="color:var(--accent-neon)">' + escapeHtml(name) + '</span>' +
+        ' <span style="color:var(--text-muted)">(' + count + ' events)</span></div>'
+    ).join('') || '<div class="empty-state">No actors extracted - run the GDELT pipeline</div>';
+}
+
+function renderFusionPresets() {
+    const bar = document.getElementById('fusionPresetBar');
+    if (!bar) return;
+    bar.innerHTML = '<span class="sc-layer-label">Presets:</span>' + QUERY_PRESETS.map(p =>
+        '<button class="sc-preset-btn" onclick="applyFusionPreset(\'' + p.query.replace(/'/g, "\\'") + '\',\'' + p.intent + '\')">' + p.name + '</button>'
+    ).join('');
+}
+
+function applyFusionPreset(query, intent) {
+    document.getElementById('fusionQuery').value = query;
+    threatQueryIntent = intent;
+    document.querySelectorAll('.sc-preset-btn').forEach(b => b.classList.remove('active'));
+    event && event.target && event.target.classList.add('active');
+    gkgLiveStructuralCheck();
+    renderFusionMap();
 }
 
 async function renderFusionMap() {
     const map = initFusionMap();
     if (!map) return;
+    renderFusionPresets();
     const hud = document.getElementById('fusionMapHud');
     if (hud) hud.textContent = 'Loading GDELT + OpenSky data…';
     const query = (document.getElementById('fusionQuery').value || '').trim() || '(military OR defense OR conflict)';

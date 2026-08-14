@@ -134,11 +134,11 @@ class StrixConnector:
 
         await self.db.update_strix_scan(scan_id, status='running', started_at=time.time())
         await self._emit(scan_id, company_id, {
-            'type': 'strix_scan_started', 'scan_id': scan_id,
+            'type': 'redteam_scan_started', 'scan_id': scan_id,
             'targets': targets, 'scan_mode': scan_mode,
         })
         await self.db.add_log(scan_id, company_id, 'info', None,
-                              f'Strix scan started: mode={scan_mode}, targets={targets}')
+                              f'Red Team scan started: mode={scan_mode}, targets={targets}')
 
         proc = None
         run_dir = None
@@ -160,10 +160,10 @@ class StrixConnector:
                     scan_id, run_name=run_name, run_dir=str(run_dir)
                 )
                 await self._emit(scan_id, company_id, {
-                    'type': 'strix_run_discovered', 'scan_id': scan_id,
+                    'type': 'redteam_run_discovered', 'scan_id': scan_id,
                     'run_name': run_name,
                 })
-                logger.info(f'Strix scan {scan_id} → run dir {run_name}')
+                logger.info(f'Red Team scan {scan_id} → run dir {run_name}')
 
             # Poll for findings + status until the process exits
             await self._poll_until_complete(scan_id, company_id, proc, run_dir)
@@ -173,16 +173,16 @@ class StrixConnector:
                 scan_id, status='interrupted', finished_at=time.time()
             )
             await self._emit(scan_id, company_id, {
-                'type': 'strix_scan_cancelled', 'scan_id': scan_id,
+                'type': 'redteam_scan_cancelled', 'scan_id': scan_id,
             })
             raise
         except Exception as e:
-            logger.error(f'Strix scan {scan_id} error: {e}')
+            logger.error(f'Red Team scan {scan_id} error: {e}')
             await self.db.update_strix_scan(
                 scan_id, status='failed', error_message=str(e), finished_at=time.time()
             )
             await self._emit(scan_id, company_id, {
-                'type': 'strix_scan_error', 'scan_id': scan_id, 'error': str(e),
+                'type': 'redteam_scan_error', 'scan_id': scan_id, 'error': str(e),
             })
         finally:
             self._active.pop(scan_id, None)
@@ -197,7 +197,7 @@ class StrixConnector:
             await self.db.update_strix_scan(
                 scan_id, status='interrupted', finished_at=time.time()
             )
-            await self.db.add_log(scan_id, company_id, 'warning', None, 'Strix scan cancelled')
+            await self.db.add_log(scan_id, company_id, 'warning', None, 'Red Team scan cancelled')
 
     # ── Internal helpers ──
 
@@ -238,7 +238,7 @@ class StrixConnector:
                     last_progress = progress
                     await self.db.update_strix_scan(scan_id, progress=progress)
                     await self._emit(scan_id, company_id, {
-                        'type': 'strix_progress', 'scan_id': scan_id,
+                        'type': 'redteam_progress', 'scan_id': scan_id,
                         'progress': progress,
                     })
 
@@ -274,13 +274,13 @@ class StrixConnector:
             severity_info=severity_counts.get('info', 0),
         )
         await self._emit(scan_id, company_id, {
-            'type': 'strix_scan_completed', 'scan_id': scan_id,
+            'type': 'redteam_scan_completed', 'scan_id': scan_id,
             'status': final_status, 'exit_code': exit_code,
             'total_findings': len(seen_finding_ids),
             'severity': severity_counts,
         })
         await self.db.add_log(scan_id, company_id, 'info', None,
-                              f'Strix scan {final_status} (exit={exit_code}): '
+                              f'Red Team scan {final_status} (exit={exit_code}): '
                               f'{len(seen_finding_ids)} findings')
 
     async def _read_stdout(self, proc, buf: list, scan_id: str, company_id: str):
@@ -295,7 +295,7 @@ class StrixConnector:
                 # Emit agent-activity lines to the WebSocket (throttled by line rate)
                 if text and not text.startswith('Pulling'):
                     await self._emit(scan_id, company_id, {
-                        'type': 'strix_log', 'scan_id': scan_id,
+                        'type': 'redteam_log', 'scan_id': scan_id,
                         'line': text[:500],
                     })
         except Exception:
@@ -326,7 +326,7 @@ class StrixConnector:
         if new_rows:
             await self.db.add_strix_findings_batch(new_rows)
             await self._emit(scan_id, company_id, {
-                'type': 'strix_findings', 'scan_id': scan_id,
+                'type': 'redteam_findings', 'scan_id': scan_id,
                 'new_count': len(new_rows), 'total': len(seen),
             })
 

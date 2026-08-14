@@ -89,7 +89,7 @@ async def startup():
     engine = ScanEngine(db, manager, plugins)
     strix = StrixConnector(db, manager)
     strix_health = strix.health()
-    logger.info(f'Strix connector: {strix_health["message"]} ({strix_health["cli_version"]})')
+    logger.info(f'Red Team connector: {strix_health["message"]}')
 
     await seed_defaults()
     logger.info('Hawskight Engine started')
@@ -263,7 +263,7 @@ def _strix_auth(request: Request) -> tuple[str, int]:
     The Centra portal login (login.html) stores a Supabase access_token in
     hs_session; the engine issues its own JWTs via /api/auth/login. This helper
     accepts either: a valid Centra Bearer token, or an X-Company-Id header so
-    the existing portal session can drive Strix scans without a separate login.
+    the existing portal session can drive red-team scans without a separate login.
     """
     auth = request.headers.get('Authorization', '')
     if auth.startswith('Bearer '):
@@ -274,20 +274,36 @@ def _strix_auth(request: Request) -> tuple[str, int]:
     return cid, 0
 
 
-@app.get('/api/strix/health')
-async def strix_health():
-    return strix.health()
+def _sanitize_health(h: dict) -> dict:
+    """Strip tool-identifying details from the health response.
+    Exposes only Centra-branded status — never the underlying engine name,
+    version, or install path."""
+    return {
+        'engine_online': h['ready'],
+        'docker_available': h['docker_available'],
+        'llm_configured': h['llm_configured'],
+        'reasoning_effort': h['reasoning_effort'],
+        'free_ram_mb': h['free_ram_mb'],
+        'ready': h['ready'],
+        'message': 'Autonomous Red Team engine ready' if h['ready'] else 'Engine initializing — configuration pending',
+    }
 
 
-@app.post('/api/strix/scans')
-async def start_strix_scan(req: StrixScanRequest, request: Request):
+@app.get('/api/redteam/health')
+async def redteam_health(request: Request):
+    _strix_auth(request)
+    return _sanitize_health(strix.health())
+
+
+@app.post('/api/redteam/scans')
+async def start_redteam_scan(req: StrixScanRequest, request: Request):
     company_id, user_id = _strix_auth(request)
     if not req.targets:
         raise HTTPException(status_code=400, detail='At least one target is required')
 
     h = strix.health()
     if not h['ready']:
-        raise HTTPException(status_code=503, detail=h['message'])
+        raise HTTPException(status_code=503, detail='Red Team engine not ready')
 
     scan_id = await db.create_strix_scan(
         company_id, user_id, req.targets, req.scan_mode, req.instruction
@@ -298,30 +314,30 @@ async def start_strix_scan(req: StrixScanRequest, request: Request):
     return {'scan_id': scan_id, 'status': 'started', 'targets': req.targets, 'scan_mode': req.scan_mode}
 
 
-@app.get('/api/strix/scans')
-async def list_strix_scans(request: Request):
+@app.get('/api/redteam/scans')
+async def list_redteam_scans(request: Request):
     company_id, _ = _strix_auth(request)
     return await db.get_strix_scans(company_id)
 
 
-@app.get('/api/strix/stats')
-async def get_strix_stats(request: Request):
+@app.get('/api/redteam/stats')
+async def get_redteam_stats(request: Request):
     company_id, _ = _strix_auth(request)
     return await db.get_strix_stats(company_id)
 
 
-@app.get('/api/strix/scans/{scan_id}')
-async def get_strix_scan(scan_id: str, request: Request):
+@app.get('/api/redteam/scans/{scan_id}')
+async def get_redteam_scan(scan_id: str, request: Request):
     company_id, _ = _strix_auth(request)
     scan = await db.get_strix_scan(scan_id, company_id)
     if not scan:
-        raise HTTPException(status_code=404, detail='Strix scan not found')
+        raise HTTPException(status_code=404, detail='Scan not found')
     findings = await db.get_strix_findings(scan_id)
     return {'scan': scan, 'findings': findings}
 
 
-@app.delete('/api/strix/scans/{scan_id}')
-async def delete_strix_scan(scan_id: str, request: Request):
+@app.delete('/api/redteam/scans/{scan_id}')
+async def delete_redteam_scan(scan_id: str, request: Request):
     company_id, _ = _strix_auth(request)
     await strix.cancel_scan(scan_id, company_id)
     await db.delete_strix_scan(scan_id, company_id)
@@ -410,8 +426,8 @@ async def scan_page():
     return FileResponse(str(CENTRA_DIR / 'scan.html'))
 
 
-@app.get('/strix')
-async def strix_page():
+@app.get('/red-team')
+async def redteam_page():
     return FileResponse(str(CENTRA_DIR / 'strix.html'))
 
 

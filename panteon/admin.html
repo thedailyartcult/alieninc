@@ -1430,6 +1430,10 @@
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="8" r="2.5"/><circle cx="12" cy="8" r="2.5"/><path d="M6.5 8h3"/></svg>
                         Link Types
                     </div>
+                    <div class="nav-item" data-page="sc-fusion">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="8" r="4"/><circle cx="11" cy="8" r="4"/><path d="M6 4h5M6 12h5"/></svg>
+                        Spinal Cracker
+                    </div>
                     <div class="nav-item" data-page="sc-gdelt">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12l4-8 4 4 4-4v6H2z"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>
                         GDELT Pipeline
@@ -1861,9 +1865,69 @@
                             <tbody id="linkTypesBody"><tr><td colspan="6"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
                         </div>
                     </div>
-                 </div>
+                  </div>
 
-                 <div class="page" id="page-sc-gdelt">
+                  <!-- Spinal Cracker Fusion Dashboard — one map, both GDELT + OpenSky -->
+                  <div class="page" id="page-sc-fusion">
+                      <div class="section">
+                          <div class="section-header">
+                              <div class="section-title">Spinal Cracker — Unified Intelligence Map</div>
+                              <div style="display:flex;gap:10px;align-items:center">
+                                  <span class="tag tag-green" id="fusionGdeltDot">GDELT</span>
+                                  <span class="tag tag-blue" id="fusionOpenSkyDot">OpenSky</span>
+                              </div>
+                          </div>
+                          <p class="section-subtitle">One cohesive map overlaying GDELT threat events and OpenSky live aircraft. Toggle layers, run either pipeline, and inspect any marker.</p>
+
+                          <!-- Control rail: query + validate + run + layer toggles -->
+                          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+                              <input id="fusionQuery" type="text" placeholder='GDELT query e.g. (military OR defense OR conflict)' style="flex:1;min-width:240px">
+                              <button class="btn btn-secondary btn-sm" onclick="fusionValidate()">Validate</button>
+                              <button class="btn btn-primary btn-sm" onclick="fusionRunGdelt()">Run GDELT</button>
+                              <button class="btn btn-primary btn-sm" onclick="fusionRunOpenSky()">Run OpenSky</button>
+                              <button class="btn btn-secondary btn-sm" onclick="renderFusionMap()">Refresh Map</button>
+                          </div>
+                          <div id="fusionValidateStatus" style="font-family:var(--font-mono);font-size:10px;margin-bottom:8px;min-height:16px;color:var(--text-muted)"></div>
+
+                          <!-- Layer toggle chips with live counts -->
+                          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+                              <span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--text-muted)">Layers:</span>
+                              <button class="retro-map-btn retro-map-btn-active" id="fusionLayerThreats" onclick="fusionToggleLayer('threats')">☠ Threats <b id="fusionThreatCount">0</b></button>
+                              <button class="retro-map-btn retro-map-btn-active" id="fusionLayerAviation" onclick="fusionToggleLayer('aviation')">✈ Aircraft <b id="fusionAircraftCount">0</b></button>
+                              <button class="retro-map-btn" id="fusionLayer3d" onclick="fusionToggle3D()">▢ 3D</button>
+                          </div>
+
+                          <!-- KPI rail: both sources -->
+                          <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px;font-family:var(--font-mono);font-size:11px">
+                              <span>Events: <b style="color:var(--text)" id="fusionKpiEvents">0</b></span>
+                              <span style="color:var(--red)">Threats: <b id="fusionKpiThreats">0</b></span>
+                              <span>Aircraft: <b style="color:var(--text)" id="fusionKpiAircraft">0</b></span>
+                              <span style="color:var(--red)">Military: <b id="fusionKpiMilitary">0</b></span>
+                              <span style="color:var(--amber)">Jamming: <b id="fusionKpiJamming">0</b></span>
+                              <span>Countries: <b style="color:var(--text)" id="fusionKpiCountries">0</b></span>
+                          </div>
+
+                          <!-- The single unified map -->
+                          <div style="position:relative;height:560px;border:1px solid var(--border-light);border-radius:8px;overflow:hidden">
+                              <div class="retro-map-canvas" id="fusionMap" style="width:100%;height:100%"></div>
+                              <div id="fusionMapHud" style="position:absolute;top:10px;left:10px;font-family:var(--font-mono);font-size:10px;color:var(--text-muted);background:rgba(0,0,0,0.6);padding:4px 8px;border-radius:4px;pointer-events:none">Loading unified map…</div>
+                          </div>
+
+                          <!-- Recent activity tables side by side -->
+                          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+                              <div class="card">
+                                  <div class="card-header"><span class="card-title">Recent Threat Events</span><span class="tag tag-red">GDELT</span></div>
+                                  <div id="fusionThreatTable" style="font-family:var(--font-mono);font-size:10px;line-height:1.6;color:var(--text-muted);max-height:240px;overflow:auto"></div>
+                              </div>
+                              <div class="card">
+                                  <div class="card-header"><span class="card-title">Recent Military Aircraft</span><span class="tag tag-blue">OpenSky</span></div>
+                                  <div id="fusionAircraftTable" style="font-family:var(--font-mono);font-size:10px;line-height:1.6;color:var(--text-muted);max-height:240px;overflow:auto"></div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="page" id="page-sc-gdelt">
                       <div class="section">
                           <div class="section-header">
                               <span class="section-title">GDELT Intelligence Engine</span>
@@ -3215,6 +3279,7 @@ const CMB_BASE_URL = '/panteon/cmb/';
 
 const PAGES = {
     'overview': 'Overview',
+    'sc-fusion': 'Spinal Cracker',
     'sc-gdelt': 'GDELT Intelligence Engine',
     'sc-aviation': 'Aviation Domain',
     'sc-types': 'Object Types',
@@ -3359,6 +3424,7 @@ function loadPageData(page) {
         case 'sc-types': loadObjectTypes(); loadActionTypes(); break;
         case 'sc-objects': loadObjectTypeFilter(); loadObjects(); break;
         case 'sc-links': loadLinkTypes(); break;
+        case 'sc-fusion': renderFusionMap(); break;
         case 'sc-gdelt': loadGdeltHealth(); loadGdeltSnapshot(); renderThreatPresets(); renderThreatMap(true); gkgLiveStructuralCheck(); refreshGkgBudget(); break;
         case 'sc-aviation': loadAviationHealth(); loadAviationSnapshot(); loadAviationFlights(); break;
         case 'yono-providers': loadProviders(); loadModels(); break;
@@ -5068,6 +5134,282 @@ function clearMapMarkers() {
 function resetMapView() {
     if (!threatMap) return;
     threatMap.flyTo({ center: [20, 20], zoom: 1.5, pitch: 55, bearing: -10, duration: 1200 });
+}
+
+// ============================================================================
+// Spinal Cracker Fusion Map — ONE maplibregl.Map, TWO toggleable layers
+// (GDELT threats + OpenSky aircraft). Reuses the 3D-buildings layer, the
+// COUNTRY_CAPITALS fly-to, and a unified bounds-fit. A normalizer maps both
+// sources to a common point shape so a single renderer handles both.
+// ============================================================================
+let fusionMap = null;
+let fusionMapInitialized = false;
+let fusionThreatMarkers = [];
+let fusionAviationMarkers = [];
+let fusionThreatEvents = [];
+let fusionFlights = [];
+let fusionLayers = { threats: true, aviation: true, '3d': true };
+let fusion3dAdded = false;
+
+function initFusionMap() {
+    if (fusionMapInitialized) { if (fusionMap) fusionMap.resize(); return fusionMap; }
+    if (typeof maplibregl === 'undefined' || !document.getElementById('fusionMap')) return null;
+    fusionMap = new maplibregl.Map({
+        container: 'fusionMap',
+        style: 'https://tiles.openfreemap.org/styles/dark',
+        center: [20, 20],
+        zoom: 1.5,
+        pitch: 55,
+        bearing: -10,
+        maxPitch: 85,
+        attributionControl: { compact: true },
+        canvasContextAttributes: { antialias: true },
+    });
+    fusionMap.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+    fusionMap.on('style.load', () => {
+        if (!fusionMap || fusionMap.getLayer('3d-buildings')) return;
+        fusionMap.addLayer({
+            id: '3d-buildings',
+            source: 'openmaptiles',
+            'source-layer': 'building',
+            type: 'fill-extrusion',
+            minzoom: 13,
+            paint: {
+                'fill-extrusion-color': BUILDING_HEIGHT_RAMP,
+                'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 13, 0, 14, ['get', 'render_height']],
+                'fill-extrusion-base': ['case', ['>=', ['get', 'zoom'], 16], ['get', 'render_min_height'], 0],
+                'fill-extrusion-opacity': 0.75
+            }
+        });
+        fusion3dAdded = true;
+        fusionMap.setLayoutProperty('3d-buildings', 'visibility', fusionLayers['3d'] ? 'visible' : 'none');
+        const b = document.getElementById('fusionLayer3d');
+        if (b) b.className = 'retro-map-btn' + (fusionLayers['3d'] ? ' retro-map-btn-active' : '');
+    });
+    fusionMapInitialized = true;
+    return fusionMap;
+}
+
+// Normalize both sources to a common point shape for the unified renderer.
+// {lat, lng, source, type, label, color, popup, raw}
+function normalizeThreatPoint(ev) {
+    const geo = parseActionGeo(ev);
+    if (!geo) return null;
+    const tone = threatLevelForEvent(ev);
+    return {
+        lat: geo.latitude, lng: geo.longitude, source: 'gdelt', type: 'threat',
+        label: 'CAMEO ' + (ev.event_code || '?'),
+        color: tone === 'red' ? '#ef4444' : tone === 'amber' ? '#f59e0b' : '#22c544',
+        popup: '<b>' + THREAT_LABEL[tone] + '</b> · CAMEO ' + (ev.event_code || '?') + ' · ' + (ev.event_type || '') +
+            '<br>COUNTRY: ' + (geo.country || '-') +
+            '<br>TITLE: ' + (ev.title ? (ev.title.length > 90 ? ev.title.slice(0, 90) + '…' : ev.title) : ' — ') +
+            '<br>SOURCE: ' + (ev.domain || '-') +
+            '<br>DATE: ' + (ev.event_date || ''),
+    };
+}
+
+function normalizeAircraftPoint(f) {
+    const props = f.properties || {};
+    const lat = props.lat, lng = props.lng;
+    if (lat == null || lng == null) return null;
+    return {
+        lat: lat, lng: lng, source: 'opensky', type: 'aviation',
+        label: (props.callsign || '—') + ' [' + (props.category || '?') + ']',
+        color: getColorForCategory(props.category),
+        popup: '<b>' + (props.callsign || '—') + '</b> · ' + (props.category || '?') +
+            '<br>MODEL: ' + (props.model || '?') +
+            '<br>ALT: ' + (props.alt || '?') + ' ft' +
+            '<br>SPEED: ' + (props.speed_knots || '?') + ' kts' +
+            '<br>HEADING: ' + (props.heading || '?') +
+            '<br>ICAO24: ' + (props.icao24 || '?') +
+            '<br>COORD: [' + lat + ', ' + lng + ']',
+    };
+}
+
+function renderFusionThreatLayer() {
+    fusionThreatMarkers.forEach(m => { try { m.remove(); } catch (e) {} });
+    fusionThreatMarkers = [];
+    if (!fusionMap || !fusionLayers.threats) return;
+    fusionThreatEvents.forEach(ev => {
+        const p = normalizeThreatPoint(ev);
+        if (!p) return;
+        const el = document.createElement('div');
+        el.className = 'retro-map-node-marker tone-' + (p.color === '#ef4444' ? 'red' : p.color === '#f59e0b' ? 'amber' : 'green');
+        el.innerHTML = '<div class="retro-map-marker-tag">' + p.label + '</div><div class="retro-map-marker-line"></div><div class="retro-map-marker-glow"></div>';
+        const popup = new maplibregl.Popup({ closeButton: false, offset: 8 }).setHTML(p.popup);
+        const mk = new maplibregl.Marker({ element: el }).setLngLat([p.lng, p.lat]).setPopup(popup).addTo(fusionMap);
+        fusionThreatMarkers.push(mk);
+    });
+}
+
+function renderFusionAviationLayer() {
+    fusionAviationMarkers.forEach(m => { try { m.remove(); } catch (e) {} });
+    fusionAviationMarkers = [];
+    if (!fusionMap || !fusionLayers.aviation) return;
+    fusionFlights.forEach(f => {
+        const p = normalizeAircraftPoint(f);
+        if (!p) return;
+        const el = document.createElement('div');
+        el.style.width = '10px'; el.style.height = '10px';
+        el.style.borderRadius = '50%';
+        el.style.background = p.color;
+        el.style.boxShadow = '0 0 5px ' + p.color;
+        el.style.cursor = 'pointer';
+        const popup = new maplibregl.Popup({ closeButton: false, offset: 6 }).setHTML(p.popup);
+        const mk = new maplibregl.Marker({ element: el }).setLngLat([p.lng, p.lat]).setPopup(popup).addTo(fusionMap);
+        fusionAviationMarkers.push(mk);
+    });
+}
+
+function fitFusionBounds() {
+    if (!fusionMap) return;
+    const pts = [];
+    if (fusionLayers.threats) fusionThreatEvents.forEach(ev => { const g = parseActionGeo(ev); if (g) pts.push(g); });
+    if (fusionLayers.aviation) fusionFlights.forEach(f => { const p = normalizeAircraftPoint(f); if (p) pts.push({ latitude: p.lat, longitude: p.lng }); });
+    if (!pts.length) { fusionMap.flyTo({ center: [20, 20], zoom: 1.5, duration: 1000 }); return; }
+    const b = pts.reduce((bb, p) => ({
+        minX: Math.min(bb.minX, p.longitude), maxX: Math.max(bb.maxX, p.longitude),
+        minY: Math.min(bb.minY, p.latitude), maxY: Math.max(bb.maxY, p.latitude),
+    }), { minX: 180, maxX: -180, minY: 90, maxY: -90 });
+    fusionMap.fitBounds([[b.minX, b.minY], [b.maxX, b.maxY]], { padding: 60, maxZoom: 7, duration: 1200 });
+}
+
+function updateFusionKpis() {
+    const m = computeIntelMetrics(fusionThreatEvents);
+    document.getElementById('fusionKpiEvents').textContent = m.total;
+    document.getElementById('fusionKpiThreats').textContent = m.negative;
+    document.getElementById('fusionThreatCount').textContent = fusionThreatMarkers.length;
+    let military = 0, jamming = 0;
+    const cats = { commercial: 0, private: 0, jet: 0, military: 0 };
+    fusionFlights.forEach(f => { const c = (f.properties || {}).category || '?'; if (cats[c] != null) cats[c]++; if (c === 'military') military++; });
+    const total = fusionFlights.length;
+    document.getElementById('fusionKpiAircraft').textContent = total;
+    document.getElementById('fusionKpiMilitary').textContent = military;
+    document.getElementById('fusionAircraftCount').textContent = fusionAviationMarkers.length;
+    const countries = new Set(fusionThreatEvents.map(e => { const g = parseActionGeo(e); return g ? g.country : null; }).filter(Boolean));
+    document.getElementById('fusionKpiCountries').textContent = countries.size;
+    // Recent tables
+    document.getElementById('fusionThreatTable').innerHTML = fusionThreatEvents.slice(0, 15).map(ev => {
+        const g = parseActionGeo(ev); const tone = threatLevelForEvent(ev);
+        const c = tone === 'red' ? 'var(--red)' : tone === 'amber' ? 'var(--amber)' : 'var(--green)';
+        return '<div style="margin-bottom:2px"><span style="color:' + c + '">[' + (g ? g.country : '-') + '] ' +
+            (ev.event_type || 'GDELT') + ' ' + (ev.event_code || '') + '</span>' +
+            (ev.title ? '<div style="font-size:9px;color:var(--text-muted)">' + (ev.title.length > 80 ? ev.title.slice(0, 80) + '…' : ev.title) + '</div>' : '') + '</div>';
+    }).join('') || '<div class="empty-state">No threat events — run the GDELT pipeline</div>';
+    document.getElementById('fusionAircraftTable').innerHTML = fusionFlights
+        .filter(f => (f.properties || {}).category === 'military').slice(0, 15).map(f => {
+            const p = f.properties || {};
+            return '<div style="margin-bottom:2px"><span style="color:var(--red)">' + (p.callsign || '—') + ' · ' + (p.model || '?') +
+                '</span><div style="font-size:9px;color:var(--text-muted)">' + (p.alt || '?') + 'ft · ' + (p.speed_knots || '?') + 'kts · [' + (p.lat || '?') + ', ' + (p.lng || '?') + ']</div></div>';
+        }).join('') || '<div class="empty-state">No military aircraft — run the OpenSky pipeline</div>';
+}
+
+async function renderFusionMap() {
+    const map = initFusionMap();
+    if (!map) return;
+    const hud = document.getElementById('fusionMapHud');
+    if (hud) hud.textContent = 'Loading GDELT + OpenSky data…';
+    const query = (document.getElementById('fusionQuery').value || '').trim() || '(military OR defense OR conflict)';
+    // Fetch both sources in parallel.
+    let events = [], flights = [];
+    try {
+        const [evData, flData] = await Promise.all([
+            api('/gkg/events?limit=250').catch(() => ({ events: [] })),
+            api('/opensky/flights?limit=2000').catch(() => ({ flights: [] })),
+        ]);
+        events = gkgEventsFrom(evData && evData.events);
+        flights = (flData && flData.flights) || [];
+    } catch (e) { /* keep empty */ }
+    fusionThreatEvents = events;
+    fusionFlights = flights;
+    renderFusionThreatLayer();
+    renderFusionAviationLayer();
+    updateFusionKpis();
+    if (hud) hud.textContent = fusionThreatMarkers.length + ' threats · ' + fusionAviationMarkers.length + ' aircraft plotted';
+    requestAnimationFrame(() => { if (fusionMap) fusionMap.resize(); });
+    fitFusionBounds();
+}
+
+function fusionToggleLayer(name) {
+    fusionLayers[name] = !fusionLayers[name];
+    const btn = document.getElementById(name === 'threats' ? 'fusionLayerThreats' : 'fusionLayerAviation');
+    if (btn) btn.className = 'retro-map-btn' + (fusionLayers[name] ? ' retro-map-btn-active' : '');
+    if (name === 'threats') renderFusionThreatLayer(); else renderFusionAviationLayer();
+    updateFusionKpis();
+    const hudEl = document.getElementById('fusionMapHud');
+    if (hudEl) hudEl.textContent = fusionThreatMarkers.length + ' threats · ' + fusionAviationMarkers.length + ' aircraft plotted';
+    fitFusionBounds();
+}
+
+function fusionToggle3D() {
+    fusionLayers['3d'] = !fusionLayers['3d'];
+    const btn = document.getElementById('fusionLayer3d');
+    if (btn) btn.className = 'retro-map-btn' + (fusionLayers['3d'] ? ' retro-map-btn-active' : '');
+    if (fusionMap && fusion3dAdded) {
+        try { fusionMap.setLayoutProperty('3d-buildings', 'visibility', fusionLayers['3d'] ? 'visible' : 'none'); } catch (e) {}
+    }
+}
+
+async function fusionValidate() {
+    const q = document.getElementById('fusionQuery').value.trim() || '(military OR defense OR conflict)';
+    const config = { query: q, mode: 'events', timespan: '24h', maxrecords: 50, api_key: '' };
+    const el = document.getElementById('fusionValidateStatus');
+    if (el) el.innerHTML = '<span style="color:var(--amber)">⟳ validating against GDELT…</span>';
+    try {
+        const result = await api('/gkg/pipeline/validate', { method: 'POST', body: JSON.stringify(config) });
+        if (el) el.innerHTML = result.valid
+            ? '<span style="color:var(--green)">✓ GDELT query verified (' + (result.live === 'cached' ? 'cached' : 'live') + (result.sample_count != null ? ' · ' + result.sample_count + ' samples' : '') + ')</span>'
+            : '<span style="color:var(--red)">✗ ' + escapeHtml((result.errors && result.errors[0] && result.errors[0].message) || result.message || 'rejected') + '</span>';
+    } catch (e) {
+        if (el) el.innerHTML = '<span style="color:var(--red)">✗ ' + escapeHtml(e.message || 'validate failed') + '</span>';
+    }
+}
+
+async function fusionRunGdelt() {
+    const q = document.getElementById('fusionQuery').value.trim() || '(military OR defense OR conflict)';
+    const el = document.getElementById('fusionValidateStatus');
+    if (el) el.innerHTML = '<span style="color:var(--amber)">⟳ Running GDELT pipeline (background)…</span>';
+    const st = await startGkgPipeline({ query: q, mode: 'events', timespan: '24h', maxrecords: 50, api_key: '' }, (s) => {
+        if (el && s.status === 'running') el.innerHTML = '<span style="color:var(--amber)">⟳ GDELT running…</span>';
+        else if (el && s.error) el.innerHTML = '<span style="color:var(--red)">✗ ' + escapeHtml(s.error) + '</span>';
+    });
+    if (el && st && st.report && st.report.gkg) el.innerHTML = '<span style="color:var(--green)">✓ GDELT: ' + st.report.gkg.events_written + ' events written</span>';
+    renderFusionMap();
+}
+
+async function fusionRunOpenSky() {
+    const el = document.getElementById('fusionValidateStatus');
+    const rate = await api('/opensky/pipeline/rate').catch(() => null);
+    if (rate && !rate.can_pull_now) {
+        if (el) el.innerHTML = '<span style="color:var(--amber)">⏸ OpenSky: wait ' + Math.ceil(rate.anon_seconds_left) + 's (anon ~1 req/15min)</span>';
+        return;
+    }
+    if (el) el.innerHTML = '<span style="color:var(--amber)">⟳ Running OpenSky pipeline (background, can take >1min)…</span>';
+    try {
+        const start = await api('/opensky/pipeline/run', { method: 'POST', body: JSON.stringify({ client_id: '', client_secret: '', fetch_military: true, request_timeout: 30, max_retries: 5 }) });
+        if (start.status === 'rejected') {
+            if (el) el.innerHTML = '<span style="color:var(--amber)">⏸ OpenSky: ' + escapeHtml(start.message || 'not due') + '</span>';
+            return;
+        }
+    } catch (e) { if (el) el.innerHTML = '<span style="color:var(--red)">✗ ' + escapeHtml(e.message) + '</span>'; return; }
+    // Poll status.
+    const t0 = Date.now();
+    while (Date.now() - t0 < 180000) {
+        await new Promise(r => setTimeout(r, 3000));
+        let st;
+        try { st = await api('/opensky/pipeline/status'); } catch (e) { continue; }
+        if (st.status === 'complete') {
+            const r = st.report || {};
+            if (el) el.innerHTML = '<span style="color:var(--green)">✓ OpenSky: ' + (r.classification ? r.classification.military + ' military / ' + (r.opensky ? r.opensky.total : 0) + ' total' : 'done') + '</span>';
+            break;
+        }
+        if (st.status === 'failed') {
+            if (el) el.innerHTML = '<span style="color:var(--red)">✗ OpenSky: ' + escapeHtml(st.error || 'failed') + '</span>';
+            break;
+        }
+        if (el) el.innerHTML = '<span style="color:var(--amber)">⟳ OpenSky running…</span>';
+    }
+    renderFusionMap();
 }
 
 function fitThreatBounds() {

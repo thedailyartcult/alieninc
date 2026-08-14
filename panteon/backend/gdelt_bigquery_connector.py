@@ -43,8 +43,11 @@ from gkg_connector import GKGEvent, GKGEventType
 
 logger = logging.getLogger("gkg.connector.bigquery")
 
-# Public GDELT BigQuery dataset (free, updated every 15 min).
-_GKG_TABLE = "gdelt-bq.gdeltv2.gkg"
+# Public GDELT BigQuery datasets (free, updated every 15 min).
+# The Events table (gdeltv2.events) has CAMEO codes, AvgTone, actors, and
+# precise geocoding (ActionGeo_Lat/Long) — richer than the GKG table for our
+# conflict-intelligence use case.
+_EVENTS_TABLE = "gdelt-bq.gdeltv2.events"
 
 
 @dataclass
@@ -108,72 +111,73 @@ def _parse_tone(v2tone: str) -> float:
 
 
 def _build_gkg_query(config: GDELTBigQueryConfig) -> str:
-    """Build a parameterized SQL query against the GKG table.
+    """Build a parameterized SQL query against the GDELT Events table.
 
-    Filters to the conflict themes, the time window, and the tone range.
-    Returns the columns we need to build GKGEvent objects. Uses a LIKE-based
-    theme match (CONTAINS_SUBSTR is available in BigQuery but LIKE is safer
-    across versions).
+    Filters to conflict-related CAMEO root codes (14=fight, 15=use of force,
+    17=coerce, 18=halt, 19=aggress, 20=mass violence, 145=protest, 175=force,
+    182=arrest) and the time window. Returns the columns we need to build
+    GKGEvent objects.
     """
     since = (datetime.now(timezone.utc) - timedelta(days=config.days_back))
-    since_str = since.strftime("%Y%m%d%H%M%S")
-    # Build theme filter: Themes LIKE '%THEME%'
-    theme_filters = " OR ".join(
-        f"Themes LIKE '%{t}%'" for t in config.themes
-    )
+    since_str = since.strftime("%Y%m%d")
+    # CAMEO root codes for conflict/violence/protest events.
+    conflict_roots = "(EventRootCode IN ('14','15','17','18','19','20') OR EventCode LIKE '145%' OR EventCode LIKE '175%' OR EventCode LIKE '182%')"
     return f"""
     SELECT
-        DATE,
-        V2Tone,
-        ActionGeo_Lat,
-        ActionGeo_Long,
-        ActionGeo_FullName,
-        ActionGeo_CountryCode,
+        GLOBALEVENTID,
+        SQLDATE,
+        EventCode,
+        EventRootCode,
+        AvgTone,
+        GoldsteinScale,
+        NumMentions,
+        NumSources,
+        NumArticles,
         Actor1Name,
         Actor2Name,
         Actor1CountryCode,
         Actor2CountryCode,
-        Themes,
-        DocumentIdentifier,
-        SourceCommonName
-    FROM `{_GKG_TABLE}`
-    WHERE DATE >= {since_str}
-      AND ({theme_filters})
+        ActionGeo_Lat,
+        ActionGeo_Long,
+        ActionGeo_FullName,
+        ActionGeo_CountryCode,
+        SOURCEURL
+    FROM `{_EVENTS_TABLE}`
+    WHERE SQLDATE >= {since_str}
+      AND {conflict_roots}
       AND ActionGeo_Lat IS NOT NULL
       AND ActionGeo_Long IS NOT NULL
-    ORDER BY DATE DESC
+    ORDER BY SQLDATE DESC, AvgTone ASC
     LIMIT {int(config.max_results)}
     """
 
 
 def _row_to_gkg_event(row: Any) -> Optional[GKGEvent]:
-    """Convert a BigQuery row to a GKGEvent. Returns None if unparseable."""
+    """Convert a BigQuery Events-table row to a GKGEvent. Returns None if unparseable."""
     try:
-        tone = _parse_tone(row.get("V2Tone") or "")
+        tone = float(row.get("AvgTone") or 0)
         lat = row.get("ActionGeo_Lat")
         lng = row.get("ActionGeo_Long")
         if lat is None or lng is None:
             return None
         event_type = _cameo_for_tone(tone)
-        url = row.get("DocumentIdentifier") or ""
-        guid = str(uuid.uuid5(uuid.NAMESPACE_URL, url or f"bq:{row.get('DATE')}"))
-        # FIPS country code -> we keep it; the frontend maps via COUNTRY_CAPITALS
-        # by full name, so we also store the FullName for geocoding display.
+        event_code = str(row.get("EventCode") or event_type.value)
+        event_root = str(row.get("EventRootCode") or event_code[:2])
+        url = row.get("SOURCEURL") or ""
+        guid = str(uuid.uuid5(uuid.NAMESPACE_URL, url or f"bq:{row.get('GLOBALEVENTID')}"))
         geo_full = row.get("ActionGeo_FullName") or ""
         country_code = row.get("ActionGeo_CountryCode") or ""
         actor1 = row.get("Actor1Name") or ""
         actor2 = row.get("Actor2Name") or ""
-        # Build title from actors + themes (GKG has no article title field).
-        themes_raw = row.get("Themes") or ""
+        # Build title from actors.
         title_parts = []
         if actor1:
             title_parts.append(actor1)
         if actor2:
             title_parts.append("-> " + actor2)
-        if themes_raw:
-            title_parts.append("[" + themes_raw.split(";")[0] + "]")
-        title = " ".join(title_parts) if title_parts else geo_full or "GDELT GKG event"
-        # Domain from source URL.
+        if not title_parts:
+            title_parts.append(geo_full or "GDELT event")
+        title = " ".join(title_parts)
         domain = ""
         if url:
             try:
@@ -181,19 +185,19 @@ def _row_to_gkg_event(row: Any) -> Optional[GKGEvent]:
                 domain = urlparse(url).netloc or ""
             except Exception:
                 pass
-        # Date: YYYYMMDDHHMMSS -> ISO.
-        date_raw = str(row.get("DATE") or "")
+        # Date: YYYYMMDD -> ISO.
+        date_raw = str(row.get("SQLDATE") or "")
         event_date = ""
-        if len(date_raw) == 14:
+        if len(date_raw) == 8:
             try:
-                dt = datetime.strptime(date_raw, "%Y%m%d%H%M%S")
+                dt = datetime.strptime(date_raw, "%Y%m%d")
                 event_date = dt.isoformat()
             except ValueError:
                 event_date = date_raw
         return GKGEvent(
             guid=guid,
-            event_root_code=event_type.value[:2] + "00",
-            event_code=event_type.value,
+            event_root_code=event_root + "00",
+            event_code=event_code,
             event_type=event_type,
             action_geo={
                 "latitude": float(lat),
@@ -201,7 +205,7 @@ def _row_to_gkg_event(row: Any) -> Optional[GKGEvent]:
                 "country": geo_full or country_code,
                 "country_code": country_code,
             },
-            source_event_id=guid,
+            source_event_id=str(row.get("GLOBALEVENTID") or guid),
             event_date=event_date,
             avg_tone=tone,
             num_articles=1,
@@ -213,7 +217,7 @@ def _row_to_gkg_event(row: Any) -> Optional[GKGEvent]:
             translated_text="",
         )
     except Exception as exc:
-        logger.warning("Failed to parse BigQuery GKG row: %s", exc)
+        logger.warning("Failed to parse BigQuery Events row: %s", exc)
         return None
 
 
@@ -259,7 +263,7 @@ class GDELTBigQueryConnector:
         client = _client()
         try:
             query_job = client.query(
-                f"SELECT DATE FROM `{_GKG_TABLE}` ORDER BY DATE DESC LIMIT 1"
+                f"SELECT GLOBALEVENTID FROM `{_EVENTS_TABLE}` ORDER BY SQLDATE DESC LIMIT 1"
             )
             rows = list(query_job.result())
             return {"valid": True, "sample_count": len(rows)}

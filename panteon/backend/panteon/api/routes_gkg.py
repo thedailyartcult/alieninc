@@ -334,6 +334,24 @@ async def _validate_query(config: PipelineConfig, force_live: bool = False) -> d
             "rate": rate,
         }
 
+    # BigQuery-first validation: if BigQuery is configured, validate via a
+    # lightweight BQ probe (no per-IP throttle). Only fall back to the DOC 2.0
+    # probe when BigQuery is unavailable.
+    if is_bigquery_available():
+        try:
+            import asyncio as _asyncio
+            bq_conn = GDELTBigQueryConnector(config=GDELTBigQueryConfig(max_results=1))
+            bq_result = await _asyncio.to_thread(bq_conn.validate)
+            _validation_cache[config.query] = {"ts": now, "result": bq_result}
+            return {
+                "valid": True, "errors": errors, "warnings": warnings,
+                "live": "bigquery", "sample_count": bq_result.get("sample_count"),
+                "rate": rate, "backend": "bigquery",
+            }
+        except Exception as bq_exc:  # noqa: BLE001
+            logger.warning("BigQuery validate failed, falling back to DOC 2.0: %s", bq_exc)
+            # Fall through to DOC 2.0 probe below.
+
     gdconfig = GKGConfig(
         query=config.query, timespan=config.timespan,
         maxrecords=config.maxrecords, api_key=config.api_key,

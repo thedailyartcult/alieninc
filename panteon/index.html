@@ -13,7 +13,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
+    <!-- Partner brand fonts (logos are brand assets, not Panteon UI typography) -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Montserrat:wght@500;700&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+
     <style>
         /* CSS Reset & Design Tokens */
         * {
@@ -668,6 +670,49 @@
             transform: translate(6px, 6px);
         }
 
+        /* Nav "Get Started" stacked button — mirrors get-started-btn header states */
+        header .alien-stacked-btn .btn-layer-main {
+            background-color: var(--text-light);
+            color: var(--bg-dark);
+            border-color: var(--text-light);
+            padding: 9px 20px;
+            font-size: 0.72rem;
+        }
+        header .alien-stacked-btn .btn-layer-back-1,
+        header .alien-stacked-btn .btn-layer-back-2 {
+            background-color: var(--text-light);
+            border-color: var(--text-light);
+        }
+        header .alien-stacked-btn .btn-layer-main .square-dot {
+            background-color: var(--bg-dark);
+        }
+        header.scrolled .alien-stacked-btn .btn-layer-main {
+            background-color: var(--text-dark);
+            color: var(--text-light);
+            border-color: var(--text-dark);
+        }
+        header.scrolled .alien-stacked-btn .btn-layer-back-1,
+        header.scrolled .alien-stacked-btn .btn-layer-back-2 {
+            background-color: var(--text-dark);
+            border-color: var(--text-dark);
+        }
+        header.scrolled .alien-stacked-btn .btn-layer-main .square-dot {
+            background-color: var(--text-light);
+        }
+        header.menu-active .alien-stacked-btn .btn-layer-main {
+            background-color: var(--text-light) !important;
+            color: var(--bg-dark) !important;
+            border-color: var(--text-light) !important;
+        }
+        header.menu-active .alien-stacked-btn .btn-layer-back-1,
+        header.menu-active .alien-stacked-btn .btn-layer-back-2 {
+            background-color: var(--text-light) !important;
+            border-color: var(--text-light) !important;
+        }
+        header.menu-active .alien-stacked-btn .btn-layer-main .square-dot {
+            background-color: var(--bg-dark) !important;
+        }
+
         /* 6. ALIEN USE CASES SECTION WITH CONTINUOUS MOVING TRACK */
         .alien-use-cases-section {
             border-top: 1px solid var(--border-dark);
@@ -853,9 +898,10 @@
             flex-shrink: 0;
             border: 1px solid var(--border-dark);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 24px;
             text-decoration: none;
             color: inherit;
             transition: transform 0.3s ease, background-color 0.3s;
@@ -866,13 +912,12 @@
             background-color: #f8f9fa;
         }
 
-        .partner-box span {
-            color: var(--text-dark);
-            font-family: var(--font-tech);
-            font-weight: 700;
-            font-size: 1rem;
-            text-align: center;
-            letter-spacing: -0.01em;
+        .partner-box svg {
+            width: 100%;
+            height: 100%;
+            max-width: 132px;
+            max-height: 92px;
+            pointer-events: none;
         }
 
         /* PARALLAX SPACER SYSTEM */
@@ -1471,7 +1516,7 @@
 
         @media (max-width: 768px) {
             .top-nav { grid-template-columns: 1fr auto; height: 64px; }
-            .center-wrapper, .right-wrapper .get-started-btn { display: none; }
+            .center-wrapper, .right-wrapper .alien-stacked-btn { display: none; }
             .navWrapper { padding: 0 20px; }
             .pre-footer-contact { padding: 100px 16px; min-height: 60vh; }
             .use-case-card { width: 85vw; min-width: 280px; }
@@ -1540,7 +1585,15 @@
                 </div>
                 
                 <div class="right-wrapper">
-                    <a href="login.html" class="get-started-btn">Get Started <span>↖</span></a>
+                    <a href="login.html" class="alien-stacked-btn" aria-label="Get Started">
+                        <div class="btn-layer-main">
+                            <span class="square-dot"></span>
+                            Get Started
+                            <span class="square-dot"></span>
+                        </div>
+                        <div class="btn-layer-back-1"></div>
+                        <div class="btn-layer-back-2"></div>
+                    </a>
                     <button class="header-icon-box" aria-label="Search button">
                         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 16 16">
                             <circle cx="9.5" cy="6.5" r="5.5" stroke-width="1.5"></circle>
@@ -1825,11 +1878,44 @@
             </div>
             <div class="partners-marquee-container" id="partners-container">
                 <div class="partners-marquee-track" id="partners-track">
-                    <a class="partner-box" href="https://rousseau.alieninc.tech"><span>Rousseau</span></a>
-                    <a class="partner-box" href="https://kmt.alieninc.tech"><span>KMT Consulting</span></a>
-                    <a class="partner-box" href="https://centra.alieninc.tech"><span>Centra</span></a>
-                    <a class="partner-box" href="https://immanuel.alieninc.tech"><span>Immanuel</span></a>
-                    <a class="partner-box" href="https://thedailyartcult.alieninc.tech"><span>The Daily Art Cult</span></a>
+                    <a class="partner-box" href="https://rousseau.alieninc.tech" aria-label="Rousseau Holdings">
+                        <svg viewBox="0 0 130 112" role="img" aria-hidden="true">
+                            <g transform="translate(44, 2) scale(0.42)">
+                                <polygon points="50,5 90,25 90,65 50,95 10,65 10,25" fill="#c5a059"/>
+                                <polygon points="50,10 85,28 85,62 50,88 15,62 15,28" fill="#0d2344"/>
+                                <path d="M50,15 L50,83 M15,48 L85,48" stroke="#c5a059" stroke-width="3"/>
+                                <text x="32" y="40" fill="#ffffff" font-family="Georgia, serif" font-size="20" font-weight="bold">1</text>
+                                <text x="68" y="40" fill="#ffffff" font-family="Georgia, serif" font-size="20" font-weight="bold">6</text>
+                                <text x="32" y="75" fill="#ffffff" font-family="Georgia, serif" font-size="20" font-weight="bold">0</text>
+                                <text x="68" y="75" fill="#ffffff" font-family="Georgia, serif" font-size="20" font-weight="bold">9</text>
+                            </g>
+                            <text x="65" y="74" text-anchor="middle" fill="#0d2344" font-family="Montserrat, sans-serif" font-size="11" font-weight="500" letter-spacing="3.5">ROUSSEAU</text>
+                            <text x="65" y="94" text-anchor="middle" fill="#0d2344" font-family="Montserrat, sans-serif" font-size="16" font-weight="700" letter-spacing="1.5">HOLDINGS</text>
+                        </svg>
+                    </a>
+                    <a class="partner-box" href="https://kmt.alieninc.tech" aria-label="KMT Consulting">
+                        <svg viewBox="0 0 130 90" role="img" aria-hidden="true">
+                            <text x="65" y="60" text-anchor="middle" fill="#144622" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="44" font-weight="800" letter-spacing="-1">KMT</text>
+                        </svg>
+                    </a>
+                    <a class="partner-box" href="https://centra.alieninc.tech" aria-label="Centra">
+                        <svg viewBox="0 0 210 56" role="img" aria-hidden="true">
+                            <text x="105" y="40" text-anchor="middle" fill="#131920" font-family="Orbitron, sans-serif" font-size="30" font-weight="900" letter-spacing="2">CENTR<tspan fill="#00FFFF">A</tspan><tspan font-size="13" dy="-13" fill="#00FFFF">™</tspan></text>
+                        </svg>
+                    </a>
+                    <a class="partner-box" href="https://immanuel.alieninc.tech" aria-label="Immanuel">
+                        <svg viewBox="0 0 100 100" role="img" aria-hidden="true">
+                            <circle cx="50" cy="50" r="46" stroke="#111111" stroke-width="1.5" fill="none"/>
+                            <circle cx="50" cy="50" r="41" stroke="#111111" stroke-width="1" stroke-dasharray="70 10 50 10" fill="none"/>
+                            <text x="50" y="46" text-anchor="middle" dominant-baseline="middle" fill="#111111" font-family="Inter, sans-serif" font-size="14" font-weight="900" letter-spacing="1">IMAN</text>
+                            <text x="50" y="64" text-anchor="middle" dominant-baseline="middle" fill="#FF4712" font-family="Inter, sans-serif" font-size="14" font-weight="900" letter-spacing="1">NUEL</text>
+                        </svg>
+                    </a>
+                    <a class="partner-box" href="https://thedailyartcult.alieninc.tech" aria-label="The Daily Art Cult">
+                        <svg viewBox="0 0 200 60" role="img" aria-hidden="true">
+                            <text x="100" y="40" text-anchor="middle" fill="#070504" font-family="'Playfair Display', serif" font-size="22" font-weight="600">The Daily Art Cult</text>
+                        </svg>
+                    </a>
                 </div>
             </div>
         </section>
@@ -2132,13 +2218,13 @@
             <canvas class="pre-footer-canvas" id="spiralCanvas"></canvas>
             <div class="pre-footer-content" data-parallax-item>
                 <div class="remove-br-mobile">
-                    <h2 class="reveal-text-line">Make Contact</h2>
+                    <h2 class="reveal-text-line">Connect With Us</h2>
                 </div>
                 <div class="alien-btn-wrapper">
                     <a href="login.html" class="alien-stacked-btn">
                         <div class="btn-layer-main" style="background-color: #000000; color: #ffffff; border-color: #000000; padding: 16px 36px; font-size: 0.85rem;">
                             <span class="square-dot" style="background-color: #ffffff;"></span>
-                            BOOK A DEMO
+                            Get Started
                             <span class="square-dot" style="background-color: #ffffff;"></span>
                         </div>
                         <div class="btn-layer-back-1" style="background-color: #ffffff; border-color: #000000;"></div>
@@ -2515,6 +2601,42 @@
 
             let time = 0;
 
+            // Mouse-reactive tunnel: hovering the Make Contact section tilts
+            // the tunnel toward the cursor and warps forward faster, then
+            // smoothly settles back. Inspired by alien.club's pre-footer.
+            const section = canvas.parentElement;
+            let targetMx = 0;      // normalized -1..1 from section center (x)
+            let targetMy = 0;      // normalized -1..1 from section center (y)
+            let targetHover = 0;   // 0 idle, 1 hovering
+            let mx = 0, my = 0, hover = 0;  // smoothed values
+
+            section.addEventListener('mousemove', (e) => {
+                const rect = section.getBoundingClientRect();
+                targetMx = ((e.clientX - rect.left) / rect.width  - 0.5) * 2;
+                targetMy = ((e.clientY - rect.top)  / rect.height - 0.5) * 2;
+            });
+            section.addEventListener('mouseenter', () => { targetHover = 1; });
+            section.addEventListener('mouseleave', () => {
+                targetHover = 0;
+                targetMx = 0;
+                targetMy = 0;
+            });
+            // Touch: tap-and-drag drives the same state
+            section.addEventListener('touchmove', (e) => {
+                if (!e.touches[0]) return;
+                const rect = section.getBoundingClientRect();
+                targetMx = ((e.touches[0].clientX - rect.left) / rect.width  - 0.5) * 2;
+                targetMy = ((e.touches[0].clientY - rect.top)  / rect.height - 0.5) * 2;
+                targetHover = 1;
+            }, { passive: true });
+            section.addEventListener('touchend', () => {
+                targetHover = 0;
+                targetMx = 0;
+                targetMy = 0;
+            });
+
+            function lerp(a, b, t) { return a + (b - a) * t; }
+
             function draw3DTunnel() {
                 ctx.clearRect(0, 0, displayWidth, displayHeight);
                 
@@ -2525,15 +2647,33 @@
                 const ringSpacing = 35;
                 const baseSize = Math.max(140, Math.min(260, Math.min(displayWidth, displayHeight) * 0.32));
 
+                // Smooth the mouse state toward its target (ease in/out).
+                mx = lerp(mx, targetMx, 0.08);
+                my = lerp(my, targetMy, 0.08);
+                hover = lerp(hover, targetHover, 0.06);
+
+                // Coherent tunnel: one shared rigid-body rotation for the whole
+                // tunnel + a smooth single-axis helical twist (small per-ring
+                // phase) so adjacent rings stay aligned and the mesh curves
+                // cleanly instead of crossing/tangling. See Lode's tunnel tut.
+                // On hover the cursor steers the tilt (up to ~22°) and adds a
+                // little extra oscillation, so the background reacts to the
+                // pointer over the "Book a Demo" CTA.
+                const baseRotX = Math.sin(time * 0.15) * 0.28;
+                const baseRotY = Math.cos(time * 0.11) * 0.28;
+                const globalRotX = baseRotX + my * 0.38 * hover;
+                const globalRotY = baseRotY + mx * 0.38 * hover;
+                const twistPerRing = 0.022 + hover * 0.012;
+
                 const ringVertices = [];
 
                 for (let i = 0; i < numRings; i++) {
                     let z = ((i * ringSpacing - time * 45) % (numRings * ringSpacing));
                     if (z < -fov + 10) z += numRings * ringSpacing;
 
-                    const rotX = time * 0.12 + i * 0.035;
-                    const rotY = time * 0.18 + i * 0.045;
-                    const rotZ = time * 0.08 + i * 0.06;
+                    const rotX = globalRotX;
+                    const rotY = globalRotY;
+                    const rotZ = time * 0.18 + i * twistPerRing;
 
                     const half = baseSize;
                     const corners = [
@@ -2572,9 +2712,9 @@
                     }
                     ctx.closePath();
 
-                    const alpha = Math.max(0, Math.min(0.55, (1 - (z / (numRings * ringSpacing))) * 0.65));
+                    const alpha = Math.max(0, Math.min(0.55 + hover * 0.15, (1 - (z / (numRings * ringSpacing))) * 0.65));
                     ctx.strokeStyle = `rgba(0, 0, 0, ${alpha})`;
-                    ctx.lineWidth = 0.85;
+                    ctx.lineWidth = 0.85 + hover * 0.35;
                     ctx.stroke();
                 }
 
@@ -2584,9 +2724,9 @@
                     const ringB = ringVertices[r + 1];
                     if (!ringA || !ringB) continue;
 
-                    const alpha = Math.max(0, Math.min(0.35, 0.4 - (r / ringVertices.length) * 0.35));
+                    const alpha = Math.max(0, Math.min(0.35 + hover * 0.15, 0.4 - (r / ringVertices.length) * 0.35));
                     ctx.strokeStyle = `rgba(0, 0, 0, ${alpha})`;
-                    ctx.lineWidth = 0.5;
+                    ctx.lineWidth = 0.5 + hover * 0.25;
 
                     for (let c = 0; c < 4; c++) {
                         ctx.beginPath();
@@ -2596,7 +2736,8 @@
                     }
                 }
 
-                time += 0.012;
+                // Warp forward faster while hovering (up to ~2.5x idle speed).
+                time += 0.012 + hover * 0.018;
                 requestAnimationFrame(draw3DTunnel);
             }
             draw3DTunnel();

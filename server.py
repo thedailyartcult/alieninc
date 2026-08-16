@@ -182,6 +182,98 @@ SUPABASE_ANON_KEY = os.environ.get(
 # Set to "true" to require app_metadata.secure_access == true for login.
 SUPABASE_REQUIRE_ACCESS = os.environ.get('SUPABASE_REQUIRE_ACCESS', 'false').lower() in ('1', 'true', 'yes')
 
+# ── CENTRA Self-Service Portal ──────────────────────────────
+# The portal lives under secure.alieninc.tech/selfservice/ (a protected
+# subfolder of the secure site, mirroring secure/moderation/). Data lives in
+# the same Supabase project used by secure auth. The server proxies portal
+# REST calls using the Supabase access token captured at login, so row-level
+# security policies keyed on auth.uid() apply per user.
+SELFSERVICE_TABLES = frozenset([
+    'personnel_records',
+    'access_requests',
+    'foreign_travel_reports',
+    'foreign_contact_disclosures',
+    'reportable_incidents',
+    'visit_requests',
+])
+_sb_sessions = {'map': {}, 'lock': threading.Lock()}
+
+# Compliance lead(s) notified whenever a self-service submission is created.
+# SMTP must be configured (self-hosted MTA); if SMTP_HOST is empty the
+# notification is only appended to the audit log + in-app feed.
+SELFSERVICE_COMPLIANCE_LEAD_EMAILS = [
+    e.strip() for e in os.environ.get(
+        'SELFSERVICE_COMPLIANCE_LEADS', '').split(',') if e.strip()
+]
+SMTP_HOST = os.environ.get('SMTP_HOST', '')
+SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
+SMTP_USER = os.environ.get('SMTP_USER', '')
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
+SMTP_FROM = os.environ.get('SMTP_FROM', '')
+SMTP_USE_TLS = os.environ.get('SMTP_USE_TLS', 'true').lower() in ('1', 'true', 'yes')
+SELFSERVICE_NOTIFY_FILE = os.environ.get(
+    'SELFSERVICE_NOTIFY_FILE', 'data/compliance/selfservice_notifications.jsonl')
+
+_sb_sessions_lock = _sb_sessions['lock']
+
+
+def _stash_sb_tokens(token, user_data):
+    """Remember the Supabase access/refresh tokens + role for a session token."""
+    if not user_data or not isinstance(user_data, dict):
+        return
+    u = user_data.get('user') or {}
+    meta = u.get('app_metadata') or u.get('user_metadata') or {}
+    with _sb_sessions['lock']:
+        _sb_sessions['map'][token] = {
+            'access_token': (user_data.get('access_token') or ''),
+            'refresh_token': (user_data.get('refresh_token') or ''),
+            'email': u.get('email') or user_data.get('email') or '',
+            'role': (meta.get('role') or 'employee').lower(),
+            'ts': time.time(),
+        }
+
+
+def _get_sb_tokens(token):
+    with _sb_sessions['lock']:
+        return _sb_sessions['map'].get(token)
+
+
+def _append_selfservice_notification(record):
+    """Append a submission notification to the JSONL audit feed (best-effort)."""
+    try:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), SELFSERVICE_NOTIFY_FILE)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        line = json.dumps(record, sort_keys=True) + '\n'
+        with open(path, 'a', encoding='utf-8') as f:
+            f.write(line)
+        return path
+    except Exception as e:
+        sys.stderr.write('[SELFSERVICE-NOTIFY] append failed: %s\n' % e)
+        return None
+
+
+def _send_selfservice_email(subject, body):
+    """Send the notification email via configured self-hosted SMTP. Returns None on success or an error string."""
+    if not SMTP_HOST or not SELFSERVICE_COMPLIANCE_LEAD_EMAILS:
+        return 'SMTP not configured or no compliance leads set'
+    try:
+        import smtplib
+        from email.message import EmailMessage
+        msg = EmailMessage()
+        msg['Subject'] = subject
+        msg['From'] = SMTP_FROM or SMTP_USER or 'centra-notify@alieninc.tech'
+        msg['To'] = ', '.join(SELFSERVICE_COMPLIANCE_LEAD_EMAILS)
+        msg.set_content(body)
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as s:
+            if SMTP_USE_TLS:
+                s.starttls()
+            if SMTP_USER:
+                s.login(SMTP_USER, SMTP_PASSWORD)
+            s.send_message(msg)
+        return None
+    except Exception as e:
+        return 'email failed: %s' % e
+
 # Path to moderation guidelines data (outside the git repo on production).
 # Defaults to secure/moderation/data/ inside the repo for local dev.
 MODERATION_DATA_PATH = os.environ.get(
@@ -275,7 +367,10 @@ def verify_secure_credentials(user, password):
     if not user or not password:
         return False
     if SECURE_AUTH_BACKEND == 'supabase':
-        return _verify_via_supabase(user, password)
+        data = _verify_via_supabase(user, password)
+        if not data:
+            return False
+        return data
     gate_user = os.environ.get('SECURE_GATE_USER', '')
     gate_pass = os.environ.get('SECURE_GATE_PASS', '')
     if not gate_user or not gate_pass:
@@ -285,7 +380,8 @@ def verify_secure_credentials(user, password):
 
 
 def _verify_via_supabase(email, password):
-    """GoTrue password grant against Supabase Auth."""
+    """GoTrue password grant against Supabase Auth.
+    Returns the parsed token payload (dict) on success, or None on failure."""
     url = '%s/auth/v1/token?grant_type=password' % SUPABASE_URL.rstrip('/')
     payload = json.dumps({'email': email, 'password': password}).encode('utf-8')
     req = urllib.request.Request(
@@ -306,23 +402,23 @@ def _verify_via_supabase(email, password):
             sys.stderr.write('[SUPABASE-AUTH] error: %s\n' % body)
         except Exception:
             sys.stderr.write('[SUPABASE-AUTH] HTTP error: %s\n' % e.code)
-        return False
+        return None
     except Exception as e:
         sys.stderr.write('[SUPABASE-AUTH] request failed: %s\n' % e)
-        return False
+        return None
 
     access_token = data.get('access_token')
     if not access_token:
-        return False
+        return None
 
     if SUPABASE_REQUIRE_ACCESS:
         user = data.get('user', {})
         metadata = user.get('app_metadata', {}) or user.get('user_metadata', {}) or {}
         if not metadata.get('secure_access'):
             sys.stderr.write('[SUPABASE-AUTH] access denied for %r (no secure_access metadata)\n' % email)
-            return False
+            return None
 
-    return True
+    return data
 
 
 def _issue_secure_session(user):
@@ -467,6 +563,13 @@ SECURITY_HEADERS = {
     'X-Compliance': 'monitored; CIS-NGINX-v3.0; DISA-STIG-V4R5; PCI-DSS-v4.0.1; OWASP-ASVS-L1; NIST-800-53-Moderate; NIST-CSF-2.0; report=/trust/',
 }
 
+# Strict CSP for the self-service portal. All app logic is an external
+# same-origin file (secure/selfservice/app.js); no inline scripts are used,
+# so 'unsafe-inline' is deliberately absent. Session data is delivered in a
+# <script type="application/json"> data block, which CSP treats as inert data,
+# not as an executable script.
+SELFSERVICE_CSP = "default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; connect-src 'self' https://*.supabase.co"
+
 
 _price_cache = {'data': None, 'ts': 0, 'lock': threading.Lock()}
 PRICE_CACHE_TTL = 60  # 1 minute
@@ -520,12 +623,6 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=ROOT, **kwargs)
-
-    def end_headers(self):
-        self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate')
-        for header, value in SECURITY_HEADERS.items():
-            self.send_header(header, value)
-        super().end_headers()
 
     def _get_subdomain(self):
         host = self.headers.get('Host', '')
@@ -731,6 +828,14 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         path = path.split('?', 1)[0]
         return path == '/moderation' or path.startswith('/moderation/')
 
+    def _is_selfservice_page_path(self, path):
+        path = path.split('?', 1)[0].split('#', 1)[0]
+        return path == '/selfservice' or path == '/selfservice/'
+
+    def _is_selfservice_path(self, path):
+        path = path.split('?', 1)[0]
+        return path == '/selfservice' or path.startswith('/selfservice/')
+
     def _get_cookie_token(self, cookie_name):
         """Extract a token from the Cookie header by name. Parses once per call."""
         cookie = self.headers.get('Cookie', '')
@@ -844,6 +949,9 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         if m:
             self._handle_plugin_detail(int(m.group(1)))
             return
+        if path == '/api/selfservice/notify':
+            self._handle_selfservice_notify()
+            return
         self.send_error(404)
 
     def _handle_api_login(self):
@@ -873,8 +981,11 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         if not user or not password:
             self._send_json_error('Email and password required')
             return
-        if verify_secure_credentials(user, password):
+        result = verify_secure_credentials(user, password)
+        if result:
             token = _issue_secure_session(user)
+            if isinstance(result, dict):
+                _stash_sb_tokens(token, result)
             domain = self.headers.get('Host', '').split(':')[0].lower()
             base = '.alieninc.tech'
             secure_flag = '; Secure' if self._is_secure_connection() else ''
@@ -1141,8 +1252,11 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         password = (form.get('password', [''])[0] or '')
         default_redirect = '/'
         redirect = _safe_redirect(form.get('next', [''])[0]) or default_redirect
-        if verify_secure_credentials(user, password):
+        result = verify_secure_credentials(user, password)
+        if result:
             token = _issue_secure_session(user)
+            if isinstance(result, dict):
+                _stash_sb_tokens(token, result)
             self.send_response(302)
             self._add_rate_limit_headers()
             self.send_header('Location', redirect)
@@ -1183,7 +1297,10 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         if self._is_moderation_path(self.path) and not self._is_secure_host():
             self.send_error(404)
             return False
-        if self._is_secure_host() and (self._is_vault_path(self.path) or self._is_moderation_path(self.path)):
+        if self._is_selfservice_path(self.path) and not self._is_secure_host():
+            self.send_error(404)
+            return False
+        if self._is_secure_host() and (self._is_vault_path(self.path) or self._is_moderation_path(self.path) or self._is_selfservice_path(self.path)):
             if not self._has_valid_secure_session():
                 sys.stderr.write('[SECURE-GATE] %s — %s (no session, redirected)\n' % (
                     self.address_string(), self.path,
@@ -1218,8 +1335,11 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
 
     def end_headers(self):
         for header, value in SECURITY_HEADERS.items():
-            self.send_header(header, value)
-        if self._is_moderation_path(self.path) or self._is_vault_path(self.path):
+            if header == 'Content-Security-Policy' and self._is_selfservice_path(self.path):
+                self.send_header(header, SELFSERVICE_CSP)
+            else:
+                self.send_header(header, value)
+        if self._is_moderation_path(self.path) or self._is_vault_path(self.path) or self._is_selfservice_path(self.path):
             self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, private')
             self.send_header('Pragma', 'no-cache')
             self.send_header('Expires', '0')
@@ -1240,6 +1360,8 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             self._serve_prices()
         elif self.path == '/api/ecosystem/public' or self.path.startswith('/api/ecosystem/public?'):
             self._serve_ecosystem_api()
+        elif self.path == '/api/techstack' or self.path.startswith('/api/techstack?'):
+            self._serve_techstack()
         elif self.path == '/api/ecosystem' or self.path.startswith('/api/ecosystem?'):
             auth = self._has_valid_secure_session() or self._has_valid_main_session()
             if not auth:
@@ -1283,6 +1405,15 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             self._handle_compliance_status()
         elif self.path == '/api/compliance/report' or self.path.startswith('/api/compliance/report?'):
             self._handle_compliance_report()
+        elif self.path == '/api/selfservice/notifications' or self.path.startswith('/api/selfservice/notifications?'):
+            if not self._is_secure_host():
+                self.send_error(404)
+                return
+            if not self._has_valid_secure_session():
+                self._send_json({'error': 'authentication required'}, 401)
+                return
+            self._handle_selfservice_notifications()
+            return
         elif self.path == '/api/plugins/search' or self.path.startswith('/api/plugins/search?'):
             self._handle_plugin_search()
             return
@@ -1332,6 +1463,9 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_error(429)
                     return
                 self._serve_moderation_page()
+                return
+            if self._is_selfservice_page_path(self.path):
+                self._serve_selfservice_page()
                 return
             if self.path.endswith('/') and self._is_sensitive_directory(self.path):
                 self.send_error(404)
@@ -1407,6 +1541,126 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(body)
         except BrokenPipeError:
             pass
+
+    def _serve_selfservice_page(self):
+        """Serve the CENTRA self-service portal, embedding the session user
+        and their Supabase tokens server-side so the client can talk to
+        Supabase with RLS applied as that user."""
+        html_path = os.path.join(ROOT, 'secure', 'selfservice', 'index.html')
+        if not os.path.isfile(html_path):
+            self.send_error(404)
+            return
+        try:
+            with open(html_path, 'r', encoding='utf-8') as f:
+                html = f.read()
+        except OSError:
+            self.send_error(404)
+            return
+        email = self._get_session_user() or ''
+        token = self._get_cookie_token(SECURE_SESSION_COOKIE)
+        sb = _get_sb_tokens(token) if token else None
+        session = {
+            'email': email,
+            'supabaseUrl': SUPABASE_URL,
+            'anonKey': SUPABASE_ANON_KEY,
+            'accessToken': (sb or {}).get('access_token', ''),
+            'refreshToken': (sb or {}).get('refresh_token', ''),
+            'role': (sb or {}).get('role', 'employee'),
+        }
+        placeholder = '/*[SELFSERVICE_SESSION]*/'
+        if placeholder in html:
+            html = html.replace(placeholder, json.dumps(session), 1)
+        body = html.encode('utf-8')
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html; charset=utf-8')
+        self.send_header('Content-Length', str(len(body)))
+        self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+        self.send_header('Pragma', 'no-cache')
+        self.send_header('Expires', '0')
+        self.end_headers()
+        try:
+            self.wfile.write(body)
+        except BrokenPipeError:
+            pass
+
+    def _handle_selfservice_notify(self):
+        """POST from the portal after a submission insert: record to the
+        audit feed and email the compliance lead(s). Requires a valid secure
+        session on the secure host."""
+        if not self._is_secure_host():
+            self.send_error(404)
+            return
+        if not self._has_valid_secure_session():
+            self._send_json({'error': 'authentication required'}, 401)
+            return
+        try:
+            length = int(self.headers.get('Content-Length', '0'))
+            raw = self.rfile.read(length) if length else b''
+            payload = json.loads(raw.decode('utf-8') or '{}')
+        except Exception:
+            self._send_json({'error': 'invalid request body'}, 400)
+            return
+        table = str(payload.get('table') or '')
+        kind = str(payload.get('kind') or table)
+        row_id = str(payload.get('id') or '')
+        summary = str(payload.get('summary') or '')[:2000]
+        user = self._get_session_user() or ''
+        ip = self.client_address[0] if self.client_address else '?'
+        if table not in SELFSERVICE_TABLES:
+            self._send_json({'error': 'unknown table'}, 400)
+            return
+        record = {
+            'ts': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+            'table': table,
+            'kind': kind,
+            'row_id': row_id,
+            'user_email': user,
+            'summary': summary,
+            'ip': ip,
+        }
+        _append_selfservice_notification(record)
+        email_error = None
+        if SELFSERVICE_COMPLIANCE_LEAD_EMAILS:
+            subject = '[CENTRA] New %s submission from %s' % (kind.replace('_', ' '), user)
+            body = (
+                'A new CENTRA self-service submission was received.\n\n'
+                'Type: %s\nUser: %s\nRow: %s\n\n%s\n\n'
+                'Review it at https://secure.alieninc.tech/selfservice/?view=review\n'
+            ) % (kind, user, row_id or '-', summary)
+            email_error = _send_selfservice_email(subject, body)
+        self._send_json({'ok': True, 'recorded': True, 'email': 'queued' if email_error is None else email_error})
+        sys.stderr.write('[SELFSERVICE-NOTIFY] %s table=%s row=%s user=%s email=%s\n' % (
+            ip, table, row_id or '-', user, 'ok' if email_error is None else 'skipped:' + email_error))
+
+    def _get_secure_role(self):
+        token = self._get_cookie_token(SECURE_SESSION_COOKIE)
+        sb = _get_sb_tokens(token) if token else None
+        if not sb:
+            return None
+        return (sb.get('role') or 'employee').lower()
+
+    def _handle_selfservice_notifications(self):
+        """Return recent submission notifications (audit feed) for the Security Review view."""
+        if (self._get_secure_role() or '') != 'security_staff':
+            self._send_json({'error': 'forbidden'}, 403)
+            return
+        try:
+            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), SELFSERVICE_NOTIFY_FILE)
+            rows = []
+            if os.path.isfile(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            rows.append(json.loads(line))
+                        except ValueError:
+                            continue
+            rows.reverse()
+            self._send_json({'notifications': rows[:100]})
+        except Exception as e:
+            self._send_json({'error': str(e)}, 500)
 
     def _serve_html_with_ecosystem(self, fs_path):
         auth = self._has_valid_secure_session() or self._has_valid_main_session()
@@ -1499,6 +1753,87 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(body)
         except BrokenPipeError:
             pass
+
+    def _serve_techstack(self):
+        """Search the global tech-stack database.
+
+        GET /api/techstack                     -> all featured (map markers), public
+        GET /api/techstack?featured=1          -> featured only, public
+        GET /api/techstack?q=<query>&limit=N   -> full-text search across name,
+                                                   city, sector, and tech_stack.
+        Auth gating (teaser-then-lock):
+          - All callers receive name, city, sector, lat, lng, marker_color.
+          - Only authenticated callers receive the tech_stack array.
+          - Non-authed callers get locked=true so the UI can render a lock.
+        """
+        from urllib.parse import urlparse, parse_qs
+        if not os.path.isfile(ECOSYSTEM_DB_PATH):
+            self._send_json({"error": "tech-stack database not initialized"}, 404)
+            return
+        parsed = urlparse(self.path)
+        params = parse_qs(parsed.query)
+        query = (params.get('q', [''])[0] or '').strip()
+        try:
+            limit = max(1, min(100, int(params.get('limit', ['25'])[0])))
+        except (ValueError, TypeError):
+            limit = 25
+        featured_only = params.get('featured', ['0'])[0] in ('1', 'true', 'yes')
+
+        import sqlite3 as _sqlite3
+        auth = self._has_valid_secure_session() or self._has_valid_main_session()
+        conn = _sqlite3.connect(ECOSYSTEM_DB_PATH)
+        conn.row_factory = _sqlite3.Row
+        try:
+            if featured_only:
+                rows = conn.execute(
+                    "SELECT * FROM global_tech_stack WHERE is_featured=1 ORDER BY name"
+                ).fetchall()
+            elif query:
+                pattern = '%' + query.lower() + '%'
+                rows = conn.execute(
+                    """SELECT * FROM global_tech_stack
+                       WHERE LOWER(name) LIKE ? OR LOWER(city) LIKE ?
+                          OR LOWER(sector) LIKE ? OR LOWER(tech_stack) LIKE ?
+                       ORDER BY
+                         CASE WHEN LOWER(name) LIKE ? THEN 0 ELSE 1 END,
+                         name
+                       LIMIT ?""",
+                    (pattern, pattern, pattern, pattern, pattern, limit)
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT * FROM global_tech_stack ORDER BY name LIMIT ?", (limit,)
+                ).fetchall()
+        finally:
+            conn.close()
+
+        results = []
+        for r in rows:
+            is_featured = bool(r["is_featured"])
+            # Featured entries (map markers) are the public showcase — their
+            # tech stack is always visible. Non-featured entries (S&P 500 /
+            # scraped companies) gate the tech stack behind authentication.
+            show_stack = auth or is_featured
+            entry = {
+                "name": r["name"],
+                "city": r["city"],
+                "sector": r["sector"],
+                "lat": r["lat"],
+                "lng": r["lng"],
+                "markerColor": r["marker_color"],
+                "isFeatured": is_featured,
+                "locked": not show_stack
+            }
+            if show_stack:
+                entry["techStack"] = json.loads(r["tech_stack"]) if r["tech_stack"] else []
+            results.append(entry)
+
+        self._send_json({
+            "query": query,
+            "count": len(results),
+            "authenticated": auth,
+            "results": results
+        })
 
     def _serve_simulation_status(self):
         try:

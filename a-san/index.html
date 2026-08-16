@@ -10,6 +10,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 
+  <!-- Splide slider (TrophyLab-style catalog carousel) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide-extension-auto-scroll@0.5.3/dist/js/splide-extension-auto-scroll.min.js" defer></script>
+
   <style>
     /* ==========================================================================
        DESIGN SYSTEM & VARIABLES (Exact original color palette & measurements)
@@ -312,6 +317,274 @@
     }
 
     /* ==========================================================================
+       CATALOG SLIDER (TrophyLab-style c-catalog-card, A-SAN design language)
+       ========================================================================== */
+    .s-catalog-slider__title {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+    .s-catalog-slider__title .slider-slash {
+      color: var(--color-brand-red);
+      font-weight: 700;
+    }
+    .s-catalog-slider__slider-wrapper {
+      margin-bottom: 8px;
+      overflow: hidden;       /* clip peeking slides so they never cause horizontal page scroll */
+      padding: 4px;           /* breathing room so the peek/hover shadow isn't hard-cut */
+    }
+    .s-catalog-slider__slider .splide__track { overflow: visible; }  /* allow adjacent slide to peek */
+    .s-catalog-slider__slider .splide__list { align-items: stretch; }
+    .s-catalog-slider__slider .splide__slide { height: auto; }
+    .s-catalog-slider__slider .splide__slide.is-active .c-catalog-card { border-color: var(--color-brand-red); }
+
+    .c-catalog-card {
+      display: block;
+      position: relative;
+      height: 100%;
+      background: var(--color-white);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+    }
+    .c-catalog-card:hover {
+      border-color: var(--color-brand-red);
+      box-shadow: 0 6px 18px rgba(234, 67, 53, 0.12);
+      transform: translateY(-2px);
+    }
+
+    /* Animated corner-bracket decore (spans draw in from their corners on hover) */
+    .c-catalog-card__decore {
+      width: calc(100% + 16px);
+      height: calc(100% + 16px);
+      position: absolute;
+      top: -8px;
+      left: -8px;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .c-catalog-card__decore span {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-color: var(--color-brand-red);
+    }
+    .c-catalog-card__decore span:nth-child(1) { top: 0; left: 0; border-top: 4px solid; border-left: 4px solid; }
+    .c-catalog-card__decore span:nth-child(2) { top: 0; right: 0; border-top: 4px solid; border-right: 4px solid; }
+    .c-catalog-card__decore span:nth-child(3) { bottom: 0; right: 0; border-right: 4px solid; border-bottom: 4px solid; }
+    .c-catalog-card__decore span:nth-child(4) { bottom: 0; left: 0; border-bottom: 4px solid; border-left: 4px solid; }
+
+    .c-catalog-card__image {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-bg-light);
+      border-bottom: 1px solid var(--color-border);
+      overflow: hidden;
+    }
+    .c-catalog-card__image img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 18px;
+      display: block;
+      filter: grayscale(0.3) contrast(1.05) brightness(0.92);
+      transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.45s ease;
+      will-change: transform, filter;
+    }
+    /* Sweep light reflection that glides across the image on hover */
+    .c-catalog-card__image::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(115deg, transparent 30%, rgba(234, 67, 53, 0.18) 48%, rgba(255, 255, 255, 0.35) 52%, transparent 70%);
+      transform: translateX(-120%);
+      transition: none;
+    }
+    .c-catalog-card:hover .c-catalog-card__image img {
+      transform: scale(1.07) translateY(-2px);
+      filter: grayscale(0) contrast(1.12) brightness(1) drop-shadow(0 3px 8px rgba(234, 67, 53, 0.4));
+    }
+    .c-catalog-card:hover .c-catalog-card__image::after {
+      animation: sweep-light 0.85s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+    @keyframes sweep-light {
+      from { transform: translateX(-120%); }
+      to   { transform: translateX(120%); }
+    }
+
+    /* Decore corner brackets: each draws in from its corner (scale + opacity) */
+    .c-catalog-card__decore span {
+      opacity: 0;
+      transform: scale(0.4);
+      transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .c-catalog-card:hover .c-catalog-card__decore span { opacity: 1; transform: scale(1); }
+    .c-catalog-card:hover .c-catalog-card__decore span:nth-child(1) { transition-delay: 0s; }
+    .c-catalog-card:hover .c-catalog-card__decore span:nth-child(2) { transition-delay: 0.06s; }
+    .c-catalog-card:hover .c-catalog-card__decore span:nth-child(3) { transition-delay: 0.12s; }
+    .c-catalog-card:hover .c-catalog-card__decore span:nth-child(4) { transition-delay: 0.18s; }
+
+    /* Title slides up + arrow appears on hover */
+    .c-catalog-card__content {
+      padding: 16px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .c-catalog-card__title {
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.4;
+      color: var(--color-text-main);
+      transition: color 0.25s ease, transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .c-catalog-card:hover .c-catalog-card__title {
+      color: var(--color-brand-red);
+      transform: translateX(2px);
+    }
+    .c-catalog-card__arrow {
+      flex-shrink: 0;
+      opacity: 0;
+      transform: translateX(-6px);
+      transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+      color: var(--color-brand-red);
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .c-catalog-card:hover .c-catalog-card__arrow {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* Custom slider arrows (A-SAN red) */
+    .c-custom-splide-arrows {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 24px;
+    }
+    .c-custom-splide-arrows__arrow {
+      width: 48px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--color-brand-red);
+      border: 1px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .c-custom-splide-arrows__arrow:hover {
+      background-color: var(--color-link-hover);
+      border-color: var(--color-white);
+    }
+    .c-custom-splide-arrows__arrow:disabled {
+      background-color: var(--color-border);
+      cursor: default;
+      pointer-events: none;
+    }
+    .c-custom-splide-arrows__arrow svg { fill: #fff; }
+    .c-custom-splide-arrows__arrow.arrow--prev svg { transform: scaleX(-1); }
+
+    @media (max-width: 768px) {
+      .c-catalog-card__image img { padding: 12px; }
+      .c-catalog-card__title { font-size: 14px; }
+      .c-custom-splide-arrows { margin-top: 18px; }
+    }
+    @media (max-width: 540px) {
+      .c-catalog-card__image img { padding: 10px; }
+    }
+
+    /* ==========================================================================
+       EXAMPLE SHOWCASE (cutout product imagery, TrophyLab-style decore)
+       ========================================================================== */
+    .examples-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+    .example-showcase {
+      display: flex;
+      flex-direction: column;
+      background: var(--color-white);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+    }
+    .example-showcase:hover {
+      border-color: var(--color-brand-red);
+      box-shadow: 0 8px 24px rgba(234, 67, 53, 0.14);
+      transform: translateY(-3px);
+    }
+
+    .example-showcase__media {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 5 / 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at 50% 50%, #fff 0%, var(--color-bg-light) 80%);
+      border-bottom: 1px solid var(--color-border);
+      overflow: hidden;
+    }
+    .example-showcase__media img {
+      max-width: 78%;
+      max-height: 78%;
+      object-fit: contain;
+      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.18));
+      transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.45s ease;
+      will-change: transform;
+    }
+    .example-showcase:hover .example-showcase__media img {
+      transform: scale(1.06);
+      filter: drop-shadow(0 10px 20px rgba(234, 67, 53, 0.28));
+    }
+
+    /* Decore corner-mark SVG (TrophyLab s-stats-cta / s-cta pattern), recolored red */
+    .example-showcase__decore {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      color: var(--color-brand-red);
+      opacity: 0.35;
+      transform: scale(0.9);
+      transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .example-showcase:hover .example-showcase__decore {
+      opacity: 1;
+      transform: scale(1) rotate(90deg);
+    }
+
+    .example-showcase__content {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+    .example-showcase__content .detail-meta { margin-bottom: 6px; }
+    .example-showcase__content .card-heading { margin-bottom: 10px; }
+    .example-showcase__content .card-description { margin-bottom: 18px; }
+    .example-showcase__content .ir-link { align-self: flex-start; }
+
+    @media (max-width: 768px) {
+      .examples-grid { grid-template-columns: 1fr; gap: 18px; }
+      .example-showcase__media { aspect-ratio: 16 / 9; }
+      .example-showcase__media img { max-width: 70%; max-height: 70%; }
+    }
+
+    /* ==========================================================================
        TEASER / RESTRICTED ACCESS PATTERN
        ========================================================================== */
     .teaser-box {
@@ -537,7 +810,7 @@
   <header class="site-header">
     <div class="header-container" id="headerContainer">
       
-      <a href="#" class="brand-logo" aria-label="A-SAN Home">
+      <a href="index.html" class="brand-logo" aria-label="A-SAN Home">
         <span class="brand-title">A-SAN</span>
         <span class="brand-subtitle">ASEAN Superiority Aerospace Navigator</span>
       </a>
@@ -546,7 +819,7 @@
         <ul class="nav-list">
           
           <li class="nav-item">
-            <a href="category.html" class="nav-link">Home</a>
+            <a href="index.html" class="nav-link">Home</a>
           </li>
 
           <li class="nav-item selected">
@@ -572,15 +845,15 @@
           </li>
 
           <li class="nav-item">
-            <a href="category.html#research" class="nav-link">Research</a>
+            <a href="research.html" class="nav-link">Research</a>
           </li>
 
           <li class="nav-item">
-            <a href="category.html#access" class="nav-link">Access</a>
+            <a href="access.html" class="nav-link">Access</a>
           </li>
 
           <li class="nav-item">
-            <a href="category.html#about" class="nav-link">About</a>
+            <a href="about.html" class="nav-link">About</a>
           </li>
 
         </ul>
@@ -606,128 +879,207 @@
         Browse categories below. Full technical profiles require verified access.
       </p>
 
-      <h2 class="section-title">Equipment Categories</h2>
+      <h2 class="section-title s-catalog-slider__title"><span class="slider-slash">/</span>Equipment Categories</h2>
 
-      <div class="cards-grid">
+      <div class="s-catalog-slider__slider-wrapper">
+        <div class="s-catalog-slider__slider splide" id="catalogSlider" aria-label="Catalog slider">
+          <div class="splide__track">
+            <div class="splide__list">
 
-        <article class="category-card">
-          <div>
-            <h3 class="card-heading">Aircraft</h3>
-            <p class="card-description">Manned fixed-wing and rotary-wing combat and support aircraft.</p>
+              <div class="splide__slide">
+                <a href="category.html?cat=aircraft" class="c-catalog-card">
+                  <div class="c-catalog-card__decore" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                  <div class="c-catalog-card__image">
+                    <img src="images/catalog-slider/aircraft.png" alt="Aircraft" loading="lazy" width="241" height="241">
+                  </div>
+                  <div class="c-catalog-card__content">
+                    <p class="c-catalog-card__title">Aircraft</p>
+                    <span class="c-catalog-card__arrow" aria-hidden="true">›</span>
+                  </div>
+                </a>
+              </div>
+
+              <div class="splide__slide">
+                <a href="category.html?cat=uavs" class="c-catalog-card">
+                  <div class="c-catalog-card__decore" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                  <div class="c-catalog-card__image">
+                    <img src="images/catalog-slider/unmanned-aerial-vehicles.png" alt="UAVs" loading="lazy" width="241" height="241">
+                  </div>
+                  <div class="c-catalog-card__content">
+                    <p class="c-catalog-card__title">UAVs</p>
+                    <span class="c-catalog-card__arrow" aria-hidden="true">›</span>
+                  </div>
+                </a>
+              </div>
+
+              <div class="splide__slide">
+                <a href="category.html?cat=air-launched-munitions" class="c-catalog-card">
+                  <div class="c-catalog-card__decore" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                  <div class="c-catalog-card__image">
+                    <img src="images/catalog-slider/air-launched-weapons.png" alt="Air-launched munitions" loading="lazy" width="241" height="241">
+                  </div>
+                  <div class="c-catalog-card__content">
+                    <p class="c-catalog-card__title">Air-launched munitions</p>
+                    <span class="c-catalog-card__arrow" aria-hidden="true">›</span>
+                  </div>
+                </a>
+              </div>
+
+              <div class="splide__slide">
+                <a href="category.html?cat=rocket-and-missile-weapons" class="c-catalog-card">
+                  <div class="c-catalog-card__decore" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                  <div class="c-catalog-card__image">
+                    <img src="images/catalog-slider/missile-and-rocket-weapons.png" alt="Rocket and missile weapons" loading="lazy" width="241" height="241">
+                  </div>
+                  <div class="c-catalog-card__content">
+                    <p class="c-catalog-card__title">Rocket and missile weapons</p>
+                    <span class="c-catalog-card__arrow" aria-hidden="true">›</span>
+                  </div>
+                </a>
+              </div>
+
+              <div class="splide__slide">
+                <a href="category.html?cat=sea-launched-cruise-missiles" class="c-catalog-card">
+                  <div class="c-catalog-card__decore" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                  <div class="c-catalog-card__image">
+                    <img src="images/catalog-slider/sea-launched-cruise-missiles.png" alt="Sea-launched cruise missiles" loading="lazy" width="241" height="241">
+                  </div>
+                  <div class="c-catalog-card__content">
+                    <p class="c-catalog-card__title">Sea-launched cruise missiles</p>
+                    <span class="c-catalog-card__arrow" aria-hidden="true">›</span>
+                  </div>
+                </a>
+              </div>
+
+              <div class="splide__slide">
+                <a href="category.html?cat=ew-assets" class="c-catalog-card">
+                  <div class="c-catalog-card__decore" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                  <div class="c-catalog-card__image">
+                    <img src="images/catalog-slider/electronic-warfare-systems.png" alt="EW assets" loading="lazy" width="241" height="241">
+                  </div>
+                  <div class="c-catalog-card__content">
+                    <p class="c-catalog-card__title">EW assets</p>
+                    <span class="c-catalog-card__arrow" aria-hidden="true">›</span>
+                  </div>
+                </a>
+              </div>
+
+              <div class="splide__slide">
+                <a href="category.html?cat=ugvs" class="c-catalog-card">
+                  <div class="c-catalog-card__decore" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                  <div class="c-catalog-card__image">
+                    <img src="images/catalog-slider/unmanned-ground-vehicles.png" alt="UGVs" loading="lazy" width="241" height="241">
+                  </div>
+                  <div class="c-catalog-card__content">
+                    <p class="c-catalog-card__title">UGVs</p>
+                    <span class="c-catalog-card__arrow" aria-hidden="true">›</span>
+                  </div>
+                </a>
+              </div>
+
+              <div class="splide__slide">
+                <a href="category.html?cat=armored-vehicles-and-equipment" class="c-catalog-card">
+                  <div class="c-catalog-card__decore" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                  <div class="c-catalog-card__image">
+                    <img src="images/catalog-slider/armored-vehicles-and-equipment.png" alt="Armored vehicles and equipment" loading="lazy" width="241" height="241">
+                  </div>
+                  <div class="c-catalog-card__content">
+                    <p class="c-catalog-card__title">Armored vehicles and equipment</p>
+                    <span class="c-catalog-card__arrow" aria-hidden="true">›</span>
+                  </div>
+                </a>
+              </div>
+
+              <div class="splide__slide">
+                <a href="category.html?cat=automotive-vehicles" class="c-catalog-card">
+                  <div class="c-catalog-card__decore" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                  <div class="c-catalog-card__image">
+                    <img src="images/catalog-slider/automotive-vehicles.png" alt="Automotive vehicles" loading="lazy" width="241" height="241">
+                  </div>
+                  <div class="c-catalog-card__content">
+                    <p class="c-catalog-card__title">Automotive vehicles</p>
+                    <span class="c-catalog-card__arrow" aria-hidden="true">›</span>
+                  </div>
+                </a>
+              </div>
+
+              <div class="splide__slide">
+                <a href="category.html?cat=small-arms" class="c-catalog-card">
+                  <div class="c-catalog-card__decore" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                  <div class="c-catalog-card__image">
+                    <img src="images/catalog-slider/small-arms.png" alt="Small arms" loading="lazy" width="241" height="241">
+                  </div>
+                  <div class="c-catalog-card__content">
+                    <p class="c-catalog-card__title">Small arms</p>
+                    <span class="c-catalog-card__arrow" aria-hidden="true">›</span>
+                  </div>
+                </a>
+              </div>
+
+            </div>
           </div>
-          <a href="category.html?cat=aircraft" class="ir-link">View category <span class="link-arrow">›</span></a>
-        </article>
-
-        <article class="category-card">
-          <div>
-            <h3 class="card-heading">UAVs</h3>
-            <p class="card-description">Unmanned aerial vehicles including reconnaissance, attack, and loitering systems.</p>
+          <div class="c-custom-splide-arrows">
+            <button class="c-custom-splide-arrows__arrow arrow--prev" id="catalogPrev" type="button" aria-label="Previous slide">
+              <svg width="7" height="8" viewBox="0 0 7 8" xmlns="http://www.w3.org/2000/svg"><path d="M0 7.3125V5.46094L4.71875 3.78906L5.19531 3.64844L4.72656 3.49219L0 1.85156V0L6.97656 2.89844V4.40625L0 7.3125Z"/></svg>
+            </button>
+            <button class="c-custom-splide-arrows__arrow arrow--next" id="catalogNext" type="button" aria-label="Next slide">
+              <svg width="7" height="8" viewBox="0 0 7 8" xmlns="http://www.w3.org/2000/svg"><path d="M0 7.3125V5.46094L4.71875 3.78906L5.19531 3.64844L4.72656 3.49219L0 1.85156V0L6.97656 2.89844V4.40625L0 7.3125Z"/></svg>
+            </button>
           </div>
-          <a href="category.html?cat=uavs" class="ir-link">View category <span class="link-arrow">›</span></a>
-        </article>
-
-        <article class="category-card">
-          <div>
-            <h3 class="card-heading">Air-launched munitions</h3>
-            <p class="card-description">Air-to-air, air-to-ground munitions and guided bombs.</p>
-          </div>
-          <a href="category.html?cat=air-launched-munitions" class="ir-link">View category <span class="link-arrow">›</span></a>
-        </article>
-
-        <article class="category-card">
-          <div>
-            <h3 class="card-heading">Rocket and missile weapons</h3>
-            <p class="card-description">Ballistic, cruise, and tactical missile systems.</p>
-          </div>
-          <a href="category.html?cat=rocket-and-missile-weapons" class="ir-link">View category <span class="link-arrow">›</span></a>
-        </article>
-
-        <article class="category-card">
-          <div>
-            <h3 class="card-heading">Sea-launched cruise missiles</h3>
-            <p class="card-description">Naval cruise missile systems and ship-launched platforms.</p>
-          </div>
-          <a href="category.html?cat=sea-launched-cruise-missiles" class="ir-link">View category <span class="link-arrow">›</span></a>
-        </article>
-
-        <article class="category-card">
-          <div>
-            <h3 class="card-heading">EW assets</h3>
-            <p class="card-description">Electronic warfare systems, jammers, and signal intelligence platforms.</p>
-          </div>
-          <a href="category.html?cat=ew-assets" class="ir-link">View category <span class="link-arrow">›</span></a>
-        </article>
-
-        <article class="category-card">
-          <div>
-            <h3 class="card-heading">UGVs</h3>
-            <p class="card-description">Unmanned ground vehicles for combat, logistics, and reconnaissance.</p>
-          </div>
-          <a href="category.html?cat=ugvs" class="ir-link">View category <span class="link-arrow">›</span></a>
-        </article>
-
-        <article class="category-card">
-          <div>
-            <h3 class="card-heading">Armored vehicles and equipment</h3>
-            <p class="card-description">Main battle tanks, IFVs, APCs, and related armored systems.</p>
-          </div>
-          <a href="category.html?cat=armored-vehicles-and-equipment" class="ir-link">View category <span class="link-arrow">›</span></a>
-        </article>
-
-        <article class="category-card">
-          <div>
-            <h3 class="card-heading">Automotive vehicles</h3>
-            <p class="card-description">Military trucks, logistics, and support vehicles.</p>
-          </div>
-          <a href="category.html?cat=automotive-vehicles" class="ir-link">View category <span class="link-arrow">›</span></a>
-        </article>
-
-        <article class="category-card">
-          <div>
-            <h3 class="card-heading">Small arms</h3>
-            <p class="card-description">Infantry weapons, light machine guns, and related systems.</p>
-          </div>
-          <a href="category.html?cat=small-arms" class="ir-link">View category <span class="link-arrow">›</span></a>
-        </article>
-
+        </div>
       </div>
     </section>
 
     <!-- EXAMPLE CATEGORY: AIRCRAFT -->
     <section id="aircraft" style="margin-top: 80px;">
-      <h1 class="page-title">Aircraft</h1>
+      <h1 class="page-title">Featured Examples</h1>
       <p class="page-subtitle">
-        Technical profiles of manned combat and support aircraft. 
-        Basic information is publicly available. Full specifications, drawings, and component analysis require verified access.
+        A sample of the equipment documented in the A-SAN catalog. 
+        Technical specifications, blueprints, and research results are available to verified partners.
       </p>
 
-      <div class="cards-grid-3">
+      <div class="examples-grid">
 
-        <article class="item-card">
-          <div>
-            <div class="detail-meta">Fighter • Fixed-wing</div>
-            <h3 class="card-heading">Example Fighter Platform</h3>
-            <p class="card-description">Multirole fighter aircraft. Public teaser data only.</p>
+        <article class="example-showcase">
+          <div class="example-showcase__media">
+            <div class="example-showcase__decore" aria-hidden="true">
+              <svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M48 0V10L45.5 10L45.5 2.5L38 2.5V-4.37114e-07L48 0Z" fill="currentColor"/>
+                <path d="M0 48L0 38L2.5 38L2.5 45.5L10 45.5V48L0 48Z" fill="currentColor"/>
+                <path d="M0 0L10 0V2.5L2.5 2.5L2.5 10H0L0 0Z" fill="currentColor"/>
+                <path d="M48 48H38V45.5L45.5 45.5V38H48V48Z" fill="currentColor"/>
+                <path d="M25.5001 24L30 28.4999L28.4999 30L24 25.5001L19.5001 30L18 28.4999L22.4999 24L18 19.5001L19.5001 18L24 22.4999L28.4999 18L30 19.5001L25.5001 24Z" fill="currentColor"/>
+              </svg>
+            </div>
+            <img src="images/examples/kinzhal-sm.png" alt="Kinzhal hypersonic missile" loading="lazy">
           </div>
-          <a href="#detail-example" class="ir-link">View profile <span class="link-arrow">›</span></a>
+          <div class="example-showcase__content">
+            <div class="detail-meta">Air-launched ballistic missile</div>
+            <h3 class="card-heading">Kinzhal</h3>
+            <p class="card-description">Hypersonic aero-ballistic missile. Technical specifications, blueprints and research results available to verified partners.</p>
+            <a href="#detail-example" class="ir-link">View profile <span class="link-arrow">›</span></a>
+          </div>
         </article>
 
-        <article class="item-card">
-          <div>
-            <div class="detail-meta">Attack • Fixed-wing</div>
-            <h3 class="card-heading">Example Attack Aircraft</h3>
-            <p class="card-description">Close air support and strike platform. Limited public data.</p>
+        <article class="example-showcase">
+          <div class="example-showcase__media">
+            <div class="example-showcase__decore" aria-hidden="true">
+              <svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M48 0V10L45.5 10L45.5 2.5L38 2.5V-4.37114e-07L48 0Z" fill="currentColor"/>
+                <path d="M0 48L0 38L2.5 38L2.5 45.5L10 45.5V48L0 48Z" fill="currentColor"/>
+                <path d="M0 0L10 0V2.5L2.5 2.5L2.5 10H0L0 0Z" fill="currentColor"/>
+                <path d="M48 48H38V45.5L45.5 45.5V38H48V48Z" fill="currentColor"/>
+                <path d="M25.5001 24L30 28.4999L28.4999 30L24 25.5001L19.5001 30L18 28.4999L22.4999 24L18 19.5001L19.5001 18L24 22.4999L28.4999 18L30 19.5001L25.5001 24Z" fill="currentColor"/>
+              </svg>
+            </div>
+            <img src="images/examples/cta-drone.png" alt="Shahed-136 loitering munition" loading="lazy">
           </div>
-          <a href="#" class="ir-link">View profile <span class="link-arrow">›</span></a>
-        </article>
-
-        <article class="item-card">
-          <div>
-            <div class="detail-meta">Transport • Fixed-wing</div>
-            <h3 class="card-heading">Example Transport Aircraft</h3>
-            <p class="card-description">Tactical transport aircraft. Basic overview available.</p>
+          <div class="example-showcase__content">
+            <div class="detail-meta">Loitering munition • UAV</div>
+            <h3 class="card-heading">Shahed-136</h3>
+            <p class="card-description">Long-range one-way attack drone. Composition, components, specs, photos and analysis in one place.</p>
+            <a href="#" class="ir-link">View profile <span class="link-arrow">›</span></a>
           </div>
-          <a href="#" class="ir-link">View profile <span class="link-arrow">›</span></a>
         </article>
 
       </div>
@@ -776,7 +1128,7 @@
             Detailed specifications, technical drawings, component analysis, and research results<br>
             are available only to verified defense companies, researchers, and authorized partners.
           </p>
-          <a href="#" class="btn-primary">Request Access</a>
+          <a href="access.html" class="btn-primary">Request Access</a>
         </div>
       </div>
     </section>
@@ -788,10 +1140,10 @@
     <div class="footer-container">
       <span class="footer-logo">A-SAN</span>
       <ul class="footer-links">
-        <li><a href="#" class="footer-link">Privacy</a></li>
-        <li><a href="#" class="footer-link">Terms</a></li>
-        <li><a href="#" class="footer-link">About A-SAN</a></li>
-        <li><a href="#" class="footer-link">Access Request</a></li>
+        <li><a href="privacy.html" class="footer-link">Privacy</a></li>
+        <li><a href="terms.html" class="footer-link">Terms</a></li>
+        <li><a href="about.html" class="footer-link">About A-SAN</a></li>
+        <li><a href="access.html" class="footer-link">Access Request</a></li>
       </ul>
     </div>
   </footer>
@@ -815,6 +1167,44 @@
           }
         });
       });
+
+      // Catalog slider (TrophyLab-style Splide carousel)
+      const sliderEl = document.getElementById('catalogSlider');
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (sliderEl && window.Splide) {
+        const catalogSlider = new Splide(sliderEl, {
+          perPage: 4,
+          perMove: 1,
+          gap: '20px',
+          padding: '2px',
+          arrows: false,
+          pagination: false,
+          speed: 600,
+          easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+          trimSpace: false,
+          rewind: true,           // loop back to start instead of stopping at the end
+          drag: true,             // mouse drag + touch swipe ("glide" to move)
+          swipeDistanceThreshold: 10,
+          flickPower: 600,
+          flickMaxPages: 1,
+          autoScroll: {           // continuous autoplay — the slider glides on its own
+            autoStart: !prefersReducedMotion,
+            speed: 1.2,           // pages per second (slow, elegant glide)
+            pauseOnHover: true,   // stop when the user is reading a card
+            pauseOnFocus: true,
+          },
+          breakpoints: {
+            1024: { perPage: 3, gap: '16px' },
+            768:  { perPage: 2, gap: '14px' },
+            540:  { perPage: 1, gap: '12px', padding: '4px' }
+          }
+        }).mount();
+
+        const prevBtn = document.getElementById('catalogPrev');
+        const nextBtn = document.getElementById('catalogNext');
+        if (prevBtn) prevBtn.addEventListener('click', () => catalogSlider.go('<'));
+        if (nextBtn) nextBtn.addEventListener('click', () => catalogSlider.go('>'));
+      }
     });
   </script>
 </body>

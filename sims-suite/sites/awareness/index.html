@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intellectual Awareness — Incident Response</title>
+  <meta name="description" content="Intelligence-driven incident response and operational continuity.">
+
+  <link rel="stylesheet" href="/sims-suite/design/tokens.css">
+
+  <style>
+    :root {
+      --purple-dark: #25076b; --purple: #46178f; --yellow: #ffd400;
+      --text: #131920; --text-subtle: #3a4b5f; --bg: #ffffff; --bg-alt: #f6f6f6;
+      --font: "Montserrat", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-family: var(--font); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+    body { line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+
+    .header { position: sticky; top: 0; z-index: 100; background: var(--purple-dark); color: #fff; }
+    .header-inner { max-width: 1280px; margin: 0 auto; height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; }
+    .brand { font-size: 22px; font-weight: 800; font-style: italic; letter-spacing: -0.02em; }
+    .btn { padding: 10px 24px; border-radius: 1rem; font-family: var(--font); font-size: 14px; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s; }
+    .btn-yellow { background: var(--yellow); color: var(--text); }
+    .btn-yellow:hover { background: #e6c100; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .hero { padding: 64px 24px 32px; text-align: center; }
+    .hero-eyebrow { font-size: 14px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--purple); margin-bottom: 16px; }
+    .hero-title { font-size: 52px; font-weight: 900; line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 24px; }
+    .hero-title span { background: linear-gradient(to right, var(--purple-dark), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero-desc { font-size: 19px; color: var(--text-subtle); max-width: 700px; margin: 0 auto; }
+
+    .controls { max-width: 1280px; margin: 40px auto 0; padding: 0 24px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .ctrl { display: flex; flex-direction: column; gap: 6px; background: var(--bg-alt); padding: 16px 20px; border-radius: 0.75rem; }
+    .ctrl label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-subtle); }
+    .ctrl select, .ctrl input { border: 1px solid #ddd; border-radius: 0.5rem; padding: 8px 12px; font-family: var(--font); font-size: 15px; color: var(--text); background: #fff; outline: none; }
+    .ctrl select:focus, .ctrl input:focus { border-color: var(--purple); }
+
+    .status { text-align: center; padding: 16px; font-size: 15px; color: var(--text-subtle); font-weight: 500; }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #ddd; border-top-color: var(--purple); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: text-bottom; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .results { max-width: 1280px; margin: 0 auto; padding: 0 24px 64px; display: none; }
+    .results-header { text-align: center; margin-bottom: 32px; }
+    .results-header h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .results-header p { color: var(--text-subtle); font-size: 16px; }
+    .results-header .severity { display: inline-block; padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-left: 8px; }
+    .severity.critical { background: #fce8e6; color: #d93025; }
+    .severity.high { background: #fef7e0; color: #b06000; }
+    .severity.medium { background: #e8f0fe; color: #1a73e8; }
+    .severity.low { background: #e6f4ea; color: #137333; }
+
+    .best-pb { background: linear-gradient(135deg, var(--purple-dark), var(--purple)); border-radius: 1rem; padding: 32px; margin-bottom: 32px; color: #fff; }
+    .best-pb__label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.8; margin-bottom: 8px; }
+    .best-pb__name { font-size: 32px; font-weight: 800; margin-bottom: 16px; }
+    .best-pb__stats { display: flex; gap: 32px; flex-wrap: wrap; }
+    .best-pb__stat { }
+    .best-pb__stat-value { font-size: 28px; font-weight: 800; color: var(--yellow); }
+    .best-pb__stat-label { font-size: 13px; opacity: 0.8; }
+
+    .pb-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    .pb-card { background: var(--bg-alt); border-radius: 0.75rem; padding: 24px; display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; }
+    .pb-card__name { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .pb-card__desc { font-size: 14px; color: var(--text-subtle); }
+    .pb-card__stats { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 12px; }
+    .pb-card__stat { font-size: 13px; color: var(--text-subtle); }
+    .pb-card__stat strong { color: var(--text); font-size: 16px; }
+
+    .outcome-bars { display: flex; gap: 4px; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 12px; }
+    .ob-contained { background: #137333; }
+    .ob-partial { background: #b06000; }
+    .ob-failed { background: #d93025; }
+    .ob-exacerbated { background: #7b1fa2; }
+
+    .footer { border-top: 1px solid #eee; padding: 32px 24px; text-align: center; }
+    .footer p { font-size: 14px; color: var(--text-subtle); }
+    .footer a { color: var(--purple); font-weight: 600; }
+  </style>
+</head>
+<body class="skin-platoon">
+
+  <header class="header">
+    <div class="header-inner">
+      <a class="brand" href="/">Intellectual Awareness</a>
+      <button class="btn btn-yellow" id="runBtn">Run Response Simulation</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-eyebrow">Infrastructure Defense — Incident Response</div>
+    <h1 class="hero-title">When the walls give,<br><span>we're already moving.</span></h1>
+    <p class="hero-desc">
+      Intellectual Awareness consumes threat intelligence and Citadel's predicted breaks, then runs
+      thousands of response scenarios to find the playbook that contains the threat fastest —
+      with the least collateral damage and the most operational continuity preserved.
+    </p>
+  </section>
+
+  <div class="controls">
+    <div class="ctrl">
+      <label>Threat Scenario</label>
+      <select id="threatSelect"></select>
+    </div>
+    <div class="ctrl">
+      <label>Scenarios</label>
+      <input type="number" id="scenariosInput" value="5000" min="100" max="50000">
+    </div>
+    <div class="ctrl">
+      <label>Seed</label>
+      <input type="number" id="seedInput" value="42">
+    </div>
+  </div>
+
+  <div class="status" id="statusLine">Select a threat scenario and run the response simulation.</div>
+
+  <div class="results" id="resultsSection">
+    <div class="results-header">
+      <h2 id="rTitle">—</h2>
+      <p id="rMeta"></p>
+    </div>
+    <div class="best-pb" id="bestSection" style="display:none;">
+      <div class="best-pb__label">Recommended Playbook</div>
+      <div class="best-pb__name" id="bestName">—</div>
+      <div class="best-pb__stats">
+        <div class="best-pb__stat"><div class="best-pb__stat-value" id="bestRate">—</div><div class="best-pb__stat-label">Success Rate</div></div>
+        <div class="best-pb__stat"><div class="best-pb__stat-value" id="bestTime">—</div><div class="best-pb__stat-label">Avg Containment</div></div>
+        <div class="best-pb__stat"><div class="best-pb__stat-value" id="bestMitigated">—</div><div class="best-pb__stat-label">Damage Mitigated</div></div>
+        <div class="best-pb__stat"><div class="best-pb__stat-value" id="bestContinuity">—</div><div class="best-pb__stat-label">Op. Continuity</div></div>
+      </div>
+    </div>
+    <div class="pb-grid" id="pbGrid"></div>
+  </div>
+
+  <footer class="footer"><p>Intellectual Awareness — Incident Response. Part of the <a href="/">Alien Inc</a> simulation stack.</p></footer>
+
+  <script>
+    // Load threats from API
+    fetch('/api/awareness/threats')
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (threats) {
+        var sel = document.getElementById('threatSelect');
+        threats.forEach(function (t, i) {
+          var opt = document.createElement('option');
+          opt.value = i;
+          opt.textContent = t.name + ' (' + t.severity + ')';
+          sel.appendChild(opt);
+        });
+      })
+      .catch(function () {});
+
+    document.getElementById('runBtn').addEventListener('click', function () {
+      var threatIdx = parseInt(document.getElementById('threatSelect').value, 10) || 0;
+      var n = parseInt(document.getElementById('scenariosInput').value, 10) || 5000;
+      var seed = parseInt(document.getElementById('seedInput').value, 10) || 42;
+      var status = document.getElementById('statusLine');
+      var btn = this;
+      btn.disabled = true;
+      status.innerHTML = '<span class="spinner"></span>Running ' + n + ' response scenarios...';
+
+      fetch('/api/awareness/run', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threat_index: threatIdx, scenarios: n, seed: seed }) })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          btn.disabled = false;
+          if (!d) { status.textContent = 'Error.'; return; }
+          status.textContent = 'Evaluated ' + d.scenarios_run + ' scenarios in ' + (d.duration_ms / 1000).toFixed(2) + 's.';
+          renderResults(d);
+        })
+        .catch(function () { btn.disabled = false; status.textContent = 'Request failed.'; });
+    });
+
+    function renderResults(d) {
+      document.getElementById('resultsSection').style.display = '';
+      document.getElementById('rTitle').textContent = d.threat_name;
+      document.getElementById('rMeta').innerHTML = d.threat_type.replace(/_/g, ' ') +
+        ' <span class="severity ' + d.threat_severity + '">' + d.threat_severity + '</span> — ' +
+        d.scenarios_run + ' branched scenarios';
+
+      if (d.best_playbook) {
+        document.getElementById('bestSection').style.display = '';
+        document.getElementById('bestName').textContent = d.best_playbook.name;
+        document.getElementById('bestRate').textContent = (d.best_playbook.success_rate * 100).toFixed(1) + '%';
+        document.getElementById('bestTime').textContent = d.best_playbook.avg_containment_time + 'm';
+        document.getElementById('bestMitigated').textContent = d.best_playbook.avg_damage_mitigated + '%';
+        document.getElementById('bestContinuity').textContent = d.best_playbook.avg_continuity + '%';
+      }
+
+      var grid = document.getElementById('pbGrid');
+      grid.innerHTML = '';
+      d.evaluations.forEach(function (ev) {
+        var total = ev.scenarios || 1;
+        var cPct = (ev.contained / total * 100);
+        var pPct = (ev.partial / total * 100);
+        var fPct = (ev.failed / total * 100);
+        var ePct = (ev.exacerbated / total * 100);
+        var card = document.createElement('div');
+        card.className = 'pb-card';
+        card.innerHTML =
+          '<div>' +
+            '<div class="pb-card__name">' + ev.playbook + '</div>' +
+            '<div class="pb-card__desc">Success rate: ' + (ev.success_rate * 100).toFixed(1) + '% — ' +
+              ev.contained + ' contained, ' + ev.partial + ' partial, ' + ev.failed + ' failed, ' + ev.exacerbated + ' exacerbated</div>' +
+            '<div class="pb-card__stats">' +
+              '<span class="pb-card__stat"><strong>' + ev.avg_containment_time + 'm</strong> containment</span>' +
+              '<span class="pb-card__stat"><strong>' + ev.avg_damage_mitigated + '%</strong> mitigated</span>' +
+              '<span class="pb-card__stat"><strong>' + ev.avg_collateral + '%</strong> collateral</span>' +
+              '<span class="pb-card__stat"><strong>' + ev.avg_continuity + '%</strong> continuity</span>' +
+            '</div>' +
+            '<div class="outcome-bars">' +
+              '<div class="ob-contained" style="width:' + cPct + '%"></div>' +
+              '<div class="ob-partial" style="width:' + pPct + '%"></div>' +
+              '<div class="ob-failed" style="width:' + fPct + '%"></div>' +
+              '<div class="ob-exacerbated" style="width:' + ePct + '%"></div>' +
+            '</div>' +
+          '</div>';
+        grid.appendChild(card);
+      });
+    }
+  </script>
+</body>
+</html>

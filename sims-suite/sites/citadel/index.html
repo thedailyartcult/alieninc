@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Citadel — Infrastructure Defense</title>
+  <meta name="description" content="Turns Kriegspiel's own logic inward — running the same scenario engine against your infrastructure to find where the walls give first.">
+
+  <link rel="stylesheet" href="/sims-suite/design/tokens.css">
+
+  <style>
+    :root {
+      --bg: #ffffff; --bg-alt: #f8f9fa; --pill: #f1f3f4;
+      --text-main: #202124; --text-body: #3c4043; --text-muted: #5f6368;
+      --border: #e8eaed; --accent: #d93025;
+      --font: 'Google Sans Flex', 'Google Sans', -apple-system, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-family: var(--font); background: var(--bg); color: var(--text-main); -webkit-font-smoothing: antialiased; }
+    body { line-height: 1.6; }
+    a { color: inherit; text-decoration: none; }
+
+    .header { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+    .header-inner { max-width: 1280px; margin: 0 auto; height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; }
+    .brand { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 500; }
+    .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+    .btn { padding: 10px 20px; border-radius: 100px; font-size: 14px; font-weight: 500; border: 1px solid #dadce0; background: var(--bg); cursor: pointer; transition: all 0.2s; }
+    .btn:hover { background: var(--bg-alt); }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-primary:hover { background: #b3261e; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .hero { padding: 64px 24px 24px; text-align: center; }
+    .hero-eyebrow { font-size: 15px; color: var(--text-muted); margin-bottom: 16px; }
+    .hero-title { font-size: 52px; font-weight: 500; letter-spacing: -0.03em; margin-bottom: 24px; }
+    .hero-title em { font-style: italic; color: var(--accent); }
+    .hero-desc { font-size: 20px; color: var(--text-body); max-width: 720px; margin: 0 auto; }
+
+    .controls { max-width: 1280px; margin: 40px auto 0; padding: 0 24px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .ctrl { display: flex; flex-direction: column; gap: 6px; background: var(--bg-alt); padding: 16px 20px; border-radius: 16px; }
+    .ctrl label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+    .ctrl input { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 15px; font-family: var(--font); outline: none; }
+    .ctrl input:focus { border-color: var(--accent); }
+
+    .status { text-align: center; padding: 16px; font-size: 15px; color: var(--text-muted); }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: text-bottom; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .results { max-width: 1280px; margin: 32px auto; padding: 0 24px; display: none; }
+    .results-header { text-align: center; margin-bottom: 32px; }
+    .results-header h2 { font-size: 28px; font-weight: 500; margin-bottom: 8px; }
+    .results-header p { color: var(--text-muted); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .card { background: var(--bg-alt); border-radius: 16px; padding: 24px; }
+    .card__label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+    .card__value { font-size: 36px; font-weight: 500; font-variant-numeric: tabular-nums; }
+    .card__value.danger { color: var(--accent); }
+    .card__note { font-size: 14px; color: var(--text-muted); }
+
+    .path-display { max-width: 1280px; margin: 32px auto; padding: 0 24px; display: none; }
+    .path-display h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--text-body); }
+    .path-chain { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .path-node { padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 500; background: var(--pill); }
+    .path-node.entry { background: #e8f0fe; color: #1a73e8; }
+    .path-node.crown { background: #fce8e6; color: var(--accent); }
+    .path-arrow { color: var(--text-muted); font-size: 18px; }
+    .path-vuln { margin-top: 12px; font-size: 14px; color: var(--text-muted); }
+    .path-vuln strong { color: var(--accent); }
+
+    .vuln-list { max-width: 1280px; margin: 32px auto; padding: 0 24px; display: none; }
+    .vuln-list h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--text-body); }
+    .vuln-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .vuln-name { width: 200px; font-size: 14px; font-weight: 500; }
+    .vuln-track { flex: 1; height: 24px; background: var(--pill); border-radius: 12px; overflow: hidden; }
+    .vuln-fill { height: 100%; background: var(--accent); border-radius: 12px; transition: width 0.8s; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 12px; color: #fff; font-weight: 600; }
+
+    .footer { border-top: 1px solid var(--border); margin-top: 64px; padding: 32px 24px; text-align: center; }
+    .footer p { font-size: 14px; color: var(--text-muted); }
+    .footer a { color: var(--accent); }
+  </style>
+</head>
+<body class="skin-alphazero">
+
+  <header class="header">
+    <div class="header-inner">
+      <a class="brand" href="/"><span class="dot"></span> Citadel</a>
+      <button class="btn btn-primary" id="runBtn">Run Attack Simulation</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-eyebrow">Infrastructure Defense — a feature of ALIEN.INC</div>
+    <h1 class="hero-title">Find where the walls <em>give first.</em></h1>
+    <p class="hero-desc">
+      Citadel turns Kriegspiel's own logic inward — running the same scenario engine against your
+      infrastructure to find the attack paths that reach your crown jewels, before anyone outside
+      this system does.
+    </p>
+  </section>
+
+  <div class="controls">
+    <div class="ctrl">
+      <label>Scenarios</label>
+      <input type="number" id="scenariosInput" value="5000" min="100" max="50000">
+    </div>
+    <div class="ctrl">
+      <label>Seed</label>
+      <input type="number" id="seedInput" value="42">
+    </div>
+  </div>
+
+  <div class="status" id="statusLine">Click "Run Attack Simulation" to generate attack-path scenarios.</div>
+
+  <div class="results" id="resultsSection">
+    <div class="results-header">
+      <h2>Attack Simulation Report</h2>
+      <p id="resultsMeta"></p>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="card__label">Scenarios Run</div><div class="card__value" id="rScenarios">—</div></div>
+      <div class="card"><div class="card__label">Crown Jewel Breaches</div><div class="card__value danger" id="rBreaches">—</div></div>
+      <div class="card"><div class="card__label">Breach Rate</div><div class="card__value" id="rRate">—</div></div>
+      <div class="card"><div class="card__label">Avg Attack Depth</div><div class="card__value" id="rDepth">—</div></div>
+      <div class="card"><div class="card__label">Avg Nodes Compromised</div><div class="card__value" id="rCompromised">—</div></div>
+      <div class="card"><div class="card__label">Convergence</div><div class="card__value" id="rConvergence">—</div></div>
+    </div>
+  </div>
+
+  <div class="path-display" id="pathSection">
+    <h3>Best Attack Path (Highest Score)</h3>
+    <div class="path-chain" id="pathChain"></div>
+    <div class="path-vuln" id="pathVuln"></div>
+  </div>
+
+  <div class="vuln-list" id="vulnSection">
+    <h3>Most Frequently Compromised Nodes</h3>
+    <div id="vulnContainer"></div>
+  </div>
+
+  <footer class="footer"><p>Citadel — Infrastructure Defense. Part of the <a href="/">Alien Inc</a> simulation stack.</p></footer>
+
+  <script>
+    document.getElementById('runBtn').addEventListener('click', function () {
+      var n = parseInt(document.getElementById('scenariosInput').value, 10) || 5000;
+      var seed = parseInt(document.getElementById('seedInput').value, 10) || 42;
+      var status = document.getElementById('statusLine');
+      var btn = this;
+      btn.disabled = true;
+      status.innerHTML = '<span class="spinner"></span>Running ' + n + ' attack scenarios...';
+
+      fetch('/api/citadel/run', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scenarios: n, seed: seed }) })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          btn.disabled = false;
+          if (!d) { status.textContent = 'Error.'; return; }
+          status.textContent = 'Generated ' + d.scenarios_run + ' scenarios in ' + (d.duration_ms / 1000).toFixed(2) + 's.';
+          renderResults(d);
+        })
+        .catch(function () { btn.disabled = false; status.textContent = 'Request failed.'; });
+    });
+
+    function renderResults(d) {
+      document.getElementById('resultsSection').style.display = '';
+      document.getElementById('pathSection').style.display = '';
+      document.getElementById('vulnSection').style.display = '';
+      document.getElementById('resultsMeta').textContent = d.infra_name + ' — ' + d.scenarios_run + ' branched attack scenarios';
+
+      document.getElementById('rScenarios').textContent = d.scenarios_run.toLocaleString();
+      document.getElementById('rBreaches').textContent = d.crown_jewel_breaches;
+      document.getElementById('rRate').textContent = (d.breach_rate * 100).toFixed(1) + '%';
+      document.getElementById('rDepth').textContent = d.avg_depth;
+      document.getElementById('rCompromised').textContent = d.avg_nodes_compromised;
+      document.getElementById('rConvergence').textContent = (d.convergence_rate * 100).toFixed(1) + '%';
+
+      if (d.best_attack_path) {
+        var chain = document.getElementById('pathChain');
+        chain.innerHTML = '';
+        var path = d.best_attack_path.path;
+        path.forEach(function (node, i) {
+          var span = document.createElement('span');
+          span.className = 'path-node' + (i === 0 ? ' entry' : '') + (i === path.length - 1 && d.best_attack_path.crown_jewel_reached ? ' crown' : '');
+          span.textContent = node;
+          chain.appendChild(span);
+          if (i < path.length - 1) {
+            var arrow = document.createElement('span');
+            arrow.className = 'path-arrow';
+            arrow.textContent = '→';
+            chain.appendChild(arrow);
+          }
+        });
+        document.getElementById('pathVuln').innerHTML = d.best_attack_path.key_vulnerability
+          ? 'Key vulnerability exploited: <strong>' + d.best_attack_path.key_vulnerability.replace(/_/g, ' ') + '</strong>'
+          : '';
+      }
+
+      var vc = document.getElementById('vulnContainer');
+      vc.innerHTML = '';
+      var maxCount = d.most_vulnerable_nodes[0] ? d.most_vulnerable_nodes[0].times_compromised : 1;
+      d.most_vulnerable_nodes.forEach(function (vn) {
+        var row = document.createElement('div');
+        row.className = 'vuln-bar';
+        var pct = (vn.times_compromised / maxCount * 100);
+        row.innerHTML = '<span class="vuln-name">' + vn.name + '</span>' +
+          '<div class="vuln-track"><div class="vuln-fill" style="width:' + pct + '%">' + vn.times_compromised + '</div></div>';
+        vc.appendChild(row);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1272,6 +1272,111 @@
         color: rgba(255, 255, 255, 0.5);
         font-size: 0.85rem;
     }
+    .retro-map-search-item-locked .retro-map-search-item-stack {
+        color: #f59e0b;
+        font-style: italic;
+    }
+
+    /* ── Auth-gate lock panel (retro-terminal aesthetic) ── */
+    .retro-lock-panel {
+        border: 1px solid rgba(245, 158, 11, 0.35);
+        background: rgba(245, 158, 11, 0.06);
+        padding: 10px 12px;
+        margin-top: 6px;
+        font-family: 'VT323', Courier, monospace;
+    }
+    .retro-lock-panel__header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+    }
+    .retro-lock-panel__icon {
+        width: 14px;
+        height: 14px;
+        border: 1.5px solid #f59e0b;
+        border-radius: 2px;
+        position: relative;
+        flex-shrink: 0;
+    }
+    .retro-lock-panel__icon::before {
+        content: '';
+        position: absolute;
+        top: -7px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 8px;
+        height: 7px;
+        border: 1.5px solid #f59e0b;
+        border-bottom: none;
+        border-radius: 8px 8px 0 0;
+    }
+    .retro-lock-panel__icon::after {
+        content: '';
+        position: absolute;
+        top: 3px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 2px;
+        height: 5px;
+        background: #f59e0b;
+    }
+    .retro-lock-panel__title {
+        color: #f59e0b;
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        font-weight: bold;
+    }
+    .retro-lock-panel__msg {
+        color: rgba(255, 255, 255, 0.55);
+        font-size: 0.75rem;
+        line-height: 1.3;
+        margin-bottom: 8px;
+    }
+    .retro-lock-panel__btn {
+        display: inline-block;
+        padding: 4px 14px;
+        border: 1px solid #f59e0b;
+        background: transparent;
+        color: #f59e0b;
+        font-family: 'VT323', Courier, monospace;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    .retro-lock-panel__btn:hover {
+        background: #f59e0b;
+        color: #000000;
+        box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+    }
+    .retro-lock-panel__blurred {
+        filter: blur(3px);
+        opacity: 0.3;
+        user-select: none;
+        pointer-events: none;
+    }
+    .retro-lock-panel__scanline {
+        position: relative;
+        overflow: hidden;
+    }
+    .retro-lock-panel__scanline::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: rgba(245, 158, 11, 0.4);
+        animation: retro-lock-scan 3s linear infinite;
+    }
+    @keyframes retro-lock-scan {
+        0% { top: 0; }
+        100% { top: 100%; }
+    }
 
     .retro-map-hud-right {
         position: absolute;
@@ -1437,6 +1542,13 @@
         background: rgba(74, 222, 128, 0.15);
         border-color: #4ade80;
         box-shadow: 0 0 8px rgba(74, 222, 128, 0.3);
+    }
+
+    .retro-map-btn-filter.active {
+        background: rgba(34, 211, 238, 0.2);
+        border-color: #22d3ee;
+        color: #ffffff;
+        box-shadow: 0 0 10px rgba(34, 211, 238, 0.35);
     }
 
     .retro-map-btn svg {
@@ -1754,16 +1866,25 @@
           title: '1902 book Just So Stories, Rudyard Kipling\'s collection'
         },
         '3': {
-          phrases: ['placeholder phrase one for set three', 'placeholder phrase two for set three'],
-          title: null
+          phrases: [
+            'We remembered it, understood it, then applied it to the nav',
+            'Evaluate all you want — we already created it'
+          ],
+          title: 'Bloom\'s Taxonomy, 1956, six levels deep'
         },
         '4': {
-          phrases: ['placeholder phrase one for set four', 'placeholder phrase two for set four'],
-          title: null
+          phrases: [
+            'We tried on all six hats, this one fit',
+            'De Bono\'s hats, hung on our hook'
+          ],
+          title: 'Edward de Bono\'s Six Thinking Hats, worn in rotation'
         },
         '5': {
-          phrases: ['placeholder phrase one for set five', 'placeholder phrase two for set five'],
-          title: null
+          phrases: [
+            'Physiology first. The nav bar can wait.',
+            'We self-actualized into a navigation bar'
+          ],
+          title: 'Maslow\'s Hierarchy of Needs, climbed one link at a time'
         }
       };
       window.ALIEN_NAV_SETS = NAV_SETS;
@@ -1831,36 +1952,37 @@
           </ul>
           <!-- Set 2: the recovered book navigation -->
           <ul class="nav__list nav__list--set2">
-            <li class="nav__list-item"><a href="founder.html" class="nav__list-item-link">What</a></li>
-            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Why</a></li>
-            <li class="nav__list-item"><a href="#" class="nav__list-item-link">When</a></li>
-            <li class="nav__list-item"><a href="#" class="nav__list-item-link">How</a></li>
-            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Where</a></li>
-            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Who</a></li>
+            <li class="nav__list-item"><a href="about.html" class="nav__list-item-link">What</a></li>
+            <li class="nav__list-item"><a href="why/" class="nav__list-item-link">Why</a></li>
+            <li class="nav__list-item"><a href="founder.html" class="nav__list-item-link">When</a></li>
+            <li class="nav__list-item"><a href="dashboard.html" class="nav__list-item-link">How</a></li>
+            <li class="nav__list-item"><a href="index.html#network-map" class="nav__list-item-link">Where</a></li>
+            <li class="nav__list-item"><a href="founder.html" class="nav__list-item-link">Who</a></li>
           </ul>
-          <!-- Sets 3-5: placeholders — replace hrefs, labels, and phrases -->
+          <!-- Sets 3-5: cognitive frameworks — Remember/Understand/Apply/Analyze/Evaluate/Create,
+               the Six Thinking Hats, and Maslow's Hierarchy, each linked to the pages they map to -->
           <ul class="nav__list nav__list--set3">
-            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Remember</a></li>
-            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Understand</a></li>
+            <li class="nav__list-item"><a href="about.html" class="nav__list-item-link">Remember</a></li>
+            <li class="nav__list-item"><a href="about.html#mission" class="nav__list-item-link">Understand</a></li>
             <li class="nav__list-item"><a href="founder.html" class="nav__list-item-link">Apply</a></li>
-            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Analyze</a></li>
-            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Evaluate</a></li>
-            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Create</a></li>
+            <li class="nav__list-item"><a href="dashboard.html" class="nav__list-item-link">Analyze</a></li>
+            <li class="nav__list-item"><a href="dashboard.html#compliance" class="nav__list-item-link">Evaluate</a></li>
+            <li class="nav__list-item"><a href="founder.html" class="nav__list-item-link">Create</a></li>
           </ul>
           <ul class="nav__list nav__list--set4">
-            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Blue Hat</a></li>
-            <li class="nav__list-item"><a href="#" class="nav__list-item-link">White Hat</a></li>
-            <li class="nav__list-item"><a href="founder.html" class="nav__list-item-link">Yellow Hat</a></li>
-            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Black Hat</a></li>
-            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Green Hat</a></li>
-            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Red Hat</a></li>
+            <li class="nav__list-item"><a href="index.html#operating-system" class="nav__list-item-link">Blue Hat</a></li>
+            <li class="nav__list-item"><a href="dashboard.html" class="nav__list-item-link">White Hat</a></li>
+            <li class="nav__list-item"><a href="why/" class="nav__list-item-link">Yellow Hat</a></li>
+            <li class="nav__list-item"><a href="dashboard.html#compliance" class="nav__list-item-link">Black Hat</a></li>
+            <li class="nav__list-item"><a href="about.html" class="nav__list-item-link">Green Hat</a></li>
+            <li class="nav__list-item"><a href="founder.html" class="nav__list-item-link">Red Hat</a></li>
           </ul>
           <ul class="nav__list nav__list--set5">
-            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Physio</a></li>
-            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Safety</a></li>
-            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Social</a></li>
-            <li class="nav__list-item"><a href="#" class="nav__list-item-link">Esteem</a></li>
-            <li class="nav__list-item"><a href="founder.html" class="nav__list-item-link">Actualization</a></li>
+            <li class="nav__list-item"><a href="index.html#foundation" class="nav__list-item-link">Physio</a></li>
+            <li class="nav__list-item"><a href="dashboard.html#compliance" class="nav__list-item-link">Safety</a></li>
+            <li class="nav__list-item"><a href="index.html#portfolio" class="nav__list-item-link">Social</a></li>
+            <li class="nav__list-item"><a href="founder.html" class="nav__list-item-link">Esteem</a></li>
+            <li class="nav__list-item"><a href="why/" class="nav__list-item-link">Actualization</a></li>
           </ul>
         </nav>
       </div>
@@ -1919,7 +2041,7 @@
             </div>
             <div class="metric-card">
               <div class="metric-card__label">SIMULATION ENGINE</div>
-              <div class="metric-card__value">A-Z</div>
+              <div class="metric-card__value" id="metricEngine">A-Z</div>
               <div class="metric-card__note">Counterfactual decision engine; additional simulation systems in development.</div>
             </div>
           </div>
@@ -1948,7 +2070,7 @@
       <!-- ESSENTIAL BRANDS -->
       <div class="essential-brands">
         <div class="l-container">
-          <h2>Simulation Stack</h2>
+          <h2 id="portfolio-heading">Simulation Stack</h2>
         </div>
       </div>
 
@@ -2108,17 +2230,21 @@
 
             <!-- Command Preset Toolbar Sector Presets -->
             <div class="retro-map-toolbar">
-                <button onclick="focusSector([121.0500, 14.5500], 14.5, 'BGC CORE HUB')" class="retro-map-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>
-                    BGC Core
+                <button onclick="filterDataCenters('foundry')" id="filter-btn-foundry" class="retro-map-btn retro-map-btn-filter">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="2" x2="9" y2="4"/><line x1="15" y1="2" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="22"/><line x1="15" y1="20" x2="15" y2="22"/><line x1="20" y1="9" x2="22" y2="9"/><line x1="20" y1="14" x2="22" y2="14"/><line x1="2" y1="9" x2="4" y2="9"/><line x1="2" y1="14" x2="4" y2="14"/></svg>
+                    Foundries &amp; Fabs
                 </button>
-                <button onclick="focusSector([120.5518, 15.1761], 14.0, 'CLARK FREEPORT')" class="retro-map-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg>
-                    Clark Node
+                <button onclick="filterDataCenters('hyperscale')" id="filter-btn-hyperscale" class="retro-map-btn retro-map-btn-filter">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+                    Hyperscale Cloud
                 </button>
-                <button onclick="focusSector([120.2833, 14.8250], 14.2, 'SUBIC FREEPORT')" class="retro-map-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c4 0 7-2 7-2s3 2 7 2a1 1 0 0 1 1 1v7z"/></svg>
-                    Subic Node
+                <button onclick="filterDataCenters('colocation')" id="filter-btn-colocation" class="retro-map-btn retro-map-btn-filter">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                    Colocation &amp; IX
+                </button>
+                <button onclick="filterDataCenters('all')" id="filter-btn-all" class="retro-map-btn retro-map-btn-filter active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    All Facilities
                 </button>
                 <button onclick="resetMapView()" class="retro-map-btn retro-map-btn-reset">
                     <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
@@ -2484,6 +2610,8 @@
   let activeMapInstance = null;
   let minimapInstance = null;
   let boundsInstance = null;
+  let mapMarkers = [];
+  let activeFilter = 'all';
   let districtMarkers = [];
   let searchMarkerInstance = null;
 
@@ -2702,56 +2830,27 @@
       }
   }
 
-  // Company search: BGC directory entries + group network nodes, from the source of truth.
-  function buildSearchIndex() {
-      const index = [];
-      const bgc = window.bgcDirectory;
-      if (bgc && Array.isArray(bgc.companies)) {
-          bgc.companies.forEach((entry) => {
-                index.push({
-                    type: 'directory',
-                    kind: entry.kind || 'company',
-                    name: entry.name || '',
-                    address: entry.address || '',
-                    industry: entry.industry || '',
-                    lat: entry.lat,
-                    lng: entry.lng,
-                    distanceKm: entry.distanceKm,
-                    techStack: (entry.techStack || []).slice(),
-                    lastVerified: entry.lastVerified || '',
-                    source: entry
-                });
-          });
-      }
-      (window.aliensNetworkNodes || []).forEach((node) => {
-          index.push({
-              type: 'node',
-              name: node.name || node.sector || '',
-              address: node.city ? `${node.city}${node.sector ? ' • ' + node.sector : ''}` : (node.sector || ''),
-              industry: node.sector || '',
-              lat: node.lat,
-              lng: node.lng,
-              distanceKm: node.distanceKmToCore,
-              techStack: (node.techStack || []).map((t) => (t && t.name) || String(t)),
-              source: node
-          });
-      });
-      return index;
-  }
-
+  // Company search: backed by /api/techstack — searches the global_tech_stack
+  // database (SQLite) server-side. Featured data centers return their tech
+  // stack publicly; non-featured companies (S&P 500 / scraped) return
+  // locked=true unless the caller is authenticated (teaser-then-lock).
   function initSearch() {
       const input = document.getElementById('retro-company-search');
       const resultsEl = document.getElementById('retro-search-results');
       if (!input || !resultsEl) return;
 
-      const index = buildSearchIndex();
       let debounceTimer = null;
+      let lastQuery = '';
 
       const close = () => resultsEl.classList.remove('retro-map-search-open');
 
       input.addEventListener('input', () => {
+          const q = input.value.trim();
+          if (q === lastQuery) return;
+          lastQuery = q;
           clearTimeout(debounceTimer);
-          debounceTimer = setTimeout(() => renderSearchResults(index, input.value, resultsEl, close), 150);
+          if (!q) { resultsEl.innerHTML = ''; close(); return; }
+          debounceTimer = setTimeout(() => fetchSearchResults(q, resultsEl, close), 200);
       });
 
       input.addEventListener('keydown', (e) => {
@@ -2761,7 +2860,6 @@
           }
       });
 
-      // Keep focus on the input when interacting with the dropdown so clicks land.
       resultsEl.addEventListener('pointerdown', (e) => e.preventDefault());
 
       document.addEventListener('click', (e) => {
@@ -2771,61 +2869,49 @@
       });
   }
 
-  function renderSearchResults(index, query, resultsEl, close) {
-      const q = (query || '').trim().toLowerCase();
+  function fetchSearchResults(query, resultsEl, close) {
+      fetch('/api/techstack?q=' + encodeURIComponent(query) + '&limit=8')
+          .then((res) => res.json())
+          .then((data) => renderSearchResults(data, resultsEl, close))
+          .catch((err) => {
+              console.warn('[TechStack] search failed:', err);
+              resultsEl.innerHTML = `<div class="retro-map-search-empty">SEARCH SERVICE UNAVAILABLE</div>`;
+              resultsEl.classList.add('retro-map-search-open');
+          });
+  }
+
+  function renderSearchResults(data, resultsEl, close) {
       resultsEl.innerHTML = '';
-      if (!q) {
-          close();
-          return;
-      }
-
-      const tokens = q.split(/\s+/).filter(Boolean);
-      const matches = [];
-
-      index.forEach((item) => {
-          const haystack = `${item.name} ${item.industry} ${item.address} ${item.techStack.join(' ')}`.toLowerCase();
-          const allMatch = tokens.every((t) => haystack.indexOf(t) !== -1);
-          if (!allMatch) return;
-
-          const nameLower = item.name.toLowerCase();
-          const startsWith = nameLower.indexOf(tokens[0]) === 0 ? 0 : 1;
-          const distance = (typeof item.distanceKm === 'number') ? item.distanceKm : 9999;
-          matches.push({ item, score: startsWith, distance });
-      });
-
-      matches.sort((a, b) => (a.score - b.score) || (a.distance - b.distance));
-
-      const top = matches.slice(0, 8);
+      const top = data.results || [];
       if (!top.length) {
           resultsEl.innerHTML = `<div class="retro-map-search-empty">NO MATCHES — CHECK THE SOURCE OF TRUTH</div>`;
           resultsEl.classList.add('retro-map-search-open');
           return;
       }
 
-          top.forEach(({ item }) => {
-              const dist = (typeof item.distanceKm === 'number')
-                  ? ` • ${item.distanceKm.toFixed(2)} KM FROM BGC CORE`
-                  : '';
-              const kindTag = item.kind === 'landmark' ? 'LANDMARK • ' : '';
-              const stack = item.techStack.slice(0, 5).join(' / ');
-              const stackLine = stack
-                  ? stack
-                  : (item.kind === 'landmark'
-                      ? 'Iconic BGC landmark — no technology stack'
-                      : 'Not yet ready to share');
-              const btn = document.createElement('button');
-              btn.type = 'button';
-              btn.className = 'retro-map-search-item';
-              btn.innerHTML = `
-                  <div class="retro-map-search-item-title">${item.name}</div>
-                  <div class="retro-map-search-item-sub">${kindTag}${item.address}${dist}</div>
-                  <div class="retro-map-search-item-stack">${stackLine}</div>`;
-              btn.addEventListener('click', () => {
-                  openSearchResult(item);
-                  close();
-              });
-              resultsEl.appendChild(btn);
+      top.forEach((item) => {
+          const subLine = `${item.city || '—'} • ${item.sector || '—'}`;
+          let stackLine;
+          if (item.locked) {
+              stackLine = '▶ INTELLIGENCE LOCKED';
+          } else if (item.techStack && item.techStack.length) {
+              stackLine = item.techStack.slice(0, 5).map((t) => t.name).join(' / ');
+          } else {
+              stackLine = 'Not yet ready to share';
+          }
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'retro-map-search-item' + (item.locked ? ' retro-map-search-item-locked' : '');
+          btn.innerHTML = `
+              <div class="retro-map-search-item-title">${item.name}</div>
+              <div class="retro-map-search-item-sub">${subLine}</div>
+              <div class="retro-map-search-item-stack">${stackLine}</div>`;
+          btn.addEventListener('click', () => {
+              openSearchResult(item);
+              close();
           });
+          resultsEl.appendChild(btn);
+      });
 
       resultsEl.classList.add('retro-map-search-open');
   }
@@ -2833,8 +2919,13 @@
   function openSearchResult(item) {
       placeSearchMarker(item);
 
-      if (item.type === 'node') {
-          inspectNode(item.source, true);
+      // If the result matches a node already on the map, use the full
+      // inspector (which includes the group company record if present).
+      const matchedNode = (window.aliensNetworkNodes || []).find(
+          (n) => n.name === item.name || (Math.abs(n.lng - item.lng) < 0.01 && Math.abs(n.lat - item.lat) < 0.01)
+      );
+      if (matchedNode && !item.locked) {
+          inspectNode(matchedNode, true);
           return;
       }
 
@@ -2854,20 +2945,33 @@
       inspectorContent.innerHTML = `<p style="color: #22d3ee; animation: aliens-blink 1s step-end infinite; text-align: center; margin-top: 20px;">[ RETRIEVING COMPANY PROFILE... ]</p>`;
 
       setTimeout(() => {
-          inspectorContent.innerHTML = renderDirectoryProfile(item);
+          inspectorContent.innerHTML = renderApiProfile(item);
       }, 550);
   }
 
-  // Profile panel for a BGC directory entry (no group `company` record).
-  function renderDirectoryProfile(item) {
-      const stack = (item.techStack && item.techStack.length)
-          ? item.techStack.map((t) => `<div class="retro-map-inspector-stack-row"><span>${t}</span></div>`).join('')
-          : (item.kind === 'landmark'
-              ? '<div class="retro-map-inspector-stack-row"><span>Iconic BGC landmark — no technology stack</span></div>'
-              : '<div class="retro-map-inspector-stack-row"><span>Not yet ready to share</span></div>');
-      const dist = (typeof item.distanceKm === 'number')
-          ? `${item.distanceKm.toFixed(2)} KM FROM BGC CORE`
-          : '—';
+  // Profile panel for an API-returned tech-stack entry.
+  function renderApiProfile(item) {
+      const latHemi = item.lat >= 0 ? 'N' : 'S';
+      const lngHemi = item.lng >= 0 ? 'E' : 'W';
+
+      let stackHtml;
+      if (item.locked) {
+          stackHtml = `
+              <div class="retro-lock-panel retro-lock-panel__scanline">
+                  <div class="retro-lock-panel__header">
+                      <div class="retro-lock-panel__icon"></div>
+                      <div class="retro-lock-panel__title">Access Restricted</div>
+                  </div>
+                  <div class="retro-lock-panel__msg">Technology stack intelligence requires authenticated access. This data is classified under the Alien Inc. partner program.</div>
+                  <a href="/api/login" class="retro-lock-panel__btn" onclick="document.getElementById('ecosystem-login-overlay').style.display='flex';return false;">▶ Authenticate</a>
+              </div>`;
+      } else if (item.techStack && item.techStack.length) {
+          stackHtml = item.techStack.map((t) =>
+              `<div class="retro-map-inspector-stack-row"><span>${t.name}</span><em>${t.role || ''}</em></div>`
+          ).join('');
+      } else {
+          stackHtml = '<div class="retro-map-inspector-stack-row"><span>Not yet ready to share</span></div>';
+      }
 
       const rows = `
           <div class="retro-map-inspector-row">
@@ -2875,34 +2979,25 @@
               <dd class="retro-map-inspector-dd">${item.name}</dd>
           </div>
           <div class="retro-map-inspector-row">
-              <dt class="retro-map-inspector-dt">ADDRESS</dt>
-              <dd class="retro-map-inspector-dd">${item.address}</dd>
+              <dt class="retro-map-inspector-dt">CITY</dt>
+              <dd class="retro-map-inspector-dd">${item.city || '—'}</dd>
           </div>
           <div class="retro-map-inspector-row">
-              <dt class="retro-map-inspector-dt">INDUSTRY</dt>
-              <dd class="retro-map-inspector-dd">${item.industry || '—'}</dd>
+              <dt class="retro-map-inspector-dt">SECTOR</dt>
+              <dd class="retro-map-inspector-dd">${item.sector || '—'}</dd>
           </div>
           <div class="retro-map-inspector-row">
               <dt class="retro-map-inspector-dt">COORDINATES</dt>
-              <dd class="retro-map-inspector-dd">${item.lat.toFixed(4)}N, ${item.lng.toFixed(4)}E</dd>
-          </div>
-          <div class="retro-map-inspector-row">
-              <dt class="retro-map-inspector-dt">DISTANCE FROM BGC CORE</dt>
-              <dd class="retro-map-inspector-dd">${dist}</dd>
+              <dd class="retro-map-inspector-dd">${Math.abs(item.lat).toFixed(4)}${latHemi}, ${Math.abs(item.lng).toFixed(4)}${lngHemi}</dd>
           </div>
           <div class="retro-map-inspector-row">
               <dt class="retro-map-inspector-dt">TECH STACK</dt>
-              <dd class="retro-map-inspector-dd">${stack}</dd>
-          </div>
-          <div class="retro-map-inspector-row">
-              <dt class="retro-map-inspector-dt">LAST VERIFIED</dt>
-              <dd class="retro-map-inspector-dd">${item.lastVerified || '—'}</dd>
+              <dd class="retro-map-inspector-dd">${stackHtml}</dd>
           </div>`;
 
-      const footer = `<div class="retro-map-inspector-intel">
-          <strong>SOURCE:</strong><br>
-          BGC directory • curated against the ecosystem source of truth. Coordinates from OpenStreetMap building records; landmark entries carry no technology stack.
-      </div>`;
+      const footer = item.locked
+          ? `<div class="retro-map-inspector-intel" style="border-top-color:rgba(245,158,11,0.15);color:#f59e0b;"><strong>INTEL GATE:</strong><br>Full technology stack available to authenticated partners only. Location data is public; stack intelligence requires access clearance.</div>`
+          : '';
 
       return `<dl>${rows}</dl>${footer}`;
   }
@@ -2942,10 +3037,10 @@
       activeMapInstance = new maplibregl.Map({
           container: 'aliens-network-map',
           style: 'https://tiles.openfreemap.org/styles/dark',
-          center: [120.7, 15.1],
-          zoom: 8.2,
-          pitch: 55, // Immersive 3D camera angle
-          bearing: -10,
+          center: [10, 20],
+          zoom: 1.4,
+          pitch: 0,
+          bearing: 0,
           attributionControl: { compact: true },
           canvasContextAttributes: { antialias: true }
       });
@@ -2954,8 +3049,8 @@
       minimapInstance = new maplibregl.Map({
           container: 'retro-compass-radar-map',
           style: 'https://tiles.openfreemap.org/styles/dark',
-          center: [120.7, 15.1],
-          zoom: 4.8,
+          center: [10, 20],
+          zoom: 1.0,
           interactive: false,
           attributionControl: false
       });
@@ -3137,11 +3232,11 @@
                 document.getElementById('retro-focus-stat1-lbl').textContent = "RESIDENTS";
                 document.getElementById('retro-focus-stat2').textContent = `CENSUS ${nearestLgu.censusYear || 2020}`;
           } else {
-              const sectors = (window.ecosystemSummary && window.ecosystemSummary.nodeCount) || 7;
-              document.getElementById('retro-focus-title').textContent = "LUZON CORRIDOR";
+              const sectors = (window.ecosystemSummary && window.ecosystemSummary.nodeCount) || aliensNetworkNodes.length || 13;
+              document.getElementById('retro-focus-title').textContent = "GLOBAL GRID";
               document.getElementById('retro-focus-stat1-val').textContent = `${sectors} SECTORS`;
               document.getElementById('retro-focus-stat1-lbl').textContent = "CONNECTED";
-              document.getElementById('retro-focus-stat2').textContent = "GRID AREA ACTIVE";
+              document.getElementById('retro-focus-stat2').textContent = "WORLD GRID ACTIVE";
           }
       });
 
@@ -3154,6 +3249,25 @@
               <div class="retro-map-marker-glow"></div>
           `;
 
+          // Data center nodes carry their own accent color; the ALIEN.INC HQ
+          // keeps its default cyan design untouched.
+          if (node.markerColor) {
+              const c = node.markerColor;
+              const tag = el.querySelector('.retro-map-marker-tag');
+              const line = el.querySelector('.retro-map-marker-line');
+              const glow = el.querySelector('.retro-map-marker-glow');
+              if (tag) {
+                  tag.style.color = c;
+                  tag.style.borderColor = c;
+                  tag.style.boxShadow = '0 0 10px ' + c + '33';
+              }
+              if (line) line.style.background = c + '80';
+              if (glow) {
+                  glow.style.background = c;
+                  glow.style.boxShadow = '0 0 10px ' + c + ', 0 0 20px ' + c + '99';
+              }
+          }
+
           // Custom marker interaction triggers
           el.addEventListener('click', (e) => {
               e.stopPropagation();
@@ -3161,10 +3275,11 @@
               inspectNode(node);
           });
 
-          new maplibregl.Marker({ element: el, anchor: 'bottom' })
+          var marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
               .setLngLat([node.lng, node.lat])
               .addTo(activeMapInstance);
 
+          mapMarkers.push({ marker: marker, node: node });
           boundsInstance.extend([node.lng, node.lat]);
       });
 
@@ -3172,9 +3287,9 @@
       activeMapInstance.once('load', () => {
           activeMapInstance.fitBounds(boundsInstance, { 
               padding: { top: 120, bottom: 120, left: 60, right: 60 }, 
-              maxZoom: 10,
-              pitch: 55,
-              bearing: -10
+              maxZoom: 4,
+              pitch: 0,
+              bearing: 0
           });
       });
   }
@@ -3240,17 +3355,94 @@
       }
   }
 
+  // Category definitions for the filter buttons
+  var DC_CATEGORIES = {
+      foundry: {
+          label: 'FOUNDRIES & FABS',
+          sectors: ['Semiconductor Foundry', 'Memory Manufacturing', 'EUV Lithography HQ', 'Analog Semiconductor Fab']
+      },
+      hyperscale: {
+          label: 'HYPERSCALE CLOUD',
+          sectors: ['Hyperscale Data Center', 'Cloud Region / Edge POP', 'Cloud Region / Sovereign Cloud']
+      },
+      colocation: {
+          label: 'COLOCATION & IX',
+          sectors: ['Internet Exchange / Colocation', 'Carrier-Neutral Colocation', 'Hyperscale Colocation', 'Underground Data Center', 'Scientific Computing', 'Government Intelligence']
+      }
+  };
+
+  // Filter visible data center markers by category
+  function filterDataCenters(category) {
+      if (!activeMapInstance) return;
+      activeFilter = category;
+
+      // Update button active states
+      document.querySelectorAll('.retro-map-btn-filter').forEach(btn => btn.classList.remove('active'));
+      var activeBtn = document.getElementById('filter-btn-' + category);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      var visibleBounds = new maplibregl.LngLatBounds();
+      var visibleCount = 0;
+
+      mapMarkers.forEach(function (entry) {
+          var node = entry.node;
+          var show = false;
+
+          // ALIEN.INC HQ is always visible
+          if (!node.markerColor) {
+              show = true;
+          } else if (category === 'all') {
+              show = true;
+          } else {
+              var cat = DC_CATEGORIES[category];
+              if (cat && cat.sectors.indexOf(node.sector) !== -1) {
+                  show = true;
+              }
+          }
+
+          if (show) {
+              entry.marker.addTo(activeMapInstance);
+              visibleBounds.extend([node.lng, node.lat]);
+              visibleCount++;
+          } else {
+              entry.marker.remove();
+          }
+      });
+
+      // Re-fit bounds to show only visible markers
+      if (!visibleBounds.isEmpty()) {
+          activeMapInstance.fitBounds(visibleBounds, {
+              padding: { top: 120, bottom: 120, left: 60, right: 60 },
+              maxZoom: 4,
+              pitch: 0,
+              bearing: 0,
+              duration: 1500
+          });
+      }
+
+      // Update HUD
+      var hudLabel = (category === 'all') ? 'GLOBAL GRID' : (DC_CATEGORIES[category] ? DC_CATEGORIES[category].label : 'GLOBAL GRID');
+      updateHUD(hudLabel, visibleCount + ' FACILITIES', category === 'all' ? 'WORLD GRID ACTIVE' : 'CATEGORY FILTER');
+      toggleInspector(false);
+      clearSearchMarker();
+  }
+
   // Reset the main map back to its overall cluster viewpoint
   function resetMapView() {
       if (!activeMapInstance || !boundsInstance) return;
+      // Reset filter to show all markers
+      if (activeFilter !== 'all') {
+          filterDataCenters('all');
+          return;
+      }
       activeMapInstance.fitBounds(boundsInstance, {
           padding: { top: 120, bottom: 120, left: 60, right: 60 },
-          maxZoom: 10,
-          pitch: 55,
-          bearing: -10,
+          maxZoom: 4,
+          pitch: 0,
+          bearing: 0,
           duration: 2000
       });
-      updateHUD("LUZON CORRIDOR", "MONITORING SYSTEM", "GRID ARRAY BOUNDS");
+      updateHUD("GLOBAL GRID", "MONITORING SYSTEM", "WORLD GRID BOUNDS");
       toggleInspector(false);
       clearSearchMarker();
   }
@@ -3289,12 +3481,15 @@
       const clients = (company && typeof company.clientCount === 'number') ? company.clientCount : '—';
       const projects = (company && typeof company.activeProjectCount === 'number') ? company.activeProjectCount : '—';
       const established = company ? (company.foundingDate || company.yearFounded || '—') : '—';
-      const category = company ? (company.category || '—') : 'Group headquarters';
+      const category = company ? (company.category || '—') : (node.markerColor ? (node.sector || '—') : 'Group headquarters');
       const mission = company ? company.mission : null;
 
       const stack = (node.techStack && node.techStack.length)
           ? node.techStack.map(t => `<div class="retro-map-inspector-stack-row"><span>${t.name}</span><em>${t.role}</em></div>`).join('')
           : '<div class="retro-map-inspector-stack-row"><span>Not yet ready to share</span></div>';
+
+      const latHemi = node.lat >= 0 ? 'N' : 'S';
+      const lngHemi = node.lng >= 0 ? 'E' : 'W';
 
       let rows = `
           <div class="retro-map-inspector-row">
@@ -3303,7 +3498,7 @@
           </div>
           <div class="retro-map-inspector-row">
               <dt class="retro-map-inspector-dt">COORDINATES</dt>
-              <dd class="retro-map-inspector-dd">${node.lat.toFixed(4)}N, ${node.lng.toFixed(4)}E</dd>
+              <dd class="retro-map-inspector-dd">${Math.abs(node.lat).toFixed(4)}${latHemi}, ${Math.abs(node.lng).toFixed(4)}${lngHemi}</dd>
           </div>
           <div class="retro-map-inspector-row">
               <dt class="retro-map-inspector-dt">CATEGORY</dt>
@@ -3362,6 +3557,55 @@
           panel.classList.add('closed');
       }
   }
+
+  // ── Global Network Node Set (API-backed) ───────────────────────
+  // The map shows ALIEN.INC (HQ, design intact) plus the featured data
+  // centers / semiconductor fabs from the global_tech_stack database
+  // (served by /api/techstack?featured=1). The dataset lives in SQLite,
+  // NOT hardcoded here — so it can scale to S&P 500 + scraped companies
+  // without bloating this file. The search bar hits /api/techstack?q=...
+  // directly; non-featured company tech stacks are auth-gated server-side.
+
+  // Replace the public map nodes: keep only the ALIEN.INC HQ (its design
+  // stays intact), then fetch featured data centers from the API.
+  function applyGlobalNetworkNodes(callback) {
+    var all = window.aliensNetworkNodes || [];
+    var hq = null;
+    for (var i = 0; i < all.length; i++) {
+      var n = all[i];
+      if (n && (n.name === 'ALIEN.INC' || ((n.companyId === null || n.companyId === undefined) && n.sector && /HQ/.test(n.sector)))) {
+        hq = n;
+        break;
+      }
+    }
+
+    fetch('/api/techstack?featured=1')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        var merged = [];
+        if (hq) merged.push(hq);
+        (data.results || []).forEach(function (r) {
+          merged.push({
+            name: r.name,
+            city: r.city,
+            sector: r.sector,
+            lat: r.lat,
+            lng: r.lng,
+            markerColor: r.markerColor,
+            techStack: r.techStack || []
+          });
+        });
+        window.aliensNetworkNodes = merged;
+        if (window.ecosystemSummary) {
+          window.ecosystemSummary.nodeCount = merged.length;
+        }
+        if (callback) callback();
+      })
+      .catch(function (err) {
+        console.warn('[TechStack] featured load failed:', err);
+        if (callback) callback();
+      });
+  }
 (function () {
   function startMapWhenVisible() {
     var section = document.getElementById('network-map');
@@ -3373,7 +3617,9 @@
           if (entry.isIntersecting && !started) {
             started = true;
             NetworkMapData.load(function () {
-              initNetworkMap();
+              applyGlobalNetworkNodes(function () {
+                initNetworkMap();
+              });
             });
             io.disconnect();
           }
@@ -3382,7 +3628,9 @@
       io.observe(section);
     } else {
       NetworkMapData.load(function () {
-        initNetworkMap();
+        applyGlobalNetworkNodes(function () {
+          initNetworkMap();
+        });
       });
     }
   }
@@ -3442,14 +3690,14 @@
         label: 'Infrastructure Defense',
         name: 'Citadel',
         link: '#',
-        description: 'Turns Kriegspiel's own logic inward — running the same scenario engine against your infrastructure to find where the walls give first, before anyone outside this system does.',
+        description: "Turns Kriegspiel's own logic inward — running the same scenario engine against your infrastructure to find where the walls give first, before anyone outside this system does.",
         actions: 'Site'
       },
       {
         label: 'Applied Combat Modeling',
         name: 'Kriegspiel',
         link: '#',
-        description: 'Generates 10,000 battlefield scenarios in under a minute — geography, force deployment, and strategy that used to take a commander 48 hours.'
+        description: 'Generates 10,000 battlefield scenarios in under a minute — geography, force deployment, and strategy that used to take a commander 48 hours.',
         actions: 'Site'
       }
     ];
@@ -3530,6 +3778,11 @@
     function applyView(isCommercial) {
       var items = getGridItems();
       if (!items.length) return;
+
+      var heading = document.getElementById('portfolio-heading');
+      if (heading) {
+        heading.textContent = isCommercial ? 'Simulation Stack' : 'Company Directory';
+      }
 
       for (var i = 0; i < items.length; i++) {
         items[i].classList.add('view-switch-fade');
@@ -3686,6 +3939,55 @@
         setTimeout(reveal, 300);
       });
     }, 180);
+  })();
+  </script>
+
+  <!-- Sims-suite live data shim — polls the gateway and feeds real simulation
+       numbers into the metric cards + the tally counter. Must run BEFORE the
+       tally script below, which checks window.ALIEN_SIMS.getValue(). -->
+  <script>
+  (function () {
+    var _count = 0;
+    var _stage = null;
+    var _engineCode = null;
+
+    window.ALIEN_SIMS = {
+      getValue: function () { return _count; }
+    };
+
+    function setText(id, text) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = text;
+    }
+
+    function poll() {
+      fetch('/api/simulations/today')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d) return;
+          _count = d.count || _count;
+        })
+        .catch(function () {});
+      fetch('/api/simulations/coverage')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d) return;
+          _stage = d.stage;
+          setText('metricExternal', d.stage);
+        })
+        .catch(function () {});
+      fetch('/api/simulations/engine')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d) return;
+          _engineCode = d.code;
+          setText('metricEngine', d.code);
+        })
+        .catch(function () {});
+    }
+
+    poll();
+    setInterval(poll, 5000);
   })();
   </script>
 

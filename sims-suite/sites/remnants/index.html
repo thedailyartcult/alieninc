@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Remnants — Post-Conflict Continuity Intelligence</title>
+  <meta name="description" content="Models what institutions, doctrines, and supply chains outlast a war — the survivors, not the casualties.">
+
+  <link rel="stylesheet" href="/sims-suite/design/tokens.css">
+
+  <style>
+    :root {
+      --ink: #070504; --night: #0d0907; --walnut: #1b110d;
+      --cream: #f5f0e8; --gold: #c4a265; --muted: #8a7d6e;
+      --serif: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+      --sans: "Jost", "Inter", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-family: var(--sans); background: var(--ink); color: var(--cream); -webkit-font-smoothing: antialiased; }
+    body { line-height: 1.7; }
+    a { color: var(--gold); text-decoration: none; }
+
+    .header { position: sticky; top: 0; z-index: 100; background: rgba(7,5,4,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(196,162,101,0.15); }
+    .header-inner { max-width: 1200px; margin: 0 auto; height: 68px; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; }
+    .brand { font-family: var(--serif); font-size: 26px; font-weight: 500; font-style: italic; color: var(--gold); letter-spacing: 0.02em; }
+    .btn { padding: 12px 28px; border-radius: 4px; font-family: var(--sans); font-size: 14px; font-weight: 400; letter-spacing: 0.06em; text-transform: uppercase; border: 1px solid var(--gold); background: transparent; color: var(--gold); cursor: pointer; transition: all 0.3s; }
+    .btn:hover { background: var(--gold); color: var(--ink); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .hero { padding: 80px 24px 40px; text-align: center; max-width: 800px; margin: 0 auto; }
+    .hero-eyebrow { font-family: var(--sans); font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 24px; }
+    .hero-title { font-family: var(--serif); font-size: 64px; font-weight: 300; line-height: 1.1; margin-bottom: 28px; color: var(--cream); }
+    .hero-title em { font-style: italic; color: var(--gold); }
+    .hero-desc { font-family: var(--serif); font-size: 22px; font-weight: 400; line-height: 1.5; color: var(--muted); max-width: 640px; margin: 0 auto; }
+
+    .controls { max-width: 1200px; margin: 48px auto 0; padding: 0 24px; display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
+    .ctrl { display: flex; flex-direction: column; gap: 6px; }
+    .ctrl label { font-family: var(--sans); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+    .ctrl input { background: var(--night); border: 1px solid rgba(196,162,101,0.2); border-radius: 4px; padding: 10px 14px; font-family: var(--sans); font-size: 15px; color: var(--cream); outline: none; }
+    .ctrl input:focus { border-color: var(--gold); }
+
+    .status { text-align: center; padding: 24px; font-family: var(--serif); font-size: 18px; color: var(--muted); font-style: italic; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(196,162,101,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: text-bottom; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .results { max-width: 1200px; margin: 0 auto; padding: 0 24px 64px; display: none; }
+    .results-header { text-align: center; margin-bottom: 48px; }
+    .results-header h2 { font-family: var(--serif); font-size: 36px; font-weight: 400; font-style: italic; color: var(--cream); margin-bottom: 12px; }
+    .results-header p { font-family: var(--sans); font-size: 15px; color: var(--muted); }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 48px; }
+    .stat { text-align: center; padding: 32px 16px; background: var(--night); border: 1px solid rgba(196,162,101,0.08); border-radius: 8px; }
+    .stat__label { font-family: var(--sans); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+    .stat__value { font-family: var(--serif); font-size: 48px; font-weight: 300; color: var(--gold); font-variant-numeric: tabular-nums; }
+    .stat__note { font-family: var(--serif); font-size: 15px; color: var(--muted); margin-top: 8px; font-style: italic; }
+
+    .survivors-section { margin-bottom: 48px; }
+    .survivors-section h3 { font-family: var(--serif); font-size: 24px; font-weight: 400; font-style: italic; color: var(--cream); margin-bottom: 24px; text-align: center; }
+    .survivor-row { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; padding: 16px 24px; background: var(--night); border-radius: 8px; border-left: 3px solid; transition: border-color 0.3s; }
+    .survivor-row.resilient { border-left-color: var(--gold); }
+    .survivor-row.fragile { border-left-color: #8b4040; }
+    .survivor-name { font-family: var(--serif); font-size: 20px; font-weight: 500; width: 280px; color: var(--cream); }
+    .survivor-bar-track { flex: 1; height: 8px; background: rgba(196,162,101,0.1); border-radius: 4px; overflow: hidden; }
+    .survivor-bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+    .survivor-bar-fill.high { background: var(--gold); }
+    .survivor-bar-fill.low { background: #8b4040; }
+    .survivor-score { font-family: var(--sans); font-size: 16px; font-weight: 500; width: 60px; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+    .best-survivor { text-align: center; padding: 32px; margin-bottom: 48px; }
+    .best-survivor h3 { font-family: var(--serif); font-size: 20px; font-weight: 400; color: var(--muted); font-style: italic; margin-bottom: 8px; }
+    .best-survivor .name { font-family: var(--serif); font-size: 42px; font-weight: 300; color: var(--gold); }
+    .best-survivor .factor { font-family: var(--serif); font-size: 18px; color: var(--muted); font-style: italic; margin-top: 12px; }
+
+    .footer { border-top: 1px solid rgba(196,162,101,0.1); padding: 40px 24px; text-align: center; }
+    .footer p { font-family: var(--serif); font-size: 16px; color: var(--muted); font-style: italic; }
+  </style>
+</head>
+<body class="skin-tdac">
+
+  <header class="header">
+    <div class="header-inner">
+      <a class="brand" href="/">Remnants</a>
+      <button class="btn" id="runBtn">Model Continuity</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-eyebrow">Post-Conflict Continuity Intelligence</div>
+    <h1 class="hero-title">The <em>survivors,</em><br>not the casualties.</h1>
+    <p class="hero-desc">
+      Remnants models what institutions, doctrines, and supply chains outlast a war.
+      Each is scored by resilience, adaptability, and continuity — the things that
+      will still be standing after the dust settles.
+    </p>
+  </section>
+
+  <div class="controls">
+    <div class="ctrl"><label>Scenarios</label><input type="number" id="scenariosInput" value="5000" min="100" max="50000"></div>
+    <div class="ctrl"><label>Conflict Intensity</label><input type="number" id="intensityInput" value="50" min="0" max="100"></div>
+    <div class="ctrl"><label>Duration (months)</label><input type="number" id="durationInput" value="12" min="1" max="120"></div>
+    <div class="ctrl"><label>Seed</label><input type="number" id="seedInput" value="42"></div>
+  </div>
+
+  <div class="status" id="statusLine">Adjust the conflict conditions, then model continuity.</div>
+
+  <div class="results" id="resultsSection">
+    <div class="results-header">
+      <h2>Continuity Report</h2>
+      <p id="resultsMeta"></p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat"><div class="stat__label">Scenarios Run</div><div class="stat__value" id="rScenarios">—</div></div>
+      <div class="stat"><div class="stat__label">Survival Rate</div><div class="stat__value" id="rRate">—</div></div>
+      <div class="stat"><div class="stat__label">Survived</div><div class="stat__value" id="rSurvived">—</div></div>
+      <div class="stat"><div class="stat__label">Collapsed</div><div class="stat__value" id="rCollapsed">—</div></div>
+      <div class="stat"><div class="stat__label">Avg Recovery</div><div class="stat__value" id="rRecovery">—</div><div class="stat__note">months</div></div>
+    </div>
+
+    <div class="best-survivor" id="bestSection">
+      <h3>Most Resilient Survivor</h3>
+      <div class="name" id="bestName">—</div>
+      <div class="factor" id="bestFactor"></div>
+    </div>
+
+    <div class="survivors-section">
+      <h3>Institutions, Doctrines & Supply Chains — Ranked</h3>
+      <div id="survivorContainer"></div>
+    </div>
+  </div>
+
+  <footer class="footer"><p>Remnants — Post-Conflict Continuity Intelligence. Part of the Alien Inc simulation stack.</p></footer>
+
+  <script>
+    document.getElementById('runBtn').addEventListener('click', function () {
+      var n = parseInt(document.getElementById('scenariosInput').value, 10) || 5000;
+      var intensity = parseFloat(document.getElementById('intensityInput').value) || 50;
+      var duration = parseFloat(document.getElementById('durationInput').value) || 12;
+      var seed = parseInt(document.getElementById('seedInput').value, 10) || 42;
+      var status = document.getElementById('statusLine');
+      var btn = this;
+      btn.disabled = true;
+      status.innerHTML = '<span class="spinner"></span>Modeling continuity across ' + n + ' scenarios...';
+
+      fetch('/api/remnants/run', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scenarios: n, intensity: intensity, duration_months: duration, seed: seed }) })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          btn.disabled = false;
+          if (!d) { status.textContent = 'Error.'; return; }
+          status.textContent = 'Modeled ' + d.scenarios_run + ' scenarios in ' + (d.duration_ms / 1000).toFixed(2) + 's.';
+          renderResults(d);
+        })
+        .catch(function () { btn.disabled = false; status.textContent = 'Request failed.'; });
+    });
+
+    function renderResults(d) {
+      document.getElementById('resultsSection').style.display = '';
+      document.getElementById('resultsMeta').textContent = 'Conflict intensity: ' + d.conflict_intensity + '/100 — ' + d.scenarios_run + ' branched scenarios';
+
+      document.getElementById('rScenarios').textContent = d.scenarios_run.toLocaleString();
+      document.getElementById('rRate').textContent = (d.survival_rate * 100).toFixed(1) + '%';
+      document.getElementById('rSurvived').textContent = d.survived_count;
+      document.getElementById('rCollapsed').textContent = d.collapsed_count;
+      document.getElementById('rRecovery').textContent = d.avg_recovery_time;
+
+      if (d.best_survivor) {
+        document.getElementById('bestName').textContent = d.best_survivor.name;
+        document.getElementById('bestFactor').textContent = 'Key factor: ' + d.best_survivor.key_factor;
+      }
+
+      var all = d.most_resilient.concat(d.most_fragile.reverse());
+      var seen = {}; var combined = [];
+      all.forEach(function (s) { if (!seen[s.name]) { seen[s.name] = true; combined.push(s); } });
+      combined.sort(function (a, b) { return b.avg_score - a.avg_score; });
+
+      var sc = document.getElementById('survivorContainer');
+      sc.innerHTML = '';
+      combined.forEach(function (s) {
+        var isResilient = s.avg_score > 40;
+        var row = document.createElement('div');
+        row.className = 'survivor-row ' + (isResilient ? 'resilient' : 'fragile');
+        row.innerHTML = '<span class="survivor-name">' + s.name + '</span>' +
+          '<div class="survivor-bar-track"><div class="survivor-bar-fill ' + (isResilient ? 'high' : 'low') +
+          '" style="width:' + Math.max(s.avg_score, 2) + '%"></div></div>' +
+          '<span class="survivor-score">' + s.avg_score.toFixed(1) + '</span>';
+        sc.appendChild(row);
+      });
+    }
+  </script>
+</body>
+</html>

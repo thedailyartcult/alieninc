@@ -853,6 +853,330 @@
         max-width: calc(100vw - 3rem);
       }
     }
+
+    /* PAGE SKELETON — mirrors the about layout while the agent 'builds' the page */
+    .page-wrap {
+      position: relative;
+    }
+
+    .skeleton {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      display: none;
+      overflow: hidden;
+      background: var(--ppl-color-bg-default);
+      pointer-events: none;
+    }
+
+    .js-nav:not(.reduced-motion) .skeleton {
+      display: block;
+    }
+
+    .js-nav:not(.reduced-motion).is-nav-revealed .skeleton {
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.55s ease 0.1s, visibility 0.55s ease 0.1s;
+    }
+
+    /* Skeleton building blocks — design tokens only (base #f7f7f7, highlight #fff, radius 4px) */
+    .skeleton__bar {
+      display: block;
+      border-radius: 4px;
+      background-color: var(--hg-color-muted);
+      background-image: linear-gradient(100deg, transparent 25%, var(--hg-color-lightest) 45%, var(--hg-color-lightest) 55%, transparent 75%);
+      background-size: 220% 100%;
+      background-repeat: no-repeat;
+      animation: skeleton-shimmer 1.5s linear infinite;
+    }
+
+    .skeleton__bar--dark,
+    .skeleton__vision .skeleton__bar,
+    .skeleton__pillar-card i,
+    .skeleton__about-hero-panel .skeleton__bar {
+      background-color: rgba(255, 255, 255, 0.10);
+      background-image: linear-gradient(100deg, transparent 25%, rgba(255, 255, 255, 0.22) 45%, rgba(255, 255, 255, 0.22) 55%, transparent 75%);
+      background-size: 220% 100%;
+      background-repeat: no-repeat;
+      animation: skeleton-shimmer 1.5s linear infinite;
+    }
+
+    .skeleton__bar--gold {
+      background-color: rgba(19, 25, 32, 0.16);
+      background-image: linear-gradient(100deg, transparent 25%, rgba(19, 25, 32, 0.30) 45%, rgba(19, 25, 32, 0.30) 55%, transparent 75%);
+      background-size: 220% 100%;
+      background-repeat: no-repeat;
+      animation: skeleton-shimmer 1.5s linear infinite;
+    }
+
+    @keyframes skeleton-shimmer {
+      0% { background-position: 120% 0; }
+      100% { background-position: -120% 0; }
+    }
+
+    /* Notification banner */
+    .skeleton__banner {
+      background: var(--ppl-button-contained-bg);
+      padding: 0.75rem 1rem;
+    }
+
+    .skeleton__banner-inner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .skeleton__banner .skeleton__bar {
+      height: 1.125rem;
+    }
+
+    /* Hero — mirrors .about-hero exactly */
+    .skeleton__about-hero {
+      margin: 3rem auto;
+      max-width: 1200px;
+      padding: 0 1.5rem;
+      box-sizing: border-box;
+    }
+
+    .skeleton__about-hero-panel {
+      background: linear-gradient(135deg, #18222d, #131920);
+      min-height: 460px;
+      border-radius: 4px;
+      border-left: 6px solid var(--hg-color-secondary);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      box-sizing: border-box;
+      padding: clamp(2.5rem, 6vw, 4.5rem);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .skeleton__about-hero-meta {
+      height: 12px;
+      width: 130px;
+      margin-bottom: 1rem;
+    }
+
+    .skeleton__about-hero-title {
+      height: clamp(44px, 5vw, 76px);
+      width: 88%;
+      margin-bottom: 0.9rem;
+    }
+
+    .skeleton__about-hero-lead {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 640px;
+    }
+
+    .skeleton__about-hero-lead i {
+      display: block;
+      height: clamp(22px, 2.8vw, 28px);
+    }
+
+    .skeleton__about-hero-lead i:last-child { width: 62%; }
+
+    /* Sections + section heads — mirrors .about-section */
+    .skeleton__section {
+      padding: 5rem 0;
+      background: var(--ppl-color-bg-default);
+    }
+
+    .skeleton__section--muted {
+      background: var(--hg-color-muted);
+      border-top: 1px solid rgba(19, 25, 32, 0.08);
+      border-bottom: 1px solid rgba(19, 25, 32, 0.08);
+    }
+
+    .skeleton__section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 0.7fr);
+      gap: clamp(2rem, 5vw, 4rem);
+      align-items: end;
+      margin-bottom: 2rem;
+    }
+
+    .skeleton__kicker {
+      height: 12px;
+      width: 112px;
+      margin-bottom: 0.75rem;
+    }
+
+    .skeleton__section-title {
+      height: clamp(38px, 4.5vw, 72px);
+    }
+
+    .skeleton__title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .skeleton__section-lead {
+      height: 28px;
+      width: 90%;
+      margin-top: 1rem;
+    }
+
+    /* Mission article — mirrors .about-article */
+    .skeleton__about-article {
+      display: grid;
+      grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
+      gap: clamp(2rem, 5vw, 4rem);
+      align-items: start;
+    }
+
+    .skeleton__about-article-side {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .skeleton__about-article-rule {
+      width: 52px;
+      height: 4px;
+      background: var(--hg-color-secondary);
+      margin: 0.25rem 0 1rem;
+    }
+
+    .skeleton__about-article-side i {
+      display: block;
+      height: 14px;
+    }
+
+    .skeleton__about-article-side i:nth-child(2) { width: 82%; }
+    .skeleton__about-article-side i:nth-child(3) { width: 58%; }
+
+    .skeleton__about-article-body {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .skeleton__about-article-body i {
+      display: block;
+      height: clamp(26px, 2.9vw, 30px);
+    }
+
+    .skeleton__about-article-body i:nth-child(2) { width: 96%; }
+    .skeleton__about-article-body i:nth-child(3) { width: 88%; }
+
+    /* Vision band — mirrors .about-vision */
+    .skeleton__vision {
+      background-color: #131920;
+      padding: 5rem 0;
+      text-align: center;
+    }
+
+    .skeleton__vision .skeleton__kicker {
+      margin: 0 auto;
+    }
+
+    .skeleton__vision-statement {
+      height: clamp(38px, 4.5vw, 58px);
+      width: 76%;
+      margin: 1rem auto 0;
+    }
+
+    .skeleton__vision-statement--second {
+      width: 56%;
+      margin-top: 12px;
+    }
+
+    .skeleton__vision-sub {
+      height: 28px;
+      width: 52%;
+      margin: 1.5rem auto 0;
+    }
+
+    /* Reason grid — mirrors .reason-grid */
+    .skeleton__reason-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+
+    .skeleton__reason-card {
+      padding: 1.5rem;
+      border-left: 4px solid var(--hg-color-secondary);
+      background: var(--hg-color-lightest);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .skeleton__reason-card i { display: block; height: 14px; }
+    .skeleton__reason-card i:nth-child(1) { height: 12px; width: 72%; }
+    .skeleton__reason-card i:nth-child(2) { height: 20px; width: 88%; }
+    .skeleton__reason-card i:nth-child(3) { width: 100%; }
+    .skeleton__reason-card i:nth-child(4) { width: 92%; }
+    .skeleton__reason-card i:nth-child(5) { width: 60%; }
+
+    /* Pillar grid — mirrors .pillar-grid (dark) */
+    .skeleton__pillar-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+
+    .skeleton__pillar-card {
+      background: #1c232d;
+      border-left: 4px solid var(--hg-color-secondary);
+      padding: 1.6rem;
+      min-height: 260px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .skeleton__pillar-card i { display: block; height: 14px; }
+    .skeleton__pillar-card i:first-child { height: 20px; width: 68%; }
+    .skeleton__pillar-card i:nth-child(2) { width: 100%; }
+    .skeleton__pillar-card i:nth-child(3) { width: 88%; }
+
+    /* Closing — mirrors .about-closing */
+    .skeleton__closing {
+      background: var(--hg-color-muted);
+      border-top: 1px solid rgba(19, 25, 32, 0.08);
+      padding: 4rem 0;
+      text-align: center;
+    }
+
+    .skeleton__closing-title {
+      height: clamp(34px, 4vw, 48px);
+      width: 70%;
+      margin: 0 auto 1.5rem;
+    }
+
+    .skeleton__closing .skeleton__actions {
+      justify-content: center;
+    }
+
+    .skeleton__button {
+      height: 46px;
+      width: 150px;
+      border-radius: 4px;
+    }
+
+    /* Responsive — mirrors the real layout breakpoints */
+    @media (max-width: 900px) {
+      .skeleton__about-article,
+      .skeleton__reason-grid,
+      .skeleton__pillar-grid,
+      .skeleton__section-head {
+        grid-template-columns: 1fr;
+      }
+
+      .skeleton__vision-statement { width: 92%; }
+      .skeleton__vision-sub { width: 80%; }
+    }
   </style>
   <script>
     (function () {
@@ -915,6 +1239,114 @@
         </nav>
       </div>
     </header>
+
+    <div class="page-wrap">
+
+    <!-- PAGE SKELETON — mirrors the about layout while the agent 'builds' the page -->
+    <div class="skeleton" aria-hidden="true">
+      <!-- Notification banner -->
+      <div class="skeleton__banner">
+        <div class="skeleton__banner-inner l-container">
+          <span class="skeleton__bar" style="width: 180px;"></span>
+          <span class="skeleton__bar skeleton__bar--gold" style="width: 140px;"></span>
+        </div>
+      </div>
+
+      <!-- Hero -->
+      <div class="skeleton__about-hero">
+        <div class="skeleton__about-hero-panel">
+          <span class="skeleton__bar skeleton__bar--dark skeleton__about-hero-meta"></span>
+          <span class="skeleton__bar skeleton__bar--dark skeleton__about-hero-title"></span>
+          <span class="skeleton__about-hero-lead">
+            <i class="skeleton__bar skeleton__bar--dark"></i>
+            <i class="skeleton__bar skeleton__bar--dark" style="width: 86%;"></i>
+            <i class="skeleton__bar skeleton__bar--dark" style="width: 62%;"></i>
+          </span>
+        </div>
+      </div>
+
+      <!-- Mission -->
+      <div class="skeleton__section">
+        <div class="l-container">
+          <span class="skeleton__section-head">
+            <span class="skeleton__title-block">
+              <span class="skeleton__bar skeleton__kicker"></span>
+              <span class="skeleton__bar skeleton__section-title"></span>
+            </span>
+            <span class="skeleton__bar skeleton__section-lead"></span>
+          </span>
+          <div class="skeleton__about-article">
+            <div class="skeleton__about-article-side">
+              <span class="skeleton__about-article-rule"></span>
+              <i class="skeleton__bar"></i>
+              <i class="skeleton__bar" style="width: 58%;"></i>
+            </div>
+            <div class="skeleton__about-article-body">
+              <i class="skeleton__bar"></i>
+              <i class="skeleton__bar" style="width: 96%;"></i>
+              <i class="skeleton__bar" style="width: 88%;"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vision -->
+      <div class="skeleton__vision">
+        <div class="l-container">
+          <span class="skeleton__bar skeleton__kicker"></span>
+          <span class="skeleton__bar skeleton__bar--dark skeleton__vision-statement"></span>
+          <span class="skeleton__bar skeleton__bar--dark skeleton__vision-statement skeleton__vision-statement--second"></span>
+          <span class="skeleton__bar skeleton__bar--dark skeleton__vision-sub"></span>
+        </div>
+      </div>
+
+      <!-- Why the Philippines -->
+      <div class="skeleton__section skeleton__section--muted">
+        <div class="l-container">
+          <span class="skeleton__section-head">
+            <span class="skeleton__title-block">
+              <span class="skeleton__bar skeleton__kicker"></span>
+              <span class="skeleton__bar skeleton__section-title"></span>
+            </span>
+            <span class="skeleton__bar skeleton__section-lead"></span>
+          </span>
+          <div class="skeleton__reason-grid">
+            <span class="skeleton__reason-card"><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="skeleton__reason-card"><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="skeleton__reason-card"><i></i><i></i><i></i><i></i><i></i></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Strategic pillars -->
+      <div class="skeleton__section">
+        <div class="l-container">
+          <span class="skeleton__section-head">
+            <span class="skeleton__title-block">
+              <span class="skeleton__bar skeleton__kicker"></span>
+              <span class="skeleton__bar skeleton__section-title"></span>
+            </span>
+            <span class="skeleton__bar skeleton__section-lead"></span>
+          </span>
+          <div class="skeleton__pillar-grid">
+            <span class="skeleton__pillar-card"><i></i><i></i><i></i></span>
+            <span class="skeleton__pillar-card"><i></i><i></i><i></i></span>
+            <span class="skeleton__pillar-card"><i></i><i></i><i></i></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Closing -->
+      <div class="skeleton__closing">
+        <div class="l-container">
+          <span class="skeleton__bar skeleton__closing-title"></span>
+          <span class="skeleton__actions">
+            <span class="skeleton__button skeleton__bar skeleton__bar--gold"></span>
+            <span class="skeleton__button skeleton__bar"></span>
+          </span>
+        </div>
+      </div>
+    </div>
 
     <!-- NOTIFICATION BANNER - Identical to Homepage -->
     <div class="notification-banner">
@@ -1037,6 +1469,8 @@
         </div>
       </div>
     </section>
+
+    </div><!-- /.page-wrap -->
 
   </main>
 

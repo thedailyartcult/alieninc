@@ -469,6 +469,21 @@ CREATE TABLE IF NOT EXISTS user_scopes (
     PRIMARY KEY (email, company_id)
 );
 
+CREATE TABLE IF NOT EXISTS global_tech_stack (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    city TEXT,
+    sector TEXT,
+    lat REAL NOT NULL,
+    lng REAL NOT NULL,
+    marker_color TEXT,
+    is_featured INTEGER NOT NULL DEFAULT 0,
+    tech_stack TEXT,
+    source TEXT NOT NULL DEFAULT 'curated',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE INDEX IF NOT EXISTS idx_financials_company ON company_financials(company_id);
 CREATE INDEX IF NOT EXISTS idx_kpis_company ON company_kpis(company_id);
 CREATE INDEX IF NOT EXISTS idx_clients_company ON clients(company_id);
@@ -508,6 +523,8 @@ CREATE INDEX IF NOT EXISTS idx_entity_history_entity ON ontology_entity_history(
 CREATE INDEX IF NOT EXISTS idx_entity_history_date ON ontology_entity_history(changed_at);
 CREATE INDEX IF NOT EXISTS idx_channels_company ON notification_channels(company_id);
 CREATE INDEX IF NOT EXISTS idx_user_scopes_email ON user_scopes(email);
+CREATE INDEX IF NOT EXISTS idx_techstack_featured ON global_tech_stack(is_featured);
+CREATE INDEX IF NOT EXISTS idx_techstack_name ON global_tech_stack(name);
 """
 
 

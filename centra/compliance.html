@@ -490,12 +490,75 @@
             }
         }
 
+        function normalizeReport(data) {
+            if (!data) return null;
+            // Already in dashboard-compatible schema
+            if (data.overall && data.overall.security_frameworks) return data;
+            // New Centra scanner schema (framework_summary)
+            if (data.framework_summary) {
+                const frameworks = {};
+                const frameworkScores = {};
+                let total = 0, verified = 0;
+                for (const [k, f] of Object.entries(data.framework_summary)) {
+                    const score = Math.round(f.score || 0);
+                    frameworks[k] = { name: f.name, score: score };
+                    frameworkScores[k] = {
+                        name: f.name,
+                        score: score,
+                        passed: f.verified || 0,
+                        failed: (f.total_controls || 0) - (f.verified || 0),
+                        total: f.total_controls || 0,
+                        weight: 0.1
+                    };
+                    total += f.total_controls || 0;
+                    verified += f.verified || 0;
+                }
+                const overallScore = Math.round(data.overall_score || 0);
+                return {
+                    report_date: data.timestamp,
+                    overall: {
+                        total_companies: 1,
+                        realistic_compliant: 1,
+                        realistic_rate: overallScore,
+                        critical_alerts: 0,
+                        high_alerts: 0,
+                        security_frameworks: frameworks
+                    },
+                    companies: {
+                        alieninc: {
+                            name: 'Alien.Inc',
+                            type: 'parent',
+                            total_checks: total,
+                            passed: verified,
+                            failed: total - verified,
+                            baseline_score: overallScore,
+                            realistic_score: overallScore,
+                            art13_score: 100,
+                            depth_score: 100,
+                            security_score: overallScore,
+                            framework_scores: frameworkScores,
+                            risk_score: 0,
+                            active_risks: []
+                        }
+                    },
+                    audits: {},
+                    alerts: []
+                };
+            }
+            return null;
+        }
+
         async function loadDashboard() {
             try {
                 const res = await fetch(API_BASE + '/report');
                 if (!res.ok) throw new Error('No data');
                 const data = await res.json();
-                renderDashboard(data);
+                const report = normalizeReport(data);
+                if (report) {
+                    renderDashboard(report);
+                } else {
+                    throw new Error('Unrecognized report schema');
+                }
             } catch (e) {
                 console.log('No scan data available. Running initial scan...');
                 document.getElementById('companyGrid').innerHTML = `
@@ -620,14 +683,20 @@
             const grid = document.getElementById('securityGrid');
             const fw = report.overall.security_frameworks || {};
             const fwColors = {
-                cis: '#2c3e50', disa: '#e67e22', pci_dss: '#3498db',
-                owasp: '#27ae60', mozilla: '#9b59b6'
+                cis: '#2c3e50', cis_v3_0: '#2c3e50', disa: '#e67e22', pci_dss: '#3498db',
+                owasp: '#27ae60', mozilla: '#9b59b6',
+                soc2: '#101828', iso27001: '#e67e22', gdpr: '#3498db', ccpa: '#27ae60',
+                hipaa: '#9b59b6', fedramp: '#e74c3c', cmmc: '#f39c12', csastar: '#1abc9c',
+                vpat: '#8e44ad', sox: '#34495e', tisax: '#16a085'
             };
             const fwNames = {
                 cis: 'CIS Benchmarks', cis_v3_0: 'CIS NGINX v3.0', disa: 'DISA STIGs',
                 pci_dss: 'PCI-DSS v4', owasp: 'OWASP ASVS', mozilla: 'Mozilla Observatory',
                 nist_800_53: 'NIST 800-53', nist_800_53_moderate: 'NIST SP 800-53',
-                nist_csf: 'NIST CSF 2.0', nist_csf_2_0: 'NIST CSF 2.0'
+                nist_csf: 'NIST CSF 2.0', nist_csf_2_0: 'NIST CSF 2.0',
+                soc2: 'SOC 2 Type II', iso27001: 'ISO 27001:2022', gdpr: 'GDPR', ccpa: 'CCPA',
+                hipaa: 'HIPAA', fedramp: 'FedRAMP High', cmmc: 'CMMC Level 2', csastar: 'CSA STAR',
+                vpat: 'VPAT / WCAG 2.1 AA', sox: 'SOX', tisax: 'TISAX'
             };
 
             grid.innerHTML = '';

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kriegspiel — Applied Combat Modeling</title>
+  <meta name="description" content="Generates 10,000 battlefield scenarios in under a minute — geography, force deployment, and strategy that used to take a commander 48 hours.">
+
+  <!-- Alpha Zero design tokens -->
+  <link rel="stylesheet" href="/sims-suite/design/tokens.css">
+
+  <!-- MapLibre GL (same version as Spinal Craker) -->
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #ffffff;
+      --bg-alt: #f8f9fa;
+      --pill-bg: #f1f3f4;
+      --text-main: #202124;
+      --text-body: #3c4043;
+      --text-muted: #5f6368;
+      --border-color: #e8eaed;
+      --font-stack: 'Google Sans Flex', 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --container-max: 1280px;
+      --radius-pill: 100px;
+      --radius-media: 24px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-family: var(--font-stack); background: var(--bg-color); color: var(--text-main); -webkit-font-smoothing: antialiased; }
+    body { line-height: 1.6; }
+    a { color: inherit; text-decoration: none; }
+
+    /* HEADER */
+    .site-header {
+      position: sticky; top: 0; z-index: 1000;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid transparent; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .site-header.scrolled { border-color: var(--border-color); box-shadow: var(--shadow-sm); }
+    .header-container {
+      max-width: var(--container-max); margin: 0 auto; height: 68px;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 32px;
+    }
+    .brand-logo { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
+    .brand-logo .dot { width: 10px; height: 10px; border-radius: 50%; background: #1a73e8; }
+    .header-cta { display: flex; align-items: center; gap: 12px; }
+    .btn-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 20px; border-radius: var(--radius-pill);
+      font-size: 14px; font-weight: 500; border: 1px solid #dadce0;
+      background: var(--bg-color); color: var(--text-main); cursor: pointer; transition: all 0.2s;
+    }
+    .btn-pill:hover { background: var(--bg-alt); border-color: #bdc1c6; }
+    .btn-primary { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+    .btn-primary:hover { background: #1557b0; border-color: #1557b0; }
+
+    /* HERO */
+    .hero-section { padding: 72px 24px 32px; text-align: center; }
+    .hero-container { max-width: 800px; margin: 0 auto; }
+    .hero-eyebrow { font-size: 15px; font-weight: 500; color: var(--text-muted); margin-bottom: 20px; }
+    .hero-title { font-size: 56px; font-weight: 500; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 28px; }
+    .hero-title em { font-style: italic; color: #1a73e8; }
+    .hero-description { font-size: 20px; font-weight: 400; line-height: 1.5; color: var(--text-body); max-width: 720px; margin: 0 auto; }
+
+    /* CONTROL PANEL */
+    .control-panel {
+      max-width: var(--container-max); margin: 48px auto 0; padding: 0 24px;
+      display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+    }
+    .control-group {
+      display: flex; flex-direction: column; gap: 6px;
+      background: var(--bg-alt); padding: 16px 20px; border-radius: 16px;
+    }
+    .control-group label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+    .control-group select, .control-group input {
+      border: 1px solid var(--border-color); border-radius: 8px;
+      padding: 8px 12px; font-size: 15px; font-family: var(--font-stack);
+      color: var(--text-main); background: #fff; outline: none;
+    }
+    .control-group select:focus, .control-group input:focus { border-color: #1a73e8; }
+
+    /* MAP */
+    .map-section { max-width: var(--container-max); margin: 32px auto; padding: 0 24px; }
+    .map-wrapper {
+      position: relative; width: 100%; height: 500px;
+      border-radius: var(--radius-media); overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+    #battleMap { width: 100%; height: 100%; }
+
+    /* RESULTS */
+    .results-section { max-width: var(--container-max); margin: 48px auto; padding: 0 24px; }
+    .results-header { text-align: center; margin-bottom: 32px; }
+    .results-header h2 { font-size: 28px; font-weight: 500; letter-spacing: -0.02em; margin-bottom: 8px; }
+    .results-header p { color: var(--text-muted); font-size: 16px; }
+    .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .result-card {
+      background: var(--bg-alt); border-radius: 16px; padding: 24px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .result-card__label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+    .result-card__value { font-size: 36px; font-weight: 500; color: var(--text-main); font-variant-numeric: tabular-nums; }
+    .result-card__note { font-size: 14px; color: var(--text-muted); }
+
+    /* OUTCOME BARS */
+    .outcome-bars { max-width: var(--container-max); margin: 32px auto; padding: 0 24px; }
+    .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .bar-label { width: 80px; font-size: 14px; font-weight: 500; color: var(--text-body); }
+    .bar-track { flex: 1; height: 32px; background: var(--pill-bg); border-radius: 16px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 16px; transition: width 0.8s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 12px; font-size: 13px; font-weight: 600; color: #fff; }
+    .bar-red { background: #dc3545; }
+    .bar-blue { background: #1a73e8; }
+    .bar-stale { background: #5f6368; }
+
+    /* STATUS */
+    .status-line { text-align: center; padding: 16px; font-size: 15px; color: var(--text-muted); }
+    .status-line .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border-color); border-top-color: #1a73e8; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: text-bottom; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* KEY EVENTS */
+    .events-list { max-width: 720px; margin: 32px auto; padding: 0 24px; }
+    .events-list h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--text-body); }
+    .event-item { padding: 12px 16px; background: var(--bg-alt); border-radius: 12px; margin-bottom: 8px; font-size: 15px; color: var(--text-body); }
+    .event-item::before { content: "→"; color: #1a73e8; font-weight: 700; margin-right: 8px; }
+
+    /* FOOTER */
+    .site-footer { border-top: 1px solid var(--border-color); margin-top: 64px; padding: 32px 24px; text-align: center; }
+    .site-footer p { font-size: 14px; color: var(--text-muted); }
+    .site-footer a { color: #1a73e8; }
+  </style>
+</head>
+<body class="skin-alphazero">
+
+  <header class="site-header" id="header">
+    <div class="header-container">
+      <a class="brand-logo" href="/">
+        <span class="dot"></span>
+        Kriegspiel
+      </a>
+      <div class="header-cta">
+        <a class="btn-pill" href="/#operating-system">Alien Inc</a>
+        <button class="btn-pill btn-primary" id="runBtn">Generate Scenarios</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero-section">
+    <div class="hero-container">
+      <div class="hero-eyebrow">Applied Combat Modeling — a feature of ALIEN.INC</div>
+      <h1 class="hero-title">10,000 battlefields, <em>branched.</em></h1>
+      <p class="hero-description">
+        Kriegspiel generates ten thousand battlefield scenarios in under a minute — geography, force deployment,
+        and strategy that used to take a commander 48 hours. Each branch varies doctrine, terrain, and stochastic
+        engagement outcomes to surface the full space of plausible results.
+      </p>
+    </div>
+  </section>
+
+  <div class="control-panel">
+    <div class="control-group">
+      <label for="battlefieldSelect">Battlefield</label>
+      <select id="battlefieldSelect">
+        <option value="random">Random</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="scenariosInput">Scenarios</label>
+      <input type="number" id="scenariosInput" value="1000" min="10" max="50000">
+    </div>
+    <div class="control-group">
+      <label for="seedInput">Seed</label>
+      <input type="number" id="seedInput" value="42">
+    </div>
+  </div>
+
+  <div class="map-section">
+    <div class="map-wrapper">
+      <div id="battleMap"></div>
+    </div>
+  </div>
+
+  <div class="status-line" id="statusLine">Select a battlefield and click Generate Scenarios.</div>
+
+  <div class="results-section" id="resultsSection" style="display:none;">
+    <div class="results-header">
+      <h2>Scenario Report</h2>
+      <p id="resultsMeta"></p>
+    </div>
+    <div class="results-grid">
+      <div class="result-card">
+        <div class="result-card__label">Scenarios Run</div>
+        <div class="result-card__value" id="rScenarios">—</div>
+      </div>
+      <div class="result-card">
+        <div class="result-card__label">Convergence</div>
+        <div class="result-card__value" id="rConvergence">—</div>
+        <div class="result-card__note" id="rConvergenceNote"></div>
+      </div>
+      <div class="result-card">
+        <div class="result-card__label">Avg Duration</div>
+        <div class="result-card__value" id="rDuration">—</div>
+      </div>
+      <div class="result-card">
+        <div class="result-card__label">Decisive</div>
+        <div class="result-card__value" id="rDecisive">—</div>
+      </div>
+      <div class="result-card">
+        <div class="result-card__label">Red Casualties</div>
+        <div class="result-card__value" id="rRedCas">—</div>
+      </div>
+      <div class="result-card">
+        <div class="result-card__label">Blue Casualties</div>
+        <div class="result-card__value" id="rBlueCas">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="outcome-bars" id="outcomeBars" style="display:none;">
+    <div class="bar-row">
+      <span class="bar-label">Red wins</span>
+      <div class="bar-track"><div class="bar-fill bar-red" id="barRed" style="width:0%">0</div></div>
+    </div>
+    <div class="bar-row">
+      <span class="bar-label">Blue wins</span>
+      <div class="bar-track"><div class="bar-fill bar-blue" id="barBlue" style="width:0%">0</div></div>
+    </div>
+    <div class="bar-row">
+      <span class="bar-label">Stalemate</span>
+      <div class="bar-track"><div class="bar-fill bar-stale" id="barStale" style="width:0%">0</div></div>
+    </div>
+  </div>
+
+  <div class="events-list" id="eventsList" style="display:none;">
+    <h3>Key Events Across Scenarios</h3>
+    <div id="eventsContainer"></div>
+  </div>
+
+  <footer class="site-footer">
+    <p>Kriegspiel — Applied Combat Modeling. Part of the <a href="/">Alien Inc</a> simulation stack.</p>
+  </footer>
+
+  <script>
+    // --- Header scroll effect ---
+    var header = document.getElementById('header');
+    window.addEventListener('scroll', function () {
+      header.classList.toggle('scrolled', window.scrollY > 10);
+    });
+
+    // --- Map (same stack as Spinal Craker: MapLibre 4.7.1 + OpenFreeMap dark) ---
+    var map = new maplibregl.Map({
+      container: 'battleMap',
+      style: 'https://tiles.openfreemap.org/styles/dark',
+      center: [15, 30], zoom: 1.5, pitch: 0,
+    });
+    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+    // --- Load battlefields from API ---
+    var battlefields = [];
+    fetch('/api/kriegspiel/battlefields')
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (data) {
+        battlefields = data;
+        var sel = document.getElementById('battlefieldSelect');
+        data.forEach(function (bf) {
+          var opt = document.createElement('option');
+          opt.value = bf.name;
+          opt.textContent = bf.name + ' (' + bf.terrain + ')';
+          sel.appendChild(opt);
+        });
+      })
+      .catch(function () {});
+
+    // --- Run scenarios ---
+    document.getElementById('runBtn').addEventListener('click', function () {
+      var bf = document.getElementById('battlefieldSelect').value;
+      var n = parseInt(document.getElementById('scenariosInput').value, 10) || 1000;
+      var seed = parseInt(document.getElementById('seedInput').value, 10) || 42;
+      var status = document.getElementById('statusLine');
+      var btn = this;
+
+      btn.disabled = true;
+      status.innerHTML = '<span class="spinner"></span>Generating ' + n + ' scenarios...';
+
+      var body = JSON.stringify({ battlefield: bf, scenarios: n, seed: seed });
+      fetch('/api/kriegspiel/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          btn.disabled = false;
+          if (!d) { status.textContent = 'Error generating scenarios.'; return; }
+          status.textContent = 'Generated ' + d.scenarios_run + ' scenarios in ' + (d.duration_ms / 1000).toFixed(1) + 's.';
+          renderResults(d);
+          if (d._battlefield) renderOnMap(d._battlefield);
+        })
+        .catch(function () {
+          btn.disabled = false;
+          status.textContent = 'Request failed.';
+        });
+    });
+
+    function renderResults(d) {
+      document.getElementById('resultsSection').style.display = '';
+      document.getElementById('outcomeBars').style.display = '';
+      document.getElementById('eventsList').style.display = '';
+
+      document.getElementById('resultsMeta').textContent =
+        d.battlefield + ' — ' + d.scenarios_run + ' branched scenarios';
+      document.getElementById('rScenarios').textContent = d.scenarios_run.toLocaleString();
+      document.getElementById('rConvergence').textContent = (d.convergence_rate * 100).toFixed(1) + '%';
+      document.getElementById('rConvergenceNote').textContent =
+        d.convergence_rate > 0.8 ? 'High — outcomes strongly converge' :
+        d.convergence_rate > 0.5 ? 'Moderate — multiple plausible outcomes' :
+        'Low — highly uncertain battlespace';
+      document.getElementById('rDuration').textContent = d.avg_duration_hours + 'h';
+      document.getElementById('rDecisive').textContent = d.decisive_battles;
+      document.getElementById('rRedCas').textContent = d.avg_red_casualties + '%';
+      document.getElementById('rBlueCas').textContent = d.avg_blue_casualties + '%';
+
+      var total = d.scenarios_run || 1;
+      setBar('barRed', d.red_wins, total);
+      setBar('barBlue', d.blue_wins, total);
+      setBar('barStale', d.stalemates, total);
+
+      var ec = document.getElementById('eventsContainer');
+      ec.innerHTML = '';
+      (d.key_events || []).forEach(function (ev) {
+        var div = document.createElement('div');
+        div.className = 'event-item';
+        div.textContent = ev;
+        ec.appendChild(div);
+      });
+    }
+
+    function setBar(id, count, total) {
+      var pct = (count / total * 100);
+      var el = document.getElementById(id);
+      el.style.width = Math.max(pct, 2) + '%';
+      el.textContent = count + ' (' + pct.toFixed(1) + '%)';
+    }
+
+    function renderOnMap(bf) {
+      if (!bf || !bf.bounds) return;
+      var w = bf.bounds[0], s = bf.bounds[1], e = bf.bounds[2], n = bf.bounds[3];
+      map.fitBounds([[w, s], [e, n]], { padding: 60, duration: 1000 });
+
+      if (map.getSource('battlefield')) map.removeLayer('battlefield-fill');
+      if (map.getSource('battlefield')) map.removeSource('battlefield');
+      map.addSource('battlefield', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          geometry: { type: 'Polygon', coordinates: [[[w, s], [e, s], [e, n], [w, n], [w, s]]] },
+          properties: { name: bf.name, terrain: bf.terrain },
+        },
+      });
+      map.addLayer({
+        id: 'battlefield-fill',
+        type: 'fill',
+        source: 'battlefield',
+        paint: { 'fill-color': '#1a73e8', 'fill-opacity': 0.08 },
+      });
+      map.addLayer({
+        id: 'battlefield-border',
+        type: 'line',
+        source: 'battlefield',
+        paint: { 'line-color': '#1a73e8', 'line-width': 2, 'line-dasharray': [3, 2] },
+      });
+    }
+  </script>
+</body>
+</html>

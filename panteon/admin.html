@@ -1324,6 +1324,7 @@
             font-family: var(--font-mono); font-size: 10px; text-transform: uppercase;
             padding: 3px 10px; border: 1px solid var(--border-color); border-radius: 3px;
             background: var(--bg-card); color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+            clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
         }
         .sc-preset-btn:hover { border-color: var(--accent-neon); color: var(--text); }
         .sc-preset-btn.active { background: var(--accent-neon); color: #000; border-color: var(--accent-neon); }
@@ -1338,38 +1339,138 @@
             display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
             font-family: var(--font-mono); font-size: 9px; margin-bottom: 8px; color: var(--text-muted);
         }
-        .sc-layer-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
-        .sc-layer-label { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; color: var(--text-muted); }
-        .sc-kpi-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-            gap: 8px; margin-bottom: 10px;
+
+        .sc-layer-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+        .sc-layer-label { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.08em; }
+        .sc-layer-bar .retro-map-btn {
+            clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
         }
-        .sc-kpi-card {
-            background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 4px;
-            padding: 8px 10px; text-align: center;
+
+        /* Split layout: structured honeycomb deck (left) + unified map pane (right) */
+        /* Split layout: blueprint HUD tessellation (left) + unified map pane (right) */
+        .sc-split {
+            display: grid; grid-template-columns: minmax(567px, 620px) minmax(0, 1fr);
+            gap: 12px; margin-bottom: 12px; align-items: stretch;
         }
-        .sc-kpi-card.sc-kpi-red { border-left: 3px solid var(--red); }
-        .sc-kpi-card.sc-kpi-amber { border-left: 3px solid var(--amber); }
-        .sc-kpi-label { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px; }
-        .sc-kpi-value { font-family: var(--font-tech); font-size: 18px; font-weight: 300; color: var(--text); }
+        .sc-split.sc-map-wide { grid-template-columns: 1fr; }
+        .sc-split.sc-map-wide .sc-hud-container { display: none; }
+
+        /* Blueprint HUD container (centra compliance-tab design language) */
+        .sc-hud-container {
+            position: relative;
+            background-color: var(--bg-card);
+            background-image:
+                linear-gradient(to right, rgba(203, 213, 225, 0.07) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(203, 213, 225, 0.07) 1px, transparent 1px);
+            background-size: 20px 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px 14px;
+            overflow: hidden;
+        }
+        .sc-hud-grid { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+        .sc-hud-row { display: flex; gap: 8px; justify-content: center; transition: transform 0.3s ease; }
+        .sc-hud-row.offset-row { transform: translateX(28px); }
+        .sc-hud-tile {
+            position: relative; width: 165px; height: 120px;
+            background-color: var(--border-color);
+            padding: 1.5px;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+        }
+        .sc-hud-tile.cut-tr-bl { clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px)); }
+        .sc-hud-tile.cut-tr-bl .sc-hud-inner { clip-path: polygon(0 0, calc(100% - 21px) 0, 100% 21px, 100% 100%, 21px 100%, 0 calc(100% - 21px)); }
+        .sc-hud-tile.cut-tl-br { clip-path: polygon(22px 0, 100% 0, 100% calc(100% - 22px), calc(100% - 22px) 100%, 0 100%, 0 22px); }
+        .sc-hud-tile.cut-tl-br .sc-hud-inner { clip-path: polygon(21px 0, 100% 0, 100% calc(100% - 21px), calc(100% - 21px) 100%, 0 100%, 0 21px); }
+        .sc-hud-inner {
+            background-color: var(--bg-card); width: 100%; height: 100%;
+            padding: 10px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+            position: relative;
+            transition: background-color 0.2s ease;
+        }
+        .sc-hud-tile:hover { z-index: 10; background-color: rgba(255, 255, 255, 0.35); transform: scale(1.06); filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5)); }
+        .sc-hud-tile:hover .sc-hud-inner { background-color: var(--bg-light); }
+        .sc-hud-tile.neighbor-active { background-color: #10b981; transform: scale(0.98); }
+        .sc-hud-tile.neighbor-active .sc-wireframe-box { border-color: #10b981; }
+
+        .sc-tile-live { background-color: rgba(34, 211, 238, 0.55); }
+        .sc-tile-signal { background-color: rgba(244, 63, 94, 0.55); }
+        .sc-tile-indices { background-color: rgba(223, 241, 64, 0.55); }
+        .sc-tile-live .sc-hud-value { color: #22d3ee; }
+        .sc-tile-signal .sc-hud-value { color: var(--red); }
+        .sc-tile-indices .sc-hud-value { color: var(--accent-neon); }
+
+        .sc-wireframe-boxes { display: flex; gap: 3px; position: absolute; top: 6px; left: 12px; }
+        .sc-wireframe-box { width: 8px; height: 8px; border: 1px solid #94a3b8; border-radius: 1px; transition: all 0.2s ease; }
+        .sc-wireframe-box.active { background-color: #10b981; border-color: #059669; }
+        .sc-hud-tag {
+            font-family: var(--font-mono); font-size: 8px; color: var(--text-muted);
+            position: absolute; top: 5px; right: 12px; letter-spacing: 0.05em;
+        }
+        .sc-hud-value { font-family: var(--font-tech); font-size: 22px; font-weight: 300; line-height: 1.1; margin-top: 16px; }
+        .sc-hud-label { font-family: var(--font-mono); font-size: 8px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.08em; }
+        .sc-hud-check { position: absolute; bottom: 8px; display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; color: var(--text); }
+        .sc-hud-check b { color: #4ca30d; font-weight: 700; }
+
+        @media (max-width: 1100px) {
+            .sc-split { grid-template-columns: 1fr; }
+            .sc-hud-row { flex-wrap: wrap; justify-content: center; }
+            .sc-hud-row.offset-row { transform: none; }
+            .sc-hud-inner { padding: 8px; }
+        }
+
+
+        .sc-map-pane {
+            border: 1px solid var(--border-color); border-radius: 8px;
+            background-color: var(--bg-card); padding: 10px 12px 12px;
+            display: flex; flex-direction: column; gap: 8px; min-width: 0;
+        }
+        .sc-map-pane .sc-layer-bar { margin-bottom: 0; }
+        .sc-map-pane .sc-legend { margin-bottom: 0; }
+        .sc-map-pane-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .sc-map-pane-title {
+            display: flex; align-items: center; gap: 8px;
+            font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.14em;
+            text-transform: uppercase; color: var(--text-muted);
+        }
+        .sc-live-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--green); box-shadow: 0 0 6px var(--green);
+            animation: sc-pulse 2s ease-in-out infinite;
+        }
+        @keyframes sc-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .sc-map-canvas-wrap {
+            position: relative; height: clamp(340px, 55vh, 560px);
+            border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden;
+        }
+
         .sc-legend {
             display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
             font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-bottom: 8px;
         }
         .sc-legend-label { text-transform: uppercase; opacity: 0.7; }
         .sc-legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 3px; }
-        .sc-map-wrapper {
-            position: relative; height: clamp(360px, 60vh, 600px);
-            border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;
-        }
+
         .sc-map-hud {
             position: absolute; top: 10px; left: 10px; z-index: 5;
             font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);
             background: rgba(0, 0, 0, 0.6); padding: 4px 8px; border-radius: 4px; pointer-events: none;
         }
+        /* Intel + tactical panels: clipped-corner identity */
         .sc-intel-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 12px; margin-top: 12px;
+        }
+        .sc-intel-grid .card, .sc-metrics-grid .card { position: relative; }
+        .sc-intel-grid .card::before, .sc-metrics-grid .card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 14px; height: 14px;
+            background: var(--accent-neon); clip-path: polygon(0 0, 100% 0, 0 100%);
+            opacity: 0.75;
+        }
+        .sc-intel-index {
+            font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.1em;
+            color: var(--accent-neon); opacity: 0.8;
         }
         .sc-data-list {
             font-family: var(--font-mono); font-size: 10px; line-height: 1.6;
@@ -1385,10 +1486,10 @@
             .sc-query-row { flex-direction: column; align-items: stretch; }
             .sc-query-input { min-width: unset; }
             .sc-query-row .btn { width: 100%; }
-            .sc-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .sc-split { grid-template-columns: 1fr; }
             .sc-intel-grid { grid-template-columns: 1fr; }
             .sc-metrics-grid { grid-template-columns: 1fr; }
-            .sc-map-wrapper { height: clamp(300px, 50vh, 400px); }
+            .sc-map-canvas-wrap { height: clamp(280px, 45vh, 380px); }
         }
 
         .maplibregl-ctrl-group {
@@ -1962,7 +2063,7 @@
                                   <button class="btn btn-secondary btn-sm" onclick="fusionValidate()">Validate</button>
                                   <button class="btn btn-primary btn-sm" onclick="fusionRunGdelt()">Run GDELT</button>
                                   <button class="btn btn-primary btn-sm" onclick="fusionRunOpenSky()">Run OpenSky</button>
-                                  <button class="btn btn-secondary btn-sm" onclick="renderFusionMap()">Refresh</button>
+                                  <button class="btn btn-secondary btn-sm" onclick="renderFusionMap(true)">Refresh</button>
                               </div>
                           </div>
                           <div id="fusionValidateStatus" style="font-family:var(--font-mono);font-size:10px;margin-bottom:8px;min-height:16px;color:var(--text-muted)"></div>
@@ -1970,53 +2071,170 @@
                           <!-- Unified rate meter: both GDELT + OpenSky -->
                           <div id="fusionRateMeter" class="sc-rate-meter"></div>
 
-                          <!-- Layer toggle chips with live counts -->
-                          <div class="sc-layer-bar">
-                              <span class="sc-layer-label">Layers:</span>
-                              <button class="retro-map-btn retro-map-btn-active" id="fusionLayerThreats" onclick="fusionToggleLayer('threats')">Threats <b id="fusionThreatCount">0</b></button>
-                              <button class="retro-map-btn retro-map-btn-active" id="fusionLayerAviation" onclick="fusionToggleLayer('aviation')">Aircraft <b id="fusionAircraftCount">0</b></button>
-                              <button class="retro-map-btn" id="fusionLayer3d" onclick="fusionToggle3D()">3D</button>
+                          <!-- Split layout: honeycomb KPI deck (left) + unified map pane (right) -->
+                          <div class="sc-split" id="fusionSplit">
+                          <div class="sc-hud-container">
+                                  <div class="sc-hud-grid">
+
+                                      <!-- Row 1: LIVE band -->
+                                      <div class="sc-hud-row">
+                                          <div class="sc-hud-tile cut-tr-bl sc-tile-live">
+                                              <div class="sc-hud-inner">
+                                                  <div class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box"></span></div>
+                                                  <span class="sc-hud-tag">LIVE-01</span>
+                                                  <div class="sc-hud-value" id="fusionKpiAircraft">0</div>
+                                                  <div class="sc-hud-label">Aircraft</div>
+                                                  <div class="sc-hud-check"><b>&#10003;</b> OpenSky feed</div>
+                                              </div>
+                                          </div>
+                                          <div class="sc-hud-tile cut-tl-br sc-tile-live">
+                                              <div class="sc-hud-inner">
+                                                  <div class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></div>
+                                                  <span class="sc-hud-tag">LIVE-02</span>
+                                                  <div class="sc-hud-value" id="fusionKpiMilitary">0</div>
+                                                  <div class="sc-hud-label">Military</div>
+                                                  <div class="sc-hud-check"><b>&#10003;</b> Category jets</div>
+                                              </div>
+                                          </div>
+                                          <div class="sc-hud-tile cut-tr-bl sc-tile-live">
+                                              <div class="sc-hud-inner">
+                                                  <div class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box"></span></div>
+                                                  <span class="sc-hud-tag">LIVE-03</span>
+                                                  <div class="sc-hud-value" id="fusionKpiJamming">0</div>
+                                                  <div class="sc-hud-label">Jamming</div>
+                                                  <div class="sc-hud-check"><b>&#10003;</b> GPS suspects</div>
+                                              </div>
+                                          </div>
+                                      </div>
+
+                                      <!-- Row 2: SIGNAL band (offset) -->
+                                      <div class="sc-hud-row offset-row">
+                                          <div class="sc-hud-tile cut-tl-br sc-tile-signal">
+                                              <div class="sc-hud-inner">
+                                                  <div class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></div>
+                                                  <span class="sc-hud-tag">SIG-01</span>
+                                                  <div class="sc-hud-value" id="fusionKpiEvents">0</div>
+                                                  <div class="sc-hud-label">Events</div>
+                                                  <div class="sc-hud-check"><b>&#10003;</b> Fused events</div>
+                                              </div>
+                                          </div>
+                                          <div class="sc-hud-tile cut-tr-bl sc-tile-signal">
+                                              <div class="sc-hud-inner">
+                                                  <div class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></div>
+                                                  <span class="sc-hud-tag">SIG-02</span>
+                                                  <div class="sc-hud-value" id="fusionKpiThreats">0</div>
+                                                  <div class="sc-hud-label">Threats</div>
+                                                  <div class="sc-hud-check"><b>&#10003;</b> Negative tone</div>
+                                              </div>
+                                          </div>
+                                          <div class="sc-hud-tile cut-tl-br sc-tile-signal">
+                                              <div class="sc-hud-inner">
+                                                  <div class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box"></span></div>
+                                                  <span class="sc-hud-tag">SIG-03</span>
+                                                  <div class="sc-hud-value" id="fusionKpiCountries">0</div>
+                                                  <div class="sc-hud-label">Countries</div>
+                                                  <div class="sc-hud-check"><b>&#10003;</b> Geo-coded</div>
+                                              </div>
+                                          </div>
+                                      </div>
+
+                                      <!-- Row 3: INDICES band -->
+                                      <div class="sc-hud-row">
+                                          <div class="sc-hud-tile cut-tr-bl sc-tile-indices">
+                                              <div class="sc-hud-inner">
+                                                  <div class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></div>
+                                                  <span class="sc-hud-tag">IDX-01</span>
+                                                  <div class="sc-hud-value" id="fusionKpiTone">--</div>
+                                                  <div class="sc-hud-label">Avg Tone</div>
+                                                  <div class="sc-hud-check"><b>&#10003;</b> Tone mean</div>
+                                              </div>
+                                          </div>
+                                          <div class="sc-hud-tile cut-tl-br sc-tile-indices">
+                                              <div class="sc-hud-inner">
+                                                  <div class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></div>
+                                                  <span class="sc-hud-tag">IDX-02</span>
+                                                  <div class="sc-hud-value" id="fusionKpiGoldstein">--</div>
+                                                  <div class="sc-hud-label">Goldstein</div>
+                                                  <div class="sc-hud-check"><b>&#10003;</b> Scale mean</div>
+                                               </div>
+                                           </div>
+                                       </div>
+
+                                    </div>
+                                </div>
+
+<div class="sc-map-pane" id="fusionMapPane">
+                                  <div class="sc-map-pane-top">
+                                      <span class="sc-map-pane-title"><span class="sc-live-dot"></span>Unified map</span>
+                                      <button class="retro-map-btn" id="fusionFullViewBtn" onclick="fusionToggleFullView()">&#8672; Full view</button>
+                                  </div>
+                                  <div class="sc-layer-bar">
+                                      <span class="sc-layer-label">Layers:</span>
+                                      <button class="retro-map-btn retro-map-btn-active" id="fusionLayerThreats" onclick="fusionToggleLayer('threats')">Threats <b id="fusionThreatCount">0</b></button>
+                                      <button class="retro-map-btn retro-map-btn-active" id="fusionLayerAviation" onclick="fusionToggleLayer('aviation')">Aircraft <b id="fusionAircraftCount">0</b></button>
+                                      <button class="retro-map-btn" id="fusionLayer3d" onclick="fusionToggle3D()">3D</button>
+                                  </div>
+                                  <div class="sc-map-canvas-wrap">
+                                      <div class="retro-map-canvas" id="fusionMap"></div>
+                                      <div id="fusionMapHud" class="sc-map-hud">Loading unified map...</div>
+                                  </div>
+                                  <div class="sc-legend">
+                                      <span class="sc-legend-label">LEGEND:</span>
+                                      <span><span class="sc-legend-dot" style="background:#ef4444;box-shadow:0 0 4px #ef4444"></span> Threat-RED / Military</span>
+                                      <span><span class="sc-legend-dot" style="background:#f59e0b;box-shadow:0 0 4px #f59e0b"></span> Threat-AMBER / Private</span>
+                                      <span><span class="sc-legend-dot" style="background:#22c544;box-shadow:0 0 4px #22c544"></span> Threat-GREEN / Commercial</span>
+                                      <span><span class="sc-legend-dot" style="background:#22d3ee;box-shadow:0 0 4px #22d3ee"></span> Jet</span>
+                                  </div>
+                              </div>
                           </div>
 
-                          <!-- KPI grid: both sources + BigQuery metrics -->
-                          <div class="sc-kpi-grid">
-                              <div class="sc-kpi-card"><div class="sc-kpi-label">Events</div><div class="sc-kpi-value" id="fusionKpiEvents">0</div></div>
-                              <div class="sc-kpi-card sc-kpi-red"><div class="sc-kpi-label">Threats</div><div class="sc-kpi-value" id="fusionKpiThreats">0</div></div>
-                              <div class="sc-kpi-card"><div class="sc-kpi-label">Aircraft</div><div class="sc-kpi-value" id="fusionKpiAircraft">0</div></div>
-                              <div class="sc-kpi-card sc-kpi-red"><div class="sc-kpi-label">Military</div><div class="sc-kpi-value" id="fusionKpiMilitary">0</div></div>
-                              <div class="sc-kpi-card sc-kpi-amber"><div class="sc-kpi-label">Jamming</div><div class="sc-kpi-value" id="fusionKpiJamming">0</div></div>
-                              <div class="sc-kpi-card"><div class="sc-kpi-label">Countries</div><div class="sc-kpi-value" id="fusionKpiCountries">0</div></div>
-                              <div class="sc-kpi-card"><div class="sc-kpi-label">Avg Tone</div><div class="sc-kpi-value" id="fusionKpiTone">--</div></div>
-                              <div class="sc-kpi-card"><div class="sc-kpi-label">Avg Goldstein</div><div class="sc-kpi-value" id="fusionKpiGoldstein">--</div></div>
-                          </div>
+                          <script>
+                          // Spinal Cracker: full-view widening toggle (map pane auto-fits the active region by default)
+                          function fusionToggleFullView() {
+                              var split = document.getElementById('fusionSplit');
+                              var pane = document.getElementById('fusionMapPane');
+                              var btn = document.getElementById('fusionFullViewBtn');
+                              if (!split || !pane) return;
+                              var wide = split.classList.toggle('sc-map-wide');
+                              if (btn) btn.innerHTML = wide ? '⇦ Collapse' : '⇢ Full view';
+                              if (wide) { if (typeof resetMapView === 'function') resetMapView(); }
+                              else { if (typeof fitFusionBounds === 'function') fitFusionBounds(); }
+                              setTimeout(function () {
+                                  if (typeof fusionMap !== 'undefined' && fusionMap) { try { fusionMap.resize(); } catch (e) {} }
+                              }, 380);
+                          }
+                          </script>
 
-                          <!-- Marker legend -->
-                          <div class="sc-legend">
-                              <span class="sc-legend-label">LEGEND:</span>
-                              <span><span class="sc-legend-dot" style="background:#ef4444;box-shadow:0 0 4px #ef4444"></span> Threat-RED / Military</span>
-                              <span><span class="sc-legend-dot" style="background:#f59e0b;box-shadow:0 0 4px #f59e0b"></span> Threat-AMBER / Private</span>
-                              <span><span class="sc-legend-dot" style="background:#22c544;box-shadow:0 0 4px #22c544"></span> Threat-GREEN / Commercial</span>
-                              <span><span class="sc-legend-dot" style="background:#22d3ee;box-shadow:0 0 4px #22d3ee"></span> Jet</span>
-                          </div>
-
-                          <!-- The single unified map -->
-                          <div class="sc-map-wrapper">
-                              <div class="retro-map-canvas" id="fusionMap"></div>
-                              <div id="fusionMapHud" class="sc-map-hud">Loading unified map...</div>
-                          </div>
+                          <script>
+                          // Spinal Cracker: connected-grid reaction (blueprint HUD design language)
+                          document.addEventListener('DOMContentLoaded', function () {
+                              var tiles = document.querySelectorAll('.sc-hud-tile');
+                              tiles.forEach(function (tile) {
+                                  tile.addEventListener('mouseenter', function () {
+                                      var prev = tile.previousElementSibling;
+                                      var next = tile.nextElementSibling;
+                                      if (prev && prev.classList.contains('sc-hud-tile')) prev.classList.add('neighbor-active');
+                                      if (next && next.classList.contains('sc-hud-tile')) next.classList.add('neighbor-active');
+                                  });
+                                  tile.addEventListener('mouseleave', function () {
+                                      tiles.forEach(function (t) { t.classList.remove('neighbor-active'); });
+                                  });
+                              });
+                          });
+                          </script>
 
                           <!-- Intelligence panels: 3-column responsive grid -->
                           <div class="sc-intel-grid">
                               <div class="card">
-                                  <div class="card-header"><span class="card-title">Recent Threat Events</span><span class="tag tag-red">GDELT</span></div>
+                                  <div class="card-header"><span style="display:flex;align-items:center;gap:6px"><span class="sc-intel-index">01</span><span class="card-title">Recent Threat Events</span></span><span class="tag tag-red">GDELT</span></div>
                                   <div id="fusionThreatTable" class="sc-data-list"></div>
                               </div>
                               <div class="card">
-                                  <div class="card-header"><span class="card-title">Military Aircraft</span><span class="tag tag-blue">OpenSky</span></div>
+                                  <div class="card-header"><span style="display:flex;align-items:center;gap:6px"><span class="sc-intel-index">02</span><span class="card-title">Military Aircraft</span></span><span class="tag tag-blue">OpenSky</span></div>
                                   <div id="fusionAircraftTable" class="sc-data-list"></div>
                               </div>
                               <div class="card">
-                                  <div class="card-header"><span class="card-title">Actor Network</span><span class="tag tag-green">CAMEO</span></div>
+                                  <div class="card-header"><span style="display:flex;align-items:center;gap:6px"><span class="sc-intel-index">03</span><span class="card-title">Actor Network</span></span><span class="tag tag-green">CAMEO</span></div>
                                   <div id="fusionActorTable" class="sc-data-list"></div>
                               </div>
                           </div>
@@ -2024,15 +2242,15 @@
                           <!-- Tactical metrics -->
                           <div class="sc-metrics-grid">
                               <div class="card">
-                                  <div class="card-header"><span class="card-title">Systemic Importance</span></div>
+                                  <div class="card-header"><span style="display:flex;align-items:center;gap:6px"><span class="sc-intel-index">04</span><span class="card-title">Systemic Importance</span></span></div>
                                   <div class="sc-metric-value" id="fusionMetricSystemic">--</div>
                               </div>
                               <div class="card">
-                                  <div class="card-header"><span class="card-title">Propagation Potential</span></div>
+                                  <div class="card-header"><span style="display:flex;align-items:center;gap:6px"><span class="sc-intel-index">05</span><span class="card-title">Propagation Potential</span></span></div>
                                   <div class="sc-metric-value" id="fusionMetricPropagation">--</div>
                               </div>
                               <div class="card">
-                                  <div class="card-header"><span class="card-title">Event Momentum</span></div>
+                                  <div class="card-header"><span style="display:flex;align-items:center;gap:6px"><span class="sc-intel-index">06</span><span class="card-title">Event Momentum</span></span></div>
                                   <div class="sc-metric-value" id="fusionMetricMomentum">--</div>
                               </div>
                           </div>
@@ -5269,13 +5487,14 @@ function applyFusionPreset(query, intent) {
     document.querySelectorAll('.sc-preset-btn').forEach(b => b.classList.remove('active'));
     event && event.target && event.target.classList.add('active');
     gkgLiveStructuralCheck();
-    renderFusionMap();
+    renderFusionMap(true);
 }
 
-async function renderFusionMap() {
-    const map = initFusionMap();
-    if (!map) return;
-    renderFusionPresets();
+let fusionDataLoaded = false;
+
+async function preloadFusionData() {
+    if (fusionDataLoaded) return;
+    fusionDataLoaded = true;
     const hud = document.getElementById('fusionMapHud');
     if (hud) hud.textContent = 'Loading GDELT + OpenSky data…';
     const query = (document.getElementById('fusionQuery').value || '').trim() || '(military OR defense OR conflict)';
@@ -5291,11 +5510,22 @@ async function renderFusionMap() {
     } catch (e) { /* keep empty */ }
     fusionThreatEvents = events;
     fusionFlights = flights;
-    renderFusionThreatLayer();
-    renderFusionAviationLayer();
     updateFusionKpis();
     refreshFusionRateMeter();
     refreshFusionBqStatus();
+    if (hud) hud.textContent = 'Data loaded - auto-fitted to active region';
+}
+
+async function renderFusionMap(forceReload) {
+    if (forceReload) fusionDataLoaded = false;
+    if (!fusionDataLoaded) await preloadFusionData();
+    const map = initFusionMap();
+    if (!map) return;
+    renderFusionPresets();
+    const hud = document.getElementById('fusionMapHud');
+    if (hud) hud.textContent = 'Loading GDELT + OpenSky data…';
+    renderFusionThreatLayer();
+    renderFusionAviationLayer();
     if (hud) hud.textContent = fusionThreatMarkers.length + ' threats · ' + fusionAviationMarkers.length + ' aircraft plotted';
     requestAnimationFrame(() => { if (fusionMap) fusionMap.resize(); });
     fitFusionBounds();
@@ -5345,7 +5575,7 @@ async function fusionRunGdelt() {
         else if (el && s.error) el.innerHTML = '<span style="color:var(--red)">✗ ' + escapeHtml(s.error) + '</span>';
     });
     if (el && st && st.report && st.report.gkg) el.innerHTML = '<span style="color:var(--green)">✓ GDELT: ' + st.report.gkg.events_written + ' events written</span>';
-    renderFusionMap();
+    renderFusionMap(true);
 }
 
 async function fusionRunOpenSky() {
@@ -5380,7 +5610,7 @@ async function fusionRunOpenSky() {
         }
         if (el) el.innerHTML = '<span style="color:var(--amber)">⟳ OpenSky running…</span>';
     }
-    renderFusionMap();
+    renderFusionMap(true);
 }
 
 function fitThreatBounds() {

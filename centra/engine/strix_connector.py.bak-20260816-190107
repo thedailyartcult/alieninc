@@ -37,9 +37,6 @@ POLL_INTERVAL = 2.0          # seconds between run-dir / finding polls
 FINDING_POLL_INTERVAL = 3.0  # seconds between vulnerabilities.json re-reads
 PROCESS_TIMEOUT = 1800       # 30 min hard cap on a single Strix run
 MIN_FREE_RAM_MB = 1024       # refuse to launch a Strix sandbox below this free RAM
-YONO_DB = Path('/home/alieninc/panteon/backend/panteon.db')
-YONO_KEYFILE = Path('/home/alieninc/panteon/backend/.yono_secret_key')
-YONO_PROVIDER = 'Hetzner'
 
 
 class StrixConnector:
@@ -63,74 +60,15 @@ class StrixConnector:
             pass
         return 4096  # optimistic fallback if /proc unavailable
 
-    # ── LLM config resolution: process env first, then the YONO store ──
-
-    def _yono_llm_config(self) -> dict:
-        """Read the strix LLM provider/model from panteon's YONO store."""
-        try:
-            import sqlite3
-            from cryptography.fernet import Fernet
-
-            if not YONO_DB.exists() or not YONO_KEYFILE.exists():
-                return {}
-            env_key = os.environ.get('YONO_SECRET_KEY', '')
-            key = env_key.encode('utf-8') if env_key else YONO_KEYFILE.read_bytes()
-            f = Fernet(key)
-            conn = sqlite3.connect(YONO_DB)
-            try:
-                row = conn.execute(
-                    'SELECT api_key_encrypted, base_url FROM yono_llm_providers '
-                    'WHERE name=? AND is_enabled=1',
-                    (YONO_PROVIDER,),
-                ).fetchone()
-                if not row or not row[0]:
-                    return {}
-                enc, base_url = row
-                models = [
-                    r[0] for r in conn.execute(
-                        'SELECT model_id FROM yono_llm_models '
-                        'WHERE provider_id=(SELECT id FROM yono_llm_providers '
-                        'WHERE name=? AND is_enabled=1) AND is_enabled=1 '
-                        'ORDER BY created_at DESC',
-                        (YONO_PROVIDER,),
-                    )
-                ]
-                if not models:
-                    return {}
-                return {
-                    'api_key': f.decrypt(enc.encode('utf-8')).decode('utf-8'),
-                    'base_url': base_url,
-                    'model': models[0],
-                }
-            finally:
-                conn.close()
-        except Exception as e:
-            logger.warning('YONO LLM config unavailable: %s', e)
-            return {}
-
-    def _resolve_llm_config(self) -> dict:
-        """Process env vars win; otherwise fall back to the YONO store."""
-        if os.environ.get('LLM_API_KEY') and os.environ.get('STRIX_LLM'):
-            return {
-                'api_key': os.environ['LLM_API_KEY'],
-                'base_url': os.environ.get('LLM_API_BASE', ''),
-                'model': os.environ['STRIX_LLM'],
-            }
-        return self._yono_llm_config()
-
-    def is_busy(self) -> bool:
-        """True while any scan subprocess is still running."""
-        return bool(self._active)
-
     def health(self) -> dict:
         """Report Strix CLI, Docker, LLM, and host-resource status."""
         free_ram = self._free_ram_mb()
         cli_ok = STRIX_BIN.exists() and os.access(STRIX_BIN, os.X_OK)
         docker_ok = shutil.which('docker') is not None
-        cfg = self._resolve_llm_config()
-        llm_key = bool(cfg.get('api_key'))
-        llm_base = cfg.get('base_url') or ''
-        llm_model = cfg.get('model') or ''
+        llm_key = bool(os.environ.get('LLM_API_KEY') or os.environ.get('OPENAI_API_KEY')
+                        or os.environ.get('HETZNER_VLLM_API_KEY'))
+        llm_base = os.environ.get('LLM_API_BASE', '')
+        llm_model = os.environ.get('STRIX_LLM', '')
         version = ''
         if cli_ok:
             try:
@@ -148,7 +86,7 @@ class StrixConnector:
         if not docker_ok: missing.append('Docker')
         if not llm_key: missing.append('LLM_API_KEY')
         if llm_key and not llm_model: missing.append('STRIX_LLM (model name)')
-        if llm_key and not llm_base:
+        if llm_key and not llm_base and not os.environ.get('OPENAI_API_KEY'):
             missing.append('LLM_API_BASE (endpoint)')
         if free_ram < MIN_FREE_RAM_MB:
             missing.append(f'{MIN_FREE_RAM_MB}MB free RAM (host has {free_ram}MB)')
@@ -162,9 +100,9 @@ class StrixConnector:
             'llm_base_url': llm_base,
             'reasoning_effort': os.environ.get('STRIX_REASONING_EFFORT', 'high'),
             'free_ram_mb': free_ram,
-            'ready': ready and bool(llm_model) and bool(llm_base) and free_ram >= MIN_FREE_RAM_MB,
+            'ready': ready and bool(llm_model) and (bool(llm_base) or bool(os.environ.get('OPENAI_API_KEY'))) and free_ram >= MIN_FREE_RAM_MB,
             'message': (
-                'Strix is ready' if (ready and llm_model and llm_base and free_ram >= MIN_FREE_RAM_MB)
+                'Strix is ready' if (ready and llm_model and (llm_base or os.environ.get('OPENAI_API_KEY')) and free_ram >= MIN_FREE_RAM_MB)
                 else 'Configure: ' + ', '.join(missing) if missing
                 else 'Strix is ready'
             ),
@@ -191,23 +129,8 @@ class StrixConnector:
         if instruction:
             cmd += ['--instruction', instruction]
 
-        cfg = self._resolve_llm_config()
-        if not cfg.get('api_key') or not cfg.get('model'):
-            msg = ('LLM not configured: set STRIX_LLM/LLM_API_KEY or '
-                   'seed the YONO provider')
-            await self.db.update_strix_scan(
-                scan_id, status='failed', error_message=msg
-            )
-            await self._emit(scan_id, company_id, {
-                'type': 'redteam_scan_error', 'scan_id': scan_id, 'error': msg,
-            })
-            return
         env = os.environ.copy()
         env['PYTHONUNBUFFERED'] = '1'
-        env['STRIX_LLM'] = cfg['model']
-        env['LLM_API_KEY'] = cfg['api_key']
-        if cfg.get('base_url'):
-            env['LLM_API_BASE'] = cfg['base_url']
 
         await self.db.update_strix_scan(scan_id, status='running', started_at=time.time())
         await self._emit(scan_id, company_id, {
@@ -224,7 +147,6 @@ class StrixConnector:
                 *cmd,
                 cwd=str(STRIX_RUNS_BASE),
                 env=env,
-                stdin=asyncio.subprocess.DEVNULL,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
             )

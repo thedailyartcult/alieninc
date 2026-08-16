@@ -21,7 +21,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from auth import create_token, decode_token, authenticate_user, get_password_hash, set_db, verify_supabase_token
+from auth import create_token, decode_token, authenticate_user, get_password_hash, set_db
 from database import Database
 from engine import ScanEngine
 from ws_manager import ConnectionManager
@@ -257,21 +257,21 @@ async def get_stats(company_id: str):
 
 # ── Strix AI Pentest Routes ──
 
-async def _strix_auth(request: Request) -> tuple[str, int]:
-    """Require a valid bearer token: the engine's own JWT (from
-    /api/auth/login) or a live Supabase portal session token
-    (hs_session.access_token, verified against /auth/v1/user)."""
+def _strix_auth(request: Request) -> tuple[str, int]:
+    """Dual-path auth: Centra JWT first, then fall back to X-Company-Id header.
+
+    The Centra portal login (login.html) stores a Supabase access_token in
+    hs_session; the engine issues its own JWTs via /api/auth/login. This helper
+    accepts either: a valid Centra Bearer token, or an X-Company-Id header so
+    the existing portal session can drive red-team scans without a separate login.
+    """
     auth = request.headers.get('Authorization', '')
-    if not auth.startswith('Bearer '):
-        raise HTTPException(status_code=401, detail='Authentication required')
-    token = auth[7:]
-    payload = decode_token(token)
-    if payload:
-        return payload['company_id'], payload['user_id']
-    if await asyncio.to_thread(verify_supabase_token, token):
-        cid = request.headers.get('X-Company-Id') or 'alieninc'
-        return cid, 0
-    raise HTTPException(status_code=401, detail='Invalid or expired token')
+    if auth.startswith('Bearer '):
+        payload = decode_token(auth[7:])
+        if payload:
+            return payload['company_id'], payload['user_id']
+    cid = request.headers.get('X-Company-Id', 'alieninc')
+    return cid, 0
 
 
 def _sanitize_health(h: dict) -> dict:
@@ -291,13 +291,13 @@ def _sanitize_health(h: dict) -> dict:
 
 @app.get('/api/redteam/health')
 async def redteam_health(request: Request):
-    await _strix_auth(request)
+    _strix_auth(request)
     return _sanitize_health(strix.health())
 
 
 @app.post('/api/redteam/scans')
 async def start_redteam_scan(req: StrixScanRequest, request: Request):
-    company_id, user_id = await _strix_auth(request)
+    company_id, user_id = _strix_auth(request)
     if not req.targets:
         raise HTTPException(status_code=400, detail='At least one target is required')
 
@@ -318,19 +318,19 @@ async def start_redteam_scan(req: StrixScanRequest, request: Request):
 
 @app.get('/api/redteam/scans')
 async def list_redteam_scans(request: Request):
-    company_id, _ = await _strix_auth(request)
+    company_id, _ = _strix_auth(request)
     return await db.get_strix_scans(company_id)
 
 
 @app.get('/api/redteam/stats')
 async def get_redteam_stats(request: Request):
-    company_id, _ = await _strix_auth(request)
+    company_id, _ = _strix_auth(request)
     return await db.get_strix_stats(company_id)
 
 
 @app.get('/api/redteam/scans/{scan_id}')
 async def get_redteam_scan(scan_id: str, request: Request):
-    company_id, _ = await _strix_auth(request)
+    company_id, _ = _strix_auth(request)
     scan = await db.get_strix_scan(scan_id, company_id)
     if not scan:
         raise HTTPException(status_code=404, detail='Scan not found')
@@ -340,7 +340,7 @@ async def get_redteam_scan(scan_id: str, request: Request):
 
 @app.delete('/api/redteam/scans/{scan_id}')
 async def delete_redteam_scan(scan_id: str, request: Request):
-    company_id, _ = await _strix_auth(request)
+    company_id, _ = _strix_auth(request)
     await strix.cancel_scan(scan_id, company_id)
     await db.delete_strix_scan(scan_id, company_id)
     return {'deleted': True}
@@ -361,17 +361,12 @@ async def ws_scan(websocket: WebSocket):
 
         payload = decode_token(msg['token'])
         if not payload:
-            uid = await asyncio.to_thread(verify_supabase_token, msg['token'])
-            if not uid:
-                await websocket.close(code=4001, reason='Invalid token')
-                return
-            user_id = msg.get('user_id') or 0
-            company_id = msg.get('company_id') or 'alieninc'
-            username = msg.get('username') or 'portal-user'
-        else:
-            user_id = payload['user_id']
-            company_id = payload['company_id']
-            username = payload['username']
+            await websocket.close(code=4001, reason='Invalid token')
+            return
+
+        user_id = payload['user_id']
+        company_id = payload['company_id']
+        username = payload['username']
 
         await manager.connect(websocket, company_id, user_id)
         await websocket.send_text(json.dumps({

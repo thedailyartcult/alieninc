@@ -74,15 +74,26 @@ class RobotsGate:
 class HttpFetcher:
     """Politeness-aware fetcher. One instance per host is serialised."""
 
-    def __init__(self, settings: Settings, robots: RobotsGate):
+    # Per-host crawl-delay overrides (seconds). When a host is created, its
+    # crawl-delay (if listed here) overrides settings.min_delay_seconds.
+    # Values come from each site's robots.txt Crawl-delay directive — see POLICY.md.
+    HOST_CRAWL_DELAY: dict[str, float] = {
+        "missilethreat.csis.org": 10.0,   # robots.txt: Crawl-delay: 10
+        "modernfirearms.net": 20.0,       # robots.txt: Crawl-delay: 20
+    }
+
+    def __init__(self, settings: Settings, robots: RobotsGate, host: str = ""):
         self.settings = settings
         self.robots = robots
+        self.host = host
+        # Per-host crawl-delay overrides the global min_delay_seconds when set.
+        self.min_delay = self.HOST_CRAWL_DELAY.get(host, settings.min_delay_seconds)
         self._last = 0.0
         self._lock = threading.Lock()
 
     def _throttle(self):
         with self._lock:
-            gap = self.settings.min_delay_seconds - (time.monotonic() - self._last)
+            gap = self.min_delay - (time.monotonic() - self._last)
             if gap > 0:
                 time.sleep(gap)
             self._last = time.monotonic()

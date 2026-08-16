@@ -70,6 +70,10 @@ class PipelineConfig(BaseModel):
     timespan: str = Field(default="24h", description="GDELT timespan (e.g. 24h, 1h).")
     maxrecords: int = Field(default=250, ge=1, le=250)
     api_key: str = Field(default="", description="GDELT API key (empty: open/no-auth).")
+    country_code: str = Field(
+        default="",
+        description="Optional FIPS-10-4 country code to scope by event location (e.g. UKR). Empty = global.",
+    )
 
 
 def _build_pipeline() -> tuple[OSv2Manager, OntologyLayer, GDELTWritebackPipeline]:
@@ -162,6 +166,7 @@ async def _run_pipeline(config: PipelineConfig) -> dict:
         timespan=config.timespan,
         maxrecords=config.maxrecords,
         api_key=config.api_key,
+        sourcecountry=config.country_code or "",
     )
 
     staging = []  # staging dataset not needed for GKG, events written directly
@@ -179,7 +184,7 @@ async def _run_pipeline(config: PipelineConfig) -> dict:
         if is_bigquery_available():
             try:
                 import asyncio as _asyncio
-                bq_config = GDELTBigQueryConfig(max_results=config.maxrecords)
+                bq_config = GDELTBigQueryConfig(max_results=config.maxrecords, country_code=config.country_code or "")
                 bq_connector = GDELTBigQueryConnector(config=bq_config)
                 # BigQuery client is blocking — run in a thread.
                 gkg_events = await _asyncio.to_thread(bq_connector.pull)

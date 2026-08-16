@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from panteon.core.database import get_db
 from panteon.core.auth import get_current_user
 from panteon.yono.service import LLMOrchestrator, AgentService, AutomationService
-from panteon.yono.secrets import encrypt_secret
 from panteon.api.schemas_yono import (
     LLMProviderCreate, LLMProviderResponse,
     LLMModelCreate, LLMModelResponse,
@@ -27,7 +26,6 @@ async def create_provider(
         name=data.name,
         provider_type=data.provider_type,
         base_url=data.base_url,
-        api_key_encrypted=encrypt_secret(data.api_key) if data.api_key else None,
     )
     db.add(provider)
     await db.flush()

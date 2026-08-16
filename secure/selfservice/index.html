@@ -222,6 +222,46 @@
     .alert-info { background: var(--info-bg); border-left-color: var(--info); color: #1e40af; }
     .hidden { display: none !important; }
 
+    .info-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--bg-hover); border: 1px solid var(--border);
+      color: var(--text-dim); font-size: 11px; font-weight: 700;
+      cursor: help; position: relative; vertical-align: middle;
+      margin-left: 6px; flex-shrink: 0;
+    }
+    .info-icon:hover { color: var(--ink); border-color: var(--ink-dark); }
+    .info-icon .tooltip {
+      display: none; position: absolute;
+      bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+      background: var(--ink-dark); color: #fff;
+      padding: 8px 12px; border-radius: var(--radius-sm);
+      font-size: 12px; font-weight: 400; line-height: 1.5;
+      white-space: normal; width: 260px; text-align: left;
+      z-index: 3000; box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      pointer-events: none;
+    }
+    .info-icon .tooltip::after {
+      content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+      border: 5px solid transparent; border-top-color: var(--ink-dark);
+    }
+    .info-icon:hover .tooltip { display: block; }
+
+    .step-timeline { position: relative; padding-left: 24px; margin-top: 12px; }
+    .step-timeline::before { content: ''; position: absolute; left: 7px; top: 4px; bottom: 4px; width: 2px; background: var(--border-soft); }
+    .step-node { position: relative; padding: 0 0 16px 0; }
+    .step-node::before {
+      content: ''; position: absolute; left: -24px; top: 2px;
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 2px solid var(--border); background: #fff;
+    }
+    .step-node.done::before { background: var(--green); border-color: var(--green); }
+    .step-node.current::before { background: var(--warning); border-color: var(--warning); box-shadow: 0 0 0 3px var(--warning-bg); }
+    .step-node.rejected::before { background: var(--danger); border-color: var(--danger); }
+    .step-node-title { font-size: 13px; font-weight: 600; color: var(--text); }
+    .step-node-meta { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+    .step-node-detail { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
     .empty { text-align: center; color: var(--text-dim); font-size: 13px; padding: 40px 20px; }
     .empty .big { font-size: 32px; margin-bottom: 8px; opacity: 0.5; }
 
@@ -299,6 +339,11 @@
         <button class="nav-item hidden js-staff-only" data-view="review">
           <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.6-2.6A11.95 11.95 0 0112 21 11.95 11.95 0 012.4 8.6A11.95 11.95 0 0112 3a11.95 11.95 0 019.6 3.4z"/></svg>
           Security Review
+        </button>
+        <div class="nav-section">Automation</div>
+        <button class="nav-item" data-view="workflow">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+          Workflows
         </button>
       </nav>
       <div class="sidebar-footer">
@@ -379,7 +424,7 @@
             <textarea id="f-access-just" required></textarea>
           </div>
           <div class="form-actions">
-            <button class="btn btn-primary" data-submit="access">Submit Request</button>
+            <button class="btn btn-primary" data-submit="access">Submit Request<span class="info-icon">?<span class="tooltip">Saves your access request and automatically starts a Personnel Access Request (PAR) workflow. The workflow routes through Security review, HR verification, IT provisioning, and final approval &mdash; you can track each step in the Workflows tab.</span></span></button>
             <button class="btn btn-ghost" data-cancel>Cancel</button>
           </div>
         </div>
@@ -419,7 +464,7 @@
             <textarea id="f-travel-post" placeholder="Answers to the SEAD 3 post-travel questionnaire. Complete after you return."></textarea>
           </div>
           <div class="form-actions">
-            <button class="btn btn-primary" data-submit="travel">Submit Travel Report</button>
+            <button class="btn btn-primary" data-submit="travel">Submit Travel Report<span class="info-icon">?<span class="tooltip">Saves your foreign travel report and automatically starts a Foreign Travel workflow under SEAD 3. Routes through pre-travel review and post-travel debrief by Security staff.</span></span></button>
             <button class="btn btn-ghost" data-cancel>Cancel</button>
           </div>
         </div>
@@ -457,7 +502,7 @@
             <textarea id="f-contact-notes" placeholder="Any additional context for the disclosure."></textarea>
           </div>
           <div class="form-actions">
-            <button class="btn btn-primary" data-submit="contact">Submit Disclosure</button>
+            <button class="btn btn-primary" data-submit="contact">Submit Disclosure<span class="info-icon">?<span class="tooltip">Saves your foreign contact disclosure and automatically starts a Security Reporting workflow. A PSQ form may be auto-generated from these details by Security staff during review.</span></span></button>
             <button class="btn btn-ghost" data-cancel>Cancel</button>
           </div>
         </div>
@@ -492,7 +537,7 @@
             <textarea id="f-incident-desc" required></textarea>
           </div>
           <div class="form-actions">
-            <button class="btn btn-primary" data-submit="incident">Submit Report</button>
+            <button class="btn btn-primary" data-submit="incident">Submit Report<span class="info-icon">?<span class="tooltip">Saves your incident report and automatically starts a Security Reporting workflow. Routes through triage &amp; classification, investigation, and closure &amp; reporting under NISPOM and 32 CFR Part 117.</span></span></button>
             <button class="btn btn-ghost" data-cancel>Cancel</button>
           </div>
         </div>
@@ -529,7 +574,7 @@
             <div class="hint">Optional. One JSON object per visitor with name, organization, and citizenship.</div>
           </div>
           <div class="form-actions">
-            <button class="btn btn-primary" data-submit="visit">Submit Visit Request</button>
+            <button class="btn btn-primary" data-submit="visit">Submit Visit Request<span class="info-icon">?<span class="tooltip">Saves your visit request and automatically starts an Incoming Visitors workflow. Routes through Security review (visitor clearance verification) and visit approval under NISPOM.</span></span></button>
             <button class="btn btn-ghost" data-cancel>Cancel</button>
           </div>
         </div>
@@ -546,6 +591,101 @@
           <div class="card-title"><span class="dot"></span> Submission Feed</div>
           <p style="color:var(--text-muted);font-size:12px;margin-top:4px;">Audit log of notifications emitted for new submissions.</p>
           <div id="notifyFeed" style="margin-top:10px;font-size:12px;"><div class="loading"><span class="spin"></span>Loading&hellip;</div></div>
+        </div>
+      </section>
+
+      <!-- WORKFLOWS -->
+      <section data-section="workflow" class="hidden">
+        <div class="page-heading">
+          <h1>Automated Security Workflows
+            <span class="info-icon">?<span class="tooltip">Structured, repeatable workflows that route submissions through multi-department review steps (Security, HR, IT, Export) with per-step validation against NISPOM, 32 CFR 117, SAP, SCI, and SEAD 3. Each step is audited and the personnel record syncs automatically on approval.</span></span>
+          </h1>
+          <p>The process side of industrial security compliance &mdash; structured, repeatable workflows instead of ad hoc email chains and spreadsheets.</p>
+        </div>
+
+        <div id="wfStats" style="margin-bottom:16px;"><div class="loading"><span class="spin"></span>Loading&hellip;</div></div>
+
+        <div class="card">
+          <div class="card-title"><span class="dot"></span> My Workflows
+            <span class="info-icon">?<span class="tooltip">Workflows you have started. Each shows the current review step, who it's assigned to, and its status. Click a row to see the full step-by-step timeline with validation results and field-level changes.</span></span>
+          </div>
+          <div id="wfMyInstances"><div class="loading"><span class="spin"></span>Loading&hellip;</div></div>
+        </div>
+
+        <div class="card js-staff-only hidden">
+          <div class="card-title"><span class="dot"></span> Staff Workload
+            <span class="info-icon">?<span class="tooltip">All active workflows across the organization, grouped by current department and assignee role. Use this to spot bottlenecks &mdash; steps that have been sitting too long are highlighted in the timeline view.</span></span>
+          </div>
+          <div id="wfStaffQueue"><div class="loading"><span class="spin"></span>Loading&hellip;</div></div>
+        </div>
+
+        <div id="wfDetail"></div>
+
+        <div class="card">
+          <div class="card-title"><span class="dot"></span> Start a Workflow
+            <span class="info-icon">?<span class="tooltip">Kick off a new workflow. Forms you submit from the Submissions section (Access, Travel, Contact, Incident, Visit) automatically start their corresponding workflow. The templates below are for processes that don't have a dedicated submission form yet &mdash; enter a brief description and the workflow opens at the first review step.</span></span>
+          </div>
+          <div class="grid" id="wfStartGrid"><div class="loading"><span class="spin"></span>Loading templates&hellip;</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="dot"></span> How the workflows are built</div>
+          <p style="font-size:13px;color:var(--text);line-height:1.7;">Rather than building every workflow from scratch, CENTRA draws from a library of pre-built workflow templates covering the processes security teams deal with most often. These get configured to match how our organization actually operates &mdash; routing logic, who sees what data at each step, custom questions per form, validation rules, and what triggers a notification. So the underlying template is standard, but the behavior is tailored to our program.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="dot"></span> Where compliance gets enforced automatically
+            <span class="info-icon">?<span class="tooltip">Each step has validation rules tied to regulatory frameworks. If a rule with severity 'block' is not satisfied, the database rejects the approval before it happens &mdash; not after the fact. The frameworks below are the ones currently enforced.</span></span>
+          </div>
+          <p style="font-size:13px;color:var(--text);line-height:1.7;">Each workflow has validation checks built into individual steps, which catch non-compliant actions before they happen rather than after the fact. These checks are built around the regulatory frameworks we're required to follow &mdash; NISPOM, 32 CFR Part 117, SAP, SCI, and SEAD 3. Every workflow also keeps a full audit trail: who did what, when, and what changed at each field level &mdash; so if something needs to be reviewed later, the full history is already there.</p>
+          <div class="grid" style="margin-top:14px;">
+            <div class="stat"><div class="stat-label">Framework</div><div class="stat-value" style="font-size:14px;">NISPOM</div></div>
+            <div class="stat"><div class="stat-label">Framework</div><div class="stat-value" style="font-size:14px;">32 CFR Part 117</div></div>
+            <div class="stat"><div class="stat-label">Framework</div><div class="stat-value" style="font-size:14px;">SAP</div></div>
+            <div class="stat"><div class="stat-label">Framework</div><div class="stat-value" style="font-size:14px;">SCI</div></div>
+            <div class="stat"><div class="stat-label">Framework</div><div class="stat-value" style="font-size:14px;">SEAD 3</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="dot"></span> Staying in sync with the system of record
+            <span class="info-icon">?<span class="tooltip">When a workflow reaches 'Approved', the personnel_records table is updated immediately via a database trigger: PAR/IS-Access &rarr; active_accesses, Foreign Travel &rarr; foreign_travel_history, Training &rarr; training_completions. No lag, no manual sync.</span></span>
+          </div>
+          <p style="font-size:13px;color:var(--text);line-height:1.7;">Anything that happens in a workflow &mdash; a submission, an approval, a status change &mdash; updates the main personnel security record immediately. There's no lag between "the workflow says it's done" and "the record reflects that it's done," which matters for audit readiness and for anyone making decisions off that data.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="dot"></span> Who's involved</div>
+          <p style="font-size:13px;color:var(--text);line-height:1.7;">These workflows aren't limited to the security team. Depending on the process, HR, IT, and Export/Trade Compliance can all have defined roles within a given workflow &mdash; so a single request (say, an access termination) can route through everyone who needs to sign off, without someone manually chasing approvals across departments.</p>
+          <div class="grid" style="margin-top:14px;">
+            <div class="stat"><div class="stat-label">Department</div><div class="stat-value" style="font-size:14px;">Security</div></div>
+            <div class="stat"><div class="stat-label">Department</div><div class="stat-value" style="font-size:14px;">HR</div></div>
+            <div class="stat"><div class="stat-label">Department</div><div class="stat-value" style="font-size:14px;">IT</div></div>
+            <div class="stat"><div class="stat-label">Department</div><div class="stat-value" style="font-size:14px;">Export / Trade Compliance</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="dot"></span> Where it runs / what feeds into it</div>
+          <p style="font-size:13px;color:var(--text);line-height:1.7;">Like the rest of CENTRA, this can be deployed on-prem or in a CMMC Level 2 certified cloud environment. It can also pull data in from other systems already in use &mdash; HR systems, learning management systems, access control systems, contract management, and travel systems &mdash; so workflows don't require re-entering information that already exists elsewhere.</p>
+          <dl class="kv" style="margin-top:12px;">
+            <div class="kv"><dt>Deployment</dt><dd>On-prem or CMMC Level 2 certified cloud</dd></div>
+            <div class="kv"><dt>Integrations</dt><dd>HRIS &middot; LMS &middot; Access control &middot; Contract mgmt &middot; Travel systems</dd></div>
+          </dl>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="dot"></span> Processes currently supported</div>
+          <div class="grid" style="margin-top:6px;">
+            <div class="stat"><div class="stat-label">PAR</div><div class="stat-value" style="font-size:13px;line-height:1.4;">Personnel Access Requests &mdash; new, upgrades, rejustifications, crossovers, transfers, additional accesses</div></div>
+            <div class="stat"><div class="stat-label">SEAD 3</div><div class="stat-value" style="font-size:13px;line-height:1.4;">Foreign Travel &mdash; pre- and post-travel reporting</div></div>
+            <div class="stat"><div class="stat-label">Reporting</div><div class="stat-value" style="font-size:13px;line-height:1.4;">Security Reporting &mdash; violations, incidents, required reporting, foreign contacts</div></div>
+            <div class="stat"><div class="stat-label">IS Access</div><div class="stat-value" style="font-size:13px;line-height:1.4;">Information System Access &mdash; new access and termination requests</div></div>
+            <div class="stat"><div class="stat-label">Training</div><div class="stat-value" style="font-size:13px;line-height:1.4;">Training &mdash; completion tracking and documentation</div></div>
+            <div class="stat"><div class="stat-label">Doc Control</div><div class="stat-value" style="font-size:13px;line-height:1.4;">Document &amp; Material Control &mdash; classified document/material management</div></div>
+            <div class="stat"><div class="stat-label">Visitors</div><div class="stat-value" style="font-size:13px;line-height:1.4;">Incoming Visitors &mdash; request initiation and approval routing</div></div>
+            <div class="stat"><div class="stat-label">Medical</div><div class="stat-value" style="font-size:13px;line-height:1.4;">Medical Device Requests &mdash; security review and approval</div></div>
+          </div>
         </div>
       </section>
     </main>

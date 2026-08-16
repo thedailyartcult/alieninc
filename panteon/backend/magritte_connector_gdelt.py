@@ -57,6 +57,10 @@ class GDELTConfig:
     base_backoff_ms: int = 5000
     max_backoff_ms: int = 60000
     jitter_factor: float = 0.3
+    # Optional FIPS-10-4 country code to scope the query by publication country
+    # (DOC 2.0 has no event-location filter; sourcecountry is the closest proxy).
+    # Empty string = global (no country filter).
+    sourcecountry: str = ""
 
     def __post_init__(self) -> None:
         if isinstance(self.mode, str):
@@ -134,8 +138,13 @@ class GDELTConnector:
 
     async def _build_request(self) -> Dict[str, Any]:
         """Construct a GDELT DOC 2.0 request payload."""
+        query = self.config.query
+        if self.config.sourcecountry:
+            cc = "".join(c for c in self.config.sourcecountry.upper() if c.isalpha())[:3]
+            if cc:
+                query = f"({query}) sourcecountry:{cc}"
         payload: Dict[str, Any] = {
-            "query": self.config.query,
+            "query": query,
             "mode": self.config.mode.value,
             "format": "json",
             "maxrecords": self.config.maxrecords,

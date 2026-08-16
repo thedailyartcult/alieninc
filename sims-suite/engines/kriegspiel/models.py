@@ -129,7 +129,13 @@ class Battlefield:
 
 @dataclass
 class Battle:
-    """A complete battle setup — the seed for scenario branching."""
+    """A complete battle setup — the seed for scenario branching.
+
+    ``provenance`` is set by the LLM synthesis layer to record where this
+    battle came from (procedural fallback vs LLM provider/model/hashes).
+    It is None for battles created before the LLM layer existed, so existing
+    callers never see a change.
+    """
 
     battlefield: Battlefield
     red_force: Force
@@ -137,6 +143,7 @@ class Battle:
     objective: str = ""
     duration_hours: int = 48
     seed: Optional[int] = None
+    provenance: Optional[dict] = None
 
 
 @dataclass
@@ -173,3 +180,20 @@ BATTLEFIELDS: list[Battlefield] = [
     Battlefield("Andes", (-15.0, -70.0), TerrainType.MOUNTAIN, 800000,
                 (-78, -25, -62, -5)),
 ]
+
+
+# Mutable pool of LLM-synthesized battlefields. Kept separate from the
+# canonical ``BATTLEFIELDS`` list so the procedural set is never mutated.
+# The gateway exposes both via the ``/api/kriegspiel/battlefields`` endpoint
+# (canonical first, LLM-synthesized appended with a ``source`` tag).
+BATTLEFIELDS_LLM: list[Battlefield] = []
+
+
+def register_llm_battlefield(bf: Battlefield) -> None:
+    """Add an LLM-synthesized battlefield to the runtime pool.
+
+    De-duplicates by name. The pool is process-local and not persisted; a
+    contractor who wants durable LLM battlefields should store them via CMB.
+    """
+    if not any(existing.name == bf.name for existing in BATTLEFIELDS_LLM):
+        BATTLEFIELDS_LLM.append(bf)

@@ -1340,6 +1340,41 @@
             font-family: var(--font-mono); font-size: 9px; margin-bottom: 8px; color: var(--text-muted);
         }
 
+        /* Investigation Builder — intent-first scoping (WHERE/WHAT/WHEN) */
+        .sc-scope-builder { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+        .sc-scope-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+        .sc-scope-step {
+            font-family: var(--font-mono); font-size: 9px; text-transform: uppercase;
+            color: var(--text-muted); letter-spacing: 0.08em; min-width: 48px;
+        }
+        .sc-scope-btn {
+            font-family: var(--font-mono); font-size: 10px; text-transform: uppercase;
+            padding: 4px 12px; border: 1px solid var(--border-color); border-radius: 3px;
+            background: var(--bg-card); color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+            clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+        }
+        .sc-scope-btn:hover { border-color: var(--accent-neon); color: var(--text); }
+        .sc-scope-btn.active { background: var(--accent-neon); color: #000; border-color: var(--accent-neon); }
+        .sc-scope-select {
+            font-family: var(--font-mono); font-size: 10px; padding: 4px 8px;
+            background: var(--bg-input); color: var(--text); border: 1px solid var(--border-color);
+            border-radius: 3px; cursor: pointer;
+        }
+        .sc-scope-select:focus { outline: none; border-color: var(--accent-neon); }
+        .sc-scope-advanced { margin-top: 2px; }
+        .sc-scope-advanced summary {
+            font-family: var(--font-mono); font-size: 9px; text-transform: uppercase;
+            color: var(--text-muted); cursor: pointer; letter-spacing: 0.05em;
+        }
+        .sc-scope-advanced[open] summary { color: var(--text); margin-bottom: 6px; }
+        .sc-scope-empty {
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-tech); font-size: 13px; color: var(--text-muted);
+            background: rgba(0,0,0,0.5); position: absolute; inset: 0; z-index: 10;
+            text-align: center; padding: 20px; pointer-events: none;
+        }
+        .sc-map-canvas-wrap { position: relative; }
+
         .sc-layer-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
         .sc-layer-label { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.08em; }
         .sc-layer-bar .retro-map-btn {
@@ -2053,18 +2088,45 @@
                                   <span class="tag" id="fusionBqDot" style="font-size:9px">BQ: ?</span>
                               </div>
                           </div>
-                          <p class="section-subtitle" style="font-size:11px;color:var(--text-muted);margin-bottom:16px">One cohesive map overlaying GDELT threat events and OpenSky live aircraft. Toggle layers, run either pipeline, and inspect any marker.</p>
+                          <p class="section-subtitle" style="font-size:11px;color:var(--text-muted);margin-bottom:16px">One cohesive map overlaying GDELT threat events and OpenSky live aircraft. Select a region and theme to begin — the map will not load until you scope your investigation.</p>
 
-                          <!-- Control rail: presets + query + validate + run -->
-                          <div class="sc-control-rail">
-                              <div class="sc-preset-bar" id="fusionPresetBar"></div>
-                              <div class="sc-query-row">
-                                  <input id="fusionQuery" type="text" placeholder='GDELT query e.g. (military OR defense OR conflict)' class="sc-query-input">
-                                  <button class="btn btn-secondary btn-sm" onclick="fusionValidate()">Validate</button>
+                          <!-- Investigation Builder: intent-first scoping (WHERE / WHAT / WHEN) -->
+                          <div class="sc-scope-builder" id="fusionScopeBuilder">
+                              <div class="sc-scope-row">
+                                  <span class="sc-scope-step">Where</span>
+                                  <button class="sc-scope-btn" data-scope-region="Worldwide" onclick="scSelectRegion(this)">Worldwide</button>
+                                  <button class="sc-scope-btn" data-scope-region="Eastern Europe" onclick="scSelectRegion(this)">Eastern Europe</button>
+                                  <button class="sc-scope-btn" data-scope-region="Middle East" onclick="scSelectRegion(this)">Middle East</button>
+                                  <button class="sc-scope-btn" data-scope-region="East Asia" onclick="scSelectRegion(this)">East Asia</button>
+                                  <button class="sc-scope-btn" data-scope-region="Africa" onclick="scSelectRegion(this)">Africa</button>
+                                  <select class="sc-scope-select" id="scCountrySelect" onchange="scSelectCountry(this)">
+                                      <option value="">-- Country --</option>
+                                  </select>
+                              </div>
+                              <div class="sc-scope-row">
+                                  <span class="sc-scope-step">What</span>
+                                  <span id="fusionPresetBar" style="display:inline-flex;gap:6px;flex-wrap:wrap"></span>
+                              </div>
+                              <div class="sc-scope-row">
+                                  <span class="sc-scope-step">When</span>
+                                  <button class="sc-scope-btn active" data-scope-window="24h" onclick="scSelectWindow(this)">Last 24h</button>
+                                  <button class="sc-scope-btn" data-scope-window="72h" onclick="scSelectWindow(this)">Last 3 days</button>
+                                  <button class="sc-scope-btn" data-scope-window="7d" onclick="scSelectWindow(this)">Last 7 days</button>
+                              </div>
+                              <div class="sc-scope-row" style="margin-top:2px">
+                                  <span class="sc-scope-step"></span>
+                                  <button class="btn btn-primary btn-sm" onclick="fusionValidate()">Validate</button>
                                   <button class="btn btn-primary btn-sm" onclick="fusionRunGdelt()">Run GDELT</button>
                                   <button class="btn btn-primary btn-sm" onclick="fusionRunOpenSky()">Run OpenSky</button>
                                   <button class="btn btn-secondary btn-sm" onclick="renderFusionMap(true)">Refresh</button>
                               </div>
+                              <details class="sc-scope-advanced">
+                                  <summary>Advanced — raw GDELT query</summary>
+                                  <div class="sc-query-row" style="margin-top:6px">
+                                      <input id="fusionQuery" type="text" placeholder='GDELT query e.g. (military OR defense OR conflict)' class="sc-query-input">
+                                      <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">Country scope is appended automatically.</span>
+                                  </div>
+                              </details>
                           </div>
                           <div id="fusionValidateStatus" style="font-family:var(--font-mono);font-size:10px;margin-bottom:8px;min-height:16px;color:var(--text-muted)"></div>
 
@@ -2176,7 +2238,8 @@
                                   </div>
                                   <div class="sc-map-canvas-wrap">
                                       <div class="retro-map-canvas" id="fusionMap"></div>
-                                      <div id="fusionMapHud" class="sc-map-hud">Loading unified map...</div>
+                                      <div id="fusionMapHud" class="sc-map-hud">Select a region and theme to begin.</div>
+                                      <div id="fusionScopeEmpty" class="sc-scope-empty">Select a WHERE and WHAT to scope your investigation.<br>The map, KPIs, and tables will populate after a scoped run.</div>
                                   </div>
                                   <div class="sc-legend">
                                       <span class="sc-legend-label">LEGEND:</span>
@@ -3510,7 +3573,7 @@ function loadPageData(page) {
         case 'sc-types': loadObjectTypes(); loadActionTypes(); break;
         case 'sc-objects': loadObjectTypeFilter(); loadObjects(); break;
         case 'sc-links': loadLinkTypes(); break;
-        case 'sc-fusion': renderFusionMap(); break;
+        case 'sc-fusion': initScopeBuilder(); renderFusionMap(); break;
         case 'sc-gdelt': loadGdeltHealth(); loadGdeltSnapshot(); refreshGdeltBqStatus(); break;
         case 'sc-aviation': loadAviationHealth(); loadAviationSnapshot(); loadAviationFlights(); break;
         case 'yono-providers': loadProviders(); loadModels(); break;
@@ -5349,6 +5412,12 @@ function renderFusionAviationLayer() {
 
 function fitFusionBounds() {
     if (!fusionMap) return;
+    // Prefer the scope bbox — the map frames YOUR region, not data clusters.
+    const sb = scBbox();
+    if (sb) {
+        fusionMap.fitBounds([[sb.lomin, sb.lamin], [sb.lomax, sb.lamax]], { padding: 60, maxZoom: 7, duration: 1200 });
+        return;
+    }
     const pts = [];
     if (fusionLayers.threats) fusionThreatEvents.forEach(ev => { const g = parseActionGeo(ev); if (g) pts.push(g); });
     if (fusionLayers.aviation) fusionFlights.forEach(f => { const p = normalizeAircraftPoint(f); if (p) pts.push({ latitude: p.lat, longitude: p.lng }); });
@@ -5473,21 +5542,147 @@ function updateFusionKpis() {
     ).join('') || '<div class="empty-state">No actors extracted - run the GDELT pipeline</div>';
 }
 
+// ============================================================================
+// Spinal Cracker — Investigation Builder (intent-first scoping)
+// ----------------------------------------------------------------------------
+// SCScope is the single source of scope for both pipelines + the map. The map,
+// KPIs, and tables stay empty until the user picks WHERE + WHAT. This cures the
+// "all planes at once without asking" problem by mirroring the camera section's
+// "will not load until you choose" pattern.
+// ============================================================================
+const SC_REGION_BBOXES = {
+    'Worldwide': null,
+    'Eastern Europe': { lamin: 44.0, lomin: 20.0, lamax: 60.0, lomax: 42.0, countries: ['Russia','Ukraine','Belarus','Poland','Romania','Bulgaria','Hungary','Moldova','Czech Republic','Czechia','Slovakia','Georgia','Armenia','Azerbaijan'] },
+    'Middle East': { lamin: 12.0, lomin: 25.0, lamax: 42.0, lomax: 65.0, countries: ['Turkey','Turkiye','Iran','Iraq','Israel','Saudi Arabia','Pakistan','Afghanistan','Syria','Lebanon','Jordan','Yemen','United Arab Emirates','Qatar','Kuwait','Oman'] },
+    'East Asia': { lamin: 15.0, lomin: 95.0, lamax: 55.0, lomax: 145.0, countries: ['China','Japan','South Korea','North Korea','Taiwan','Philippines','Vietnam','Thailand','Myanmar','Cambodia','Laos','Malaysia'] },
+    'Africa': { lamin: -35.0, lomin: -20.0, lamax: 38.0, lomax: 55.0, countries: ['Egypt','Nigeria','Kenya','Ethiopia','Morocco','Algeria','Libya','Sudan','Somalia','South Africa','Tunisia','Ghana','Uganda','Tanzania','Angola','Zimbabwe'] },
+};
+
+// FIPS-10-4 country code map (for GDELT BigQuery ActionGeo_CountryCode + DOC 2.0 sourcecountry)
+const COUNTRY_FIPS = {
+    'Russia':'RS','Ukraine':'UP','Belarus':'BO','Poland':'PL','Romania':'RO','Bulgaria':'BU',
+    'Hungary':'HU','Moldova':'MD','Czech Republic':'EZ','Czechia':'EZ','Slovakia':'LO',
+    'Georgia':'GG','Armenia':'AM','Azerbaijan':'AJ',
+    'Turkey':'TU','Turkiye':'TU','Iran':'IR','Iraq':'IZ','Israel':'IS','Saudi Arabia':'SA',
+    'Pakistan':'PK','Afghanistan':'AF','Syria':'SY','Lebanon':'LE','Jordan':'JO','Yemen':'YM',
+    'United Arab Emirates':'AE','Qatar':'QA','Kuwait':'KU','Oman':'MU',
+    'China':'CH','Japan':'JA','South Korea':'KS','North Korea':'KN','Taiwan':'TW',
+    'Philippines':'RP','Vietnam':'VM','Thailand':'TH','Myanmar':'BM','Cambodia':'CB',
+    'Malaysia':'MY','Indonesia':'ID','India':'IN','Sri Lanka':'CE','Bangladesh':'BG',
+    'Egypt':'EG','Nigeria':'NI','Kenya':'KE','Ethiopia':'ET','Morocco':'MO','Algeria':'AG',
+    'Libya':'LY','Sudan':'SU','Somalia':'SO','South Africa':'SF','Tunisia':'TS','Ghana':'GH',
+    'Uganda':'UG','Tanzania':'TZ','Angola':'AO','Zimbabwe':'ZI',
+    'United States':'US','USA':'US','Canada':'CA','Mexico':'MX','Brazil':'BR','Argentina':'AR',
+    'United Kingdom':'UK','UK':'UK','France':'FR','Germany':'GM','Italy':'IT','Spain':'SP',
+    'Netherlands':'NL','Belgium':'BE','Switzerland':'SW','Austria':'AU','Sweden':'SW',
+    'Norway':'NO','Finland':'FI','Denmark':'DA','Portugal':'PO','Ireland':'EI','Greece':'GR',
+    'Croatia':'HR','Serbia':'RB','Australia':'AS','New Zealand':'NZ',
+};
+
+let SCScope = {
+    region: 'Worldwide',      // key into SC_REGION_BBOXES
+    country: '',              // country name (overrides region if set)
+    preset: 'Conflicts',      // QUERY_PRESETS name
+    timeWindow: '24h',        // 24h | 72h | 7d
+    query: '(military OR war OR battle OR conflict OR offensive)',  // derived from preset
+};
+
+function scBbox() {
+    if (SCScope.country) {
+        const cap = COUNTRY_CAPITALS[SCScope.country];
+        if (cap) {
+            // Derive a ~5° bbox around the capital as a reasonable country scope.
+            return { lamin: cap[1] - 5, lomin: cap[0] - 7, lamax: cap[1] + 5, lomax: cap[0] + 7 };
+        }
+    }
+    const r = SC_REGION_BBOXES[SCScope.region];
+    if (r) return { lamin: r.lamin, lomin: r.lomin, lamax: r.lamax, lomax: r.lomax };
+    return null; // Worldwide
+}
+
+function scCountryFips() {
+    if (SCScope.country) return COUNTRY_FIPS[SCScope.country] || '';
+    return '';
+}
+
+function scScopeComplete() {
+    return !!SCScope.preset && !!SCScope.region;
+}
+
+function scSelectRegion(btn) {
+    SCScope.region = btn.dataset.scopeRegion;
+    SCScope.country = ''; // region resets country
+    document.querySelectorAll('[data-scope-region]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const sel = document.getElementById('scCountrySelect');
+    if (sel) sel.value = '';
+    scPopulateCountries();
+    scUpdateEmptyState();
+}
+
+function scSelectCountry(sel) {
+    SCScope.country = sel.value || '';
+    if (SCScope.country) {
+        document.querySelectorAll('[data-scope-region]').forEach(b => b.classList.remove('active'));
+    } else if (SCScope.region) {
+        // re-highlight the active region
+        document.querySelectorAll('[data-scope-region]').forEach(b => {
+            if (b.dataset.scopeRegion === SCScope.region) b.classList.add('active');
+        });
+    }
+    scUpdateEmptyState();
+}
+
+function scSelectWindow(btn) {
+    SCScope.timeWindow = btn.dataset.scopeWindow;
+    document.querySelectorAll('[data-scope-window]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+function scPopulateCountries() {
+    const sel = document.getElementById('scCountrySelect');
+    if (!sel) return;
+    const r = SC_REGION_BBOXES[SCScope.region];
+    let countries = r && r.countries ? r.countries : Object.keys(COUNTRY_CAPITALS);
+    countries = countries.filter(c => COUNTRY_CAPITALS[c]).sort();
+    sel.innerHTML = '<option value="">-- Country --</option>' +
+        countries.map(c => '<option value="' + c + '">' + c + '</option>').join('');
+}
+
+function scUpdateEmptyState() {
+    const overlay = document.getElementById('fusionScopeEmpty');
+    if (!overlay) return;
+    overlay.style.display = scScopeComplete() ? 'none' : 'flex';
+}
+
 function renderFusionPresets() {
     const bar = document.getElementById('fusionPresetBar');
     if (!bar) return;
-    bar.innerHTML = '<span class="sc-layer-label">Presets:</span>' + QUERY_PRESETS.map(p =>
-        '<button class="sc-preset-btn" onclick="applyFusionPreset(\'' + p.query.replace(/'/g, "\\'") + '\',\'' + p.intent + '\')">' + p.name + '</button>'
+    bar.innerHTML = QUERY_PRESETS.map(p =>
+        '<button class="sc-scope-btn' + (p.name === SCScope.preset ? ' active' : '') + '" onclick="applyFusionPreset(\'' + p.name.replace(/'/g, "\\'") + '\')">' + p.name + '</button>'
     ).join('');
 }
 
-function applyFusionPreset(query, intent) {
-    document.getElementById('fusionQuery').value = query;
-    threatQueryIntent = intent;
-    document.querySelectorAll('.sc-preset-btn').forEach(b => b.classList.remove('active'));
-    event && event.target && event.target.classList.add('active');
-    gkgLiveStructuralCheck();
-    renderFusionMap(true);
+function applyFusionPreset(name) {
+    const preset = QUERY_PRESETS.find(p => p.name === name) || QUERY_PRESETS[0];
+    SCScope.preset = preset.name;
+    SCScope.query = preset.query;
+    threatQueryIntent = preset.intent;
+    const qEl = document.getElementById('fusionQuery');
+    if (qEl) qEl.value = preset.query;
+    renderFusionPresets();
+    scUpdateEmptyState();
+}
+
+function initScopeBuilder() {
+    scPopulateCountries();
+    renderFusionPresets();
+    applyFusionPreset('Conflicts');
+    // Highlight default region (Worldwide)
+    document.querySelectorAll('[data-scope-region]').forEach(b => {
+        if (b.dataset.scopeRegion === SCScope.region) b.classList.add('active');
+    });
+    scUpdateEmptyState();
 }
 
 let fusionDataLoaded = false;
@@ -5497,7 +5692,6 @@ async function preloadFusionData() {
     fusionDataLoaded = true;
     const hud = document.getElementById('fusionMapHud');
     if (hud) hud.textContent = 'Loading GDELT + OpenSky data…';
-    const query = (document.getElementById('fusionQuery').value || '').trim() || '(military OR defense OR conflict)';
     // Fetch both sources in parallel.
     let events = [], flights = [];
     try {
@@ -5508,20 +5702,40 @@ async function preloadFusionData() {
         events = gkgEventsFrom(evData && evData.events);
         flights = (flData && flData.flights) || [];
     } catch (e) { /* keep empty */ }
+    // Filter to scope bbox (client-side post-filter; backend scoping happens on run)
+    const bbox = scBbox();
+    if (bbox) {
+        events = events.filter(ev => {
+            const g = parseActionGeo(ev);
+            if (!g) return false;
+            return g.latitude >= bbox.lamin && g.latitude <= bbox.lamax &&
+                   g.longitude >= bbox.lomin && g.longitude <= bbox.lomax;
+        });
+        flights = flights.filter(f => {
+            const p = normalizeAircraftPoint(f);
+            if (!p) return false;
+            return p.lat >= bbox.lamin && p.lat <= bbox.lamax &&
+                   p.lng >= bbox.lomin && p.lng <= bbox.lomax;
+        });
+    }
     fusionThreatEvents = events;
     fusionFlights = flights;
     updateFusionKpis();
     refreshFusionRateMeter();
     refreshFusionBqStatus();
-    if (hud) hud.textContent = 'Data loaded - auto-fitted to active region';
+    if (hud) hud.textContent = 'Data loaded - scoped to ' + (SCScope.country || SCScope.region);
 }
 
 async function renderFusionMap(forceReload) {
     if (forceReload) fusionDataLoaded = false;
+    if (!scScopeComplete()) {
+        scUpdateEmptyState();
+        return;
+    }
+    scUpdateEmptyState();
     if (!fusionDataLoaded) await preloadFusionData();
     const map = initFusionMap();
     if (!map) return;
-    renderFusionPresets();
     const hud = document.getElementById('fusionMapHud');
     if (hud) hud.textContent = 'Loading GDELT + OpenSky data…';
     renderFusionThreatLayer();
@@ -5552,10 +5766,10 @@ function fusionToggle3D() {
 }
 
 async function fusionValidate() {
-    const q = document.getElementById('fusionQuery').value.trim() || '(military OR defense OR conflict)';
-    const config = { query: q, mode: 'events', timespan: '24h', maxrecords: 50, api_key: '' };
+    const q = (document.getElementById('fusionQuery').value || '').trim() || SCScope.query;
+    const config = { query: q, mode: 'events', timespan: SCScope.timeWindow, maxrecords: 50, api_key: '', country_code: scCountryFips() };
     const el = document.getElementById('fusionValidateStatus');
-    if (el) el.innerHTML = '<span style="color:var(--amber)">⟳ validating against GDELT…</span>';
+    if (el) el.innerHTML = '<span style="color:var(--amber)">⟳ validating ' + (SCScope.country || SCScope.region) + ' · ' + SCScope.preset + '…</span>';
     try {
         const result = await api('/gkg/pipeline/validate', { method: 'POST', body: JSON.stringify(config) });
         if (el) el.innerHTML = result.valid
@@ -5567,10 +5781,10 @@ async function fusionValidate() {
 }
 
 async function fusionRunGdelt() {
-    const q = document.getElementById('fusionQuery').value.trim() || '(military OR defense OR conflict)';
+    const q = (document.getElementById('fusionQuery').value || '').trim() || SCScope.query;
     const el = document.getElementById('fusionValidateStatus');
-    if (el) el.innerHTML = '<span style="color:var(--amber)">⟳ Running GDELT pipeline (background)…</span>';
-    const st = await startGkgPipeline({ query: q, mode: 'events', timespan: '24h', maxrecords: 50, api_key: '' }, (s) => {
+    if (el) el.innerHTML = '<span style="color:var(--amber)">⟳ Running GDELT for ' + (SCScope.country || SCScope.region) + ' · ' + SCScope.preset + ' · ' + SCScope.timeWindow + '…</span>';
+    const st = await startGkgPipeline({ query: q, mode: 'events', timespan: SCScope.timeWindow, maxrecords: 50, api_key: '', country_code: scCountryFips() }, (s) => {
         if (el && s.status === 'running') el.innerHTML = '<span style="color:var(--amber)">⟳ GDELT running…</span>';
         else if (el && s.error) el.innerHTML = '<span style="color:var(--red)">✗ ' + escapeHtml(s.error) + '</span>';
     });
@@ -5580,14 +5794,18 @@ async function fusionRunGdelt() {
 
 async function fusionRunOpenSky() {
     const el = document.getElementById('fusionValidateStatus');
+    const bbox = scBbox();
+    const scopeLabel = SCScope.country || SCScope.region;
     const rate = await api('/opensky/pipeline/rate').catch(() => null);
     if (rate && !rate.can_pull_now) {
-        if (el) el.innerHTML = '<span style="color:var(--amber)">⏸ OpenSky: wait ' + Math.ceil(rate.anon_seconds_left) + 's (anon ~1 req/15min)</span>';
+        if (el) el.innerHTML = '<span style="color:var(--amber)">⏸ OpenSky: wait ' + Math.ceil(rate.anon_seconds_left) + 's (anon ~1 req/15min) — try Run GDELT only for ' + scopeLabel + '</span>';
         return;
     }
-    if (el) el.innerHTML = '<span style="color:var(--amber)">⟳ Running OpenSky pipeline (background, can take >1min)…</span>';
+    if (el) el.innerHTML = '<span style="color:var(--amber)">⟳ Running OpenSky for ' + scopeLabel + ' (background, can take >1min)…</span>';
     try {
-        const start = await api('/opensky/pipeline/run', { method: 'POST', body: JSON.stringify({ client_id: '', client_secret: '', fetch_military: true, request_timeout: 30, max_retries: 5 }) });
+        const payload = { client_id: '', client_secret: '', fetch_military: true, request_timeout: 30, max_retries: 5 };
+        if (bbox) { payload.lamin = bbox.lamin; payload.lomin = bbox.lomin; payload.lamax = bbox.lamax; payload.lomax = bbox.lomax; }
+        const start = await api('/opensky/pipeline/run', { method: 'POST', body: JSON.stringify(payload) });
         if (start.status === 'rejected') {
             if (el) el.innerHTML = '<span style="color:var(--amber)">⏸ OpenSky: ' + escapeHtml(start.message || 'not due') + '</span>';
             return;

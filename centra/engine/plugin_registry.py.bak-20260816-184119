@@ -132,7 +132,7 @@ def search_plugins(query='', page=1, per_page=20, category=None, family=None, se
     where_clauses = []
 
     if query and query.strip():
-        safe_query = '"' + query.strip().replace('"', '""') + '"'
+        safe_query = query.strip().replace('"', '""')
         where_clauses.append("plugins.id IN (SELECT id FROM plugins_fts WHERE plugins_fts MATCH ?)")
         params.append(safe_query)
     if category:

@@ -288,6 +288,12 @@ class OpenSkyConfig:
     cache_ttl_ms: int = 90000
     anonymous_interval_ms: int = 900000
     cooldown_ms: int = 15 * 60 * 1000
+    # Optional bounding box to scope the OpenSky states/all pull (lamin/lomin/lamax/lomax).
+    # None = global pull. When set, only aircraft within the box are requested.
+    lamin: float | None = None
+    lomin: float | None = None
+    lamax: float | None = None
+    lomax: float | None = None
 
 
 @dataclass
@@ -623,13 +629,25 @@ class OpenSkyConnector:
 
     # ── OpenSky states/all ─────────────────────────────────────────────────
 
+    def _bbox_query(self) -> str:
+        """Build the lamin/lomin/lamax/lomax query string if a bbox is configured."""
+        c = self.config
+        if c.lamin is not None and c.lomin is not None and c.lamax is not None and c.lomax is not None:
+            return f"lamin={c.lamin}&lomin={c.lomin}&lamax={c.lamax}&lomax={c.lomax}"
+        return ""
+
     async def _fetch_open_sky_snapshot(self, session: aiohttp.ClientSession, token: str | None) -> list[dict[str, Any]]:  # noqa: E501
         """Fetch the global aircraft state vector from OpenSky /states/all?extended=1."""
         headers = {}
         if token:
             headers['Authorization'] = f'Bearer {token}'
 
-        data = await self._stealth_fetch(session, self.config.open_sky_url, headers=headers)
+        url = self.config.open_sky_url
+        bbox = self._bbox_query()
+        if bbox:
+            url = f"{url}&{bbox}"
+
+        data = await self._stealth_fetch(session, url, headers=headers)
         if data is None:
             return []
 

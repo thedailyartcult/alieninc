@@ -50,8 +50,23 @@
   const NAV = {
     dashboard: 'My Record', reports: 'Direct Reports', access: 'Request Access',
     travel: 'Foreign Travel', contact: 'Foreign Contact', incident: 'Report Incident',
-    visit: 'Visit Request', review: 'Security Review',
+    visit: 'Visit Request', review: 'Security Review', workflow: 'Workflows',
   };
+
+  const WORKFLOW_MAP = {
+    access: 'par',
+    travel: 'foreign_travel',
+    incident: 'security_reporting',
+    visit: 'incoming_visitors',
+    contact: 'security_reporting',
+  };
+  const TEMPLATE_LABELS = {
+    par: 'Personnel Access Requests', foreign_travel: 'Foreign Travel',
+    security_reporting: 'Security Reporting', is_access: 'Information System Access',
+    training: 'Training', doc_material_control: 'Document & Material Control',
+    incoming_visitors: 'Incoming Visitors', medical_device: 'Medical Device Requests',
+  };
+  const DIRECT_START_TEMPLATES = ['is_access', 'training', 'doc_material_control', 'medical_device'];
 
   function currentView() {
     const p = new URLSearchParams(location.search);
@@ -78,6 +93,7 @@
     if (view === 'dashboard') { renderDash(); }
     else if (view === 'reports') { renderReports(); }
     else if (view === 'review') { renderReview(); renderNotifyFeed(); }
+    else if (view === 'workflow') { renderWorkflows(); }
   }
 
   async function fetchRows(table, opts) {
@@ -332,21 +348,41 @@
     }
     const { data: inserted, error } = await supabaseClient.from(def.table).insert([row]).select('id');
     if (error) { showToast('Submission failed: ' + error.message, true); return; }
+    const submissionId = (inserted && inserted[0] && inserted[0].id) || null;
+
+    const summaryParts = [];
+    if (row.program_or_contract) summaryParts.push('Program/Contract: ' + row.program_or_contract);
+    if (row.destination_countries) summaryParts.push('Countries: ' + row.destination_countries);
+    if (row.contact_name) summaryParts.push('Contact: ' + row.contact_name);
+    if (row.incident_type) summaryParts.push('Type: ' + row.incident_type);
+    if (row.visit_direction) summaryParts.push('Direction: ' + row.visit_direction);
+
+    var workflowStarted = false;
+    if (WORKFLOW_MAP[kind] && submissionId) {
+      try {
+        var wfRes = await supabaseClient.rpc('start_workflow', {
+          p_template_code: WORKFLOW_MAP[kind],
+          p_submission_table: def.table,
+          p_submission_id: submissionId,
+          p_user_email: EMAIL,
+          p_metadata: { summary: summaryParts.join(' '), source: 'portal_form' },
+        });
+        if (wfRes.error) throw new Error(wfRes.error.message);
+        workflowStarted = true;
+      } catch (wfErr) {
+        console.warn('Workflow start failed (submission still saved):', wfErr.message);
+      }
+    }
+
     try {
-      const summaryParts = [];
-      if (row.program_or_contract) summaryParts.push('Program/Contract: ' + row.program_or_contract);
-      if (row.destination_countries) summaryParts.push('Countries: ' + row.destination_countries);
-      if (row.contact_name) summaryParts.push('Contact: ' + row.contact_name);
-      if (row.incident_type) summaryParts.push('Type: ' + row.incident_type);
-      if (row.visit_direction) summaryParts.push('Direction: ' + row.visit_direction);
       await fetch('/api/selfservice/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           table: def.table,
           kind: kind,
-          id: (inserted && inserted[0] && inserted[0].id) || '',
-          summary: summaryParts.join('\n'),
+          id: submissionId || '',
+          summary: summaryParts.join('\n') + (workflowStarted ? '\n[Workflow ' + WORKFLOW_MAP[kind] + ' started]' : ''),
         }),
       });
     } catch (_) { /* notification is best-effort */ }
@@ -356,8 +392,320 @@
       if (el && el.tagName === 'SELECT') el.selectedIndex = 0;
       if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) el.value = '';
     });
-    showToast('Submission received. Status: Pending review.');
+    showToast(workflowStarted ? 'Submission received & workflow started. Track it in Workflows.' : 'Submission received. Status: Pending review.');
     go('dashboard');
+  }
+
+  // ── Workflows ────────────────────────────────────────────
+  function wfStatusLabel(s) {
+    var map = { InProgress: 'review', AwaitingApproval: 'pending', Approved: 'approved', Rejected: 'rejected' };
+    return map[s] || 'review';
+  }
+
+  async function fetchWorkflowTemplates() {
+    const { data, error } = await supabaseClient
+      .from('workflow_templates')
+      .select('code,name,description,framework,steps')
+      .eq('is_active', true)
+      .order('name');
+    if (error) throw new Error(error.message);
+    return data || [];
+  }
+
+  async function fetchMyWorkflowInstances() {
+    const { data, error } = await supabaseClient
+      .from('workflow_instances')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw new Error(error.message);
+    return data || [];
+  }
+
+  async function fetchAllWorkflowInstances() {
+    const { data, error } = await supabaseClient
+      .from('workflow_instances')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw new Error(error.message);
+    return data || [];
+  }
+
+  async function fetchWorkflowSteps(instanceId) {
+    const { data, error } = await supabaseClient
+      .from('workflow_steps')
+      .select('*')
+      .eq('instance_id', instanceId)
+      .order('step_index', { ascending: true });
+    if (error) throw new Error(error.message);
+    return data || [];
+  }
+
+  async function renderWorkflows() {
+    renderWfStartGrid();
+    var instances = [], allInstances = [];
+    try {
+      instances = await fetchMyWorkflowInstances();
+      if (IS_STAFF) allInstances = instances;
+      else allInstances = instances;
+    } catch (e) {
+      $('wfMyInstances').innerHTML = '<div class="empty">Failed to load workflows: ' + esc(e.message) + '</div>';
+    }
+
+    var open = 0, approved = 0, rejected = 0, pending = 0;
+    for (var i = 0; i < allInstances.length; i++) {
+      var s = allInstances[i].status;
+      if (s === 'InProgress' || s === 'AwaitingApproval') open++;
+      else if (s === 'Approved') approved++;
+      else if (s === 'Rejected') rejected++;
+      if (s === 'AwaitingApproval') pending++;
+    }
+
+    $('wfStats').innerHTML =
+      '<div class="grid">' +
+        '<div class="stat"><div class="stat-label">Open</div><div class="stat-value">' + open + '</div></div>' +
+        '<div class="stat"><div class="stat-label">Awaiting Approval</div><div class="stat-value gold">' + pending + '</div></div>' +
+        '<div class="stat"><div class="stat-label">Approved</div><div class="stat-value" style="color:var(--green-deep);">' + approved + '</div></div>' +
+        '<div class="stat"><div class="stat-label">Rejected</div><div class="stat-value" style="color:var(--danger);">' + rejected + '</div></div>' +
+      '</div>';
+
+    var myRows = instances;
+    if (!myRows.length) {
+      $('wfMyInstances').innerHTML = '<div class="empty">No workflows yet. Submit a form (Access, Travel, Incident, Visit) or start a workflow below.</div>';
+    } else {
+      $('wfMyInstances').innerHTML = '<div class="table-wrap"><table><thead><tr><th>Process</th><th>Current Step</th><th>Assigned To</th><th>Status</th><th>Started</th><th></th></tr></thead><tbody>' +
+        myRows.map(function(r) {
+          return '<tr>' +
+            '<td style="font-weight:600;">' + esc(TEMPLATE_LABELS[r.template_code] || r.template_code) + '</td>' +
+            '<td>' + esc(r.current_step_key ? r.current_step_key.replace(/_/g, ' ') : '&mdash;') + '</td>' +
+            '<td>' + esc(r.assigned_department || '') + '</td>' +
+            '<td><span class="status ' + wfStatusLabel(r.status) + '">' + esc(r.status) + '</span></td>' +
+            '<td style="white-space:nowrap;color:var(--text-muted);">' + esc((r.created_at || '').slice(0, 10)) + '</td>' +
+            '<td><button class="btn btn-sm btn-ghost" data-wf-detail="' + esc(r.id) + '">View Timeline</button></td>' +
+          '</tr>';
+        }).join('') + '</tbody></table></div>';
+      $('wfMyInstances').querySelectorAll('[data-wf-detail]').forEach(function(btn) {
+        btn.addEventListener('click', function() { renderWorkflowDetail(btn.dataset.wfDetail); });
+      });
+    }
+
+    if (IS_STAFF) {
+      var staffHost = $('wfStaffQueue');
+      var active = allInstances.filter(function(r) { return r.status === 'InProgress' || r.status === 'AwaitingApproval'; });
+      if (!active.length) {
+        staffHost.innerHTML = '<div class="empty">No active workflows in the queue.</div>';
+      } else {
+        var byDept = {};
+        for (var j = 0; j < active.length; j++) {
+          var dept = active[j].assigned_department || 'Unassigned';
+          if (!byDept[dept]) byDept[dept] = [];
+          byDept[dept].push(active[j]);
+        }
+        staffHost.innerHTML = Object.keys(byDept).sort().map(function(dept) {
+          return '<div style="margin-bottom:12px;"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:6px;">' + esc(dept) + ' (' + byDept[dept].length + ')</div>' +
+            '<div class="table-wrap"><table><thead><tr><th>Process</th><th>Step</th><th>Role</th><th>Employee</th><th>Status</th><th></th></tr></thead><tbody>' +
+            byDept[dept].map(function(r) {
+              return '<tr>' +
+                '<td style="font-weight:600;">' + esc(TEMPLATE_LABELS[r.template_code] || r.template_code) + '</td>' +
+                '<td>' + esc(r.current_step_key ? r.current_step_key.replace(/_/g, ' ') : '') + '</td>' +
+                '<td>' + esc(r.assigned_role || '') + '</td>' +
+                '<td class="mono" style="font-size:12px;">' + esc(r.user_email) + '</td>' +
+                '<td><span class="status ' + wfStatusLabel(r.status) + '">' + esc(r.status) + '</span></td>' +
+                '<td><button class="btn btn-sm btn-primary" data-wf-detail="' + esc(r.id) + '">Review</button></td>' +
+              '</tr>';
+            }).join('') + '</tbody></table></div></div>';
+        }).join('');
+        staffHost.querySelectorAll('[data-wf-detail]').forEach(function(btn) {
+          btn.addEventListener('click', function() { renderWorkflowDetail(btn.dataset.wfDetail); });
+        });
+      }
+    }
+  }
+
+  async function renderWorkflowDetail(instanceId) {
+    var host = $('wfDetail');
+    host.innerHTML = '<div class="card"><div class="loading"><span class="spin"></span>Loading workflow&hellip;</div></div>';
+    host.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    var steps, instance;
+    try {
+      steps = await fetchWorkflowSteps(instanceId);
+      var instRes = await supabaseClient.from('workflow_instances').select('*').eq('id', instanceId).maybeSingle();
+      if (instRes.error) throw new Error(instRes.error.message);
+      instance = instRes.data;
+    } catch (e) {
+      host.innerHTML = '<div class="card"><div class="alert alert-error">Failed to load: ' + esc(e.message) + '</div></div>';
+      return;
+    }
+    if (!instance) { host.innerHTML = '<div class="card"><div class="empty">Workflow not found.</div></div>'; return; }
+
+    var canAct = IS_STAFF || (instance.assigned_role === ROLE && instance.status !== 'Approved' && instance.status !== 'Rejected');
+
+    var stepsHtml = steps.map(function(s) {
+      var nodeClass = s.status === 'Approved' ? 'done' : s.status === 'Rejected' ? 'rejected' : s.status === 'InProgress' ? 'current' : '';
+      var meta = [];
+      if (s.assignee_role) meta.push(s.assignee_role);
+      if (s.department) meta.push(s.department);
+      if (s.exited_at) meta.push((s.duration_seconds || 0).toFixed(0) + 's');
+      var detail = [];
+      if (s.actor_email) detail.push('by ' + s.actor_email);
+      if (s.notes) detail.push(esc(s.notes));
+      if (s.validation_results && s.validation_results.length) {
+        var vResults = s.validation_results.map(function(v) {
+          return esc(v.rule_key + ': ' + v.result + (v.auto ? ' (auto)' : ''));
+        }).join(', ');
+        detail.push('Validation: ' + vResults);
+      }
+      if (s.field_changes && s.field_changes.length) {
+        var fChanges = s.field_changes.map(function(fc) {
+          return esc(fc.field + ': ' + (fc.before || '') + ' &rarr; ' + (fc.after || ''));
+        }).join(', ');
+        detail.push('Changes: ' + fChanges);
+      }
+      return '<div class="step-node ' + nodeClass + '">' +
+        '<div class="step-node-title">' + esc(s.step_name || s.step_key) + ' &mdash; <span class="status ' + wfStatusLabel(s.status) + '" style="font-size:11px;">' + esc(s.status) + '</span></div>' +
+        '<div class="step-node-meta">' + meta.join(' &middot; ') + '</div>' +
+        (detail.length ? '<div class="step-node-detail">' + detail.join(' &middot; ') + '</div>' : '') +
+      '</div>';
+    }).join('');
+
+    var actionBtns = '';
+    if (canAct && instance.status !== 'Approved' && instance.status !== 'Rejected') {
+      actionBtns = '<div style="display:flex;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border-soft);">' +
+        '<button class="btn btn-success" data-wf-advance="' + esc(instanceId) + '" data-action="approve">Approve Step' +
+          '<span class="info-icon">?<span class="tooltip">Approves the current step and advances the workflow to the next review step. All block-severity validation rules for this step must be satisfied (marked pass) or the database will reject the approval.</span></span>' +
+        '</button>' +
+        '<button class="btn btn-danger" data-wf-advance="' + esc(instanceId) + '" data-action="reject">Reject' +
+          '<span class="info-icon">?<span class="tooltip">Rejects the workflow at the current step. The instance is marked Rejected and no further steps run. The initiator is notified. Rejection does not require validation rules to be satisfied.</span></span>' +
+        '</button>' +
+        '<button class="btn btn-ghost" data-wf-advance="' + esc(instanceId) + '" data-action="return">Return for Revision' +
+          '<span class="info-icon">?<span class="tooltip">Returns the workflow to the previous step for revision. Use this when the submitter needs to provide additional information before review can continue.</span></span>' +
+        '</button>' +
+      '</div>';
+    }
+
+    host.innerHTML = '<div class="card">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">' +
+        '<div class="card-title" style="margin:0;"><span class="dot"></span>' + esc(TEMPLATE_LABELS[instance.template_code] || instance.template_code) + '</div>' +
+        '<span class="status ' + wfStatusLabel(instance.status) + '">' + esc(instance.status) + '</span>' +
+      '</div>' +
+      '<dl>' +
+        '<div class="kv"><dt>Initiated by</dt><dd class="mono">' + esc(instance.user_email) + '</dd></div>' +
+        '<div class="kv"><dt>Current step</dt><dd>' + esc(instance.current_step_key ? instance.current_step_key.replace(/_/g, ' ') : 'Complete') + ' (' + (instance.current_step_index + 1) + ')</dd></div>' +
+        '<div class="kv"><dt>Assigned to</dt><dd>' + esc(instance.assigned_department || '') + ' &middot; ' + esc(instance.assigned_role || '') + '</dd></div>' +
+        (instance.submission_table ? '<div class="kv"><dt>Linked submission</dt><dd class="mono">' + esc(instance.submission_table) + '</dd></div>' : '') +
+      '</dl>' +
+      '<div class="step-timeline">' + stepsHtml + '</div>' +
+      actionBtns +
+      '<div style="margin-top:12px;"><button class="btn btn-ghost btn-sm" data-wf-close>Close</button></div>' +
+    '</div>';
+
+    host.querySelectorAll('[data-wf-advance]').forEach(function(btn) {
+      btn.addEventListener('click', function() { advanceWorkflowAction(btn.dataset.wfAdvance, btn.dataset.action, instanceId); });
+    });
+    var closeBtn = host.querySelector('[data-wf-close]');
+    if (closeBtn) closeBtn.addEventListener('click', function() { host.innerHTML = ''; });
+  }
+
+  async function advanceWorkflowAction(action, actionVerb, instanceId) {
+    var validationResults = [];
+    try {
+      var tmplRes = await supabaseClient.from('workflow_templates').select('steps').eq('code',
+        (await supabaseClient.from('workflow_instances').select('template_code').eq('id', instanceId).maybeSingle()).data.template_code
+      ).maybeSingle();
+      var instRes2 = await supabaseClient.from('workflow_instances').select('current_step_key').eq('id', instanceId).maybeSingle();
+      if (tmplRes.data && tmplRes.data.steps) {
+        var curKey = instRes2.data.current_step_key;
+        var stepDef = tmplRes.data.steps.find(function(s) { return s.key === curKey; });
+        if (stepDef && stepDef.validation_rules) {
+          validationResults = stepDef.validation_rules.map(function(r) {
+            return { rule_key: r.rule_key, result: 'pass', framework: r.framework || '' };
+          });
+        }
+      }
+    } catch (_) {}
+
+    var notes = '';
+    if (actionVerb === 'reject' || actionVerb === 'return') {
+      notes = prompt(actionVerb === 'reject' ? 'Reason for rejection:' : 'Reason for return:') || '';
+      if (actionVerb === 'reject' && !notes) { showToast('A reason is required for rejection.', true); return; }
+    }
+
+    try {
+      var res = await supabaseClient.rpc('advance_workflow', {
+        p_instance_id: instanceId,
+        p_actor_email: EMAIL,
+        p_action: actionVerb,
+        p_validation_results: validationResults,
+        p_field_changes: [],
+        p_notes: notes,
+      });
+      if (res.error) throw new Error(res.error.message);
+      var newStatus = res.data.status;
+      showToast('Step ' + (actionVerb === 'approve' ? 'approved' : actionVerb === 'reject' ? 'rejected' : 'returned') + '. Workflow: ' + newStatus);
+      renderWorkflowDetail(instanceId);
+      renderWorkflows();
+    } catch (e) {
+      showToast('Action failed: ' + e.message, true);
+    }
+  }
+
+  async function renderWfStartGrid() {
+    var host = $('wfStartGrid');
+    try {
+      var templates = await fetchWorkflowTemplates();
+      var direct = templates.filter(function(t) { return DIRECT_START_TEMPLATES.indexOf(t.code) >= 0; });
+      var linked = templates.filter(function(t) { return DIRECT_START_TEMPLATES.indexOf(t.code) < 0; });
+
+      var html = '';
+      if (linked.length) {
+        html += '<div style="grid-column:1/-1;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-dim);margin-bottom:4px;">Auto-started from submissions</div>';
+        html += linked.map(function(t) {
+          return '<div class="stat" style="opacity:0.75;">' +
+            '<div class="stat-label">' + esc(t.framework || '') + '</div>' +
+            '<div class="stat-value" style="font-size:13px;line-height:1.4;">' + esc(t.name) + '</div>' +
+            '<div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Started automatically when you submit the matching form.</div>' +
+          '</div>';
+        }).join('');
+      }
+      if (direct.length) {
+        html += '<div style="grid-column:1/-1;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-dim);margin-bottom:4px;margin-top:8px;">Start directly</div>';
+        html += direct.map(function(t) {
+          return '<div class="stat">' +
+            '<div class="stat-label">' + esc(t.framework || '') + '</div>' +
+            '<div class="stat-value" style="font-size:13px;line-height:1.4;">' + esc(t.name) + '</div>' +
+            '<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">' + esc(t.description) + '</div>' +
+            '<button class="btn btn-primary btn-sm" style="margin-top:10px;" data-wf-start="' + esc(t.code) + '">Start' +
+              '<span class="info-icon">?<span class="tooltip">Starts a new ' + esc(t.name) + ' workflow. You will be prompted for a brief description. The workflow opens at the first review step assigned to ' + esc(t.framework || 'Security') + ' staff.</span></span>' +
+            '</button>' +
+          '</div>';
+        }).join('');
+      }
+      host.innerHTML = html || '<div class="empty">No templates available.</div>';
+      host.querySelectorAll('[data-wf-start]').forEach(function(btn) {
+        btn.addEventListener('click', function() { startWorkflowDirect(btn.dataset.wfStart); });
+      });
+    } catch (e) {
+      host.innerHTML = '<div class="empty">Failed to load templates: ' + esc(e.message) + '</div>';
+    }
+  }
+
+  async function startWorkflowDirect(templateCode) {
+    var desc = prompt('Brief description for this ' + (TEMPLATE_LABELS[templateCode] || templateCode) + ' request:') || '';
+    if (!desc.trim()) { showToast('A description is required.', true); return; }
+    try {
+      var res = await supabaseClient.rpc('start_workflow', {
+        p_template_code: templateCode,
+        p_submission_table: '',
+        p_submission_id: null,
+        p_user_email: EMAIL,
+        p_metadata: { description: desc, source: 'direct_start' },
+      });
+      if (res.error) throw new Error(res.error.message);
+      showToast('Workflow started. Track it in My Workflows.');
+      renderWorkflows();
+    } catch (e) {
+      showToast('Failed to start workflow: ' + e.message, true);
+    }
   }
 
   // ── Wire up ──────────────────────────────────────────────

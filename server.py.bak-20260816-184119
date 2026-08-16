@@ -653,11 +653,6 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                 return SUBDOMAIN_ROOTS[sub]
         return ROOT
 
-    def list_directory(self, path):
-        """Directory listings are disabled: return 404 instead of autoindex."""
-        self.send_error(404)
-        return None
-
     def translate_path(self, path):
         path = path.split('?', 1)[0]
         path = path.split('#', 1)[0]
@@ -1055,7 +1050,7 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
 
             if query:
                 where_clauses.append("id IN (SELECT rowid FROM plugins_fts WHERE plugins_fts MATCH ?)")
-                fts_query = ' OR '.join('"' + w.replace('"', '') + '"' for w in query.split() if w.strip())
+                fts_query = ' OR '.join(f'"{w}"' for w in query.split() if w.strip())
                 params.append(fts_query)
             if family:
                 where_clauses.append("family = ?")

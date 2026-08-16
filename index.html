@@ -1138,7 +1138,209 @@
         top: 15px;
         left: 15px;
         z-index: 10;
-        width: 230px;
+        width: 360px;
+    }
+
+    /* ── Beehive FOCUS SECTOR HUD ──────────────────────────────────
+       Alieninc adaptation of panteon admin.html sc-hud-container
+       design language: tessellated honeycomb tiles with alternating
+       cut-corner clip-paths, blueprint grid backdrop, wireframe
+       status pips, mono tags, and a bottom check line. Recolored to
+       the alieninc cyber palette (cyan #22d3ee / emerald #4ade80 on
+       pure black) and typeset in VT323 to match the existing map HUD. */
+
+    .retro-map-hive {
+        background-color: rgba(0, 0, 0, 0.92);
+        border: 1px solid rgba(34, 211, 238, 0.35);
+        border-radius: 8px;
+        padding: 12px 10px 14px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.85), 0 0 28px rgba(34, 211, 238, 0.08) inset;
+        box-sizing: border-box;
+        font-family: 'VT323', Courier, monospace;
+    }
+
+    .retro-map-hive-kicker {
+        font-size: 0.85rem;
+        color: #4ade80;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin: 0 0 8px 2px;
+        text-shadow: 0 0 4px rgba(74, 222, 128, 0.4);
+    }
+
+    .retro-map-hive-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        align-items: center;
+    }
+
+    .retro-map-hive-row {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+        transition: transform 0.3s ease;
+    }
+
+    .retro-map-hive-row.offset-row { transform: translateX(28px); }
+
+    .retro-map-hive-tile {
+        position: relative;
+        width: 168px;
+        height: 132px;
+        background-color: rgba(34, 211, 238, 0.45);
+        padding: 1.5px;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Alternating cut corners produce the honeycomb tessellation */
+    .retro-map-hive-tile.cut-tr-bl { clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px)); }
+    .retro-map-hive-tile.cut-tr-bl .retro-map-hive-inner { clip-path: polygon(0 0, calc(100% - 21px) 0, 100% 21px, 100% 100%, 21px 100%, 0 calc(100% - 21px)); }
+    .retro-map-hive-tile.cut-tl-br { clip-path: polygon(22px 0, 100% 0, 100% calc(100% - 22px), calc(100% - 22px) 100%, 0 100%, 0 22px); }
+    .retro-map-hive-tile.cut-tl-br .retro-map-hive-inner { clip-path: polygon(21px 0, 100% 0, 100% calc(100% - 21px), calc(100% - 21px) 100%, 0 100%, 0 21px); }
+
+    .retro-map-hive-tile.tile-cyan { background-color: rgba(34, 211, 238, 0.55); }
+    .retro-map-hive-tile.tile-emerald { background-color: rgba(74, 222, 128, 0.55); }
+
+    .retro-map-hive-inner {
+        background-color: #000;
+        width: 100%;
+        height: 100%;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        position: relative;
+        transition: background-color 0.2s ease;
+    }
+
+    .retro-map-hive-wires {
+        display: flex;
+        gap: 3px;
+        position: absolute;
+        top: 8px;
+        left: 12px;
+    }
+
+    .retro-map-wire-box {
+        width: 8px;
+        height: 8px;
+        border: 1px solid rgba(74, 222, 128, 0.55);
+        border-radius: 1px;
+        transition: all 0.2s ease;
+    }
+
+    .retro-map-wire-box.active {
+        background-color: #4ade80;
+        border-color: #4ade80;
+        box-shadow: 0 0 4px rgba(74, 222, 128, 0.8);
+    }
+
+    .retro-map-hive-tag {
+        font-size: 0.78rem;
+        color: rgba(74, 222, 128, 0.75);
+        position: absolute;
+        top: 6px;
+        right: 12px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    .retro-map-hive-value {
+        font-size: 1.45rem;
+        color: #ffffff;
+        line-height: 1.05;
+        margin-top: 12px;
+        text-align: center;
+        letter-spacing: 1px;
+        text-shadow: 0 0 6px rgba(34, 211, 238, 0.5);
+        text-transform: uppercase;
+        word-break: break-word;
+        max-width: 100%;
+    }
+
+    .retro-map-hive-tile.tile-cyan .retro-map-hive-value {
+        color: #22d3ee;
+        text-shadow: 0 0 6px rgba(34, 211, 238, 0.55);
+    }
+    .retro-map-hive-tile.tile-emerald .retro-map-hive-value {
+        color: #4ade80;
+        text-shadow: 0 0 6px rgba(74, 222, 128, 0.55);
+    }
+
+    .retro-map-hive-label {
+        font-size: 0.8rem;
+        color: rgba(34, 211, 238, 0.7);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-align: center;
+    }
+
+    .retro-map-hive-tile.tile-emerald .retro-map-hive-label { color: rgba(74, 222, 128, 0.75); }
+
+    .retro-map-hive-check {
+        position: absolute;
+        bottom: 6px;
+        left: 12px;
+        right: 12px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.78rem;
+        color: rgba(74, 222, 128, 0.85);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .retro-map-hive-check b {
+        color: #4ade80;
+        font-weight: normal;
+        text-shadow: 0 0 4px rgba(74, 222, 128, 0.8);
+    }
+
+    /* Clickable MAP VIEWS honeycomb tiles (DEFAULT / GRID FLOW) */
+    .retro-map-hive-tile.retro-map-view-btn {
+        border: none;
+        font: inherit;
+        color: inherit;
+        text-align: center;
+        cursor: pointer;
+    }
+    .retro-map-hive-tile.retro-map-view-btn:hover .retro-map-hive-inner {
+        background-color: #050a0e;
+    }
+    .retro-map-hive-tile.retro-map-view-btn:hover {
+        z-index: 10;
+        transform: scale(1.05);
+        filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.55));
+    }
+    .retro-map-hive-tile.retro-map-view-btn.active {
+        background-color: #4ade80;
+    }
+    .retro-map-hive-tile.retro-map-view-btn.active .retro-map-hive-inner {
+        background-color: rgba(74, 222, 128, 0.08);
+    }
+    .retro-map-hive-tile.retro-map-view-btn.active .retro-map-hive-value {
+        color: #4ade80;
+        text-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+    }
+    .retro-map-hive-tile.retro-map-view-btn.active .retro-map-hive-label {
+        color: rgba(74, 222, 128, 0.85);
+    }
+    .retro-map-hive-tile.retro-map-view-btn.active .retro-map-hive-check {
+        color: #4ade80;
+    }
+
+    @media screen and (max-width: 900px) {
+        .retro-map-hud-left { width: calc(100% - 30px); }
+        .retro-map-hive-row { flex-wrap: wrap; }
+        .retro-map-hive-row.offset-row { transform: none; }
+        .retro-map-deck { top: 380px; }
     }
 
     .retro-map-hud-kicker {
@@ -1378,19 +1580,12 @@
         100% { top: 100%; }
     }
 
-    .retro-map-hud-right {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        z-index: 10;
-        width: 210px;
-        text-align: right;
-    }
+    .retro-map-hud-right { display: none; }
 
     /* Left-side Drawer: Map Active Spectras */
     .retro-map-deck {
         position: absolute;
-        top: 150px;
+        top: 215px;
         left: 15px;
         z-index: 10;
         width: 180px;
@@ -2171,15 +2366,67 @@
       <section id="network-map" class="network-map-zone">
         <div class="retro-map-wrapper">
 
-            <!-- HUD: Focused LGU Telemetry Card (fable top-left card adapted) -->
-            <div class="retro-map-hud-panel retro-map-hud-left">
-                <div class="retro-map-hud-kicker">FOCUS SECTOR</div>
-                <div id="retro-focus-title" class="retro-map-hud-heading">LUZON ARRAY</div>
-                <div class="retro-map-hud-stat">
-                    <span id="retro-focus-stat1-val" class="retro-map-hud-num">7 SECTORS</span>
-                    <span id="retro-focus-stat1-lbl" class="retro-map-hud-sub">CONNECTED</span>
+            <!-- HUD: FOCUS SECTOR (beehive honeycomb deck — alieninc adaptation of panteon admin.html sc-hud-container design language) -->
+            <div class="retro-map-hud-left retro-map-hive">
+                <div class="retro-map-hive-kicker">FOCUS SECTOR</div>
+                <div class="retro-map-hive-grid">
+                    <div class="retro-map-hive-row">
+                        <div class="retro-map-hive-tile cut-tr-bl tile-cyan">
+                            <div class="retro-map-hive-inner">
+                                <div class="retro-map-hive-wires">
+                                    <span class="retro-map-wire-box active"></span>
+                                    <span class="retro-map-wire-box active"></span>
+                                    <span class="retro-map-wire-box"></span>
+                                </div>
+                                <span class="retro-map-hive-tag">FOCUS-01</span>
+                                <div id="retro-focus-title" class="retro-map-hive-value">NETWORK STANDBY</div>
+                                <div class="retro-map-hive-label">SECTOR LOCK</div>
+                                <div class="retro-map-hive-check"><b>&#10003;</b> <span id="retro-focus-stat2">AWAITING DATA STREAM</span></div>
+                            </div>
+                        </div>
+                        <div class="retro-map-hive-tile cut-tl-br tile-emerald">
+                            <div class="retro-map-hive-inner">
+                                <div class="retro-map-hive-wires">
+                                    <span class="retro-map-wire-box active"></span>
+                                    <span class="retro-map-wire-box active"></span>
+                                    <span class="retro-map-wire-box active"></span>
+                                </div>
+                                <span class="retro-map-hive-tag">FOCUS-02</span>
+                                <div id="retro-focus-stat1-val" class="retro-map-hive-value">&mdash; SECTORS</div>
+                                <div class="retro-map-hive-label"><span id="retro-focus-stat1-lbl">STANDBY</span></div>
+                                <div class="retro-map-hive-check"><b>&#10003;</b> GRID SYNC</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2 (offset): MAP VIEWS — clickable honeycomb tiles, same design language as the focus tiles -->
+                    <div class="retro-map-hive-row offset-row">
+                        <button onclick="toggleDataLayer('default')" id="layer-btn-default" class="retro-map-hive-tile cut-tl-br tile-cyan retro-map-view-btn active" type="button">
+                            <div class="retro-map-hive-inner">
+                                <div class="retro-map-hive-wires">
+                                    <span class="retro-map-wire-box active"></span>
+                                    <span class="retro-map-wire-box active"></span>
+                                </div>
+                                <span class="retro-map-hive-tag">VIEW-01</span>
+                                <div class="retro-map-hive-value">DEFAULT</div>
+                                <div class="retro-map-hive-label">BUILDINGS</div>
+                                <div class="retro-map-hive-check"><b>&#10003;</b> HEIGHT SPECTRUM</div>
+                            </div>
+                        </button>
+                        <button onclick="toggleDataLayer('flow')" id="layer-btn-flow" class="retro-map-hive-tile cut-tr-bl tile-emerald retro-map-view-btn" type="button">
+                            <div class="retro-map-hive-inner">
+                                <div class="retro-map-hive-wires">
+                                    <span class="retro-map-wire-box active"></span>
+                                    <span class="retro-map-wire-box"></span>
+                                </div>
+                                <span class="retro-map-hive-tag">VIEW-02</span>
+                                <div class="retro-map-hive-value">GRID FLOW</div>
+                                <div class="retro-map-hive-label">CONNECTIONS</div>
+                                <div class="retro-map-hive-check"><b>&#10003;</b> COMPANY ARCS</div>
+                            </div>
+                        </button>
+                    </div>
                 </div>
-                <div id="retro-focus-stat2" class="retro-map-hud-meta">GRID AREA ACTIVE</div>
             </div>
 
             <!-- HUD: Company search (BGC directory + group companies from the source of truth) -->
@@ -2188,28 +2435,15 @@
                 <div id="retro-search-results" class="retro-map-search-results"></div>
             </div>
 
-            <!-- HUD: Database Status Card (real counts + as-of date from source of truth) -->
-            <div class="retro-map-hud-panel retro-map-hud-right">
-                <div class="retro-map-hud-kicker">DATABASE STATUS</div>
-                <div id="hud-archive-count" class="retro-map-hud-heading">— COMPANIES</div>
-                <div id="hud-archive-meta" class="retro-map-hud-meta">AS OF —</div>
-            </div>
+            <!-- DATABASE STATUS panel removed: the beehive FOCUS SECTOR deck now
+                 carries the live sector telemetry, and the static company-count
+                 card had a stale "7 COMPANIES" placeholder that never refreshed
+                 after the API-backed node list loaded. -->
 
-            <!-- Left side Drawer: Map Views -->
-            <div class="retro-map-hud-panel retro-map-deck">
-                <div class="retro-map-deck-title">MAP VIEWS</div>
-                <button onclick="toggleDataLayer('default')" id="layer-btn-default" class="retro-map-deck-btn active">DEFAULT</button>
-                <button onclick="toggleDataLayer('flow')" id="layer-btn-flow" class="retro-map-deck-btn">GRID FLOW</button>
-
-                <!-- Spectral Legend -->
-                <div class="retro-map-legend">
-                    <div class="retro-map-legend-bar"></div>
-                    <div class="retro-map-legend-labels">
-                        <span id="retro-legend-low">LOW-RISE</span>
-                        <span id="retro-legend-high">HIGH-RISE</span>
-                    </div>
-                </div>
-            </div>
+            <!-- MAP VIEWS deck removed: DEFAULT / GRID FLOW now live as clickable
+                 honeycomb tiles in the FOCUS SECTOR beehive above. The building-
+                 height spectral legend was retired alongside the corridor-based
+                 grid flow, which is now a company-connection arc view. -->
 
             <!-- Map Render Port -->
             <div id="aliens-network-map" style="height: 100%; width: 100%;"></div>
@@ -2625,10 +2859,17 @@
       500, '#22d3ee'     // Skyline peaks
   ];
 
-  // --- GRID FLOW: animated pulses along real Luzon corridors that color buildings as they cross ---
-  const FLOW_DURATION_MS = 26000;
-  const FLOW_BUFFER_M = 160;
-  const FLOW_REVEAL_SCAN_MS = 100;
+  // --- GRID FLOW: threatmap.checkpoint.com-style animated company connection arcs ---
+  // Curved yellow/amber arcs draw themselves from one company node to another,
+  // showing which companies are connected. Adapted from the Check Point
+  // ThreatMap design language: great-circle-style arcs with a bright traveling
+  // head, animated as if the line is being rendered source -> target.
+  const FLOW_ARC_DURATION_MS = 4200;   // ms for one arc to fully draw
+  const FLOW_ARC_HOLD_MS = 900;        // ms the full arc lingers before restarting
+  const FLOW_ARC_CYCLE_MS = FLOW_ARC_DURATION_MS + FLOW_ARC_HOLD_MS;
+  const FLOW_ARC_LIFT = 0.22;          // curvature: control-point lift as fraction of distance
+  const FLOW_ARC_SAMPLES = 64;         // bezier sample resolution
+  const FLOW_ARC_COLORS = ['#FFD23F', '#FFC107', '#FFB300', '#FFE066']; // threatmap yellow family
 
   function flowDistanceM(a, b) {
       const dx = (b[0] - a[0]) * 111320 * Math.cos((a[1] + b[1]) / 2 * Math.PI / 180);
@@ -2652,69 +2893,101 @@
       return out;
   }
 
-  function flowOffsetChain(coords, w) {
-      const n = coords.length;
-      if (n < 2) return null;
-      const left = [], right = [];
-      for (let i = 0; i < n; i++) {
-          const a = coords[Math.max(0, i - 1)];
-          const b = coords[i];
-          const c = coords[Math.min(n - 1, i + 1)];
-          let dx = c[0] - a[0], dy = c[1] - a[1];
-          const len = Math.sqrt(dx * dx + dy * dy) || 1;
-          dx /= len; dy /= len;
-          const nx = -dy, ny = dx;
-          left.push([b[0] + nx * w, b[1] + ny * w]);
-          right.push([b[0] - nx * w, b[1] - ny * w]);
+  // Build curved arc coordinates (quadratic bezier with perpendicular lift)
+  // between two network nodes — gives the threatmap-style great-circle bow.
+  function buildArcCoords(from, to) {
+      const A = [from.lng, from.lat];
+      const B = [to.lng, to.lat];
+      const mx = (A[0] + B[0]) / 2;
+      const my = (A[1] + B[1]) / 2;
+      const dx = B[0] - A[0];
+      const dy = B[1] - A[1];
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1e-6;
+      const nx = -dy / dist;            // perpendicular unit vector
+      const ny = dx / dist;
+      const liftAmt = dist * FLOW_ARC_LIFT;
+      const C = [mx + nx * liftAmt, my + ny * liftAmt];
+      const pts = [];
+      for (let i = 0; i <= FLOW_ARC_SAMPLES; i++) {
+          const t = i / FLOW_ARC_SAMPLES;
+          const it = 1 - t;
+          pts.push([
+              it * it * A[0] + 2 * it * t * C[0] + t * t * B[0],
+              it * it * A[1] + 2 * it * t * C[1] + t * t * B[1]
+          ]);
       }
-      const ring = left.concat(right.reverse());
-      ring.push(ring[0]);
-      return { type: 'Polygon', coordinates: [ring] };
+      return pts;
   }
 
-  function flowPointInPoly(pt, ring) {
-      let inside = false;
-      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-          const xi = ring[i][0], yi = ring[i][1];
-          const xj = ring[j][0], yj = ring[j][1];
-          if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < ((xj - xi) * (pt[1] - yi)) / (yj - yi) + xi) {
-              inside = !inside;
-          }
-      }
-      return inside;
-  }
+  let flowConnCache = null;            // [{from, to, coords, segs, len, phase, color}]
 
-  let flowLinesCache = null;
-  let flowRunning = false;
-  let flowRafId = null;
-  let flowStartTs = 0;
-  let flowPrevPhase = 0;
-  let flowLastScan = 0;
-  const revealedBuildingIds = new Set();
-
-  function buildFlowLines() {
-      if (flowLinesCache) return flowLinesCache;
-      const features = [
-          ...luzonRailwaysGeoJSON.features.map(f => Object.assign({}, f, { properties: Object.assign({}, f.properties, { type: 'rail' }) })),
-          ...luzonHighwaysGeoJSON.features.map(f => Object.assign({}, f, { properties: Object.assign({}, f.properties, { type: 'road' }) }))
-      ];
-      flowLinesCache = features.map(f => {
-          const coords = f.geometry.coordinates;
+  // Build the company-to-company connection set from the live network nodes.
+  // Hub-spoke from ALIEN.INC HQ to every node + nearest-2 mesh links between
+  // the others, so the arcs read as a living network rather than a single star.
+  function buildFlowConnections() {
+      const nodes = (window.aliensNetworkNodes || []).filter(n => n && n.lat != null && n.lng != null);
+      if (nodes.length < 2) { flowConnCache = []; return flowConnCache; }
+      const hq = nodes.find(n => n.name === 'ALIEN.INC') || nodes[0];
+      const conns = [];
+      const seen = new Set();
+      const key = (a, b) => {
+          const ia = nodes.indexOf(a), ib = nodes.indexOf(b);
+          return ia < ib ? ia + ':' + ib : ib + ':' + ia;
+      };
+      const add = (from, to, colorIdx) => {
+          const k = key(from, to);
+          if (seen.has(k)) return;
+          seen.add(k);
+          const coords = buildArcCoords(from, to);
           const segs = [];
           let len = 0;
           for (let i = 0; i < coords.length - 1; i++) {
               const d = flowDistanceM(coords[i], coords[i + 1]);
-              segs.push(d);
-              len += d;
+              segs.push(d); len += d;
           }
-          return { name: f.properties.name, type: f.properties.type, coords, segs, len };
+          conns.push({
+              from, to, coords, segs, len,
+              phase: Math.random(),
+              color: FLOW_ARC_COLORS[colorIdx % FLOW_ARC_COLORS.length]
+          });
+      };
+      // Hub-spoke: HQ -> every other node (primary yellow)
+      nodes.forEach(n => { if (n !== hq) add(hq, n, 0); });
+      // Mesh: each non-HQ node -> its 2 nearest non-HQ neighbors (amber variants)
+      const others = nodes.filter(n => n !== hq);
+      others.forEach(n => {
+          const nearest = others
+              .filter(m => m !== n)
+              .map(m => ({ m, d: (m.lng - n.lng) ** 2 + (m.lat - n.lat) ** 2 }))
+              .sort((a, b) => a.d - b.d)
+              .slice(0, 2);
+          nearest.forEach((entry, i) => add(n, entry.m, i + 1));
       });
-      return flowLinesCache;
+      flowConnCache = conns;
+      return flowConnCache;
   }
+
+  let flowRunning = false;
+  let flowRafId = null;
+  let flowStartTs = 0;
 
   function startFlow() {
       if (flowRunning || !activeMapInstance) return;
-      if (!activeMapInstance.getLayer('flow-base')) return;
+      if (!activeMapInstance.getSource('flow-conn-base')) return;
+      flowConnCache = null; // rebuild fresh each session (nodes may have changed)
+      buildFlowConnections();
+      // Seed the static base arcs (faint full routes — the "network" underlay)
+      const baseSource = activeMapInstance.getSource('flow-conn-base');
+      if (baseSource) {
+          baseSource.setData({
+              type: 'FeatureCollection',
+              features: (flowConnCache || []).map(c => ({
+                  type: 'Feature',
+                  properties: { color: c.color },
+                  geometry: { type: 'LineString', coordinates: c.coords }
+              }))
+          });
+      }
       flowRunning = true;
       flowStartTs = performance.now();
       flowTick();
@@ -2722,107 +2995,61 @@
 
   function stopFlow() {
       flowRunning = false;
-      if (flowRafId) {
-          cancelAnimationFrame(flowRafId);
-          flowRafId = null;
-      }
-      clearRevealedBuildings();
-  }
-
-  function clearRevealedBuildings() {
-      if (!activeMapInstance || revealedBuildingIds.size === 0) return;
-      const ids = [...revealedBuildingIds];
-      revealedBuildingIds.clear();
-      ids.forEach(id => {
-          try {
-              activeMapInstance.setFeatureState({ source: 'openmaptiles', sourceLayer: 'building', id }, { reveal: false });
-          } catch (e) { /* tile may have been evicted */ }
-      });
+      if (flowRafId) { cancelAnimationFrame(flowRafId); flowRafId = null; }
+      if (!activeMapInstance) return;
+      const activeSource = activeMapInstance.getSource('flow-conn-active');
+      if (activeSource) activeSource.setData({ type: 'FeatureCollection', features: [] });
+      const headSource = activeMapInstance.getSource('flow-conn-head');
+      if (headSource) headSource.setData({ type: 'FeatureCollection', features: [] });
   }
 
   function flowTick() {
       if (!flowRunning || !activeMapInstance) { flowRafId = null; return; }
-      const phase = ((performance.now() - flowStartTs) % FLOW_DURATION_MS) / FLOW_DURATION_MS;
+      const now = performance.now();
+      const conns = flowConnCache || [];
+      const activeFeatures = [];
+      const headFeatures = [];
 
-      if (activeMapInstance.getLayer('flow-dash')) {
-          activeMapInstance.setPaintProperty('flow-dash', 'line-dasharray', [2.4, 2.4, phase * 4.8]);
-      }
-
-      const lines = buildFlowLines();
-      const cometFeatures = [];
-      const polys = [];
-      const revealBuildings = activeMapInstance.getZoom() >= 13;
-
-      lines.forEach((line, i) => {
-          const p = (phase + i * 0.13) % 1;
-          const portion = flowSubstring(line.coords, line.segs, line.len * p);
-          cometFeatures.push({
-              type: 'Feature',
-              properties: { name: line.name },
-              geometry: { type: 'LineString', coordinates: portion }
-          });
-          if (revealBuildings && portion.length >= 2) {
-              const poly = flowOffsetChain(portion, FLOW_BUFFER_M / 110540);
-              if (poly) polys.push(poly);
+      conns.forEach(c => {
+          const t = ((now - flowStartTs) + c.phase * FLOW_ARC_CYCLE_MS) % FLOW_ARC_CYCLE_MS;
+          let p;
+          if (t < FLOW_ARC_DURATION_MS) {
+              // ease-in-out draw phase: line renders from source -> target
+              const x = t / FLOW_ARC_DURATION_MS;
+              p = x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+          } else {
+              p = 1; // hold phase: full arc visible
           }
+          if (p <= 0) return;
+          const partial = flowSubstring(c.coords, c.segs, c.len * p);
+          if (partial.length < 2) return;
+          activeFeatures.push({
+              type: 'Feature',
+              properties: { color: c.color },
+              geometry: { type: 'LineString', coordinates: partial }
+          });
+          // Traveling head marker at the leading edge of each arc
+          const head = partial[partial.length - 1];
+          headFeatures.push({
+              type: 'Feature',
+              properties: { color: c.color },
+              geometry: { type: 'Point', coordinates: head }
+          });
       });
 
-      const cometSource = activeMapInstance.getSource('flow-comet-source');
-      if (cometSource) {
-          cometSource.setData({ type: 'FeatureCollection', features: cometFeatures });
-      }
-
-      // Reveal buildings as the pulse crosses them (feature-state opacity, throttled scan)
-      if (revealBuildings && polys.length) {
-          if (phase < flowPrevPhase) clearRevealedBuildings();
-          const now = performance.now();
-          if (now - flowLastScan > FLOW_REVEAL_SCAN_MS) {
-              flowLastScan = now;
-              const rings = polys.map(p => p.coordinates[0]);
-              let feats = [];
-              try {
-                  feats = activeMapInstance.querySourceFeatures('openmaptiles', { sourceLayer: 'building' });
-              } catch (e) { feats = []; }
-              feats.forEach(f => {
-                  if (f.id == null) return;
-                  if (revealedBuildingIds.has(f.id)) return;
-                  const g = f.geometry;
-                  let pt = null;
-                  if (g.type === 'Point') pt = g.coordinates;
-                  else if (g.type === 'Polygon' && g.coordinates[0] && g.coordinates[0][0]) pt = g.coordinates[0][0];
-                  else return;
-                  let matched = false;
-                  for (let k = 0; k < rings.length; k++) {
-                      if (flowPointInPoly(pt, rings[k])) { matched = true; break; }
-                  }
-                  if (matched) {
-                      revealedBuildingIds.add(f.id);
-                      try {
-                          activeMapInstance.setFeatureState({ source: 'openmaptiles', sourceLayer: 'building', id: f.id }, { reveal: true });
-                      } catch (e) { /* ignore */ }
-                  }
-              });
-          }
-      }
-      flowPrevPhase = phase;
+      const activeSource = activeMapInstance.getSource('flow-conn-active');
+      if (activeSource) activeSource.setData({ type: 'FeatureCollection', features: activeFeatures });
+      const headSource = activeMapInstance.getSource('flow-conn-head');
+      if (headSource) headSource.setData({ type: 'FeatureCollection', features: headFeatures });
 
       flowRafId = requestAnimationFrame(flowTick);
   }
 
   // Applies real group numbers from the ecosystem source of truth to the HUD.
+  // The DATABASE STATUS card was removed; only the sector-count write remains.
   function applyEcosystemSummary() {
       const summary = window.ecosystemSummary;
       if (!summary) return;
-
-      const countEl = document.getElementById('hud-archive-count');
-      if (countEl && typeof summary.companyCount === 'number') {
-          countEl.textContent = `${summary.companyCount} COMPANIES`;
-      }
-
-      const metaEl = document.getElementById('hud-archive-meta');
-      if (metaEl && summary.asOf) {
-          metaEl.textContent = `AS OF ${summary.asOf}`;
-      }
 
       const sectorsEl = document.getElementById('retro-focus-stat1-val');
       if (sectorsEl && summary.nodeCount && sectorsEl.textContent.trim().indexOf('SECTORS') !== -1) {
@@ -3031,6 +3258,20 @@
       if (!mapEl || typeof maplibregl === 'undefined') return;
 
       applyEcosystemSummary();
+      // Snap HUD to the real default state immediately — don't leave the
+      // static "NETWORK STANDBY" placeholder visible while tiles load,
+      // and don't wait for the first `move` event to refresh it.
+      (function applyInitialFocusHUD() {
+          const sectors = (window.ecosystemSummary && window.ecosystemSummary.nodeCount) || (window.aliensNetworkNodes || []).length || 13;
+          const titleEl = document.getElementById('retro-focus-title');
+          const valEl = document.getElementById('retro-focus-stat1-val');
+          const lblEl = document.getElementById('retro-focus-stat1-lbl');
+          const metaEl = document.getElementById('retro-focus-stat2');
+          if (titleEl) titleEl.textContent = 'GLOBAL GRID';
+          if (valEl) valEl.textContent = `${sectors} SECTORS`;
+          if (lblEl) lblEl.textContent = 'CONNECTED';
+          if (metaEl) metaEl.textContent = 'WORLD GRID ACTIVE';
+      })();
       initSearch();
 
       // Integrates OpenFreeMap Dark style to serve vector tiles natively
@@ -3087,94 +3328,70 @@
               }
           });
 
-          // Add Luzon corridor network (real rail + highway alignments) for the GRID FLOW view
-          const corridorFeatures = [
-              ...luzonRailwaysGeoJSON.features.map(f => Object.assign({}, f, { properties: Object.assign({}, f.properties, { type: 'rail' }) })),
-              ...luzonHighwaysGeoJSON.features.map(f => Object.assign({}, f, { properties: Object.assign({}, f.properties, { type: 'road' }) }))
-          ];
-          activeMapInstance.addSource('luzon-corridors', {
+          // Company connection arcs for the GRID FLOW view
+          // (threatmap.checkpoint.com design language: curved yellow arcs with
+          // a bright traveling head, animated as if drawn source -> target)
+          activeMapInstance.addSource('flow-conn-base', {
               type: 'geojson',
-              data: { type: 'FeatureCollection', features: corridorFeatures }
+              data: { type: 'FeatureCollection', features: [] }
           });
-
-          // Dim base corridor underlay (identity colors: rail = cyan, road = emerald)
-          activeMapInstance.addLayer({
-              id: 'flow-base',
-              type: 'line',
-              source: 'luzon-corridors',
-              layout: { 'line-cap': 'round', 'line-join': 'round', 'visibility': 'none' },
-              paint: {
-                  'line-color': ['match', ['get', 'type'], 'rail', '#22d3ee', '#34d399'],
-                  'line-width': 3,
-                  'line-opacity': 0.22
-              }
-          });
-
-          // Flowing dashes marching along the network
-          activeMapInstance.addLayer({
-              id: 'flow-dash',
-              type: 'line',
-              source: 'luzon-corridors',
-              layout: { 'line-cap': 'round', 'line-join': 'round', 'visibility': 'none' },
-              paint: {
-                  'line-color': ['match', ['get', 'type'], 'rail', '#22d3ee', '#34d399'],
-                  'line-width': 3,
-                  'line-opacity': 0.85,
-                  'line-dasharray': [2.4, 2.4, 0]
-              }
-          });
-
-          // Traveling comet head (geometry rebuilt every frame up to the pulse position)
-          activeMapInstance.addSource('flow-comet-source', {
+          activeMapInstance.addSource('flow-conn-active', {
               type: 'geojson',
               lineMetrics: true,
               data: { type: 'FeatureCollection', features: [] }
           });
+          activeMapInstance.addSource('flow-conn-head', {
+              type: 'geojson',
+              data: { type: 'FeatureCollection', features: [] }
+          });
+
+          // Faint full routes — the static "network" underlay
           activeMapInstance.addLayer({
-              id: 'flow-comet',
+              id: 'flow-conn-base',
               type: 'line',
-              source: 'flow-comet-source',
+              source: 'flow-conn-base',
+              layout: { 'line-cap': 'round', 'line-join': 'round', 'visibility': 'none' },
+              paint: {
+                  'line-color': ['get', 'color'],
+                  'line-width': 1,
+                  'line-opacity': 0.16
+              }
+          });
+
+          // Animated drawing arcs — line-gradient fades the tail to transparent
+          // and brightens toward the head (white tip), threatmap-style.
+          activeMapInstance.addLayer({
+              id: 'flow-conn-active',
+              type: 'line',
+              source: 'flow-conn-active',
               layout: { 'line-cap': 'round', 'line-join': 'round', 'visibility': 'none' },
               paint: {
                   'line-gradient': [
                       'interpolate', ['linear'], ['line-progress'],
-                      0, 'rgba(103,232,249,0)',
-                      0.72, 'rgba(103,232,249,0)',
-                      0.84, 'rgba(34,211,238,0.9)',
-                      0.97, 'rgba(255,255,255,1)'
+                      0, 'rgba(255, 210, 63, 0)',
+                      0.55, 'rgba(255, 210, 63, 0.22)',
+                      0.85, ['get', 'color'],
+                      1, '#ffffff'
                   ],
-                  'line-width': 4,
-                  'line-opacity': 1
+                  'line-width': 2.4,
+                  'line-opacity': 0.95
               }
           });
 
-          // Buildings get their real height colors once the pulse crosses them (feature-state opacity)
+          // Glowing head dots at each arc's leading edge
           activeMapInstance.addLayer({
-              id: 'buildings-revealed',
-              source: 'openmaptiles',
-              'source-layer': 'building',
-              type: 'fill-extrusion',
-              minzoom: 13,
+              id: 'flow-conn-head',
+              type: 'circle',
+              source: 'flow-conn-head',
               layout: { 'visibility': 'none' },
               paint: {
-                  'fill-extrusion-color': [
-                      'case',
-                      ['==', ['feature-state', 'reveal'], true],
-                      BUILDING_HEIGHT_RAMP,
-                      'rgba(0,0,0,0)'
-                  ],
-                  'fill-extrusion-height': [
-                      'interpolate', ['linear'], ['zoom'],
-                      13, 0,
-                      14, ['get', 'render_height']
-                  ],
-                  'fill-extrusion-base': [
-                      'case',
-                      ['>=', ['get', 'zoom'], 16],
-                      ['get', 'render_min_height'],
-                      0
-                  ],
-                  'fill-extrusion-opacity': 0.92
+                  'circle-radius': 4,
+                  'circle-color': ['get', 'color'],
+                  'circle-opacity': 0.95,
+                  'circle-stroke-width': 1.5,
+                  'circle-stroke-color': '#ffffff',
+                  'circle-stroke-opacity': 0.9,
+                  'circle-blur': 0.6
               }
           });
 
@@ -3294,24 +3511,23 @@
       });
   }
 
-  // Map view toggle: DEFAULT shows height-colored buildings, GRID FLOW animates corridor pulses
+  // Map view toggle: DEFAULT shows height-colored buildings, GRID FLOW animates
+  // threatmap-style company connection arcs (yellow lines drawn node -> node).
   function toggleDataLayer(mode) {
       if (!activeMapInstance) return;
 
       const isFlow = mode === 'flow';
-      document.querySelectorAll('.retro-map-deck-btn').forEach(btn => {
-          btn.classList.remove('active');
-      });
+      document.querySelectorAll('.retro-map-view-btn').forEach(btn => btn.classList.remove('active'));
       const activeBtn = document.getElementById(`layer-btn-${mode}`);
       if (activeBtn) activeBtn.classList.add('active');
 
-      const flowLayerIds = ['flow-base', 'flow-dash', 'flow-comet', 'buildings-revealed'];
+      const flowLayerIds = ['flow-conn-base', 'flow-conn-active', 'flow-conn-head'];
 
       if (isFlow) {
-          // Dim base buildings so pulses' height-color reveal pops
+          // Dim base buildings so the connection arcs pop
           if (activeMapInstance.getLayer('3d-buildings')) {
               activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-color', '#0b1520');
-              activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.55);
+              activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.5);
           }
           flowLayerIds.forEach(id => {
               if (activeMapInstance.getLayer(id)) activeMapInstance.setLayoutProperty(id, 'visibility', 'visible');
@@ -3327,11 +3543,6 @@
               if (activeMapInstance.getLayer(id)) activeMapInstance.setLayoutProperty(id, 'visibility', 'none');
           });
       }
-
-      const lowEl = document.getElementById('retro-legend-low');
-      const highEl = document.getElementById('retro-legend-high');
-      if (lowEl) lowEl.textContent = 'LOW-RISE';
-      if (highEl) highEl.textContent = 'HIGH-RISE';
   }
 
   // Sector Preset action focusing

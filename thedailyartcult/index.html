@@ -1561,11 +1561,8 @@
 
                   <div class="publisher-access-form mt-7 rounded-xl p-4">
                     <p class="text-[9px] font-mono uppercase tracking-[0.22em] text-antique/70">Private Ledger Access</p>
-                    <form id="publisher-access-form" class="mt-3 flex flex-col gap-3 sm:flex-row">
-                      <input type="email" id="publisher-access-email" required placeholder="your@email.com" class="min-w-0 flex-1 rounded-lg border border-linen/10 bg-[#14100e]/85 px-4 py-3 text-sm text-cream placeholder:text-linen/25 outline-none transition focus:border-antique/50">
-                      <button type="submit" class="rounded-lg bg-cream px-5 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-ink transition duration-300 hover:bg-antique active:scale-[0.99]">Send Link</button>
-                    </form>
-                    
+                    <p class="mt-3 text-xs text-linen/55 leading-relaxed">Sign in to your account library to save your selected lenses and source studies as personal audiobook editions.</p>
+
                     <!-- Active Selection Tray -->
                     <div class="mt-4 pt-3 border-t border-white/[0.06]">
                       <p class="text-[9px] font-mono uppercase tracking-[0.22em] text-linen/40 mb-1.5">Active Lenses Selected</p>
@@ -1573,10 +1570,10 @@
                         <span class="text-[9px] text-linen/30 italic">No lenses selected. Click cards below to add them.</span>
                       </div>
                     </div>
-                    
-                    <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+
+                    <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <p id="publisher-access-feedback" class="min-h-[1.25em] text-[10px] font-mono text-antique/80"></p>
-                      <a href="/thedailyartcult/accounts.thedailyartcult" class="text-[9px] font-mono uppercase tracking-[0.2em] text-linen/40 transition hover:text-antique">Open account library →</a>
+                      <button type="button" id="publisher-access-login-btn" class="shrink-0 rounded-lg bg-cream px-5 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-ink transition duration-300 hover:bg-antique active:scale-[0.99]">Sign in to library →</button>
                     </div>
                   </div>
                 </div>
@@ -1656,7 +1653,7 @@
  <!-- THE REVISED OFFERING: THE MEMBERSHIP -->
 <div id="post-playback-ui" class="hidden text-left px-4 md:px-0">
   <div class="mx-auto max-w-2xl py-8 text-center">
-    <a href="/thedailyartcult/accounts.thedailyartcult" class="text-[10px] font-mono uppercase tracking-[0.22em] text-linen/45 transition duration-300 hover:text-antique">
+    <a href="https://accounts.thedailyartcult.lol/" class="text-[10px] font-mono uppercase tracking-[0.22em] text-linen/45 transition duration-300 hover:text-antique">
       Open the private ledger →
     </a>
   </div>
@@ -2120,7 +2117,7 @@
       <div>
         <p class="text-[10px] font-mono tracking-[0.2em] uppercase text-antique/70 mb-5">The Ledger</p>
         <ul class="space-y-3 text-sm text-linen/60">
-          <li><a href="/thedailyartcult/accounts.thedailyartcult" class="hover:text-antique transition duration-300">Membership</a></li>
+          <li><a href="https://accounts.thedailyartcult.lol/" class="hover:text-antique transition duration-300">Membership</a></li>
           <li><a href="educators/" class="hover:text-antique transition duration-300">TDAC for Educators</a></li>
           <li><a href="giftcard/" class="hover:text-antique transition duration-300">Gift a Membership</a></li>
           <li><a href="/thedailyartcult/support.thedailyartcult" class="hover:text-antique transition duration-300">Support</a></li>
@@ -2550,8 +2547,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const publisherFeatureRhythm = document.getElementById('publisher-feature-rhythm');
   const publisherFeatureDescription = document.getElementById('publisher-feature-description');
   const publisherPreviewToggle = document.getElementById('publisher-preview-toggle');
-  const publisherAccessForm = document.getElementById('publisher-access-form');
-  const publisherAccessEmail = document.getElementById('publisher-access-email');
+  const publisherAccessLoginBtn = document.getElementById('publisher-access-login-btn');
   const publisherAccessFeedback = document.getElementById('publisher-access-feedback');
 
 
@@ -3516,6 +3512,7 @@ A single sentence that captures me as a learner and thinker — precise enough t
   }
 
   function buildAccountRedirectUrl() {
+    const ACCOUNTS_URL = "https://accounts.thedailyartcult.lol/";
     const selectedWorldviews = cartWorldviews.length > 0
       ? cartWorldviews
       : [answers.worldview].filter(Boolean);
@@ -3526,22 +3523,18 @@ A single sentence that captures me as a learner and thinker — precise enough t
     };
 
     if (!payload.selected_worldviews.length && !payload.source_materials.length) {
-      return "/thedailyartcult/accounts.thedailyartcult";
+      return ACCOUNTS_URL;
     }
 
-    const url = new URL("/thedailyartcult/accounts.thedailyartcult");
+    const url = new URL(ACCOUNTS_URL);
     url.searchParams.set('handoff', encodeAccountHandoff(payload));
     return url.toString();
   }
 
   async function requestPublisherAccessLink(email) {
-    const redirectTo = buildAccountRedirectUrl();
-    const { error } = await supabaseClient.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: redirectTo }
-    });
-
-    if (error) throw error;
+    // Magic-link auth was removed in favor of email + password login on the accounts subdomain.
+    // This function is retained as a no-op stub for backward compatibility with any callers.
+    throw new Error("Magic-link sign-in is no longer available. Use the Sign in to library button.");
   }
 
   function getSourceMaterialTitle(value) {
@@ -3625,30 +3618,16 @@ A single sentence that captures me as a learner and thinker — precise enough t
     });
   }
 
-  if (publisherAccessForm) {
-    publisherAccessForm.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const email = publisherAccessEmail ? publisherAccessEmail.value.trim() : "";
-      if (!email) return;
-
-      if (publisherAccessFeedback) {
-        publisherAccessFeedback.textContent = "Sending private ledger link...";
-      }
-
+  if (publisherAccessLoginBtn) {
+    publisherAccessLoginBtn.addEventListener('click', () => {
       try {
         rememberPendingSourceMaterial();
-        await requestPublisherAccessLink(email);
-        if (publisherAccessFeedback) {
-          publisherAccessFeedback.textContent = "Check your inbox. Your access link has been sent.";
-        }
-        publisherAccessForm.reset();
-        logStudioInteraction('publisher_access_requested', `Requested access for ${answers.worldview || 'selected publisher'}`);
-      } catch (error) {
-        console.error("Publisher access link failed:", error);
-        if (publisherAccessFeedback) {
-          publisherAccessFeedback.textContent = error.message || "Access link failed. Open the account library instead.";
-        }
+      } catch (e) {
+        console.warn("Could not persist pending source material:", e);
       }
+      const targetUrl = buildAccountRedirectUrl();
+      logStudioInteraction('publisher_access_requested', `Redirected to account library for ${answers.worldview || 'selected publisher'}`);
+      window.location.href = targetUrl;
     });
   }
 

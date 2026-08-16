@@ -30,6 +30,9 @@ from .engine import Engine
 from .models import CatalogEntry, SourceRef, now_iso
 from .parsers import janes_import_csv
 from .parsers_militaryfactory import parse_militaryfactory_country, build_entries, parse_militaryfactory_detail
+from .parsers_designation import parse_designation_listing
+from .parsers_missilethreat import parse_missilethreat_listing
+from .parsers_modernfirearms import parse_modernfirearms_listing, MODERNFIREARMS_SEED_URLS
 from .picklist import CurationRules, curate, write_outputs
 from .patent_feed import feed_patents, feed_from_file
 
@@ -103,6 +106,57 @@ def cmd_run(args, s: Settings):
     eng.crawl(_categories(args), limit=args.limit)
     eng.export()
     print(json.dumps(eng.status(), indent=2))
+    eng.close()
+
+
+def cmd_discover_sources(args, s: Settings):
+    """Enumerate the catalog listing pages of the three fact-extraction sources
+    (designation-systems.net, missilethreat.csis.org, modernfirearms.net) and
+    enqueue every detail URL into the scan store. robots.txt-gated, polite,
+    cached. Run this once per source to populate the queue, then `crawl`."""
+    eng = Engine(s)
+    eng.seed_from_catalog()
+    summary: dict[str, int] = {}
+
+    # --- designation-systems.net: /usmilav/missiles.html catalog table ---
+    ds_listing_url = "https://www.designation-systems.net/usmilav/missiles.html"
+    res = eng._fetcher("www.designation-systems.net").fetch(
+        ds_listing_url, store=eng.store, use_cache=True)
+    n_ds = 0
+    if res.status == 200 and res.html:
+        for url, _desig, _mfr in parse_designation_listing(res.html, ds_listing_url):
+            n_ds += eng.store.enqueue(
+                url, "www.designation-systems.net", kind="product")
+    summary["designation-systems.net"] = n_ds
+
+    # --- missilethreat.csis.org: /missile/ dropdown (full catalog) ---
+    mt_listing_url = "https://missilethreat.csis.org/missile/"
+    res = eng._fetcher("missilethreat.csis.org").fetch(
+        mt_listing_url, store=eng.store, use_cache=True)
+    n_mt = 0
+    if res.status == 200 and res.html:
+        for url, _name in parse_missilethreat_listing(res.html):
+            n_mt += eng.store.enqueue(
+                url, "missilethreat.csis.org", kind="product")
+    summary["missilethreat.csis.org"] = n_mt
+
+    # --- modernfirearms.net: each working category index page ---
+    n_mf = 0
+    for _mf_cat, idx_url in MODERNFIREARMS_SEED_URLS.items():
+        res = eng._fetcher("modernfirearms.net").fetch(
+            idx_url, store=eng.store, use_cache=True)
+        if res.status == 200 and res.html:
+            for url, _name, _excerpt in parse_modernfirearms_listing(res.html):
+                n_mf += eng.store.enqueue(
+                    url, "modernfirearms.net", kind="product")
+    summary["modernfirearms.net"] = n_mf
+
+    print(json.dumps({
+        "enqueued_by_source": summary,
+        "total_enqueued": sum(summary.values()),
+        "status": eng.status(),
+        "next": "python -m scan crawl --categories air-launched-munitions,sea-launched-cruise-missiles,rocket-and-missile-weapons,small-arms",
+    }, indent=2))
     eng.close()
 
 
@@ -298,6 +352,11 @@ def main(argv=None):
     rep = sub.add_parser("re-enrich-military",
                          help="re-parse cached militaryfactory detail HTML and re-upsert")
     _add_common(rep)
+    dsp = sub.add_parser("discover-sources",
+                         help="enumerate listing pages of designation-systems.net, "
+                              "missilethreat.csis.org, modernfirearms.net and enqueue "
+                              "their detail URLs")
+    _add_common(dsp)
 
     args = p.parse_args(argv)
     logging.basicConfig(level=logging.INFO if not args.quiet else logging.WARNING,
@@ -321,6 +380,8 @@ def main(argv=None):
         cmd_import_military(args, s)
     elif args.cmd == "re-enrich-military":
         cmd_re_enrich_military(args, s)
+    elif args.cmd == "discover-sources":
+        cmd_discover_sources(args, s)
     elif args.cmd == "curate":
         cmd_curate(args, s)
     elif args.cmd == "build-web":

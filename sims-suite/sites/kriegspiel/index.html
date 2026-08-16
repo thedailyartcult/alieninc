@@ -129,6 +129,45 @@
     .event-item { padding: 12px 16px; background: var(--bg-alt); border-radius: 12px; margin-bottom: 8px; font-size: 15px; color: var(--text-body); }
     .event-item::before { content: "→"; color: #1a73e8; font-weight: 700; margin-right: 8px; }
 
+    /* LLM-mode toggle + provenance panel (Phase 5) */
+    .control-group--llm { flex-direction: row; align-items: center; gap: 10px; }
+    .llm-toggle { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
+    .llm-toggle input { opacity: 0; position: absolute; width: 0; height: 0; }
+    .llm-toggle__slider {
+      width: 36px; height: 20px; background: var(--border-color);
+      border-radius: 100px; position: relative; transition: background 0.2s;
+    }
+    .llm-toggle__slider::after {
+      content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+      background: #fff; border-radius: 50%; transition: transform 0.2s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    .llm-toggle input:checked + .llm-toggle__slider { background: #1a73e8; }
+    .llm-toggle input:checked + .llm-toggle__slider::after { transform: translateX(16px); }
+    .llm-toggle__label { font-size: 13px; color: var(--text-muted); margin-left: 8px; }
+
+    .llm-status-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 100px; font-size: 12px; font-weight: 500;
+      background: var(--pill-bg); color: var(--text-muted);
+    }
+    .llm-status-pill__dot { width: 8px; height: 8px; border-radius: 50%; background: #999; }
+    .llm-status-pill--on { background: #e6f4ea; color: #137333; }
+    .llm-status-pill--on .llm-status-pill__dot { background: #137333; }
+    .llm-status-pill--off { background: var(--pill-bg); color: var(--text-muted); }
+    .llm-status-pill--off .llm-status-pill__dot { background: #999; }
+
+    .provenance-panel {
+      max-width: var(--container-max); margin: 16px auto 0; padding: 14px 20px;
+      background: var(--bg-alt); border: 1px solid var(--border-color); border-radius: 16px;
+      font-size: 13px; color: var(--text-muted); display: none;
+    }
+    .provenance-panel__title { font-weight: 500; color: var(--text-body); margin-bottom: 6px; }
+    .provenance-panel--llm { background: #fef7e0; border-color: #f9ab00; color: #b06000; }
+    .provenance-panel--fallback { background: #e8f0fe; border-color: #1a73e8; color: #174ea6; }
+    .provenance-panel__row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 4px; }
+    .provenance-panel__row span { font-family: 'SF Mono', Consolas, monospace; font-size: 12px; }
+
     /* FOOTER */
     .site-footer { border-top: 1px solid var(--border-color); margin-top: 64px; padding: 32px 24px; text-align: center; }
     .site-footer p { font-size: 14px; color: var(--text-muted); }
@@ -177,6 +216,17 @@
       <label for="seedInput">Seed</label>
       <input type="number" id="seedInput" value="42">
     </div>
+    <div class="control-group control-group--llm">
+      <label class="llm-toggle" title="When ON, the LLM synthesis layer proposes the battle seed (geography, forces, events, strategies). Falls back to procedural if the LLM is unavailable or its output fails validation.">
+        <input type="checkbox" id="llmToggle">
+        <span class="llm-toggle__slider"></span>
+        <span class="llm-toggle__label">LLM-enriched mode</span>
+      </label>
+      <span class="llm-status-pill llm-status-pill--off" id="llmStatusPill">
+        <span class="llm-status-pill__dot"></span>
+        <span id="llmStatusText">checking…</span>
+      </span>
+    </div>
   </div>
 
   <div class="map-section">
@@ -186,6 +236,11 @@
   </div>
 
   <div class="status-line" id="statusLine">Select a battlefield and click Generate Scenarios.</div>
+
+  <div class="provenance-panel" id="provenancePanel">
+    <div class="provenance-panel__title" id="provenanceTitle">Seed provenance</div>
+    <div class="provenance-panel__row" id="provenanceRow"></div>
+  </div>
 
   <div class="results-section" id="resultsSection" style="display:none;">
     <div class="results-header">
@@ -270,31 +325,62 @@
         data.forEach(function (bf) {
           var opt = document.createElement('option');
           opt.value = bf.name;
-          opt.textContent = bf.name + ' (' + bf.terrain + ')';
+          var tag = bf.source === 'llm' ? ' [LLM]' : '';
+          opt.textContent = bf.name + ' (' + bf.terrain + ')' + tag;
           sel.appendChild(opt);
         });
       })
       .catch(function () {});
+
+    // --- LLM status poll (Phase 5) ---
+    var llmAvailable = false;
+    function refreshLlmStatus() {
+      fetch('/api/kriegspiel/llm/status')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d) return;
+          llmAvailable = !!d.available;
+          var pill = document.getElementById('llmStatusPill');
+          var txt = document.getElementById('llmStatusText');
+          pill.classList.toggle('llm-status-pill--on', llmAvailable);
+          pill.classList.toggle('llm-status-pill--off', !llmAvailable);
+          if (llmAvailable) {
+            txt.textContent = 'LLM: ' + d.provider + ' / ' + d.model;
+          } else {
+            txt.textContent = 'LLM: off (procedural)';
+          }
+        })
+        .catch(function () {});
+    }
+    refreshLlmStatus();
+    setInterval(refreshLlmStatus, 30000);  // refresh every 30s
 
     // --- Run scenarios ---
     document.getElementById('runBtn').addEventListener('click', function () {
       var bf = document.getElementById('battlefieldSelect').value;
       var n = parseInt(document.getElementById('scenariosInput').value, 10) || 1000;
       var seed = parseInt(document.getElementById('seedInput').value, 10) || 42;
+      var llmMode = document.getElementById('llmToggle').checked;
       var status = document.getElementById('statusLine');
       var btn = this;
 
       btn.disabled = true;
-      status.innerHTML = '<span class="spinner"></span>Generating ' + n + ' scenarios...';
+      status.innerHTML = '<span class="spinner"></span>Generating ' + n + ' scenarios' + (llmMode ? ' (LLM-enriched)' : '') + '...';
 
-      var body = JSON.stringify({ battlefield: bf, scenarios: n, seed: seed });
-      fetch('/api/kriegspiel/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body })
+      // LLM mode hits the dedicated /llm/run endpoint which always synthesizes
+      // a fresh seed. Non-LLM mode keeps the original /run contract.
+      var endpoint = llmMode ? '/api/kriegspiel/llm/run' : '/api/kriegspiel/run';
+      var body = llmMode
+        ? JSON.stringify({ scenarios: n, seed: seed })
+        : JSON.stringify({ battlefield: bf, scenarios: n, seed: seed });
+      fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (d) {
           btn.disabled = false;
           if (!d) { status.textContent = 'Error generating scenarios.'; return; }
           status.textContent = 'Generated ' + d.scenarios_run + ' scenarios in ' + (d.duration_ms / 1000).toFixed(1) + 's.';
           renderResults(d);
+          renderProvenance(d.provenance);
           if (d._battlefield) renderOnMap(d._battlefield);
         })
         .catch(function () {
@@ -302,6 +388,46 @@
           status.textContent = 'Request failed.';
         });
     });
+
+    function renderProvenance(p) {
+      var panel = document.getElementById('provenancePanel');
+      var title = document.getElementById('provenanceTitle');
+      var row = document.getElementById('provenanceRow');
+      if (!p) {
+        // Procedural run with no LLM attempt — hide the panel.
+        panel.style.display = 'none';
+        return;
+      }
+      panel.style.display = '';
+      panel.classList.remove('provenance-panel--llm', 'provenance-panel--fallback');
+      if (p.source === 'llm') {
+        panel.classList.add('provenance-panel--llm');
+        title.textContent = 'Seed provenance — LLM-synthesized (verified)';
+        row.innerHTML =
+          '<span>provider: ' + (p.provider || '?') + '</span>' +
+          '<span>model: ' + (p.model || '?') + '</span>' +
+          '<span>prompt_hash: ' + (p.prompt_hash || '?') + '</span>' +
+          '<span>raw_response_hash: ' + (p.raw_response_hash || '?') + '</span>' +
+          '<span>latency: ' + (p.latency_ms || '?') + 'ms</span>' +
+          '<span>validated: ' + (p.validated ? 'yes' : 'no') + '</span>';
+      } else if (p.source === 'procedural') {
+        panel.classList.add('provenance-panel--fallback');
+        title.textContent = 'Seed provenance — procedural fallback';
+        var bits = ['<span>source: procedural</span>'];
+        if (p.reason) bits.push('<span>reason: ' + escapeHtml(p.reason) + '</span>');
+        if (p.attempted_provider) bits.push('<span>attempted: ' + p.attempted_provider + (p.attempted_model ? ' / ' + p.attempted_model : '') + '</span>');
+        row.innerHTML = bits.join('');
+      } else {
+        title.textContent = 'Seed provenance — ' + (p.source || 'unknown');
+        row.innerHTML = '<span>' + escapeHtml(JSON.stringify(p)) + '</span>';
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
 
     function renderResults(d) {
       document.getElementById('resultsSection').style.display = '';

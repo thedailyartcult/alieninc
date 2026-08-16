@@ -152,6 +152,10 @@ class GKGConfig:
     maxrecords: int = 250
     api_key: str = ""
     base_url: str = "https://api.gdeltproject.org/api/v2/doc"
+    # Optional FIPS-10-4 country code to scope the query by publication country
+    # (DOC 2.0 has no event-location filter; sourcecountry is the closest proxy).
+    # Empty string = global (no country filter).
+    sourcecountry: str = ""
 
 
 class GKGConnector:
@@ -162,8 +166,13 @@ class GKGConnector:
 
     async def _build_request(self) -> Dict[str, Any]:
         """Construct a GDELT DOC 2.0 API request payload."""
+        query = self.config.query
+        if self.config.sourcecountry:
+            cc = "".join(c for c in self.config.sourcecountry.upper() if c.isalpha())[:3]
+            if cc:
+                query = f"({query}) sourcecountry:{cc}"
         payload: Dict[str, Any] = {
-            "query": self.config.query,
+            "query": query,
             "timespan": self.config.timespan,
             "maxrecords": self.config.maxrecords,
             "format": "json",

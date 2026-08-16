@@ -20,7 +20,6 @@ from panteon.yono.models import (
     Automation, AutomationExecution
 )
 from panteon.core.config import settings
-from panteon.yono.secrets import decrypt_secret
 
 
 class LLMOrchestrator:
@@ -243,7 +242,7 @@ class LLMOrchestrator:
     ) -> dict:
         from openai import AsyncOpenAI
 
-        client = self._openai_client(model.provider)
+        client = AsyncOpenAI(api_key=settings.openai_api_key)
 
         # Build messages with system prompt
         api_messages = []
@@ -337,25 +336,6 @@ class LLMOrchestrator:
             "tokens_output": response.usage.output_tokens,
         }
 
-    def _openai_client(self, provider):
-        """Build an AsyncOpenAI client from the stored YONO provider config.
-
-        Uses the provider's stored base_url + decrypted api_key when present,
-        falling back to settings.openai_api_key.
-        """
-        from openai import AsyncOpenAI
-
-        api_key = settings.openai_api_key
-        if provider.api_key_encrypted:
-            try:
-                api_key = decrypt_secret(provider.api_key_encrypted)
-            except Exception:
-                api_key = settings.openai_api_key
-        kwargs = {}
-        if provider.base_url:
-            kwargs["base_url"] = provider.base_url
-        return AsyncOpenAI(api_key=api_key, **kwargs)
-
     async def _call_provider(
         self,
         model: LLMModel,
@@ -382,7 +362,7 @@ class LLMOrchestrator:
     ) -> dict:
         from openai import AsyncOpenAI
 
-        client = self._openai_client(model.provider)
+        client = AsyncOpenAI(api_key=settings.openai_api_key)
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})

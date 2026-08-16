@@ -224,6 +224,12 @@ _ks_generate: Any = None
 _ks_report_to_dict: Any = None
 _ks_battlefields: Any = None
 _ks_create_battle: Any = None
+_ks_battlefields_llm: Any = None
+_ks_register_llm_battlefield: Any = None
+_ks_llm_available = False
+_ks_synthesize_battle_seed: Any = None
+_ks_synthesize_events: Any = None
+_ks_get_llm_client: Any = None
 
 _ks_sim_count = 0  # in-memory (also persisted via _add_count)
 _ks_last_report: dict[str, Any] = {}
@@ -232,6 +238,8 @@ _ks_last_report: dict[str, Any] = {}
 def _load_kriegspiel() -> bool:
     """Try to import the Kriegspiel engine. Return True if available."""
     global _ks_available, _ks_generate, _ks_report_to_dict, _ks_battlefields, _ks_create_battle
+    global _ks_llm_available, _ks_synthesize_battle_seed, _ks_synthesize_events, _ks_get_llm_client
+    global _ks_register_llm_battlefield, _ks_battlefields_llm
     if _ks_available:
         return True
     # Re-prioritize sims-suite root on sys.path.
@@ -246,12 +254,36 @@ def _load_kriegspiel() -> bool:
             report_to_dict as _rtd,
             create_default_battle as _cdb,
         )
-        from engines.kriegspiel.models import BATTLEFIELDS as _bf
+        from engines.kriegspiel.models import (
+            BATTLEFIELDS as _bf,
+            BATTLEFIELDS_LLM as _bf_llm,
+            register_llm_battlefield as _rlb,
+        )
 
         _ks_generate = _gs
         _ks_report_to_dict = _rtd
         _ks_battlefields = _bf
+        _ks_battlefields_llm = _bf_llm
+        _ks_register_llm_battlefield = _rlb
         _ks_create_battle = _cdb
+
+        # LLM synthesis layer — optional. If imports fail (e.g. missing env
+        # config or a Python version issue) we just leave the LLM flag off
+        # and the procedural engine answers every call.
+        try:
+            from engines.kriegspiel.llm import (
+                synthesize_battle_seed as _sbs,
+                synthesize_events as _sev,
+                get_llm_client as _glc,
+            )
+            _ks_synthesize_battle_seed = _sbs
+            _ks_synthesize_events = _sev
+            _ks_get_llm_client = _glc
+            _ks_llm_available = True
+            logger.info("Kriegspiel LLM synthesis layer loaded")
+        except Exception as llm_exc:
+            logger.warning("Kriegspiel LLM layer not available: %s", llm_exc)
+            _ks_llm_available = False
         _ks_available = True
         logger.info("Kriegspiel engine loaded")
         return True
@@ -785,16 +817,29 @@ async def company_metrics(name: str) -> CompanyResponse:
 async def ks_battlefields() -> list[dict[str, Any]]:
     if not _ks_available or not _ks_battlefields:
         return []
-    return [
+    out: list[dict[str, Any]] = [
         {
             "name": bf.name,
             "terrain": bf.terrain.value,
             "center": list(bf.center),
             "bounds": list(bf.bounds),
             "area_km2": bf.area_km2,
+            "source": "canonical",
         }
         for bf in _ks_battlefields
     ]
+    # Append LLM-synthesized battlefields if any have been registered.
+    if _ks_battlefields_llm:
+        for bf in _ks_battlefields_llm:
+            out.append({
+                "name": bf.name,
+                "terrain": bf.terrain.value,
+                "center": list(bf.center),
+                "bounds": list(bf.bounds),
+                "area_km2": bf.area_km2,
+                "source": "llm",
+            })
+    return out
 
 
 @app.post("/api/kriegspiel/run")
@@ -829,6 +874,192 @@ async def ks_run(body: dict[str, Any]) -> dict[str, Any]:
 
     result = await asyncio.to_thread(_run)
     return result
+
+
+# ---------------------------------------------------------------------------
+# Kriegspiel LLM synthesis endpoints (Phase 5)
+# ---------------------------------------------------------------------------
+
+@app.get("/api/kriegspiel/llm/status")
+async def ks_llm_status() -> dict[str, Any]:
+    """Report whether the LLM synthesis layer is configured.
+
+    Returns ``{available: bool, provider: str|None, model: str|None}``.
+    ``available=False`` does NOT mean the engine is broken — it means
+    procedural mode is in use. Callers should treat LLM mode as opt-in.
+    """
+    import os
+    if not _ks_llm_available:
+        return {
+            "available": False,
+            "provider": None,
+            "model": None,
+            "reason": "llm layer not loaded",
+        }
+    client = _ks_get_llm_client() if _ks_get_llm_client else None
+    if client is None:
+        return {
+            "available": False,
+            "provider": os.environ.get("KRIEGSPIEL_LLM_PROVIDER"),
+            "model": os.environ.get("KRIEGSPIEL_LLM_MODEL"),
+            "reason": "provider env not configured or invalid",
+        }
+    return {
+        "available": True,
+        "provider": client.provider,
+        "model": client.model,
+        "reason": None,
+    }
+
+
+@app.post("/api/kriegspiel/llm/seed")
+async def ks_llm_seed(body: dict[str, Any] = None) -> dict[str, Any]:
+    """Synthesize one LLM-enriched battle seed.
+
+    Body (all optional):
+        seed: int            — RNG seed for fallback positioning
+        register: bool       — if true, add the LLM battlefield to the
+                               runtime ``BATTLEFIELDS_LLM`` pool (default true)
+
+    Returns the serialized battle plus its provenance dict. If the LLM is
+    unavailable or its output fails validation, the response includes the
+    fallback procedural battle and a ``provenance.source == "procedural"``
+    marker so the caller knows what they got.
+    """
+    if not _ks_llm_available:
+        return {"error": "LLM synthesis layer not loaded",
+                "provenance": {"source": "unavailable"}}
+    body = body or {}
+    seed = body.get("seed")
+    do_register = bool(body.get("register", True))
+
+    def _run() -> dict[str, Any]:
+        battle = _ks_synthesize_battle_seed(seed=seed)
+        if do_register and battle.provenance and battle.provenance.get("source") == "llm":
+            _ks_register_llm_battlefield(battle.battlefield)
+        return {
+            "battlefield": {
+                "name": battle.battlefield.name,
+                "terrain": battle.battlefield.terrain.value,
+                "center": list(battle.battlefield.center),
+                "bounds": list(battle.battlefield.bounds),
+                "area_km2": battle.battlefield.area_km2,
+            },
+            "objective": battle.objective,
+            "duration_hours": battle.duration_hours,
+            "red_force": {
+                "name": battle.red_force.name,
+                "doctrine": battle.red_force.doctrine.value,
+                "unit_count": len(battle.red_force.units),
+                "unit_types": [u.unit_type.value for u in battle.red_force.units],
+            },
+            "blue_force": {
+                "name": battle.blue_force.name,
+                "doctrine": battle.blue_force.doctrine.value,
+                "unit_count": len(battle.blue_force.units),
+                "unit_types": [u.unit_type.value for u in battle.blue_force.units],
+            },
+            "provenance": battle.provenance,
+        }
+
+    return await asyncio.to_thread(_run)
+
+
+@app.post("/api/kriegspiel/llm/run")
+async def ks_llm_run(body: dict[str, Any] = None) -> dict[str, Any]:
+    """Run Monte Carlo branching with an LLM-enriched seed.
+
+    Body (all optional):
+        scenarios: int       — branch count (capped at 50,000; default 1000)
+        seed: int            — RNG seed
+        register: bool       — add LLM battlefield to runtime pool (default true)
+
+    Equivalent to ``POST /api/kriegspiel/run`` but with
+    ``enrich_with_llm=True``. Falls back transparently to procedural if the
+    LLM is unavailable — the response's ``provenance.source`` field tells
+    the caller which path produced the seed.
+    """
+    if not _ks_available:
+        return {"error": "Kriegspiel engine not available"}
+    body = body or {}
+    n_scenarios = min(int(body.get("scenarios", 1000)), 50000)
+    seed = body.get("seed", 42)
+    do_register = bool(body.get("register", True))
+
+    def _run() -> dict[str, Any]:
+        report = _ks_generate(
+            battle=None,
+            n_scenarios=n_scenarios,
+            seed=seed,
+            enrich_with_llm=True,
+        )
+        d = _ks_report_to_dict(report)
+        if do_register and report.provenance and report.provenance.get("source") == "llm":
+            # The battle object is internal to the report; we re-synthesize
+            # is not needed — the synthesizer already registered it if it
+            # produced a new battlefield. This branch is a no-op safety net.
+            pass
+        global _ks_sim_count
+        _ks_sim_count += report.scenarios_run
+        _add_count("kriegspiel", report.scenarios_run)
+        return d
+
+    return await asyncio.to_thread(_run)
+
+
+@app.post("/api/kriegspiel/llm/events")
+async def ks_llm_events(body: dict[str, Any] = None) -> dict[str, Any]:
+    """Ask the LLM for situational events tailored to a battle.
+
+    Body:
+        battlefield: str          — one of the predefined battlefield names
+        red_doctrine: str         — optional, default random
+        blue_doctrine: str        — optional, default random
+        objective: str            — optional
+        n: int                    — number of events (default 12, max 50)
+
+    Falls back to the procedural event pool if the LLM is unavailable.
+    """
+    if not _ks_llm_available:
+        return {"error": "LLM synthesis layer not loaded"}
+    body = body or {}
+    bf_name = body.get("battlefield", "random")
+    n = min(int(body.get("n", 12)), 50)
+    objective = body.get("objective", "Secure strategic corridor")
+
+    # Build a minimal Battle to feed the synthesizer. We use a procedural
+    # seed battle so the LLM has context, then ask it for events only.
+    battle = None
+    if _ks_battlefields:
+        for bf in _ks_battlefields:
+            if bf.name == bf_name:
+                battle = _ks_create_battle(battlefield=bf, seed=body.get("seed", 42))
+                break
+    if battle is None:
+        battle = _ks_create_battle(seed=body.get("seed", 42))
+
+    # Override doctrines if the caller supplied them
+    from engines.kriegspiel.models import Doctrine
+    rd = body.get("red_doctrine")
+    bd = body.get("blue_doctrine")
+    if rd and rd in {d.value for d in Doctrine}:
+        battle.red_force.doctrine = Doctrine(rd)
+    if bd and bd in {d.value for d in Doctrine}:
+        battle.blue_force.doctrine = Doctrine(bd)
+    if objective:
+        battle.objective = objective
+
+    def _run() -> dict[str, Any]:
+        events = _ks_synthesize_events(battle, n=n)
+        return {
+            "battlefield": battle.battlefield.name,
+            "red_doctrine": battle.red_force.doctrine.value,
+            "blue_doctrine": battle.blue_force.doctrine.value,
+            "events": events,
+            "n": len(events),
+        }
+
+    return await asyncio.to_thread(_run)
 
 
 # ---------------------------------------------------------------------------

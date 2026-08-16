@@ -65,6 +65,9 @@ class GDELTBigQueryConfig:
     # Min absolute tone to include (negative = more negative coverage).
     min_tone: float = -100.0
     max_tone: float = 100.0
+    # Optional FIPS-10-4 country code to filter by event location (e.g. "UKR").
+    # Empty string = global (no country filter). Applied via ActionGeo_CountryCode.
+    country_code: str = ""
 
 
 def _client() -> Any:
@@ -122,6 +125,13 @@ def _build_gkg_query(config: GDELTBigQueryConfig) -> str:
     since_str = since.strftime("%Y%m%d")
     # CAMEO root codes for conflict/violence/protest events.
     conflict_roots = "(EventRootCode IN ('14','15','17','18','19','20') OR EventCode LIKE '145%' OR EventCode LIKE '175%' OR EventCode LIKE '182%')"
+    # Optional country filter (FIPS-10-4 code on event location).
+    country_clause = ""
+    if config.country_code:
+        # FIPS codes are short uppercase strings — inline-safe after alpha check.
+        cc = "".join(c for c in config.country_code.upper() if c.isalpha())[:3]
+        if cc:
+            country_clause = f" AND ActionGeo_CountryCode = '{cc}'"
     return f"""
     SELECT
         GLOBALEVENTID,
@@ -146,7 +156,7 @@ def _build_gkg_query(config: GDELTBigQueryConfig) -> str:
     WHERE SQLDATE >= {since_str}
       AND {conflict_roots}
       AND ActionGeo_Lat IS NOT NULL
-      AND ActionGeo_Long IS NOT NULL
+      AND ActionGeo_Long IS NOT NULL{country_clause}
     ORDER BY SQLDATE DESC, AvgTone ASC
     LIMIT {int(config.max_results)}
     """

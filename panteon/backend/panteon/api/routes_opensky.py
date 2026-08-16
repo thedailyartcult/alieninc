@@ -67,6 +67,12 @@ class PipelineConfig(BaseModel):
     )
     request_timeout: int = Field(default=30, ge=1, le=120)
     max_retries: int = Field(default=5, ge=0, le=10)
+    # Optional bounding box to scope the OpenSky states/all pull.
+    # None = global. When all four are set, only aircraft within the box are requested.
+    lamin: float | None = Field(default=None, description="Min latitude of bbox scope.")
+    lomin: float | None = Field(default=None, description="Min longitude of bbox scope.")
+    lamax: float | None = Field(default=None, description="Max latitude of bbox scope.")
+    lomax: float | None = Field(default=None, description="Max longitude of bbox scope.")
 
 
 # ---------------------------------------------------------------------------
@@ -252,6 +258,10 @@ async def _run_pipeline(config: PipelineConfig) -> dict:
         fetch_military=config.fetch_military,
         request_timeout=config.request_timeout,
         max_retries=config.max_retries,
+        lamin=config.lamin,
+        lomin=config.lomin,
+        lamax=config.lamax,
+        lomax=config.lomax,
     )
     staging = StagingDataset(path="/tmp/opensky_staging.jsonl")
 

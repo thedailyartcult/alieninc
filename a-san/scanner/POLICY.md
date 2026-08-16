@@ -21,6 +21,23 @@ our selected categories, keep the licence records (email/agreement) in
 1. *May we fetch?* Answered by robots.txt + site ToS + operator whitelist.
 2. *May we republish the data?* Answered by the content licence (e.g. CC BY).
 
+### Fact-extraction-only sources (all-rights-reserved, no CC licence)
+
+The following sources are © all-rights-reserved (no Creative Commons licence).
+For these we use the **fact-extraction-with-attribution** pattern: only factual
+data printed on the page (designation, dimensions, weights, ranges, country,
+manufacturer) plus a short factual description is recorded, and every entry
+carries the exact source URL. Wholesale prose reproduction is never done.
+
+- **designation-systems.net** — © Andreas Parsch 2000-2026. See `/copyright.html`.
+- **missilethreat.csis.org** — © Center for Strategic and International Studies.
+  Each entry's description carries the verbatim "Cite this Page" citation string
+  produced by CSIS for clean attribution.
+- **modernfirearms.net** — © Maxim Popenker 1999-2026. Contact `admin@modernfirearms.net`.
+
+If you need to republish longer excerpts or imagery from these sources, request
+written permission and file it under `data/access/` before doing so.
+
 ## 3. Approved high-volume paths per source
 
 | Source | Compliant path | Status |
@@ -31,6 +48,9 @@ our selected categories, keep the licence records (email/agreement) in
 | ppubs.uspto.gov | Official APIs (PatentsView / PEDS); the web app is browser-only | Manual / API pass |
 | janes.com | **Paid licence** via research desk; CSV import (`import-janes`), never automated crawling | Licensed desk |
 | militaryfactory.com | robots.txt imposes no crawl rules; scanner fetches with its UA. By-country list pages are also ingested from operator-supplied local HTML via `import-military` (site blocks some autonomous fetches, so local fallback is supported); detail pages are fetched live by the scanner to enrich specs. | Active |
+| designation-systems.net | robots.txt allows `User-agent:*` for `/dusrm/` (detail pages) and `/usmilav/` (catalog index). No crawl-delay. Catalog enumeration via `/usmilav/missiles.html` (`table.designation-table`); detail pages `/dusrm/m-NN.html`. Wired in `parsers_designation.parse_designation`. | **Active** |
+| missilethreat.csis.org | robots.txt allows `User-agent:*` (Disallow empty). **Crawl-delay: 10s** — enforced via `HttpFetcher.HOST_CRAWL_DELAY`. Catalog enumeration via `/missile/` dropdown (`select#item-select`); detail pages `/missile/<slug>/`. Wired in `parsers_missilethreat.parse_missilethreat`. | **Active** |
+| modernfirearms.net | robots.txt allows `User-agent:*` for `/en/`. **Crawl-delay: 20s** — enforced via `HttpFetcher.HOST_CRAWL_DELAY`. Note: the bare category slugs (`/en/assault-rifles/`, `/en/handguns/`) 301→`/bez-rubriki/...`→404; use the long-slug URLs in `MODERNFIREARMS_SEED_URLS`. Detail pages `/en/<cat>/<country>-<cat>/<slug>/` are live. Wired in `parsers_modernfirearms.parse_modernfirearms`. | **Active** |
 
 ## 4. Operator-whitelisted deep scan (rare, documented)
 

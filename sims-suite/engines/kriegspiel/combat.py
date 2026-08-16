@@ -42,8 +42,10 @@ _DOCTRINE_PARAMS = {
     Doctrine.INFORMATION:   {"aggression": 0.3, "risk": 0.3, "supply_focus": 0.7, "morale_drain": 0.3},
 }
 
-# Key events for narrative flavor
-_KEY_EVENTS = [
+# Key events for narrative flavor. This is a *mutable* pool — the LLM
+# synthesis layer can append situational events via ``register_events()``.
+# The procedural baseline stays the same; LLM events simply add variety.
+_KEY_EVENTS: list[str] = [
     "flanking maneuver succeeded",
     "supply convoy intercepted",
     "artillery barrage broke enemy lines",
@@ -57,6 +59,25 @@ _KEY_EVENTS = [
     "reconnaissance revealed weak flank",
     "naval blockade cut reinforcement route",
 ]
+
+
+def register_events(events: list[str]) -> None:
+    """Append situational events to the runtime event pool.
+
+    Called by the LLM synthesis layer when a battle seed includes
+    ``situational_events`` or when ``synthesize_events()`` is invoked.
+    De-duplicates against the existing pool so repeat calls are safe.
+    """
+    existing = set(_KEY_EVENTS)
+    for e in events:
+        if isinstance(e, str) and e not in existing:
+            _KEY_EVENTS.append(e)
+            existing.add(e)
+
+
+def get_event_pool() -> list[str]:
+    """Return the current event pool (procedural + any LLM-registered)."""
+    return list(_KEY_EVENTS)
 
 
 def simulate_battle(battle: Battle, seed: Optional[int] = None) -> BattleOutcome:

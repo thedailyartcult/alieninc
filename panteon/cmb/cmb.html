@@ -3207,9 +3207,14 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
     return `Request failed (${status})`;
   };
 
+  let cmbToken = '';
+  try {
+    const hashToken = new URLSearchParams(location.hash.slice(1)).get('token');
+    if (hashToken) cmbToken = hashToken;
+    else try { cmbToken = localStorage.getItem('cmb_token') || ''; } catch (_) {}
+  } catch (_) {}
   async function api(path, options = {}) {
-    const init = { ...options, headers: { ...(options.headers || {}) } };
-    init.headers['X-CMB-Browser-Session'] = '1';
+    const init = { ...options, headers: { ...(options.headers || {}), 'X-CMB-Browser-Session': '1', Authorization: `Bearer ${cmbToken}` } };
     if (init.body && !(init.body instanceof FormData) && typeof init.body !== 'string') {
       init.headers['Content-Type'] = 'application/json';
       init.body = JSON.stringify(init.body);

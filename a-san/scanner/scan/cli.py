@@ -23,6 +23,7 @@ import json
 import logging
 import os
 import sys
+import urllib.parse
 from pathlib import Path
 
 from .config import Settings, CATEGORY_KEYS, category_key
@@ -33,6 +34,9 @@ from .parsers_militaryfactory import parse_militaryfactory_country, build_entrie
 from .parsers_designation import parse_designation_listing
 from .parsers_missilethreat import parse_missilethreat_listing
 from .parsers_modernfirearms import parse_modernfirearms_listing, MODERNFIREARMS_SEED_URLS
+from .parsers_milrem import MILREM_PRODUCT_URLS
+from .parsers_fas import FAS_INDEX_URLS, parse_fas_listing
+from .parsers_wikipedia import WIKIPEDIA_LIST_URLS, parse_wikipedia_list
 from .picklist import CurationRules, curate, write_outputs
 from .patent_feed import feed_patents, feed_from_file
 
@@ -151,11 +155,125 @@ def cmd_discover_sources(args, s: Settings):
                     url, "modernfirearms.net", kind="product")
     summary["modernfirearms.net"] = n_mf
 
+    # --- milremrobotics.com: 6 known UGV product pages ---
+    n_milrem = 0
+    for url in MILREM_PRODUCT_URLS:
+        n_milrem += eng.store.enqueue(
+            url, "milremrobotics.com", category="UGVs", kind="product")
+    summary["milremrobotics.com"] = n_milrem
+
+    # --- fas.org (man.fas.org): 3 equipment indexes → detail pages ---
+    n_fas = 0
+    for idx_url in FAS_INDEX_URLS:
+        res = eng._fetcher("man.fas.org").fetch(
+            idx_url, store=eng.store, use_cache=True)
+        if res.status == 200 and res.html:
+            for url in parse_fas_listing(res.html, idx_url):
+                n_fas += eng.store.enqueue(
+                    url, "man.fas.org", kind="product")
+    summary["man.fas.org"] = n_fas
+
     print(json.dumps({
         "enqueued_by_source": summary,
         "total_enqueued": sum(summary.values()),
         "status": eng.status(),
-        "next": "python -m scan crawl --categories air-launched-munitions,sea-launched-cruise-missiles,rocket-and-missile-weapons,small-arms",
+        "next": "python -m scan crawl --categories uavs,naval-vessels,armored-vehicles-and-equipment,automotive-vehicles,air-launched-munitions,ew-assets",
+    }, indent=2))
+    eng.close()
+
+
+def cmd_import_wikipedia(args, s: Settings):
+    """Parse the Wikipedia 'List of military electronics' pages inline and
+    upsert all entries directly (no crawl queue — the list pages ARE the data).
+    Also enqueues individual pages from Wikipedia categories for a follow-up
+    crawl (those have infobox spec tables).
+
+    --wiki-categories: comma-separated list of Wikipedia category names to
+    enqueue (default: Electronic_countermeasures plus any extras specified).
+    Use 'all' to enqueue the full set of EW-relevant categories."""
+    import time as _time
+    import urllib.request, json as _json
+
+    eng = Engine(s)
+    eng.seed_from_catalog()
+    summary: dict[str, int] = {}
+
+    # 1. Parse the two master list pages (A–G, M–Z) — entries go straight in
+    total_list_entries = 0
+    for list_url in WIKIPEDIA_LIST_URLS:
+        res = eng._fetcher("en.wikipedia.org").fetch(
+            list_url, store=eng.store, use_cache=True)
+        n = 0
+        if res.status == 200 and res.html:
+            entries = parse_wikipedia_list(res.html, list_url)
+            for e in entries:
+                op = eng.store.upsert_entry(e, list_url)
+                if op == "inserted":
+                    n += 1
+            eng.store.mark(list_url, "done", status=200)
+        summary[list_url.split("/")[-1][:20]] = n
+        total_list_entries += n
+    summary["list_total_inserted"] = total_list_entries
+
+    # 2. Enqueue pages from Wikipedia categories via the API
+    ALL_EW_CATEGORIES = [
+        "Electronic_countermeasures",
+        "Electronic_warfare",
+        "Military_electronics_of_the_United_States",
+        "Radar",
+        "Military_radars",
+        "Signals_intelligence",
+        "Anti-aircraft_warfare",
+        "Military_communications",
+    ]
+    wiki_cats_arg = getattr(args, "wiki_categories", None) or ""
+    if wiki_cats_arg.strip().lower() == "all":
+        categories = ALL_EW_CATEGORIES
+    elif wiki_cats_arg.strip():
+        categories = [c.strip() for c in wiki_cats_arg.split(",") if c.strip()]
+    else:
+        categories = ["Electronic_countermeasures"]
+
+    total_enqueued = 0
+    for cat in categories:
+        n_cat = 0
+        cmcontinue = ""
+        while True:
+            api_url = (
+                f"https://en.wikipedia.org/w/api.php?action=query&list=categorymembers"
+                f"&cmtitle=Category:{urllib.parse.quote(cat)}"
+                f"&cmlimit=500&cmtype=page&format=json"
+            )
+            if cmcontinue:
+                api_url += f"&cmcontinue={urllib.parse.quote(cmcontinue)}"
+            try:
+                req = urllib.request.Request(api_url, headers={
+                    "User-Agent": s.user_agent, "Accept": "application/json"})
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    data = _json.loads(resp.read().decode("utf-8"))
+                members = data.get("query", {}).get("categorymembers", [])
+                for m in members:
+                    if m["ns"] != 0:
+                        continue
+                    title = m["title"].replace(" ", "_")
+                    page_url = f"https://en.wikipedia.org/wiki/{urllib.parse.quote(title)}"
+                    n_cat += eng.store.enqueue(page_url, "en.wikipedia.org", kind="product")
+                cmcontinue = data.get("continue", {}).get("cmcontinue", "")
+                if not cmcontinue:
+                    break
+                _time.sleep(1)  # polite delay between paginated requests
+            except Exception as e:
+                log.warning(f"Wikipedia API fetch failed for {cat}: {e}")
+                break
+        summary[f"cat_{cat}"] = n_cat
+        total_enqueued += n_cat
+        _time.sleep(2)  # polite delay between categories
+    summary["categories_total_enqueued"] = total_enqueued
+
+    print(json.dumps({
+        "summary": summary,
+        "status": eng.status(),
+        "next": "python -m scan crawl --categories ew-assets",
     }, indent=2))
     eng.close()
 
@@ -357,6 +475,15 @@ def main(argv=None):
                               "missilethreat.csis.org, modernfirearms.net and enqueue "
                               "their detail URLs")
     _add_common(dsp)
+    wp = sub.add_parser("import-wikipedia",
+                        help="parse Wikipedia 'List of military electronics' pages "
+                             "(CC BY-SA 4.0) + enqueue EW system pages from "
+                             "Wikipedia categories")
+    wp.add_argument("--wiki-categories",
+                    help="comma-separated Wikipedia category names to enqueue, "
+                         "or 'all' for the full EW-relevant set "
+                         "(default: Electronic_countermeasures only)")
+    _add_common(wp)
 
     args = p.parse_args(argv)
     logging.basicConfig(level=logging.INFO if not args.quiet else logging.WARNING,
@@ -382,6 +509,8 @@ def main(argv=None):
         cmd_re_enrich_military(args, s)
     elif args.cmd == "discover-sources":
         cmd_discover_sources(args, s)
+    elif args.cmd == "import-wikipedia":
+        cmd_import_wikipedia(args, s)
     elif args.cmd == "curate":
         cmd_curate(args, s)
     elif args.cmd == "build-web":

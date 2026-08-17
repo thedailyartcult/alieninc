@@ -9,9 +9,14 @@ index.html integration (line ~3699):
     window.ALIEN_SIMS = { getValue: () => <polled count> };
 
 Endpoints:
-    GET /api/simulations/today      — { count, runs, last_24h, by_engine }
+    GET /api/simulations/today      — { count, runs, last_24h, by_engine,
+                                       cumulative, by_engine_cumulative,
+                                       window_seconds, as_of }
+                                      count/last_24h/by_engine are a true
+                                      rolling 24h UTC window; cumulative fields
+                                      are the all-time totals.
     GET /api/simulations/coverage   — { stage, engines_online, total_engines }
-    GET /api/simulations/engine     — { code, engines: [...] }
+    GET /api/simulations/engine     — { code, engines, engines_detail }
     GET /api/companies/{name}       — { name, station, simulations }
     GET /api/health                 — { status, uptime, engines }
 
@@ -23,11 +28,13 @@ Run:
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 import sys
 import threading
 import time
+from collections import deque
 from pathlib import Path
 from typing import Any, Optional
 
@@ -63,6 +70,17 @@ COMPANY_STATIONS: dict[str, str] = {
 
 TOTAL_ENGINES = 7
 
+# Friendly display names for the engine dropdown on index.html.
+ENGINE_DISPLAY_NAMES: dict[str, str] = {
+    "platoon": "Platoon",
+    "alpha_zero": "Alpha Zero",
+    "tdac": "TDAC",
+    "kriegspiel": "Kriegspiel",
+    "citadel": "Citadel",
+    "remnants": "Remnants",
+    "awareness": "Awareness",
+}
+
 # ---------------------------------------------------------------------------
 # Persistent cumulative counter — survives restarts, never trims
 # ---------------------------------------------------------------------------
@@ -83,19 +101,121 @@ def _read_count() -> dict[str, int]:
 
 def _write_count(counts: dict[str, int]) -> None:
     """Write the persistent cumulative counter atomically."""
-    import json
     try:
         _COUNT_FILE.write_text(json.dumps(counts))
     except Exception:
         pass
 
 
+# ---------------------------------------------------------------------------
+# Rolling 24h (UTC) event log — timestamps every real increment so the
+# /api/simulations/today endpoint can report a true last-24-hours window
+# instead of the all-time cumulative total. Unix timestamps are inherently
+# UTC, so the window is Universal Standard Time by construction.
+# ---------------------------------------------------------------------------
+
+_EVENT_FILE = _SUITE_ROOT / "api" / ".sim_events.jsonl"
+_WINDOW_S = 86400  # 24 hours
+
+# In-memory ring of (ts, engine, n) for the current window; fast reads.
+_events_24h: "deque[tuple[float, str, int]]" = deque()
+
+
+def _load_events_24h() -> None:
+    """Load timestamped events from the last 24h into memory on startup, then
+    compact the on-disk log so it never grows unbounded across restarts."""
+    global _events_24h
+    cutoff = time.time() - _WINDOW_S
+    loaded: "deque[tuple[float, str, int]]" = deque()
+    try:
+        if _EVENT_FILE.exists():
+            with _EVENT_FILE.open("r") as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        rec = json.loads(line)
+                    except Exception:
+                        continue
+                    try:
+                        ts = float(rec.get("ts", 0))
+                        engine = str(rec.get("engine", ""))
+                        n = int(rec.get("n", 0))
+                    except Exception:
+                        continue
+                    if ts >= cutoff and engine and n:
+                        loaded.append((ts, engine, n))
+    except Exception:
+        pass
+    _events_24h = loaded
+    _rewrite_events()
+
+
+def _append_event(ts: float, engine: str, n: int) -> None:
+    """Append a single timestamped event to the on-disk JSONL log."""
+    try:
+        with _EVENT_FILE.open("a") as fh:
+            fh.write(json.dumps({"ts": ts, "engine": engine, "n": n}) + "\n")
+    except Exception:
+        pass
+
+
+def _rewrite_events() -> None:
+    """Atomically rewrite the on-disk log from the in-memory deque (trimmed)."""
+    try:
+        tmp = _EVENT_FILE.with_suffix(".jsonl.tmp")
+        with tmp.open("w") as fh:
+            for ts, engine, n in _events_24h:
+                fh.write(json.dumps({"ts": ts, "engine": engine, "n": n}) + "\n")
+        tmp.replace(_EVENT_FILE)
+    except Exception:
+        pass
+
+
+def _evict_old_events() -> None:
+    """Drop events that have aged out of the 24h window. Caller holds the lock."""
+    cutoff = time.time() - _WINDOW_S
+    while _events_24h and _events_24h[0][0] < cutoff:
+        _events_24h.popleft()
+
+
+def _sum_24h() -> tuple[int, dict[str, int]]:
+    """Return (total, by_engine) for the rolling 24h UTC window."""
+    with _count_lock:
+        _evict_old_events()
+        by_engine: dict[str, int] = {}
+        total = 0
+        for _ts, engine, n in _events_24h:
+            by_engine[engine] = by_engine.get(engine, 0) + n
+            total += n
+    return total, by_engine
+
+
+async def _event_trim_loop() -> None:
+    """Periodically evict aged events and compact the on-disk log."""
+    while True:
+        await asyncio.sleep(600)
+        try:
+            with _count_lock:
+                _evict_old_events()
+                _rewrite_events()
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            pass
+
+
 def _add_count(engine: str, n: int) -> None:
-    """Add n to the persistent counter for the given engine."""
-    import threading
+    """Add n to the persistent cumulative counter for the given engine and
+    record a timestamped event so a true rolling 24h (UTC) window is available."""
+    now = time.time()
     with _count_lock:
         _counts[engine] = _counts.get(engine, 0) + n
         _write_count(_counts)
+        _events_24h.append((now, engine, n))
+        _evict_old_events()
+    _append_event(now, engine, n)
 
 
 _count_lock = threading.Lock()
@@ -292,16 +412,32 @@ def _load_kriegspiel() -> bool:
         return False
 
 
+def _ks_learn(report: Any) -> None:
+    """Feed a ScenarioReport to the self-learning tracker. Swallows errors
+    so on-demand runs never block on the research layer."""
+    try:
+        from engines.kriegspiel.learning import get_tracker
+        get_tracker().observe(report)
+    except Exception as learn_exc:
+        logger.debug("Learning layer observe failed: %s", learn_exc)
+
+
 def _run_ks_background_batch() -> int:
-    """Run a small batch of Kriegspiel scenarios for the live counter."""
+    """Run a small batch of Kriegspiel scenarios for the live counter.
+
+    The report is fed to the self-learning tracker so the engine distills
+    findings and self-improves its doctrine parameters over time. Learning
+    failures are swallowed — the live counter must never block on research.
+    """
     global _ks_sim_count
     if not _ks_available:
         return 0
     try:
-        report = _ks_generate(n_scenarios=50, seed=None)
+        report = _ks_generate(n_scenarios=100, seed=None)
         _ks_sim_count += report.scenarios_run
         _add_count("kriegspiel", report.scenarios_run)
         _ks_last_report = _ks_report_to_dict(report)
+        _ks_learn(report)
         return report.scenarios_run
     except Exception as exc:
         logger.debug("Kriegspiel background batch failed: %s", exc)
@@ -699,6 +835,10 @@ class SimTodayResponse(BaseModel):
     runs: int
     last_24h: int
     by_engine: dict[str, int]
+    cumulative: int
+    by_engine_cumulative: dict[str, int]
+    window_seconds: int
+    as_of: float
 
 
 class CoverageResponse(BaseModel):
@@ -710,6 +850,7 @@ class CoverageResponse(BaseModel):
 class EngineResponse(BaseModel):
     code: str
     engines: list[str]
+    engines_detail: list[dict[str, str]]
 
 
 class CompanyResponse(BaseModel):
@@ -726,6 +867,7 @@ class HealthResponse(BaseModel):
 
 @app.on_event("startup")
 async def _startup() -> None:
+    _load_events_24h()
     _load_alpha_zero()
     _load_kriegspiel()
     _load_citadel()
@@ -740,6 +882,7 @@ async def _startup() -> None:
     asyncio.create_task(_background_aw_loop())
     asyncio.create_task(_background_pl_loop())
     asyncio.create_task(_background_td_loop())
+    asyncio.create_task(_event_trim_loop())
 
 
 @app.get("/api/health")
@@ -753,34 +896,35 @@ async def health() -> HealthResponse:
 
 @app.get("/api/simulations/today")
 async def simulations_today() -> SimTodayResponse:
-    pl_total = _counts.get("platoon", 0)
-    az_total = _counts.get("alpha_zero", 0)
-    td_total = _counts.get("tdac", 0)
-    ks_total = _counts.get("kriegspiel", 0)
-    cit_total = _counts.get("citadel", 0)
-    rem_total = _counts.get("remnants", 0)
-    aw_total = _counts.get("awareness", 0)
-    by_engine: dict[str, int] = {}
+    # Rolling 24h UTC window — the genuine count of decisions produced in the
+    # last 24 hours. This is what index.html surfaces as the live tally.
+    total_24h, by_engine_24h = _sum_24h()
+    # Cumulative (all-time) totals are preserved for transparency.
+    by_engine_cum: dict[str, int] = {}
     if _pl_available:
-        by_engine["platoon"] = pl_total
+        by_engine_cum["platoon"] = _counts.get("platoon", 0)
     if _az_available:
-        by_engine["alpha_zero"] = az_total
+        by_engine_cum["alpha_zero"] = _counts.get("alpha_zero", 0)
     if _td_available:
-        by_engine["tdac"] = td_total
+        by_engine_cum["tdac"] = _counts.get("tdac", 0)
     if _ks_available:
-        by_engine["kriegspiel"] = ks_total
+        by_engine_cum["kriegspiel"] = _counts.get("kriegspiel", 0)
     if _cit_available:
-        by_engine["citadel"] = cit_total
+        by_engine_cum["citadel"] = _counts.get("citadel", 0)
     if _rem_available:
-        by_engine["remnants"] = rem_total
+        by_engine_cum["remnants"] = _counts.get("remnants", 0)
     if _aw_available:
-        by_engine["awareness"] = aw_total
-    total = pl_total + az_total + td_total + ks_total + cit_total + rem_total + aw_total
+        by_engine_cum["awareness"] = _counts.get("awareness", 0)
+    cumulative = sum(by_engine_cum.values())
     return SimTodayResponse(
-        count=total,
-        runs=total,
-        last_24h=total,
-        by_engine=by_engine,
+        count=total_24h,
+        runs=total_24h,
+        last_24h=total_24h,
+        by_engine=by_engine_24h,
+        cumulative=cumulative,
+        by_engine_cumulative=by_engine_cum,
+        window_seconds=_WINDOW_S,
+        as_of=time.time(),
     )
 
 
@@ -797,7 +941,8 @@ async def simulations_coverage() -> CoverageResponse:
 @app.get("/api/simulations/engine")
 async def simulations_engine() -> EngineResponse:
     online = _engines_online()
-    return EngineResponse(code=_engine_code(online), engines=online)
+    detail = [{"id": s, "name": ENGINE_DISPLAY_NAMES.get(s, s)} for s in online]
+    return EngineResponse(code=_engine_code(online), engines=online, engines_detail=detail)
 
 
 @app.get("/api/companies/{name}")
@@ -870,6 +1015,7 @@ async def ks_run(body: dict[str, Any]) -> dict[str, Any]:
         global _ks_sim_count
         _ks_sim_count += report.scenarios_run
         _add_count("kriegspiel", report.scenarios_run)
+        _ks_learn(report)
         return d
 
     result = await asyncio.to_thread(_run)
@@ -1002,6 +1148,7 @@ async def ks_llm_run(body: dict[str, Any] = None) -> dict[str, Any]:
         global _ks_sim_count
         _ks_sim_count += report.scenarios_run
         _add_count("kriegspiel", report.scenarios_run)
+        _ks_learn(report)
         return d
 
     return await asyncio.to_thread(_run)
@@ -1060,6 +1207,85 @@ async def ks_llm_events(body: dict[str, Any] = None) -> dict[str, Any]:
         }
 
     return await asyncio.to_thread(_run)
+
+
+# ---------------------------------------------------------------------------
+# Research / self-learning endpoints (Kriegspiel doctrine evolution)
+# ---------------------------------------------------------------------------
+# These surface what the engine has *learned* from its own simulations:
+#   - /api/research/strategy-table  : doctrine × terrain win-rate matrix
+#   - /api/research/findings        : latest distilled research findings
+#   - /api/research/parameters      : current evolved doctrine parameters
+#   - /api/research/dossier         : full append-only research log
+#   - /api/research/improve         : trigger a self-improvement step
+#
+# The tracker is a process-wide singleton in engines.kriegspiel.learning.
+# All endpoints are read-only except /improve (manual self-improve trigger).
+
+def _research_tracker():
+    """Lazy-import the tracker. Returns None if Kriegspiel isn't loaded."""
+    if not _ks_available:
+        return None
+    try:
+        from engines.kriegspiel.learning import get_tracker
+        return get_tracker()
+    except Exception as exc:
+        logger.debug("Research tracker unavailable: %s", exc)
+        return None
+
+
+@app.get("/api/research/strategy-table")
+async def research_strategy_table() -> dict[str, Any]:
+    tracker = _research_tracker()
+    if tracker is None:
+        return {"error": "research layer unavailable", "doctrines": [], "terrains": [], "matrix": []}
+    return tracker.strategy_table()
+
+
+@app.get("/api/research/findings")
+async def research_findings(k: int = 10) -> dict[str, Any]:
+    tracker = _research_tracker()
+    if tracker is None:
+        return {"error": "research layer unavailable", "findings": []}
+    k = max(1, min(int(k), 50))
+    return {"findings": tracker.findings(k), "k": k}
+
+
+@app.get("/api/research/parameters")
+async def research_parameters() -> dict[str, Any]:
+    tracker = _research_tracker()
+    if tracker is None:
+        return {"error": "research layer unavailable", "current": {}, "total_adjustments": 0}
+    return tracker.parameters()
+
+
+@app.get("/api/research/dossier")
+async def research_dossier(k: int = 50) -> dict[str, Any]:
+    tracker = _research_tracker()
+    if tracker is None:
+        return {"error": "research layer unavailable"}
+    k = max(1, min(int(k), 200))
+    return tracker.dossier(k)
+
+
+@app.post("/api/research/improve")
+async def research_improve() -> dict[str, Any]:
+    """Manually trigger a self-improvement step. The background loop also
+    auto-triggers every 20 batches; this endpoint lets a human force one."""
+    tracker = _research_tracker()
+    if tracker is None:
+        return {"error": "research layer unavailable", "changes": []}
+    changes = tracker.self_improve()
+    return {
+        "changes_applied": len(changes),
+        "changes": [
+            {
+                "doctrine": c.doctrine, "terrain": c.terrain, "field": c.field,
+                "before": c.before, "after": c.after, "win_rate": c.win_rate,
+                "rationale": c.rationale,
+            } for c in changes
+        ],
+    }
 
 
 # ---------------------------------------------------------------------------

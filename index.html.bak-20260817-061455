@@ -26,7 +26,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Ultra&family=Alfa+Slab+One&family=Instrument+Sans:wght@400;500;600;700;800&family=Instrument+Sans+Condensed:wght@700;800&family=VT323&display=swap" rel="stylesheet">
-  <!-- xterm.js: lazy-loaded when map enters viewport -->
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 
@@ -849,250 +848,6 @@
       background: var(--hg-color-muted);
     }
 
-    /* Research Output panel — surfaces what the simulation engine has
-       *learned* (doctrine × terrain win-rate matrix, distilled findings,
-       and self-improved doctrine parameters). Uses only existing tokens;
-       the single new color is a low-opacity red tint for underperforming
-       cells, the universal "weak" semantic. */
-    /* Research output overlay — a fixed fullscreen panel that floats above
-       the page. Does NOT reflow the document flow. Shown only on click of
-       the "View Full Report" button in the Simulation Engine card. */
-    .research-output {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: rgba(19, 25, 32, 0.75);
-    backdrop-filter: blur(3px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s ease, visibility 0.2s ease;
-    margin: 0;
-    border: 0;
-    border-radius: 0;
-    padding: 0;
-    }
-    .research-output:not([hidden]) {
-    opacity: 1;
-    visibility: visible;
-    }
-    .research-output__body {
-    background: #ffffff;
-    border-radius: 6px;
-    max-width: 920px;
-    width: calc(100% - 2rem);
-    max-height: calc(100vh - 2rem);
-    overflow-y: auto;
-    padding: 1.75rem 1.5rem 1.5rem;
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25);
-    }
-    .research-output__header { margin-bottom: 1.5rem; }
-    .research-output__kicker {
-      font-size: 0.72rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--ppl-color-text-subtle);
-      margin-bottom: 0.4rem;
-    }
-    .research-output__title {
-      font-family: var(--hg-font-secondary);
-      font-size: 1.45rem;
-      font-weight: 800;
-      line-height: 1.15;
-      margin: 0 0 0.5rem;
-    }
-    .research-output__copy {
-      color: var(--ppl-color-text-subtle);
-      font-size: 0.92rem;
-      max-width: 70ch;
-    }
-    .research-output__stats {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.25rem 2rem;
-      margin-top: 0.85rem;
-      font-size: 0.82rem;
-      color: var(--ppl-color-text-subtle);
-    }
-    .research-output__stat strong {
-      font-family: var(--hg-font-secondary);
-      font-weight: 800;
-      color: var(--ppl-color-text-default);
-    }
-    .research-output__grid {
-      display: grid;
-      grid-template-columns: 1.4fr 1fr 1fr;
-      gap: 1.25rem;
-      align-items: start;
-    }
-    @media (max-width: 960px) {
-      .research-output__grid { grid-template-columns: 1fr; }
-    }
-    .research-output__panel {
-      background: var(--hg-color-muted);
-      border-radius: 3px;
-      padding: 1rem 1.1rem 1.15rem;
-    }
-    .research-output__panel-title {
-      font-size: 0.72rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--ppl-color-text-subtle);
-      margin: 0 0 0.75rem;
-    }
-
-    /* Strategy table (doctrine × terrain win-rate matrix) */
-    .strategy-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.78rem;
-      font-family: var(--hg-font-primary);
-    }
-    .strategy-table th, .strategy-table td {
-      padding: 5px 6px;
-      text-align: center;
-      border-bottom: 1px solid rgba(19, 25, 32, 0.06);
-    }
-    .strategy-table thead th {
-      font-size: 0.68rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--ppl-color-text-subtle);
-      font-weight: 700;
-    }
-    .strategy-table tbody th {
-      text-align: left;
-      font-weight: 700;
-      color: var(--ppl-color-text-default);
-      text-transform: capitalize;
-    }
-    .strategy-table__cell {
-      font-variant-numeric: tabular-nums;
-      font-weight: 600;
-    }
-    .strategy-table__cell--strong { background: rgba(78, 162, 253, 0.14); color: #1a5fa8; }
-    .strategy-table__cell--mid    { background: rgba(255, 212, 0, 0.14); }
-    .strategy-table__cell--weak   { background: rgba(192, 57, 43, 0.12); color: #8e2a1c; }
-    .strategy-table__cell--empty  { color: var(--ppl-color-text-subtle); opacity: 0.5; }
-    .strategy-table__cell-sample {
-      display: block;
-      font-size: 0.62rem;
-      font-weight: 400;
-      color: var(--ppl-color-text-subtle);
-      margin-top: 1px;
-    }
-
-    /* Findings list */
-    .findings-list { list-style: none; margin: 0; padding: 0; }
-    .findings-list li {
-      padding: 0.5rem 0;
-      border-bottom: 1px solid rgba(19, 25, 32, 0.06);
-      font-size: 0.84rem;
-      line-height: 1.4;
-      color: var(--ppl-color-text-default);
-    }
-    .findings-list li:last-child { border-bottom: 0; }
-    .findings-list .finding-kind {
-      display: inline-block;
-      font-size: 0.62rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--hg-color-secondary-bold);
-      margin-right: 0.4em;
-    }
-    .findings-list .finding-kind--weak { color: #8e2a1c; }
-    .findings-list .finding-kind--strong { color: #1a5fa8; }
-    .findings-list .finding-empty {
-      color: var(--ppl-color-text-subtle);
-      font-style: italic;
-    }
-
-    /* Parameter evolution */
-    .param-list { list-style: none; margin: 0; padding: 0; }
-    .param-list li {
-      padding: 0.45rem 0;
-      border-bottom: 1px solid rgba(19, 25, 32, 0.06);
-      font-size: 0.82rem;
-    }
-    .param-list li:last-child { border-bottom: 0; }
-    .param-list__doctrine {
-      font-weight: 700;
-      text-transform: capitalize;
-      color: var(--ppl-color-text-default);
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-    }
-    .param-list__adjustments {
-      font-size: 0.68rem;
-      font-weight: 600;
-      color: var(--hg-color-secondary-bold);
-    }
-    .param-list__adjustments.is-zero { color: var(--ppl-color-text-subtle); }
-    .param-list__params {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 2px 8px;
-      margin-top: 3px;
-      font-size: 0.72rem;
-      color: var(--ppl-color-text-subtle);
-      font-variant-numeric: tabular-nums;
-    }
-    .param-list__params span b {
-      font-weight: 600;
-      color: var(--ppl-color-text-default);
-    }
-    .research-output__loading {
-      color: var(--ppl-color-text-subtle);
-      font-style: italic;
-      font-size: 0.85rem;
-      padding: 1rem 0;
-    }
-
-    /* Research toggle — a small inline button placed inside the SIMULATION
-       ENGINE card's note line. Loads the research panel only on click. */
-    .research-inline-btn {
-      display: inline-block;
-      margin-left: 0.5rem;
-      padding: 1px 10px;
-      border: 1px solid var(--hg-color-secondary);
-      border-radius: 3px;
-      background: transparent;
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--hg-color-secondary);
-      cursor: pointer;
-      transition: background 0.15s ease, color 0.15s ease;
-      vertical-align: baseline;
-    }
-    .research-inline-btn:hover {
-      background: rgba(255, 212, 0, 0.10);
-    }
-
-    /* Close button inside the expanded research section */
-    .research-output__close {
-      display: inline-block;
-      margin-top: 1rem;
-      padding: 5px 14px;
-      background: transparent;
-      border: 1px solid rgba(19, 25, 32, 0.10);
-      border-radius: 3px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--ppl-color-text-subtle);
-      cursor: pointer;
-      transition: border-color 0.15s ease, color 0.15s ease;
-    }
-    .research-output__close:hover {
-      border-color: var(--hg-color-secondary);
-      color: var(--ppl-color-text-default);
-    }
-
     .flow-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1443,8 +1198,18 @@
     /* ─────────────────────────────────────────────────────────────
        Integrated fable Obscured Map Components
        ───────────────────────────────────────────────────────────── */
+    .retro-map-wrapper {
+        position: relative;
+        height: 700px;
+        width: 100%;
+        border: 1px solid rgba(34, 211, 238, 0.4);
+        border-radius: 8px;
+        overflow: hidden;
+        background: #000;
+        box-shadow: 0 0 30px rgba(34, 211, 238, 0.15) inset;
+        font-family: 'VT323', Courier, monospace;
+    }
 
-    
     /* GRID FLOW live-grid overlay: one static <path> per connection, animated with
        the stroke-dasharray/stroke-dashoffset trick. alieninc-original class. */
     .alieninc-gridflow-overlay {
@@ -1994,60 +1759,6 @@
     }
 
     /* Map interactive help controls banner */
-
-    /* Terminal — store.palantir.com pattern */
-    .retro-map-terminal {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 380px;
-        height: 200px;
-        z-index: 20;
-        letter-spacing: 0;
-        overflow: hidden;
-        flex-shrink: 0;
-    }
-    .retro-map-terminal .xterm {
-        height: 200px;
-        max-height: 200px;
-    }
-    .retro-map-terminal .xterm .xterm-screen {
-        height: 100% !important;
-        max-height: 100% !important;
-    }
-    .retro-map-terminal canvas {
-        display: block;
-    }
-    .retro-map-terminal:after {
-        content: "";
-        position: absolute;
-        top: 0;
-        height: 100%;
-        width: 100%;
-        background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0) 100%);
-        pointer-events: none;
-    }
-    .retro-map-terminal .xterm {
-        padding: 0;
-    }
-    .retro-map-terminal .xterm .xterm-viewport {
-        overflow: hidden;
-    }
-    .retro-map-terminal .xterm .xterm-selection > div {
-        background-color: transparent !important;
-    }
-    .retro-map-terminal.mono {
-        font-family: 'VT323', monospace;
-        font-size: 1.4rem;
-    }
-    @keyframes blink_outline_1 {
-        0% { opacity: 0; }
-        50% { opacity: 1; }
-    }
-    .xterm-dom-renderer-owner-1 .xterm-cursor.xterm-cursor-outline {
-        animation: blink_outline_1 1s step-end infinite;
-    }
-
     .retro-map-hint-banner {
         position: absolute;
         bottom: 75px;
@@ -2060,7 +1771,7 @@
         pointer-events: none;
     }
     @media screen and (max-width: 768px) {
-.retro-map-hint-banner { bottom: 65px; }
+        .retro-map-hint-banner { bottom: 65px; }
     }
 
     .retro-map-hint-text {
@@ -2081,7 +1792,7 @@
         bottom: 12px;
         left: 50%;
         transform: translateX(-50%);
-        z-index: 25;
+        z-index: 10;
         background: rgba(0, 0, 0, 0.95);
         border: 1px solid rgba(34, 211, 238, 0.2);
         border-radius: 6px;
@@ -2418,8 +2129,6 @@
       background: #000;
     }
     .network-map-zone .retro-map-wrapper {
-      position: relative;
-      overflow: hidden;
       height: calc(100vh - var(--header-height));
       min-height: 620px;
       max-height: 1200px;
@@ -2494,7 +2203,7 @@
       }
     })();
   </script>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; img-src 'self' data: https:; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https:; connect-src 'self' https://tiles.openfreemap.org; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
     <meta http-equiv="X-Frame-Options" content="DENY">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
 </head>
@@ -2637,10 +2346,7 @@
                 </button>
                 <div class="sims-engine__menu" id="metricEngineMenu" role="listbox"></div>
               </div>
-               <div class="metric-card__note">
-                 Live simulation engines. Select one to filter the count above by engine.
-                 <button type="button" id="researchShowBtn" class="research-inline-btn" aria-expanded="false" aria-controls="research-output">View Full Report</button>
-               </div>
+              <div class="metric-card__note">Live simulation engines. Select one to filter the count above by engine.</div>
             </div>
           </div>
 
@@ -2840,7 +2546,6 @@
                  grid flow, which is now a company-connection arc view. -->
 
             <!-- Map Render Port -->
-
             <div id="aliens-network-map" style="height: 100%; width: 100%;"></div>
 
             <!-- Circular Radar-masked Minimap (fable Minimap adapted) -->
@@ -2855,11 +2560,6 @@
             <!-- HUD Command Line Navigation Help -->
             <div class="retro-map-hint-banner">
                 <div class="retro-map-hint-text">[ DRAG: PAN • SCROLL: ZOOM • SHIFT+DRAG: TILT 3D • CLICK COORDINATES ]</div>
-            </div>
-
-            <!-- Terminal (store.palantir.com pattern) -->
-            <div data-section-id="terminal" data-section-type="terminal" class="retro-map-terminal mono">
-                <div id="terminal"></div>
             </div>
 
             <!-- Command Preset Toolbar Sector Presets -->
@@ -4656,239 +4356,6 @@
   })();
   </script>
 
-  <!-- RESEARCH OUTPUT overlay — floats above everything (fixed, hidden).
-       Shown only when "View Full Report" in the Simulation Engine card is
-       clicked. Does not reflow the document flow. -->
-  <section class="research-output" id="research-output" aria-hidden="true" hidden>
-    <div class="research-output__body" role="dialog" aria-modal="true" aria-label="Simulation research report">
-      <div class="research-output__header">
-        <div class="research-output__kicker">RESEARCH OUTPUT — KRIEGSPIEL SELF-LEARNING</div>
-        <h3 class="research-output__title">What the machine is learning, in real time.</h3>
-        <p class="research-output__copy">Every scenario batch is observed by a doctrine-performance tracker. When the evidence is strong enough, the engine distills a finding — and rewrites its own combat parameters toward what wins. The table below is live; the numbers shift as the engine learns.</p>
-        <div class="research-output__stats" id="researchStats">
-          <span class="research-output__stat">Scenarios observed: <strong id="researchScenarios">—</strong></span>
-          <span class="research-output__stat">Batches: <strong id="researchBatches">—</strong></span>
-          <span class="research-output__stat">Findings: <strong id="researchFindingsCount">—</strong></span>
-          <span class="research-output__stat">Parameter adjustments: <strong id="researchAdjustments">—</strong></span>
-          <span class="research-output__stat">Log entries: <strong id="researchLogEntries">—</strong></span>
-        </div>
-      </div>
-      <div class="research-output__grid">
-        <div class="research-output__panel">
-          <h4 class="research-output__panel-title">Strategy table — doctrine × terrain win rate</h4>
-          <div id="researchStrategyTable"><p class="research-output__loading">Loading strategy matrix…</p></div>
-        </div>
-        <div class="research-output__panel">
-          <h4 class="research-output__panel-title">Latest findings</h4>
-          <div id="researchFindings"><p class="research-output__loading">Loading findings…</p></div>
-        </div>
-        <div class="research-output__panel">
-          <h4 class="research-output__panel-title">Doctrine parameters — evolved by the engine</h4>
-          <div id="researchParameters"><p class="research-output__loading">Loading parameters…</p></div>
-        </div>
-      </div>
-      <button type="button" id="researchCloseBtn" class="research-output__close">Hide research</button>
-    </div>
-  </section>
-
-  <!-- Research Output — polls /api/research/* and renders the strategy
-       table, latest findings, and evolved doctrine parameters. The engine
-       learns from its own Kriegspiel scenarios and self-improves its
-       doctrine parameters; this surfaces that learning live. -->
-  <script>
-  (function () {
-    var FETCH_OPTS = { credentials: 'same-origin' };
-
-    function setText(id, txt) {
-      var el = document.getElementById(id);
-      if (el) el.textContent = txt;
-    }
-
-    function fmtPct(v) {
-      if (v === null || v === undefined) return '—';
-      return Math.round(v * 100) + '%';
-    }
-
-    function cellClass(winRate) {
-      if (winRate === null || winRate === undefined) return 'strategy-table__cell strategy-table__cell--empty';
-      if (winRate >= 0.65) return 'strategy-table__cell strategy-table__cell--strong';
-      if (winRate < 0.35) return 'strategy-table__cell strategy-table__cell--weak';
-      return 'strategy-table__cell strategy-table__cell--mid';
-    }
-
-    function renderStrategyTable(data) {
-      var host = document.getElementById('researchStrategyTable');
-      if (!host) return;
-      var doctrines = data.doctrines || [];
-      var terrains = data.terrains || [];
-      var matrix = data.matrix || [];
-      if (!doctrines.length || !terrains.length) {
-        host.innerHTML = '<p class="research-output__loading">Not enough data yet — the engine is still gathering scenarios.</p>';
-        return;
-      }
-      var html = '<table class="strategy-table"><thead><tr><th>Doctrine</th>';
-      for (var t = 0; t < terrains.length; t++) {
-        html += '<th>' + terrains[t] + '</th>';
-      }
-      html += '</tr></thead><tbody>';
-      for (var d = 0; d < doctrines.length; d++) {
-        html += '<tr><th>' + doctrines[d] + '</th>';
-        var row = matrix[d] || [];
-        for (var t = 0; t < terrains.length; t++) {
-          var cell = row[t] || {};
-          var wr = cell.win_rate;
-          var samples = cell.samples || 0;
-          if (samples === 0) {
-            html += '<td class="' + cellClass(null) + '">—</td>';
-          } else {
-            html += '<td class="' + cellClass(wr) + '">' + fmtPct(wr) +
-                    '<span class="strategy-table__cell-sample">n=' + samples + '</span></td>';
-          }
-        }
-        html += '</tr>';
-      }
-      html += '</tbody></table>';
-      host.innerHTML = html;
-    }
-
-    function findingKindClass(kind) {
-      if (kind === 'terrain_doctrine_weak' || kind === 'matchup_asymmetry') return 'finding-kind finding-kind--weak';
-      if (kind === 'terrain_doctrine_strong') return 'finding-kind finding-kind--strong';
-      return 'finding-kind';
-    }
-
-    function findingKindLabel(kind) {
-      var labels = {
-        'terrain_doctrine_weak': 'WEAK',
-        'terrain_doctrine_strong': 'STRONG',
-        'matchup_asymmetry': 'ASYMMETRY',
-        'parameter_change': 'ADJUSTMENT',
-        'milestone': 'MILESTONE'
-      };
-      return labels[kind] || kind.toUpperCase();
-    }
-
-    function renderFindings(data) {
-      var host = document.getElementById('researchFindings');
-      if (!host) return;
-      var findings = data.findings || [];
-      if (!findings.length) {
-        host.innerHTML = '<p class="research-output__loading">No findings yet — the engine needs more scenarios before it can distill patterns.</p>';
-        return;
-      }
-      var html = '<ul class="findings-list">';
-      // Newest last → reverse for display so newest is on top.
-      for (var i = findings.length - 1; i >= 0; i--) {
-        var f = findings[i];
-        html += '<li><span class="' + findingKindClass(f.kind) + '">' +
-                findingKindLabel(f.kind) + '</span>' +
-                (f.text || '') + '</li>';
-      }
-      html += '</ul>';
-      host.innerHTML = html;
-    }
-
-    function renderParameters(data) {
-      var host = document.getElementById('researchParameters');
-      if (!host) return;
-      var current = data.current || {};
-      var keys = Object.keys(current).sort();
-      if (!keys.length) {
-        host.innerHTML = '<p class="research-output__loading">Parameters unavailable.</p>';
-        return;
-      }
-      var html = '<ul class="param-list">';
-      for (var i = 0; i < keys.length; i++) {
-        var d = keys[i];
-        var p = current[d];
-        var adj = p.adjustments || 0;
-        html += '<li><div class="param-list__doctrine"><span>' + d + '</span>' +
-                '<span class="param-list__adjustments' + (adj ? '' : ' is-zero') + '">' +
-                (adj ? adj + ' adjustment' + (adj === 1 ? '' : 's') : 'baseline') + '</span></div>' +
-                '<div class="param-list__params">' +
-                '<span>agg <b>' + p.aggression.toFixed(2) + '</b></span>' +
-                '<span>risk <b>' + p.risk.toFixed(2) + '</b></span>' +
-                '<span>sup <b>' + p.supply_focus.toFixed(2) + '</b></span>' +
-                '<span>drn <b>' + p.morale_drain.toFixed(2) + '</b></span>' +
-                '</div></li>';
-      }
-      html += '</ul>';
-      host.innerHTML = html;
-    }
-
-     function fetchResearch() {
-       fetch('/api/research/strategy-table', FETCH_OPTS)
-         .then(function (r) { return r.ok ? r.json() : null; })
-         .then(function (d) {
-           if (!d || d.error) return;
-           renderStrategyTable(d);
-           setText('researchScenarios', (d.scenarios_observed || 0).toLocaleString());
-           setText('researchBatches', (d.batches_observed || 0).toLocaleString());
-         })
-         .catch(function () {});
-       fetch('/api/research/findings?k=8', FETCH_OPTS)
-         .then(function (r) { return r.ok ? r.json() : null; })
-         .then(function (d) {
-           if (!d || d.error) return;
-           renderFindings(d);
-           setText('researchFindingsCount', (d.findings || []).length);
-         })
-         .catch(function () {});
-       fetch('/api/research/parameters', FETCH_OPTS)
-         .then(function (r) { return r.ok ? r.json() : null; })
-         .then(function (d) {
-           if (!d || d.error) return;
-           renderParameters(d);
-           setText('researchAdjustments', (d.total_adjustments || 0).toLocaleString());
-         })
-         .catch(function () {});
-       fetch('/api/research/dossier?k=1', FETCH_OPTS)
-         .then(function (r) { return r.ok ? r.json() : null; })
-         .then(function (d) {
-           if (!d || d.error) return;
-           setText('researchLogEntries', (d.log_entries || 0).toLocaleString());
-         })
-         .catch(function () {});
-     }
-
-    // Lazy-load: the research overlay starts hidden (hidden attr). Data is
-    // fetched only when the user clicks "View Full Report" in the SIMULATION
-    // ENGINE card. The overlay floats above everything (fixed, z-index 9999)
-    // so it never reflows the document. Clicking the backdrop also closes.
-    var _researchPollTimer = null;
-    function _researchTick() { _researchPollTimer = null; fetchResearch(); }
-    function _setResearchOpen(open) {
-      var section = document.getElementById('research-output');
-      var btn = document.getElementById('researchShowBtn');
-      if (!section || !btn) return;
-      section.hidden = !open;
-      btn.setAttribute('aria-expanded', String(open));
-      if (open) {
-        fetchResearch();
-        _researchPollTimer = setTimeout(_researchTick, 8000);
-      } else if (_researchPollTimer) {
-        clearTimeout(_researchPollTimer);
-        _researchPollTimer = null;
-      }
-    }
-    var showBtn = document.getElementById('researchShowBtn');
-    var closeBtn = document.getElementById('researchCloseBtn');
-    if (showBtn) {
-      showBtn.addEventListener('click', function () { _setResearchOpen(true); });
-    }
-    // Backdrop click closes the overlay (clicking outside the white card).
-    if (document.getElementById('research-output')) {
-      document.getElementById('research-output').addEventListener('click', function (e) {
-        var body = e.target.closest('.research-output__body');
-        if (!body) { _setResearchOpen(false); }
-      });
-    }
-    if (closeBtn) {
-      closeBtn.addEventListener('click', function () { _setResearchOpen(false); });
-    }
-  })();
-  </script>
-
   <!-- Live Simulations Output — shared engine drives the section counter and the nav counter -->
   <script>
   // To drive the counter from a real source, define before this script runs:
@@ -5049,389 +4516,6 @@
       }
     }
   })();
-  </script>
-
-  <script>
-        // ── Terminal Console (store.palantir.com pattern, lazy-loaded) ──
-        (function() {
-            var el = document.getElementById('terminal');
-            var mapSection = document.getElementById('network-map');
-            if (!el || !mapSection) return;
-
-            var initialized = false;
-
-            function loadScript(url) {
-                return new Promise(function(resolve, reject) {
-                    var s = document.createElement('script');
-                    s.src = url;
-                    s.onload = resolve;
-                    s.onerror = reject;
-                    document.head.appendChild(s);
-                });
-            }
-
-            function loadCSS(url) {
-                var l = document.createElement('link');
-                l.rel = 'stylesheet';
-                l.href = url;
-                document.head.appendChild(l);
-            }
-
-            function initTerminal() {
-                if (initialized) return;
-                initialized = true;
-
-                loadCSS('https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css');
-
-                Promise.all([
-                    loadScript('https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js'),
-                    loadScript('https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js')
-                ]).then(function() {
-                    if (typeof Terminal === 'undefined') return;
-                    bootTerminal();
-                });
-            }
-
-            // IntersectionObserver: only load xterm when map scrolls into view
-            if ('IntersectionObserver' in window) {
-                var mapObserver = new IntersectionObserver(function(entries) {
-                    entries.forEach(function(entry) {
-                        if (entry.isIntersecting) {
-                            initTerminal();
-                            mapObserver.disconnect();
-                        }
-                    });
-                }, { threshold: 0.1 });
-                mapObserver.observe(mapSection);
-            } else {
-                initTerminal();
-            }
-
-            function bootTerminal() {
-
-            function rgb(r, g, b) { return "\x1B[38;2;" + r + ";" + g + ";" + b + "m"; }
-
-            var term = new Terminal({
-                theme: { foreground: '#CDCDCD', background: '#ff000000', selectionBackground: '#090808' },
-                allowTransparency: true, scrollback: 1000, wordWrap: true,
-                fontSize: 13, lineHeight: 1.1, fontFamily: "'VT323', monospace",
-                cursorBlink: true, cursorStyle: 'block', convertEol: true
-            });
-
-            var fitAddon = new FitAddon.FitAddon();
-            term.loadAddon(fitAddon);
-            term.open(el);
-            fitAddon.fit();
-            window.addEventListener('resize', function() { fitAddon.fit(); });
-
-            var renderedLines = [], lineBuffer = [], history = [], shellListener = null, offset = 0;
-            var visitorIP = 'unknown';
-
-            // Fetch visitor IP on init
-            fetch('https://api.ipify.org?format=json').then(function(r) { return r.json(); }).then(function(d) {
-                visitorIP = d.ip || 'unknown';
-            }).catch(function() { visitorIP = 'unavailable'; });
-
-            function redrawScreen() {
-                var rows = term.rows;
-                term.write('\x1b[2J\x1b[H');
-                var start = Math.max(0, renderedLines.length - (rows - 1));
-                var vis = renderedLines.slice(start);
-                for (var i = 0; i < rows - 1 - vis.length; i++) term.write('\r\n');
-                for (var j = 0; j < vis.length; j++) term.write(vis[j] + '\r\n');
-                term.write("\x1B[" + rows + ";1H" + lineBuffer.join(''));
-                if (offset < 0) term.write("\x1B[" + (-offset) + "D");
-            }
-
-            function log(msg, type) {
-                var ts = new Date().toLocaleTimeString();
-                var c = type === 'error' ? rgb(255,0,0) : type === 'success' ? rgb(34,211,238) : type === 'warning' ? rgb(255,255,0) : rgb(229,231,235);
-                renderedLines.push(c + "[" + ts + "] " + rgb(229,231,235) + msg + "\x1B[0m");
-                redrawScreen();
-            }
-
-            // Boot sequence
-            renderedLines.push('Loading version 1.0');
-            redrawScreen();
-            setTimeout(function() { log('Setting preferences...', 'info'); }, 1000);
-            setTimeout(function() { log('Current date: ' + new Date().toLocaleDateString(), 'info'); }, 2000);
-
-            // terminal:log listener
-            window.addEventListener('terminal:log', function(e) {
-                var message = (e.detail && e.detail.message) || 'No message provided';
-                var type = (e.detail && e.detail.type) || 'info';
-                var ts = new Date().toLocaleTimeString();
-                var c = type === 'error' ? rgb(255,0,0) : type === 'success' ? rgb(34,211,238) : type === 'warning' ? rgb(255,255,0) : rgb(229,231,235);
-                renderedLines.push(c + "[" + ts + "] " + rgb(229,231,235) + message + "\x1B[0m");
-                redrawScreen();
-            });
-
-            function terminalLog(message, type) {
-                window.dispatchEvent(new CustomEvent('terminal:log', { detail: { message: message, type: type || 'info' } }));
-            }
-
-            // Navigation tracking
-            var sections = document.querySelectorAll('section[id], .timeline-title[id]');
-            if (sections.length && 'IntersectionObserver' in window) {
-                var navObserver = new IntersectionObserver(function(entries) {
-                    entries.forEach(function(entry) {
-                        if (entry.isIntersecting) {
-                            var id = entry.target.id;
-                            if (id) { terminalLog('NAVIGATING TO /' + id, 'success'); setTimeout(function() { terminalLog('NAVIGATION COMPLETE', 'success'); }, 400); }
-                        }
-                    });
-                }, { threshold: 0.3 });
-                sections.forEach(function(s) { navObserver.observe(s); });
-            }
-
-            // Map marker clicks
-            document.addEventListener('click', function(e) {
-                var marker = e.target.closest('.maplibregl-marker, .mapboxgl-marker, [class*="marker"]');
-                if (marker) {
-                    var label = marker.getAttribute('aria-label') || marker.getAttribute('title') || 'COORDINATE';
-                    terminalLog('SELECTING ' + label.toUpperCase(), 'success');
-                }
-            });
-
-            // === HELP TEXT ===
-            var HELP_TEXT = [
-                rgb(34,211,238) + '═══ ALIEN INC NETWORK MAP TERMINAL ═══' + rgb(229,231,235),
-                '',
-                'NAVIGATION',
-                '  scan                  │ Cycle map filter: foundry → hyperscale → colo → all',
-                '  filter <type>         │ Filter map: foundry | hyperscale | colocation | all',
-                '  reset                 │ Reset map to default global view',
-                '  focus <name>          │ Fly to a company node by name',
-                '  locate                │ Fly to Alien Inc headquarters (BGC, Taguig)',
-                '',
-                'RECONNAISSANCE',
-                '  nodes                 │ List all network nodes with coordinates',
-                '  node <name>           │ Inspect a company node (opens profile panel)',
-                '  scan-tech             │ List all companies with tech stacks',
-                '  ping <name>           │ Test connection latency to a node',
-                '  status                │ Network status + visitor IP + ecosystem stats',
-                '',
-                'SYSTEM',
-                '  whoami                │ Visitor identity (IP, timestamp, viewport)',
-                '  uptime                │ Time since page load',
-                '  clear                 │ Clear terminal output',
-                '  history               │ Show command history',
-                '  help                  │ Show this help',
-                '',
-                rgb(100,100,100) + 'Type any command. Arrow keys for history. Backspace to edit.' + rgb(229,231,235)
-            ];
-
-            function getNodes() { return window.aliensNetworkNodes || []; }
-            function getMap() { return window.activeMapInstance; }
-            function getSummary() { return window.ecosystemSummary || {}; }
-
-            function fuzzyFind(query) {
-                var q = query.toLowerCase();
-                var nodes = getNodes();
-                return nodes.filter(function(n) {
-                    return n.name && n.name.toLowerCase().indexOf(q) !== -1;
-                });
-            }
-
-            function shell(data) {
-                for (var i = 0; i < data.length; ++i) {
-                    var c = data[i];
-                    if (c === '\r') {
-                        offset = 0;
-                        var command = lineBuffer.join('');
-                        renderedLines.push(rgb(180,180,180) + '> ' + rgb(229,231,235) + command + '\x1B[0m');
-                        lineBuffer.length = 0;
-                        history.push(command);
-                        try {
-                            if (shellListener) shellListener.dispose();
-                            var parts = command.trim().split(/\s+/);
-                            var cmd = (parts[0] || '').toLowerCase();
-                            var args = parts.slice(1).join(' ');
-                            var nodes = getNodes();
-                            var map = getMap();
-                            var summary = getSummary();
-
-                            switch (cmd) {
-                                case 'help':
-                                    HELP_TEXT.forEach(function(l) { renderedLines.push(l); });
-                                    break;
-
-                                case 'clear':
-                                    renderedLines = [];
-                                    break;
-
-                                case 'whoami': {
-                                    var now = new Date();
-                                    renderedLines.push(rgb(34,211,238) + 'VISITOR REPORT' + rgb(229,231,235));
-                                    renderedLines.push('  IP Address:     ' + visitorIP);
-                                    renderedLines.push('  Timestamp:      ' + now.toISOString());
-                                    renderedLines.push('  Viewport:       ' + window.innerWidth + 'x' + window.innerHeight);
-                                    renderedLines.push('  User Agent:     ' + navigator.userAgent.substring(0, 60) + '...');
-                                    renderedLines.push('  Language:       ' + navigator.language);
-                                    renderedLines.push('  Platform:       ' + (navigator.platform || 'unknown'));
-                                    break;
-                                }
-
-                                case 'uptime': {
-                                    var sec = Math.floor((Date.now() - performance.timing.navigationStart) / 1000);
-                                    var m = Math.floor(sec / 60), h = Math.floor(m / 60);
-                                    renderedLines.push('Page uptime: ' + h + 'h ' + (m % 60) + 'm ' + (sec % 60) + 's');
-                                    break;
-                                }
-
-                                case 'status': {
-                                    renderedLines.push(rgb(34,211,238) + 'NETWORK STATUS' + rgb(229,231,235));
-                                    renderedLines.push('  Visitor IP:     ' + visitorIP);
-                                    renderedLines.push('  Nodes:          ' + nodes.length);
-                                    renderedLines.push('  Sectors:        ' + (summary.nodeCount || nodes.length));
-                                    renderedLines.push('  Founding Year:  ' + (summary.earliestFoundingYear || '—'));
-                                    renderedLines.push('  Map:            ' + (map ? rgb(34,211,238) + 'ONLINE' + rgb(229,231,235) : rgb(255,0,0) + 'OFFLINE' + rgb(229,231,235)));
-                                    renderedLines.push('  Tiles:          openfreemap.org/dark');
-                                    var markers = document.querySelectorAll('.maplibregl-marker');
-                                    renderedLines.push('  Markers:        ' + markers.length + ' visible');
-                                    break;
-                                }
-
-                                case 'nodes': {
-                                    if (!nodes.length) { renderedLines.push('No nodes loaded.'); break; }
-                                    renderedLines.push(rgb(34,211,238) + 'NETWORK NODES (' + nodes.length + ')' + rgb(229,231,235));
-                                    nodes.forEach(function(n, i) {
-                                        var tag = n.markerColor ? rgb(74,222,128) : rgb(255,212,0);
-                                        renderedLines.push(tag + '  ' + (i+1).toString().padStart(2,'0') + rgb(229,231,235) + ' ' + (n.name || '?').substring(0,30).padEnd(30) + ' ' + rgb(100,100,100) + (n.sector || '—').substring(0,25) + rgb(229,231,235));
-                                    });
-                                    break;
-                                }
-
-                                case 'node': {
-                                    if (!args) { renderedLines.push('Usage: node <name>'); break; }
-                                    var found = fuzzyFind(args);
-                                    if (!found.length) { renderedLines.push(rgb(255,0,0) + 'No node matching "' + args + '"' + rgb(229,231,235)); break; }
-                                    var n = found[0];
-                                    inspectNode(n, true);
-                                    renderedLines.push(rgb(34,211,238) + 'FLYING TO ' + n.name.toUpperCase() + rgb(229,231,235));
-                                    break;
-                                }
-
-                                case 'scan': {
-                                    var order = ['all', 'foundry', 'hyperscale', 'colocation'];
-                                    var current = window.activeFilter || 'all';
-                                    var next = order[(order.indexOf(current) + 1) % order.length];
-                                    filterDataCenters(next);
-                                    terminalLog('SCANNING → ' + (DC_CATEGORIES[next] ? DC_CATEGORIES[next].label : 'ALL').toUpperCase(), 'success');
-                                    break;
-                                }
-
-                                case 'filter': {
-                                    if (!args || !DC_CATEGORIES[args]) {
-                                        renderedLines.push('Usage: filter <foundry|hyperscale|colocation|all>');
-                                        break;
-                                    }
-                                    filterDataCenters(args);
-                                    terminalLog('FILTER APPLIED: ' + DC_CATEGORIES[args].label, 'success');
-                                    break;
-                                }
-
-                                case 'reset':
-                                    resetMapView();
-                                    terminalLog('MAP RESET TO GLOBAL VIEW', 'success');
-                                    break;
-
-                                case 'focus': {
-                                    if (!args) { renderedLines.push('Usage: focus <company name>'); break; }
-                                    var found = fuzzyFind(args);
-                                    if (!found.length) { renderedLines.push(rgb(255,0,0) + 'No match for "' + args + '"' + rgb(229,231,235)); break; }
-                                    var n = found[0];
-                                    if (map) {
-                                        map.flyTo({ center: [n.lng, n.lat], zoom: 14, pitch: 55, bearing: 5, duration: 2000 });
-                                        updateHUD(n.name, 'FOCUS LOCK', n.sector);
-                                    }
-                                    terminalLog('FOCUS → ' + n.name.toUpperCase(), 'success');
-                                    break;
-                                }
-
-                                case 'locate':
-                                    if (map) {
-                                        map.flyTo({ center: [121.0450, 14.5547], zoom: 15, pitch: 45, bearing: -10, duration: 2500 });
-                                        updateHUD('ALIEN INC HQ', 'BGC CORE', '14.5547°N, 121.0450°E');
-                                    }
-                                    terminalLog('LOCATING ALIEN INC HEADQUARTERS', 'success');
-                                    break;
-
-                                case 'scan-tech': {
-                                    var withStack = nodes.filter(function(n) { return n.techStack && n.techStack.length > 0; });
-                                    if (!withStack.length) { renderedLines.push('No tech stacks available.'); break; }
-                                    renderedLines.push(rgb(34,211,238) + 'TECH STACKS (' + withStack.length + ' companies)' + rgb(229,231,235));
-                                    withStack.forEach(function(n) {
-                                        renderedLines.push(rgb(34,211,238) + '  ' + n.name + rgb(229,231,235) + ' (' + n.techStack.length + ' tools)');
-                                        n.techStack.slice(0, 5).forEach(function(t) {
-                                            renderedLines.push(rgb(100,100,100) + '    • ' + t.name + ' — ' + t.role + rgb(229,231,235));
-                                        });
-                                        if (n.techStack.length > 5) renderedLines.push(rgb(100,100,100) + '    ... +' + (n.techStack.length - 5) + ' more' + rgb(229,231,235));
-                                    });
-                                    break;
-                                }
-
-                                case 'ping': {
-                                    if (!args) { renderedLines.push('Usage: ping <node name>'); break; }
-                                    var found = fuzzyFind(args);
-                                    if (!found.length) { renderedLines.push(rgb(255,0,0) + 'No node matching "' + args + '"' + rgb(229,231,235)); break; }
-                                    var n = found[0];
-                                    var dist = Math.round(haversine(14.5547, 121.0450, n.lat, n.lng));
-                                    terminalLog('PING ' + n.name.toUpperCase() + ' (' + dist + ' km)...', 'info');
-                                    setTimeout(function() {
-                                        var lat = Math.floor(Math.random() * 120 + 8);
-                                        var jitter = Math.floor(Math.random() * 5);
-                                        terminalLog('PONG ' + n.name.toUpperCase() + ' — ' + lat + 'ms ±' + jitter + 'ms — ' + dist + 'km from HQ', 'success');
-                                    }, 300 + Math.random() * 700);
-                                    break;
-                                }
-
-                                case 'history':
-                                    history.forEach(function(h, idx) { renderedLines.push(rgb(100,100,100) + '  ' + idx + ': ' + h + rgb(229,231,235)); });
-                                    break;
-
-                                default:
-                                    if (cmd) renderedLines.push(rgb(255,255,0) + 'Unknown command: ' + cmd + '. Type "help" for available commands.' + rgb(229,231,235));
-                            }
-                        } catch (e) {
-                            var msg = (e && e.message) || 'Error';
-                            renderedLines.push(rgb(255,0,0) + msg + rgb(229,231,235));
-                        } finally {
-                            shellListener = term.onData(shell);
-                            redrawScreen();
-                        }
-                    } else if (c === '\x7F') {
-                        if (lineBuffer.length) {
-                            if (offset === 0) lineBuffer.pop();
-                            else if (offset < 0 && Math.abs(offset) !== lineBuffer.length) lineBuffer.splice(lineBuffer.length + offset - 1, 1);
-                            redrawScreen();
-                        }
-                    } else if (['\x1b[A','\x1b[B','\x1b[C','\x1b[D'].includes(data.slice(i, i + 3))) {
-                        var k = data.slice(i, i + 3);
-                        if (k === '\x1b[C' && offset < 0) offset++;
-                        else if (k === '\x1b[D' && Math.abs(offset) < lineBuffer.length) offset--;
-                        i += 2;
-                        redrawScreen();
-                    } else {
-                        if (offset === 0) lineBuffer.push(c);
-                        else lineBuffer.splice(lineBuffer.length + offset, 0, c);
-                        term.write(c);
-                    }
-                }
-            }
-
-            function haversine(lat1, lon1, lat2, lon2) {
-                var R = 6371;
-                var dLat = (lat2 - lat1) * Math.PI / 180;
-                var dLon = (lon2 - lon1) * Math.PI / 180;
-                var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            }
-
-            shellListener = term.onData(shell);
-            }
-        })();
-
   </script>
 
 </body>

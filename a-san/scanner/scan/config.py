@@ -179,4 +179,5 @@ class Settings:
                 "worldwide.espacenet.com", "ppubs.uspto.gov", "janes.com",
                 "www.militaryfactory.com",
                 "www.designation-systems.net", "missilethreat.csis.org",
-                "modernfirearms.net"}
+                "modernfirearms.net", "milremrobotics.com", "man.fas.org",
+                "en.wikipedia.org"}

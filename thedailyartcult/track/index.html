@@ -1,11 +1,175 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
-    <meta http-equiv="X-Frame-Options" content="DENY">
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
-<title>Track Your Card — The Daily Art Cult</title></head>
-<body style="font-family:Georgia,serif;max-width:800px;margin:0 auto;padding:80px 24px;text-align:center;background:#0e0c09;color:#d4c9b8;">
-<h1 style="color:#c6a766;">Track Your Card</h1>
-<p>Gift card tracking — enter your card ID to see your delivery status.</p>
-<p><a href="/thedailyartcult/" style="color:#c6a766;">Return to The Daily Art Cult</a></p>
-</body></html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta name="description" content="Track the delivery status of your Daily Art Cult gift card.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' https://cdn.jsdelivr.net https://cdn.tailwindcss.com; connect-src 'self' https://*.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <title>Track Your Card — The Daily Art Cult</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: "#070504",
+            night: "#0d0907",
+            walnut: "#1b110d",
+            cream: "#f2eadc",
+            linen: "#d8cbb8",
+            smoke: "#9f9283",
+            antique: "#c6a766"
+          },
+          fontFamily: {
+            serif: ["Playfair Display", "Georgia", "serif"],
+            sans: ["Inter", "system-ui", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body { background: #0e0c09; }
+    .field-label { font-family: 'Jost', monospace; letter-spacing: 0.22em; text-transform: uppercase; }
+  </style>
+</head>
+<body class="font-sans text-linen min-h-screen antialiased">
+
+  <main class="max-w-xl mx-auto px-6 py-24 sm:py-32">
+
+    <a href="/thedailyartcult/" class="inline-block font-serif text-lg font-semibold text-cream hover:text-antique transition duration-300">The Daily Art Cult</a>
+    <span class="block field-label text-[9px] text-linen/40 mt-1">Bespoke Tracking</span>
+
+    <h1 class="mt-10 font-serif text-4xl sm:text-5xl text-cream leading-tight">Track Your Card</h1>
+    <p class="mt-4 text-linen/70 leading-relaxed text-sm max-w-md">
+      Enter the code printed on your gift card to see its current delivery status.
+    </p>
+
+    <form id="track-form" class="mt-10 space-y-4" autocomplete="off">
+      <div>
+        <label for="card-code" class="block field-label text-[9px] text-linen/50 mb-2">Card Code</label>
+        <input
+          id="card-code"
+          name="card-code"
+          type="text"
+          required
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="e.g. TDAC-XXXX-XXXX"
+          class="w-full px-4 py-3 rounded-sm bg-white/[0.02] border border-antique/30 focus:border-antique focus:ring-0 focus:outline-none text-cream font-mono text-sm tracking-[0.12em] uppercase placeholder:text-linen/25 placeholder:normal-case transition duration-300"
+        />
+      </div>
+      <button
+        type="submit"
+        class="w-full py-3.5 rounded-sm border border-antique/50 bg-antique/10 hover:bg-antique hover:text-ink text-antique font-mono text-[10px] font-bold uppercase tracking-[0.25em] transition duration-300">
+        Check Status
+      </button>
+    </form>
+
+    <div id="track-result" class="mt-10 hidden" aria-live="polite"></div>
+
+  </main>
+
+  <script>
+    const SUPABASE_URL = "https://frwjaixxlgthkgjtafhz.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyd2phaXh4bGd0aGtnanRhZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDUzNDQsImV4cCI6MjA5NDYyMTM0NH0.j2DKz__QMml4WplMYNmsQpTUw0qu-kZG7Md3qBEEdEc";
+
+    const form = document.getElementById('track-form');
+    const codeInput = document.getElementById('card-code');
+    const resultBox = document.getElementById('track-result');
+
+    const escapeHtml = (s) => (s == null ? '' : String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+
+    const formatDate = (iso) => {
+      if (!iso) return '';
+      const d = new Date(iso);
+      if (isNaN(d)) return '';
+      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    };
+
+    const renderRow = (label, value) => value
+      ? `<div class="flex justify-between gap-6 py-2 border-b border-linen/10">
+           <span class="field-label text-[8px] text-linen/40 pt-1">${label}</span>
+           <span class="text-cream font-serif text-sm text-right">${escapeHtml(value)}</span>
+         </div>`
+      : '';
+
+    const showResult = (record) => {
+      if (!record) {
+        resultBox.innerHTML = `
+          <div class="p-5 rounded-sm border border-linen/15 bg-white/[0.02]">
+            <p class="field-label text-[9px] text-linen/40">Status</p>
+            <p class="mt-2 text-cream/80 font-serif text-base">No record found for that code.</p>
+            <p class="mt-2 text-linen/50 text-xs leading-relaxed">
+              Double-check the code printed on your card. If the issue persists, contact the studio.
+            </p>
+          </div>`;
+        resultBox.classList.remove('hidden');
+        return;
+      }
+
+      const statusLabel = {
+        'delivered': 'Delivered',
+        'in_transit': 'In Transit',
+        'dispatched': 'Dispatched',
+        'awaiting_fulfillment': 'Awaiting Fulfillment',
+        'held': 'Held at Facility'
+      }[record.status] || record.status;
+
+      const carrierLine = [record.carrier, record.tracking_number].filter(Boolean).join(' · ');
+      const updatedLine = formatDate(record.updated_at);
+
+      resultBox.innerHTML = `
+        <div class="p-6 rounded-sm border border-antique/25 bg-white/[0.02]">
+          <p class="field-label text-[9px] text-antique/80">Current Status</p>
+          <p class="mt-2 font-serif text-2xl text-cream">${escapeHtml(statusLabel)}</p>
+          <div class="mt-5">
+            ${renderRow('Location', record.current_location)}
+            ${renderRow('Carrier', carrierLine)}
+            ${renderRow('Notes', record.notes)}
+            ${renderRow('Last Updated', updatedLine)}
+          </div>
+        </div>`;
+      resultBox.classList.remove('hidden');
+    };
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const code = codeInput.value.trim();
+      if (!code) return;
+
+      resultBox.innerHTML = `
+        <div class="p-5 rounded-sm border border-linen/15 bg-white/[0.02]">
+          <p class="field-label text-[9px] text-linen/40">Checking</p>
+          <p class="mt-2 text-cream/70 font-serif text-sm italic">Looking up your card…</p>
+        </div>`;
+      resultBox.classList.remove('hidden');
+
+      let record = null;
+      try {
+        const url = `${SUPABASE_URL}/rest/v1/card_tracking?code=eq.${encodeURIComponent(code)}&limit=1`;
+        const res = await fetch(url, {
+          headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+        });
+        if (res.ok) {
+          const rows = await res.json();
+          record = Array.isArray(rows) && rows.length ? rows[0] : null;
+        }
+      } catch (err) {
+        record = null;
+      }
+      showResult(record);
+    });
+  </script>
+</body>
+</html>

@@ -35,8 +35,18 @@ carries the exact source URL. Wholesale prose reproduction is never done.
   produced by CSIS for clean attribution.
 - **modernfirearms.net** — © Maxim Popenker 1999-2026. Contact `admin@modernfirearms.net`.
 
-If you need to republish longer excerpts or imagery from these sources, request
-written permission and file it under `data/access/` before doing so.
+### CC BY-SA source (freely republishable with attribution)
+
+- **en.wikipedia.org** — Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0).
+  Wikipedia content can be freely republished on the A-SAN website provided the
+  source URL and licence are attributed. Every Wikipedia-sourced entry carries
+  `SourceRef("Wikipedia (CC BY-SA 4.0)", <page_url>)` so the attribution chain
+  is preserved in the catalog data. If you adapt or remix the content, the
+  derivative must also be CC BY-SA 4.0 (ShareAlike).
+
+If you need to republish longer excerpts or imagery from any all-rights-reserved
+source, request written permission and file it under `data/access/` before doing
+so.
 
 ## 3. Approved high-volume paths per source
 
@@ -51,6 +61,9 @@ written permission and file it under `data/access/` before doing so.
 | designation-systems.net | robots.txt allows `User-agent:*` for `/dusrm/` (detail pages) and `/usmilav/` (catalog index). No crawl-delay. Catalog enumeration via `/usmilav/missiles.html` (`table.designation-table`); detail pages `/dusrm/m-NN.html`. Wired in `parsers_designation.parse_designation`. | **Active** |
 | missilethreat.csis.org | robots.txt allows `User-agent:*` (Disallow empty). **Crawl-delay: 10s** — enforced via `HttpFetcher.HOST_CRAWL_DELAY`. Catalog enumeration via `/missile/` dropdown (`select#item-select`); detail pages `/missile/<slug>/`. Wired in `parsers_missilethreat.parse_missilethreat`. | **Active** |
 | modernfirearms.net | robots.txt allows `User-agent:*` for `/en/`. **Crawl-delay: 20s** — enforced via `HttpFetcher.HOST_CRAWL_DELAY`. Note: the bare category slugs (`/en/assault-rifles/`, `/en/handguns/`) 301→`/bez-rubriki/...`→404; use the long-slug URLs in `MODERNFIREARMS_SEED_URLS`. Detail pages `/en/<cat>/<country>-<cat>/<slug>/` are live. Wired in `parsers_modernfirearms.parse_modernfirearms`. | **Active** |
+| milremrobotics.com | robots.txt allows `User-agent:*` (only AI bots — Amazonbot, Applebot-Extended, Bytespider — are disallowed). No crawl-delay for our UA. 6 UGV product pages (THeMIS family, HAVOC RCV, Vector RCV, MRCV, ARCOS, Type-X) with clean spec blocks. Wired in `parsers_milrem.parse_milrem`. | **Active** |
+| man.fas.org | robots.txt: `User-agent:*` with `Disallow:` (empty — nothing disallowed). No crawl-delay. FAS Federation of American Scientists equipment reference at `/dod-101/sys/land/` (379 pages), `/ship/` (166), `/ac/equip/` (245). 501(c)(3) nonprofit — most license-permissive source. Two spec-table patterns (single-column + multi-variant). Wired in `parsers_fas.parse_fas`. | **Active** |
+| en.wikipedia.org | robots.txt: `User-agent:*` allowed (the `/w/api.php` endpoint is the sanctioned high-volume route). No crawl-delay for polite fetchers. **Content licence: CC BY-SA 4.0** — this is the FIRST source whose content can be freely republished on the A-SAN website with attribution. Two page types: (1) "List of military electronics of the United States" (A–G + M–Z) with 1552 entries in wikitables (Designation/Purpose/Platform/Manufacturer); (2) individual EW system pages (AN/ALQ-99, AN/SLQ-32, Krasukha, etc.) with structured infobox spec tables. Wired in `parsers_wikipedia.parse_wikipedia_list` + `parse_wikipedia_infobox`. CLI: `python -m scan import-wikipedia`. | **Active** |
 
 ## 4. Operator-whitelisted deep scan (rare, documented)
 

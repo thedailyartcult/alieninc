@@ -628,6 +628,23 @@
       backdrop-filter: blur(14px);
     }
 
+    .custom-input {
+      border: 1px solid rgba(242, 234, 220, 0.14);
+      background: rgba(9, 6, 5, 0.45);
+      backdrop-filter: blur(8px);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .custom-input:focus {
+      border-color: #c6a766;
+      box-shadow: 0 0 10px rgba(198, 167, 102, 0.15);
+      outline: none;
+    }
+
+    .tracker-result-row {
+      border-bottom: 1px solid rgba(216, 203, 184, 0.08);
+    }
+    .tracker-result-row:last-child { border-bottom: 0; }
+
     .quiet-panel-strong {
       border: 1px solid rgba(216, 203, 184, 0.22);
       background: rgba(16, 44, 38, 0.36);
@@ -1880,10 +1897,150 @@
       </div>
     </div>
 
-    <!-- Persistent Tracker Link -->
-    <p class="mt-6 text-center">
-      <a href="track/index.html" class="text-[10px] font-mono tracking-[0.22em] uppercase text-antique/50 hover:text-antique transition duration-300 border-b border-antique/20 hover:border-antique/50 pb-px">Track Your Card →</a>
-    </p>
+    <!-- Inline Card Tracker -->
+    <div id="inline-tracker" class="mt-10 reveal">
+      <div class="quiet-panel rounded-2xl p-6 sm:p-8 max-w-2xl mx-auto">
+
+        <div class="text-center space-y-2 mb-6">
+          <p class="text-[9px] font-mono uppercase tracking-[0.28em] text-antique/80">Track Your Card</p>
+          <h3 class="font-serif text-2xl font-semibold text-cream">Where is your reflection?</h3>
+          <p class="text-xs text-linen/55 leading-relaxed max-w-md mx-auto">
+            Enter the sequence embossed on your gift card to follow its passage to you.
+          </p>
+        </div>
+
+        <form id="inline-track-form" class="flex flex-col sm:flex-row gap-3 sm:items-end" autocomplete="off">
+          <div class="flex-1 text-left">
+            <label for="inline-card-code" class="block font-mono text-[10px] uppercase tracking-[0.18em] text-linen/60 mb-2">Card Sequence</label>
+            <input
+              id="inline-card-code"
+              name="inline-card-code"
+              type="text"
+              required
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="TDAC-XXXX-XXXX"
+              class="w-full custom-input rounded px-4 py-3 text-sm text-cream font-mono tracking-[0.12em] uppercase placeholder:text-linen/25 placeholder:normal-case placeholder:tracking-normal transition duration-300"
+            />
+          </div>
+          <button
+            type="submit"
+            id="inline-track-submit"
+            class="shrink-0 py-3 px-6 rounded border border-antique/40 bg-antique/10 hover:bg-antique hover:text-ink text-antique font-mono text-[10px] font-bold uppercase tracking-[0.25em] transition duration-300 flex items-center justify-center gap-2"
+          >
+            <span>Trace</span>
+            <svg id="inline-track-spinner" class="hidden animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </button>
+        </form>
+
+        <div id="inline-track-result" class="mt-6 hidden" aria-live="polite"></div>
+
+        <div class="mt-6 pt-5 border-t border-linen/10 text-center">
+          <a href="track/index.html" class="text-[9px] font-mono uppercase tracking-[0.22em] text-linen/40 hover:text-antique transition duration-300">
+            Open the dedicated tracking page →
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <script>
+    (function () {
+      const form = document.getElementById('inline-track-form');
+      if (!form) return;
+      const codeInput = document.getElementById('inline-card-code');
+      const resultBox = document.getElementById('inline-track-result');
+      const spinner = document.getElementById('inline-track-spinner');
+      const submitBtn = document.getElementById('inline-track-submit');
+
+      const escapeHtml = (s) => (s == null ? '' : String(s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;'));
+
+      const formatDate = (iso) => {
+        if (!iso) return '';
+        const d = new Date(iso);
+        if (isNaN(d)) return '';
+        return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+      };
+
+      const statusLabels = {
+        delivered: 'Delivered',
+        in_transit: 'In Transit',
+        dispatched: 'Dispatched',
+        awaiting_fulfillment: 'Awaiting Fulfillment',
+        held: 'Held at Facility'
+      };
+
+      const row = (label, value) => value
+        ? `<div class="tracker-result-row flex justify-between gap-6 py-2.5">
+             <span class="font-mono text-[9px] uppercase tracking-[0.2em] text-linen/40 pt-1">${label}</span>
+             <span class="text-cream font-serif text-sm text-right">${escapeHtml(value)}</span>
+           </div>`
+        : '';
+
+      const render = (record) => {
+        if (!record) {
+          resultBox.innerHTML = `
+            <div class="p-4 rounded-lg border border-linen/10 bg-white/[0.02]">
+              <p class="font-mono text-[9px] uppercase tracking-[0.2em] text-linen/40">Status</p>
+              <p class="mt-1.5 text-cream/80 font-serif text-base">No record found for that sequence.</p>
+              <p class="mt-1.5 text-linen/45 text-xs leading-relaxed">
+                Verify the code embossed on your card. If the passage remains unclear, the studio will assist.
+              </p>
+            </div>`;
+          resultBox.classList.remove('hidden');
+          return;
+        }
+        const statusLabel = statusLabels[record.status] || record.status;
+        const carrierLine = [record.carrier, record.tracking_number].filter(Boolean).join(' · ');
+        const updatedLine = formatDate(record.updated_at);
+        resultBox.innerHTML = `
+          <div class="p-5 rounded-lg border border-antique/25 bg-antique/[0.03]">
+            <p class="font-mono text-[9px] uppercase tracking-[0.25em] text-antique/80">Current Status</p>
+            <p class="mt-2 font-serif text-xl text-cream">${escapeHtml(statusLabel)}</p>
+            <div class="mt-4">
+              ${row('Location', record.current_location)}
+              ${row('Carrier', carrierLine)}
+              ${row('Notes', record.notes)}
+              ${row('Last Updated', updatedLine)}
+            </div>
+          </div>`;
+        resultBox.classList.remove('hidden');
+      };
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const code = codeInput.value.trim();
+        if (!code) return;
+        submitBtn.disabled = true;
+        spinner.classList.remove('hidden');
+        resultBox.innerHTML = `
+          <div class="p-4 rounded-lg border border-linen/10 bg-white/[0.02]">
+            <p class="font-mono text-[9px] uppercase tracking-[0.2em] text-linen/40">Tracing</p>
+            <p class="mt-1.5 text-cream/70 font-serif text-sm italic">Following your card's passage…</p>
+          </div>`;
+        resultBox.classList.remove('hidden');
+        let record = null;
+        try {
+          const url = `${SUPABASE_URL}/rest/v1/card_tracking?code=eq.${encodeURIComponent(code)}&limit=1`;
+          const res = await fetch(url, {
+            headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+          });
+          if (res.ok) {
+            const rows = await res.json();
+            record = Array.isArray(rows) && rows.length ? rows[0] : null;
+          }
+        } catch (err) { record = null; }
+        spinner.classList.add('hidden');
+        submitBtn.disabled = false;
+        render(record);
+      });
+    })();
+    </script>
   </div>
 </section>
 
@@ -2224,37 +2381,10 @@ document.addEventListener("DOMContentLoaded", () => {
         maxZoom: 20
       }).addTo(map);
 
-      // Confirm locations (Solid pulsing gold) — add photo, clientName, bookTitle, quote for each real client
-      const confirmedLocations = [
-        { 
-          coords: [19.8968, -155.5828], 
-          name: "Hawaiʻi", 
-          desc: "A physical bespoke gift card has arrived here.",
-          clientName: "Private Member",
-          bookTitle: "A Grief That Had No Name",
-          quote: "I never felt so home in a book. I closed my eyes halfway through and didn't open them.",
-          photo: "clients/hawaii-client.jpg"
-        },
-        { 
-          coords: [46.8182, 8.2275], 
-          name: "Switzerland", 
-          desc: "A commissioned leather-bound review has arrived here.",
-          clientName: "Marc A., Geneva",
-          bookTitle: "Silence As A Second Language",
-          quote: "A devastatingly beautiful recording. The rhythm of the prose is exceptional.",
-          photo: "clients/marc-geneva.jpg"
-        }
-      ];
-
-      // Future delivery locations (hollow circles)
-      const futureLocations = [
-        { coords: [48.8566, 2.3522], name: "Paris", desc: "A bespoke project is finding its way here." },
-        { coords: [35.6762, 139.6503], name: "Tokyo", desc: "A customized reflection is currently in transit." },
-        { coords: [40.7128, -74.0060], name: "New York", desc: "A handcrafted commission is currently being prepared." },
-        { coords: [51.5074, -0.1278], name: "London", desc: "A private studio master is currently being written." },
-        { coords: [-33.9249, 18.4241], name: "Cape Town", desc: "A patron's letter is finding its way here." },
-        { coords: [-33.8688, 151.2093], name: "Sydney", desc: "A bespoke code has been dispatched." }
-      ];
+      // Pin data lives in Supabase (public.card_deliveries) so it isn't
+      // shipped in the page HTML. Loaded async below.
+      let confirmedLocations = [];
+      let futureLocations = [];
 
       // Side panel DOM refs
       const clientPanel = document.getElementById('map-client-panel');
@@ -2295,30 +2425,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 280);
       }
 
-      confirmedLocations.forEach(loc => {
-        const customIcon = L.divIcon({
-          className: 'custom-map-icon',
-          html: `<span class="map-marker-pulse"></span>`,
-          iconSize: [14, 14],
-          iconAnchor: [7, 7]
-        });
-        
-        const popupContent = `
-          <div class="p-1">
-            <h4 class="font-serif text-sm font-semibold text-cream">${loc.name}</h4>
-            <p class="text-[10px] text-linen/70 mt-1 leading-relaxed">${loc.desc}</p>
-          </div>
-        `;
-        
-        const marker = L.marker(loc.coords, { icon: customIcon })
-          .addTo(map)
-          .bindPopup(popupContent, { closeButton: false, offset: L.point(0, -5) });
-
-        marker.on('mouseover', () => showClientPanel(loc));
-        marker.on('mouseout', () => hideClientPanel());
-        marker.on('click', () => showClientPanel(loc));
-      });
-
       // Keep panel open when hovering the panel itself
       if (clientPanel) {
         clientPanel.addEventListener('mouseenter', () => {
@@ -2327,25 +2433,76 @@ document.addEventListener("DOMContentLoaded", () => {
         clientPanel.addEventListener('mouseleave', () => hideClientPanel());
       }
 
-      futureLocations.forEach(loc => {
-        const customIcon = L.divIcon({
-          className: 'custom-map-icon',
-          html: `<span class="map-marker-hollow"></span>`,
-          iconSize: [12, 12],
-          iconAnchor: [6, 6]
+      // Fetch pins from Supabase (anon read allowed by RLS) and render.
+      (async () => {
+        let rows = [];
+        try {
+          const url = `${SUPABASE_URL}/rest/v1/card_deliveries?is_visible=eq.true&order=sort_order.asc&select=pin_type,name,description,lat,lng,client_name,book_title,quote,photo`;
+          const res = await fetch(url, {
+            headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+          });
+          if (res.ok) rows = await res.json();
+        } catch (e) { rows = []; }
+
+        confirmedLocations = rows
+          .filter(r => r.pin_type === 'confirmed')
+          .map(r => ({
+            coords: [r.lat, r.lng],
+            name: r.name,
+            desc: r.description,
+            clientName: r.client_name,
+            bookTitle: r.book_title,
+            quote: r.quote,
+            photo: r.photo
+          }));
+        futureLocations = rows
+          .filter(r => r.pin_type === 'future')
+          .map(r => ({ coords: [r.lat, r.lng], name: r.name, desc: r.description }));
+
+        confirmedLocations.forEach(loc => {
+          const customIcon = L.divIcon({
+            className: 'custom-map-icon',
+            html: `<span class="map-marker-pulse"></span>`,
+            iconSize: [14, 14],
+            iconAnchor: [7, 7]
+          });
+
+          const popupContent = `
+            <div class="p-1">
+              <h4 class="font-serif text-sm font-semibold text-cream">${loc.name}</h4>
+              <p class="text-[10px] text-linen/70 mt-1 leading-relaxed">${loc.desc || ''}</p>
+            </div>
+          `;
+
+          const marker = L.marker(loc.coords, { icon: customIcon })
+            .addTo(map)
+            .bindPopup(popupContent, { closeButton: false, offset: L.point(0, -5) });
+
+          marker.on('mouseover', () => showClientPanel(loc));
+          marker.on('mouseout', () => hideClientPanel());
+          marker.on('click', () => showClientPanel(loc));
         });
-        
-        const popupContent = `
-          <div class="p-1">
-            <h4 class="font-serif text-sm font-semibold text-cream">${loc.name}</h4>
-            <p class="text-[10px] text-linen/70 mt-1 leading-relaxed">${loc.desc}</p>
-          </div>
-        `;
-        
-        L.marker(loc.coords, { icon: customIcon })
-          .addTo(map)
-          .bindPopup(popupContent, { closeButton: false, offset: L.point(0, -5) });
-      });
+
+        futureLocations.forEach(loc => {
+          const customIcon = L.divIcon({
+            className: 'custom-map-icon',
+            html: `<span class="map-marker-hollow"></span>`,
+            iconSize: [12, 12],
+            iconAnchor: [6, 6]
+          });
+
+          const popupContent = `
+            <div class="p-1">
+              <h4 class="font-serif text-sm font-semibold text-cream">${loc.name}</h4>
+              <p class="text-[10px] text-linen/70 mt-1 leading-relaxed">${loc.desc || ''}</p>
+            </div>
+          `;
+
+          L.marker(loc.coords, { icon: customIcon })
+            .addTo(map)
+            .bindPopup(popupContent, { closeButton: false, offset: L.point(0, -5) });
+        });
+      })();
     }
 
   </script>

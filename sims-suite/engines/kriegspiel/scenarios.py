@@ -151,6 +151,10 @@ def generate_scenarios(
             "decisive": outcome.decisive,
             "key_event": outcome.key_event,
             "terrain_advantage": outcome.terrain_advantage,
+            # Doctrine tags for the self-learning layer. _vary_battle already
+            # assigned a (possibly different) doctrine to each side per branch.
+            "red_doctrine": varied_battle.red_force.doctrine.value,
+            "blue_doctrine": varied_battle.blue_force.doctrine.value,
         }
 
     raw_branches = monte_carlo_branch(_simulate_one, n_scenarios, seed=seed)
@@ -165,6 +169,8 @@ def generate_scenarios(
         terrain_advantage=b["terrain_advantage"],
         score=b["score"],
         outcome=b["outcome"],
+        red_doctrine=b.get("red_doctrine", ""),
+        blue_doctrine=b.get("blue_doctrine", ""),
     ) for b in raw_branches]
 
     red_wins = sum(1 for b in branches if b.winner == "red")
@@ -190,6 +196,8 @@ def generate_scenarios(
             terrain_advantage=best_raw["terrain_advantage"],
             score=best_raw["score"],
             outcome=best_raw["outcome"],
+            red_doctrine=best_raw.get("red_doctrine", ""),
+            blue_doctrine=best_raw.get("blue_doctrine", ""),
         )
 
     key_events = list(set(b.key_event for b in branches if b.key_event))[:10]
@@ -275,6 +283,8 @@ def report_to_dict(report: ScenarioReport) -> dict:
             "duration_hours": report.best_branch.duration_hours,
             "red_casualties_pct": report.best_branch.red_casualties_pct,
             "blue_casualties_pct": report.best_branch.blue_casualties_pct,
+            "red_doctrine": report.best_branch.red_doctrine,
+            "blue_doctrine": report.best_branch.blue_doctrine,
         } if report.best_branch else None,
         "key_events": report.key_events,
         "duration_ms": report.duration_ms,

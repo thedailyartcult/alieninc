@@ -26,6 +26,10 @@ from .parsers_militaryfactory import parse_militaryfactory_detail
 from .parsers_designation import parse_designation
 from .parsers_missilethreat import parse_missilethreat
 from .parsers_modernfirearms import parse_modernfirearms
+from .parsers_milrem import parse_milrem
+from .parsers_fas import parse_fas
+from .parsers_wikipedia import parse_wikipedia_infobox, parse_wikipedia_list
+from .parsers_deagel import parse_deagel
 from .sitemap import product_urls_from_sitemap, article_urls_from_sitemap, sitemap_urls_to_parse
 from .store import ScanStore
 
@@ -38,6 +42,10 @@ MILITARYFACTORY_HOST = "www.militaryfactory.com"
 DESIGNATION_HOST = "www.designation-systems.net"
 MISSILETHREAT_HOST = "missilethreat.csis.org"
 MODERNFIREARMS_HOST = "modernfirearms.net"
+MILREM_HOST = "milremrobotics.com"
+FAS_HOST = "man.fas.org"
+WIKIPEDIA_HOST = "en.wikipedia.org"
+DEAGEL_HOST = "www.deagel.com"
 
 
 def load_catalog_entries(path: Path) -> list[dict]:
@@ -230,6 +238,41 @@ class Engine:
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
                     return
+            elif host == MILREM_HOST:
+                disp = row["category"] or "UGVs"
+                e = parse_milrem(url, fetched.html, disp)
+                if e:
+                    op = self.store.upsert_entry(e, url)
+                    self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
+            elif host == FAS_HOST and "/dod-101/sys/" in url and url.endswith(".htm"):
+                disp = row["category"] or "Uncategorized"
+                e = parse_fas(url, fetched.html, disp)
+                if e:
+                    op = self.store.upsert_entry(e, url)
+                    self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
+            elif host == WIKIPEDIA_HOST and "/wiki/" in url:
+                disp = row["category"] or "Uncategorized"
+                e = parse_wikipedia_infobox(url, fetched.html, disp)
+                if e:
+                    op = self.store.upsert_entry(e, url)
+                    self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
+            elif host == DEAGEL_HOST:
+                e = parse_deagel(url, fetched.html)
+                if e:
+                    op = self.store.upsert_entry(e, url)
+                    self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
             # unknown host/kind or parser returned None: still mark fetched so the
             # page isn't re-fetched on every run (no data extracted).
             self.store.mark(url, "done", status=200)
@@ -269,6 +312,9 @@ class Engine:
                     "https://www.designation-systems.net",
                     "https://missilethreat.csis.org",
                     "https://modernfirearms.net",
+                    "https://milremrobotics.com",
+                    "https://man.fas.org",
+                    "https://en.wikipedia.org",
                 ],
                 "note": ("Compiled by the A-SAN deep scanner. robots.txt and site ToS are "
                          "respected; every entry carries the exact source URL it was fetched "

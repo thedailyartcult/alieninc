@@ -159,6 +159,12 @@ class BattleOutcome:
     terrain_advantage: str = ""        # who benefited from terrain
     score: float = 0.0                 # for best_branch() aggregation
     outcome: str = ""                  # label for convergence_rate()
+    # Doctrine tags populated by scenarios.generate_scenarios so the
+    # self-learning layer (engines.kriegspiel.learning) can attribute
+    # outcomes to (doctrine, terrain) pairs. Empty for outcomes created
+    # before the learning layer existed — the tracker skips those branches.
+    red_doctrine: str = ""
+    blue_doctrine: str = ""
 
 
 # Predefined battlefields (real-world regions for the dashboard)

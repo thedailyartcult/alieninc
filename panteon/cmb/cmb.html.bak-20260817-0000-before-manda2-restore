@@ -726,6 +726,7 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);opacity:1}
               <button class="graph-choice graph-style-choice" type="button" data-graph-style-choice="solar" aria-pressed="false"><span class="render-preview solar"><i></i><i></i><i></i></span><span>Solar</span></button>
               <button class="graph-choice graph-style-choice" type="button" data-graph-style-choice="classic" aria-pressed="false"><span class="render-preview classic"><i></i><i></i><i></i></span><span>Classic</span></button>
               <button class="graph-choice graph-style-choice" type="button" data-graph-style-choice="panteon-theme" aria-pressed="false"><span class="render-preview panteon-theme"><i></i><i></i><i></i></span><span>Panteon</span></button>
+              <button class="graph-choice graph-style-choice" type="button" data-graph-style-choice="manda" aria-pressed="false"><span class="render-preview manda"><i></i><i></i><i></i></span><span>Manda</span></button>
             </div>
             <p id="graph-style-note" class="graph-note">Iridescent PVD over graphite — cyan, violet, and magenta across each node.</p>
           </section>
@@ -738,7 +739,6 @@ input::placeholder,textarea::placeholder{color:var(--text-dim);opacity:1}
               <button class="graph-choice graph-layout-choice" type="button" data-graph-preset-choice="original" aria-pressed="false"><span class="layout-preview spacious"><i></i><i></i><i></i><i></i></span><span>Spacious</span></button>
               <button class="graph-choice graph-layout-choice" type="button" data-graph-preset-choice="radial" aria-pressed="false"><span class="layout-preview radial"><i></i><i></i><i></i><i></i></span><span>Radial</span></button>
               <button class="graph-choice graph-layout-choice" type="button" data-graph-preset-choice="constellation" aria-pressed="false"><span class="layout-preview constellation"><i></i><i></i><i></i><i></i></span><span>Constellation</span></button>
-              <button class="graph-choice graph-layout-choice" type="button" data-graph-preset-choice="manda" aria-pressed="false"><span class="layout-preview manda"><i></i><i></i><i></i><i></i></span><span>Manda</span></button>
               <button class="graph-choice graph-layout-choice" type="button" data-graph-preset-choice="panteon" aria-pressed="false"><span class="layout-preview panteon"><i></i><i></i><i></i><i></i></span><span>Panteon</span></button>
             </div>
           </section>
@@ -1015,7 +1015,6 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
     radial: { label: 'Radial orbit', repel: 68, link: 26, gravity: 12, font: 13, size: 3, linkw: 0.75, labelDensity: 55, curve: 0.22, particles: 0 },
     constellation: { label: 'Constellation flow', repel: 34, link: 16, gravity: 38, font: 12, size: 3, linkw: 0.65, labelDensity: 35, curve: 0.32, particles: 2 },
     panteon: { label: 'Panteon', repel: 44, link: 28, gravity: 30, font: 12, size: 3, linkw: 0.7, labelDensity: 30, curve: 0.08, particles: 0 },
-    manda: { label: 'Manda', repel: 48, link: 16, gravity: 48, font: 12, size: 3, linkw: 0.6, labelDensity: 24, curve: 0, particles: 0 },
     custom: { label: 'Custom tuning', curve: 0.1, particles: 0 }
   };
 
@@ -2000,7 +1999,9 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
        to that change detection. Everywhere else, letting force-graph park the redraw is what
        keeps a settled graph off the CPU. */
     function needsContinuousFrames() {
-      return !reduced() && state.styleName === 'galaxy' && !large;
+      /* Mandala Fan keeps a redraw loop so its shimmer can breathe (like galaxy's starfield).
+         Gated on motion + not-large so a huge pinned store still settles. */
+      return !reduced() && ((state.styleName === 'galaxy') || (state.styleName === 'manda' && !large)) && !large;
     }
     /* Betweenness is the one analysis that is superlinear in the store size, and nothing in
        the default view consumes it — the bridge overlay and betweenness-sizing are both off.
@@ -2148,8 +2149,8 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
          full graph remains a live layout. The previous `renderMode === 'full'` guard removed
          every force and pinned every node, which is why the gravity slider could read 98
          while the canvas stayed on a wide ring. */
-      if (state.settings.mode === 'manda') {
-        /* Mandala is a pinned community-buildings layout. Pin every node to its building slot
+      if (state.styleName === 'manda') {
+        /* Mandala Fan is a pinned bipartite layout. Pin every node to its column slot
            (assigned by assignMandaColumns) and drop the forces that would scatter it, so the
            dense fan in drawMandaFan stays crisp instead of jiggling under repulsion/link drift. */
         fg.d3Force('link', null);
@@ -2259,63 +2260,46 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
       });
     }
 
-    /* Mandala ("manda") helpers. This layout renders the graph as a row of horizontal
-       buildings — the four largest communities each become one building, placed side by
-       side across the canvas and categorized by community. Every node is pinned to its
-       building slot by assignMandaColumns + applyForces, and the inter-building ray fan is
-       painted behind the chips by drawMandaFan. All coordinates are graph-world units so
-       pan/zoom still compose. */
+    /* Mandala Fan ("manda") helpers. This style renders the graph as ONE unified bipartite
+       fan — an input column (In1..) on the left projecting every node to every node of a hidden
+       column (H1.x) on the right — with no category splits: this is the real, complete view.
+       The only change from the first version is that the column height is BOUNDED (it "stacks"
+       into a compact disc instead of one endlessly tall tower) and the column gap / ray density
+       answer the Tune knobs, so it stays viewable at any size:
+         - `gravity` (0–100) → column gap (compact ↔ wide fan)
+         - `size`    (1–5)    → chip radius + row stride
+         - `repel`   (0–200)  → ray density (sparse ↔ dense bloom). */
+    var MANDA_BAND = 820;        /* capped world-unit column height — a disc, not a tower */
     function assignMandaColumns(data) {
-      const nodes = (data.nodes || []).filter(n => !n.cluster && !n.ghost);
-      const groups = new Map();
-      nodes.forEach(n => {
-        const key = (typeof n.community === 'number') ? n.community : 0;
-        if (!groups.has(key)) groups.set(key, []);
-        groups.get(key).push(n);
-      });
-      const ordered = [...groups.values()].sort((a, b) => b.length - a.length);
-      let cols;
-      if (ordered.length <= 4) {
-        cols = ordered.slice(0, 4);
-      } else {
-        /* Balanced bin-packing: largest-first, each community dropped into the least-loaded
-           column, so every community stays whole while the four columns come out similar
-           height instead of one absorbing all the overflow. */
-        cols = [[], [], [], []];
-        const loads = [0, 0, 0, 0];
-        ordered.forEach(group => {
-          let bin = 0;
-          for (let i = 1; i < 4; i++) if (loads[i] < loads[bin]) bin = i;
-          cols[bin] = cols[bin].concat(group);
-          loads[bin] += group.length;
-        });
+      var nodes = (data.nodes || []).filter(n => !n.cluster && !n.ghost);
+      var s = state.settings;
+      var gravity = Math.max(0, Math.min(1, Number(s.gravity) / 100 || 0.48));
+      var nodeSize = Math.max(1, Number(s.size) || 3);
+      var colGap = 220 + gravity * 420;            /* left/right column separation */
+      /* Bound the column height: a small store gets a short, readable fan; a huge store stacks
+         into the same compact disc instead of a skyscraper. autoFit then zooms to fit. This is
+         the "stack it properly" fix for the old too-tall tower, with no data splits. */
+      var ranked = nodes.slice().sort((a, b) => (a.degree || 0) - (b.degree || 0) || String(a.id).localeCompare(String(b.id)));
+      var spanY = Math.min(MANDA_BAND, Math.max(480, (ranked.length - 1) * 14));
+      var half = Math.ceil(ranked.length / 2) || 1;
+      var left = ranked.slice(0, half);
+      var right = ranked.slice(half);
+      function assignColumn(arr, side, colX) {
+        var count = arr.length;
+        for (var i = 0; i < count; i++) {
+          var n = arr[i];
+          var y = count > 1 ? (i / (count - 1)) * spanY - spanY / 2 : 0;
+          n.mandaSide = side;
+          n.mandaIndex = i;
+          n.mandaColX = colX;
+          n.mandaColY = y;
+          n.mandaStride = count > 1 ? spanY / (count - 1) : spanY;
+          n.mandaLabel = (side === 'in' ? 'In' : 'H1.') + (i + 1);
+          n.fx = colX; n.fy = y; n.vx = 0; n.vy = 0;
+        }
       }
-      if (!cols.length) cols = [[]];
-      /* Tune knobs drive the Manda shape live: "Repel force" spreads/pulls the columns
-         apart horizontally, "Link distance" compresses/stretches the rows vertically, so the
-         ladder can be squeezed down or drawn out. Defaults reproduce the approved look. */
-      const repel = Number(state.settings.repel) || 48;
-      const link = Number(state.settings.link) || 16;
-      const spacing = 120 + repel * 5;
-      const nodeDY = 4 + link * 1.375;
-      const maxN = Math.max(...cols.map(g => g.length), 1);
-      const spanY = (maxN - 1) * nodeDY;
-      cols.forEach((group, ci) => {
-        const cx = (ci - (cols.length - 1) / 2) * spacing;
-        const sorted = group.slice().sort((a, c) => (c.degree || 0) - (a.degree || 0) || String(a.id).localeCompare(String(c.id)));
-        const n = sorted.length;
-        const stepY = n > 1 ? spanY / (n - 1) : nodeDY;
-        sorted.forEach((node, i) => {
-          node.mandaSide = (ci % 2 === 0) ? 'in' : 'out';
-          node.mandaIndex = i;
-          node.mandaColumn = ci;
-          node.mandaColX = cx;
-          node.mandaColY = (i - (n - 1) / 2) * stepY;
-          node.mandaLabel = 'C' + (ci + 1) + '.' + (i + 1);
-          node.fx = node.mandaColX; node.fy = node.mandaColY; node.vx = 0; node.vy = 0;
-          node.x = node.mandaColX; node.y = node.mandaColY;
-        });
-      });
+      assignColumn(left, 'in', -colGap / 2);
+      assignColumn(right, 'out', colGap / 2);
     }
     /* Release the bipartite pins so the normal force layout can resume. Only clears pins this
        style set (drag pins are disabled in CMB, but we stay scoped so we never surprise anyone). */
@@ -2334,10 +2318,13 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
       if (nodes.length < 4) { return; }
       var left = nodes.filter(n => n.mandaSide === 'in');
       var right = nodes.filter(n => n.mandaSide === 'out');
+      var s = state.settings;
+      var repel = Math.max(0, Number(s.repel) || 48);
       ctx.save();
-      /* Substrate + subtle grid */
+      /* Warm ember substrate — kept very dark so the amber fan reads as light, not mud. */
       ctx.fillStyle = '#0a0704';
-      var c = ctx.canvas; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      /* Faint reference grid. */
       ctx.strokeStyle = 'rgba(255,120,55,.028)';
       ctx.lineWidth = 1 / scale;
       ctx.beginPath();
@@ -2345,95 +2332,52 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
       for (var x = -900; x < 900; x += step) { ctx.moveTo(x, -720); ctx.lineTo(x, 720); }
       for (var y = -540; y < 540; y += step) { ctx.moveTo(-900, y); ctx.lineTo(900, y); }
       ctx.stroke();
-      /* Vertical boundary rails behind each column of circular endpoints */
-      const colXs = [...new Set(nodes.filter(n => typeof n.mandaColX === 'number').map(n => n.mandaColX))].sort((a, b) => a - b);
+      /* Column rails: faint vertical lines framing the two chip columns. */
       ctx.strokeStyle = 'rgba(255,120,55,.05)';
-      ctx.lineWidth = 1 / scale;
       ctx.beginPath();
-      colXs.forEach(x => { ctx.moveTo(x - 14, -720); ctx.lineTo(x - 14, 720); ctx.moveTo(x + 14, -720); ctx.lineTo(x + 14, 720); });
+      ctx.moveTo(-430, -720); ctx.lineTo(-430, 720); ctx.moveTo(-410, -720); ctx.lineTo(-410, 720);
+      ctx.moveTo(410, -720); ctx.lineTo(410, 720); ctx.moveTo(430, -720); ctx.lineTo(430, 720);
       ctx.stroke();
-
-      /* ---- Real connections only ----
-         Draw the actual relations this system really has (from the loaded graph), not an
-         artificial all-to-all mesh. Each real edge is a gentle curve between its two endpoint
-         nodes, tinted in the warm amber/gold family so the layout stays legible and honest. */
-      var links = data.links || [];
+      /* Animation clock: a slow breath + a band of light that sweeps down the input column. */
+      var time = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      var breath = 0.8 + 0.2 * Math.sin(time / 1400);
+      /* Column hub glows at fan origin points (breathe with the animation). */
+      ctx.fillStyle = 'rgba(255,174,76,' + (0.10 * breath).toFixed(3) + ')';
+      left.forEach(function(n) { ctx.beginPath(); ctx.arc(n.mandaColX, n.mandaColY, 7, 0, 6.2832); ctx.fill(); });
+      ctx.fillStyle = 'rgba(255,138,42,' + (0.12 * breath).toFixed(3) + ')';
+      right.forEach(function(n) { ctx.beginPath(); ctx.arc(n.mandaColX, n.mandaColY, 7, 0, 6.2832); ctx.fill(); });
+      /* Dense all-pairs ray fan: every input node -> every hidden node. Warm amber down the
+         source column so the fan gradients from gold (top) through orange to red (bottom).
+         Rays are emitted as separate sub-paths under globalCompositeOperation 'lighter' so the
+         criss-cross region brightens where they overlap. The `repel` knob thins the rays
+         (low repel = dense bloom, high = sparse), and a travelling shimmer keeps it alive. */
       ctx.globalCompositeOperation = 'lighter';
-      for (var li2 = 0; li2 < links.length; li2++) {
-        var lk = links[li2];
-        if (!lk) continue;
-        var sa = lk.source, ta = lk.target;
-        if (!sa || !ta) continue;
-        /* Only left-right connections: skip edges whose endpoints sit in the same
-           column, otherwise the vertical up/down lines inside a building return. */
-        if (typeof sa.mandaColumn === 'number' && typeof ta.mandaColumn === 'number' && sa.mandaColumn === ta.mandaColumn) continue;
-        var sx = Number.isFinite(sa.x) ? sa.x : sa.mandaColX;
-        var sy = Number.isFinite(sa.y) ? sa.y : sa.mandaColY;
-        var tx = Number.isFinite(ta.x) ? ta.x : ta.mandaColX;
-        var ty = Number.isFinite(ta.y) ? ta.y : ta.mandaColY;
-        if (!Number.isFinite(sx) || !Number.isFinite(sy) || !Number.isFinite(tx) || !Number.isFinite(ty)) continue;
-        var mx2 = (sx + tx) / 2, my2 = (sy + ty) / 2;
-        ctx.strokeStyle = 'rgba(255,176,92,.20)';
-        ctx.lineWidth = 1 / scale;
-        ctx.beginPath();
-        ctx.moveTo(sx, sy);
-        ctx.quadraticCurveTo(mx2, my2, tx, ty);
-        ctx.stroke();
+      var L = left.length, R = right.length;
+      if (L && R) {
+        var total = L * R;
+        var maxPairs = 160000;
+        var stepL = L > 1 && total > maxPairs ? Math.ceil(L / 400) : 1;
+        var stepR = R > 1 && total > maxPairs ? Math.ceil(R / 400) : 1;
+        /* repel nudges the seed stride so the fan can be thinned out on demand. */
+        if (repel > 48) { var thin = 1 + Math.floor((repel - 48) / 40); stepL *= thin; stepR *= thin; }
+        ctx.lineWidth = 0.8 / scale;
+        for (var i = 0; i < L; i += stepL) {
+          var a = left[i];
+          var t = i / (L - 1 || 1);
+          ctx.strokeStyle = 'hsl(' + (42 - t * 54) + ',94%,' + (44 + t * 8) + '%)';
+          var pulse = 0.55 + 0.45 * Math.sin(time / 750 - t * 6.2832);
+          ctx.globalAlpha = Math.min(0.4, 0.13 * pulse * breath);
+          ctx.beginPath();
+          for (var j = 0; j < R; j += stepR) {
+            var b = right[j];
+            if (j === 0) ctx.moveTo(a.mandaColX, a.mandaColY);
+            else ctx.lineTo(b.mandaColX, b.mandaColY);
+          }
+          ctx.stroke();
+        }
       }
       ctx.globalCompositeOperation = 'source-over';
-
-      /* ---- Ladder bridge between adjacent columns ----
-         Column 1 connects to column 2, column 2 to column 3, column 3 to column 4 — a
-         horizontal left-to-right chain. Each column is one vertical file of nodes; the bridge
-         links neighbouring columns row by row (node i of the left column to node i of the
-         right column) so the connection between any two columns is plainly visible. */
-      if (colXs.length > 1) {
-        const colRails = colXs.map(x => ({
-          x,
-          members: nodes.filter(n => n.mandaColX === x).slice().sort((a, b) => a.mandaColY - b.mandaColY),
-        }));
-        /* Feed-forward neural wiring: every node in a section wires to at least five nodes in
-           the NEXT section only (section 1 -> section 2 -> section 3 -> section 4), never back
-           into its own column. Targets spread evenly and deterministically — no stray random
-           lines — and each fibre runs straight into the receiving node's centre so every wire
-           visibly belongs to two real nodes. */
-        const WIRES = 5;
-        const linkw = Number(state.settings.linkw);
-        const lineBase = Number.isFinite(linkw) && linkw > 0 ? linkw : 0.6;
-        const fanPairs = (a, b, r) => {
-          const na = a.members.length, nb = b.members.length;
-          const pairs = [];
-          for (let k = 0; k < na; k++) {
-            for (let m = 0; m < WIRES; m++) {
-              const j = (k * WIRES + m + r * 3) % nb;
-              pairs.push([k, j]);
-            }
-          }
-          return pairs;
-        };
-        ctx.save();
-        for (let r = 0; r < colRails.length - 1; r++) {
-          const a = colRails[r], b = colRails[r + 1];
-          const segs = fanPairs(a, b, r).map(([k, j]) => {
-            const x0 = a.x, y0 = a.members[k].mandaColY;
-            const x1 = b.x, y1 = b.members[j].mandaColY;
-            return [x0, y0, x1, y1];
-          });
-          ctx.globalCompositeOperation = 'lighter';
-          ctx.strokeStyle = 'rgba(255,176,92,.14)';
-          ctx.lineWidth = (lineBase * 3) / scale;
-          for (const [x0, y0, x1, y1] of segs) {
-            ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
-          }
-          ctx.globalCompositeOperation = 'source-over';
-          ctx.strokeStyle = 'rgba(255,196,126,.42)';
-          ctx.lineWidth = lineBase / scale;
-          for (const [x0, y0, x1, y1] of segs) {
-            ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
-          }
-        }
-        ctx.restore();
-      }
+      ctx.globalAlpha = 1;
       ctx.restore();
     }
 
@@ -2480,6 +2424,9 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
       if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) return;
       const focus = hoverSet && hoverSet.size > 1, neighbor = focus && hoverSet.has(node.id), dim = focus && !neighbor;
       let r = node.radius;
+      /* Manda chips share a fixed-height band, so cap the radius to the row stride to stop
+         dense columns from merging into a smear. */
+      if (state.styleName === 'manda' && Number.isFinite(node.mandaStride)) r = Math.min(r, node.mandaStride * 0.42);
       const col = node.color;
       ctx.globalAlpha = node.ghost ? 0.22 : (dim ? 0.12 : 1);
       if (node.ghost) {
@@ -2588,7 +2535,7 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
         ctx.strokeStyle = alpha(nodeMaterial.identity, 0.92);
         ctx.beginPath(); ctx.arc(node.x, node.y, r + 2.45 / scale, 0, 6.2832); ctx.stroke();
       }
-      const showLabel = (state.settings.labels && labelIds.has(node.id)) || node.id === hilite || neighbor;
+      const showLabel = (state.styleName === 'manda') || (state.settings.labels && labelIds.has(node.id)) || node.id === hilite || neighbor;
       if (showLabel && scale > 0.35) {
         // The dashboard setting is a screen-space font size.  As on the reference renderer,
         // compensate only for graph zoom; an extra artistic divisor makes a configured 12px
@@ -2596,9 +2543,16 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
         const size = Math.max(2, state.settings.font / scale);
         ctx.font = (state.styleName === 'manda' ? '600' : '500') + ' ' + size + 'px system-ui, sans-serif';
         ctx.textBaseline = 'middle';
-        if (false) {
-          // (Manda now labels exactly like every other layout: real node names, only for the
-          // top-ranked nodes. The old synthetic band labels are removed.)
+        if (state.styleName === 'manda') {
+          // Manda chips carry short band labels on their outer edge.
+          const offset = (state.settings.font / scale) * 0.55 + r + 2.5;
+          const isInput = node.mandaSide === 'in';
+          ctx.fillStyle = 'rgba(0,0,0,.45)';
+          ctx.fillText(node.mandaLabel || '', node.x + (isInput ? -offset : r + 1.8) + 0.3, node.y + 0.3);
+          ctx.fillStyle = isInput ? 'rgba(255,193,110,.88)' : 'rgba(255,164,58,.88)';
+          ctx.textAlign = isInput ? 'right' : 'left';
+          ctx.fillText(node.mandaLabel || '', node.x + (isInput ? -offset : r + 1.8), node.y);
+          ctx.textAlign = 'left';
         } else {
           ctx.fillStyle = 'rgba(0,0,0,.5)';
           ctx.fillText(nodeName(node), node.x + r + 1.6 + 0.3, node.y + 0.3);
@@ -2718,11 +2672,10 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
          bipartite column (in/out), vertical slot and a short label, then pin it with fx/fy so the
          complete fan in drawMandaFan stays crisp. Leaving manda clears those pins so the normal
          force layout resumes without residual position locks. */
-      const mandaMode = state.settings.mode === 'manda';
-      const enteringManda = mandaMode && !mandaPinned;
-      if (mandaMode) { assignMandaColumns(data); }
+      const enteringManda = state.styleName === 'manda' && !mandaPinned;
+      if (state.styleName === 'manda') { assignMandaColumns(data); }
       else if (mandaPinned) { clearMandaPins(data); }
-      mandaPinned = mandaMode;
+      mandaPinned = state.styleName === 'manda';
       const labelCap = Math.max(1, Math.round(Number(state.settings.labelDensity) || 40));
       labelIds = new Set(data.nodes
         .filter(n => !n.cluster && !n.ghost)
@@ -3000,25 +2953,14 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
        render() applies the reduced-motion exemption (`if(layout&&!prefersReducedMotion())`). */
     const LAYOUT_KEYS = ['mode', 'repel', 'link', 'gravity', 'size'];
     api.setSettings = patch => {
-      const layoutKey = LAYOUT_KEYS.some(k => patch && patch[k] !== undefined);
-      if (layoutKey) fullLayoutDirty = true;
+      if (LAYOUT_KEYS.some(k => patch && patch[k] !== undefined)) fullLayoutDirty = true;
       Object.assign(state.settings, patch);
-      /* Manda is a fully pinned layout: reheating the simulation moves nothing (every node is
-         held by fx/fy), so force-graph sees no motion and parks the redraw. Fit instead, so a
-         tune-knob change (repel/link/spacing) visibly re-shapes the ladder live. */
-      render(layoutKey && state.settings.mode === 'manda', layoutKey && state.settings.mode !== 'manda');
+      render(false, LAYOUT_KEYS.some(k => patch && patch[k] !== undefined));
     };
     api.setPreset = name => {
       const p = PRESETS[name] || PRESETS.compact;
       state.settings.mode = PRESETS[name] ? name : 'compact';
       ['repel', 'link', 'gravity', 'font', 'size', 'linkw', 'labelDensity'].forEach(k => { if (p[k] !== undefined) state.settings[k] = p[k]; });
-      if (name === 'manda') {
-        state.styleName = 'manda';
-        clearMaterialCache();
-      } else if (state.styleName === 'manda') {
-        state.styleName = 'classic';
-        clearMaterialCache();
-      }
       fullLayoutDirty = true;
       render(true, true);
       return { ...state.settings };

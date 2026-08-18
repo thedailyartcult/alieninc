@@ -1015,7 +1015,7 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
     radial: { label: 'Radial orbit', repel: 68, link: 26, gravity: 12, font: 13, size: 3, linkw: 0.75, labelDensity: 55, curve: 0.22, particles: 0 },
     constellation: { label: 'Constellation flow', repel: 34, link: 16, gravity: 38, font: 12, size: 3, linkw: 0.65, labelDensity: 35, curve: 0.32, particles: 2 },
     panteon: { label: 'Panteon', repel: 44, link: 28, gravity: 30, font: 12, size: 3, linkw: 0.7, labelDensity: 30, curve: 0.08, particles: 0 },
-    manda: { label: 'Manda', repel: 48, link: 16, gravity: 48, font: 12, size: 3, linkw: 0.6, labelDensity: 24, curve: 0, particles: 0 },
+    manda: { label: 'Manda', repel: 0, link: 0, gravity: 0, font: 12, size: 3, linkw: 0.6, labelDensity: 24, curve: 0, particles: 0 },
     custom: { label: 'Custom tuning', curve: 0.1, particles: 0 }
   };
 
@@ -2274,46 +2274,28 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
         groups.get(key).push(n);
       });
       const ordered = [...groups.values()].sort((a, b) => b.length - a.length);
-      let cols;
-      if (ordered.length <= 4) {
-        cols = ordered.slice(0, 4);
-      } else {
-        /* Balanced bin-packing: largest-first, each community dropped into the least-loaded
-           column, so every community stays whole while the four columns come out similar
-           height instead of one absorbing all the overflow. */
-        cols = [[], [], [], []];
-        const loads = [0, 0, 0, 0];
-        ordered.forEach(group => {
-          let bin = 0;
-          for (let i = 1; i < 4; i++) if (loads[i] < loads[bin]) bin = i;
-          cols[bin] = cols[bin].concat(group);
-          loads[bin] += group.length;
-        });
+      let cols = ordered.slice(0, 4);
+      if (ordered.length > 4) {
+        const extra = ordered.slice(4).reduce((all, g) => all.concat(g), []);
+        if (cols.length) cols[cols.length - 1] = cols[cols.length - 1].concat(extra);
+        else cols = [extra];
       }
       if (!cols.length) cols = [[]];
-      /* Tune knobs drive the Manda shape live: "Repel force" spreads/pulls the columns
-         apart horizontally, "Link distance" compresses/stretches the rows vertically, so the
-         ladder can be squeezed down or drawn out. Defaults reproduce the approved look. */
-      const repel = Number(state.settings.repel) || 48;
-      const link = Number(state.settings.link) || 16;
-      const spacing = 120 + repel * 5;
-      const nodeDY = 4 + link * 1.375;
-      const maxN = Math.max(...cols.map(g => g.length), 1);
-      const spanY = (maxN - 1) * nodeDY;
+      const spacing = 460;
+      const colSpacingY = 30;
       cols.forEach((group, ci) => {
         const cx = (ci - (cols.length - 1) / 2) * spacing;
         const sorted = group.slice().sort((a, c) => (c.degree || 0) - (a.degree || 0) || String(a.id).localeCompare(String(c.id)));
         const n = sorted.length;
-        const stepY = n > 1 ? spanY / (n - 1) : nodeDY;
+        const spanY = Math.max(0, (n - 1) * colSpacingY);
         sorted.forEach((node, i) => {
           node.mandaSide = (ci % 2 === 0) ? 'in' : 'out';
           node.mandaIndex = i;
           node.mandaColumn = ci;
           node.mandaColX = cx;
-          node.mandaColY = (i - (n - 1) / 2) * stepY;
+          node.mandaColY = n > 1 ? (i / (n - 1)) * spanY - spanY / 2 : 0;
           node.mandaLabel = 'C' + (ci + 1) + '.' + (i + 1);
           node.fx = node.mandaColX; node.fy = node.mandaColY; node.vx = 0; node.vy = 0;
-          node.x = node.mandaColX; node.y = node.mandaColY;
         });
       });
     }
@@ -2364,9 +2346,6 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
         if (!lk) continue;
         var sa = lk.source, ta = lk.target;
         if (!sa || !ta) continue;
-        /* Only left-right connections: skip edges whose endpoints sit in the same
-           column, otherwise the vertical up/down lines inside a building return. */
-        if (typeof sa.mandaColumn === 'number' && typeof ta.mandaColumn === 'number' && sa.mandaColumn === ta.mandaColumn) continue;
         var sx = Number.isFinite(sa.x) ? sa.x : sa.mandaColX;
         var sy = Number.isFinite(sa.y) ? sa.y : sa.mandaColY;
         var tx = Number.isFinite(ta.x) ? ta.x : ta.mandaColX;
@@ -2382,56 +2361,30 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
       }
       ctx.globalCompositeOperation = 'source-over';
 
-      /* ---- Ladder bridge between adjacent columns ----
-         Column 1 connects to column 2, column 2 to column 3, column 3 to column 4 — a
-         horizontal left-to-right chain. Each column is one vertical file of nodes; the bridge
-         links neighbouring columns row by row (node i of the left column to node i of the
-         right column) so the connection between any two columns is plainly visible. */
+      /* ---- Chain connections between adjacent columns ----
+         Column 1 connects to column 2, column 2 to column 3, column 3 to column 4, so the
+         whole arrangement reads as one intact, cohesive structure. A warm glowing connector
+         joins each neighbouring column's centre. */
       if (colXs.length > 1) {
-        const colRails = colXs.map(x => ({
-          x,
-          members: nodes.filter(n => n.mandaColX === x).slice().sort((a, b) => a.mandaColY - b.mandaColY),
-        }));
-        /* Feed-forward neural wiring: every node in a section wires to at least five nodes in
-           the NEXT section only (section 1 -> section 2 -> section 3 -> section 4), never back
-           into its own column. Targets spread evenly and deterministically — no stray random
-           lines — and each fibre runs straight into the receiving node's centre so every wire
-           visibly belongs to two real nodes. */
-        const WIRES = 5;
-        const linkw = Number(state.settings.linkw);
-        const lineBase = Number.isFinite(linkw) && linkw > 0 ? linkw : 0.6;
-        const fanPairs = (a, b, r) => {
-          const na = a.members.length, nb = b.members.length;
-          const pairs = [];
-          for (let k = 0; k < na; k++) {
-            for (let m = 0; m < WIRES; m++) {
-              const j = (k * WIRES + m + r * 3) % nb;
-              pairs.push([k, j]);
-            }
-          }
-          return pairs;
-        };
+        const centers = colXs.map(x => {
+          const members = nodes.filter(n => n.mandaColX === x);
+          const y = members.reduce((sum, n) => sum + n.mandaColY, 0) / Math.max(1, members.length);
+          return { x, y };
+        });
         ctx.save();
-        for (let r = 0; r < colRails.length - 1; r++) {
-          const a = colRails[r], b = colRails[r + 1];
-          const segs = fanPairs(a, b, r).map(([k, j]) => {
-            const x0 = a.x, y0 = a.members[k].mandaColY;
-            const x1 = b.x, y1 = b.members[j].mandaColY;
-            return [x0, y0, x1, y1];
-          });
-          ctx.globalCompositeOperation = 'lighter';
-          ctx.strokeStyle = 'rgba(255,176,92,.14)';
-          ctx.lineWidth = (lineBase * 3) / scale;
-          for (const [x0, y0, x1, y1] of segs) {
-            ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
-          }
-          ctx.globalCompositeOperation = 'source-over';
-          ctx.strokeStyle = 'rgba(255,196,126,.42)';
-          ctx.lineWidth = lineBase / scale;
-          for (const [x0, y0, x1, y1] of segs) {
-            ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
-          }
-        }
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.strokeStyle = 'rgba(255,150,60,.16)';
+        ctx.lineWidth = 6 / scale;
+        ctx.beginPath();
+        centers.forEach((pt, i) => { if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
+        ctx.stroke();
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.strokeStyle = 'rgba(255,196,126,.9)';
+        ctx.lineWidth = 1.6 / scale;
+        ctx.beginPath();
+        centers.forEach((pt, i) => { if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
+        ctx.stroke();
+        centers.forEach(pt => { ctx.fillStyle = 'rgba(255,182,104,.95)'; ctx.beginPath(); ctx.arc(pt.x, pt.y, 3.4 / scale, 0, 6.2832); ctx.fill(); });
         ctx.restore();
       }
       ctx.restore();
@@ -3000,13 +2953,9 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
        render() applies the reduced-motion exemption (`if(layout&&!prefersReducedMotion())`). */
     const LAYOUT_KEYS = ['mode', 'repel', 'link', 'gravity', 'size'];
     api.setSettings = patch => {
-      const layoutKey = LAYOUT_KEYS.some(k => patch && patch[k] !== undefined);
-      if (layoutKey) fullLayoutDirty = true;
+      if (LAYOUT_KEYS.some(k => patch && patch[k] !== undefined)) fullLayoutDirty = true;
       Object.assign(state.settings, patch);
-      /* Manda is a fully pinned layout: reheating the simulation moves nothing (every node is
-         held by fx/fy), so force-graph sees no motion and parks the redraw. Fit instead, so a
-         tune-knob change (repel/link/spacing) visibly re-shapes the ladder live. */
-      render(layoutKey && state.settings.mode === 'manda', layoutKey && state.settings.mode !== 'manda');
+      render(false, LAYOUT_KEYS.some(k => patch && patch[k] !== undefined));
     };
     api.setPreset = name => {
       const p = PRESETS[name] || PRESETS.compact;

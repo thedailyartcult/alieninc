@@ -2862,15 +2862,15 @@
             <div class="retro-map-toolbar">
                 <button onclick="filterDataCenters('foundry')" id="filter-btn-foundry" class="retro-map-btn retro-map-btn-filter">
                     <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="2" x2="9" y2="4"/><line x1="15" y1="2" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="22"/><line x1="15" y1="20" x2="15" y2="22"/><line x1="20" y1="9" x2="22" y2="9"/><line x1="20" y1="14" x2="22" y2="14"/><line x1="2" y1="9" x2="4" y2="9"/><line x1="2" y1="14" x2="4" y2="14"/></svg>
-                    Foundries &amp; Fabs
+                    Silicon Fabrication
                 </button>
                 <button onclick="filterDataCenters('hyperscale')" id="filter-btn-hyperscale" class="retro-map-btn retro-map-btn-filter">
                     <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-                    Hyperscale Cloud
+                    Cloud &amp; Edge
                 </button>
                 <button onclick="filterDataCenters('colocation')" id="filter-btn-colocation" class="retro-map-btn retro-map-btn-filter">
                     <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
-                    Colocation &amp; IX
+                    Network &amp; Colo
                 </button>
                 <button onclick="filterDataCenters('all')" id="filter-btn-all" class="retro-map-btn retro-map-btn-filter active">
                     <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
@@ -3294,6 +3294,23 @@
   // Build the connection set from the live network nodes: hub-spoke from ALIEN.INC
   // HQ (amber) + nearest-2 mesh (red/violet), plus self-circling loops on the HQ and
   // every third data center so the "ping the node itself" loops show up too.
+  // Authentic bloc coloring for the GRID FLOW animation: arcs are tinted by the
+  // facility operator's allegiance so the live grid reflects the Pax Silica
+  // (blue) vs WAICO (red) split among the newly created facilities. Operators
+  // not matched fall back to the neutral mesh color.
+  const AGF_PAX = '#38bdf8';
+  const AGF_WAICO = '#f87171';
+  const AGF_PAX_OPS = ['GOOGLE','MICROSOFT','AMAZON','AWS','META','APPLE','TSMC','SAMSUNG','SK HYNIX','MICRON','INTEL','GLOBALFOUNDRIES','ASML','UMC','ST MICRO','TEXAS INSTRUMENTS','IBM','EQUINIX','DIGITAL REALTY','CORESITE','SWITCH','NTT','KDDI','TELEHOUSE','NEXTDC','ST TELEMEDIA','ADANICONNEX','CTRLS','NAVER','IRON MOUNTAIN','BAHNHOF','NSA','CERN','ORACLE','YOTTA'];
+  const AGF_WAICO_OPS = ['ALIBABA','TENCENT','BAIDU','HUAWEI','BYTEDANCE','SMIC','YMTC','CXMT','HUA HONG','CHINA'];
+
+  function agfBlocColor(node) {
+      if (!node || !node.name) return AGF_COLORS[0];
+      const nm = node.name.toUpperCase();
+      if (AGF_WAICO_OPS.some(o => nm.indexOf(o) === 0)) return AGF_WAICO;
+      if (AGF_PAX_OPS.some(o => nm.indexOf(o) === 0)) return AGF_PAX;
+      return AGF_COLORS[0];
+  }
+
   function agfBuild() {
       const nodes = (window.aliensNetworkNodes || []).filter(n => n && n.lat != null && n.lng != null);
       agfArcs = [];
@@ -3311,7 +3328,7 @@
           seen.add(k);
           agfArcs.push({ from, to, color });
       };
-      nodes.forEach(n => { if (n !== hq) add(hq, n, AGF_COLORS[0]); });
+      nodes.forEach(n => { if (n !== hq) add(hq, n, agfBlocColor(n)); });
       const others = nodes.filter(n => n !== hq);
       others.forEach(n => {
           const nearest = others
@@ -3319,10 +3336,10 @@
               .map(m => ({ m, d: (m.lng - n.lng) ** 2 + (m.lat - n.lat) ** 2 }))
               .sort((a, b) => a.d - b.d)
               .slice(0, 2);
-          nearest.forEach((entry, i) => add(n, entry.m, AGF_COLORS[i + 1]));
+          nearest.forEach((entry, i) => add(n, entry.m, agfBlocColor(entry.m)));
       });
       nodes.forEach((n, i) => {
-          if (i % 3 === 0) agfLoops.push({ node: n, color: AGF_COLORS[i % AGF_COLORS.length] });
+          if (i % 3 === 0) agfLoops.push({ node: n, color: agfBlocColor(n) });
       });
   }
 
@@ -3759,6 +3776,33 @@
           // GRID FLOW arcs run as an SVG overlay (see the agf* functions) so the
           // dash-draw + slide-while-fade animation is preserved over the canvas.
 
+          // PAX SILICA vs WAICO — country-bloc overlay (hidden until 'silicrack').
+          // A Natural Earth 110m admin_0 GeoJSON (served same-origin from data/,
+          // allowed by CSP 'self') provides country polygons. Each is colored blue
+          // (Pax Silica), red (WAICO) or neutral by ADM0_A3. Facility nodes & the 4
+          // filter options remain untouched and sit above this fill (DOM markers).
+          // Note: Singapore is too small for the 110m dataset and renders neutral.
+          try {
+              activeMapInstance.addSource('world-countries', {
+                  'type': 'geojson',
+                  'data': 'data/world-countries.geojson'
+              });
+              activeMapInstance.addLayer({
+                  'id': 'country-bloc',
+                  'source': 'world-countries',
+                  'type': 'fill',
+                  'paint': {
+                      'fill-color': 'transparent',
+                      'fill-opacity': 0.55,
+                      'fill-outline-color': 'rgba(255,255,255,0.08)'
+                  },
+                  'layout': { 'visibility': 'none' }
+              }, 'boundary_country_z0-4');
+          } catch (e) {
+              console.warn('[Silicrack] country overlay init failed:', e);
+          }
+
+
           // Generate fable District labels
           fableDistricts.forEach(dist => {
               const el = document.createElement('div');
@@ -3926,15 +3970,15 @@
   // Category definitions for the filter buttons
   var DC_CATEGORIES = {
       foundry: {
-          label: 'FOUNDRIES & FABS',
+          label: 'SILICON FABRICATION',
           sectors: ['Semiconductor Foundry', 'Memory Manufacturing', 'EUV Lithography HQ', 'Analog Semiconductor Fab']
       },
       hyperscale: {
-          label: 'HYPERSCALE CLOUD',
+          label: 'CLOUD & EDGE',
           sectors: ['Hyperscale Data Center', 'Cloud Region / Edge POP', 'Cloud Region / Sovereign Cloud']
       },
       colocation: {
-          label: 'COLOCATION & IX',
+          label: 'NETWORK & COLO',
           sectors: ['Internet Exchange / Colocation', 'Carrier-Neutral Colocation', 'Hyperscale Colocation', 'Underground Data Center', 'Scientific Computing', 'Government Intelligence']
       }
   };
@@ -4013,6 +4057,34 @@
       updateHUD("GLOBAL GRID", "MONITORING SYSTEM", "WORLD GRID BOUNDS");
       toggleInspector(false);
       clearSearchMarker();
+  }
+
+  // ── PAX SILICA vs WAICO — country-bloc map overlay (activated by 'silicrack') ──
+  // Recolors each country polygon by bloc allegiance: blue for Pax Silica (US-led),
+  // red for WAICO (China-led), neutral for everyone else. Facility nodes and the
+  // four filter buttons keep working — this is a background country fill only.
+  var SILICRACK_ACTIVE = false;
+
+  function applySilicrack() {
+      if (!activeMapInstance || !activeMapInstance.getLayer('country-bloc')) return;
+      activeMapInstance.setPaintProperty('country-bloc', 'fill-color', [
+          'match', ['get', 'ADM0_A3'],
+          ['USA','GBR','AUS','ISR','JPN','KOR','SGP','NLD','QAT','ARE','IND','SWE','FIN','PHL','NOR','DEU','GRC','ITA','ARG','CHL','CRI','SLV','PAN','EST','KAZ','CAN','TWN'],
+          '#38bdf8',
+          ['CHN','RUS','BRA','IDN','IRN','ZAF','DZA','BLR','KHM','CMR','COG','CUB','ETH','KEN','KGZ','LAO','LSO','MYS','MOZ','MMR','NIC','OMN','PAK','SEN','SRB','TJK','UZB','VEN','ZMB'],
+          '#f87171',
+          'rgba(15,23,42,0.25)'
+      ]);
+      activeMapInstance.setPaintProperty('country-bloc', 'fill-opacity', 0.55);
+      activeMapInstance.setLayoutProperty('country-bloc', 'visibility', 'visible');
+      SILICRACK_ACTIVE = true;
+      updateHUD('PAX SILICA VS WAICO', 'BLOC OVERLAY ACTIVE', 'BLUE=PAX SILICA · RED=WAICO');
+  }
+
+  function clearSilicrack() {
+      if (!activeMapInstance || !activeMapInstance.getLayer('country-bloc')) return;
+      activeMapInstance.setLayoutProperty('country-bloc', 'visibility', 'none');
+      SILICRACK_ACTIVE = false;
   }
 
   // Company profile inspector (real data from the ecosystem source of truth)
@@ -5222,6 +5294,7 @@
                 '  scan-tech             │ List all companies with tech stacks',
                 '  ping <name>           │ Test connection latency to a node',
                 '  status                │ Network status + visitor IP + ecosystem stats',
+                '  silicrack [off]       │ Color map by Pax Silica vs WAICO (blue/red) + country list',
                 '',
                 'SYSTEM',
                 '  whoami                │ Visitor identity (IP, timestamp, viewport)',
@@ -5332,7 +5405,7 @@
 
                                 case 'scan': {
                                     var order = ['all', 'foundry', 'hyperscale', 'colocation'];
-                                    var SCAN_LABELS = { foundry: 'Foundries & Fabs', hyperscale: 'Hyperscale Cloud', colocation: 'Colocation & IX', all: 'All Facilities' };
+                                    var SCAN_LABELS = { foundry: 'Silicon Fabrication', hyperscale: 'Cloud & Edge', colocation: 'Network & Colo', all: 'All Facilities' };
                                     var current = window.activeFilter || 'all';
                                     var next = order[(order.indexOf(current) + 1) % order.length];
                                     filterDataCenters(next);
@@ -5340,8 +5413,50 @@
                                     break;
                                 }
 
+                                case 'silicrack': {
+                                    if (args.trim().toLowerCase() === 'off') {
+                                        clearSilicrack();
+                                        renderedLines.push(rgb(100,100,100) + 'Bloc overlay disabled — country coloring cleared.' + rgb(229,231,235));
+                                        terminalLog('SILICRACK OFF — overlay cleared', 'success');
+                                        break;
+                                    }
+                                    var CY = rgb(56,189,248);   // Pax Silica blue #38bdf8
+                                    var RD = rgb(248,113,113);  // WAICO red #f87171
+                                    var GR = rgb(100,100,100);
+                                    var WH = rgb(229,231,235);
+                                    renderedLines.push(CY + '═══ PAX SILICA ═══  (US-LED ALLIANCE · LAUNCHED DEC 12 2025)' + WH);
+                                    renderedLines.push(GR + '  Securing the Silicon Supply Chain — semiconductors, AI & rare earth' + WH);
+                                    var pax = [
+                                        'United States', 'United Kingdom', 'Australia', 'Israel', 'Japan',
+                                        'South Korea', 'Singapore', 'Netherlands', 'Qatar', 'United Arab Emirates',
+                                        'India', 'Sweden', 'Finland', 'Philippines', 'Norway', 'European Union',
+                                        'Germany', 'Greece', 'Italy', 'Argentina', 'Chile', 'Costa Rica',
+                                        'El Salvador', 'Panama', 'Estonia', 'Kazakhstan*'
+                                    ];
+                                    pax.forEach(function(c) { renderedLines.push(CY + '  ■ ' + WH + c); });
+                                    renderedLines.push(GR + '  Observers / participating: Canada, Taiwan' + WH);
+                                    renderedLines.push('');
+                                    renderedLines.push(RD + '═══ WAICO ═══  (WORLD AI COOPERATION ORGANIZATION · CHINA-LED · JUL 16 2026)' + WH);
+                                    renderedLines.push(GR + '  Global-South oriented AI governance — open-source AI cooperation' + WH);
+                                    var waico = [
+                                        'China', 'Russia', 'Brazil', 'Indonesia', 'Iran', 'South Africa',
+                                        'Algeria', 'Belarus', 'Cambodia', 'Cameroon', 'Congo', 'Cuba',
+                                        'Ethiopia', 'Kenya', 'Kyrgyzstan', 'Laos', 'Lesotho', 'Malaysia',
+                                        'Mozambique', 'Myanmar', 'Nicaragua', 'Oman', 'Pakistan', 'Senegal',
+                                        'Serbia', 'Tajikistan', 'Uzbekistan', 'Venezuela', 'Zambia'
+                                    ];
+                                    waico.forEach(function(c) { renderedLines.push(RD + '  ■ ' + WH + c); });
+                                    renderedLines.push('');
+                                    renderedLines.push(GR + '  * Kazakhstan holds dual membership (Pax Silica + WAICO).' + WH);
+                                    renderedLines.push(GR + '  Total: ' + pax.length + ' Pax Silica · ' + waico.length + ' WAICO signatories.' + WH);
+                                    renderedLines.push(CY + '  › Map overlay active: BLUE = Pax Silica · RED = WAICO. Type "silicrack off" to clear.' + WH);
+                                    applySilicrack();
+                                    terminalLog('SILICRACK — bloc allegiance report + map overlay', 'success');
+                                    break;
+                                }
+
                                 case 'filter': {
-                                    var FILTER_LABELS = { foundry: 'Foundries & Fabs', hyperscale: 'Hyperscale Cloud', colocation: 'Colocation & IX', all: 'All Facilities' };
+                                    var FILTER_LABELS = { foundry: 'Silicon Fabrication', hyperscale: 'Cloud & Edge', colocation: 'Network & Colo', all: 'All Facilities' };
                                     if (!args || !DC_CATEGORIES[args]) {
                                         renderedLines.push('Usage: filter <foundry|hyperscale|colocation|all>');
                                         break;

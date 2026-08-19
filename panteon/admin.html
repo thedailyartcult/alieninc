@@ -500,7 +500,7 @@
             .topbar-branding .logo-wrap svg { height: 14px; }
         }
 
-        /* ===== SMM PANEL ===== */
+        /* ===== MiMi PANEL ===== */
         .smm-tab {
             padding: 8px 16px;
             font-size: 11px;
@@ -1718,7 +1718,7 @@
                     </div>
                     <div class="nav-item" data-page="statham-smm">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4l3-2h8l3 2M2 4v8c0 1 1 2 2 2h8c1 0 2-1 2-2V4"/><path d="M8 6v4M6 8h4"/></svg>
-                        SMM Panel
+                        MiMi Panel
                     </div>
                 </div>
                 <div class="nav-section">
@@ -2863,7 +2863,7 @@
                     <div id="smmTab-tracking" class="smm-panel" style="display:none">
                         <div class="card" style="max-width:480px;margin-bottom:16px">
                             <div class="card-title" style="margin-bottom:12px">Check Order Status</div>
-                            <input id="smmTrackInput" type="text" placeholder="Naizop Order ID" style="width:100%;margin-bottom:12px" />
+                            <input id="smmTrackInput" type="text" placeholder="Order ID" style="width:100%;margin-bottom:12px" />
                             <button class="btn btn-primary" onclick="trackSmmOrder()">Check Status</button>
                             <div id="smmTrackResult" style="margin-top:12px"></div>
                         </div>
@@ -2894,13 +2894,13 @@
 
                     <div id="smmTab-guide" class="smm-panel" style="display:none">
                         <div class="card" style="max-width:640px">
-                            <div class="card-title" style="margin-bottom:12px">Statham SMM Panel</div>
+                            <div class="card-title" style="margin-bottom:12px">MiMi Panel</div>
                             <div style="font-size:12px;line-height:1.8;color:var(--text-muted)">
-                                <p style="margin-bottom:12px">Manage social media marketing campaigns directly from Statham. Powered by the Naizop SMM panel API.</p>
+                                <p style="margin-bottom:12px">Manage your campaigns directly from Statham.</p>
                                 <div style="font-weight:600;color:var(--text);margin:16px 0 8px">Quick Start</div>
                                 <ol style="padding-left:16px;margin-bottom:16px">
                                     <li>Go to <b>Order</b> tab and select a service</li>
-                                    <li>Paste your social media link</li>
+                                    <li>Paste your link</li>
                                     <li>Set quantity and place order</li>
                                     <li>Track progress in <b>Tracking</b> tab</li>
                                 </ol>
@@ -2915,7 +2915,7 @@
                                     <tr><td><span class="tag">massorder</span></td><td>Place multiple orders at once</td></tr>
                                 </tbody></table>
                                 <div style="font-weight:600;color:var(--text);margin:16px 0 8px">API Reference</div>
-                                <p>All orders go through <code style="background:var(--bg-input);padding:2px 6px;border-radius:3px;font-family:var(--font-mono);font-size:11px">POST https://naizop.com/api/v2</code> with x-www-form-urlencoded body.</p>
+                                <p>All orders are processed through the Statham delivery network.</p>
                             </div>
                         </div>
                     </div>
@@ -3655,6 +3655,7 @@ const PAGES = {
     'yono-functions': 'Functions',
     'yono-executions': 'Executions',
     'yono-chat': 'Quick Query',
+    'statham-smm': 'MiMi Panel',
     'tdac-resonance': 'Resonance Index',
     'tdac-metrics': 'Metrics',
     'tdac-dashboard': 'Dashboard',
@@ -4398,7 +4399,7 @@ async function placeSmmOrder() {
         const data = await api('/smm/orders', { method: 'POST', body: JSON.stringify(body) });
         const el = document.getElementById('smmOrderResult');
         el.style.display = 'block';
-        el.innerHTML = 'Order placed! Naizop ID: <b>' + (data.naizop_order_id || '--') + '</b>';
+        el.innerHTML = 'Order placed! Order ID: <b>' + (data.naizop_order_id || '--') + '</b>';
         toast('Order placed successfully');
         loadSmmLinks();
     } catch (e) {
@@ -4421,7 +4422,7 @@ async function loadSmmTrackingOrders() {
     try {
         const orders = await api('/smm/orders');
         if (!orders.length) { el.innerHTML = 'No orders yet'; return; }
-        el.innerHTML = '<table><thead><tr><th>Naizop ID</th><th>Link</th><th>Service</th><th>Qty</th><th>Status</th><th>Confirmed</th><th>Placed</th><th></th></tr></thead><tbody>'
+        el.innerHTML = '<table><thead><tr><th>Order ID</th><th>Link</th><th>Service</th><th>Qty</th><th>Status</th><th>Confirmed</th><th>Placed</th><th></th></tr></thead><tbody>'
             + orders.slice(0, 30).map(o => {
                 const link = smmLinksCache.find(l => l.id === o.link_id);
                 return '<tr>'

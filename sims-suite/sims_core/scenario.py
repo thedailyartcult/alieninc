@@ -7,7 +7,7 @@ Flow:
                            Kriegspiel ──scenarios──┐
                          ┌──────┴──────┐           │
                          ▼             ▼           ▼
-                    Remnants       Citadel      Awareness
+                    Remnants       CC           Awareness
 
 A ``Scenario`` is created at Platoon (the objective) and accumulates state as it
 flows through each station. Each station reads what it needs and writes its
@@ -30,7 +30,7 @@ class Station(str, Enum):
     TDAC = "tdac"                  # 3 — publish / render narrative
     KRIEGSPIEL = "kriegspiel"      # 4 — generate combat scenarios
     REMNANTS = "remnants"          # 5 — filter for survivors
-    CITADEL = "citadel"            # 6 — mirror inward on infra
+    CC = "cc"                    # 6 — mirror inward on infra
     AWARENESS = "awareness"        # 7 — incident response
 
 
@@ -60,7 +60,7 @@ class Scenario:
     world_state: dict[str, Any] = field(default_factory=dict)   # Alpha Zero population state
     branches: list[dict[str, Any]] = field(default_factory=list)  # Kriegspiel scenario branches
     survivors: list[dict[str, Any]] = field(default_factory=list)  # Remnants: what outlasts conflict
-    breaks: list[dict[str, Any]] = field(default_factory=list)     # Citadel: infra weak points
+    breaks: list[dict[str, Any]] = field(default_factory=list)     # CC: infra weak points
     narrative: Optional[str] = None             # Daily Art Cult: rendered editorial/audio script
     response_playbooks: list[dict[str, Any]] = field(default_factory=list)  # Awareness: IR playbooks
     results: list[ScenarioResult] = field(default_factory=list)

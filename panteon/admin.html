@@ -500,6 +500,24 @@
             .topbar-branding .logo-wrap svg { height: 14px; }
         }
 
+        /* ===== SMM PANEL ===== */
+        .smm-tab {
+            padding: 8px 16px;
+            font-size: 11px;
+            font-family: var(--font-tech);
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .smm-tab:hover { color: var(--text); }
+        .smm-tab.active { color: var(--accent-cyan); border-bottom-color: var(--accent-cyan); }
+
         /* ===== CMB SECTION DESIGN LANGUAGE ===== */
 
         .cmb-section-header {
@@ -1698,6 +1716,10 @@
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h4M10 4h4M2 8h4M10 8h4M2 12h4M10 12h4M6 4v8M10 4v8"/></svg>
                         Pipelines
                     </div>
+                    <div class="nav-item" data-page="statham-smm">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4l3-2h8l3 2M2 4v8c0 1 1 2 2 2h8c1 0 2-1 2-2V4"/><path d="M8 6v4M6 8h4"/></svg>
+                        SMM Panel
+                    </div>
                 </div>
                 <div class="nav-section">
                     <div class="nav-section-title">TDAC</div>
@@ -2706,6 +2728,199 @@
                     </div>
                 </div>
 
+                <div class="page" id="page-statham-smm">
+                    <div class="grid grid-4" style="margin-bottom:16px">
+                        <div class="card">
+                            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+                                <span>Balance</span>
+                                <button class="btn btn-sm" onclick="toggleCurrency()" id="smmCurrencyToggle">PHP</button>
+                            </div>
+                            <div class="card-value" id="smmBalance">--</div>
+                        </div>
+                        <div class="card"><div class="card-title">Services</div><div class="card-value" id="smmServiceCount">--</div></div>
+                        <div class="card"><div class="card-title">Orders Placed</div><div class="card-value" id="smmOrderCount">--</div></div>
+                        <div class="card"><div class="card-title">Spent</div><div class="card-value" id="smmSpent">--</div></div>
+                    </div>
+
+                    <div style="display:flex;gap:2px;margin-bottom:16px;border-bottom:1px solid var(--border-color)">
+                        <button class="smm-tab active" onclick="switchSmmTab('links')">Links</button>
+                        <button class="smm-tab" onclick="switchSmmTab('order')">Order</button>
+                        <button class="smm-tab" onclick="switchSmmTab('services')">Services</button>
+                        <button class="smm-tab" onclick="switchSmmTab('tracking')">Tracking</button>
+                        <button class="smm-tab" onclick="switchSmmTab('automate')">AI Automate</button>
+                        <button class="smm-tab" onclick="switchSmmTab('guide')">Guide</button>
+                    </div>
+
+                    <div id="smmTab-links" class="smm-panel">
+                        <div class="grid grid-2" style="margin-bottom:16px">
+                            <div class="card" style="max-width:480px">
+                                <div class="card-title" style="margin-bottom:12px">Register Link</div>
+                                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Platform</label>
+                                <select id="smmLinkPlatform" style="width:100%;margin-bottom:12px">
+                                    <option value="facebook">Facebook</option>
+                                    <option value="instagram">Instagram</option>
+                                    <option value="twitter">Twitter / X</option>
+                                    <option value="tiktok">TikTok</option>
+                                    <option value="youtube">YouTube</option>
+                                    <option value="linkedin">LinkedIn</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">URL</label>
+                                <input id="smmLinkUrl" type="text" placeholder="https://www.facebook.com/..." style="width:100%;margin-bottom:12px" />
+                                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Label</label>
+                                <input id="smmLinkLabel" type="text" placeholder="e.g. alieninc FB page" style="width:100%;margin-bottom:12px" />
+                                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Username</label>
+                                <input id="smmLinkUsername" type="text" placeholder="@alieninc" style="width:100%;margin-bottom:12px" />
+                                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Notes</label>
+                                <textarea id="smmLinkNotes" placeholder="Optional notes about this link" style="width:100%;margin-bottom:12px;min-height:60px"></textarea>
+                                <button class="btn btn-primary" onclick="registerSmmLink()">Register Link</button>
+                            </div>
+                            <div class="card">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                                    <div class="card-title">Registered Links</div>
+                                    <input id="smmLinkSearch" type="text" placeholder="Search links..." style="width:200px" oninput="filterSmmLinks()" />
+                                </div>
+                                <div style="max-height:520px;overflow-y:auto">
+                                    <table><thead><tr><th>Platform</th><th>Label</th><th>Username</th><th>Orders</th><th>Confirmed</th><th>Spent</th><th>Status</th><th></th></tr></thead>
+                                    <tbody id="smmLinksBody"><tr><td colspan="8"><div class="empty-state">No links registered</div></td></tr></tbody></table>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="smmLinkDetail" style="display:none">
+                            <div class="card">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                                    <div class="card-title" id="smmLinkDetailTitle">Link Orders</div>
+                                    <button class="btn btn-sm" onclick="document.getElementById('smmLinkDetail').style.display='none'">Close</button>
+                                </div>
+                                <div id="smmLinkOrdersBody" style="max-height:400px;overflow-y:auto"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="smmTab-order" class="smm-panel" style="display:none">
+                        <div class="card" style="max-width:640px">
+                            <div class="card-title" style="margin-bottom:12px">Place Order</div>
+                            <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Select Link</label>
+                            <select id="smmOrderLinkSelect" style="width:100%;margin-bottom:12px"><option value="">Loading links...</option></select>
+                            <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Service</label>
+                            <select id="smmServiceSelect" style="width:100%;margin-bottom:12px"><option value="">Loading services...</option></select>
+                            <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Quantity</label>
+                            <input id="smmQtyInput" type="number" placeholder="100" style="width:100%;margin-bottom:12px" />
+                            <div id="smmDripSection" style="display:none">
+                                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Drip-feed Runs</label>
+                                <input id="smmDripRuns" type="number" placeholder="10" style="width:100%;margin-bottom:12px" />
+                                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Drip-feed Interval (minutes)</label>
+                                <input id="smmDripInterval" type="number" placeholder="60" style="width:100%;margin-bottom:12px" />
+                            </div>
+                            <div id="smmCommentsSection" style="display:none">
+                                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Comments (one per line)</label>
+                                <textarea id="smmCommentsInput" placeholder="Great post!&#10;Love this content" style="width:100%;margin-bottom:12px"></textarea>
+                            </div>
+                            <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+                                <input type="checkbox" id="smmDripCheck" onchange="document.getElementById('smmDripSection').style.display=this.checked?'block':'none'" />
+                                <label for="smmDripCheck" style="font-size:11px;color:var(--text-muted)">Enable drip-feed</label>
+                            </div>
+                            <button class="btn btn-primary" onclick="placeSmmOrder()" id="smmOrderBtn">Place Order</button>
+                            <div id="smmOrderResult" style="margin-top:12px;font-size:12px;color:var(--green);display:none"></div>
+                        </div>
+                    </div>
+
+                    <div id="smmTab-services" class="smm-panel" style="display:none">
+                        <div class="card">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                                <div class="card-title">All Services</div>
+                                <input id="smmServiceSearch" type="text" placeholder="Search services..." style="width:240px" oninput="filterSmmServices()" />
+                            </div>
+                            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+                                <select id="smmServicePlatformFilter" onchange="filterSmmServices()" style="width:120px">
+                                    <option value="all">All Platforms</option>
+                                    <option value="facebook">Facebook</option>
+                                    <option value="instagram">Instagram</option>
+                                    <option value="twitter">Twitter / X</option>
+                                    <option value="tiktok">TikTok</option>
+                                    <option value="youtube">YouTube</option>
+                                </select>
+                                <select id="smmServiceRefillFilter" onchange="filterSmmServices()" style="width:120px">
+                                    <option value="all">All Refill</option>
+                                    <option value="yes">Refill Only</option>
+                                    <option value="no">No Refill</option>
+                                </select>
+                                <select id="smmServiceSort" onchange="filterSmmServices()" style="width:140px">
+                                    <option value="cheapest">Cheapest First</option>
+                                    <option value="expensive">Most Expensive First</option>
+                                    <option value="popular">Most Popular (min)</option>
+                                </select>
+                                <span id="smmServiceCountBadge" style="font-size:11px;color:var(--text-muted);margin-left:auto"></span>
+                            </div>
+                            <div style="max-height:480px;overflow-y:auto">
+                                <table><thead><tr><th>ID</th><th>Platform</th><th>Service</th><th>Type</th><th>Rate/1k</th><th>Min</th><th>Max</th><th>Refill</th></tr></thead>
+                                <tbody id="smmServicesBody"><tr><td colspan="8"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
+                            </div>
+                            <div id="smmPagination" style="margin-top:8px;display:flex;justify-content:center;gap:4px"></div>
+                        </div>
+                    </div>
+
+                    <div id="smmTab-tracking" class="smm-panel" style="display:none">
+                        <div class="card" style="max-width:480px;margin-bottom:16px">
+                            <div class="card-title" style="margin-bottom:12px">Check Order Status</div>
+                            <input id="smmTrackInput" type="text" placeholder="Naizop Order ID" style="width:100%;margin-bottom:12px" />
+                            <button class="btn btn-primary" onclick="trackSmmOrder()">Check Status</button>
+                            <div id="smmTrackResult" style="margin-top:12px"></div>
+                        </div>
+                        <div class="card">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                                <div class="card-title">All Orders</div>
+                                <button class="btn btn-sm" onclick="loadSmmTrackingOrders()">Refresh</button>
+                            </div>
+                            <div id="smmRecentOrders" style="font-size:12px;color:var(--text-muted)">Loading...</div>
+                        </div>
+                    </div>
+
+                    <div id="smmTab-automate" class="smm-panel" style="display:none">
+                        <div class="card" style="max-width:640px">
+                            <div class="card-title" style="margin-bottom:12px">AI Campaign Planner</div>
+                            <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Describe your campaign goal</label>
+                            <textarea id="smmGoalInput" placeholder="e.g. Get 500 likes on my latest Facebook post and 200 followers this week" style="width:100%;margin-bottom:12px;min-height:100px"></textarea>
+                            <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">LLM Provider</label>
+                            <select id="smmLlmProvider" style="width:100%;margin-bottom:12px">
+                                <option value="hetzner">Hetzner (Qwen)</option>
+                                <option value="openai">OpenAI</option>
+                                <option value="anthropic">Anthropic</option>
+                            </select>
+                            <button class="btn btn-primary" onclick="generateSmmPlan()">Generate Plan</button>
+                            <div id="smmPlanResult" style="margin-top:12px"></div>
+                        </div>
+                    </div>
+
+                    <div id="smmTab-guide" class="smm-panel" style="display:none">
+                        <div class="card" style="max-width:640px">
+                            <div class="card-title" style="margin-bottom:12px">Statham SMM Panel</div>
+                            <div style="font-size:12px;line-height:1.8;color:var(--text-muted)">
+                                <p style="margin-bottom:12px">Manage social media marketing campaigns directly from Statham. Powered by the Naizop SMM panel API.</p>
+                                <div style="font-weight:600;color:var(--text);margin:16px 0 8px">Quick Start</div>
+                                <ol style="padding-left:16px;margin-bottom:16px">
+                                    <li>Go to <b>Order</b> tab and select a service</li>
+                                    <li>Paste your social media link</li>
+                                    <li>Set quantity and place order</li>
+                                    <li>Track progress in <b>Tracking</b> tab</li>
+                                </ol>
+                                <div style="font-weight:600;color:var(--text);margin:16px 0 8px">Available Actions</div>
+                                <table style="width:100%;margin-bottom:16px"><thead><tr><th>Action</th><th>Description</th></tr></thead><tbody>
+                                    <tr><td><span class="tag">balance</span></td><td>Check account balance</td></tr>
+                                    <tr><td><span class="tag">services</span></td><td>List all available services</td></tr>
+                                    <tr><td><span class="tag">add</span></td><td>Place a new order</td></tr>
+                                    <tr><td><span class="tag">status</span></td><td>Check order status</td></tr>
+                                    <tr><td><span class="tag">refill</span></td><td>Refill a completed order</td></tr>
+                                    <tr><td><span class="tag">cancel</span></td><td>Cancel an order in queue</td></tr>
+                                    <tr><td><span class="tag">massorder</span></td><td>Place multiple orders at once</td></tr>
+                                </tbody></table>
+                                <div style="font-weight:600;color:var(--text);margin:16px 0 8px">API Reference</div>
+                                <p>All orders go through <code style="background:var(--bg-input);padding:2px 6px;border-radius:3px;font-family:var(--font-mono);font-size:11px">POST https://naizop.com/api/v2</code> with x-www-form-urlencoded body.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="page" id="page-tdac-resonance">
                     <div class="grid grid-2">
                         <div class="card">
@@ -3586,6 +3801,7 @@ function loadPageData(page) {
         case 'statham-environments': loadEnvironments(); break;
         case 'statham-deployments': loadDeployments(); break;
         case 'statham-pipelines': loadPipelines(); break;
+        case 'statham-smm': loadSmmBalance(); loadSmmServices(); loadSmmLinks(); break;
         case 'tdac-resonance': loadResonance(); break;
         case 'tdac-metrics': loadMetrics(); break;
         case 'tdac-dashboard': loadDashboard(); break;
@@ -3905,6 +4121,374 @@ async function loadPipelines() {
 
 async function triggerPipeline(id) {
     try { await api('/statham/pipelines/' + id + '/trigger', { method: 'POST' }); toast('Pipeline triggered'); loadPipelines(); } catch (e) { toast(e.message, 'error'); }
+}
+
+let smmServicesCache = [];
+let smmLinksCache = [];
+let smmFilteredServices = [];
+let smmCurrentPage = 1;
+const SMM_PAGE_SIZE = 50;
+const PLATFORM_TAGS = {
+    facebook: { label: 'Facebook', color: '#3b82f6' },
+    instagram: { label: 'Instagram', color: '#ec4899' },
+    twitter: { label: 'Twitter', color: '#6b7280' },
+    tiktok: { label: 'TikTok', color: '#ef4444' },
+    youtube: { label: 'YouTube', color: '#f43f5e' },
+    linkedin: { label: 'LinkedIn', color: '#3b82f6' },
+    other: { label: 'Other', color: '#71717a' },
+};
+let smmCurrency = 'usd';
+const USD_TO_PHP = 56.5;
+
+function switchSmmTab(tab) {
+    document.querySelectorAll('.smm-panel').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.smm-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('smmTab-' + tab).style.display = 'block';
+    event.target.classList.add('active');
+}
+
+function toggleCurrency() {
+    smmCurrency = smmCurrency === 'usd' ? 'php' : 'usd';
+    const btn = document.getElementById('smmCurrencyToggle');
+    btn.textContent = smmCurrency === 'usd' ? 'SHOW PHP' : 'SHOW USD';
+    btn.style.color = smmCurrency === 'usd' ? 'var(--text-muted)' : 'var(--green)';
+    loadSmmBalance();
+    updateSmmSpent();
+}
+
+function updateSmmSpent() {
+    const totalCost = smmLinksCache.reduce((sum, l) => sum + (l.total_cost || 0), 0);
+    const el = document.getElementById('smmSpent');
+    if (smmCurrency === 'php') {
+        el.textContent = '₱' + (totalCost * USD_TO_PHP).toFixed(2);
+    } else {
+        el.textContent = '$' + totalCost.toFixed(2);
+    }
+}
+
+async function loadSmmBalance() {
+    try {
+        const data = await api('/smm/balance');
+        const bal = parseFloat(data.balance || 0);
+        if (smmCurrency === 'php') {
+            document.getElementById('smmBalance').textContent = '₱' + (bal * USD_TO_PHP).toFixed(2);
+        } else {
+            document.getElementById('smmBalance').textContent = '$' + bal.toFixed(2);
+        }
+    } catch (e) { document.getElementById('smmBalance').textContent = '--'; }
+}
+
+async function loadSmmServices() {
+    try {
+        const data = await api('/smm/services');
+        smmServicesCache = Array.isArray(data) ? data : (data.services || []);
+        document.getElementById('smmServiceCount').textContent = smmServicesCache.length;
+        const sel = document.getElementById('smmServiceSelect');
+        sel.innerHTML = smmServicesCache.map(s => '<option value="' + s.service + '">' + s.service + ' - ' + s.name + ' ($' + (s.rate || '0') + '/1k)</option>').join('');
+        if (document.getElementById('smmServicePlatformFilter')) {
+            filterSmmServices();
+        }
+    } catch (e) {
+        document.getElementById('smmServiceSelect').innerHTML = '<option>Error loading services</option>';
+    }
+}
+
+async function loadSmmLinks() {
+    try {
+        const data = await api('/smm/links');
+        smmLinksCache = Array.isArray(data) ? data : [];
+        renderSmmLinksTable(smmLinksCache);
+        const sel = document.getElementById('smmOrderLinkSelect');
+        if (sel) {
+            sel.innerHTML = smmLinksCache.length
+                ? smmLinksCache.filter(l => l.status === 'active').map(l => '<option value="' + l.id + '">' + (l.label || l.username || l.url) + ' (' + l.platform + ')</option>').join('')
+                : '<option value="">No links registered — go to Links tab</option>';
+        }
+        const totalOrders = smmLinksCache.reduce((sum, l) => sum + l.order_count, 0);
+        document.getElementById('smmOrderCount').textContent = totalOrders;
+        updateSmmSpent();
+    } catch (e) {
+        smmLinksCache = [];
+    }
+}
+
+const PLATFORM_ICONS = { facebook: '&#x25B2;', instagram: '&#x25B2;', twitter: '&#x25B2;', tiktok: '&#x25B2;', youtube: '&#x25B2;', linkedin: '&#x25B2;', other: '&#x25B2;' };
+const PLATFORM_COLORS = { facebook: '#3b82f6', instagram: '#ec4899', twitter: '#6b7280', tiktok: '#ef4444', youtube: '#f43f5e', linkedin: '#3b82f6', other: '#71717a' };
+
+function renderSmmLinksTable(links) {
+    const tb = document.getElementById('smmLinksBody');
+    if (!links.length) { tb.innerHTML = '<tr><td colspan="8"><div class="empty-state">No links registered</div></td></tr>'; return; }
+    tb.innerHTML = links.map(l => {
+        const color = PLATFORM_COLORS[l.platform] || '#71717a';
+        return '<tr style="cursor:pointer" onclick="showSmmLinkDetail(\'' + l.id + '\')">'
+            + '<td><span class="tag" style="border-color:' + color + ';color:' + color + '">' + l.platform + '</span></td>'
+            + '<td style="font-size:11px">' + (l.label || '--') + '</td>'
+            + '<td class="mono" style="font-size:11px">' + (l.username || '--') + '</td>'
+            + '<td class="mono">' + l.order_count + '</td>'
+            + '<td class="mono">' + l.confirmed_count + '/' + l.order_count + '</td>'
+            + '<td class="mono">$' + (l.total_cost || '0') + '</td>'
+            + '<td><span class="tag ' + (l.status === 'active' ? 'tag-green' : 'tag-red') + '">' + l.status + '</span></td>'
+            + '<td><a href="' + l.url + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent-cyan);font-size:11px">Open</a></td>'
+            + '</tr>';
+    }).join('');
+}
+
+function filterSmmLinks() {
+    const q = document.getElementById('smmLinkSearch').value.toLowerCase();
+    const filtered = smmLinksCache.filter(l => (l.label || '').toLowerCase().includes(q) || (l.username || '').toLowerCase().includes(q) || l.platform.includes(q) || (l.url || '').toLowerCase().includes(q));
+    renderSmmLinksTable(filtered);
+}
+
+async function registerSmmLink() {
+    const platform = document.getElementById('smmLinkPlatform').value;
+    const url = document.getElementById('smmLinkUrl').value.trim();
+    const label = document.getElementById('smmLinkLabel').value.trim();
+    const username = document.getElementById('smmLinkUsername').value.trim();
+    const notes = document.getElementById('smmLinkNotes').value.trim();
+    if (!url) { toast('URL is required', 'error'); return; }
+    try {
+        await api('/smm/links', { method: 'POST', body: JSON.stringify({ platform, url, label: label || null, username: username || null, notes: notes || null }) });
+        toast('Link registered');
+        document.getElementById('smmLinkUrl').value = '';
+        document.getElementById('smmLinkLabel').value = '';
+        document.getElementById('smmLinkUsername').value = '';
+        document.getElementById('smmLinkNotes').value = '';
+        loadSmmLinks();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+async function showSmmLinkDetail(linkId) {
+    const link = smmLinksCache.find(l => l.id === linkId);
+    if (!link) return;
+    const detail = document.getElementById('smmLinkDetail');
+    detail.style.display = 'block';
+    document.getElementById('smmLinkDetailTitle').textContent = (link.label || link.url) + ' — Orders';
+    const body = document.getElementById('smmLinkOrdersBody');
+    body.innerHTML = '<span class="loading"></span>';
+    try {
+        const orders = await api('/smm/orders?link_id=' + linkId);
+        if (!orders.length) { body.innerHTML = '<div class="empty-state" style="padding:16px">No orders for this link</div>'; return; }
+        body.innerHTML = '<table><thead><tr><th>Order ID</th><th>Service</th><th>Qty</th><th>Status</th><th>Placed</th><th>Actions</th></tr></thead><tbody>'
+            + orders.map(o => '<tr>'
+            + '<td class="mono" style="font-size:10px">' + (o.naizop_order_id || '--') + '</td>'
+            + '<td style="font-size:11px">' + (o.service_name || o.service_id) + '</td>'
+            + '<td class="mono">' + (o.quantity || '--') + '</td>'
+            + '<td><span class="tag ' + (o.confirmed ? 'tag-green' : o.naizop_status === 'Completed' ? 'tag-green' : o.naizop_status === 'Canceled' ? 'tag-red' : '') + '">' + (o.confirmed ? 'Confirmed' : (o.naizop_status || 'Pending')) + '</span></td>'
+            + '<td style="font-size:11px;color:var(--text-dim)">' + fmtTimeAgo(o.placed_at) + '</td>'
+            + '<td style="display:flex;gap:4px">'
+            + '<button class="btn btn-sm" onclick="syncSmmOrder(\'' + o.id + '\',\'' + linkId + '\')">Sync</button>'
+            + (!o.confirmed && o.naizop_status === 'Completed' ? '<button class="btn btn-sm" style="color:var(--green)" onclick="confirmSmmOrder(\'' + o.id + '\',\'' + linkId + '\')">Confirm</button>' : '')
+            + '</td></tr>').join('')
+            + '</tbody></table>';
+    } catch (e) { body.innerHTML = '<div style="color:var(--red);font-size:12px;padding:16px">Error: ' + e.message + '</div>'; }
+}
+
+async function syncSmmOrder(orderId, linkId) {
+    try {
+        const res = await api('/smm/orders/' + orderId + '/sync', { method: 'POST' });
+        toast('Status: ' + res.naizop_status);
+        showSmmLinkDetail(linkId);
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+async function confirmSmmOrder(orderId, linkId) {
+    if (!confirm('Confirm delivery was verified manually?')) return;
+    try {
+        await api('/smm/orders/' + orderId + '/confirm', { method: 'POST', body: JSON.stringify({ confirmed_by: 'admin', notes: 'Manually verified' }) });
+        toast('Order confirmed');
+        showSmmLinkDetail(linkId);
+        loadSmmLinks();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+function getServicePlatform(s) {
+    const name = ((s.name || '') + (s.category || '')).toLowerCase();
+    for (const p of Object.keys(PLATFORM_TAGS)) {
+        if (name.includes(p)) return p;
+    }
+    return 'other';
+}
+
+function renderSmmServicesTable(services) {
+    const tb = document.getElementById('smmServicesBody');
+    if (!services.length) { tb.innerHTML = '<tr><td colspan="8"><div class="empty-state">No services found</div></td></tr>'; return; }
+    tb.innerHTML = services.map(s => {
+        const plat = getServicePlatform(s);
+        const pcolor = PLATFORM_TAGS[plat].color;
+        return '<tr>'
+            + '<td class="mono" style="font-size:10px">' + s.service + '</td>'
+            + '<td><span class="tag" style="border-color:' + pcolor + ';color:' + pcolor + '">' + PLATFORM_TAGS[plat].label + '</span></td>'
+            + '<td style="font-size:11px">' + s.name + '</td>'
+            + '<td><span class="tag">' + (s.type || '--') + '</span></td>'
+            + '<td class="mono">$' + (s.rate || '0') + '</td>'
+            + '<td class="mono">' + (s.min || '0') + '</td>'
+            + '<td class="mono">' + (s.max || '0') + '</td>'
+            + '<td>' + (s.refill ? '<span class="tag tag-green">Yes</span>' : '<span class="tag tag-red">No</span>') + '</td>'
+            + '</tr>';
+    }).join('');
+}
+
+function filterSmmServices() {
+    const q = document.getElementById('smmServiceSearch').value.toLowerCase();
+    const platformFilter = document.getElementById('smmServicePlatformFilter').value;
+    const refillFilter = document.getElementById('smmServiceRefillFilter').value;
+    const sortFilter = document.getElementById('smmServiceSort').value;
+    let filtered = smmServicesCache.filter(s => {
+        const matchesSearch = (s.name || '').toLowerCase().includes(q) || String(s.service).includes(q);
+        if (!matchesSearch) return false;
+        if (platformFilter !== 'all' && getServicePlatform(s) !== platformFilter) return false;
+        if (refillFilter === 'yes' && !s.refill) return false;
+        if (refillFilter === 'no' && s.refill) return false;
+        return true;
+    });
+    if (sortFilter === 'cheapest') {
+        filtered.sort((a, b) => parseFloat(a.rate || 0) - parseFloat(b.rate || 0));
+    } else if (sortFilter === 'expensive') {
+        filtered.sort((a, b) => parseFloat(b.rate || 0) - parseFloat(a.rate || 0));
+    } else if (sortFilter === 'popular') {
+        filtered.sort((a, b) => (b.min || 0) - (a.min || 0));
+    }
+    smmFilteredServices = filtered;
+    smmCurrentPage = 1;
+    document.getElementById('smmServiceCountBadge').textContent = filtered.length + ' services';
+    renderSmmServicesPage();
+}
+
+function renderSmmServicesPage() {
+    const start = (smmCurrentPage - 1) * SMM_PAGE_SIZE;
+    const page = smmFilteredServices.slice(start, start + SMM_PAGE_SIZE);
+    renderSmmServicesTable(page);
+    renderSmmPagination();
+}
+
+function renderSmmPagination() {
+    const total = smmFilteredServices.length;
+    const pages = Math.ceil(total / SMM_PAGE_SIZE);
+    const el = document.getElementById('smmPagination');
+    if (pages <= 1) { el.style.display = 'none'; return; }
+    el.style.display = 'flex';
+    let html = '';
+    for (let i = 1; i <= pages; i++) {
+        html += '<button class="btn btn-sm" onclick="goToSmmPage(' + i + ')" style="min-width:28px' + (i === smmCurrentPage ? ';background:var(--accent-purple);color:#fff' : '') + '">' + i + '</button>';
+    }
+    el.innerHTML = html;
+}
+
+function goToSmmPage(page) {
+    smmCurrentPage = page;
+    renderSmmServicesPage();
+}
+
+async function placeSmmOrder() {
+    const linkId = document.getElementById('smmOrderLinkSelect').value;
+    const service = parseInt(document.getElementById('smmServiceSelect').value);
+    const quantity = parseInt(document.getElementById('smmQtyInput').value) || undefined;
+    if (!linkId) { toast('Select a link first', 'error'); return; }
+    const body = { link_id: linkId, service };
+    if (quantity) body.quantity = quantity;
+    if (document.getElementById('smmDripCheck').checked) {
+        const runs = parseInt(document.getElementById('smmDripRuns').value);
+        const interval = parseInt(document.getElementById('smmDripInterval').value);
+        if (runs && interval) { body.runs = runs; body.interval = interval; }
+    }
+    const comments = document.getElementById('smmCommentsInput').value.trim();
+    if (comments) body.comments = comments.split('\n').filter(Boolean);
+    try {
+        document.getElementById('smmOrderBtn').disabled = true;
+        const data = await api('/smm/orders', { method: 'POST', body: JSON.stringify(body) });
+        const el = document.getElementById('smmOrderResult');
+        el.style.display = 'block';
+        el.innerHTML = 'Order placed! Naizop ID: <b>' + (data.naizop_order_id || '--') + '</b>';
+        toast('Order placed successfully');
+        loadSmmLinks();
+    } catch (e) {
+        toast(e.message, 'error');
+    } finally {
+        document.getElementById('smmOrderBtn').disabled = false;
+    }
+}
+
+function trackRecentOrder(orderId, service) {
+    /* deprecated — orders now stored in DB */
+}
+
+function renderRecentOrders() {
+    /* deprecated — use loadSmmTrackingOrders instead */
+}
+
+async function loadSmmTrackingOrders() {
+    const el = document.getElementById('smmRecentOrders');
+    try {
+        const orders = await api('/smm/orders');
+        if (!orders.length) { el.innerHTML = 'No orders yet'; return; }
+        el.innerHTML = '<table><thead><tr><th>Naizop ID</th><th>Link</th><th>Service</th><th>Qty</th><th>Status</th><th>Confirmed</th><th>Placed</th><th></th></tr></thead><tbody>'
+            + orders.slice(0, 30).map(o => {
+                const link = smmLinksCache.find(l => l.id === o.link_id);
+                return '<tr>'
+                    + '<td class="mono" style="font-size:10px">' + (o.naizop_order_id || '--') + '</td>'
+                    + '<td style="font-size:11px">' + (link ? (link.label || link.platform) : o.link_id.slice(0,8) + '...') + '</td>'
+                    + '<td style="font-size:11px">' + (o.service_name || o.service_id) + '</td>'
+                    + '<td class="mono">' + (o.quantity || '--') + '</td>'
+                    + '<td><span class="tag ' + (o.confirmed ? 'tag-green' : o.naizop_status === 'Completed' ? 'tag-green' : o.naizop_status === 'Canceled' ? 'tag-red' : '') + '">' + (o.confirmed ? 'Confirmed' : (o.naizop_status || 'Pending')) + '</span></td>'
+                    + '<td>' + (o.confirmed ? '<span class="tag tag-green">Yes</span>' : '<span class="tag">No</span>') + '</td>'
+                    + '<td style="font-size:11px;color:var(--text-dim)">' + fmtTimeAgo(o.placed_at) + '</td>'
+                    + '<td><button class="btn btn-sm" onclick="syncFromTracking(\'' + o.id + '\')">Sync</button></td>'
+                    + '</tr>';
+            }).join('')
+            + '</tbody></table>';
+    } catch (e) { el.innerHTML = '<div style="color:var(--red);font-size:12px">Error: ' + e.message + '</div>'; }
+}
+
+async function syncFromTracking(orderId) {
+    try {
+        const res = await api('/smm/orders/' + orderId + '/sync', { method: 'POST' });
+        toast('Status: ' + res.naizop_status);
+        loadSmmTrackingOrders();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
+async function trackSmmOrder() {
+    const orderId = document.getElementById('smmTrackInput').value.trim();
+    if (!orderId) { toast('Enter an order ID', 'error'); return; }
+    const el = document.getElementById('smmTrackResult');
+    el.innerHTML = '<span class="loading"></span>';
+    try {
+        const data = await api('/smm/status/' + orderId);
+        el.innerHTML = '<div style="padding:8px 0;font-size:12px"><b>Status:</b> ' + (data.status || JSON.stringify(data)) + '</div>';
+    } catch (e) { el.innerHTML = '<div style="color:var(--red);font-size:12px">Error: ' + e.message + '</div>'; }
+}
+
+async function generateSmmPlan() {
+    const goal = document.getElementById('smmGoalInput').value.trim();
+    if (!goal) { toast('Describe your campaign goal', 'error'); return; }
+    const el = document.getElementById('smmPlanResult');
+    el.innerHTML = '<span class="loading"></span>';
+    const platformHints = {
+        facebook: smmServicesCache.filter(s => /facebook|fb/i.test(s.name)),
+        instagram: smmServicesCache.filter(s => /instagram|ig/i.test(s.name)),
+        tiktok: smmServicesCache.filter(s => /tiktok/i.test(s.name)),
+        twitter: smmServicesCache.filter(s => /twitter|x\.com/i.test(s.name)),
+    };
+    const detected = [];
+    for (const [plat, svcs] of Object.entries(platformHints)) {
+        if (new RegExp(plat, 'i').test(goal) && svcs.length) detected.push({ platform: plat, services: svcs.slice(0, 5) });
+    }
+    if (!detected.length) {
+        el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:8px 0">Could not auto-detect platform. Mention Facebook, Instagram, TikTok, or Twitter in your goal.</div>';
+        return;
+    }
+    let html = '<div style="font-size:12px;padding:8px 0">';
+    html += '<div style="font-weight:600;color:var(--text);margin-bottom:8px">Suggested Plan</div>';
+    detected.forEach(d => {
+        html += '<div style="margin-bottom:12px"><span class="tag" style="margin-bottom:4px;display:inline-block">' + d.platform.toUpperCase() + '</span>';
+        d.services.forEach(s => {
+            html += '<div style="padding:4px 0;color:var(--text-muted)">Service #' + s.service + ': ' + s.name + ' — $' + s.rate + '/1k</div>';
+        });
+        html += '</div>';
+    });
+    html += '<button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="toast(\'Order placement coming soon — use the Order tab\')">Place Suggested Orders</button>';
+    html += '</div>';
+    el.innerHTML = html;
 }
 
 async function loadResonance() {

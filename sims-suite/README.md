@@ -27,5 +27,5 @@ exposes `/api/simulations/today` which `index.html` polls via a one-line shim.
 
 ## What's placeholder
 
-Kriegspiel, Citadel, Remnants, and Intellectual Awareness have no engine yet —
+Kriegspiel, CC, Remnants, and Intellectual Awareness have no engine yet —
 they ship in Phases 1–3.

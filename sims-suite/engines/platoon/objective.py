@@ -90,7 +90,7 @@ SAMPLE_OBJECTIVES: list[Objective] = [
         constraints=["No disruption to live services", "Budget capped at $50M",
                      "Must comply with NIST CSF 2.0", "No offensive operations"],
         success_criteria=["Mean time to detect < 15 min", "Crown jewel breach rate < 2%",
-                          "100% asset coverage by Citadel", "Quarterly red-team pass rate > 90%"],
+                          "100% asset coverage by Collective Consciousness", "Quarterly red-team pass rate > 90%"],
         risk_tolerance=RiskTolerance.AGGRESSIVE,
         time_horizon_years=1.5, population_scale=80, confidence_required=85,
     ),

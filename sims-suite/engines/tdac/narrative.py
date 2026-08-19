@@ -134,7 +134,7 @@ SAMPLE_SOURCES: list[SimulationSource] = [
         stakes="The first 48 hours determine the next 48 years.",
     ),
     SimulationSource(
-        engine="citadel",
+        engine="cc",
         title="Infrastructure Attack Path Analysis",
         key_finding="The most common attack path reached the crown jewel database in 4 hops, exploiting SQL injection at the web API layer.",
         supporting_data={"scenarios": 5000, "breach_rate": 0.085, "depth": 4, "key_vuln": "sql_injection"},

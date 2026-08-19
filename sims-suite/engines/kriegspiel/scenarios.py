@@ -8,7 +8,7 @@ convergence rate, and the distribution of outcomes.
 
 Used by:
   - The gateway (feeds live scenario counts to index.html)
-  - Citadel (runs the same engine inward on infrastructure)
+  - CC (runs the same engine inward on infrastructure)
   - Remnants (filters the final state for what survives)
 """
 
@@ -67,7 +67,7 @@ def create_default_battle(battlefield: Optional[Battlefield] = None,
     unconditionally and trust the result.
 
     Backward compatibility: the flag defaults to ``False``, preserving the
-    original procedural behavior for Citadel, Remnants, and any other
+    original procedural behavior for CC, Remnants, and any other
     adapter that doesn't opt in.
     """
     if enrich_with_llm:

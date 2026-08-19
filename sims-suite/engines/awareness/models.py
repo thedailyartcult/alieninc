@@ -1,7 +1,7 @@
 """Awareness data models — threats, playbooks, and incident responses.
 
 A ``ThreatEvent`` is an incoming intelligence signal (could come from GDELT
-geopolitical events, Citadel predicted infrastructure breaks, or synthetic
+geopolitical events, CC predicted infrastructure breaks, or synthetic
 adversary simulation). For each threat, the engine generates ``Playbook``
 objects — structured response sequences. Each playbook is then branched
 through Monte Carlo to measure containment time, damage mitigated, and

@@ -2,7 +2,7 @@
 
 Seven independent companies, one continuous pipeline. This is the **commercial
 simulation stack** of Alien Inc (not the internal tooling). Each station feeds
-the next; Kriegspiel's scenario engine is the shared keystone that Citadel and
+the next; Kriegspiel's scenario engine is the shared keystone that CC and
 Remnants mirror.
 
 ```
@@ -13,7 +13,7 @@ Platoon ──objective──▶ Alpha Zero ──world-states──▶ Daily Ar
                      (the keystone)                │
                      ┌──────┴──────┐               │
                      ▼             ▼               ▼
-                Remnants       Citadel        Intellectual
+                Remnants       CC        Intellectual
               (outward:       (inward:         Awareness
                survives)       your walls)     (respond)
 ```
@@ -27,7 +27,7 @@ Platoon ──objective──▶ Alpha Zero ──world-states──▶ Daily Ar
 | 3 | Publish      | The Daily Art Cult    | **Yes** ✓     | Yes (`/tdac-sim`) |
 | 4 | Survive      | Remnants              | **Yes** ✓     | Yes (`/remnants`) |
 | 5 | Respond      | Intellectual Awareness| **Yes** ✓     | Yes (`/awareness`) |
-| 6 | Defend       | Citadel               | **Yes** ✓     | Yes (`/citadel`) |
+| 6 | Defend       | Collective Consciousness | **Yes** ✓     | Yes (`/cc`) |
 | 7 | Attack       | Kriegspiel            | **Yes** ✓     | Yes (`/kriegspiel`) |
 
 **All 7 engines online. Coverage: Full-spectrum. Pipeline complete.**
@@ -84,7 +84,7 @@ sims-suite/
 - **Phase 0** — Foundation: tokens, shared core, gateway, `index.html` shim.
   Real numbers flow to the site immediately from the existing Alpha Zero engine.
 - **Phase 1** — Kriegspiel: combat scenario generator (the keystone).
-- **Phase 2** — Citadel + Remnants: two thin adapters over Kriegspiel.
+- **Phase 2** — CC + Remnants: two thin adapters over Kriegspiel.
 - **Phase 3** — Intellectual Awareness: SOAR/IR layer (reuses GDELT from Spinal Craker).
 - **Phase 4** — Close the loop: Platoon objective-capture + Daily Art Cult narrative bridge.
 - **Phase 5** — LLM-driven scenario synthesis layer (mirrors Xi'an Technological Univ. /
@@ -112,7 +112,7 @@ battles enter the Monte Carlo pool. Every LLM-synthesized battle carries a
 1. **Provider-agnostic**: a single `LLMClient` interface; concrete impls for
    DeepSeek API, local Ollama, and any OpenAI-compatible endpoint. Selected via env.
 2. **Backward compatible**: `generate_scenarios(...)` keeps its current signature;
-   `enrich_with_llm=False` is the default. Citadel, Remnants, and the existing
+   `enrich_with_llm=False` is the default. CC, Remnants, and the existing
    `/api/kriegspiel/run` endpoint keep working unchanged.
 3. **No new runtime deps**: LLM HTTP calls use stdlib `urllib.request`. Air-gapped
    deployments stay air-gapped. If no provider is configured, the LLM layer is a
@@ -177,7 +177,7 @@ KRIEGSPIEL_LLM_AUDIT_DIR    = engines/kriegspiel/llm/audit
 ### Dependency impact (verified safe)
 
 - `sims_core.monte_carlo` — untouched (LLM layer sits above it, not inside).
-- `engines.citadel`, `engines.remnants` — adapters over `generate_scenarios`; the
+- `engines.cc`, `engines.remnants` — adapters over `generate_scenarios`; the
   new flag defaults to `False`, so they keep working. They may opt in later by
   passing `enrich_with_llm=True` through their own thin shims.
 - `engines.kriegspiel.combat.simulate_battle` — unchanged contract; richer

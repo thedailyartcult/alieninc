@@ -1059,6 +1059,14 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
     'panteon-theme': ['#DFF140', '#e8eaed', '#c2c8d2', '#949ca8', '#b6bdc9', '#7c8591', '#f4f6f8', '#a9b1bd', '#d7dbe1', '#5f6873', '#eef0f3', '#8b939f'],
     manda: ['#ff9a3c', '#ffae4c', '#ffc26b', '#ffcf86', '#ff7a2a', '#b85c2f', '#ffc24a', '#ff8f6b', '#ff7040', '#ffd9a3', '#ff5c1a', '#ff4400']
   };
+  const MANDA_ANIM = {
+    classic: { wire:[111,159,216], wireHi:[180,210,235], pulse:[200,220,240], pulseGlow:[140,160,210], arc:[140,131,232], arcCore:[180,190,235], spark:[200,210,240], sparkGlow:[120,150,200], arc2:[100,160,200], breath:[100,140,200] },
+    galaxy: { wire:[123,180,255], wireHi:[180,200,255], pulse:[200,210,255], pulseGlow:[100,140,240], arc:[183,137,255], arcCore:[200,180,255], spark:[210,200,255], sparkGlow:[140,110,230], arc2:[100,170,230], breath:[120,100,220] },
+    solar: { wire:[255,180,84], wireHi:[255,220,160], pulse:[255,230,180], pulseGlow:[240,160,60], arc:[255,150,50], arcCore:[255,200,140], spark:[255,230,180], sparkGlow:[220,130,40], arc2:[240,160,60], breath:[200,120,40] },
+    cyber: { wire:[34,224,255], wireHi:[182,255,60], pulse:[200,255,240], pulseGlow:[34,200,240], arc:[255,62,165], arcCore:[200,240,255], spark:[220,250,255], sparkGlow:[34,180,220], arc2:[182,255,100], breath:[34,200,240] },
+    'panteon-theme': { wire:[216,218,222], wireHi:[240,240,240], pulse:[255,255,255], pulseGlow:[200,200,210], arc:[217,219,225], arcCore:[230,232,238], spark:[255,255,255], sparkGlow:[180,180,190], arc2:[200,200,210], breath:[223,241,64] },
+    manda: { wire:[255,190,100], wireHi:[255,240,200], pulse:[255,235,180], pulseGlow:[255,210,120], arc:[255,200,120], arcCore:[255,240,200], spark:[255,248,225], sparkGlow:[255,220,140], arc2:[255,230,160], breath:[255,140,60] }
+  };
   const GRAPH_HEAT = ['#3f7bff', '#6a5cff', '#a24bff', '#e0479f', '#ff6b6b', '#ffc23d'];
 
   /* Flow particles are per *relation*, and force-graph advances every one of them on every
@@ -1950,6 +1958,8 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
     let destroyed = false, running = true, fitTimer = 0, suspended = 0, pendingRender = null;
     let suppressNodeClickAfterDrag = false, dragClickFrame = 0;
     let mandaPinned = false;
+    let mandaSparks = new Map();
+    let mandaHaze = null;
     const requestFrame = typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'
       ? window.requestAnimationFrame.bind(window)
       : callback => setTimeout(callback, 0);
@@ -2000,7 +2010,7 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
        to that change detection. Everywhere else, letting force-graph park the redraw is what
        keeps a settled graph off the CPU. */
     function needsContinuousFrames() {
-      return !reduced() && state.styleName === 'galaxy' && !large;
+      return !reduced() && (state.styleName === 'galaxy' || state.styleName === 'manda') && !large;
     }
     /* Betweenness is the one analysis that is superlinear in the store size, and nothing in
        the default view consumes it — the bridge overlay and betweenness-sizing are both off.
@@ -2334,11 +2344,15 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
       if (nodes.length < 4) { return; }
       var left = nodes.filter(n => n.mandaSide === 'in');
       var right = nodes.filter(n => n.mandaSide === 'out');
+      var t = performance.now() / 1000;
+      var allWires = [], allCurves = [];
+      var ac = (typeof MANDA_ANIM !== 'undefined' && MANDA_ANIM[state.styleName]) || (typeof MANDA_ANIM !== 'undefined' && MANDA_ANIM.manda) || {wire:[255,190,100],wireHi:[255,240,200],pulse:[255,235,180],pulseGlow:[255,210,120],arc:[255,200,120],arcCore:[255,240,200],spark:[255,248,225],sparkGlow:[255,220,140],arc2:[255,230,160],breath:[255,140,60]};
+      var rgba = function(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; };
       ctx.save();
       /* Substrate + subtle grid */
       ctx.fillStyle = '#0a0704';
       var c = ctx.canvas; ctx.fillRect(0, 0, c.width, c.height);
-      ctx.strokeStyle = 'rgba(255,120,55,.028)';
+      ctx.strokeStyle = rgba(ac.wire, .028);
       ctx.lineWidth = 1 / scale;
       ctx.beginPath();
       var step = 34 / scale;
@@ -2347,7 +2361,7 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
       ctx.stroke();
       /* Vertical boundary rails behind each column of circular endpoints */
       const colXs = [...new Set(nodes.filter(n => typeof n.mandaColX === 'number').map(n => n.mandaColX))].sort((a, b) => a - b);
-      ctx.strokeStyle = 'rgba(255,120,55,.05)';
+      ctx.strokeStyle = rgba(ac.wire, .05);
       ctx.lineWidth = 1 / scale;
       ctx.beginPath();
       colXs.forEach(x => { ctx.moveTo(x - 14, -720); ctx.lineTo(x - 14, 720); ctx.moveTo(x + 14, -720); ctx.lineTo(x + 14, 720); });
@@ -2373,12 +2387,13 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
         var ty = Number.isFinite(ta.y) ? ta.y : ta.mandaColY;
         if (!Number.isFinite(sx) || !Number.isFinite(sy) || !Number.isFinite(tx) || !Number.isFinite(ty)) continue;
         var mx2 = (sx + tx) / 2, my2 = (sy + ty) / 2;
-        ctx.strokeStyle = 'rgba(255,176,92,.20)';
+        ctx.strokeStyle = rgba(ac.arc, .20);
         ctx.lineWidth = 1 / scale;
         ctx.beginPath();
         ctx.moveTo(sx, sy);
         ctx.quadraticCurveTo(mx2, my2, tx, ty);
         ctx.stroke();
+        allCurves.push({sx:sx,sy:sy,tx:tx,ty:ty,mx:mx2,my:my2});
       }
       ctx.globalCompositeOperation = 'source-over';
 
@@ -2419,18 +2434,214 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
             const x1 = b.x, y1 = b.members[j].mandaColY;
             return [x0, y0, x1, y1];
           });
+          for (var _wi = 0; _wi < segs.length; _wi++) { var _s = segs[_wi]; allWires.push({x0:_s[0],y0:_s[1],x1:_s[2],y1:_s[3]}); }
           ctx.globalCompositeOperation = 'lighter';
-          ctx.strokeStyle = 'rgba(255,176,92,.14)';
+          ctx.strokeStyle = rgba(ac.wire, .14);
           ctx.lineWidth = (lineBase * 3) / scale;
           for (const [x0, y0, x1, y1] of segs) {
             ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
           }
           ctx.globalCompositeOperation = 'source-over';
-          ctx.strokeStyle = 'rgba(255,196,126,.42)';
+          ctx.strokeStyle = rgba(ac.wireHi, .42);
           ctx.lineWidth = lineBase / scale;
           for (const [x0, y0, x1, y1] of segs) {
             ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
           }
+        }
+        ctx.restore();
+      }
+      /* ============ NEURAL ELECTRICITY ANIMATION ============ */
+      if (!reduced()) {
+        ctx.save();
+        /* Deterministic per-wire hash for flicker */
+        var mHash = function(i, st) { var x = Math.sin(i * 127.1 + st * 311.7) * 43758.5453; return x - Math.floor(x); };
+        /* Layer 1: Crackle wires + overload flashes + traveling pulses */
+        if (allWires.length > 0) {
+          ctx.globalCompositeOperation = 'lighter';
+          /* Crackle: every wire flickers in brightness each frame */
+          for (var ci3 = 0; ci3 < allWires.length; ci3++) {
+            var cw = allWires[ci3];
+            var flick = 0.06 + 0.12 * mHash(ci3, t * 8.0) + 0.06 * Math.sin(t * 3.0 + ci3 * 1.1);
+            ctx.strokeStyle = rgba(ac.wire, flick);
+            ctx.lineWidth = 1.3 / scale;
+            ctx.beginPath();
+            ctx.moveTo(cw.x0, cw.y0);
+            ctx.lineTo(cw.x1, cw.y1);
+            ctx.stroke();
+          }
+          /* Overload flashes: 3 random wires blaze bright white each frame */
+          for (var oi = 0; oi < 3; oi++) {
+            var oidx = Math.floor(mHash(oi, t * 2.3) * allWires.length);
+            var ow = allWires[oidx];
+            if (!ow) continue;
+            var oflick = 0.5 + 0.5 * mHash(oi + 99, t * 12.0);
+            ctx.strokeStyle = rgba(ac.wireHi, oflick);
+            ctx.lineWidth = 2.8 / scale;
+            ctx.beginPath();
+            ctx.moveTo(ow.x0, ow.y0);
+            ctx.lineTo(ow.x1, ow.y1);
+            ctx.stroke();
+          }
+          /* Traveling pulses — faster, bigger, longer trails */
+          var PULSE_SPEED = 0.35, PULSE_CORE_R = 2.2 / scale, PULSE_TRAIL = 6;
+          for (var wi = 0; wi < allWires.length; wi++) {
+            var w = allWires[wi];
+            var phase = (wi * 0.137 + Math.sin(wi * 0.73) * 0.5) % 1.0;
+            for (var tr = PULSE_TRAIL - 1; tr >= 0; tr--) {
+              var trOff = tr * 0.018;
+              var pos = ((t * PULSE_SPEED + phase - trOff) % 1.0 + 1.0) % 1.0;
+              var px = w.x0 + (w.x1 - w.x0) * pos;
+              var py = w.y0 + (w.y1 - w.y0) * pos;
+              var pal = tr === 0 ? 1.0 : 0.4 / (tr + 1);
+              var prr = tr === 0 ? PULSE_CORE_R : PULSE_CORE_R * (1.2 - tr * 0.12);
+              ctx.fillStyle = rgba(ac.pulse, pal);
+              ctx.beginPath();
+              ctx.arc(px, py, prr, 0, 6.2832);
+              ctx.fill();
+            }
+            var pos0 = ((t * PULSE_SPEED + phase) % 1.0 + 1.0) % 1.0;
+            var gx = w.x0 + (w.x1 - w.x0) * pos0;
+            var gy = w.y0 + (w.y1 - w.y0) * pos0;
+            var gg = ctx.createRadialGradient(gx, gy, 0, gx, gy, PULSE_CORE_R * 8);
+            gg.addColorStop(0, rgba(ac.pulseGlow, .4));
+            gg.addColorStop(0.4, rgba(ac.pulseGlow, .12));
+            gg.addColorStop(1, rgba(ac.pulseGlow, 0));
+            ctx.fillStyle = gg;
+            ctx.beginPath();
+            ctx.arc(gx, gy, PULSE_CORE_R * 8, 0, 6.2832);
+            ctx.fill();
+          }
+        }
+        /* Layer 2: Plasma arc glow + traveling dots on real connection curves */
+        if (allCurves.length > 0) {
+          ctx.globalCompositeOperation = 'lighter';
+          var ARC_SPEED = 0.15;
+          for (var ci2 = 0; ci2 < allCurves.length; ci2++) {
+            var cv = allCurves[ci2];
+            /* Flickering plasma base */
+            var pbase = 0.08 + 0.18 * mHash(ci2 + 50, t * 6.0) + 0.1 * Math.sin(t * 2.5 + ci2 * 0.47);
+            ctx.strokeStyle = rgba(ac.arc, pbase);
+            ctx.lineWidth = 2.8 / scale;
+            ctx.beginPath();
+            ctx.moveTo(cv.sx, cv.sy);
+            ctx.quadraticCurveTo(cv.mx, cv.my, cv.tx, cv.ty);
+            ctx.stroke();
+            /* Bright plasma core */
+            var pcore = 0.04 + 0.12 * mHash(ci2 + 77, t * 10.0);
+            ctx.strokeStyle = rgba(ac.arcCore, pcore);
+            ctx.lineWidth = 1.0 / scale;
+            ctx.beginPath();
+            ctx.moveTo(cv.sx, cv.sy);
+            ctx.quadraticCurveTo(cv.mx, cv.my, cv.tx, cv.ty);
+            ctx.stroke();
+            /* Traveling dot — faster, bigger */
+            var phase2 = (ci2 * 0.23) % 1.0;
+            var pos2 = ((t * ARC_SPEED + phase2) % 1.0 + 1.0) % 1.0;
+            var u = 1 - pos2;
+            var dx = u * u * cv.sx + 2 * u * pos2 * cv.mx + pos2 * pos2 * cv.tx;
+            var dy = u * u * cv.sy + 2 * u * pos2 * cv.my + pos2 * pos2 * cv.ty;
+            ctx.fillStyle = rgba(ac.arcCore, .92);
+            ctx.beginPath();
+            ctx.arc(dx, dy, 2.0 / scale, 0, 6.2832);
+            ctx.fill();
+            var dg = ctx.createRadialGradient(dx, dy, 0, dx, dy, 10 / scale);
+            dg.addColorStop(0, rgba(ac.pulseGlow, .45));
+            dg.addColorStop(0.5, rgba(ac.pulseGlow, .12));
+            dg.addColorStop(1, rgba(ac.pulseGlow, 0));
+            ctx.fillStyle = dg;
+            ctx.beginPath();
+            ctx.arc(dx, dy, 10 / scale, 0, 6.2832);
+            ctx.fill();
+          }
+        }
+        /* Layer 3: Junction sparks — shockwave rings + bright core flash */
+        {
+          ctx.globalCompositeOperation = 'lighter';
+          var SPARK_CHANCE = 0.014, SPARK_DECAY = 4.0, SPARK_RADIUS = 18 / scale;
+          for (var ni = 0; ni < nodes.length; ni++) {
+            if (Math.random() < SPARK_CHANCE) {
+              mandaSparks.set(nodes[ni].id, {t: t, intensity: 0.6 + Math.random() * 0.4});
+            }
+          }
+          var toRemove = [];
+          for (var sid = mandaSparks.keys ? mandaSparks.keys() : []; ; ) {
+            var entry = sid.next ? sid.next() : null;
+            if (!entry || entry.done) break;
+            var nid = entry.value;
+            var spark = mandaSparks.get(nid);
+            var age = t - spark.t;
+            var fade = Math.exp(-age * SPARK_DECAY);
+            if (fade < 0.01) { toRemove.push(nid); continue; }
+            var snode = null;
+            for (var si = 0; si < nodes.length; si++) { if (nodes[si].id === nid) { snode = nodes[si]; break; } }
+            if (!snode) { toRemove.push(nid); continue; }
+            var sint = spark.intensity * fade;
+            /* White-hot core */
+            ctx.fillStyle = rgba(ac.spark, sint * 0.95);
+            ctx.beginPath();
+            ctx.arc(snode.x, snode.y, 3.0 / scale, 0, 6.2832);
+            ctx.fill();
+            /* Inner glow */
+            var sg = ctx.createRadialGradient(snode.x, snode.y, 0, snode.x, snode.y, SPARK_RADIUS * sint);
+            sg.addColorStop(0, rgba(ac.sparkGlow, sint * 0.7));
+            sg.addColorStop(0.4, rgba(ac.sparkGlow, sint * 0.25));
+            sg.addColorStop(1, rgba(ac.sparkGlow, 0));
+            ctx.fillStyle = sg;
+            ctx.beginPath();
+            ctx.arc(snode.x, snode.y, SPARK_RADIUS * sint, 0, 6.2832);
+            ctx.fill();
+            /* Expanding shockwave rings */
+            for (var ri2 = 0; ri2 < 3; ri2++) {
+              var ringAge = age - ri2 * 0.06;
+              if (ringAge < 0) continue;
+              var ringFade = Math.exp(-ringAge * 6.0);
+              var ringR = ringAge * 120 / scale;
+              ctx.strokeStyle = rgba(ac.arc, ringFade * 0.35);
+              ctx.lineWidth = 1.0 / scale;
+              ctx.beginPath();
+              ctx.arc(snode.x, snode.y, ringR, 0, 6.2832);
+              ctx.stroke();
+            }
+          }
+          for (var ri3 = 0; ri3 < toRemove.length; ri3++) mandaSparks.delete(toRemove[ri3]);
+        }
+        /* Layer 4: Secondary arcs — random jagged lightning between nearby wire midpoints */
+        {
+          ctx.globalCompositeOperation = 'lighter';
+          var ARC_COUNT = Math.min(12, Math.floor(allWires.length * 0.08));
+          for (var la = 0; la < ARC_COUNT; la++) {
+            var laidx1 = Math.floor(mHash(la + 200, t * 3.7) * allWires.length);
+            var laidx2 = Math.floor(mHash(la + 300, t * 3.7) * allWires.length);
+            if (laidx1 === laidx2) continue;
+            var law1 = allWires[laidx1], law2 = allWires[laidx2];
+            var lamx1 = (law1.x0 + law1.x1) / 2, lamy1 = (law1.y0 + law1.y1) / 2;
+            var lamx2 = (law2.x0 + law2.x1) / 2, lamy2 = (law2.y0 + law2.y1) / 2;
+            var ladist = Math.sqrt((lamx2 - lamx1) * (lamx2 - lamx1) + (lamy2 - lamy1) * (lamy2 - lamy1));
+            if (ladist > 200) continue;
+            var laflick = 0.15 + 0.35 * mHash(la + 400, t * 14.0);
+            if (laflick < 0.2) continue;
+            ctx.strokeStyle = rgba(ac.arc2, laflick);
+            ctx.lineWidth = 0.8 / scale;
+            ctx.beginPath();
+            ctx.moveTo(lamx1, lamy1);
+            var ljx1 = lamx1 + (lamx2 - lamx1) * 0.33 + (mHash(la + 500, t * 5) - 0.5) * 20;
+            var ljy1 = lamy1 + (lamy2 - lamy1) * 0.33 + (mHash(la + 600, t * 5) - 0.5) * 20;
+            var ljx2 = lamx1 + (lamx2 - lamx1) * 0.66 + (mHash(la + 700, t * 5) - 0.5) * 20;
+            var ljy2 = lamy1 + (lamy2 - lamy1) * 0.66 + (mHash(la + 800, t * 5) - 0.5) * 20;
+            ctx.lineTo(ljx1, ljy1);
+            ctx.lineTo(ljx2, ljy2);
+            ctx.lineTo(lamx2, lamy2);
+            ctx.stroke();
+          }
+        }
+        /* Layer 5: Breathing membrane — subtle radial pulse across the whole canvas */
+        {
+          var breath = 0.02 + 0.015 * Math.sin(t * 0.8);
+          var bg = ctx.createRadialGradient(0, 0, 0, 0, 0, 400 / scale);
+          bg.addColorStop(0, rgba(ac.breath, breath));
+          bg.addColorStop(1, rgba(ac.breath, 0));
+          ctx.fillStyle = bg;
+          ctx.fillRect(-500 / scale, -400 / scale, 1000 / scale, 800 / scale);
         }
         ctx.restore();
       }
@@ -2808,7 +3019,7 @@ qr.readability=function(t,n){var e=qr(t),r=qr(n);return(Math.max(e.getLuminance(
          explicitly and escaped rather than left on the vendor default. */
       .nodeLabel(node => esc(nodeName(node)))
       .linkLabel(link => esc(link && link.label ? link.label : ''))
-      .onRenderFramePre((ctx, scale) => { try { styleBackground(ctx, scale); } catch (e) { } })
+      .onRenderFramePre((ctx, scale) => { try { styleBackground(ctx, scale); } catch (e) { console.error('[CMB-manda]', e); } })
       .nodeCanvasObject((node, ctx, scale) => styleNode(node, ctx, scale))
       .nodePointerAreaPaint((node, color, ctx) => { ctx.fillStyle = color; ctx.beginPath(); ctx.arc(node.x, node.y, node.radius + 2, 0, 6.2832); ctx.fill(); })
       .linkColor(l => {

@@ -1,8 +1,8 @@
-"""Citadel infrastructure graph — your stack as a graph of nodes and edges.
+"""CC infrastructure graph — your stack as a graph of nodes and edges.
 
 Each node is a service (API, database, load balancer, message queue, etc.)
 with a criticality score and a set of vulnerabilities. Each edge is a
-dependency or trust relationship. Citadel runs attack paths through this
+dependency or trust relationship. Collective Consciousness runs attack paths through this
 graph the same way Kriegspiel runs forces across a battlefield.
 """
 

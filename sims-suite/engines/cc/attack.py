@@ -1,4 +1,4 @@
-"""Citadel attack simulation — run attack paths through the infra graph.
+"""CC attack simulation — run attack paths through the infra graph.
 
 This is the "Kriegspiel turned inward" engine. It uses the same Monte Carlo
 branching primitive from sims_core, but instead of military forces maneuvering
@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from sims_core.monte_carlo import monte_carlo_branch, best_branch, convergence_rate
-from engines.citadel.infra_graph import (
+from engines.cc.infra_graph import (
     InfraGraph,
     InfraNode,
     NodeType,
@@ -44,7 +44,7 @@ class AttackPath:
 
 
 @dataclass
-class CitadelReport:
+class CCReport:
     """Aggregated report across all branched attack scenarios."""
 
     infra_name: str
@@ -134,7 +134,7 @@ def generate_attack_scenarios(
     graph: Optional[InfraGraph] = None,
     n_scenarios: int = 5000,
     seed: Optional[int] = None,
-) -> CitadelReport:
+) -> CCReport:
     """Generate N branched attack scenarios and aggregate the results."""
     t0 = time.perf_counter()
     if graph is None:
@@ -181,7 +181,7 @@ def generate_attack_scenarios(
 
     entry_points = list(set(p.entry_point for p in paths))
 
-    return CitadelReport(
+    return CCReport(
         infra_name=graph.name,
         scenarios_run=len(paths),
         crown_jewel_breaches=breaches,
@@ -196,8 +196,8 @@ def generate_attack_scenarios(
     )
 
 
-def report_to_dict(report: CitadelReport) -> dict:
-    """Serialize a CitadelReport to a JSON-friendly dict."""
+def report_to_dict(report: CCReport) -> dict:
+    """Serialize a CCReport to a JSON-friendly dict."""
     return {
         "infra_name": report.infra_name,
         "scenarios_run": report.scenarios_run,

@@ -346,6 +346,123 @@ async def delete_redteam_scan(scan_id: str, request: Request):
     return {'deleted': True}
 
 
+# ── Naizop SMM Panel Proxy ──
+
+import httpx
+
+NAIZOP_API_URL = 'https://naizop.com/api/v2'
+NAIZOP_API_KEY = 'b2007d34c1dcce2e863f8e83c5bff144'
+
+async def _naizop_request(action: str, **params) -> dict:
+    """Proxy a request to the Naizop API."""
+    data = {'action': action, 'key': NAIZOP_API_KEY}
+    data.update({k: v for k, v in params.items() if v is not None})
+    async with httpx.AsyncClient(timeout=30) as client:
+        r = await client.post(NAIZOP_API_URL, data=data)
+        r.raise_for_status()
+        return r.json()
+
+
+class NaizopOrderRequest(BaseModel):
+    service: int
+    link: str
+    quantity: int | None = None
+    runs: int | None = None
+    interval: int | None = None
+    comments: list[str] | None = None
+    usernames: list[str] | None = None
+    hashtag: str | None = None
+    hashtag_amount: int | None = None
+    user_id: int | None = None
+    min: int | None = None
+    max: int | None = None
+    posts: int | None = None
+    delay: int | None = None
+    geo: str | None = None
+    gender: str | None = None
+    region: str | None = None
+    cancel_label: str | None = None
+    order_url: str | None = None
+    expire: int | None = None
+    marker_note: str | None = None
+
+
+@app.get('/api/smm/balance')
+async def smm_balance(request: Request):
+    return await _naizop_request('balance')
+
+
+@app.get('/api/smm/services')
+async def smm_services(request: Request, category: str | None = None):
+    data = await _naizop_request('services')
+    if isinstance(data, list) and category:
+        cat_lower = category.lower()
+        data = [s for s in data if cat_lower in (s.get('name', '') + s.get('type', '')).lower()]
+    return data
+
+
+@app.post('/api/smm/order')
+async def smm_add_order(req: NaizopOrderRequest, request: Request):
+    params = {}
+    for k, v in req.dict().items():
+        if v is not None:
+            if k in ('comments', 'usernames') and isinstance(v, list):
+                params[k] = '\n'.join(v)
+            else:
+                params[k] = v
+    return await _naizop_request('add', **params)
+
+
+@app.get('/api/smm/status/{order_id}')
+async def smm_order_status(order_id: str, request: Request):
+    return await _naizop_request('status', order=order_id)
+
+
+@app.get('/api/smm/status')
+async def smm_multi_status(request: Request, orders: str = ''):
+    ids = [o.strip() for o in orders.split(',') if o.strip()]
+    return await _naizop_request('status', order=','.join(ids))
+
+
+@app.post('/api/smm/refill')
+async def smm_refill(request: Request, order: int | None = None):
+    if not order:
+        raise HTTPException(status_code=400, detail='order is required')
+    return await _naizop_request('refill', order=order)
+
+
+@app.get('/api/smm/refill-status/{order_id}')
+async def smm_refill_status(order_id: str, request: Request):
+    return await _naizop_request('refill_status', order=order_id)
+
+
+@app.post('/api/smm/cancel')
+async def smm_cancel(request: Request, order: int | None = None):
+    if not order:
+        raise HTTPException(status_code=400, detail='order is required')
+    return await _naizop_request('cancel', order=order)
+
+
+@app.post('/api/smm/mass-order')
+async def smm_mass_order(request: Request, orders: list[dict] | None = None):
+    if not orders:
+        raise HTTPException(status_code=400, detail='orders list required')
+    lines = []
+    for o in orders:
+        line = f"{o.get('service','')}-{o.get('link','')}-{o.get('quantity','')}"
+        if o.get('comments'):
+            line += f"-{chr(10).join(o['comments'])}"
+        if o.get('username'):
+            line += f"-{o['username']}"
+        lines.append(line)
+    return await _naizop_request('orders', orders='\n'.join(lines))
+
+
+@app.get('/statham')
+async def statham_page():
+    return FileResponse(str(CENTRA_DIR / 'statham.html'))
+
+
 # ── WebSocket ──
 
 @app.websocket('/ws/scan')

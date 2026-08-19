@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import Column, String, Text, DateTime, Boolean, Integer, ForeignKey, Index
+from sqlalchemy import Column, String, Text, DateTime, Boolean, Integer, Float, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from panteon.core.database import Base
 from panteon.core.types import JSONB, UUID_COL
@@ -159,4 +159,51 @@ class PipelineRun(Base):
     __table_args__ = (
         Index("ix_piperun_pipeline", "pipeline_id"),
         Index("ix_piperun_status", "status"),
+    )
+
+
+class SmmLink(Base):
+    __tablename__ = "statham_smm_links"
+
+    id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
+    platform = Column(String(50), nullable=False)
+    url = Column(Text, nullable=False)
+    label = Column(String(255))
+    username = Column(String(255))
+    status = Column(String(50), default="active")
+    notes = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    orders = relationship("SmmOrder", back_populates="link")
+
+    __table_args__ = (
+        Index("ix_smm_link_platform", "platform"),
+        Index("ix_smm_link_status", "status"),
+    )
+
+
+class SmmOrder(Base):
+    __tablename__ = "statham_smm_orders"
+
+    id = Column(UUID_COL(), primary_key=True, default=lambda: str(uuid.uuid4()))
+    link_id = Column(UUID_COL(), ForeignKey("statham_smm_links.id"), nullable=False)
+    naizop_order_id = Column(Integer)
+    service_id = Column(Integer, nullable=False)
+    service_name = Column(String(500))
+    quantity = Column(Integer)
+    cost = Column(Float, default=0.0)
+    naizop_status = Column(String(100))
+    confirmed = Column(Boolean, default=False)
+    confirmed_by = Column(String(255))
+    confirmed_at = Column(DateTime)
+    notes = Column(Text)
+    placed_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    link = relationship("SmmLink", back_populates="orders")
+
+    __table_args__ = (
+        Index("ix_smm_order_link", "link_id"),
+        Index("ix_smm_order_naizop", "naizop_order_id"),
+        Index("ix_smm_order_confirmed", "confirmed"),
     )

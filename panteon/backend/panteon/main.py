@@ -33,6 +33,7 @@ from panteon.api.routes_yono_functions import router as yono_functions_router
 from panteon.api.routes_research import router as research_router
 from panteon.api.routes_ngram import router as ngram_router
 from panteon.api.routes_actor_graph import router as actor_graph_router
+from panteon.api.routes_smm import router as smm_router
 
 PANTEON_SITE = Path(os.path.dirname(__file__)).parent.parent
 
@@ -86,6 +87,7 @@ app.include_router(yono_functions_router, prefix="/api/v1")
 app.include_router(research_router, prefix="/api/v1")
 app.include_router(ngram_router, prefix="/api/v1")
 app.include_router(actor_graph_router, prefix="/api/v1")
+app.include_router(smm_router, prefix="/api/v1")
 
 
 @app.get("/")

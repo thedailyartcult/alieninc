@@ -64,7 +64,7 @@ COMPANY_STATIONS: dict[str, str] = {
     "tdac": "tdac",
     "kriegspiel": "kriegspiel",
     "remnants": "remnants",
-    "citadel": "citadel",
+    "cc": "cc",
     "awareness": "awareness",
 }
 
@@ -76,7 +76,7 @@ ENGINE_DISPLAY_NAMES: dict[str, str] = {
     "alpha_zero": "Alpha Zero",
     "tdac": "TDAC",
     "kriegspiel": "Kriegspiel",
-    "citadel": "Citadel",
+    "cc": "Collective Consciousness",
     "remnants": "Remnants",
     "awareness": "Awareness",
 }
@@ -93,7 +93,10 @@ def _read_count() -> dict[str, int]:
     try:
         import json
         if _COUNT_FILE.exists():
-            return json.loads(_COUNT_FILE.read_text())
+            counts = json.loads(_COUNT_FILE.read_text())
+            if "citadel" in counts:
+                counts["cc"] = counts.get("cc", 0) + counts.pop("citadel")
+            return counts
     except Exception:
         pass
     return {"alpha_zero": 0, "kriegspiel": 0}
@@ -461,58 +464,58 @@ async def _background_ks_loop() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Citadel engine — imported lazily (Kriegspiel turned inward on infra)
+# CC engine — imported lazily (Kriegspiel turned inward on infra)
 # ---------------------------------------------------------------------------
 
-_cit_available = False
-_cit_generate: Any = None
-_cit_report_to_dict: Any = None
-_cit_create_infra: Any = None
+_cc_available = False
+_cc_generate: Any = None
+_cc_report_to_dict: Any = None
+_cc_create_infra: Any = None
 
 
-def _load_citadel() -> bool:
-    global _cit_available, _cit_generate, _cit_report_to_dict, _cit_create_infra
-    if _cit_available:
+def _load_cc() -> bool:
+    global _cc_available, _cc_generate, _cc_report_to_dict, _cc_create_infra
+    if _cc_available:
         return True
     if str(_SUITE_ROOT) not in sys.path:
         sys.path.insert(0, str(_SUITE_ROOT))
     try:
-        from engines.citadel.attack import (
+        from engines.cc.attack import (
             generate_attack_scenarios as _gas,
             report_to_dict as _rtd,
         )
-        from engines.citadel.infra_graph import create_sample_infra as _csi
+        from engines.cc.infra_graph import create_sample_infra as _csi
 
-        _cit_generate = _gas
-        _cit_report_to_dict = _rtd
-        _cit_create_infra = _csi
-        _cit_available = True
-        logger.info("Citadel engine loaded")
+        _cc_generate = _gas
+        _cc_report_to_dict = _rtd
+        _cc_create_infra = _csi
+        _cc_available = True
+        logger.info("CC engine loaded")
         return True
     except Exception as exc:
-        logger.warning("Could not load Citadel engine: %s", exc)
+        logger.warning("Could not load CC engine: %s", exc)
         return False
 
 
-def _run_cit_background_batch() -> int:
-    if not _cit_available:
+def _run_cc_background_batch() -> int:
+    if not _cc_available:
         return 0
     try:
-        report = _cit_generate(n_scenarios=100, seed=None)
-        _add_count("citadel", report.scenarios_run)
+        report = _cc_generate(n_scenarios=100, seed=None)
+        _add_count("cc", report.scenarios_run)
         return report.scenarios_run
     except Exception:
         return 0
 
 
-async def _background_cit_loop() -> None:
+async def _background_cc_loop() -> None:
     if not SIM_ENABLED:
         return
     interval = SIM_INTERVAL_S * 4
-    logger.info("Citadel background loop started (interval=%.1fs)", interval)
+    logger.info("CC background loop started (interval=%.1fs)", interval)
     while True:
         try:
-            await asyncio.to_thread(_run_cit_background_batch)
+            await asyncio.to_thread(_run_cc_background_batch)
         except asyncio.CancelledError:
             raise
         except Exception:
@@ -790,8 +793,8 @@ def _engines_online() -> list[str]:
         online.append("tdac")
     if _ks_available:
         online.append("kriegspiel")
-    if _cit_available:
-        online.append("citadel")
+    if _cc_available:
+        online.append("cc")
     if _rem_available:
         online.append("remnants")
     if _aw_available:
@@ -870,14 +873,14 @@ async def _startup() -> None:
     _load_events_24h()
     _load_alpha_zero()
     _load_kriegspiel()
-    _load_citadel()
+    _load_cc()
     _load_remnants()
     _load_awareness()
     _load_platoon()
     _load_tdac()
     asyncio.create_task(_background_sim_loop())
     asyncio.create_task(_background_ks_loop())
-    asyncio.create_task(_background_cit_loop())
+    asyncio.create_task(_background_cc_loop())
     asyncio.create_task(_background_rem_loop())
     asyncio.create_task(_background_aw_loop())
     asyncio.create_task(_background_pl_loop())
@@ -909,8 +912,8 @@ async def simulations_today() -> SimTodayResponse:
         by_engine_cum["tdac"] = _counts.get("tdac", 0)
     if _ks_available:
         by_engine_cum["kriegspiel"] = _counts.get("kriegspiel", 0)
-    if _cit_available:
-        by_engine_cum["citadel"] = _counts.get("citadel", 0)
+    if _cc_available:
+        by_engine_cum["cc"] = _counts.get("cc", 0)
     if _rem_available:
         by_engine_cum["remnants"] = _counts.get("remnants", 0)
     if _aw_available:
@@ -949,7 +952,7 @@ async def simulations_engine() -> EngineResponse:
 async def company_metrics(name: str) -> CompanyResponse:
     station = COMPANY_STATIONS.get(name.lower(), "unknown")
     simulations = _counts.get(station, 0) if station in (
-        "platoon", "alpha_zero", "tdac", "kriegspiel", "citadel", "remnants", "awareness"
+        "platoon", "alpha_zero", "tdac", "kriegspiel", "cc", "remnants", "awareness"
     ) else 0
     return CompanyResponse(name=name, station=station, simulations=simulations)
 
@@ -1289,20 +1292,20 @@ async def research_improve() -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# Citadel endpoints
+# CC endpoints
 # ---------------------------------------------------------------------------
 
-@app.post("/api/citadel/run")
-async def cit_run(body: dict[str, Any]) -> dict[str, Any]:
-    if not _cit_available:
-        return {"error": "Citadel engine not available"}
+@app.post("/api/cc/run")
+async def cc_run(body: dict[str, Any]) -> dict[str, Any]:
+    if not _cc_available:
+        return {"error": "CC engine not available"}
     n_scenarios = min(int(body.get("scenarios", 5000)), 50000)
     seed = body.get("seed", 42)
 
     def _run() -> dict[str, Any]:
-        report = _cit_generate(n_scenarios=n_scenarios, seed=seed)
-        d = _cit_report_to_dict(report)
-        _add_count("citadel", report.scenarios_run)
+        report = _cc_generate(n_scenarios=n_scenarios, seed=seed)
+        d = _cc_report_to_dict(report)
+        _add_count("cc", report.scenarios_run)
         return d
 
     return await asyncio.to_thread(_run)

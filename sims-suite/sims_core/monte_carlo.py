@@ -3,7 +3,7 @@
 Lifted from Alpha Zero's ``engine/monte_carlo.py`` — the core idea of running N
 parallel universes and aggregating which branch "won." Every station uses this:
 Alpha Zero branches life decisions, Kriegspiel branches battlefield scenarios,
-Citadel branches infra failure paths, Remnants branches post-conflict states.
+CC branches infra failure paths, Remnants branches post-conflict states.
 
 This module provides the lightweight, dependency-free primitive. The full Alpha
 Zero engine (with character simulation, portfolio tracking, etc.) lives at

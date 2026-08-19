@@ -41,7 +41,7 @@ async def init_db():
     from panteon.spinal_craker.models import ObjectType, Object, LinkType, Link, ActionType, ActionExecution, DataPipeline, DataPipelineRun
     from panteon.yono.models import LLMProvider, LLMModel, LLMExecution, Agent, AgentSession, Automation, AutomationExecution, Evaluation, EvaluationRun
     from panteon.core.tenant import Tenant, TenantMetric, TenantWebhook
-    from panteon.statham.models import Environment, StathamAgent, Service, Deployment, HealthCheck, Pipeline, PipelineRun
+    from panteon.statham.models import Environment, StathamAgent, Service, Deployment, HealthCheck, Pipeline, PipelineRun, SmmLink, SmmOrder
     from panteon.core.audit import AuditLog
     from panteon.core.apikeys import APIKey
     from panteon.core.lineage import LineageNode, LineageEdge, LineageEvent

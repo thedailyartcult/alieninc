@@ -140,9 +140,19 @@ def simulate_survival(
     survivor: Survivor,
     condition: ConflictCondition,
     seed: Optional[int] = None,
+    population_resilience: float = 1.0,
 ) -> dict:
-    """Simulate whether one survivor outlasts the conflict. Per-branch function."""
+    """Simulate whether one survivor outlasts the conflict. Per-branch function.
+
+    ``population_resilience`` (0.0-1.0, default 1.0 = no penalty) is the
+    affected population's capacity to sustain the survivor through the crisis.
+    A vulnerable population (low trust, low income, elderly, rural) erodes
+    survival — the human systems that maintain institutions, supply chains and
+    cultural artifacts are weaker, so the *engine itself* produces fewer
+    survivors (not just a post-hoc report adjustment).
+    """
     rng = random.Random(seed or 42)
+    population_resilience = max(0.3, min(1.0, population_resilience))
 
     base = survivor.survival_score
     # Conflict conditions erode the survival score
@@ -154,6 +164,12 @@ def simulate_survival(
     # Longer conflicts are worse, but adaptation helps over time
     duration_penalty = min(condition.duration_months / 60, 1.0) * 15
     adaptation_bonus = (survivor.adaptability / 100) * min(condition.duration_months / 24, 1.0) * 10
+
+    # A fragile population cannot sustain the survivor through the crisis.
+    # Weakened human systems amplify the effective damage and shrink the
+    # adaptation bonus.
+    damage = damage / population_resilience
+    adaptation_bonus = adaptation_bonus * population_resilience
 
     # Stochastic variation
     luck = rng.uniform(-15, 15)
@@ -182,6 +198,7 @@ def simulate_survival(
         "key_factor": key_factor,
         "score": round(final, 2),
         "outcome": "survived" if survived else "collapsed",
+        "population_resilience": round(population_resilience, 3),
     }
 
 
@@ -190,8 +207,16 @@ def generate_continuity_scenarios(
     condition: Optional[ConflictCondition] = None,
     n_scenarios: int = 5000,
     seed: Optional[int] = None,
+    population_resilience: float = 1.0,
 ) -> RemnantsReport:
-    """Generate N branched survival scenarios and aggregate the results."""
+    """Generate N branched survival scenarios and aggregate the results.
+
+    ``population_resilience`` (0.0-1.0, default 1.0) scales how well the
+    affected population can sustain survivors through the conflict — derived
+    from the persona cohort's resilience/trust profile. It is applied *inside*
+    each branch, so a vulnerable population produces fewer survivors in the
+    engine itself.
+    """
     t0 = time.perf_counter()
     if survivors is None:
         survivors = SAMPLE_SURVIVORS
@@ -204,7 +229,8 @@ def generate_continuity_scenarios(
 
     for survivor in survivors:
         raw = monte_carlo_branch(
-            lambda s: simulate_survival(survivor, condition, s),
+            lambda s: simulate_survival(survivor, condition, s,
+                                        population_resilience=population_resilience),
             max(1, n_scenarios // len(survivors)),
             seed=seed,
         )

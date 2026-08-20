@@ -1286,9 +1286,139 @@ async def research_improve() -> dict[str, Any]:
                 "doctrine": c.doctrine, "terrain": c.terrain, "field": c.field,
                 "before": c.before, "after": c.after, "win_rate": c.win_rate,
                 "rationale": c.rationale,
+                "p_value": c.p_value, "fdr_gate": c.fdr_gate,
             } for c in changes
         ],
     }
+
+
+@app.get("/api/research/bh-gate")
+async def research_bh_gate(k: int = 20) -> dict[str, Any]:
+    """Multiple-testing gate audit trail: how many hypotheses were tested and
+    how many survived Benjamini-Hochberg at each self-improvement step."""
+    tracker = _research_tracker()
+    if tracker is None:
+        return {"error": "research layer unavailable"}
+    k = max(1, min(int(k), 100))
+    return tracker.bh_gate_history(k)
+
+
+@app.get("/api/research/adherence")
+async def research_adherence(
+    terrain: str = "open",
+    n: int = 60,
+    seed: int = 42,
+) -> dict[str, Any]:
+    """Run a controlled doctrine-adherence probe: does each doctrine's declared
+    parameter profile actually produce the expected battle behavior? Runs in a
+    worker thread — each battle is cheap but N×doctrines add up."""
+    if not _ks_available:
+        return {"error": "Kriegspiel engine not available"}
+
+    from engines.kriegspiel.models import TerrainType
+    from engines.kriegspiel.adherence import run_adherence_probe
+
+    try:
+        terrain_enum = TerrainType(terrain)
+    except ValueError:
+        terrain_enum = TerrainType.OPEN
+
+    n_per_doctrine = max(10, min(int(n), 500))
+    seed_i = int(seed)
+
+    def _run() -> dict[str, Any]:
+        return run_adherence_probe(
+            terrain=terrain_enum,
+            n_per_doctrine=n_per_doctrine,
+            seed=seed_i,
+        )
+
+    return await asyncio.to_thread(_run)
+
+
+# ---------------------------------------------------------------------------
+# Persona endpoints (MatrAIx-inspired population layer)
+# ---------------------------------------------------------------------------
+# The persona core (sims_core/persona) is the shared population model for the
+# whole stack: a correlated categorical schema, a dependency-aware DAG sampler,
+# and cohort queries. These endpoints expose it and let callers run Alpha Zero
+# branches where every universe is a *different person* instead of one generic
+# archetype branched N times.
+
+@app.get("/api/persona/schema")
+async def persona_schema() -> dict[str, Any]:
+    from sims_core.persona import render_schema_summary
+    return render_schema_summary()
+
+
+@app.post("/api/persona/sample")
+async def persona_sample(body: dict[str, Any]) -> dict[str, Any]:
+    """Sample one persona from the dependency DAG."""
+    from sims_core.persona import sample_persona, parse_query
+
+    seed = body.get("seed", 42)
+    query = parse_query(body.get("query"))
+    try:
+        persona = sample_persona(seed=seed, query=query)
+    except ValueError as exc:
+        return {"error": str(exc)}
+    return persona.to_dict()
+
+
+@app.post("/api/persona/cohort")
+async def persona_cohort(body: dict[str, Any]) -> dict[str, Any]:
+    """Sample a reproducible cohort of personas matching a population query."""
+    from sims_core.persona import sample_cohort, personas_to_dicts, parse_query
+
+    n = max(1, min(int(body.get("n", 100)), 10000))
+    seed = body.get("seed", 42)
+    try:
+        query = parse_query(body.get("query"))
+        personas = sample_cohort(n, seed=seed, query=query)
+    except ValueError as exc:
+        return {"error": str(exc)}
+    return {
+        "n": len(personas),
+        "seed": seed,
+        "query": query.to_dict(),
+        "personas": personas_to_dicts(personas),
+    }
+
+
+@app.post("/api/persona/alpha-zero/run")
+async def persona_alpha_zero_run(body: dict[str, Any]) -> dict[str, Any]:
+    """Run Alpha Zero branches where each universe is a sampled persona.
+
+    Each persona in the cohort becomes one independent life simulation through
+    the Alpha Zero FSM — the 'run this decision against millions of people'
+    promise made concrete with coherent, correlated people instead of the same
+    archetype shuffled N times."""
+    if not _az_available:
+        return {"error": "Alpha Zero engine not available"}
+
+    from sims_core.persona import sample_cohort, personas_to_dicts, parse_query
+    from sims_core.persona.bridges.alpha_zero import run_persona_cohort
+
+    n = max(1, min(int(body.get("n", 50)), 1000))
+    seed = body.get("seed", 42)
+    max_age = max(20, min(int(body.get("max_age", 100)), 120))
+    try:
+        query = parse_query(body.get("query"))
+        personas = sample_cohort(n, seed=seed, query=query)
+    except ValueError as exc:
+        return {"error": str(exc)}
+
+    def _run() -> dict[str, Any]:
+        result = run_persona_cohort(personas, base_seed=seed, max_age=max_age)
+        if result is None:
+            return {"error": "Alpha Zero engine unavailable at runtime"}
+        result["query"] = query.to_dict()
+        result["seed"] = seed
+        result["cohort_preview"] = personas_to_dicts(personas[:5])
+        _add_count("alpha_zero", result.get("personas_simulated", 0))
+        return result
+
+    return await asyncio.to_thread(_run)
 
 
 # ---------------------------------------------------------------------------
@@ -1301,11 +1431,31 @@ async def cc_run(body: dict[str, Any]) -> dict[str, Any]:
         return {"error": "CC engine not available"}
     n_scenarios = min(int(body.get("scenarios", 5000)), 50000)
     seed = body.get("seed", 42)
+    persona_query = body.get("persona_query")
+    persona_n = max(1, min(int(body.get("persona_n", 100)), 5000))
 
     def _run() -> dict[str, Any]:
-        report = _cc_generate(n_scenarios=n_scenarios, seed=seed)
+        defense_quality = 1.0
+        if persona_query is not None:
+            from sims_core.persona.bridges.population_context import (
+                sample_population_context, digital_defense_quality,
+            )
+            try:
+                ctx = sample_population_context(
+                    persona_query, n=persona_n, seed=seed, cohort_label="cc-affected",
+                )
+                defense_quality = digital_defense_quality(ctx)
+            except ValueError as exc:
+                ctx = {"error": str(exc)}
+        # Engine-internal population effect: a low-fluency population hardens
+        # slower, so the attack simulation itself becomes easier.
+        report = _cc_generate(n_scenarios=n_scenarios, seed=seed,
+                              defense_quality=defense_quality)
         d = _cc_report_to_dict(report)
         _add_count("cc", report.scenarios_run)
+        if persona_query is not None:
+            d["population_context"] = ctx
+            d["population_modifiers"] = {"defense_quality": defense_quality}
         return d
 
     return await asyncio.to_thread(_run)
@@ -1323,6 +1473,8 @@ async def rem_run(body: dict[str, Any]) -> dict[str, Any]:
     intensity = float(body.get("intensity", 50))
     duration = float(body.get("duration_months", 12))
     seed = body.get("seed", 42)
+    persona_query = body.get("persona_query")
+    persona_n = max(1, min(int(body.get("persona_n", 100)), 5000))
 
     condition = _rem_conflict(
         intensity=intensity,
@@ -1334,9 +1486,27 @@ async def rem_run(body: dict[str, Any]) -> dict[str, Any]:
     )
 
     def _run() -> dict[str, Any]:
-        report = _rem_generate(n_scenarios=n_scenarios, condition=condition, seed=seed)
+        population_resilience = 1.0
+        if persona_query is not None:
+            from sims_core.persona.bridges.population_context import (
+                sample_population_context, population_resilience as _pop_res,
+            )
+            try:
+                ctx = sample_population_context(
+                    persona_query, n=persona_n, seed=seed, cohort_label="remnants-affected",
+                )
+                population_resilience = _pop_res(ctx)
+            except ValueError as exc:
+                ctx = {"error": str(exc)}
+        # Engine-internal population effect: a fragile population cannot sustain
+        # institutions / supply chains through the crisis.
+        report = _rem_generate(n_scenarios=n_scenarios, condition=condition,
+                               seed=seed, population_resilience=population_resilience)
         d = _rem_report_to_dict(report)
         _add_count("remnants", report.scenarios_run)
+        if persona_query is not None:
+            d["population_context"] = ctx
+            d["population_modifiers"] = {"population_resilience": population_resilience}
         return d
 
     return await asyncio.to_thread(_run)
@@ -1370,15 +1540,35 @@ async def aw_run(body: dict[str, Any]) -> dict[str, Any]:
     threat_idx = int(body.get("threat_index", 0))
     n_scenarios = min(int(body.get("scenarios", 5000)), 50000)
     seed = body.get("seed", 42)
+    persona_query = body.get("persona_query")
+    persona_n = max(1, min(int(body.get("persona_n", 100)), 5000))
 
     threat = None
     if _aw_threats and 0 <= threat_idx < len(_aw_threats):
         threat = _aw_threats[threat_idx]
 
     def _run() -> dict[str, Any]:
-        report = _aw_generate(threat=threat, n_scenarios=n_scenarios, seed=seed)
+        population_reach = 1.0
+        if persona_query is not None:
+            from sims_core.persona.bridges.population_context import (
+                sample_population_context, population_reach as _pop_reach,
+            )
+            try:
+                ctx = sample_population_context(
+                    persona_query, n=persona_n, seed=seed, cohort_label="awareness-affected",
+                )
+                population_reach = _pop_reach(ctx)
+            except ValueError as exc:
+                ctx = {"error": str(exc)}
+        # Engine-internal population effect: a hard-to-reach population makes
+        # response actions land less often.
+        report = _aw_generate(threat=threat, n_scenarios=n_scenarios, seed=seed,
+                              population_reach=population_reach)
         d = _aw_report_to_dict(report)
         _add_count("awareness", report.scenarios_run)
+        if persona_query is not None:
+            d["population_context"] = ctx
+            d["population_modifiers"] = {"population_reach": population_reach}
         return d
 
     return await asyncio.to_thread(_run)
@@ -1422,6 +1612,43 @@ async def pl_run(body: dict[str, Any]) -> dict[str, Any]:
         d = _pl_generate(objective=objective, n_scenarios=n_scenarios, seed=seed)
         _add_count("platoon", d["scenarios_run"])
         return d
+
+    return await asyncio.to_thread(_run)
+
+
+@app.post("/api/platoon/extract")
+async def pl_extract(body: dict[str, Any]) -> dict[str, Any]:
+    """Treiver-style objective extraction: convert a free-text client brief
+    into a structured Objective. Offline regex stage is always run; the LLM
+    judge stage is opt-in via ``use_llm`` and falls back to the deterministic
+    result on any provider/validation failure."""
+    text = (body.get("text") or "").strip()
+    if not text:
+        return {"error": "no text provided", "code": 400}
+    if len(text) > 8000:
+        return {"error": "text too long (max 8000 chars)", "code": 400}
+    use_llm = bool(body.get("use_llm", False))
+
+    from engines.platoon.extraction import extract_objective
+
+    def _run() -> dict[str, Any]:
+        result = extract_objective(text, use_llm=use_llm)
+        objective = result.to_objective()
+        return {
+            "extraction": result.to_dict(),
+            "objective": {
+                "title": objective.title,
+                "domain": objective.domain.value,
+                "goal": objective.goal,
+                "constraints": objective.constraints,
+                "success_criteria": objective.success_criteria,
+                "risk_tolerance": objective.risk_tolerance.value,
+                "time_horizon_years": objective.time_horizon_years,
+                "population_scale": objective.population_scale,
+                "confidence_required": objective.confidence_required,
+                "complexity": round(objective.complexity, 1),
+            },
+        }
 
     return await asyncio.to_thread(_run)
 

@@ -64,6 +64,7 @@ def simulate_response(
     threat: ThreatEvent,
     playbook: Playbook,
     seed: Optional[int] = None,
+    population_reach: float = 1.0,
 ) -> dict:
     """Simulate one incident response branch. Per-branch function.
 
@@ -71,8 +72,15 @@ def simulate_response(
     in the playbook has a stochastic success chance. The threat keeps spreading
     while the response executes. Outcome depends on whether the response
     outpaces the threat.
+
+    ``population_reach`` (0.0-1.0, default 1.0 = no penalty) is the affected
+    population's reachability — how well response actions (notifications,
+    coordination, guidance) land. A low-fluency / low-trust population is
+    harder to reach, so response actions succeed less often *inside the engine*
+    (not just a post-hoc report adjustment).
     """
     rng = random.Random(seed or 42)
+    population_reach = max(0.3, min(1.0, population_reach))
 
     # Threat dynamics — how fast it spreads and how hard it persists
     threat_spread_per_min = (threat.spread_rate / 100) * rng.uniform(0.5, 2.0)
@@ -95,10 +103,12 @@ def simulate_response(
         containment_time += tick_time
         damage_accumulated += threat_spread_per_min * tick_time * (1 - i * 0.1)
 
-        # Action success chance — depends on automation, coverage, and threat persistence
+        # Action success chance — depends on automation, coverage, reachability,
+        # and threat persistence. A hard-to-reach population lowers success.
         base_success = (playbook.coverage / 100) * (playbook.automation_level / 100)
         persistence_resistance = threat_persistence * 0.3
-        action_success = max(0.1, base_success - persistence_resistance + rng.uniform(-0.2, 0.2))
+        action_success = max(0.1, base_success * population_reach
+                             - persistence_resistance + rng.uniform(-0.2, 0.2))
 
         if rng.random() < action_success:
             actions_executed += 1
@@ -146,6 +156,7 @@ def simulate_response(
         "actions_executed": actions_executed,
         "score": round(score, 2),
         "outcome_label": outcome.value,
+        "population_reach": round(population_reach, 3),
     }
 
 
@@ -154,8 +165,15 @@ def generate_response_scenarios(
     playbooks: Optional[list[Playbook]] = None,
     n_scenarios: int = 5000,
     seed: Optional[int] = None,
+    population_reach: float = 1.0,
 ) -> AwarenessReport:
-    """Evaluate all candidate playbooks against a threat via Monte Carlo branching."""
+    """Evaluate all candidate playbooks against a threat via Monte Carlo branching.
+
+    ``population_reach`` (0.0-1.0, default 1.0) scales how well response actions
+    land — derived from the affected population's digital-fluency / trust /
+    connectivity profile. Applied *inside* each branch so a hard-to-reach
+    population lowers response success in the engine itself.
+    """
     t0 = time.perf_counter()
     if threat is None:
         threat = SAMPLE_THREATS[0]
@@ -171,7 +189,7 @@ def generate_response_scenarios(
 
     for pb in playbooks:
         raw = monte_carlo_branch(
-            lambda s: simulate_response(threat, pb, s),
+            lambda s: simulate_response(threat, pb, s, population_reach=population_reach),
             scenarios_per_pb,
             seed=seed,
         )

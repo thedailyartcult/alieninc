@@ -159,6 +159,18 @@ class BattleOutcome:
     terrain_advantage: str = ""        # who benefited from terrain
     score: float = 0.0                 # for best_branch() aggregation
     outcome: str = ""                  # label for convergence_rate()
+    # Final force state (populated by combat.simulate_battle; 0.0 for outcomes
+    # produced before the adherence layer existed). Used by the doctrine
+    # adherence probes to measure supply_focus / morale_drain behavior.
+    red_final_supply_pct: float = 0.0
+    red_final_morale_pct: float = 0.0
+    blue_final_supply_pct: float = 0.0
+    blue_final_morale_pct: float = 0.0
+    # True when a high-breakthrough doctrine converted a local advantage into
+    # a decisive penetration that ended the battle early (not an attrition
+    # grind). Populated by combat.simulate_battle. Used by the adherence probes
+    # to verify breakthrough really changes behavior.
+    breakthrough_by: str = ""        # "red", "blue", or ""
     # Doctrine tags populated by scenarios.generate_scenarios so the
     # self-learning layer (engines.kriegspiel.learning) can attribute
     # outcomes to (doctrine, terrain) pairs. Empty for outcomes created

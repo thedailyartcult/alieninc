@@ -1047,6 +1047,60 @@
       font-weight: 600;
       color: var(--ppl-color-text-default);
     }
+
+    /* Validation & rigor — doctrine adherence + multiple-testing gate */
+    .rigor-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-bottom: 0.6rem;
+    }
+    .rigor-stat {
+      background: rgba(19, 25, 32, 0.04);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 0.7rem;
+      color: var(--ppl-color-text-subtle);
+    }
+    .rigor-stat strong {
+      display: block;
+      font-size: 1rem;
+      color: var(--ppl-color-text-default);
+      font-variant-numeric: tabular-nums;
+    }
+    .rigor-stat strong.ok { color: #1a7f37; }
+    .rigor-stat strong.warn { color: #b45309; }
+    .adherence-list { list-style: none; margin: 0.3rem 0 0; padding: 0; }
+    .adherence-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 0.3rem 0;
+      border-bottom: 1px solid rgba(19, 25, 32, 0.06);
+      font-size: 0.8rem;
+      color: var(--ppl-color-text-default);
+    }
+    .adherence-list li:last-child { border-bottom: 0; }
+    .adherence-list .attr { font-weight: 700; text-transform: capitalize; }
+    .adherence-list .proxy {
+      font-size: 0.66rem;
+      color: var(--ppl-color-text-subtle);
+      margin-left: 0.5em;
+    }
+    .adherence-list .corr {
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: #1a7f37;
+    }
+    .adherence-list .corr.neg { color: #b45309; }
+    .rigor-note {
+      font-size: 0.68rem;
+      color: var(--ppl-color-text-subtle);
+      font-style: italic;
+      line-height: 1.35;
+      margin-top: 0.5rem;
+    }
+
     .research-output__loading {
       color: var(--ppl-color-text-subtle);
       font-style: italic;
@@ -4208,6 +4262,8 @@
 
   // Replace the public map nodes: keep only the ALIEN.INC HQ (its design
   // stays intact), then fetch featured data centers from the API.
+  // Non-HQ subsidiaries (KMT, ROUSSEAU, CENTRA, PANTEON, TDAC, Alcantara)
+  // are NEVER shown on the map — only ALIEN.INC HQ and datacenter facilities.
   function applyGlobalNetworkNodes(callback) {
     var all = window.aliensNetworkNodes || [];
     var hq = null;
@@ -4217,6 +4273,13 @@
         hq = n;
         break;
       }
+    }
+
+    // Immediately strip to HQ-only so non-facility companies never render
+    // even if the techstack fetch below fails or is slow.
+    window.aliensNetworkNodes = hq ? [hq] : [];
+    if (window.ecosystemSummary) {
+      window.ecosystemSummary.nodeCount = window.aliensNetworkNodes.length;
     }
 
     fetch('/api/techstack?featured=1')
@@ -4754,6 +4817,10 @@
           <h4 class="research-output__panel-title">Doctrine parameters — evolved by the engine</h4>
           <div id="researchParameters"><p class="research-output__loading">Loading parameters…</p></div>
         </div>
+        <div class="research-output__panel">
+          <h4 class="research-output__panel-title">Validation &amp; rigor — adherence + significance gate</h4>
+          <div id="researchRigor"><p class="research-output__loading">Running controlled adherence probe…</p></div>
+        </div>
       </div>
       <button type="button" id="researchCloseBtn" class="research-output__close">Hide research</button>
     </div>
@@ -4878,9 +4945,52 @@
                 '<span>risk <b>' + p.risk.toFixed(2) + '</b></span>' +
                 '<span>sup <b>' + p.supply_focus.toFixed(2) + '</b></span>' +
                 '<span>drn <b>' + p.morale_drain.toFixed(2) + '</b></span>' +
+                '<span>brk <b>' + (p.breakthrough !== undefined ? p.breakthrough.toFixed(2) : '—') + '</b></span>' +
                 '</div></li>';
       }
       html += '</ul>';
+      host.innerHTML = html;
+    }
+
+    function renderRigor(bhGate, adherence) {
+      var host = document.getElementById('researchRigor');
+      if (!host) return;
+
+      // Multiple-testing gate stats.
+      var html = '<div class="rigor-stats">';
+      var gate = bhGate || {};
+      var tested = gate.hypotheses_tested || 0;
+      var survived = gate.hypotheses_survived || 0;
+      html += '<div class="rigor-stat">Hypotheses tested<strong>' + tested.toLocaleString() + '</strong></div>';
+      html += '<div class="rigor-stat">Survived BH (FDR ' +
+              (gate.fdr ? Math.round(gate.fdr * 100) : 10) + '%)<strong' +
+              (survived ? ' class="ok"' : '') + '>' + survived.toLocaleString() + '</strong></div>';
+      html += '</div>';
+
+      // Adherence probe attributes.
+      var adh = adherence || {};
+      var attrs = adh.attributes || [];
+      if (!attrs.length) {
+        host.innerHTML = html + '<p class="rigor-note">No adherence probe data yet — run the probe via /api/research/adherence.</p>';
+        return;
+      }
+      html += '<ul class="adherence-list">';
+      for (var i = 0; i < attrs.length; i++) {
+        var a = attrs[i];
+        var corr = a.spearman;
+        var cls = corr < 0 ? ' corr neg' : '';
+        html += '<li><span class="attr">' + a.attribute + '</span>' +
+                '<span class="proxy">vs ' + a.proxy + '</span>' +
+                '<span class="corr' + cls + '">' + corr.toFixed(2) + '</span></li>';
+      }
+      html += '</ul>';
+
+      var overall = adh.adherence;
+      html += '<p class="rigor-note">Adherence: ' +
+              (overall !== undefined && overall !== null
+                ? (Math.round(overall * 100) + '% — declared doctrine behavior is actually expressed in battle')
+                : '—') +
+              '. Every doctrine parameter rewrite is gated behind a two-proportion z-test + Benjamini-Hochberg correction, so the engine cannot "learn" from noise.</p>';
       host.innerHTML = html;
     }
 
@@ -4915,6 +5025,16 @@
          .then(function (d) {
            if (!d || d.error) return;
            setText('researchLogEntries', (d.log_entries || 0).toLocaleString());
+         })
+         .catch(function () {});
+       // Validation & rigor: BH gate + a controlled doctrine adherence probe.
+       fetch('/api/research/bh-gate?k=5', FETCH_OPTS)
+         .then(function (r) { return r.ok ? r.json() : null; })
+         .then(function (gate) {
+           fetch('/api/research/adherence?terrain=open&n=40&seed=42', FETCH_OPTS)
+             .then(function (r) { return r.ok ? r.json() : null; })
+             .then(function (adh) { renderRigor(gate, adh); })
+             .catch(function () {});
          })
          .catch(function () {});
      }

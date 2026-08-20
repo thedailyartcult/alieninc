@@ -37,6 +37,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from engines.kriegspiel.models import BATTLEFIELDS, Doctrine, TerrainType
+from sims_core.stats import two_proportion_z, benjamini_hochberg
 
 
 # Resolve the analytics directory relative to this file so the layer works
@@ -56,6 +57,13 @@ _PARAM_CEIL = 1.00
 # Run self_improve() every N observations (batches), not every batch — keeps
 # the parameter set stable long enough to gather fresh evidence.
 _SELF_IMPROVE_EVERY = 20
+# Multiple-testing discipline (MatrAIx-style): every candidate (doctrine,
+# terrain, field) adjustment is a hypothesis. Before any parameter rewrite we
+# two-proportion-test the cell's win rate against the terrain's strongest
+# doctrine, then apply Benjamini-Hochberg FDR control across ALL candidates in
+# this step. Only hypotheses that survive the gate move parameters — this stops
+# the layer from "learning" noise when dozens of cells are tested at once.
+_SELF_IMPROVE_FDR = 0.10
 
 
 # Battlefield name → TerrainType string. Built once from the canonical list.
@@ -107,6 +115,10 @@ class ParamChange:
     after: float
     win_rate: float
     rationale: str
+    # Statistical evidence behind the change (MatrAIx-style discipline).
+    p_value: float = 0.0           # two-proportion z-test vs terrain strongest
+    fdr_gate: float = 0.0          # BH critical value at this step
+    survived_bh: bool = True
 
 
 class ResearchLog:
@@ -171,7 +183,11 @@ class DoctrinePerformanceTracker:
     so a service restart resumes with learned parameters intact.
     """
 
-    def __init__(self) -> None:
+    def __init__(self,
+                 state_path: Optional[Path] = None,
+                 log_path: Optional[Path] = None) -> None:
+        self._state_path = state_path or _STATE_PATH
+        self._log_path = log_path or _LOG_PATH
         self._lock = threading.RLock()
         self._cells: dict[tuple[str, str], Cell] = defaultdict(Cell)
         # Per (doctrine, opposing_doctrine) win tally — for matchup findings.
@@ -184,7 +200,9 @@ class DoctrinePerformanceTracker:
         self._param_changes: list[ParamChange] = []
         # How many times each doctrine has had any parameter adjusted.
         self._adjustments_per_doctrine: dict[str, int] = defaultdict(int)
-        self._log = ResearchLog()
+        # History of multiple-testing gates (MatrAIx-style audit trail).
+        self._bh_gates: list[dict[str, Any]] = []
+        self._log = ResearchLog(self._log_path)
         self._last_self_improve_ts = 0.0
         self._last_finding_ts = 0.0
         self._load_state()
@@ -321,15 +339,20 @@ class DoctrinePerformanceTracker:
     # ----------------------------------------------------------- self-improve
     def self_improve(self) -> list[ParamChange]:
         """Rewrite ``_DOCTRINE_PARAMS`` in ``engines.kriegspiel.combat`` based
-        on observed performance.
+        on observed performance — gated by multiple-testing correction.
 
         For each (doctrine, terrain) cell with enough samples:
-          - if the doctrine is underperforming, nudge its parameters toward
-            the best-performing doctrine in that terrain;
+          - if the doctrine is underperforming, its difference from the
+            terrain's strongest doctrine is tested with a two-proportion
+            z-test;
+          - all candidate adjustments in this step are passed through the
+            Benjamini-Hochberg procedure (FDR ``_SELF_IMPROVE_FDR``), so only
+            differences that survive correction move parameters;
           - if it is overperforming, log the strength but do not change it.
 
         Every change is clamped to [_PARAM_FLOOR, _PARAM_CEIL] and recorded
-        as a ``ParamChange`` in the research log. Returns the changes made.
+        as a ``ParamChange`` (with its p-value and BH gate) in the research
+        log. Returns the changes made.
         """
         with self._lock:
             # Import here so the combat module is loaded by the time we touch it.
@@ -346,26 +369,59 @@ class DoctrinePerformanceTracker:
                 if cur is None or cell.win_rate > cur[1]:
                     strongest_per_terrain[terrain] = (doctrine, cell.win_rate, cell)
 
+            # Phase 1 — candidate hypotheses: underperforming cells with a
+            # stronger doctrine to learn from in the same terrain.
+            candidates: list[dict[str, Any]] = []
             for (doctrine, terrain), cell in self._cells.items():
                 if cell.total < _MIN_SAMPLES:
                     continue
                 wr = cell.win_rate
                 if wr >= _UNDERPERFORM:
-                    # Not underperforming — no change. Log strength if overperforming
-                    # is handled by _maybe_distill, not here.
+                    # Not underperforming — no change. Log strength if
+                    # overperforming is handled by _maybe_distill, not here.
                     continue
                 best = strongest_per_terrain.get(terrain)
                 if not best or best[0] == doctrine:
                     # No better doctrine to learn from in this terrain.
                     continue
-                best_doctrine = best[0]
+                best_doctrine, best_wr, best_cell = best
+                _z, p_value = two_proportion_z(
+                    wr, cell.total, best_wr, best_cell.total,
+                )
+                candidates.append({
+                    "doctrine": doctrine, "terrain": terrain, "cell": cell,
+                    "win_rate": wr, "best_doctrine": best_doctrine,
+                    "best_wr": best_wr, "best_cell": best_cell,
+                    "p_value": p_value,
+                })
+
+            # Phase 2 — Benjamini-Hochberg gate across ALL hypotheses in this
+            # step. Surviving hypotheses are the only ones that move params.
+            rejected: list[bool] = []
+            bh_threshold = 0.0
+            if candidates:
+                rejected, bh_threshold = benjamini_hochberg(
+                    [c["p_value"] for c in candidates],
+                    fdr=_SELF_IMPROVE_FDR,
+                )
+
+            # Phase 3 — apply changes only where the difference survives BH.
+            for candidate, survive in zip(candidates, rejected):
+                if not survive:
+                    continue
+                doctrine = candidate["doctrine"]
+                terrain = candidate["terrain"]
+                cell = candidate["cell"]
+                wr = candidate["win_rate"]
+                best_doctrine = candidate["best_doctrine"]
+                p_value = candidate["p_value"]
                 best_params = _DOCTRINE_PARAMS.get(
                     Doctrine(best_doctrine), _DOCTRINE_PARAMS[Doctrine.ATTRITION]
                 )
                 cur_params = _DOCTRINE_PARAMS.get(
                     Doctrine(doctrine), _DOCTRINE_PARAMS[Doctrine.ATTRITION]
                 )
-                for pfield in ("aggression", "risk", "supply_focus", "morale_drain"):
+                for pfield in ("aggression", "risk", "supply_focus", "morale_drain", "breakthrough"):
                     before = cur_params[pfield]
                     target = best_params[pfield]
                     # Move 5% of the way toward the target.
@@ -378,9 +434,13 @@ class DoctrinePerformanceTracker:
                         ts=now, doctrine=doctrine, terrain=terrain,
                         field=pfield, before=round(before, 4),
                         after=round(after, 4), win_rate=round(wr, 4),
-                        rationale=(f"{doctrine} wins {wr:.0%} in {terrain}; "
+                        rationale=(f"{doctrine} wins {wr:.0%} in {terrain} "
+                                   f"vs {best_doctrine} at {candidate['best_wr']:.0%}; "
                                    f"nudging {pfield} toward {best_doctrine} "
                                    f"({target:.2f}) by {delta:+.3f}"),
+                        p_value=round(p_value, 6),
+                        fdr_gate=round(bh_threshold, 6),
+                        survived_bh=True,
                     )
                     changes.append(ch)
                     self._param_changes.append(ch)
@@ -390,21 +450,36 @@ class DoctrinePerformanceTracker:
                         **asdict(ch),
                     })
 
-            if changes:
-                self._last_self_improve_ts = now
+            if candidates:
+                # Record the gate even when nothing survived — the audit trail
+                # must show that hypotheses were tested and rejected.
+                n_survived = sum(1 for r in rejected if r)
+                gate_record = {
+                    "ts": now,
+                    "candidates_tested": len(candidates),
+                    "survived_bh": n_survived,
+                    "bh_threshold": round(bh_threshold, 6),
+                    "batches": self._batches_observed,
+                    "scenarios": self._scenarios_observed,
+                    "fdr": _SELF_IMPROVE_FDR,
+                }
+                self._bh_gates.append(gate_record)
+                if len(self._bh_gates) > 200:
+                    self._bh_gates = self._bh_gates[-200:]
                 self._log.append({
                     "type": "milestone",
                     "ts": now,
-                    "text": (f"Self-improvement step #{len(self._param_changes)} "
-                             f"applied {len(changes)} parameter adjustment(s). "
-                             f"Batches observed: {self._batches_observed}; "
-                             f"scenarios: {self._scenarios_observed}."),
-                    "evidence": {
-                        "batches": self._batches_observed,
-                        "scenarios": self._scenarios_observed,
-                        "changes": len(changes),
-                    },
+                    "text": (f"Self-improvement gate: {len(candidates)} "
+                             f"candidate adjustment(s) tested, {n_survived} "
+                             f"survived Benjamini-Hochberg (FDR="
+                             f"{_SELF_IMPROVE_FDR:.0%}, threshold="
+                             f"{bh_threshold:.4g}). Applied {len(changes)} "
+                             f"parameter adjustment(s)."),
+                    "evidence": gate_record,
                 })
+
+            if changes:
+                self._last_self_improve_ts = now
             self._save_state()
             return changes
 
@@ -455,6 +530,7 @@ class DoctrinePerformanceTracker:
                     "risk": params["risk"],
                     "supply_focus": params["supply_focus"],
                     "morale_drain": params["morale_drain"],
+                    "breakthrough": params.get("breakthrough", 0.0),
                     "adjustments": self._adjustments_per_doctrine.get(doctrine.value, 0),
                 }
             return {
@@ -479,6 +555,17 @@ class DoctrinePerformanceTracker:
                 ],
             }
 
+    def bh_gate_history(self, k: int = 20) -> dict[str, Any]:
+        """Multiple-testing gate audit trail for the research API."""
+        with self._lock:
+            return {
+                "fdr": _SELF_IMPROVE_FDR,
+                "gates_ran": len(self._bh_gates),
+                "hypotheses_tested": sum(g["candidates_tested"] for g in self._bh_gates),
+                "hypotheses_survived": sum(g["survived_bh"] for g in self._bh_gates),
+                "recent_gates": self._bh_gates[-k:],
+            }
+
     # ------------------------------------------------------------- persistence
     def _save_state(self) -> None:
         """Persist learned parameters + cell counts so a restart resumes
@@ -494,6 +581,7 @@ class DoctrinePerformanceTracker:
                 "last_self_improve_ts": self._last_self_improve_ts,
                 "last_finding_ts": self._last_finding_ts,
                 "adjustments_per_doctrine": dict(self._adjustments_per_doctrine),
+                "bh_gates": self._bh_gates,
                 "current_params": {
                     d.value: dict(p) for d, p in _DOCTRINE_PARAMS.items()
                 },
@@ -505,10 +593,10 @@ class DoctrinePerformanceTracker:
                     } for (d, t), c in self._cells.items()
                 },
             }
-            tmp = _STATE_PATH.with_suffix(".tmp")
+            tmp = self._state_path.with_suffix(".tmp")
             with open(tmp, "w", encoding="utf-8") as fh:
                 json.dump(payload, fh)
-            os.replace(tmp, _STATE_PATH)
+            os.replace(tmp, self._state_path)
         except OSError:
             pass
 
@@ -516,10 +604,10 @@ class DoctrinePerformanceTracker:
         """Restore learned state from disk. Also rehydrates
         ``_DOCTRINE_PARAMS`` in the combat module so self-improvements
         survive a restart."""
-        if not _STATE_PATH.exists():
+        if not self._state_path.exists():
             return
         try:
-            with open(_STATE_PATH, "r", encoding="utf-8") as fh:
+            with open(self._state_path, "r", encoding="utf-8") as fh:
                 payload = json.load(fh)
         except (OSError, json.JSONDecodeError):
             return
@@ -531,6 +619,7 @@ class DoctrinePerformanceTracker:
         self._adjustments_per_doctrine = defaultdict(
             int, payload.get("adjustments_per_doctrine", {})
         )
+        self._bh_gates = payload.get("bh_gates", [])
         # Rehydrate cells.
         for key, vals in payload.get("cells", {}).items():
             d, t = key.split("|", 1)

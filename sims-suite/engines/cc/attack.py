@@ -60,8 +60,19 @@ class CCReport:
     entry_points: list[str] = field(default_factory=list)
 
 
-def simulate_attack(graph: InfraGraph, seed: Optional[int] = None) -> dict:
+def simulate_attack(
+    graph: InfraGraph,
+    seed: Optional[int] = None,
+    defense_quality: float = 1.0,
+) -> dict:
     """Simulate one attack path through the infrastructure.
+
+    ``defense_quality`` (0.0-1.0, default 1.0 = no population penalty) is the
+    affected population's defensive hygiene. A low-fluency / low-trust
+    population hardens and patches slower, so the same infrastructure is
+    easier to exploit — this is the *engine-internal* population effect (the
+    attack simulation itself becomes easier), distinct from the post-hoc
+    report modifier.
 
     This is the per-branch function. ``generate_attack_scenarios()`` calls it
     N times with different seeds.
@@ -69,7 +80,7 @@ def simulate_attack(graph: InfraGraph, seed: Optional[int] = None) -> dict:
     rng = random.Random(seed or 42)
     crown_jewels = set(graph.crown_jewels())
 
-    # Attacker starts at a random external node
+    # External nodes
     external_nodes = [n for n in graph.nodes.values() if n.is_external]
     if not external_nodes:
         external_nodes = list(graph.nodes.values())
@@ -80,12 +91,15 @@ def simulate_attack(graph: InfraGraph, seed: Optional[int] = None) -> dict:
     max_ticks = 15
     key_vuln = ""
 
+    # A population with poor defense quality (low digital fluency) lowers the
+    # effective resistance of every node — attacks succeed more easily.
+    defense_quality = max(0.3, min(1.0, defense_quality))
+
     for tick in range(max_ticks):
         neighbors = graph.neighbors(current)
         if not neighbors:
             break
 
-        # Try to move to each neighbor — success depends on trust + vuln
         moved = False
         rng.shuffle(neighbors)
         for neighbor_name, trust in neighbors:
@@ -95,8 +109,10 @@ def simulate_attack(graph: InfraGraph, seed: Optional[int] = None) -> dict:
             if not node:
                 continue
 
-            # Exploitation success = function of trust, attack surface, and luck
-            exploit_chance = (trust / 100) * (node.attack_surface / 100) * rng.uniform(0.5, 1.5)
+            # Exploitation success = trust * attack_surface * defense quality * luck.
+            # Lower defense quality raises the exploit chance.
+            exploit_chance = ((trust / 100) * (node.attack_surface / 100)
+                              * (1.0 / defense_quality) * rng.uniform(0.5, 1.5))
             exploit_chance = min(exploit_chance, 0.95)
 
             if rng.random() < exploit_chance:
@@ -126,7 +142,8 @@ def simulate_attack(graph: InfraGraph, seed: Optional[int] = None) -> dict:
         "score": float(score),
         "outcome": "breach" if crown_reached else "contained",
         "key_vulnerability": key_vuln,
-        "duration_ticks": tick + 1 if "tick" in dir() else 0,
+        "duration_ticks": tick + 1,
+        "defense_quality": round(defense_quality, 3),
     }
 
 
@@ -134,14 +151,19 @@ def generate_attack_scenarios(
     graph: Optional[InfraGraph] = None,
     n_scenarios: int = 5000,
     seed: Optional[int] = None,
+    defense_quality: float = 1.0,
 ) -> CCReport:
-    """Generate N branched attack scenarios and aggregate the results."""
+    """Generate N branched attack scenarios and aggregate the results.
+
+    ``defense_quality`` (0.0-1.0, default 1.0) scales how easily the attack
+    succeeds — derived from the affected population's digital fluency.
+    """
     t0 = time.perf_counter()
     if graph is None:
         graph = create_sample_infra()
 
     raw_branches = monte_carlo_branch(
-        lambda s: simulate_attack(graph, s),
+        lambda s: simulate_attack(graph, s, defense_quality=defense_quality),
         n_scenarios,
         seed=seed,
     )

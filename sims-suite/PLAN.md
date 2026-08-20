@@ -185,3 +185,208 @@ KRIEGSPIEL_LLM_AUDIT_DIR    = engines/kriegspiel/llm/audit
 - `api/gateway.py /api/kriegspiel/run` — unchanged. New endpoints added in a
   separate block. Existing background loop untouched.
 - `requirements.txt` — no additions.
+
+## Persona Population Layer (Phase 6 — MatrAIx-inspired refinement)
+
+**Reference**: MatrAIx (arXiv 2608.04205) models human variation through a
+1,290-dimension categorical schema and samples synthetic personas from a
+*dependency DAG*: `p(x_i | x_Pa(i)) ∝ prior × adjustment × compatibility-mask`,
+forward-sampled parent-first. Its validation protocol (controlled adherence
+studies, Benjamini-Hochberg multiple-testing correction, cohort-vs-aggregate
+subgroup analysis) is the discipline the whole stack now shares.
+
+We adopt the *methodology*, not the 8.3B-scale infrastructure. A compact,
+dependency-free adaptation now lives in the suite:
+
+### New modules
+
+```
+sims_core/
+  stats.py                    # stdlib-only stats: two_proportion_z, BH correction
+  persona/
+    schema.py                 # 25 correlated dimensions across 5 groups + priors,
+                              #   adjustments, and compatibility masks
+    sampler.py                # PersonaSampler: parent-first topological forward
+                              #   sampling (deterministic per seed)
+    models.py                 # Persona (values + NL descriptions -> readable profile),
+                              #   PersonaCohortQuery (population filters)
+    adherence.py              # run_controlled_study (MatrAIx 400-trial design),
+                              #   re-exports the shared stats primitives
+    bridges/alpha_zero.py     # persona -> engine.Character bridge + persona-cohort
+                              #   life simulation runner (engine-optional)
+engines/
+  kriegspiel/
+    adherence.py              # doctrine behavioral-signature probes (controlled
+                              #   study vs a fixed reference force) + persona-risk
+                              #   -> doctrine adherence bridge
+    learning.py               # self_improve() now gates every parameter rewrite
+                              #   behind a two-proportion z-test + Benjamini-Hochberg
+                              #   FDR correction (audit trail via bh_gate_history)
+  platoon/
+    extraction.py             # Treiver-style objective extraction: offline regex
+                              #   stage + optional provider-agnostic LLM judge with
+                              #   validation + fallback
+bridges/population_context.py # affected-population enrichment for Remnants/CC/
+                              #   Awareness (readability + vulnerability profiles)
+```
+
+### Adherence probe — the risk/decisiveness finding (resolved)
+
+The original probe used `decisive_rate` as the risk proxy and reported a
+negative Spearman (-0.46). Investigation showed this was a **probe-design
+artifact, not a doctrine flaw**: in this combat model (symmetric forces, 48-tick
+grind) the `decisive` flag almost never fires, so `decisive_rate` was a
+near-constant column and the correlation measured noise. The risk proxy is now
+**casualty asymmetry** (how much the winning side pays to win) — a meaningful,
+varying signal. With it, adherence reads 0.78–0.88 across all four attributes.
+
+### Doctrine breakthrough mechanic + balance fix (shipped)
+
+The adherence probe surfaced a **genuine doctrine balance bug**: Shock and
+Maneuver won ~0% of engagements because high `aggression`/`risk` combined with
+very low `supply_focus` / very high `morale_drain` made them self-destruct over
+the 48-tick grind before aggression could pay off. Two changes fixed this:
+
+1. **New `breakthrough` doctrine parameter** — a high-breakthrough attacker
+   that holds a *local* unit superiority (more fighting units than the
+   defender) can convert it into a decisive penetration and end the battle
+   early, rather than grinding to stalemate. This makes Shock/Maneuver able to
+   *win*, and makes the `decisive` flag meaningful. `BattleOutcome` now carries
+   `breakthrough_by`.
+2. **Evidence-based rebalance** — doctrine `supply_focus`/`morale_drain` are no
+   longer so severe they guarantee defeat. Shock (still the most aggressive /
+   risky / breakthrough) is now viable (win rate vs attrition ~0.39, up from
+   ~0.0). The self-improve layer and the dashboard both understand the new
+   `breakthrough` field.
+
+### Combat engagement-rate rework — the root-cause fix (shipped 2026-08-19)
+
+The rebalance helped but the deeper issue remained: **battlefields span
+real-world theaters (thousands of km) but engagement ranges are tactical (km).**
+`deploy_force` spread units across the whole theater, so opposing units started
+~2000 km apart and never engaged — combat barely happened and per-tick
+supply/morale attrition dominated every outcome (the 'supply_focus meta').
+
+Three coordinated changes fixed the root cause:
+
+1. **Tactical deployment** — `deploy_force` now places each side into a small
+   engagement zone (~6 km) near the theater center, red west / blue east of the
+   center line, so units actually make contact.
+2. **Movement phase** — units advance toward the enemy each tick (terrain-speed
+   modified), closing into engagement range over the battle.
+3. **Higher engagement frequency** — a unit now engages multiple defenders in
+   range per tick (capped at 3 for performance) instead of a single `break`.
+
+Result: the combat model is now **aggression-coherent** — `aggression` predicts
+win rate with Spearman ~1.0 (Shock 0.87 > Maneuver 0.63 > Attrition 0.36 >
+others), decisive battles are common (~64% in a live run), and the supply_focus
+meta is eliminated. The adherence probe's proxies were updated to match the new,
+correct semantics (aggression → win_rate, risk → winner casualties inverted).
+Adherence now reads 0.93.
+
+### Deep population-vulnerability integration — engine-internal, all three stations
+
+Beyond the post-hoc report modifiers, the affected population's profile is now
+baked into **all three stress-station engines** (not just CC):
+
+| Station | Engine-internal factor | Derived from | Effect (engine, not report) |
+|---------|------------------------|--------------|------------------------------|
+| CC | `digital_defense_quality` | digital fluency / trust / elderly | low-fluency pop → attack exploit chance rises → ~3.6× breach rate |
+| Remnants | `population_resilience` | trust / income / age / urbanicity | fragile pop → survival score erodes → fewer survivors |
+| Awareness | `population_reach` | digital fluency / urbanicity / trust | hard-to-reach pop → response actions land less → lower success |
+
+Each factor is a 0.3–1.0 multiplier passed into the per-branch simulation
+function (`simulate_attack`, `simulate_survival`, `simulate_response`), so the
+vulnerability is a first-class input to the engine itself — not a post-hoc
+gateway tweak. The gateway derives the factor from the sampled persona cohort
+and records it under `population_modifiers`. Default 1.0 preserves existing
+behavior (no regression). Verified live: vulnerable Remnants survival 0.0 (vs
+0.55 baseline), hard-to-reach Awareness success 0.16 (vs ~0.4), low-fluency CC
+breach 0.43.
+
+### Population context (Remnants / CC / Awareness)
+
+Remnants, CC, and Awareness accept an optional `persona_query` + `persona_n` on
+their `/run` endpoints. When provided, a persona cohort is sampled and distilled
+into an `affected_population` profile: distributions per schema group plus a
+**readability index** and a **vulnerability index**.
+
+**Population influences outcomes in the engine itself.** Each station derives a
+0.3–1.0 factor from the cohort (see the table above) and passes it into the
+per-branch simulation, so a vulnerable population genuinely changes the engine's
+output — not just a report footnote. Each report carries the factor under
+`population_modifiers`. (The earlier post-hoc `impact_modifiers` /
+`apply_*_modifier` approach was fully superseded by this deeper integration and
+removed.)
+
+### Adherence probe — risk/aggression correlation transparency
+
+The combat rework made `risk` and `aggression` correlated in effect (both scale
+offensive success — Spearman ~0.96 on declared ordering, both ~0.93+ vs win
+rate). There is no clean behavioral signal that separates them in this model
+because they are designed to work together. The probe now reports
+`parameter_correlations` (e.g. `aggression~risk: 0.96`) and a `note` so the
+analyst knows the two adherence signals overlap and should be interpreted
+together rather than as independent levers. Adherence reads 0.93–0.98.
+
+### Research dashboard — Validation & rigor panel
+
+The Kriegspiel research overlay (main index.html) now has a fourth panel that
+polls `/api/research/bh-gate` and `/api/research/adherence` and renders the
+multiple-testing gate (hypotheses tested vs survived) plus the per-attribute
+adherence correlations — so the *validity* of the engine's learning is visible,
+not just the outcomes.
+
+### What each station gains
+
+| Station | Refinement |
+|---------|------------|
+| Platoon | `extract_objective()` turns a client brief into a structured `Objective` |
+| Alpha Zero | every universe is a *different person* (sampled cohort), not one archetype branched N times |
+| Kriegspiel | parameter rewrites survive statistical significance; doctrine adherence measured, not assumed |
+| Remnants / CC / Awareness | can sample a persona cohort and use it as their affected-population context |
+
+### New endpoints
+
+- `GET  /api/persona/schema` — schema overview (categories, dimensions, values)
+- `POST /api/persona/sample` — sample one persona from the DAG (optional query)
+- `POST /api/persona/cohort` — reproducible filtered cohort (N personas)
+- `POST /api/persona/alpha-zero/run` — persona-cohort life simulation
+- `GET  /api/research/adherence` — doctrine adherence probe (controlled study)
+- `GET  /api/research/bh-gate` — multiple-testing audit trail for self-improvement
+- `POST /api/platoon/extract` — Treiver-style objective extraction (LLM opt-in)
+
+nginx: `/api/persona/` added to both sites-available and sites-enabled.
+
+### Design rules (do NOT violate)
+
+1. The persona core is **dependency-free** — stdlib only, air-gapped safe.
+2. The Alpha Zero bridge is **engine-optional** — it returns `None` and degrades
+   gracefully when the engine isn't importable; the rest of the stack never
+   depends on it.
+3. The LLM judge stage is **opt-in** and always falls back to the deterministic
+   regex result on any provider/validation failure.
+4. Every LLM/untrusted output carries a `provenance` record (`trusted=false` in
+   CMB) — same discipline as the Kriegspiel LLM layer.
+5. The compatibility mask is the *only* hard constraint; adjustments merely
+   re-weight, so rare-but-valid profiles survive (MatrAIx Eq. 4).
+
+### Test coverage (Phase 6 — 2026-08-19)
+
+```
+129 passed, 2 skipped — Phase 6 modules at 87% coverage
+
+engines/kriegspiel/adherence.py     98%   (2 lines: unreachable defaults)
+engines/kriegspiel/geography.py    100%
+engines/kriegspiel/learning.py      92%   (27 lines: audit-trail detail formatting)
+engines/platoon/extraction.py       87%   (20 lines: LLM stage-2 path)
+sims_core/persona/adherence.py      98%   (1 line: unknown-attribute guard)
+sims_core/persona/models.py         95%   (3 lines: edge-case defaults)
+sims_core/persona/sampler.py        97%   (2 lines: parse_query edge cases)
+sims_core/persona/schema.py         98%   (2 lines: edge-case validators)
+```
+
+Bugs fixed this session:
+- `_HORIZON_RE` in extraction.py: `m.group(3)` was checking the "N-year" pattern
+  instead of `m.group(4)` for "by YYYY" — year-based horizons returned `None`
+  and crashed. Fixed to check group(4) for year, group(3) for "N-year" duration.

@@ -29,3 +29,14 @@ exposes `/api/simulations/today` which `index.html` polls via a one-line shim.
 
 Kriegspiel, CC, Remnants, and Intellectual Awareness have no engine yet —
 they ship in Phases 1–3.
+
+## Persona layer (Phase 6)
+
+The MatrAIx-inspired population layer (`sims_core/persona/`) gives every
+station a correlated, dependency-aware persona model: a 25-dimension schema
+with a deterministic DAG sampler, cohort queries, controlled-adherence studies,
+and Benjamin-Hochberg multiple-testing correction. Alpha Zero runs persona
+cohorts (`/api/persona/alpha-zero/run`), Kriegspiel gates its self-improvement
+behind statistical significance (`/api/research/bh-gate`) and measures doctrine
+adherence (`/api/research/adherence`), and Platoon extracts objectives from
+free text (`/api/platoon/extract`). See PLAN.md for the full design.

@@ -72,21 +72,37 @@ def deploy_force(
     side: str = "red",
     seed: Optional[int] = None,
 ) -> None:
-    """Spread a force's units across one edge of the battlefield."""
+    """Deploy a force's units into a coherent tactical engagement zone.
+
+    Battlefields span real-world theaters (thousands of km), but combat
+    engagement ranges are tactical (km). Spreading units across the full
+    theater put them thousands of km apart — they never engaged, so per-tick
+    supply/morale attrition dominated every outcome (the 'supply_focus meta').
+
+    Fix: deploy each side into a small engagement zone near the battlefield
+    center, with a narrow gap between the two forces. Units start within a
+    few km of each other so the doctrine's aggression *actually engages*.
+    The zone is ~6 km wide, centered on the theater, with red on the west of
+    the center line and blue on the east.
+    """
     import random
     rng = random.Random(seed)
     w, s, e, n = battlefield.bounds
-    for i, unit in enumerate(force.units):
+    center_lat = (s + n) / 2.0
+    center_lng = (w + e) / 2.0
+    # A small tactical zone (~6 km ≈ 0.05 lng/lat at these latitudes).
+    zone = 0.03
+    for unit in force.units:
+        # Offset west (red) or east (blue) of the center line by ~1-3 km.
+        lat_offset = rng.uniform(-zone, zone)
         if side == "red":
-            unit.position = (
-                rng.uniform(s + 0.05, n - 0.05),     # lat
-                rng.uniform(w + 0.02, w + (e - w) * 0.2),  # lng (west edge)
-            )
+            lng = center_lng - rng.uniform(0.01, 0.03)
         else:
-            unit.position = (
-                rng.uniform(s + 0.05, n - 0.05),
-                rng.uniform(w + (e - w) * 0.8, e - 0.02),  # east edge
-            )
+            lng = center_lng + rng.uniform(0.01, 0.03)
+        unit.position = (
+            center_lat + lat_offset,
+            lng,
+        )
 
 
 def unit_to_geojson(unit: Unit, side: str) -> dict:

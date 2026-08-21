@@ -10,6 +10,7 @@ from panteon.core.auth import get_current_user
 from panteon.yono.models import LLMProvider
 from panteon.yono.secrets import decrypt_secret
 from panteon.statham.models import SmmLink, SmmOrder
+from sqlalchemy import case, func
 
 router = APIRouter(prefix="/smm", tags=["SMM Panel"], dependencies=[Depends(get_current_user)])
 
@@ -223,16 +224,27 @@ async def create_link(data: SmmLinkCreate, db: AsyncSession = Depends(get_db)):
 async def list_links(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(SmmLink).order_by(SmmLink.created_at.desc()))
     links = result.scalars().all()
+    if not links:
+        return []
+    order_stats = await db.execute(
+        select(
+            SmmOrder.link_id,
+            func.count(SmmOrder.id),
+            func.coalesce(func.sum(SmmOrder.cost), 0.0),
+            func.sum(case((SmmOrder.confirmed.is_(True), 1), else_=0)),
+        ).group_by(SmmOrder.link_id)
+    )
+    stats_map = {}
+    for link_id, order_count, total_cost, confirmed_count in order_stats.all():
+        stats_map[link_id] = (order_count, float(total_cost), confirmed_count or 0)
     out = []
     for l in links:
-        order_count = (await db.execute(select(SmmOrder).where(SmmOrder.link_id == l.id))).scalars().all()
-        total_cost = sum(o.cost for o in order_count)
-        confirmed_count = sum(1 for o in order_count if o.confirmed)
+        order_count, total_cost, confirmed_count = stats_map.get(l.id, (0, 0.0, 0))
         out.append({
             "id": l.id, "platform": l.platform, "url": l.url, "label": l.label,
             "username": l.username, "status": l.status, "notes": l.notes,
             "created_at": str(l.created_at),
-            "order_count": len(order_count), "total_cost": round(total_cost, 4),
+            "order_count": order_count, "total_cost": round(total_cost, 4),
             "confirmed_count": confirmed_count,
         })
     return out

@@ -3704,12 +3704,20 @@ async function api(path, opts = {}) {
         if (data.session) authToken = data.session.access_token;
     }
     if (authToken) headers['Authorization'] = 'Bearer ' + authToken;
+    const controller = new AbortController();
+    const timeoutMs = opts.timeout || 15000;
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-        const res = await fetch(url, { headers, ...opts });
+        const res = await fetch(url, { headers, ...opts, signal: controller.signal });
         if (res.status === 401) { doLogout(); throw new Error('Session expired'); }
         if (!res.ok) { const err = await res.json().catch(() => ({ detail: res.statusText })); throw new Error(err.detail || 'HTTP ' + res.status); }
         return await res.json();
-    } catch (e) { throw e; }
+    } catch (e) {
+        if (e.name === 'AbortError') throw new Error('Request timed out after ' + (timeoutMs / 1000) + 's');
+        throw e;
+    } finally {
+        clearTimeout(timer);
+    }
 }
 
 function toast(msg, type = 'success') {
@@ -3744,7 +3752,8 @@ function escAttr(s) { return s.replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
 
 async function checkHealth() {
     try {
-        await api('/spinal-craker/object-types');
+        const res = await fetch('/health', { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
         apiOnline = true;
         document.getElementById('apiStatusDot').classList.remove('offline');
         document.getElementById('apiStatusText').textContent = 'API Connected';
@@ -3849,19 +3858,13 @@ async function loadOverview() {
         document.getElementById('countDeploys').textContent = d.total_deployments;
     }).catch(() => {});
     api('/statham/pipelines').then(d => { document.getElementById('countPipelines').textContent = d.length; }).catch(() => { document.getElementById('countPipelines').textContent = '--'; });
-    api('/tdac/resonance').then(d => {
-        document.getElementById('overviewResonance').textContent = d.average_resonance != null ? d.average_resonance : '--';
-        document.getElementById('overviewResonanceSub').textContent = d.patron_count != null ? d.patron_count + ' patrons, ' + d.period_days + '-day window' : '';
-        document.getElementById('countPatrons').textContent = d.patron_count || '--';
-    }).catch(() => { document.getElementById('overviewResonance').textContent = '--'; });
-    api('/tdac/metrics').then(d => { document.getElementById('countMetrics').textContent = d.length; }).catch(() => {});
-    api('/tdac/dashboard').then(d => {
-        const feed = document.getElementById('overviewFeed');
-        if (d.recent_activity && d.recent_activity.length) {
-            feed.innerHTML = d.recent_activity.slice(0, 15).map(a => '<div class="feed-item"><div class="feed-dot"></div><div class="feed-content"><div class="feed-text"><span class="tag">' + a.type + '</span> <span class="mono">' + (typeof a.value === 'object' ? JSON.stringify(a.value).slice(0, 80) : a.value) + '</span></div><div class="feed-time">' + fmtTimeAgo(a.at) + '</div></div></div>').join('');
-        } else { feed.innerHTML = '<div class="empty-state">No recent activity</div>'; }
-    }).catch(() => { document.getElementById('overviewFeed').innerHTML = '<div class="empty-state">Unable to load activity</div>'; });
-    loadSmmLinks().then(() => renderWorkflowOrders()).catch(() => renderWorkflowOrders());
+    document.getElementById('overviewResonance').textContent = '--';
+    document.getElementById('overviewResonanceSub').textContent = 'TDAC paused';
+    document.getElementById('countPatrons').textContent = '--';
+    document.getElementById('countMetrics').textContent = '--';
+    document.getElementById('overviewFeed').innerHTML = '<div class="empty-state">Activity feed paused (TDAC not in use)</div>';
+    renderWorkflowOrders();
+    loadSmmLinks().then(() => renderWorkflowOrders()).catch(() => {});
 }
 
 async function loadObjectTypes() {
@@ -4196,7 +4199,10 @@ async function renderWorkflowOrders() {
                 + '<div class="card-bottom"><span class="card-owner">' + escHtml(o.service_name || '--') + '</span><span class="tag ' + status.cls + '">' + status.label + '</span></div>'
                 + '</div>';
         }).join('');
-    } catch (e) { /* keep existing content on transient errors */ }
+    } catch (e) {
+        el.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--text-muted)">Could not load orders (' + escHtml(e.message) + ')</div><div style="padding:0 12px 12px"><button class="btn btn-sm" onclick="renderWorkflowOrders()">Retry</button></div>';
+        badge.textContent = '0';
+    }
 }
 
 function escHtml(s) { return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }

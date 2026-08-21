@@ -201,11 +201,22 @@ class StathamService:
         online = sum(1 for a in agents if a.status == "online")
         deployments = await self.list_deployments(limit=100)
         active_deploys = sum(1 for d in deployments if d.status == "running")
+
+        service_ids = [_uid(s.id) for s in services]
         healthy_services = 0
-        for svc in services:
-            checks = await self.get_service_health(svc.id, limit=1)
-            if checks and checks[0].status == "healthy":
-                healthy_services += 1
+        if service_ids:
+            latest = await self.db.execute(
+                select(HealthCheck)
+                .where(HealthCheck.service_id.in_(service_ids))
+                .order_by(HealthCheck.checked_at.desc())
+            )
+            seen: set = set()
+            for hc in latest.scalars().all():
+                if hc.service_id in seen:
+                    continue
+                seen.add(hc.service_id)
+                if hc.status == "healthy":
+                    healthy_services += 1
 
         return {
             "environments": len(envs),

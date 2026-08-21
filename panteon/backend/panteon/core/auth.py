@@ -1,11 +1,63 @@
+from __future__ import annotations
+
+import hashlib
 import httpx
+import time
 from typing import Optional
+from collections import OrderedDict
 from jose import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from panteon.core.config import settings
 
 security = HTTPBearer(auto_error=False)
+
+_VERIFY_CACHE_TTL = 300
+_VERIFY_CACHE_MAX = 256
+
+
+class _VerifyCache:
+    """In-process LRU cache for Supabase token verification.
+
+    Every authenticated API call used to trigger a live HTTPS round-trip to
+    Supabase /auth/v1/user. With ~13 parallel calls per admin Overview refresh
+    that made the dashboard look like it was constantly reconnecting whenever
+    Supabase was slow or flaky. Verified tokens (or verified-negative results)
+    are cached for a short TTL so only the first request per token hits the
+    network.
+    """
+
+    def __init__(self, ttl: int = _VERIFY_CACHE_TTL, max_size: int = _VERIFY_CACHE_MAX):
+        self.ttl = ttl
+        self.max_size = max_size
+        self._store: OrderedDict[str, tuple[float, Optional[SupabaseUser]]] = OrderedDict()
+
+    def get(self, token: str) -> tuple[bool, Optional[SupabaseUser]]:
+        key = self._key(token)
+        now = time.time()
+        item = self._store.get(key)
+        if item is None:
+            return False, None
+        (expires, user) = item
+        if now > expires:
+            del self._store[key]
+            return False, None
+        self._store.move_to_end(key)
+        return True, user
+
+    def set(self, token: str, user: Optional[SupabaseUser]):
+        key = self._key(token)
+        self._store[key] = (time.time() + self.ttl, user)
+        self._store.move_to_end(key)
+        while len(self._store) > self.max_size:
+            self._store.popitem(last=False)
+
+    @staticmethod
+    def _key(token: str) -> str:
+        return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+_verify_cache = _VerifyCache()
 
 
 class SupabaseUser:
@@ -40,35 +92,46 @@ def resolve_role(email: str) -> str:
 
 
 async def verify_supabase_token(token: str) -> Optional[SupabaseUser]:
+    cached, user = _verify_cache.get(token)
+    if cached:
+        return user
     api_key = settings.supabase_service_role_key or settings.supabase_anon_key
     if not settings.supabase_url or not api_key:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Supabase not configured",
         )
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(
-            f"{settings.supabase_url}/auth/v1/user",
-            headers={
-                "apikey": api_key,
-                "Authorization": f"Bearer {token}",
-            },
-            timeout=10,
-        )
-        if resp.status_code != 200:
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{settings.supabase_url}/auth/v1/user",
+                headers={
+                    "apikey": api_key,
+                    "Authorization": f"Bearer {token}",
+                },
+                timeout=10,
+            )
+    except httpx.HTTPError:
+        _verify_cache.set(token, None)
+        return None
+    if resp.status_code != 200:
+        _verify_cache.set(token, None)
+        return None
+    data = resp.json()
+    email = data.get("email", "")
+    allowed_domains = [d.strip().lower() for d in (settings.allowed_email_domains or "").split(",") if d.strip()]
+    if allowed_domains and email:
+        domain = email.split("@", 1)[-1].lower() if "@" in email else ""
+        if not any(domain == d or domain.endswith("." + d) for d in allowed_domains):
+            _verify_cache.set(token, None)
             return None
-        data = resp.json()
-        email = data.get("email", "")
-        allowed_domains = [d.strip().lower() for d in (settings.allowed_email_domains or "").split(",") if d.strip()]
-        if allowed_domains and email:
-            domain = email.split("@", 1)[-1].lower() if "@" in email else ""
-            if not any(domain == d or domain.endswith("." + d) for d in allowed_domains):
-                return None
-        return SupabaseUser(
-            user_id=data["id"],
-            email=email,
-            role=resolve_role(email),
-        )
+    user = SupabaseUser(
+        user_id=data["id"],
+        email=email,
+        role=resolve_role(email),
+    )
+    _verify_cache.set(token, user)
+    return user
 
 
 async def get_current_user(

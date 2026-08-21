@@ -1986,10 +1986,8 @@
                         </div>
                         <div class="workflows-board">
                             <div class="workflow-column" style="border-top: 2px solid var(--accent-purple);">
-                                <div class="column-header"><div class="column-title-box"><span class="column-title" style="color: #a78bfa;">Order Fulfillment</span><span class="column-badge">12</span></div></div>
-                                <div class="workflow-card"><span class="card-name">Verifying stock availability</span><div class="card-meta"><span>ORD-10234</span><span>2m ago</span></div><div class="card-bottom"><span class="card-owner">Gingas</span><span class="tag tag-blue">Open</span></div></div>
-                                <div class="workflow-card"><span class="card-name">Processing picking list</span><div class="card-meta"><span>ORD-10235</span><span>5m ago</span></div><div class="card-bottom"><span class="card-owner">Sarah M.</span><span class="tag">In Queue</span></div></div>
-                                <div class="workflow-card"><span class="card-name">Packing verification</span><div class="card-meta"><span>ORD-10236</span><span>8m ago</span></div><div class="card-bottom"><span class="card-owner">Michael T.</span><span class="tag">Pending</span></div></div>
+                                <div class="column-header"><div class="column-title-box"><span class="column-title" style="color: #a78bfa;">Order Fulfillment</span><span class="column-badge" id="wfOrderCount">0</span></div></div>
+                                <div id="wfOrderCards"><div style="padding:12px;font-size:11px;color:var(--text-muted)">Loading...</div></div>
                                 <button class="column-add-btn">+ New Item</button>
                             </div>
                             <div class="workflow-column" style="border-top: 2px solid var(--blue);">
@@ -3639,7 +3637,7 @@ let refreshInterval = null;
 let authToken = null;
 let currentUser = null;
 const CMB_API_TOKEN = (window.CMB_API_TOKEN || '');
-const CMB_BASE_URL = '/panteon/cmb/';
+const CMB_BASE_URL = '/cmb/';
 
 const PAGES = {
     'overview': 'Overview',
@@ -3863,6 +3861,7 @@ async function loadOverview() {
             feed.innerHTML = d.recent_activity.slice(0, 15).map(a => '<div class="feed-item"><div class="feed-dot"></div><div class="feed-content"><div class="feed-text"><span class="tag">' + a.type + '</span> <span class="mono">' + (typeof a.value === 'object' ? JSON.stringify(a.value).slice(0, 80) : a.value) + '</span></div><div class="feed-time">' + fmtTimeAgo(a.at) + '</div></div></div>').join('');
         } else { feed.innerHTML = '<div class="empty-state">No recent activity</div>'; }
     }).catch(() => { document.getElementById('overviewFeed').innerHTML = '<div class="empty-state">Unable to load activity</div>'; });
+    loadSmmLinks().then(() => renderWorkflowOrders()).catch(() => renderWorkflowOrders());
 }
 
 async function loadObjectTypes() {
@@ -4146,6 +4145,7 @@ function switchSmmTab(tab) {
     document.querySelectorAll('.smm-tab').forEach(t => t.classList.remove('active'));
     document.getElementById('smmTab-' + tab).style.display = 'block';
     event.target.classList.add('active');
+    if (tab === 'tracking') loadSmmTrackingOrders();
 }
 
 function toggleCurrency() {
@@ -4166,6 +4166,40 @@ function updateSmmSpent() {
         el.textContent = '$' + totalCost.toFixed(2);
     }
 }
+
+const WF_STATUS_MAP = {
+    'Processing': { label: 'Processing', cls: 'tag-blue' },
+    'In Progress': { label: 'In Progress', cls: 'tag-blue' },
+    'Completed': { label: 'Completed', cls: 'tag-green' },
+    'Partial': { label: 'Partial', cls: 'tag-amber' },
+    'Canceled': { label: 'Canceled', cls: 'tag-red' },
+    'Refunded': { label: 'Refunded', cls: 'tag-red' },
+};
+
+async function renderWorkflowOrders() {
+    const el = document.getElementById('wfOrderCards');
+    const badge = document.getElementById('wfOrderCount');
+    if (!el) return;
+    try {
+        const orders = await api('/smm/orders');
+        if (!orders.length) { el.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--text-muted)">No orders yet</div>'; badge.textContent = '0'; return; }
+        badge.textContent = orders.length;
+        el.innerHTML = orders.slice(0, 8).map(o => {
+            const link = smmLinksCache.find(l => l.id === o.link_id);
+            const status = WF_STATUS_MAP[o.naizop_status] || { label: o.naizop_status || 'Unknown', cls: '' };
+            const linkUrl = link ? link.url : '#';
+            const linkLabel = link ? (link.label || link.username || link.platform) : '--';
+            const orderId = o.naizop_order_id || '--';
+            return '<div class="workflow-card" onclick="window.open(\'' + escAttr(linkUrl) + '\',\'_blank\')" title="Open link in new tab">'
+                + '<span class="card-name">' + escHtml(linkLabel) + '</span>'
+                + '<div class="card-meta"><span style="font-family:var(--font-mono);font-size:10px;color:var(--accent-purple)">#' + orderId + '</span><span>' + fmtTimeAgo(o.placed_at) + '</span></div>'
+                + '<div class="card-bottom"><span class="card-owner">' + escHtml(o.service_name || '--') + '</span><span class="tag ' + status.cls + '">' + status.label + '</span></div>'
+                + '</div>';
+        }).join('');
+    } catch (e) { /* keep existing content on transient errors */ }
+}
+
+function escHtml(s) { return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
 
 async function loadSmmBalance() {
     try {
@@ -4229,7 +4263,7 @@ function renderSmmLinksTable(links) {
             + '<td class="mono">' + l.confirmed_count + '/' + l.order_count + '</td>'
             + '<td class="mono">$' + (l.total_cost || '0') + '</td>'
             + '<td><span class="tag ' + (l.status === 'active' ? 'tag-green' : 'tag-red') + '">' + l.status + '</span></td>'
-            + '<td><a href="' + l.url + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent-cyan);font-size:11px">Open</a></td>'
+            + '<td style="display:flex;gap:6px;align-items:center"><a href="' + l.url + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent-cyan);font-size:11px">Open</a><button class="btn btn-sm" style="color:var(--red);font-size:10px;padding:2px 6px" onclick="event.stopPropagation();deleteSmmLink(\'' + l.id + '\',\'' + (l.label || l.url) + '\')">Delete</button></td>'
             + '</tr>';
     }).join('');
 }
@@ -4258,6 +4292,15 @@ async function registerSmmLink() {
     } catch (e) { toast(e.message, 'error'); }
 }
 
+async function deleteSmmLink(linkId, name) {
+    if (!confirm('Delete "' + name + '" and all its orders? This cannot be undone.')) return;
+    try {
+        const res = await api('/smm/links/' + linkId, { method: 'DELETE' });
+        toast('Deleted link and ' + (res.orders_removed || 0) + ' orders');
+        loadSmmLinks();
+    } catch (e) { toast(e.message, 'error'); }
+}
+
 async function showSmmLinkDetail(linkId) {
     const link = smmLinksCache.find(l => l.id === linkId);
     if (!link) return;
@@ -4274,7 +4317,7 @@ async function showSmmLinkDetail(linkId) {
             + '<td class="mono" style="font-size:10px">' + (o.naizop_order_id || '--') + '</td>'
             + '<td style="font-size:11px">' + (o.service_name || o.service_id) + '</td>'
             + '<td class="mono">' + (o.quantity || '--') + '</td>'
-            + '<td><span class="tag ' + (o.confirmed ? 'tag-green' : o.naizop_status === 'Completed' ? 'tag-green' : o.naizop_status === 'Canceled' ? 'tag-red' : '') + '">' + (o.confirmed ? 'Confirmed' : (o.naizop_status || 'Pending')) + '</span></td>'
+            + '<td><span class="tag ' + (o.confirmed ? 'tag-green' : o.naizop_status === 'Completed' ? 'tag-green' : o.naizop_status === 'Canceled' ? 'tag-red' : '') + '">' + (o.confirmed ? 'Confirmed' : (o.naizop_status || 'Processing')) + '</span></td>'
             + '<td style="font-size:11px;color:var(--text-dim)">' + fmtTimeAgo(o.placed_at) + '</td>'
             + '<td style="display:flex;gap:4px">'
             + '<button class="btn btn-sm" onclick="syncSmmOrder(\'' + o.id + '\',\'' + linkId + '\')">Sync</button>'
@@ -4420,6 +4463,7 @@ function renderRecentOrders() {
 async function loadSmmTrackingOrders() {
     const el = document.getElementById('smmRecentOrders');
     try {
+        await api('/smm/orders/sync-all', { method: 'POST' });
         const orders = await api('/smm/orders');
         if (!orders.length) { el.innerHTML = 'No orders yet'; return; }
         el.innerHTML = '<table><thead><tr><th>Order ID</th><th>Link</th><th>Service</th><th>Qty</th><th>Status</th><th>Confirmed</th><th>Placed</th><th></th></tr></thead><tbody>'
@@ -4430,7 +4474,7 @@ async function loadSmmTrackingOrders() {
                     + '<td style="font-size:11px">' + (link ? (link.label || link.platform) : o.link_id.slice(0,8) + '...') + '</td>'
                     + '<td style="font-size:11px">' + (o.service_name || o.service_id) + '</td>'
                     + '<td class="mono">' + (o.quantity || '--') + '</td>'
-                    + '<td><span class="tag ' + (o.confirmed ? 'tag-green' : o.naizop_status === 'Completed' ? 'tag-green' : o.naizop_status === 'Canceled' ? 'tag-red' : '') + '">' + (o.confirmed ? 'Confirmed' : (o.naizop_status || 'Pending')) + '</span></td>'
+                    + '<td><span class="tag ' + (o.confirmed ? 'tag-green' : o.naizop_status === 'Completed' ? 'tag-green' : o.naizop_status === 'Canceled' ? 'tag-red' : '') + '">' + (o.confirmed ? 'Confirmed' : (o.naizop_status || 'Processing')) + '</span></td>'
                     + '<td>' + (o.confirmed ? '<span class="tag tag-green">Yes</span>' : '<span class="tag">No</span>') + '</td>'
                     + '<td style="font-size:11px;color:var(--text-dim)">' + fmtTimeAgo(o.placed_at) + '</td>'
                     + '<td><button class="btn btn-sm" onclick="syncFromTracking(\'' + o.id + '\')">Sync</button></td>'
@@ -7521,7 +7565,7 @@ async function lookupDomain() {
 }
 
 async function cmbApi(path) {
-    const res = await fetch('/api' + path, {
+    const res = await fetch('/api/cmb' + path, {
         headers: { 'Authorization': 'Bearer ' + CMB_API_TOKEN, 'Content-Type': 'application/json' }
     });
     if (!res.ok) throw new Error('CMB API ' + res.status);

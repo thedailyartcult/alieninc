@@ -35,6 +35,15 @@ async def _naizop_call(action: str, api_key: str, extra: dict = None) -> dict:
         return resp.json()
 
 
+async def _lookup_service_info(api_key: str, service_id: int) -> dict:
+    resp = await _naizop_call("services", api_key)
+    services = resp if isinstance(resp, list) else resp.get("services", [])
+    for s in services:
+        if str(s.get("service")) == str(service_id):
+            return {"name": s.get("name", ""), "rate": float(s.get("rate", 0))}
+    return {"name": "", "rate": 0}
+
+
 class SMMOrderRequest(BaseModel):
     service: int
     link: str
@@ -259,12 +268,16 @@ async def create_tracked_order(data: SmmOrderCreate, db: AsyncSession = Depends(
         params["comments"] = "\n".join(data.comments)
     naizop_resp = await _naizop_call("add", api_key, params)
     naizop_order_id = naizop_resp.get("order")
+    svc_info = await _lookup_service_info(api_key, data.service)
+    qty = data.quantity or 0
     order = SmmOrder(
         link_id=data.link_id,
         naizop_order_id=naizop_order_id,
         service_id=data.service,
-        quantity=data.quantity,
-        naizop_status="Pending",
+        service_name=svc_info["name"],
+        quantity=qty,
+        cost=round(svc_info["rate"] * qty / 1000, 4) if svc_info["rate"] and qty else 0,
+        naizop_status="Processing",
     )
     db.add(order)
     await db.flush()
@@ -318,3 +331,48 @@ async def confirm_order(order_id: str, data: SmmConfirmRequest, db: AsyncSession
         order.notes = data.notes
     await db.flush()
     return {"id": order.id, "confirmed": True, "confirmed_by": order.confirmed_by, "confirmed_at": str(order.confirmed_at)}
+
+
+@router.post("/orders/sync-all")
+async def sync_all_orders(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(SmmOrder).where(SmmOrder.naizop_status.notin_(["Completed", "Canceled"]))
+    )
+    orders = result.scalars().all()
+    if not orders:
+        return {"synced": 0}
+    api_key = await _get_naizop_key(db)
+    order_ids = [str(o.naizop_order_id) for o in orders if o.naizop_order_id]
+    if not order_ids:
+        return {"synced": 0}
+    bulk_resp = await _naizop_call("status", api_key, {"orders": ",".join(order_ids)})
+    status_map = {}
+    if isinstance(bulk_resp, list):
+        for item in bulk_resp:
+            oid = str(item.get("order", ""))
+            status_map[oid] = item.get("charge", 0), item.get("status", "")
+    synced = 0
+    for o in orders:
+        oid = str(o.naizop_order_id)
+        if oid in status_map:
+            charge, status = status_map[oid]
+            o.naizop_status = status
+            if charge and charge > 0:
+                o.cost = float(charge)
+            synced += 1
+    await db.flush()
+    return {"synced": synced}
+
+
+@router.delete("/links/{link_id}")
+async def delete_link(link_id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(SmmLink).where(SmmLink.id == link_id))
+    link = result.scalar_one_or_none()
+    if not link:
+        raise HTTPException(status_code=404, detail="Link not found")
+    order_count = (await db.execute(select(SmmOrder).where(SmmOrder.link_id == link_id))).scalars().all()
+    for o in order_count:
+        await db.delete(o)
+    await db.delete(link)
+    await db.flush()
+    return {"deleted": True, "id": link_id, "orders_removed": len(order_count)}

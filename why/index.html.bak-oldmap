@@ -1,0 +1,2515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALIEN.INC - DECLASSIFIED</title>
+    
+    <!-- Google Fonts import for VT323 terminal look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
+    <!-- MapLibre GL -->
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+
+    <style>
+        /* Retro Terminal Styling Rules mapped to the declassified WH design */
+        body {
+            font-family: 'VT323', 'Courier New', Courier, monospace;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: geometricPrecision;
+            background-color: #000000;
+            color: #4ade80;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* Starfield background */
+        .aliens-star-canvas canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Scanline Overlay for retro-CRT aesthetic */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 999;
+            background-size: 100% 4px, 3px 100%;
+            pointer-events: none;
+        }
+
+        /* Green glow — used on titles, counters, nav logo */
+        .neon-cyan {
+            color: #4ade80;
+            text-shadow: 0 0 10px #22d3ee, 0 0 20px #22d3ee, 0 0 40px #22d3ee;
+        }
+
+        /* Scroll-reveal CSS */
+        body:not(.wp-admin) .section {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 1s ease, transform 1s ease;
+        }
+        body:not(.wp-admin) .section.visible { 
+            opacity: 1; 
+            transform: translateY(0); 
+        }
+
+        /* Typewriter text formatting rules */
+        .typewriter {
+            overflow: hidden;
+            white-space: normal;
+            letter-spacing: normal;
+        }
+        .typewriter-start::after {
+            content:'_';
+            animation: aliens-blink 1s step-end infinite;
+            color: #22d3ee;
+        }
+        .typewriter-done::after { 
+            border-right: none; 
+        }
+        @keyframes aliens-blink {
+            from, to { opacity: 0; }
+            50%       { opacity: 1; }
+        }
+
+        /* rest-of-page reveals sequentially post typing completion */
+        body:not(.wp-admin) #rest-of-page { 
+            opacity: 0; 
+            transition: opacity 1.2s ease; 
+        }
+
+        /* Top Announcement Banner */
+        .top-banner {
+            background-color: #ffffff;
+            color: #000000;
+            text-align: center;
+            font-size: 0.85rem;
+            letter-spacing: 0.25em;
+            padding: 8px 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(74, 222, 128, 0.3);
+        }
+
+        /* Glassmorphic Navbar Component */
+        .aliens-nav {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(34, 211, 238, 0.3);
+        }
+        .aliens-nav-inner {
+            max-width: 80rem;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            box-sizing: border-box;
+        }
+        .aliens-nav-logo { 
+            font-size: 1.875rem; 
+            font-weight: 700; 
+            letter-spacing: 0.15em; 
+        }
+        .aliens-nav-tagline { 
+            font-size: 0.75rem; 
+            text-transform: uppercase; 
+            letter-spacing: 4px; 
+        }
+
+        /* Hero Container */
+        .aliens-hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 6rem;
+            padding-bottom: 8rem;
+            position: relative;
+            box-sizing: border-box;
+        }
+        .aliens-hero-inner { 
+            max-width: 64rem; 
+            padding: 0 1.5rem; 
+            text-align: center; 
+        }
+        .aliens-hero-title {
+            font-size: clamp(3rem, 8vw, 7rem);
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            margin-bottom: 4rem;
+            text-transform: uppercase;
+        }
+        .aliens-typewriter-block {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+            font-size: clamp(1.35rem, 2.5vw, 2rem);
+            line-height: 1.8;
+            max-width: 56rem;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .aliens-hero-kicker { 
+            font-size: clamp(1.8rem, 3vw, 2.5rem); 
+            font-weight: 700; 
+            margin-top: 2rem; 
+        }
+
+        /* Moment log — static terminal readout, revealed after the rendezvous line */
+        .aliens-moment-log {
+            font-size: clamp(1rem, 1.6vw, 1.35rem);
+            line-height: 1.9;
+            border: 1px solid rgba(34, 211, 238, 0.4);
+            padding: 1rem 1.5rem;
+            color: #4ade80;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+        .aliens-moment-log.visible {
+            opacity: 1;
+        }
+        .aliens-moment-log-punchline {
+            display: inline-block;
+            margin-top: 0.75rem;
+            color: #22d3ee;
+        }
+
+        /* Flourish interactive map section block */
+        .aliens-map-section {
+            padding: 6rem 0;
+            background: rgba(0, 0, 0, 0.9);
+            border-top: 1px solid rgba(34, 211, 238, 0.3);
+            border-bottom: 1px solid rgba(34, 211, 238, 0.3);
+        }
+        .aliens-map-inner { 
+            max-width: 72rem; 
+            margin: 0 auto; 
+            padding: 0 1.5rem; 
+        }
+        .aliens-map-label-wrap { 
+            text-align: center; 
+            margin-bottom: 2rem; 
+        }
+        .aliens-clearance-badge {
+            display: inline-block;
+            padding: 0.75rem 2rem;
+            background: rgba(220, 38, 38, 0.2);
+            color: #ef4444;
+            font-size: 1rem;
+            letter-spacing: 0.15em;
+            border: 1px solid #ef4444;
+            font-weight: bold;
+        }
+        .aliens-map-title { 
+            font-family: 'VT323', 'Courier New', Courier, monospace; 
+            font-size: clamp(2rem, 5vw, 3.75rem); 
+            text-align: center; 
+            margin-bottom: 3rem; 
+        }
+        .aliens-scroll-hint { 
+            text-align: center; 
+            margin-top: 2rem; 
+            color: rgba(34, 211, 238, 0.7); 
+            font-size: 1.125rem; 
+            letter-spacing: 4px;
+        }
+
+        /* Split-Flap board mechanics */
+        .aliens-metrics-section { 
+            padding: 6rem 0; 
+        }
+        .aliens-metrics-grid {
+            max-width: 72rem;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 5rem;
+            flex-wrap: wrap;
+        }
+        .aliens-metric { 
+            text-align: center; 
+        }
+        .aliens-metric-label { 
+            font-size: 1.5rem; 
+            margin-top: 1.5rem; 
+            letter-spacing: 0.15em; 
+            color: #22d3ee;
+        }
+
+        .num-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .digit {
+            position: relative;
+            width: 140px;
+            height: 200px;
+            overflow: hidden;
+            border-radius: 5px;
+            filter: drop-shadow(0 0 10px #000a);
+        }
+        .mark {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            font-size: 90px;
+            width: 30px;
+            color: #1c1c1c;
+        }
+
+        .static-top,
+        .static-bottom,
+        .flip-top,
+        .flip-bottom {
+            position: absolute;
+            width: 100%;
+            height: 50%;
+            overflow: hidden;
+            left: 0;
+            backface-visibility: hidden;
+        }
+        .static-top,
+        .flip-top {
+            top: 0;
+            transform-origin: bottom;
+            background: #0d132d;
+            border-bottom: 1px solid #333;
+        }
+        .static-bottom,
+        .flip-bottom {
+            bottom: 0;
+            transform-origin: top;
+            background: #0d132d;
+            border-top: 1px solid #000;
+        }
+
+        .static-top span,
+        .flip-top span {
+            position: absolute;
+            width: 100%;
+            height: 200%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 160px;
+            color: #eee;
+            top: 0;
+        }
+        .static-bottom span,
+        .flip-bottom span {
+            position: absolute;
+            width: 100%;
+            height: 200%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 160px;
+            color: #eee;
+            top: -100%;
+        }
+
+        .flip-top {
+            animation-iteration-count: 1;
+            animation: flipTop 0.5s linear forwards;
+            z-index: 5;
+        }
+        .flip-bottom {
+            animation-iteration-count: 1;
+            animation: flipBottom 0.5s linear forwards;
+            z-index: 4;
+        }
+        .flip-top.fast {
+            animation: flipTop 0.08s linear forwards;
+        }
+        .flip-bottom.fast {
+            animation: flipBottom 0.08s linear forwards;
+        }
+
+        @keyframes flipTop {
+            0%   { transform: rotateX(0deg); }
+            100% { transform: rotateX(-90deg); }
+        }
+        @keyframes flipBottom {
+            0%   { transform: rotateX(90deg); }
+            100% { transform: rotateX(0deg); }
+        }
+
+        /* Action/CTA button styled to match ICE Tip Button */
+        .aliens-cta-button {
+            margin-top: 3.5rem;
+            margin-bottom: 3.5rem;
+            text-align: center;
+        }
+        .aliens-cta-button .wp-block-button__link {
+            display: inline-block;
+            background-color: #dc2626 !important;
+            color: #ffffff !important;
+            font-family: inherit !important;
+            font-size: clamp(1.3rem, 2.5vw, 1.85rem) !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.15em !important;
+            padding: 1.5rem 3rem !important;
+            border-radius: 0 !important;
+            text-decoration: none;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 0 15px rgba(220, 38, 38, 0.6);
+            cursor: pointer;
+            border: none;
+        }
+        .aliens-cta-button .wp-block-button__link:hover {
+            background-color: #b91c1c !important;
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(220, 38, 38, 0.9);
+        }
+
+        /* Addendum Panel Block */
+        .aliens-addendum-box {
+            max-width: 56rem;
+            margin: 6rem auto 3rem auto;
+            padding: 2.5rem;
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            background: rgba(69, 10, 10, 0.25);
+            border-radius: 1.5rem;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .aliens-addendum-label {
+            color: #f87171;
+            font-size: 1rem;
+            letter-spacing: 8px;
+            margin-bottom: 1.5rem;
+            font-weight: bold;
+        }
+        .aliens-reveal-headline {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            line-height: 1.1;
+            margin: 1rem 0;
+            color: #4ade80;
+        }
+        .aliens-yellow-warning { 
+            margin-top: 2rem; 
+            font-size: clamp(1.25rem, 2.5vw, 1.6rem); 
+            line-height: 1.5;
+            color: #4ade80; 
+        }
+
+        /* Email Registration Form section styling */
+        .email-form {
+            max-width: 32rem;
+            margin: 4rem auto;
+            padding: 2rem;
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 8px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .email-form h3 {
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+            color: #4ade80;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .whitehouse-form__label {
+            display: block;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            text-align: left;
+            color: #4ade80;
+        }
+        .whitehouse-form__required {
+            color: #ef4444;
+        }
+        .whitehouse-form__field {
+            width: 100%;
+            box-sizing: border-box;
+            background-color: #000000;
+            border: 1px solid #4ade80;
+            color: #4ade80;
+            padding: 0.75rem;
+            font-family: inherit;
+            font-size: 1.25rem;
+            outline: none;
+        }
+        .whitehouse-form__field:focus {
+            border-color: #22d3ee;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+        }
+        .whitehouse-form__button {
+            width: 100%;
+            background-color: transparent;
+            border: 1px solid #4ade80;
+            color: #4ade80;
+            padding: 1rem;
+            font-family: inherit;
+            font-size: 1.4rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            margin-top: 1.5rem;
+        }
+        .whitehouse-form__button:hover {
+            background-color: #4ade80;
+            color: #000000;
+            box-shadow: 0 0 15px rgba(74, 222, 128, 0.5);
+        }
+
+        /* Footer block */
+        .aliens-footer {
+            padding: 4rem 1.5rem;
+            text-align: center;
+            border-top: 1px solid rgba(74, 222, 128, 0.15);
+            font-size: 1.1rem;
+            letter-spacing: 0.15em;
+            color: #4ade80;
+        }
+
+        /* ─────────────────────────────────────────────────────────────
+           Integrated fable Obscured Map Components
+           ───────────────────────────────────────────────────────────── */
+        .retro-map-wrapper {
+            position: relative;
+            height: 700px;
+            width: 100%;
+            border: 1px solid rgba(34, 211, 238, 0.4);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+            box-shadow: 0 0 30px rgba(34, 211, 238, 0.15) inset;
+            font-family: 'VT323', Courier, monospace;
+        }
+
+        /* Unified HUD Panels */
+        .retro-map-hud-panel {
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(34, 211, 238, 0.35);
+            border-radius: 4px;
+            padding: 10px 14px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            pointer-events: auto;
+            box-sizing: border-box;
+        }
+
+        .retro-map-hud-left {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 10;
+            width: 230px;
+        }
+
+        .retro-map-hud-kicker {
+            font-size: 0.85rem;
+            color: #4ade80;
+            letter-spacing: 2px;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .retro-map-hud-heading {
+            font-size: 1.4rem;
+            color: #ffffff;
+            margin: 4px 0 2px 0;
+            letter-spacing: 1px;
+            text-shadow: 0 0 5px rgba(255,255,255,0.3);
+            text-transform: uppercase;
+        }
+
+        .retro-map-hud-stat {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+
+        .retro-map-hud-num {
+            font-size: 1.25rem;
+            color: #22d3ee;
+            font-weight: bold;
+        }
+
+        .retro-map-hud-sub {
+            font-size: 0.85rem;
+            color: rgba(34, 211, 238, 0.7);
+            text-transform: uppercase;
+        }
+
+        .retro-map-hud-meta {
+            font-size: 0.8rem;
+            color: rgba(74, 222, 128, 0.6);
+            margin: 4px 0 0 0;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Center Search Bar */
+        .retro-map-hud-center {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            width: 400px;
+        }
+        @media screen and (max-width: 900px) {
+            .retro-map-hud-center { display: none; }
+        }
+
+        .retro-map-search {
+            display: block;
+            border-radius: 4px;
+            padding: 8px;
+        }
+
+        .retro-map-search-input {
+            width: 100%;
+            box-sizing: border-box;
+            background: #000;
+            border: 1px solid rgba(34, 211, 238, 0.4);
+            border-radius: 4px;
+            color: #e5e5e5;
+            font-family: 'VT323', Courier, monospace;
+            font-size: 0.95rem;
+            padding: 8px 10px;
+            outline: none;
+        }
+        .retro-map-search-input::placeholder {
+            color: rgba(34, 211, 238, 0.45);
+        }
+
+        .retro-map-search-results {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 8px;
+            right: 8px;
+            display: none;
+            max-height: 330px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid rgba(34, 211, 238, 0.35);
+            border-radius: 4px;
+        }
+        .retro-map-search-results.retro-map-search-open {
+            display: block;
+        }
+
+        .retro-map-search-item {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            border-bottom: 1px solid rgba(34, 211, 238, 0.12);
+            color: #d1d5db;
+            font-family: 'VT323', Courier, monospace;
+            padding: 8px 10px;
+            cursor: pointer;
+        }
+        .retro-map-search-item:last-child {
+            border-bottom: none;
+        }
+        .retro-map-search-item:hover {
+            background: rgba(34, 211, 238, 0.12);
+        }
+        .retro-map-search-item-title {
+            color: #ffffff;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .retro-map-search-item-sub {
+            color: rgba(34, 211, 238, 0.7);
+            font-size: 0.8rem;
+        }
+        .retro-map-search-item-stack {
+            color: #4ade80;
+            font-size: 0.78rem;
+        }
+        .retro-map-search-empty {
+            padding: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
+        }
+
+        .retro-map-hud-right {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 10;
+            width: 210px;
+            text-align: right;
+        }
+
+        /* Left-side Drawer: Map Active Spectras */
+        .retro-map-deck {
+            position: absolute;
+            top: 150px;
+            left: 15px;
+            z-index: 10;
+            width: 180px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .retro-map-deck-title {
+            font-size: 0.85rem;
+            color: #4ade80;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 4px;
+            border-bottom: 1px solid rgba(74, 222, 128, 0.2);
+            padding-bottom: 4px;
+        }
+
+        .retro-map-deck-btn {
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid rgba(34, 211, 238, 0.3);
+            color: #22d3ee;
+            padding: 6px 10px;
+            border-radius: 3px;
+            font-size: 0.9rem;
+            text-align: left;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            font-family: 'VT323', Courier, monospace;
+        }
+
+        .retro-map-deck-btn:hover {
+            background: rgba(34, 211, 238, 0.15);
+            border-color: #22d3ee;
+        }
+
+        .retro-map-deck-btn.active {
+            background: rgba(74, 222, 128, 0.2);
+            border-color: #4ade80;
+            color: #4ade80;
+            box-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
+        }
+
+        /* Legend component styled like fable's spectral gauge */
+        .retro-map-legend {
+            margin-top: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .retro-map-legend-bar {
+            height: 8px;
+            width: 100%;
+            border-radius: 2px;
+            background: linear-gradient(to right, #4ade80, #f59e0b, #ef4444); /* emerald -> amber -> rose */
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .retro-map-legend-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: rgba(74, 222, 128, 0.6);
+            letter-spacing: 1px;
+        }
+
+        /* Map interactive help controls banner */
+        .retro-map-hint-banner {
+            position: absolute;
+            bottom: 75px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            width: 90%;
+            max-width: 440px;
+            text-align: center;
+            pointer-events: none;
+        }
+        @media screen and (max-width: 768px) {
+            .retro-map-hint-banner { bottom: 65px; }
+        }
+
+        .retro-map-hint-text {
+            background: rgba(0,0,0,0.9);
+            border: 1px solid rgba(34, 211, 238, 0.3);
+            border-radius: 4px;
+            padding: 4px 12px;
+            color: #4ade80;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+        }
+
+        /* Preset controls command dock */
+        .retro-map-toolbar {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid rgba(34, 211, 238, 0.2);
+            border-radius: 6px;
+            padding: 6px;
+            display: flex;
+            gap: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+            pointer-events: auto;
+            max-width: 95%;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .retro-map-toolbar::-webkit-scrollbar { display: none; }
+
+        .retro-map-btn {
+            background: transparent;
+            border: 1px solid rgba(34, 211, 238, 0.3);
+            color: #22d3ee;
+            padding: 4px 10px;
+            border-radius: 3px;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            font-family: 'VT323', Courier, monospace;
+        }
+
+        .retro-map-btn:hover {
+            background: rgba(34, 211, 238, 0.15);
+            border-color: #22d3ee;
+            box-shadow: 0 0 8px rgba(34, 211, 238, 0.3);
+        }
+
+        .retro-map-btn-reset {
+            color: #4ade80;
+            border-color: rgba(74, 222, 128, 0.3);
+        }
+
+        .retro-map-btn-reset:hover {
+            background: rgba(74, 222, 128, 0.15);
+            border-color: #4ade80;
+            box-shadow: 0 0 8px rgba(74, 222, 128, 0.3);
+        }
+
+        .retro-map-btn svg {
+            width: 12px;
+            height: 12px;
+            stroke: currentColor;
+        }
+
+        /* Radar circular Mask minimap */
+        .retro-map-radar-frame {
+            position: absolute;
+            bottom: 80px;
+            right: 15px;
+            z-index: 10;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 2px solid rgba(34, 211, 238, 0.4);
+            background: #000;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(34, 211, 238, 0.3);
+            pointer-events: auto;
+        }
+
+        .retro-map-radar-viewport {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+
+        /* Radial Scanning sweep and sweeping target grids */
+        .retro-map-radar-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 50%;
+            pointer-events: none;
+            background: radial-gradient(circle, rgba(34, 211, 238, 0.05) 0%, transparent 70%);
+            border: 1px dashed rgba(34, 211, 238, 0.2);
+            box-sizing: border-box;
+        }
+
+        .retro-map-radar-sweep {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 100%;
+            height: 100%;
+            background: conic-gradient(from 0deg at 0% 0%, rgba(34, 211, 238, 0.25) 0deg, rgba(34, 211, 238, 0) 90deg, transparent 360deg);
+            transform-origin: 0% 0%;
+            animation: radar-sweep-spin 4s linear infinite;
+        }
+
+        @keyframes radar-sweep-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .retro-map-radar-scope {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+            border: 1px solid #fff;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 8px #ef4444;
+        }
+
+        /* Dynamic Node Decrypter inspector panel */
+        .retro-map-inspector {
+            position: absolute;
+            bottom: 80px;
+            right: 170px;
+            z-index: 20;
+            width: 290px;
+            max-height: 55%;
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid rgba(34, 211, 238, 0.3);
+            border-radius: 4px;
+            padding: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            pointer-events: auto;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            opacity: 1;
+            transform: translateY(0);
+        }
+        @media screen and (max-width: 768px) {
+            .retro-map-inspector {
+                width: calc(100% - 24px);
+                left: 12px;
+                bottom: 160px;
+                max-height: 35%;
+            }
+        }
+
+        .retro-map-inspector.closed {
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+        }
+
+        .retro-map-inspector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(34, 211, 238, 0.2);
+            padding-bottom: 6px;
+            margin-bottom: 8px;
+        }
+
+        .retro-map-inspector-title {
+            font-size: 1.15rem;
+            color: #22d3ee;
+            letter-spacing: 2px;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .retro-map-inspector-close {
+            background: none;
+            border: none;
+            color: #22d3ee;
+            font-size: 1.5rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+        }
+        .retro-map-inspector-close:hover {
+            color: #4ade80;
+        }
+
+        .retro-map-inspector-content {
+            font-size: 0.95rem;
+            color: #4ade80;
+            line-height: 1.4;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .retro-map-inspector-content dl {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .retro-map-inspector-row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed rgba(74, 222, 128, 0.15);
+            padding-bottom: 2px;
+        }
+
+        .retro-map-inspector-dt {
+            color: rgba(74, 222, 128, 0.6);
+            text-transform: uppercase;
+        }
+
+        .retro-map-inspector-dd {
+            color: #ffffff;
+            margin: 0;
+            font-weight: bold;
+        }
+
+        .retro-map-inspector-intel {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(74, 222, 128, 0.15);
+            color: #4ade80;
+            font-size: 0.9rem;
+        }
+
+        .retro-map-inspector-stack-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 0.78rem;
+            line-height: 1.35;
+        }
+        .retro-map-inspector-stack-row span {
+            color: #22d3ee;
+            white-space: nowrap;
+        }
+        .retro-map-inspector-stack-row em {
+            color: rgba(255, 255, 255, 0.75);
+            font-style: normal;
+            text-align: right;
+        }
+
+        /* Spatial HTML Custom 3D Marker Nodes */
+        .retro-map-node-marker {
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.2s ease;
+        }
+
+        .retro-map-marker-tag {
+            font-family: 'VT323', Courier, monospace;
+            text-transform: uppercase;
+            font-size: 0.95rem;
+            color: #22d3ee;
+            border: 1px solid rgba(34, 211, 238, 0.4);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 1px 8px;
+            border-radius: 3px;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.2);
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+        .retro-map-node-marker:hover .retro-map-marker-tag {
+            color: #4ade80;
+            border-color: #4ade80;
+            box-shadow: 0 0 12px rgba(74, 222, 128, 0.3);
+            transform: scale(1.05);
+        }
+
+        .retro-map-marker-line {
+            width: 1px;
+            height: 15px;
+            background: rgba(34, 211, 238, 0.5);
+        }
+        .retro-map-node-marker:hover .retro-map-marker-line {
+            background: rgba(74, 222, 128, 0.7);
+        }
+
+        .retro-map-marker-glow {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #22d3ee;
+            border: 2px solid #000000;
+            box-shadow: 0 0 10px #22d3ee, 0 0 20px rgba(34, 211, 238, 0.6);
+            animation: retro-pulsing-marker 2s infinite ease-in-out;
+        }
+        .retro-map-node-marker:hover .retro-map-marker-glow {
+            background: #4ade80;
+            box-shadow: 0 0 10px #4ade80, 0 0 20px rgba(74, 222, 128, 0.6);
+        }
+
+        /* Search selection pin — always green so the searched company stands out */
+        .retro-map-search-marker .retro-map-marker-tag {
+            color: #4ade80;
+            border-color: #4ade80;
+            box-shadow: 0 0 12px rgba(74, 222, 128, 0.4);
+        }
+        .retro-map-search-marker .retro-map-marker-line {
+            background: rgba(74, 222, 128, 0.8);
+        }
+        .retro-map-search-marker .retro-map-marker-glow {
+            background: #4ade80;
+            box-shadow: 0 0 10px #4ade80, 0 0 24px rgba(74, 222, 128, 0.7);
+        }
+
+        @keyframes retro-pulsing-marker {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+
+        /* Obscured District Spatial labels */
+        .retro-map-district-tag {
+            font-family: 'VT323', Courier, monospace;
+            font-size: 0.72rem;
+            color: rgba(148, 163, 184, 0.55);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 0 4px;
+            border-radius: 2px;
+            letter-spacing: 1px;
+            pointer-events: none;
+            text-transform: uppercase;
+            white-space: nowrap;
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="wp-singular page-template page-template-wp-custom-template-full-width">
+
+    <!-- Active Twinkling Canvas Star Backdrop -->
+    <div id="star-container" class="aliens-star-canvas"><canvas></canvas></div>
+
+    <!-- Top Announcement Banner -->
+    <div class="top-banner">
+        CLASSIFIED // STATUS: DECLASSIFIED — ALIEN.INC INTERNAL RECORDS
+    </div>
+
+    <!-- Navigation Header -->
+    <nav class="aliens-nav">
+        <div class="aliens-nav-inner">
+            <div class="aliens-nav-logo neon-cyan">ALIEN.INC</div>
+            <div class="aliens-nav-tagline">DECLASSIFIED</div>
+        </div>
+    </nav>
+
+    <!-- Hero Introduction Block (Typewriter sequential animation) -->
+    <section id="hero" class="aliens-hero">
+        <div class="aliens-hero-inner">
+            <h1 class="aliens-hero-title neon-cyan">ONE SMALL STEP<br>ONE NEW COORDINATE</h1>
+            <div id="text-blocks" class="aliens-typewriter-block">
+                <!-- Data paragraph blocks containing user custom text -->
+                <p id="p1" class="typewriter" data-text="For over a decade, ALIEN.INC has operated quietly under a single registered name."></p>
+                <p id="p2" class="typewriter" data-text="Seven subsidiaries, one origin point, one domain — held since Dec 2016."></p>
+                <p id="p3" class="typewriter" data-text="Then came the conflict. A separate registry, unrelated to us, claimed ground adjacent to our name."></p>
+                <p id="p4" class="typewriter" data-text="Rather than share airspace with confusion, we made contact with a new coordinate: alieninc.tech."></p>
+                <p id="p5" class="typewriter" data-text="The transition wasn't a retreat. It was a correction of orbit."></p>
+                <p id="p6" class="typewriter" data-text="On July 21, 1969, at 02:56:15 UTC, Neil Armstrong set his foot on the Moon — the first human footprint off-world."></p>
+                <p id="p7" class="typewriter" data-text="We set ours at the same hour, fifty-seven years later."></p>
+                <p id="p8" class="typewriter" data-text="Not a coincidence. A rendezvous."></p>
+                <div class="aliens-moment-log">
+                    MOMENT LOG<br>
+                    1969-07-21&nbsp;&nbsp;&nbsp;02:56:15 UTC&nbsp;&nbsp;&nbsp;—&nbsp;&nbsp;&nbsp;first human step, off-world<br>
+                    2026-07-21&nbsp;&nbsp;&nbsp;02:56:15 UTC&nbsp;&nbsp;&nbsp;—&nbsp;&nbsp;&nbsp;alieninc.tech, live<br>
+                    <span class="aliens-moment-log-punchline">57 years apart. same second.</span>
+                </div>
+                <p id="p9" class="typewriter aliens-hero-kicker neon-cyan" data-text="We call it: the exit, and the landing."></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Rest of Document reveal container post text-typing completion -->
+    <div id="rest-of-page">
+        
+        <p class="aliens-scroll-hint">↓ SCROLL FOR TRANSMISSION DETAILS ↓</p>
+
+        <!-- Mechanical Split-Flap Active Transmissions Metrics Panel -->
+        <section class="aliens-metrics-section section">
+            <h2 class="aliens-map-title neon-cyan" style="letter-spacing:12px">ACTIVE TRANSMISSIONS</h2>
+            <div class="aliens-metrics-grid">
+                <div class="aliens-metric">
+                    <!-- Configured to automatically flip to 07 -->
+                    <div class="num-container" data-count="7"></div>
+                    <div class="aliens-metric-label">SUBSIDIARIES</div>
+                </div>
+                <div class="aliens-metric">
+                    <!-- Configured to automatically flip to 01 -->
+                    <div class="num-container" data-count="1"></div>
+                    <div class="aliens-metric-label">ORIGIN</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Map Coordinates Visualization Section -->
+        <section id="map-section" class="aliens-map-section">
+            <div class="aliens-map-inner">
+                <div class="aliens-map-label-wrap">
+                    <span class="aliens-clearance-badge">TOP SECRET RECORDS</span>
+                </div>
+                <h2 class="aliens-map-title neon-cyan" style="letter-spacing: 8px; margin-bottom: 1rem;">COORDINATES</h2>
+                <h3 class="aliens-map-title neon-cyan" style="font-size: 1.85rem; letter-spacing: 4px; margin-bottom: 3rem;">ALIEN.INC NETWORK MAP • LIVE</h3>
+                
+                <!-- ALIEN.INC Network Map with fable HUD Overlays -->
+                <div class="retro-map-wrapper">
+                    
+                    <!-- HUD: Focused LGU Telemetry Card (fable top-left card adapted) -->
+                    <div class="retro-map-hud-panel retro-map-hud-left">
+                        <div class="retro-map-hud-kicker">FOCUS SECTOR</div>
+                        <div id="retro-focus-title" class="retro-map-hud-heading">LUZON ARRAY</div>
+                        <div class="retro-map-hud-stat">
+                            <span id="retro-focus-stat1-val" class="retro-map-hud-num">7 SECTORS</span>
+                            <span id="retro-focus-stat1-lbl" class="retro-map-hud-sub">CONNECTED</span>
+                        </div>
+                        <div id="retro-focus-stat2" class="retro-map-hud-meta">GRID AREA ACTIVE</div>
+                    </div>
+
+                    <!-- HUD: Company search (BGC directory + group companies from the source of truth) -->
+                    <div class="retro-map-hud-panel retro-map-hud-center retro-map-search">
+                        <input id="retro-company-search" class="retro-map-search-input" type="text" autocomplete="off" spellcheck="false" placeholder="help me find the tech stack of this company" aria-label="Search BGC directory and group companies">
+                        <div id="retro-search-results" class="retro-map-search-results"></div>
+                    </div>
+
+                    <!-- HUD: Database Status Card (real counts + as-of date from source of truth) -->
+                    <div class="retro-map-hud-panel retro-map-hud-right">
+                        <div class="retro-map-hud-kicker">DATABASE STATUS</div>
+                        <div id="hud-archive-count" class="retro-map-hud-heading">— COMPANIES</div>
+                        <div id="hud-archive-meta" class="retro-map-hud-meta">AS OF —</div>
+                    </div>
+
+                    <!-- Left side Drawer: Map Views -->
+                    <div class="retro-map-hud-panel retro-map-deck">
+                        <div class="retro-map-deck-title">MAP VIEWS</div>
+                        <button onclick="toggleDataLayer('default')" id="layer-btn-default" class="retro-map-deck-btn active">DEFAULT</button>
+                        <button onclick="toggleDataLayer('flow')" id="layer-btn-flow" class="retro-map-deck-btn">GRID FLOW</button>
+                        
+                        <!-- Spectral Legend -->
+                        <div class="retro-map-legend">
+                            <div class="retro-map-legend-bar"></div>
+                            <div class="retro-map-legend-labels">
+                                <span id="retro-legend-low">LOW-RISE</span>
+                                <span id="retro-legend-high">HIGH-RISE</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Map Render Port -->
+                    <div id="aliens-network-map" style="height: 100%; width: 100%;"></div>
+
+                    <!-- Circular Radar-masked Minimap (fable Minimap adapted) -->
+                    <div class="retro-map-radar-frame">
+                        <div id="retro-compass-radar-map" class="retro-map-radar-viewport"></div>
+                        <div class="retro-map-radar-overlay">
+                            <div class="retro-map-radar-sweep"></div>
+                            <div class="retro-map-radar-scope"></div>
+                        </div>
+                    </div>
+
+                    <!-- HUD Command Line Navigation Help -->
+                    <div class="retro-map-hint-banner">
+                        <div class="retro-map-hint-text">[ DRAG: PAN • SCROLL: ZOOM • SHIFT+DRAG: TILT 3D • CLICK COORDINATES ]</div>
+                    </div>
+
+                    <!-- Command Preset Toolbar Sector Presets -->
+                    <div class="retro-map-toolbar">
+                        <button onclick="focusSector([121.0500, 14.5500], 14.5, 'BGC CORE HUB')" class="retro-map-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>
+                            BGC Core
+                        </button>
+                        <button onclick="focusSector([120.5518, 15.1761], 14.0, 'CLARK FREEPORT')" class="retro-map-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg>
+                            Clark Node
+                        </button>
+                        <button onclick="focusSector([120.2833, 14.8250], 14.2, 'SUBIC FREEPORT')" class="retro-map-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c4 0 7-2 7-2s3 2 7 2a1 1 0 0 1 1 1v7z"/></svg>
+                            Subic Node
+                        </button>
+                        <button onclick="resetMapView()" class="retro-map-btn retro-map-btn-reset">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                            Reset Array
+                        </button>
+                    </div>
+
+                    <!-- Custom Terminal Inspector Sidebar Panel -->
+                    <div id="node-inspector" class="retro-map-inspector closed">
+                        <div class="retro-map-inspector-header">
+                            <h2 class="retro-map-inspector-title">COMPANY PROFILE</h2>
+                            <button onclick="toggleInspector(false)" class="retro-map-inspector-close">&times;</button>
+                        </div>
+                        <div id="inspector-content" class="retro-map-inspector-content">
+                            <p style="color: rgba(74, 222, 128, 0.6); text-align: center; margin-top: 15px;">SELECT A NETWORK MARKER OR SECTOR TO VIEW ITS OPERATING PROFILE.</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <p style="font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.6; margin-top: 3rem; text-align: center; max-width: 48rem; margin-left: auto; margin-right: auto;">
+                    Every subsidiary under ALIEN.INC operates as its own signal — distinct, self-contained, transmitting from a strategic node within the Luzon Economic Corridor. This is where they broadcast from.
+                </p>
+
+                <!-- CTA Action Link styled exactly to declassified visual specifications -->
+                <div class="wp-block-buttons is-content-justification-center aliens-cta-button">
+                    <div class="wp-block-button">
+                        <a class="wp-block-button__link wp-element-button" href="https://alieninc.tech" target="_blank" rel="noreferrer noopener">
+                            EXPLORE THE NETWORK → VISIT ALIENINC.TECH
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Declassified Addendum Panel -->
+        <section id="reveal" class="section">
+            <div class="aliens-addendum-box">
+                <p class="aliens-addendum-label">CLASSIFIED ADDENDUM • DECLASSIFIED 2026</p>
+                <h2 class="aliens-reveal-headline">THIS WASN'T A DISAPPEARANCE.</h2>
+                <p class="aliens-yellow-warning">
+                    alien.inc didn't vanish — it relocated. The name held since 2016 needed a domain that couldn't be mistaken for anyone else's territory. alieninc.tech is that domain. Same origin. New coordinates. No conflict left unresolved.
+                </p>
+            </div>
+        </section>
+
+        <!-- Newsletter Registration/Opt-In panel matching WH styled components -->
+        <section class="email-form section">
+            <h3>Stay Informed of Transmissions From the Network</h3>
+            <form id="optin-form" onsubmit="handleForm(event)">
+                <div style="text-align: left; margin-bottom: 1.5rem;">
+                    <label class="whitehouse-form__label" for="email">
+                        Email Address <span class="whitehouse-form__required">* Required</span>
+                    </label>
+                    <input class="whitehouse-form__field" type="email" id="email" required placeholder="name@domain.com">
+                </div>
+                <input type="submit" value="JOIN THE SIGNAL" class="whitehouse-form__button">
+            </form>
+            <div id="form-msg" style="margin-top: 1rem; display: none;" class="neon-cyan"></div>
+        </section>
+
+        <!-- Footer block -->
+        <footer class="aliens-footer">
+            ALIEN.INC © 2026 • ALIENINC.TECH
+        </footer>
+
+    </div>
+
+    <!-- Active scripts (Starfield + Typing Loop + Split Flaps mechanics + Network Map) -->
+    <script src="../data/network-map-data.js?v=5"></script>
+    <script>
+        // ── ALIEN.INC Network Map Data ──────────────────────────────────
+        // Node, district, and city data is loaded from the ecosystem JSON
+        // single source of truth (networkMap section) via network-map-data.js.
+        // No financial data is rendered on this map.
+        // GeoJSON Networks (fable Custom Railway Grids & Highway Segments)
+        const luzonRailwaysGeoJSON = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": { "name": "North-South Commuter Railway (NSCR)", "type": "nscr" },
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [
+                            [121.0500, 14.5500], // BGC
+                            [121.0244, 14.5547], // Makati
+                            [120.9842, 14.5995], // Manila Tutuban
+                            [120.9800, 14.6100], // Caloocan
+                            [120.9100, 14.7500], // Meycauayan
+                            [120.8100, 14.8700], // Malolos
+                            [120.6000, 15.0200], // San Fernando
+                            [120.5518, 15.1761], // Clark Centra
+                            [120.5429, 15.3377]  // NCC
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": { "name": "Subic-Clark Rail Link", "type": "subic-clark" },
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [
+                            [120.2833, 14.8250], // Subic
+                            [120.4500, 14.9700], // Dinalupihan
+                            [120.5200, 15.0500], // Floridablanca
+                            [120.5518, 15.1761]  // Clark
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": { "name": "Metro Manila Subway Grid", "type": "subway" },
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [
+                            [121.0400, 14.6500], // North Ave
+                            [121.0600, 14.5900], // Ortigas
+                            [121.0500, 14.5500], // BGC
+                            [121.0190, 14.5560], // Makati
+                            [121.0100, 14.5100]  // FTI
+                        ]
+                    }
+                }
+            ]
+        };
+
+        const luzonHighwaysGeoJSON = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": { "name": "EDSA Corridor", "status": "severe" },
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [
+                            [120.9950, 14.5467], // Pasay
+                            [121.0244, 14.5547], // Makati
+                            [121.0333, 14.5833], // Mandaluyong
+                            [121.0350, 14.6100], // Ortigas
+                            [121.0400, 14.6500]  // Quezon City
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": { "name": "North Luzon Expressway (NLEX)", "status": "moderate" },
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [
+                            [120.9800, 14.6100], // Caloocan
+                            [120.9600, 14.7000], // Valenzuela
+                            [120.8700, 14.8300], // Marilao
+                            [120.8100, 14.8700], // Malolos
+                            [120.7100, 14.9800], // Apalit
+                            [120.6900, 15.0300], // San Fernando
+                            [120.5900, 15.1500]  // Angeles
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": { "name": "SCTEX Corridor", "status": "fluid" },
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [
+                            [120.2833, 14.8250], // Subic
+                            [120.4500, 14.9700], // Dinalupihan
+                            [120.5200, 15.0500], // Floridablanca
+                            [120.5518, 15.1761], // Clark
+                            [120.5429, 15.3377]  // NCC
+                        ]
+                    }
+                }
+            ]
+        };
+
+        let activeMapInstance = null;
+        let minimapInstance = null;
+        let boundsInstance = null;
+        let districtMarkers = [];
+        let searchMarkerInstance = null;
+
+        // Real building-height color ramp (meters, from OpenMapTiles render_height).
+        const BUILDING_HEIGHT_RAMP = [
+            'interpolate', ['linear'], ['get', 'render_height'],
+            0, '#062d18',      // Ground level
+            30, '#0f5132',     // Low-rise
+            100, '#198754',    // Mid-rise
+            250, '#4ade80',    // High-rise
+            500, '#22d3ee'     // Skyline peaks
+        ];
+
+        // --- GRID FLOW: animated pulses along real Luzon corridors that color buildings as they cross ---
+        const FLOW_DURATION_MS = 26000;
+        const FLOW_BUFFER_M = 160;
+        const FLOW_REVEAL_SCAN_MS = 100;
+
+        function flowDistanceM(a, b) {
+            const dx = (b[0] - a[0]) * 111320 * Math.cos((a[1] + b[1]) / 2 * Math.PI / 180);
+            const dy = (b[1] - a[1]) * 110540;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function flowSubstring(coords, segs, dist) {
+            const out = [coords[0]];
+            let remaining = dist;
+            for (let i = 0; i < segs.length; i++) {
+                if (remaining <= segs[i]) {
+                    const f = segs[i] === 0 ? 0 : remaining / segs[i];
+                    const a = coords[i], b = coords[i + 1];
+                    out.push([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]);
+                    return out;
+                }
+                out.push(coords[i + 1]);
+                remaining -= segs[i];
+            }
+            return out;
+        }
+
+        function flowOffsetChain(coords, w) {
+            const n = coords.length;
+            if (n < 2) return null;
+            const left = [], right = [];
+            for (let i = 0; i < n; i++) {
+                const a = coords[Math.max(0, i - 1)];
+                const b = coords[i];
+                const c = coords[Math.min(n - 1, i + 1)];
+                let dx = c[0] - a[0], dy = c[1] - a[1];
+                const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                dx /= len; dy /= len;
+                const nx = -dy, ny = dx;
+                left.push([b[0] + nx * w, b[1] + ny * w]);
+                right.push([b[0] - nx * w, b[1] - ny * w]);
+            }
+            const ring = left.concat(right.reverse());
+            ring.push(ring[0]);
+            return { type: 'Polygon', coordinates: [ring] };
+        }
+
+        function flowPointInPoly(pt, ring) {
+            let inside = false;
+            for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+                const xi = ring[i][0], yi = ring[i][1];
+                const xj = ring[j][0], yj = ring[j][1];
+                if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < ((xj - xi) * (pt[1] - yi)) / (yj - yi) + xi) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        }
+
+        let flowLinesCache = null;
+        let flowRunning = false;
+        let flowRafId = null;
+        let flowStartTs = 0;
+        let flowPrevPhase = 0;
+        let flowLastScan = 0;
+        const revealedBuildingIds = new Set();
+
+        function buildFlowLines() {
+            if (flowLinesCache) return flowLinesCache;
+            const features = [
+                ...luzonRailwaysGeoJSON.features.map(f => Object.assign({}, f, { properties: Object.assign({}, f.properties, { type: 'rail' }) })),
+                ...luzonHighwaysGeoJSON.features.map(f => Object.assign({}, f, { properties: Object.assign({}, f.properties, { type: 'road' }) }))
+            ];
+            flowLinesCache = features.map(f => {
+                const coords = f.geometry.coordinates;
+                const segs = [];
+                let len = 0;
+                for (let i = 0; i < coords.length - 1; i++) {
+                    const d = flowDistanceM(coords[i], coords[i + 1]);
+                    segs.push(d);
+                    len += d;
+                }
+                return { name: f.properties.name, type: f.properties.type, coords, segs, len };
+            });
+            return flowLinesCache;
+        }
+
+        function startFlow() {
+            if (flowRunning || !activeMapInstance) return;
+            if (!activeMapInstance.getLayer('flow-base')) return;
+            flowRunning = true;
+            flowStartTs = performance.now();
+            flowTick();
+        }
+
+        function stopFlow() {
+            flowRunning = false;
+            if (flowRafId) {
+                cancelAnimationFrame(flowRafId);
+                flowRafId = null;
+            }
+            clearRevealedBuildings();
+        }
+
+        function clearRevealedBuildings() {
+            if (!activeMapInstance || revealedBuildingIds.size === 0) return;
+            const ids = [...revealedBuildingIds];
+            revealedBuildingIds.clear();
+            ids.forEach(id => {
+                try {
+                    activeMapInstance.setFeatureState({ source: 'openmaptiles', sourceLayer: 'building', id }, { reveal: false });
+                } catch (e) { /* tile may have been evicted */ }
+            });
+        }
+
+        function flowTick() {
+            if (!flowRunning || !activeMapInstance) { flowRafId = null; return; }
+            const phase = ((performance.now() - flowStartTs) % FLOW_DURATION_MS) / FLOW_DURATION_MS;
+
+            if (activeMapInstance.getLayer('flow-dash')) {
+                activeMapInstance.setPaintProperty('flow-dash', 'line-dasharray', [2.4, 2.4, phase * 4.8]);
+            }
+
+            const lines = buildFlowLines();
+            const cometFeatures = [];
+            const polys = [];
+            const revealBuildings = activeMapInstance.getZoom() >= 13;
+
+            lines.forEach((line, i) => {
+                const p = (phase + i * 0.13) % 1;
+                const portion = flowSubstring(line.coords, line.segs, line.len * p);
+                cometFeatures.push({
+                    type: 'Feature',
+                    properties: { name: line.name },
+                    geometry: { type: 'LineString', coordinates: portion }
+                });
+                if (revealBuildings && portion.length >= 2) {
+                    const poly = flowOffsetChain(portion, FLOW_BUFFER_M / 110540);
+                    if (poly) polys.push(poly);
+                }
+            });
+
+            const cometSource = activeMapInstance.getSource('flow-comet-source');
+            if (cometSource) {
+                cometSource.setData({ type: 'FeatureCollection', features: cometFeatures });
+            }
+
+            // Reveal buildings as the pulse crosses them (feature-state opacity, throttled scan)
+            if (revealBuildings && polys.length) {
+                if (phase < flowPrevPhase) clearRevealedBuildings();
+                const now = performance.now();
+                if (now - flowLastScan > FLOW_REVEAL_SCAN_MS) {
+                    flowLastScan = now;
+                    const rings = polys.map(p => p.coordinates[0]);
+                    let feats = [];
+                    try {
+                        feats = activeMapInstance.querySourceFeatures('openmaptiles', { sourceLayer: 'building' });
+                    } catch (e) { feats = []; }
+                    feats.forEach(f => {
+                        if (f.id == null) return;
+                        if (revealedBuildingIds.has(f.id)) return;
+                        const g = f.geometry;
+                        let pt = null;
+                        if (g.type === 'Point') pt = g.coordinates;
+                        else if (g.type === 'Polygon' && g.coordinates[0] && g.coordinates[0][0]) pt = g.coordinates[0][0];
+                        else return;
+                        let matched = false;
+                        for (let k = 0; k < rings.length; k++) {
+                            if (flowPointInPoly(pt, rings[k])) { matched = true; break; }
+                        }
+                        if (matched) {
+                            revealedBuildingIds.add(f.id);
+                            try {
+                                activeMapInstance.setFeatureState({ source: 'openmaptiles', sourceLayer: 'building', id: f.id }, { reveal: true });
+                            } catch (e) { /* ignore */ }
+                        }
+                    });
+                }
+            }
+            flowPrevPhase = phase;
+
+            flowRafId = requestAnimationFrame(flowTick);
+        }
+
+        // Applies real group numbers from the ecosystem source of truth to the HUD.
+        function applyEcosystemSummary() {
+            const summary = window.ecosystemSummary;
+            if (!summary) return;
+
+            const countEl = document.getElementById('hud-archive-count');
+            if (countEl && typeof summary.companyCount === 'number') {
+                countEl.textContent = `${summary.companyCount} COMPANIES`;
+            }
+
+            const metaEl = document.getElementById('hud-archive-meta');
+            if (metaEl && summary.asOf) {
+                metaEl.textContent = `AS OF ${summary.asOf}`;
+            }
+
+            const sectorsEl = document.getElementById('retro-focus-stat1-val');
+            if (sectorsEl && summary.nodeCount && sectorsEl.textContent.trim().indexOf('SECTORS') !== -1) {
+                sectorsEl.textContent = `${summary.nodeCount} SECTORS`;
+            }
+        }
+
+        // Company search: BGC directory entries + group network nodes, from the source of truth.
+        function buildSearchIndex() {
+            const index = [];
+            const bgc = window.bgcDirectory;
+            if (bgc && Array.isArray(bgc.companies)) {
+                bgc.companies.forEach((entry) => {
+                    index.push({
+                        type: 'directory',
+                        kind: entry.kind || 'company',
+                        name: entry.name || '',
+                        address: entry.address || '',
+                        industry: entry.industry || '',
+                        lat: entry.lat,
+                        lng: entry.lng,
+                        distanceKm: entry.distanceKm,
+                        techStack: (entry.techStack || []).slice(),
+                        lastVerified: entry.lastVerified || '',
+                        source: entry
+                    });
+                });
+            }
+            (window.aliensNetworkNodes || []).forEach((node) => {
+                index.push({
+                    type: 'node',
+                    name: node.name || node.sector || '',
+                    address: node.city ? `${node.city}${node.sector ? ' • ' + node.sector : ''}` : (node.sector || ''),
+                    industry: node.sector || '',
+                    lat: node.lat,
+                    lng: node.lng,
+                    distanceKm: node.distanceKmToCore,
+                    techStack: (node.techStack || []).map((t) => (t && t.name) || String(t)),
+                    source: node
+                });
+            });
+            return index;
+        }
+
+        function initSearch() {
+            const input = document.getElementById('retro-company-search');
+            const resultsEl = document.getElementById('retro-search-results');
+            if (!input || !resultsEl) return;
+
+            const index = buildSearchIndex();
+            let debounceTimer = null;
+
+            const close = () => resultsEl.classList.remove('retro-map-search-open');
+
+            input.addEventListener('input', () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => renderSearchResults(index, input.value, resultsEl, close), 150);
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    close();
+                    input.blur();
+                }
+            });
+
+            resultsEl.addEventListener('pointerdown', (e) => e.preventDefault());
+
+            document.addEventListener('click', (e) => {
+                const panel = input.closest('.retro-map-search');
+                if (panel && panel.contains(e.target)) return;
+                close();
+            });
+        }
+
+        function renderSearchResults(index, query, resultsEl, close) {
+            const q = (query || '').trim().toLowerCase();
+            resultsEl.innerHTML = '';
+            if (!q) {
+                close();
+                return;
+            }
+
+            const tokens = q.split(/\s+/).filter(Boolean);
+            const matches = [];
+
+            index.forEach((item) => {
+                const haystack = `${item.name} ${item.industry} ${item.address} ${item.techStack.join(' ')}`.toLowerCase();
+                const allMatch = tokens.every((t) => haystack.indexOf(t) !== -1);
+                if (!allMatch) return;
+
+                const nameLower = item.name.toLowerCase();
+                const startsWith = nameLower.indexOf(tokens[0]) === 0 ? 0 : 1;
+                const distance = (typeof item.distanceKm === 'number') ? item.distanceKm : 9999;
+                matches.push({ item, score: startsWith, distance });
+            });
+
+            matches.sort((a, b) => (a.score - b.score) || (a.distance - b.distance));
+
+            const top = matches.slice(0, 8);
+            if (!top.length) {
+                resultsEl.innerHTML = `<div class="retro-map-search-empty">NO MATCHES — CHECK THE SOURCE OF TRUTH</div>`;
+                resultsEl.classList.add('retro-map-search-open');
+                return;
+            }
+
+                top.forEach(({ item }) => {
+                    const dist = (typeof item.distanceKm === 'number')
+                        ? ` • ${item.distanceKm.toFixed(2)} KM FROM BGC CORE`
+                        : '';
+                    const kindTag = item.kind === 'landmark' ? 'LANDMARK • ' : '';
+                    const stack = item.techStack.slice(0, 5).join(' / ');
+                    const stackLine = stack
+                        ? stack
+                        : (item.kind === 'landmark'
+                            ? 'Iconic BGC landmark — no technology stack'
+                            : 'Not yet ready to share');
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'retro-map-search-item';
+                    btn.innerHTML = `
+                        <div class="retro-map-search-item-title">${item.name}</div>
+                        <div class="retro-map-search-item-sub">${kindTag}${item.address}${dist}</div>
+                        <div class="retro-map-search-item-stack">${stackLine}</div>`;
+                    btn.addEventListener('click', () => {
+                        openSearchResult(item);
+                        close();
+                    });
+                    resultsEl.appendChild(btn);
+                });
+
+            resultsEl.classList.add('retro-map-search-open');
+        }
+
+        function openSearchResult(item) {
+            placeSearchMarker(item);
+
+            if (item.type === 'node') {
+                inspectNode(item.source, true);
+                return;
+            }
+
+            if (!activeMapInstance) return;
+            activeMapInstance.flyTo({
+                center: [item.lng, item.lat],
+                zoom: 14.5,
+                pitch: 55,
+                bearing: 5,
+                duration: 2000
+            });
+
+            updateHUD(item.name, 'GRID ACCESS GRANTED', `LAT/LNG: ${item.lat.toFixed(4)} / ${item.lng.toFixed(4)}`);
+
+            toggleInspector(true);
+            const inspectorContent = document.getElementById('inspector-content');
+            inspectorContent.innerHTML = `<p style="color: #22d3ee; animation: aliens-blink 1s step-end infinite; text-align: center; margin-top: 20px;">[ RETRIEVING COMPANY PROFILE... ]</p>`;
+
+            setTimeout(() => {
+                inspectorContent.innerHTML = renderDirectoryProfile(item);
+            }, 550);
+        }
+
+        // Profile panel for a BGC directory entry (no group `company` record).
+        function renderDirectoryProfile(item) {
+            const stack = (item.techStack && item.techStack.length)
+                ? item.techStack.map((t) => `<div class="retro-map-inspector-stack-row"><span>${t}</span></div>`).join('')
+                : (item.kind === 'landmark'
+                    ? '<div class="retro-map-inspector-stack-row"><span>Iconic BGC landmark — no technology stack</span></div>'
+                    : '<div class="retro-map-inspector-stack-row"><span>Not yet ready to share</span></div>');
+            const dist = (typeof item.distanceKm === 'number')
+                ? `${item.distanceKm.toFixed(2)} KM FROM BGC CORE`
+                : '—';
+
+            const rows = `
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">COMPANY NAME</dt>
+                    <dd class="retro-map-inspector-dd">${item.name}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">ADDRESS</dt>
+                    <dd class="retro-map-inspector-dd">${item.address}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">INDUSTRY</dt>
+                    <dd class="retro-map-inspector-dd">${item.industry || '—'}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">COORDINATES</dt>
+                    <dd class="retro-map-inspector-dd">${item.lat.toFixed(4)}N, ${item.lng.toFixed(4)}E</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">DISTANCE FROM BGC CORE</dt>
+                    <dd class="retro-map-inspector-dd">${dist}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">TECH STACK</dt>
+                    <dd class="retro-map-inspector-dd">${stack}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">LAST VERIFIED</dt>
+                    <dd class="retro-map-inspector-dd">${item.lastVerified || '—'}</dd>
+                </div>`;
+
+                const footer = `<div class="retro-map-inspector-intel">
+                    <strong>SOURCE:</strong><br>
+                    BGC directory • curated against the ecosystem source of truth. Coordinates from OpenStreetMap building records; landmark entries carry no technology stack.
+                </div>`;
+
+            return `<dl>${rows}</dl>${footer}`;
+        }
+
+        // Search selection pin: a company-style dot with the searched company's name.
+        function placeSearchMarker(item) {
+            if (!activeMapInstance) return;
+            if (searchMarkerInstance) searchMarkerInstance.remove();
+
+            const el = document.createElement('div');
+            el.className = 'retro-map-node-marker retro-map-search-marker';
+            el.innerHTML = `
+                <div class="retro-map-marker-tag">${item.name}</div>
+                <div class="retro-map-marker-line"></div>
+                <div class="retro-map-marker-glow"></div>`;
+
+            searchMarkerInstance = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+                .setLngLat([item.lng, item.lat])
+                .addTo(activeMapInstance);
+        }
+
+        function clearSearchMarker() {
+            if (searchMarkerInstance) {
+                searchMarkerInstance.remove();
+                searchMarkerInstance = null;
+            }
+        }
+
+        function initNetworkMap() {
+            const mapEl = document.getElementById('aliens-network-map');
+            if (!mapEl || typeof maplibregl === 'undefined') return;
+
+            applyEcosystemSummary();
+            initSearch();
+
+            // Integrates OpenFreeMap Dark style to serve vector tiles natively
+            activeMapInstance = new maplibregl.Map({
+                container: 'aliens-network-map',
+                style: 'https://tiles.openfreemap.org/styles/dark',
+                center: [120.7, 15.1],
+                zoom: 8.2,
+                pitch: 55, // Immersive 3D camera angle
+                bearing: -10,
+                attributionControl: { compact: true },
+                canvasContextAttributes: { antialias: true }
+            });
+
+            // Initialize Synchronized Radar Minimap (clone style to avoid shared object issues)
+            minimapInstance = new maplibregl.Map({
+                container: 'retro-compass-radar-map',
+                style: 'https://tiles.openfreemap.org/styles/dark',
+                center: [120.7, 15.1],
+                zoom: 4.8,
+                interactive: false,
+                attributionControl: false
+            });
+
+            activeMapInstance.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+
+            boundsInstance = new maplibregl.LngLatBounds();
+
+            // Setup layers after style is parsed
+            activeMapInstance.on('style.load', () => {
+                // Adds cybernetic 3D building extrusions natively colored by height
+                activeMapInstance.addLayer({
+                    'id': '3d-buildings',
+                    'source': 'openmaptiles',
+                    'source-layer': 'building',
+                    'type': 'fill-extrusion',
+                    'minzoom': 13,
+                    'paint': {
+                        'fill-extrusion-color': BUILDING_HEIGHT_RAMP,
+                        'fill-extrusion-height': [
+                            'interpolate',
+                            ['linear'],
+                            ['zoom'],
+                            13, 0,
+                            14, ['get', 'render_height']
+                        ],
+                        'fill-extrusion-base': [
+                            'case',
+                            ['>=', ['get', 'zoom'], 16],
+                            ['get', 'render_min_height'],
+                            0
+                        ],
+                        'fill-extrusion-opacity': 0.75
+                    }
+                });
+
+                // Add Luzon corridor network (real rail + highway alignments) for the GRID FLOW view
+                const corridorFeatures = [
+                    ...luzonRailwaysGeoJSON.features.map(f => Object.assign({}, f, { properties: Object.assign({}, f.properties, { type: 'rail' }) })),
+                    ...luzonHighwaysGeoJSON.features.map(f => Object.assign({}, f, { properties: Object.assign({}, f.properties, { type: 'road' }) }))
+                ];
+                activeMapInstance.addSource('luzon-corridors', {
+                    type: 'geojson',
+                    data: { type: 'FeatureCollection', features: corridorFeatures }
+                });
+
+                // Dim base corridor underlay (identity colors: rail = cyan, road = emerald)
+                activeMapInstance.addLayer({
+                    id: 'flow-base',
+                    type: 'line',
+                    source: 'luzon-corridors',
+                    layout: { 'line-cap': 'round', 'line-join': 'round', 'visibility': 'none' },
+                    paint: {
+                        'line-color': ['match', ['get', 'type'], 'rail', '#22d3ee', '#34d399'],
+                        'line-width': 3,
+                        'line-opacity': 0.22
+                    }
+                });
+
+                // Flowing dashes marching along the network
+                activeMapInstance.addLayer({
+                    id: 'flow-dash',
+                    type: 'line',
+                    source: 'luzon-corridors',
+                    layout: { 'line-cap': 'round', 'line-join': 'round', 'visibility': 'none' },
+                    paint: {
+                        'line-color': ['match', ['get', 'type'], 'rail', '#22d3ee', '#34d399'],
+                        'line-width': 3,
+                        'line-opacity': 0.85,
+                        'line-dasharray': [2.4, 2.4, 0]
+                    }
+                });
+
+                // Traveling comet head (geometry rebuilt every frame up to the pulse position)
+                activeMapInstance.addSource('flow-comet-source', {
+                    type: 'geojson',
+                    lineMetrics: true,
+                    data: { type: 'FeatureCollection', features: [] }
+                });
+                activeMapInstance.addLayer({
+                    id: 'flow-comet',
+                    type: 'line',
+                    source: 'flow-comet-source',
+                    layout: { 'line-cap': 'round', 'line-join': 'round', 'visibility': 'none' },
+                    paint: {
+                        'line-gradient': [
+                            'interpolate', ['linear'], ['line-progress'],
+                            0, 'rgba(103,232,249,0)',
+                            0.72, 'rgba(103,232,249,0)',
+                            0.84, 'rgba(34,211,238,0.9)',
+                            0.97, 'rgba(255,255,255,1)'
+                        ],
+                        'line-width': 4,
+                        'line-opacity': 1
+                    }
+                });
+
+                // Buildings get their real height colors once the pulse crosses them (feature-state opacity)
+                activeMapInstance.addLayer({
+                    id: 'buildings-revealed',
+                    source: 'openmaptiles',
+                    'source-layer': 'building',
+                    type: 'fill-extrusion',
+                    minzoom: 13,
+                    layout: { 'visibility': 'none' },
+                    paint: {
+                        'fill-extrusion-color': [
+                            'case',
+                            ['==', ['feature-state', 'reveal'], true],
+                            BUILDING_HEIGHT_RAMP,
+                            'rgba(0,0,0,0)'
+                        ],
+                        'fill-extrusion-height': [
+                            'interpolate', ['linear'], ['zoom'],
+                            13, 0,
+                            14, ['get', 'render_height']
+                        ],
+                        'fill-extrusion-base': [
+                            'case',
+                            ['>=', ['get', 'zoom'], 16],
+                            ['get', 'render_min_height'],
+                            0
+                        ],
+                        'fill-extrusion-opacity': 0.92
+                    }
+                });
+
+                // Generate fable District labels
+                fableDistricts.forEach(dist => {
+                    const el = document.createElement('div');
+                    el.className = 'retro-map-district-tag';
+                    el.textContent = dist.name;
+
+                    const marker = new maplibregl.Marker({ element: el, clickTolerance: 0 })
+                        .setLngLat(dist.coords)
+                        .addTo(activeMapInstance);
+
+                    districtMarkers.push(marker);
+                });
+
+                // Hide district tags on zoomed out bounds to prevent cluttering
+                function updateDistrictLabels() {
+                    const zoom = activeMapInstance.getZoom();
+                    districtMarkers.forEach(m => {
+                        m.getElement().style.opacity = zoom >= 13 ? '1' : '0';
+                    });
+                }
+                activeMapInstance.on('zoom', updateDistrictLabels);
+                updateDistrictLabels();
+                activeMapInstance.resize();
+                if (minimapInstance) minimapInstance.resize();
+            });
+
+            // Monitor map centering to update HUD Sector name dynamically based on nearest LGU
+            activeMapInstance.on('move', () => {
+                const center = activeMapInstance.getCenter();
+                
+                // Track minimap coordinates
+                minimapInstance.setCenter(center);
+                minimapInstance.setZoom(Math.max(4.5, activeMapInstance.getZoom() - 3.8));
+
+                let nearestLgu = null;
+                let minDistance = Infinity;
+
+                fableLgus.forEach(lgu => {
+                    const dx = center.lng - lgu.coords[0];
+                    const dy = center.lat - lgu.coords[1];
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearestLgu = lgu;
+                    }
+                });
+
+                // Zoomed in enough to specify structures
+                if (activeMapInstance.getZoom() > 9.5 && nearestLgu && minDistance < 0.25) {
+                    document.getElementById('retro-focus-title').textContent = nearestLgu.name.toUpperCase();
+                    document.getElementById('retro-focus-stat1-val').textContent = Number(nearestLgu.population).toLocaleString('en-US');
+                    document.getElementById('retro-focus-stat1-lbl').textContent = "RESIDENTS";
+                    document.getElementById('retro-focus-stat2').textContent = `CENSUS ${nearestLgu.censusYear || 2020}`;
+                } else {
+                    const sectors = (window.ecosystemSummary && window.ecosystemSummary.nodeCount) || 7;
+                    document.getElementById('retro-focus-title').textContent = "LUZON CORRIDOR";
+                    document.getElementById('retro-focus-stat1-val').textContent = `${sectors} SECTORS`;
+                    document.getElementById('retro-focus-stat1-lbl').textContent = "CONNECTED";
+                    document.getElementById('retro-focus-stat2').textContent = "GRID AREA ACTIVE";
+                }
+            });
+
+            aliensNetworkNodes.forEach(node => {
+                const el = document.createElement('div');
+                el.className = 'retro-map-node-marker';
+                el.innerHTML = `
+                    <div class="retro-map-marker-tag">${node.name}</div>
+                    <div class="retro-map-marker-line"></div>
+                    <div class="retro-map-marker-glow"></div>
+                `;
+
+                // Custom marker interaction triggers
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    clearSearchMarker();
+                    inspectNode(node);
+                });
+
+                new maplibregl.Marker({ element: el, anchor: 'bottom' })
+                    .setLngLat([node.lng, node.lat])
+                    .addTo(activeMapInstance);
+
+                boundsInstance.extend([node.lng, node.lat]);
+            });
+
+            // Initial fitting bound alignment on map load
+            activeMapInstance.once('load', () => {
+                activeMapInstance.fitBounds(boundsInstance, { 
+                    padding: { top: 120, bottom: 120, left: 60, right: 60 }, 
+                    maxZoom: 10,
+                    pitch: 55,
+                    bearing: -10
+                });
+            });
+        }
+
+        // Map view toggle: DEFAULT shows height-colored buildings, GRID FLOW animates corridor pulses
+        function toggleDataLayer(mode) {
+            if (!activeMapInstance) return;
+
+            const isFlow = mode === 'flow';
+            document.querySelectorAll('.retro-map-deck-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const activeBtn = document.getElementById(`layer-btn-${mode}`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            const flowLayerIds = ['flow-base', 'flow-dash', 'flow-comet', 'buildings-revealed'];
+
+            if (isFlow) {
+                // Dim base buildings so pulses' height-color reveal pops
+                if (activeMapInstance.getLayer('3d-buildings')) {
+                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-color', '#0b1520');
+                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.55);
+                }
+                flowLayerIds.forEach(id => {
+                    if (activeMapInstance.getLayer(id)) activeMapInstance.setLayoutProperty(id, 'visibility', 'visible');
+                });
+                startFlow();
+            } else {
+                stopFlow();
+                if (activeMapInstance.getLayer('3d-buildings')) {
+                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-color', BUILDING_HEIGHT_RAMP);
+                    activeMapInstance.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.75);
+                }
+                flowLayerIds.forEach(id => {
+                    if (activeMapInstance.getLayer(id)) activeMapInstance.setLayoutProperty(id, 'visibility', 'none');
+                });
+            }
+
+            const lowEl = document.getElementById('retro-legend-low');
+            const highEl = document.getElementById('retro-legend-high');
+            if (lowEl) lowEl.textContent = 'LOW-RISE';
+            if (highEl) highEl.textContent = 'HIGH-RISE';
+        }
+
+        // Sector Preset action focusing
+        function focusSector(lngLat, zoom, sectorName) {
+            if (!activeMapInstance) return;
+            activeMapInstance.flyTo({
+                center: lngLat,
+                zoom: zoom,
+                pitch: 55,
+                bearing: 15,
+                duration: 2200,
+                essential: true
+            });
+
+            // If coordinates match a registered subsidiary, inspect it automatically
+            const matchedNode = aliensNetworkNodes.find(n => Math.abs(n.lng - lngLat[0]) < 0.01 && Math.abs(n.lat - lngLat[1]) < 0.01);
+            if (matchedNode) {
+                inspectNode(matchedNode, false); // Focus sector HUD update only
+            } else {
+                updateHUD(sectorName, "SCANNING SECTOR", `COORDS: ${lngLat[1].toFixed(4)} / ${lngLat[0].toFixed(4)}`);
+            }
+        }
+
+        // Reset the main map back to its overall cluster viewpoint
+        function resetMapView() {
+            if (!activeMapInstance || !boundsInstance) return;
+            activeMapInstance.fitBounds(boundsInstance, {
+                padding: { top: 120, bottom: 120, left: 60, right: 60 },
+                maxZoom: 10,
+                pitch: 55,
+                bearing: -10,
+                duration: 2000
+            });
+            updateHUD("LUZON CORRIDOR", "MONITORING SYSTEM", "GRID ARRAY BOUNDS");
+            toggleInspector(false);
+            clearSearchMarker();
+        }
+
+        // Company profile inspector (real data from the ecosystem source of truth)
+        function inspectNode(node, shouldFly = true) {
+            if (shouldFly && activeMapInstance) {
+                activeMapInstance.flyTo({
+                    center: [node.lng, node.lat],
+                    zoom: 14.5,
+                    pitch: 55,
+                    bearing: 5,
+                    duration: 2000
+                });
+            }
+
+            // Update top sector HUD metrics dynamically
+            updateHUD(node.name, "GRID ACCESS GRANTED", `LAT/LNG: ${node.lat.toFixed(4)} / ${node.lng.toFixed(4)}`);
+
+            // Display loading state while the profile is assembled
+            toggleInspector(true);
+            const inspectorContent = document.getElementById('inspector-content');
+            inspectorContent.innerHTML = `<p style="color: #22d3ee; animation: aliens-blink 1s step-end infinite; text-align: center; margin-top: 20px;">[ RETRIEVING COMPANY PROFILE... ]</p>`;
+
+            setTimeout(() => {
+                inspectorContent.innerHTML = renderCompanyProfile(node);
+            }, 550);
+        }
+
+        // Builds the real company profile panel for a network node.
+        function renderCompanyProfile(node) {
+            const company = node.company;
+            const hc = company ? company.headcount : null;
+            const headcount2026 = (hc && typeof hc['2026F'] === 'number') ? Number(hc['2026F']).toLocaleString('en-US') : '—';
+            const headcountFt = (hc && typeof hc.fullTime === 'number') ? Number(hc.fullTime).toLocaleString('en-US') : '—';
+            const clients = (company && typeof company.clientCount === 'number') ? company.clientCount : '—';
+            const projects = (company && typeof company.activeProjectCount === 'number') ? company.activeProjectCount : '—';
+            const established = company ? (company.foundingDate || company.yearFounded || '—') : '—';
+            const category = company ? (company.category || '—') : 'Group headquarters';
+            const mission = company ? company.mission : null;
+
+            const stack = (node.techStack && node.techStack.length)
+                ? node.techStack.map(t => `<div class="retro-map-inspector-stack-row"><span>${t.name}</span><em>${t.role}</em></div>`).join('')
+                : '<div class="retro-map-inspector-stack-row"><span>Not yet ready to share</span></div>';
+
+            let rows = `
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">SECTOR LOCATION</dt>
+                    <dd class="retro-map-inspector-dd">${node.sector}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">COORDINATES</dt>
+                    <dd class="retro-map-inspector-dd">${node.lat.toFixed(4)}N, ${node.lng.toFixed(4)}E</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">CATEGORY</dt>
+                    <dd class="retro-map-inspector-dd">${category}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">ESTABLISHED</dt>
+                    <dd class="retro-map-inspector-dd">${established}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">HEADCOUNT 2026F</dt>
+                    <dd class="retro-map-inspector-dd">${headcount2026} (${headcountFt} FULL-TIME)</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">CLIENT COUNT</dt>
+                    <dd class="retro-map-inspector-dd">${clients}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">ACTIVE PROJECTS</dt>
+                    <dd class="retro-map-inspector-dd">${projects}</dd>
+                </div>
+                <div class="retro-map-inspector-row">
+                    <dt class="retro-map-inspector-dt">TECH STACK</dt>
+                    <dd class="retro-map-inspector-dd">${stack}</dd>
+                </div>`;
+
+            let footer = '';
+            if (mission) {
+                footer = `<div class="retro-map-inspector-intel">
+                    <strong>MISSION:</strong><br>
+                    ${mission}
+                </div>`;
+            }
+
+            return `<dl>${rows}</dl>${footer}`;
+        }
+
+        // Sector HUD values update utility
+        function updateHUD(name, status, telemetry) {
+            const nameEl = document.getElementById('retro-focus-title');
+            const statusEl = document.getElementById('retro-focus-stat1-lbl');
+            const telemetryEl = document.getElementById('retro-focus-stat2');
+
+            if (nameEl) nameEl.textContent = name.toUpperCase();
+            if (statusEl) statusEl.textContent = status;
+            if (telemetryEl) telemetryEl.textContent = telemetry;
+        }
+
+        // Show/Hide Right Terminal Inspector panel
+        function toggleInspector(show) {
+            const panel = document.getElementById('node-inspector');
+            if (!panel) return;
+            if (show) {
+                panel.classList.remove('closed');
+            } else {
+                panel.classList.add('closed');
+            }
+        }
+
+        // Starfield Canvas Renderer
+        const canvas = document.querySelector('#star-container canvas');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        for (let i = 0; i < 400; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 2,
+                speed: Math.random() * 0.4 + 0.1
+            });
+        }
+
+        function drawStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#22d3ee';
+            stars.forEach(s => {
+                ctx.globalAlpha = Math.random() * 0.7 + 0.3;
+                ctx.fillRect(s.x, s.y, s.size, s.size);
+                s.y += s.speed;
+                if (s.y > canvas.height) {
+                    s.y = 0;
+                    s.x = Math.random() * canvas.width;
+                }
+            });
+            requestAnimationFrame(drawStars);
+        }
+        drawStars();
+
+        // Sequential Typewriter Logic
+        const paragraphs = [
+            document.getElementById('p1'),
+            document.getElementById('p2'),
+            document.getElementById('p3'),
+            document.getElementById('p4'),
+            document.getElementById('p5'),
+            document.getElementById('p6'),
+            document.getElementById('p7'),
+            document.getElementById('p8'),
+            document.getElementById('p9')
+        ];
+        let currentPara = 0;
+
+        function typeParagraph() {
+            if (currentPara >= paragraphs.length) {
+                document.getElementById('rest-of-page').style.opacity = '1';
+                if (activeMapInstance) activeMapInstance.resize();
+                if (minimapInstance) minimapInstance.resize();
+                initSplitFlaps();
+                return;
+            }
+            const el = paragraphs[currentPara];
+            if (!el) return;
+            const text = el.getAttribute('data-text');
+            let i = 0;
+            el.textContent = '';
+            el.classList.add('typewriter');
+            
+            function type() {
+                if (i < text.length) {
+                    el.classList.add('typewriter-start');
+                    el.textContent += text.charAt(i++);
+                    setTimeout(type, 35);
+                } else {
+                    el.classList.remove('typewriter-start');
+                    el.classList.add('typewriter-done');
+                    currentPara++;
+                    if (el.id === 'p8') {
+                        document.querySelector('.aliens-moment-log').classList.add('visible');
+                    }
+                    setTimeout(typeParagraph, 600);
+                }
+            }
+            type();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(typeParagraph, 800);
+            NetworkMapData.load(() => {
+                initNetworkMap();
+            });
+        });
+
+        // Split-Flap board animation sequence
+        function initSplitFlaps() {
+            const flipSpeed = 2000;
+            const introSteps = 20;
+            const introInterval = 160;
+
+            document.querySelectorAll('.num-container').forEach(container => {
+                const targetValue = parseInt(container.dataset.count, 10);
+                const digitsCount = targetValue.toString().length;
+                let value = 0;
+
+                // Build digits starting at 0
+                for (let i = 0; i < digitsCount; i++) {
+                    const staticTop = document.createElement('div');
+                    staticTop.className = 'static-top';
+                    const staticTopSpan = document.createElement('span');
+                    staticTopSpan.textContent = '0';
+                    staticTop.appendChild(staticTopSpan);
+
+                    const staticBottom = document.createElement('div');
+                    staticBottom.className = 'static-bottom';
+                    const staticBottomSpan = document.createElement('span');
+                    staticBottomSpan.textContent = '0';
+                    staticBottom.appendChild(staticBottomSpan);
+
+                    const digit = document.createElement('div');
+                    digit.className = 'digit';
+                    digit.appendChild(staticTop);
+                    digit.appendChild(staticBottom);
+                    container.appendChild(digit);
+
+                    const remaining = digitsCount - 1 - i;
+                    if (remaining > 0 && remaining % 3 === 0) {
+                        const mark = document.createElement('div');
+                        mark.className = 'mark';
+                        const markSpan = document.createElement('span');
+                        markSpan.textContent = ',';
+                        mark.appendChild(markSpan);
+                        container.appendChild(mark);
+                    }
+                }
+
+                const digits = container.querySelectorAll('.digit');
+
+                function update(newVal, fast) {
+                    const str = newVal.toString().padStart(digitsCount, '0');
+
+                    digits.forEach((digit, index) => {
+                        const topEl = digit.querySelector('.static-top span');
+                        if (!topEl) return;
+                        const current = topEl.textContent;
+                        const next = str[index];
+
+                        if (current !== next) {
+                            const flipTop = document.createElement('div');
+                            flipTop.className = fast ? 'flip-top fast' : 'flip-top';
+
+                            const topSpan = document.createElement('span');
+                            topSpan.textContent = current;
+                            flipTop.appendChild(topSpan);
+
+                            const flipBottom = document.createElement('div');
+                            flipBottom.className = fast ? 'flip-bottom fast' : 'flip-bottom';
+
+                            const bottomSpan = document.createElement('span');
+                            bottomSpan.textContent = next;
+                            flipBottom.appendChild(bottomSpan);
+
+                            digit.appendChild(flipTop);
+                            topEl.textContent = next;
+
+                            flipTop.addEventListener('animationend', () => {
+                                digit.appendChild(flipBottom);
+                            });
+
+                            flipBottom.addEventListener('animationend', () => {
+                                const bottomEl = digit.querySelector('.static-bottom span');
+                                if (bottomEl) bottomEl.textContent = next;
+                                flipTop.remove();
+                                flipBottom.remove();
+                            });
+                        }
+                    });
+                }
+
+                // Intro: flip quickly from 0 up to targetValue
+                const step = Math.max(1, Math.floor(targetValue / introSteps));
+                const introTimer = setInterval(() => {
+                    value = Math.min(value + step, targetValue);
+                    update(value, true);
+                    if (value >= targetValue) {
+                        clearInterval(introTimer);
+                    }
+                }, introInterval);
+            });
+        }
+
+        // Scroll reveal controller
+        const sectionObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+        
+        document.querySelectorAll('.section').forEach(s => sectionObserver.observe(s));
+
+        // Opt-in Submission
+        function handleForm(e) {
+            e.preventDefault();
+            const input = document.getElementById('email');
+            const msg = document.getElementById('form-msg');
+            msg.style.display = "block";
+            msg.textContent = `TRANSMISSION SECURED: ${input.value} LOGGED INTO SIGNAL ARRAY.`;
+            input.value = "";
+        }
+    </script>
+</body>
+</html>

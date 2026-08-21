@@ -1484,23 +1484,17 @@
         min-height: 480px;
       }
     }
-    /* why page: full-bleed map zone like the homepage, minus the fixed header */
-    :root {
-      --header-height: 4.875rem;
-    }
+    /* why page: contained map height inside the declassified layout column */
     #network-map.network-map-zone .retro-map-wrapper {
-      height: calc(100vh - var(--header-height));
+      height: 700px;
       min-height: 620px;
-      max-height: 1200px;
+      max-height: 900px;
     }
     @media screen and (max-width: 768px) {
       #network-map.network-map-zone .retro-map-wrapper {
-        height: 68vh;
+        height: 62vh;
         min-height: 480px;
       }
-    }
-    #network-map .aliens-map-inner {
-      max-width: 72rem;
     }
 
     </style>
@@ -1571,16 +1565,15 @@
         </section>
 
         <!-- Interactive Map Coordinates Visualization Section -->
-        <!-- Interactive Map Coordinates Visualization Section -->
         <section id="network-map" class="aliens-map-section network-map-zone">
             <div class="aliens-map-inner">
                 <div class="aliens-map-label-wrap">
                     <span class="aliens-clearance-badge">TOP SECRET RECORDS</span>
                 </div>
                 <h2 class="aliens-map-title neon-cyan" style="letter-spacing: 8px; margin-bottom: 1rem;">COORDINATES</h2>
-                <h3 class="aliens-map-title neon-cyan" style="font-size: 1.85rem; letter-spacing: 4px; margin-bottom: 3rem;">ALIEN.INC NETWORK MAP &bull; LIVE</h3>
-            </div>
-            <div class="retro-map-wrapper">
+                <h3 class="aliens-map-title neon-cyan" style="font-size: 1.85rem; letter-spacing: 4px; margin-bottom: 3rem;">ALIEN.INC NETWORK MAP • LIVE</h3>
+                    <!-- ALIEN.INC Network Map with fable HUD Overlays (ported from index.html) -->
+                    <div class="retro-map-wrapper">
 
                         <!-- HUD: FOCUS SECTOR (honeycomb deck — floating tessellated tiles, no wrapper box;
                              VIEW DEFAULT / GRID FLOW merged into ONE toggle tile, exactly one active at a time) -->
@@ -1670,10 +1663,6 @@
                             <div class="retro-map-hint-text">[ DRAG: PAN • SCROLL: ZOOM • SHIFT+DRAG: TILT 3D • CLICK COORDINATES ]</div>
                         </div>
 
-                        <!-- Terminal (store.palantir.com pattern) -->
-                        <div data-section-id="terminal" data-section-type="terminal" class="retro-map-terminal mono">
-                            <div id="terminal"></div>
-                        </div>
 
                         <!-- Command Preset Toolbar Sector Presets -->
                         <div class="retro-map-toolbar">
@@ -1710,20 +1699,7 @@
                             </div>
                         </div>
 
-            </div>
-            <div class="aliens-map-inner">
-                <p style="font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.6; margin-top: 3rem; text-align: center; max-width: 48rem; margin-left: auto; margin-right: auto;">
-                    Every subsidiary under ALIEN.INC operates as its own signal — distinct, self-contained, transmitting from a strategic node within the Luzon Economic Corridor. This is where they broadcast from.
-                </p>
-                <div class="wp-block-buttons is-content-justification-center aliens-cta-button">
-                    <div class="wp-block-button">
-                        <a class="wp-block-button__link wp-element-button" href="https://alieninc.tech" target="_blank" rel="noreferrer noopener">
-                            EXPLORE THE NETWORK &rarr; VISIT ALIENINC.TECH
-                        </a>
                     </div>
-                </div>
-            </div>
-        </section>
                 <p style="font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.6; margin-top: 3rem; text-align: center; max-width: 48rem; margin-left: auto; margin-right: auto;">
                     Every subsidiary under ALIEN.INC operates as its own signal — distinct, self-contained, transmitting from a strategic node within the Luzon Economic Corridor. This is where they broadcast from.
                 </p>
@@ -2933,459 +2909,6 @@
     startMapWhenVisible();
   }
 })();
-</script>
-
-  <script>
-        // ── Terminal Console (store.palantir.com pattern, lazy-loaded) ──
-        (function() {
-            var el = document.getElementById('terminal');
-            var mapSection = document.getElementById('network-map');
-            if (!el || !mapSection) return;
-
-            var initialized = false;
-
-            function loadScript(url) {
-                return new Promise(function(resolve, reject) {
-                    var s = document.createElement('script');
-                    s.src = url;
-                    s.onload = resolve;
-                    s.onerror = reject;
-                    document.head.appendChild(s);
-                });
-            }
-
-            function loadCSS(url) {
-                var l = document.createElement('link');
-                l.rel = 'stylesheet';
-                l.href = url;
-                document.head.appendChild(l);
-            }
-
-            function initTerminal() {
-                if (initialized) return;
-                initialized = true;
-
-                loadCSS('https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css');
-
-                Promise.all([
-                    loadScript('https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js'),
-                    loadScript('https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js')
-                ]).then(function() {
-                    if (typeof Terminal === 'undefined') return;
-                    bootTerminal();
-                });
-            }
-
-            // IntersectionObserver: only load xterm when map scrolls into view
-            if ('IntersectionObserver' in window) {
-                var mapObserver = new IntersectionObserver(function(entries) {
-                    entries.forEach(function(entry) {
-                        if (entry.isIntersecting) {
-                            initTerminal();
-                            mapObserver.disconnect();
-                        }
-                    });
-                }, { threshold: 0.1 });
-                mapObserver.observe(mapSection);
-            } else {
-                initTerminal();
-            }
-
-            function bootTerminal() {
-
-            function rgb(r, g, b) { return "\x1B[38;2;" + r + ";" + g + ";" + b + "m"; }
-
-            var term = new Terminal({
-                theme: { foreground: '#CDCDCD', background: '#ff000000', selectionBackground: '#090808' },
-                allowTransparency: true, scrollback: 1000, wordWrap: true,
-                fontSize: 13, lineHeight: 1.1, fontFamily: "'VT323', monospace",
-                cursorBlink: true, cursorStyle: 'block', convertEol: true
-            });
-
-            var fitAddon = new FitAddon.FitAddon();
-            term.loadAddon(fitAddon);
-            term.open(el);
-            fitAddon.fit();
-            window.addEventListener('resize', function() { fitAddon.fit(); });
-
-            var renderedLines = [], lineBuffer = [], history = [], shellListener = null, offset = 0;
-            var visitorIP = 'unknown';
-            var visitorGeo = null;
-
-            // Fetch visitor IP + location on init
-            fetch('https://ipwho.is/').then(function(r) { return r.json(); }).then(function(d) {
-                if (d.success) {
-                    visitorIP = d.ip || 'unknown';
-                    visitorGeo = { city: d.city, country: d.country, region: d.region, lat: d.latitude, lon: d.longitude, tz: d.timezone, isp: d.connection ? d.connection.isp : '—' };
-                }
-            }).catch(function() { visitorIP = 'unavailable'; });
-
-            function redrawScreen() {
-                var rows = term.rows;
-                term.write('\x1b[2J\x1b[H');
-                var start = Math.max(0, renderedLines.length - (rows - 1));
-                var vis = renderedLines.slice(start);
-                for (var i = 0; i < rows - 1 - vis.length; i++) term.write('\r\n');
-                for (var j = 0; j < vis.length; j++) term.write(vis[j] + '\r\n');
-                term.write("\x1B[" + rows + ";1H" + lineBuffer.join(''));
-                if (offset < 0) term.write("\x1B[" + (-offset) + "D");
-            }
-
-            function log(msg, type) {
-                var ts = new Date().toLocaleTimeString();
-                var c = type === 'error' ? rgb(255,0,0) : type === 'success' ? rgb(34,211,238) : type === 'warning' ? rgb(255,255,0) : rgb(229,231,235);
-                renderedLines.push(c + "[" + ts + "] " + rgb(229,231,235) + msg + "\x1B[0m");
-                redrawScreen();
-            }
-
-            // Boot sequence
-            renderedLines.push('Loading version 1.0');
-            redrawScreen();
-            setTimeout(function() { log('Setting preferences...', 'info'); }, 1000);
-            setTimeout(function() { log('Current date: ' + new Date().toLocaleDateString(), 'info'); }, 2000);
-
-            // terminal:log listener
-            window.addEventListener('terminal:log', function(e) {
-                var message = (e.detail && e.detail.message) || 'No message provided';
-                var type = (e.detail && e.detail.type) || 'info';
-                var ts = new Date().toLocaleTimeString();
-                var c = type === 'error' ? rgb(255,0,0) : type === 'success' ? rgb(34,211,238) : type === 'warning' ? rgb(255,255,0) : rgb(229,231,235);
-                renderedLines.push(c + "[" + ts + "] " + rgb(229,231,235) + message + "\x1B[0m");
-                redrawScreen();
-            });
-
-            function terminalLog(message, type) {
-                window.dispatchEvent(new CustomEvent('terminal:log', { detail: { message: message, type: type || 'info' } }));
-            }
-
-            // Navigation tracking
-            var SECTION_NAMES = {
-                '/founder': 'HERO',
-                'operating-system': 'SYSTEM OVERVIEW',
-                'portfolio': 'HOLDING COMPANIES',
-                'sitemap': 'SITEMAP',
-                'network-map': 'NETWORK MAP',
-                'terminal': 'TERMINAL',
-                'research-output': 'RESEARCH REPORT'
-            };
-            var lastNavId = '';
-            var sections = document.querySelectorAll('section[id], .timeline-title[id]');
-            if (sections.length && 'IntersectionObserver' in window) {
-                var navObserver = new IntersectionObserver(function(entries) {
-                    entries.forEach(function(entry) {
-                        var id = entry.target.id;
-                        if (id && id !== lastNavId && entry.isIntersecting) {
-                            lastNavId = id;
-                            var name = SECTION_NAMES[id] || id.toUpperCase().replace(/[-/]/g, ' ');
-                            terminalLog('NAVIGATING TO /' + name, 'success');
-                        }
-                    });
-                }, { threshold: 0.3 });
-                sections.forEach(function(s) { navObserver.observe(s); });
-            }
-
-            // Map marker clicks
-            document.addEventListener('click', function(e) {
-                var marker = e.target.closest('.maplibregl-marker, .mapboxgl-marker, [class*="marker"]');
-                if (marker) {
-                    var label = marker.getAttribute('aria-label') || marker.getAttribute('title') || 'COORDINATE';
-                    terminalLog('SELECTING ' + label.toUpperCase(), 'success');
-                }
-            });
-
-            // === HELP TEXT ===
-            var HELP_TEXT = [
-                rgb(34,211,238) + '═══ ALIEN INC NETWORK MAP TERMINAL ═══' + rgb(229,231,235),
-                '',
-                'NAVIGATION',
-                '  scan                  │ Cycle map filter: foundry → hyperscale → colo → all',
-                '  filter <type>         │ Filter map: foundry | hyperscale | colocation | all',
-                '  reset                 │ Reset map to default global view',
-                '  focus <name>          │ Fly to a company node by name',
-                '  locate                │ Fly to Alien Inc headquarters (BGC, Taguig)',
-                '',
-                'RECONNAISSANCE',
-                '  nodes                 │ List all network nodes with coordinates',
-                '  node <name>           │ Inspect a company node (opens profile panel)',
-                '  scan-tech             │ List all companies with tech stacks',
-                '  ping <name>           │ Test connection latency to a node',
-                '  status                │ Network status + visitor IP + ecosystem stats',
-                '  silicrack [off]       │ Color map by Pax Silica vs WAICO (blue/red) + country list',
-                '',
-                'SYSTEM',
-                '  whoami                │ Visitor identity (IP, timestamp, viewport)',
-                '  uptime                │ Time since page load',
-                '  clear                 │ Clear terminal output',
-                '  history               │ Show command history',
-                '  help                  │ Show this help',
-                '',
-                rgb(100,100,100) + 'Type any command. Arrow keys for history. Backspace to edit.' + rgb(229,231,235)
-            ];
-
-            function getNodes() { return window.aliensNetworkNodes || []; }
-            function getMap() { return window.activeMapInstance; }
-            function getSummary() { return window.ecosystemSummary || {}; }
-
-            function fuzzyFind(query) {
-                var q = query.toLowerCase();
-                var nodes = getNodes();
-                return nodes.filter(function(n) {
-                    return n.name && n.name.toLowerCase().indexOf(q) !== -1;
-                });
-            }
-
-            function shell(data) {
-                for (var i = 0; i < data.length; ++i) {
-                    var c = data[i];
-                    if (c === '\r') {
-                        offset = 0;
-                        var command = lineBuffer.join('');
-                        renderedLines.push(rgb(180,180,180) + '> ' + rgb(229,231,235) + command + '\x1B[0m');
-                        lineBuffer.length = 0;
-                        history.push(command);
-                        try {
-                            if (shellListener) shellListener.dispose();
-                            var parts = command.trim().split(/\s+/);
-                            var cmd = (parts[0] || '').toLowerCase();
-                            var args = parts.slice(1).join(' ');
-                            var nodes = getNodes();
-                            var map = getMap();
-                            var summary = getSummary();
-
-                            switch (cmd) {
-                                case 'help':
-                                    HELP_TEXT.forEach(function(l) { renderedLines.push(l); });
-                                    break;
-
-                                case 'clear':
-                                    renderedLines = [];
-                                    break;
-
-                                case 'whoami': {
-                                    var now = new Date();
-                                    renderedLines.push(rgb(34,211,238) + 'VISITOR REPORT' + rgb(229,231,235));
-                                    renderedLines.push('  IP Address:     ' + visitorIP);
-                                    if (visitorGeo) {
-                                        renderedLines.push('  Location:       ' + visitorGeo.city + ', ' + visitorGeo.region + ', ' + visitorGeo.country);
-                                        renderedLines.push('  Coordinates:    ' + visitorGeo.lat.toFixed(4) + ', ' + visitorGeo.lon.toFixed(4));
-                                        renderedLines.push('  Timezone:       ' + visitorGeo.tz);
-                                        renderedLines.push('  ISP:            ' + visitorGeo.isp);
-                                    }
-                                    renderedLines.push('  Timestamp:      ' + now.toISOString());
-                                    renderedLines.push('  Viewport:       ' + window.innerWidth + 'x' + window.innerHeight);
-                                    renderedLines.push('  User Agent:     ' + navigator.userAgent.substring(0, 60) + '...');
-                                    renderedLines.push('  Language:       ' + navigator.language);
-                                    renderedLines.push('  Platform:       ' + (navigator.platform || 'unknown'));
-                                    break;
-                                }
-
-                                case 'uptime': {
-                                    var sec = Math.floor((Date.now() - performance.timing.navigationStart) / 1000);
-                                    var m = Math.floor(sec / 60), h = Math.floor(m / 60);
-                                    renderedLines.push('Page uptime: ' + h + 'h ' + (m % 60) + 'm ' + (sec % 60) + 's');
-                                    break;
-                                }
-
-                                case 'status': {
-                                    renderedLines.push(rgb(34,211,238) + 'NETWORK STATUS' + rgb(229,231,235));
-                                    renderedLines.push('  Visitor IP:     ' + visitorIP);
-                                    renderedLines.push('  Nodes:          ' + nodes.length);
-                                    renderedLines.push('  Sectors:        ' + (summary.nodeCount || nodes.length));
-                                    renderedLines.push('  Founding Year:  ' + (summary.earliestFoundingYear || '—'));
-                                    renderedLines.push('  Map:            ' + (map ? rgb(34,211,238) + 'ONLINE' + rgb(229,231,235) : rgb(255,0,0) + 'OFFLINE' + rgb(229,231,235)));
-                                    renderedLines.push('  Tiles:          openfreemap.org/dark');
-                                    var markers = document.querySelectorAll('.maplibregl-marker');
-                                    renderedLines.push('  Markers:        ' + markers.length + ' visible');
-                                    break;
-                                }
-
-                                case 'nodes': {
-                                    if (!nodes.length) { renderedLines.push('No nodes loaded.'); break; }
-                                    renderedLines.push(rgb(34,211,238) + 'NETWORK NODES (' + nodes.length + ')' + rgb(229,231,235));
-                                    nodes.forEach(function(n, i) {
-                                        var tag = n.markerColor ? rgb(74,222,128) : rgb(255,212,0);
-                                        renderedLines.push(tag + '  ' + (i+1).toString().padStart(2,'0') + rgb(229,231,235) + ' ' + (n.name || '?').substring(0,30).padEnd(30) + ' ' + rgb(100,100,100) + (n.sector || '—').substring(0,25) + rgb(229,231,235));
-                                    });
-                                    break;
-                                }
-
-                                case 'node': {
-                                    if (!args) { renderedLines.push('Usage: node <name>'); break; }
-                                    var found = fuzzyFind(args);
-                                    if (!found.length) { renderedLines.push(rgb(255,0,0) + 'No node matching "' + args + '"' + rgb(229,231,235)); break; }
-                                    var n = found[0];
-                                    inspectNode(n, true);
-                                    renderedLines.push(rgb(34,211,238) + 'FLYING TO ' + n.name.toUpperCase() + rgb(229,231,235));
-                                    break;
-                                }
-
-                                case 'scan': {
-                                    var order = ['all', 'foundry', 'hyperscale', 'colocation'];
-                                    var SCAN_LABELS = { foundry: 'Silicon Fabrication', hyperscale: 'Cloud & Edge', colocation: 'Network & Colo', all: 'All Facilities' };
-                                    var current = window.activeFilter || 'all';
-                                    var next = order[(order.indexOf(current) + 1) % order.length];
-                                    filterDataCenters(next);
-                                    terminalLog('NAVIGATING TO /' + (SCAN_LABELS[next] || 'All Facilities'), 'success');
-                                    break;
-                                }
-
-                                case 'silicrack': {
-                                    if (args.trim().toLowerCase() === 'off') {
-                                        clearSilicrack();
-                                        renderedLines.push(rgb(100,100,100) + 'Bloc overlay disabled — country coloring cleared.' + rgb(229,231,235));
-                                        terminalLog('SILICRACK OFF — overlay cleared', 'success');
-                                        break;
-                                    }
-                                    var CY = rgb(56,189,248);   // Pax Silica blue #38bdf8
-                                    var RD = rgb(248,113,113);  // WAICO red #f87171
-                                    var GR = rgb(100,100,100);
-                                    var WH = rgb(229,231,235);
-                                    renderedLines.push(CY + '═══ PAX SILICA ═══  (US-LED ALLIANCE · LAUNCHED DEC 12 2025)' + WH);
-                                    renderedLines.push(GR + '  Securing the Silicon Supply Chain — semiconductors, AI & rare earth' + WH);
-                                    var pax = [
-                                        'United States', 'United Kingdom', 'Australia', 'Israel', 'Japan',
-                                        'South Korea', 'Singapore', 'Netherlands', 'Qatar', 'United Arab Emirates',
-                                        'India', 'Sweden', 'Finland', 'Philippines', 'Norway', 'European Union',
-                                        'Germany', 'Greece', 'Italy', 'Argentina', 'Chile', 'Costa Rica',
-                                        'El Salvador', 'Panama', 'Estonia', 'Kazakhstan*'
-                                    ];
-                                    pax.forEach(function(c) { renderedLines.push(CY + '  ■ ' + WH + c); });
-                                    renderedLines.push(GR + '  Observers / participating: Canada, Taiwan' + WH);
-                                    renderedLines.push('');
-                                    renderedLines.push(RD + '═══ WAICO ═══  (WORLD AI COOPERATION ORGANIZATION · CHINA-LED · JUL 16 2026)' + WH);
-                                    renderedLines.push(GR + '  Global-South oriented AI governance — open-source AI cooperation' + WH);
-                                    var waico = [
-                                        'China', 'Russia', 'Brazil', 'Indonesia', 'Iran', 'South Africa',
-                                        'Algeria', 'Belarus', 'Cambodia', 'Cameroon', 'Congo', 'Cuba',
-                                        'Ethiopia', 'Kenya', 'Kyrgyzstan', 'Laos', 'Lesotho', 'Malaysia',
-                                        'Mozambique', 'Myanmar', 'Nicaragua', 'Oman', 'Pakistan', 'Senegal',
-                                        'Serbia', 'Tajikistan', 'Uzbekistan', 'Venezuela', 'Zambia'
-                                    ];
-                                    waico.forEach(function(c) { renderedLines.push(RD + '  ■ ' + WH + c); });
-                                    renderedLines.push('');
-                                    renderedLines.push(GR + '  * Kazakhstan holds dual membership (Pax Silica + WAICO).' + WH);
-                                    renderedLines.push(GR + '  Total: ' + pax.length + ' Pax Silica · ' + waico.length + ' WAICO signatories.' + WH);
-                                    renderedLines.push(CY + '  › Map overlay active: BLUE = Pax Silica · RED = WAICO. Type "silicrack off" to clear.' + WH);
-                                    applySilicrack();
-                                    terminalLog('SILICRACK — bloc allegiance report + map overlay', 'success');
-                                    break;
-                                }
-
-                                case 'filter': {
-                                    var FILTER_LABELS = { foundry: 'Silicon Fabrication', hyperscale: 'Cloud & Edge', colocation: 'Network & Colo', all: 'All Facilities' };
-                                    if (!args || !DC_CATEGORIES[args]) {
-                                        renderedLines.push('Usage: filter <foundry|hyperscale|colocation|all>');
-                                        break;
-                                    }
-                                    filterDataCenters(args);
-                                    terminalLog('NAVIGATING TO /' + (FILTER_LABELS[args] || args), 'success');
-                                    break;
-                                }
-
-                                case 'reset':
-                                    resetMapView();
-                                    terminalLog('Reset Array', 'success');
-                                    break;
-
-                                case 'focus': {
-                                    if (!args) { renderedLines.push('Usage: focus <company name>'); break; }
-                                    var found = fuzzyFind(args);
-                                    if (!found.length) { renderedLines.push(rgb(255,0,0) + 'No match for "' + args + '"' + rgb(229,231,235)); break; }
-                                    var n = found[0];
-                                    if (map) {
-                                        map.flyTo({ center: [n.lng, n.lat], zoom: 14, pitch: 55, bearing: 5, duration: 2000 });
-                                        updateHUD(n.name, 'FOCUS LOCK', n.sector);
-                                    }
-                                    terminalLog('FOCUS → ' + n.name.toUpperCase(), 'success');
-                                    break;
-                                }
-
-                                case 'locate':
-                                    if (map) {
-                                        map.flyTo({ center: [121.0450, 14.5547], zoom: 15, pitch: 45, bearing: -10, duration: 2500 });
-                                        updateHUD('ALIEN INC HQ', 'BGC CORE', '14.5547°N, 121.0450°E');
-                                    }
-                                    terminalLog('LOCATING ALIEN INC HEADQUARTERS', 'success');
-                                    break;
-
-                                case 'scan-tech': {
-                                    var withStack = nodes.filter(function(n) { return n.techStack && n.techStack.length > 0; });
-                                    if (!withStack.length) { renderedLines.push('No tech stacks available.'); break; }
-                                    renderedLines.push(rgb(34,211,238) + 'TECH STACKS (' + withStack.length + ' companies)' + rgb(229,231,235));
-                                    withStack.forEach(function(n) {
-                                        renderedLines.push(rgb(34,211,238) + '  ' + n.name + rgb(229,231,235) + ' (' + n.techStack.length + ' tools)');
-                                        n.techStack.slice(0, 5).forEach(function(t) {
-                                            renderedLines.push(rgb(100,100,100) + '    • ' + t.name + ' — ' + t.role + rgb(229,231,235));
-                                        });
-                                        if (n.techStack.length > 5) renderedLines.push(rgb(100,100,100) + '    ... +' + (n.techStack.length - 5) + ' more' + rgb(229,231,235));
-                                    });
-                                    break;
-                                }
-
-                                case 'ping': {
-                                    if (!args) { renderedLines.push('Usage: ping <node name>'); break; }
-                                    var found = fuzzyFind(args);
-                                    if (!found.length) { renderedLines.push(rgb(255,0,0) + 'No node matching "' + args + '"' + rgb(229,231,235)); break; }
-                                    var n = found[0];
-                                    var dist = Math.round(haversine(14.5547, 121.0450, n.lat, n.lng));
-                                    terminalLog('PING ' + n.name.toUpperCase() + ' (' + dist + ' km)...', 'info');
-                                    setTimeout(function() {
-                                        var lat = Math.floor(Math.random() * 120 + 8);
-                                        var jitter = Math.floor(Math.random() * 5);
-                                        terminalLog('PONG ' + n.name.toUpperCase() + ' — ' + lat + 'ms ±' + jitter + 'ms — ' + dist + 'km from HQ', 'success');
-                                    }, 300 + Math.random() * 700);
-                                    break;
-                                }
-
-                                case 'history':
-                                    history.forEach(function(h, idx) { renderedLines.push(rgb(100,100,100) + '  ' + idx + ': ' + h + rgb(229,231,235)); });
-                                    break;
-
-                                default:
-                                    if (cmd) renderedLines.push(rgb(255,255,0) + 'Unknown command: ' + cmd + '. Type "help" for available commands.' + rgb(229,231,235));
-                            }
-                        } catch (e) {
-                            var msg = (e && e.message) || 'Error';
-                            renderedLines.push(rgb(255,0,0) + msg + rgb(229,231,235));
-                        } finally {
-                            shellListener = term.onData(shell);
-                            redrawScreen();
-                        }
-                    } else if (c === '\x7F') {
-                        if (lineBuffer.length) {
-                            if (offset === 0) lineBuffer.pop();
-                            else if (offset < 0 && Math.abs(offset) !== lineBuffer.length) lineBuffer.splice(lineBuffer.length + offset - 1, 1);
-                            redrawScreen();
-                        }
-                    } else if (['\x1b[A','\x1b[B','\x1b[C','\x1b[D'].includes(data.slice(i, i + 3))) {
-                        var k = data.slice(i, i + 3);
-                        if (k === '\x1b[C' && offset < 0) offset++;
-                        else if (k === '\x1b[D' && Math.abs(offset) < lineBuffer.length) offset--;
-                        i += 2;
-                        redrawScreen();
-                    } else {
-                        if (offset === 0) lineBuffer.push(c);
-                        else lineBuffer.splice(lineBuffer.length + offset, 0, c);
-                        term.write(c);
-                    }
-                }
-            }
-
-            function haversine(lat1, lon1, lat2, lon2) {
-                var R = 6371;
-                var dLat = (lat2 - lat1) * Math.PI / 180;
-                var dLon = (lon2 - lon1) * Math.PI / 180;
-                var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            }
-
-            shellListener = term.onData(shell);
-            }
-        })();
-
-  </script>
-
-<script>
 
         // Starfield Canvas Renderer
         const canvas = document.querySelector('#star-container canvas');

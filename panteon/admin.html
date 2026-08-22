@@ -1670,6 +1670,10 @@
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8l3-3v2h6V5l3 3-3 3v-2H5v2z"/><circle cx="14" cy="8" r="1.5"/><path d="M1 12l2-2v4H1z"/></svg>
                         Aviation Domain
                     </div>
+                    <div class="nav-item" id="gaiaNavItem" title="GAIA Geo Controller (Ctrl+Shift+G)">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2a10.5 10.5 0 0 1 0 12M8 2a10.5 10.5 0 0 0 0 12"/></svg>
+                        GAIA
+                    </div>
                 </div>
                 <div class="nav-section">
                     <div class="nav-section-title">YONO</div>
@@ -2250,6 +2254,7 @@
                                       <span class="sc-map-pane-title"><span class="sc-live-dot"></span>Unified map</span>
                                       <span style="display:flex;gap:6px">
                                           <button class="retro-map-btn" id="wonToggleBtn" onclick="WONote.toggle()" title="Watch Officer Notepad (Ctrl+Shift+N)">Watch Notes</button>
+                                          <button class="retro-map-btn" id="gaiaToggleBtn" onclick="window.GAIA&amp;&amp;GAIA.toggle()" title="GAIA Geo Controller (Ctrl+Shift+G)">GAIA</button>
                                           <button class="retro-map-btn" id="fusionFullViewBtn" onclick="fusionToggleFullView()">&#8672; Full view</button>
                                       </span>
                                   </div>
@@ -9307,6 +9312,1251 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
     }
 })();
 </script>
+
+<!-- ============================================================================
+     GAIA — GEO CONTROLLER, floating add-on (self-contained, zero-touch).
+     Layer control + natural-language geo-search over the live fusion map.
+     Toggle: "GAIA" sidebar item (Spinal Cracker section), "GAIA" map-pane
+     button, or Ctrl+Shift+G / Alt+Shift+G.
+     Pure overlay: host layer switches delegate to the existing
+     fusionToggleLayer() pipeline; visibility/opacity/highlight are applied to
+     marker elements AFTER core renders (wrapped render functions) — core data,
+     arrays and rendering code are never modified. Future feeds register via
+     window.GAIA.registerLayer({id,label,meta,on(isOn),opacity(v)}).
+     ============================================================================ -->
+<style id="gaia-styles">
+    /* Styled with the SAME grammar as the Watch Officer Notepad: sc-map-pane-top
+       header (pulse dot + mono title), won-card inner frames, mono microtags and
+       wireframe-square motifs. Uses ONLY :root tokens — no new colors. */
+    #gaia-panel {
+        position: fixed;
+        right: 20px;
+        top: 76px;
+        width: 380px;
+        height: 72vh;
+        min-width: 320px;
+        max-width: min(92vw, 560px);
+        min-height: 260px;
+        display: flex;
+        flex-direction: column;
+        background: var(--bg-panel);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 16px 48px rgba(0,0,0,0.55);
+        z-index: 1900; /* above topbar/sidebar; below modals (2000) / toasts (3000) */
+        color: var(--text);
+        overflow: hidden;
+        transition: transform .38s cubic-bezier(.2,.85,.3,1), opacity .3s ease, height .25s ease;
+    }
+    #gaia-panel.gaia-hidden {
+        transform: translateX(calc(100% + 48px));
+        opacity: 0;
+        pointer-events: none;
+    }
+    #gaia-panel.gaia-min { height: auto !important; }
+    #gaia-panel.gaia-min .gaia-body,
+    #gaia-panel.gaia-min .gaia-footer,
+    #gaia-panel.gaia-min .gaia-resize-handle { display: none; }
+
+    /* ---- header (sc-map-pane-top grammar) ---- */
+    .gaia-header {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 10px 9px 12px;
+        cursor: grab;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
+        background: var(--bg-card);
+        border-bottom: 1px solid var(--border-color);
+    }
+    .gaia-header:active { cursor: grabbing; }
+    .gaia-pulse {
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 6px var(--green);
+        animation: gaia-pulse 2s ease-in-out infinite;
+        flex-shrink: 0;
+    }
+    @keyframes gaia-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    #gaia-panel.gaia-mode-filter .gaia-pulse {
+        background: var(--accent-neon);
+        box-shadow: 0 0 6px var(--accent-neon);
+        animation-duration: .9s;
+    }
+    .gaia-title {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: .22em;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-transform: uppercase;
+    }
+    .gaia-mode-chip {
+        font-family: var(--font-mono);
+        font-size: 8px;
+        letter-spacing: .14em;
+        color: var(--text-dim);
+        border: 1px solid var(--border-color);
+        border-radius: 3px;
+        padding: 2px 7px;
+        white-space: nowrap;
+        text-transform: uppercase;
+        flex-shrink: 0;
+    }
+    .gaia-mode-chip[data-mode="live"]    { color: var(--green); border-color: rgba(16, 185, 129, 0.4); }
+    .gaia-mode-chip[data-mode="standby"] { color: var(--amber); border-color: rgba(245, 158, 11, 0.4); }
+    .gaia-mode-chip[data-mode="filter"]  { color: var(--accent-neon); border-color: rgba(223, 241, 64, 0.45); box-shadow: 0 0 8px rgba(223, 241, 64, 0.15); }
+    .gaia-header-btns {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+    }
+    .gaia-hbtn {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        line-height: 1;
+        color: var(--text-dim);
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 3px;
+        padding: 4px 7px;
+        cursor: pointer;
+        transition: color .15s, border-color .15s, background .15s;
+    }
+    .gaia-hbtn:hover { color: var(--text); border-color: var(--border-color); }
+    .gaia-hbtn.gaia-danger:hover { color: var(--red); border-color: rgba(244, 63, 94, 0.4); }
+
+    /* ---- body ---- */
+    .gaia-body { flex: 1; overflow-y: auto; padding: 10px 12px 12px; scrollbar-width: thin; scrollbar-color: var(--border-color) transparent; }
+    .gaia-body::-webkit-scrollbar { width: 6px; }
+    .gaia-body::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+    .gaia-section-tag {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-family: var(--font-mono);
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        color: var(--text-dim);
+        margin: 4px 0 8px;
+    }
+    .gaia-section-tag::after { content: ''; flex: 1; height: 1px; background: var(--border-color); opacity: .5; }
+
+    /* ---- layer rows ---- */
+    .gaia-layer-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .gaia-row {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 8px 9px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        transition: border-color .15s, box-shadow .15s;
+    }
+    .gaia-row:hover { border-color: var(--border-hover); }
+    .gaia-row.on { border-color: rgba(223, 241, 64, 0.28); box-shadow: inset 0 0 12px rgba(223, 241, 64, 0.03); }
+    .gaia-dot {
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: var(--text-dim);
+        flex-shrink: 0;
+    }
+    .gaia-dot[data-status="live"] { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .gaia-dot[data-status="warn"] { background: var(--amber); box-shadow: 0 0 5px var(--amber); }
+    .gaia-dot[data-status="err"]  { background: var(--red); box-shadow: 0 0 5px var(--red); }
+    .gaia-dot[data-status="busy"] { background: var(--accent-neon); box-shadow: 0 0 6px var(--accent-neon); animation: gaia-pulse .8s ease-in-out infinite; }
+    .gaia-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+    .gaia-row-label {
+        font-family: var(--font-sans);
+        font-size: 11.5px;
+        font-weight: 500;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .gaia-row-meta {
+        font-family: var(--font-mono);
+        font-size: 8.5px;
+        letter-spacing: .1em;
+        color: var(--text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-transform: uppercase;
+    }
+    .gaia-row-status {
+        font-family: var(--font-mono);
+        font-size: 8px;
+        letter-spacing: .12em;
+        color: var(--text-dim);
+        white-space: nowrap;
+        flex-shrink: 0;
+        text-transform: uppercase;
+    }
+    .gaia-row-status[data-status="live"] { color: var(--green); }
+    .gaia-row-status[data-status="warn"] { color: var(--amber); }
+
+    .gaia-row-status[data-status="busy"] { color: var(--accent-neon); }
+
+    /* ---- switch + slider ---- */
+    .gaia-switch {
+        position: relative;
+        width: 30px; height: 16px;
+        border: 1px solid var(--border-color);
+        border-radius: 9px;
+        background: var(--bg-input);
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: border-color .18s, box-shadow .18s, background .18s;
+        padding: 0;
+    }
+    .gaia-switch::after {
+        content: '';
+        position: absolute;
+        top: 2px; left: 2px;
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        background: var(--text-dim);
+        transition: transform .18s cubic-bezier(.2,.85,.3,1), background .18s, box-shadow .18s;
+    }
+    .gaia-row.on .gaia-switch { border-color: rgba(223, 241, 64, 0.45); box-shadow: 0 0 8px rgba(223, 241, 64, 0.2); }
+    .gaia-row.on .gaia-switch::after { transform: translateX(14px); background: var(--accent-neon); box-shadow: 0 0 6px var(--accent-neon); }
+    .gaia-row.dormant .gaia-switch { opacity: .55; }
+    input[type="range"].gaia-slider {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 84px; height: 2px;
+        padding: 0;
+        border: none;
+        border-radius: 1px;
+        background: var(--border-color);
+        cursor: pointer;
+        flex-shrink: 0;
+        outline: none;
+    }
+    input[type="range"].gaia-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        background: var(--text-dim);
+        transition: background .15s, box-shadow .15s;
+    }
+    .gaia-row.on input[type="range"].gaia-slider::-webkit-slider-thumb { background: var(--accent-neon); box-shadow: 0 0 6px rgba(223, 241, 64, 0.5); }
+    input[type="range"].gaia-slider::-moz-range-thumb {
+        width: 10px; height: 10px;
+        border: none;
+        border-radius: 50%;
+        background: var(--text-dim);
+    }
+    .gaia-row.on input[type="range"].gaia-slider::-moz-range-thumb { background: var(--accent-neon); box-shadow: 0 0 6px rgba(223, 241, 64, 0.5); }
+
+    /* ---- geo-search ---- */
+    .gaia-search-wrap { display: flex; gap: 6px; margin-bottom: 8px; }
+    #gaiaSearchInput { flex: 1; min-width: 0; font-family: var(--font-sans); font-size: 11px; padding: 7px 10px; }
+    #gaiaSearchInput::placeholder { color: var(--text-muted); }
+    .gaia-go-btn {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: .14em;
+        color: var(--accent-neon);
+        background: transparent;
+        border: 1px solid var(--border-color);
+        border-radius: 3px;
+        padding: 4px 12px;
+        cursor: pointer;
+        line-height: 1;
+        text-transform: uppercase;
+        white-space: nowrap;
+        transition: background .15s, border-color .15s, box-shadow .15s, transform .1s;
+    }
+    .gaia-go-btn:hover { background: rgba(223, 241, 64, 0.08); border-color: var(--accent-neon); box-shadow: 0 0 8px rgba(223, 241, 64, 0.25); }
+    .gaia-go-btn:active { transform: scale(.96); }
+    .gaia-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+    .gaia-chip {
+        font-family: var(--font-mono);
+        font-size: 8.5px;
+        letter-spacing: .12em;
+        padding: 3px 8px;
+        border: 1px solid var(--border-color);
+        border-radius: 3px;
+        background: transparent;
+        color: var(--text-dim);
+        cursor: pointer;
+        text-transform: uppercase;
+        line-height: 1.4;
+        transition: color .15s, border-color .15s, background .15s, box-shadow .15s;
+    }
+    .gaia-chip:hover { border-color: var(--border-hover); color: var(--text); }
+    .gaia-chip.on { color: var(--accent-neon); border-color: rgba(223, 241, 64, 0.45); background: rgba(223, 241, 64, 0.06); box-shadow: 0 0 6px rgba(223, 241, 64, 0.12); }
+    .gaia-results {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        padding: 8px 10px;
+        margin-bottom: 8px;
+        min-height: 40px;
+    }
+    .gaia-results-head {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--text-dim);
+        letter-spacing: .06em;
+    }
+    .gaia-r-num { color: var(--accent-neon); font-weight: 600; font-size: 13px; font-family: var(--font-tech); }
+    .gaia-r-notes {
+        margin-top: 4px;
+        font-family: var(--font-mono);
+        font-size: 8.5px;
+        letter-spacing: .08em;
+        color: var(--amber);
+        text-transform: uppercase;
+    }
+    .gaia-r-samples { margin-top: 5px; display: flex; flex-direction: column; gap: 3px; }
+    .gaia-r-sample {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 10.5px;
+        color: var(--text-dim);
+        white-space: nowrap;
+        overflow: hidden;
+    }
+    .gaia-r-sample b { color: var(--text); font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+    .gaia-r-sample span { font-family: var(--font-mono); font-size: 8.5px; color: var(--text-muted); flex-shrink: 0; }
+    .gaia-actions { display: flex; gap: 6px; margin-bottom: 14px; }
+    .gaia-act-btn {
+        flex: 1;
+        font-family: var(--font-mono);
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+        color: var(--text-dim);
+        background: transparent;
+        border: 1px solid var(--border-color);
+        border-radius: 3px;
+        padding: 7px 6px;
+        cursor: pointer;
+        line-height: 1;
+        white-space: nowrap;
+        transition: background .15s, border-color .15s, box-shadow .15s, color .15s, transform .1s;
+    }
+    .gaia-act-btn.gaia-apply { color: var(--accent-neon); }
+    .gaia-act-btn.gaia-apply:hover { background: rgba(223, 241, 64, 0.08); border-color: var(--accent-neon); box-shadow: 0 0 10px rgba(223, 241, 64, 0.25); }
+    .gaia-act-btn.gaia-clear:hover { color: var(--red); border-color: rgba(244, 63, 94, 0.45); background: rgba(244, 63, 94, 0.06); }
+    .gaia-act-btn:active { transform: scale(.97); }
+    .gaia-hint {
+        font-family: var(--font-mono);
+        font-size: 8px;
+        letter-spacing: .08em;
+        color: var(--text-muted);
+        line-height: 1.7;
+        text-transform: uppercase;
+    }
+
+    /* ---- footer ---- */
+    .gaia-footer {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 6px 12px;
+        font-family: var(--font-mono);
+        font-size: 8.5px;
+        letter-spacing: .1em;
+        color: var(--text-muted);
+        background: var(--bg-card);
+        border-top: 1px solid var(--border-color);
+        text-transform: uppercase;
+    }
+    #gaiaStatus { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gaia-resize-handle {
+        position: absolute;
+        left: -3px; bottom: -3px;
+        width: 18px; height: 18px;
+        cursor: nesw-resize;
+        z-index: 2;
+    }
+    .gaia-resize-handle::after {
+        content: '';
+        position: absolute;
+        left: 4px; bottom: 4px;
+        width: 8px; height: 8px;
+        border-left: 2px solid var(--border-color);
+        border-bottom: 2px solid var(--border-color);
+    }
+    .gaia-resize-handle:hover::after { border-color: var(--accent-neon); }
+    #gaia-panel { resize: none; }
+
+    /* ---- marker overlays (applied to EXISTING core marker elements) ---- */
+    .retro-map-node-marker.gaia-hit::before,
+    .maplibregl-marker > div.gaia-hit::before {
+        content: '';
+        position: absolute;
+        inset: -7px;
+        border: 1px solid var(--accent-neon);
+        border-radius: 50%;
+        animation: gaia-ring 1.4s ease-out infinite;
+        pointer-events: none;
+    }
+    @keyframes gaia-ring {
+        0%   { transform: scale(.55); opacity: .95; }
+        100% { transform: scale(1.6); opacity: 0; }
+    }
+    .gaia-dim { display: none !important; }
+
+    @media (max-width: 768px) {
+        #gaia-panel { right: 8px !important; width: calc(100vw - 16px) !important; }
+        .gaia-title { letter-spacing: .16em; }
+        input[type="range"].gaia-slider { width: 60px; }
+    }
+</style>
+
+<div id="gaia-panel" class="gaia-hidden" role="complementary" aria-label="GAIA Geo Controller">
+    <div class="gaia-header" id="gaiaHeader">
+        <span class="gaia-pulse" aria-hidden="true"></span>
+        <span class="gaia-title">GAIA&ensp;&middot;&ensp;GEO CONTROLLER</span>
+        <span class="gaia-mode-chip" id="gaiaModeChip" data-mode="standby">STANDBY</span>
+        <span class="gaia-header-btns">
+            <button type="button" class="gaia-hbtn" id="gaiaMinBtn" title="Minimize">&ndash;</button>
+            <button type="button" class="gaia-hbtn gaia-danger" id="gaiaCloseBtn" title="Close">&times;</button>
+        </span>
+    </div>
+    <div class="gaia-body" id="gaiaBody">
+        <div class="gaia-section-tag"><span class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span></span>01 &middot; Layers</div>
+        <div class="gaia-layer-list" id="gaiaLayerList"></div>
+        <div class="gaia-section-tag"><span class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></span>02 &middot; Geo-Search</div>
+        <div class="gaia-search-wrap">
+            <input type="text" id="gaiaSearchInput" placeholder='e.g. "friendly assets within 10km of the scope center"' spellcheck="false" autocomplete="off">
+            <button type="button" class="gaia-go-btn" id="gaiaGoBtn" title="Parse and preview matches">GO</button>
+        </div>
+        <div class="gaia-chips" id="gaiaChips"></div>
+        <div class="gaia-results" id="gaiaResults">
+            <div class="gaia-results-head" id="gaiaResultsHead">Type a query or pick a quick filter.</div>
+            <div class="gaia-r-samples" id="gaiaSamples"></div>
+        </div>
+        <div class="gaia-actions">
+            <button type="button" class="gaia-act-btn gaia-apply" id="gaiaApplyBtn" title="Highlight matching objects on the map">Apply to Map</button>
+            <button type="button" class="gaia-act-btn" id="gaiaFocusBtn" title="Frame all matching objects">Focus</button>
+            <button type="button" class="gaia-act-btn gaia-clear" id="gaiaClearBtn" title="Remove map filters">Clear Filters</button>
+        </div>
+        <div class="gaia-hint">Understood: within N km &middot; last N min/h/d/w &middot; around / near &lt;region or country&gt; &middot; red / amber / green &middot; military / jet / private / commercial air &middot; friendly / hostile assets &middot; any free keyword.</div>
+    </div>
+    <div class="gaia-footer">
+        <span id="gaiaStatus">Standing by.</span>
+        <span id="gaiaMeta"></span>
+    </div>
+    <div class="gaia-resize-handle" id="gaiaResizeHandle" title="Drag to resize"></div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    // ------------------------------------------------------------------ config
+    var LS_GEOM  = 'sc_gaia_geom_v1';   // drag/resize geometry
+    var LS_OPEN  = 'sc_gaia_open_v1';   // panel visible flag
+    var LS_MIN   = 'sc_gaia_min_v1';    // minimized flag
+    var LS_STATE = 'sc_gaia_state_v1';  // per-layer {on,opacity} + lastQuery
+
+    // --------------------------------------------------- layer registry (pluggable)
+    // Host layers delegate to the EXISTING core pipeline via fusionToggleLayer().
+    // Layers without a provider stay dormant ("NO FEED") until registered at
+    // runtime through GAIA.registerLayer({id,label,meta,on(isOn),opacity(v)}).
+    var REGISTRY = [
+        { id: 'threats',   label: 'CAMEO Threat Events', meta: 'GDELT \u00b7 live feed',        host: 'threats' },
+        { id: 'aviation',  label: 'Aircraft Tracks',     meta: 'OpenSky \u00b7 live feed',      host: 'aviation' },
+        { id: 'drones',    label: 'Drone / Telemetry',   meta: 'no feed registered \u00b7 pluggable' },
+        { id: 'satellite', label: 'Satellite Imagery',   meta: 'no feed registered \u00b7 pluggable' },
+        { id: 'weather',   label: 'Weather Patterns',    meta: 'no feed registered \u00b7 pluggable' },
+        { id: 'actorheat', label: 'Actor Network Heat',  meta: 'no feed registered \u00b7 pluggable' }
+    ];
+
+    function $(id) { return document.getElementById(id); }
+    function esc(s) {
+        s = s == null ? '' : String(s);
+        if (typeof window.escapeHtml === 'function') return window.escapeHtml(s);
+        return s.replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+    function num(v) { var n = parseFloat(v); return Number.isFinite(n) ? n : null; }
+    function havKm(a, b) { // haversine, args {lat,lng}
+        var R = 6371, dLat = (b.lat - a.lat) * Math.PI / 180, dLng = (b.lng - a.lng) * Math.PI / 180;
+        var s1 = Math.sin(dLat / 2), s2 = Math.sin(dLng / 2);
+        var h = s1 * s1 + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * s2 * s2;
+        return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+    }
+    function fmtKm(km) {
+        if (km == null || !Number.isFinite(km)) return '\u2014';
+        return km >= 100 ? Math.round(km) + ' km' : km >= 10 ? km.toFixed(0) + ' km' : km.toFixed(1) + ' km';
+    }
+
+    // ------------------------------------------------------------------- state
+    var DEFAULT_STATE = {
+        threats:   { on: true,  opacity: 1 },
+        aviation:  { on: true,  opacity: 1 },
+        drones:    { on: false },
+        satellite: { on: false },
+        weather:   { on: false },
+        actorheat: { on: false }
+    };
+    function loadState() {
+        var st = {};
+        try {
+            var v = JSON.parse(localStorage.getItem(LS_STATE));
+            if (v && typeof v === 'object') st = v;
+        } catch (e) {}
+        Object.keys(DEFAULT_STATE).forEach(function (k) {
+            st[k] = st[k] && typeof st[k] === 'object' ? st[k] : {};
+            st[k].on = typeof st[k].on === 'boolean' ? st[k].on : DEFAULT_STATE[k].on;
+            if (DEFAULT_STATE[k].opacity != null) {
+                var o = num(st[k].opacity); st[k].opacity = o == null ? DEFAULT_STATE[k].opacity : clamp(o, 0.2, 1);
+            }
+        });
+        return st;
+    }
+    var state = loadState();
+    function saveState() {
+        try { localStorage.setItem(LS_STATE, JSON.stringify(state)); } catch (e) {}
+    }
+
+    // ---------------------------------------------------------- panel refs/state
+    var panel, listEl, statusEl, metaEl, modeChip, resultsHead, samplesEl, inputEl, chipsEl;
+    var minimized = false;
+    var isOpen = false;
+    var activeFilter = null;   // committed filter applied to map markers
+    var lastParsed = null;     // latest preview parse
+
+    function findDef(id) { for (var i = 0; i < REGISTRY.length; i++) if (REGISTRY[i].id === id) return REGISTRY[i]; return null; }
+    function hasProvider(id) { var d = findDef(id); return !!(d && typeof d.on === 'function'); }
+
+    // ------------------------------------------------------------ host layers
+    function hostActive(id) { return !!(window.fusionLayers && window.fusionLayers[id]); }
+    function setHostLayer(id, on) {
+        if (hostActive(id) === on) return;
+        // Delegate ONLY to the existing core toggle: it re-renders the layer,
+        // updates KPIs/HUD/bounds exactly like a manual click on the map bar.
+        if (typeof window.fusionToggleLayer === 'function') window.fusionToggleLayer(id);
+        else if (window.fusionLayers) window.fusionLayers[id] = on;
+    }
+    function setCustomLayer(id, on) {
+        var d = findDef(id);
+        if (!d || typeof d.on !== 'function') return; // dormant stays dormant
+        try { d.on(on); } catch (e) {}
+    }
+    function setLayerOpacity(id, v) {
+        var st = state[id]; if (!st) return;
+        st.opacity = clamp(v, 0.2, 1);
+        saveState();
+        applyOpacities();
+    }
+
+    function toggleLayerById(id) {
+        var st = state[id]; if (!st) return;
+        st.on = !st.on;
+        saveState();
+        if (st.on) setOpen(true); // switching a layer on implies the controller is in use
+        if (findDef(id) && findDef(id).host) setHostLayer(id, st.on);
+        else setCustomLayer(id, st.on);
+        renderRows();
+        refreshStatuses();
+        statusMsg((findDef(id) ? findDef(id).label : id) + ' ' + (st.on ? 'engaged.' : 'released.'));
+    }
+
+
+    // ------------------------------------------- point normalization (read-only)
+    // Mirrors the core normalizeThreatPoint/normalizeAircraftPoint shapes WITHOUT
+    // touching them — GAIA only reads host arrays and helper functions.
+    function normThreat(ev) {
+        var geo = null;
+        try { geo = window.parseActionGeo(ev); } catch (e) {}
+        if (!geo) return null;
+        var tone = 'green';
+        try { tone = window.threatLevelForEvent(ev) || 'green'; } catch (e) {}
+        return {
+            kind: 'threat', lat: num(geo.latitude), lng: num(geo.longitude),
+            level: tone, label: 'CAMEO ' + (ev.event_code || '?'),
+            title: ev.title || '', domain: ev.domain || '', country: geo.country || '',
+            raw: ev, ts: dateOf(ev)
+        };
+    }
+    function normAir(f) {
+        var p = (f && f.properties) || {};
+        var lat = num(p.lat), lng = num(p.lng);
+        if (lat == null || lng == null) return null;
+        return {
+            kind: 'aircraft', lat: lat, lng: lng,
+            cat: String(p.category || '').toLowerCase(), label: String(p.callsign || '\u2014'),
+            title: [p.callsign, p.model, p.category, p.icao24].filter(Boolean).join(' '),
+            domain: '', country: '', raw: f, ts: null
+        };
+    }
+    function dateOf(ev) {
+        if (!ev) return null;
+        var v = ev.event_date || ev.datetime || ev.seen_date || '';
+        var t = Date.parse(v);
+        return Number.isFinite(t) ? t : null;
+    }
+    function collectPoints() {
+        var out = [], i;
+        var evs = Array.isArray(window.fusionThreatEvents) ? window.fusionThreatEvents : [];
+        var fls = Array.isArray(window.fusionFlights) ? window.fusionFlights : [];
+        for (i = 0; i < evs.length; i++) { var t = normThreat(evs[i]); if (t && t.lat != null && t.lng != null) out.push(t); }
+        for (i = 0; i < fls.length; i++) { var a = normAir(fls[i]); if (a && a.lat != null && a.lng != null) out.push(a); }
+        return out;
+    }
+
+    function matches(p, f) {
+        if (!p || !f) return false;
+        if (f.types.indexOf(p.kind) < 0) return false;
+        if (p.kind === 'threat') {
+            if (f.levels && f.levels.indexOf(p.level) < 0) return false;
+            if (f.sinceTs != null) { if (p.ts == null || p.ts < f.sinceTs) return false; }
+        } else {
+            if (f.airCats && f.airCats.indexOf(p.cat) < 0) return false;
+        }
+        if (f.keywords.length) {
+            var hay = (p.label + ' ' + p.title + ' ' + p.domain + ' ' + p.country).toLowerCase();
+            for (var i = 0; i < f.keywords.length; i++) if (hay.indexOf(f.keywords[i]) < 0) return false;
+        }
+        if (f.center != null && f.radiusKm != null) {
+            if (havKm({ lat: p.lat, lng: p.lng }, f.center) > f.radiusKm) return false;
+        }
+        return true;
+    }
+
+    // ------------------------------------------------- marker sweep (pure overlay)
+    // Marker k in the core arrays corresponds to the k-th non-null normalized
+    // point (both iterate the same source arrays), so masks stay aligned without
+    // any core modification.
+    function maskFor(kind) {
+        var m = [];
+        var src = kind === 'threat'
+            ? (Array.isArray(window.fusionThreatEvents) ? window.fusionThreatEvents : [])
+            : (Array.isArray(window.fusionFlights) ? window.fusionFlights : []);
+        for (var i = 0; i < src.length; i++) {
+            var p = kind === 'threat' ? normThreat(src[i]) : normAir(src[i]);
+            if (!p) continue;
+            m.push(activeFilter ? matches(p, activeFilter) : true);
+        }
+        return m;
+    }
+    function applyOpacities() {
+        sweepArr(window.fusionThreatMarkers, state.threats ? state.threats.opacity : 1);
+        sweepArr(window.fusionAviationMarkers, state.aviation ? state.aviation.opacity : 1);
+    }
+    function sweepArr(arr, op) {
+        arr = Array.isArray(arr) ? arr : [];
+        for (var i = 0; i < arr.length; i++) {
+            var mk = arr[i];
+            var el = mk && mk.getElement ? mk.getElement() : null;
+            if (el) el.style.opacity = op;
+        }
+    }
+    function sweepAll() {
+        var tm = maskFor('threat'), am = maskFor('aircraft');
+        var th = Array.isArray(window.fusionThreatMarkers) ? window.fusionThreatMarkers : [];
+        var av = Array.isArray(window.fusionAviationMarkers) ? window.fusionAviationMarkers : [];
+        var i, el;
+        for (i = 0; i < th.length; i++) {
+            el = th[i] && th[i].getElement ? th[i].getElement() : null;
+            if (!el) continue;
+            el.style.opacity = state.threats ? state.threats.opacity : 1;
+            el.classList.toggle('gaia-dim', activeFilter ? !tm[i] : false);
+            el.classList.toggle('gaia-hit', activeFilter ? !!tm[i] : false);
+        }
+        for (i = 0; i < av.length; i++) {
+            el = av[i] && av[i].getElement ? av[i].getElement() : null;
+            if (!el) continue;
+            el.style.opacity = state.aviation ? state.aviation.opacity : 1;
+            el.classList.toggle('gaia-dim', activeFilter ? !am[i] : false);
+            el.classList.toggle('gaia-hit', activeFilter ? !!am[i] : false);
+        }
+        syncModeChip();
+    }
+
+
+    // ------------------------------------------------------------- query parser
+    var STOPWORDS = 'show|me|all|the|a|an|of|in|on|for|from|with|within|and|or|to|is|are|was|were|detected|last|minutes|minute|min|hours|hour|hrs|days|day|weeks|week|km|kilometers|miles|meters|around|near|only|please|map|filter|assets|asset|objects|object|feed|feeds|tracks|track'.split('|');
+
+    function geocode(name) {
+        name = (name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+        if (!name) return null;
+        var regions = window.SC_REGION_BBOXES || {};
+        var keys = Object.keys(regions);
+        var i, k;
+        for (i = 0; i < keys.length; i++) {
+            k = keys[i];
+            if (k && k.toLowerCase() === name) {
+                var r = regions[k];
+                if (r) return { lat: (r.lamin + r.lamax) / 2, lng: (r.lomin + r.lomax) / 2, label: k };
+            }
+        }
+        var caps = window.COUNTRY_CAPITALS || {};
+        keys = Object.keys(caps);
+        for (i = 0; i < keys.length; i++) {
+            k = keys[i];
+            if (k && (k.toLowerCase() === name || k.toLowerCase().indexOf(name) === 0)) {
+                var c = caps[k]; // [lng, lat]
+                return { lat: c[1], lng: c[0], label: k };
+            }
+        }
+        return null;
+    }
+    function scopeCenter() {
+        try {
+            if (typeof window.scBbox === 'function') {
+                var b = window.scBbox();
+                if (b) return { lat: (b.lamin + b.lamax) / 2, lng: (b.lomin + b.lomax) / 2, label: (window.SCScope && (window.SCScope.country || window.SCScope.region)) || 'scope' };
+            }
+        } catch (e) {}
+        try { if (window.fusionMap && window.fusionMap.getCenter) { var c = window.fusionMap.getCenter(); return { lat: c.lat, lng: c.lng, label: 'map view' }; } } catch (e) {}
+        return { lat: 20, lng: 20, label: 'default' };
+    }
+
+    function parseQuery(raw) {
+        var f = { types: ['threat', 'aircraft'], levels: null, airCats: null, keywords: [], center: null, radiusKm: null,
+                  sinceTs: null, notes: [], parts: [] };
+        var q = ' ' + String(raw || '').toLowerCase().replace(/\s+/g, ' ').trim() + ' ';
+        if (!q.trim()) return f;
+
+        function eat(re) { var m = q.match(re); if (m) { q = q.replace(m[0], ' '); return m; } return null; }
+
+        // radius — "within 10km", "within 50 km", "500 mile ring"
+        var m = eat(/\bwithin\s+([\d.,]+)\s*(km|kilometers?|kilometres?|m|meters?|metres?|mi|mi\.|miles?)\b/);
+        if (m) {
+            var v = parseFloat(m[1].replace(',', '.'));
+            var u = m[2];
+            var km = /^k/.test(u) ? v : (/^mi/.test(u) ? v * 1.60934 : v / 1000);
+            if (Number.isFinite(km) && km > 0) { f.radiusKm = km; f.parts.push('within ' + fmtKm(km)); }
+        }
+        // time window — "last 30 minutes", "last 7 days"
+        m = eat(/\blast\s+([\d.]+)\s*(minutes?|mins?|hours?|hrs?|days?|weeks?)\b/);
+        if (m) {
+            var n = parseFloat(m[1]), unit = m[2];
+            var mult = /min/.test(unit) ? 6e4 : /h/.test(unit) ? 36e5 : /d/.test(unit) ? 864e5 : 6048e5;
+            if (Number.isFinite(n) && n > 0) {
+                f.sinceTs = Date.now() - n * mult;
+                f.parts.push('last ' + n + ' ' + unit.replace(/s$/, '') + (n === 1 ? '' : 's'));
+                f.notes.push('time filter applies to dated CAMEO events \u00b7 aircraft are live positions');
+            }
+        }
+        // threat levels
+        var lv = [];
+        if (/\bred\b|\bcritical\b|\bsevere\b|\bhigh\s+threat/.test(q)) lv.push('red');
+        if (/\bamber\b|\bmedium\b|\belevated\b/.test(q)) lv.push('amber');
+        if (/\bgreen\b|\blow\s+threat|\bcalm\b/.test(q)) lv.push('green');
+        if (lv.length) { q = q.replace(/\bred\b|\bamber\b|\bgreen\b|\bcritical\b|\bsevere\b|\bmedium\b|\belevated\b|\bcalm\b|\b(high|low)\s+threat/g, ' '); f.levels = lv; f.parts.push('threat level ' + lv.join('/')); }
+        // aviation categories
+        var ac = [];
+        if (/\bmilitary\b|\bmil\b/.test(q)) { ac.push('military'); q = q.replace(/\bmilitary\b|\bmil\b/g, ' '); }
+        if (/\bjets?\b/.test(q)) { ac.push('jet'); q = q.replace(/\bjets?\b/g, ' '); }
+        if (/\bprivate\b/.test(q)) { ac.push('private'); q = q.replace(/\bprivate\b/g, ' '); }
+        if (/\bcommercial\b|\bairliners?\b/.test(q)) { ac.push('commercial'); q = q.replace(/\bcommercial\b|\bairliners?\b/g, ' '); }
+        if (ac.length) { f.airCats = ac; f.parts.push('air: ' + ac.join('/')); }
+        // friendly / hostile profiles
+        if (/\bfriendly\b|\ballied\b|\bnato\b/.test(q)) {
+            f.levels = f.levels || ['green']; if (!f.levels.length) f.levels = ['green'];
+            f.airCats = ['commercial', 'jet', 'private'];
+            q = q.replace(/\bfriendly\b|\ballied\b|\bnato\b/g, ' ');
+            f.parts.push('friendly profile');
+        } else if (/\bhostile\b|\benemy\b|\badversar/.test(q)) {
+            f.levels = ['red']; f.airCats = ['military'];
+            q = q.replace(/\bhostile\b|\benemy\b|\badversar\w*/g, ' ');
+            f.parts.push('hostile profile');
+        }
+        // object types
+        if (/\bdrones?\b|\buav\b|\btelemetry\b/.test(q)) { f.notes.push('no drone feed registered \u2014 register via GAIA.registerLayer'); q = q.replace(/\bdrones?\b|\buav\b|\btelemetry\b/g, ' '); }
+        if (/\baircraft\b|\bplanes?\b|\bflights?\b|\bairspace\b|\baviation\b/.test(q)) { f.types = ['aircraft']; q = q.replace(/\baircraft\b|\bplanes?\b|\bflights?\b|\bairspace\b|\baviation\b/g, ' '); f.parts.push('aircraft only'); }
+        else if (/\bthreats?\b|\bevents?\b|\bnews\b|\bcameo\b|\bprotests?\b|\bconflicts?\b|\barticles?\b/.test(q)) { f.types = ['threat']; q = q.replace(/\bthreats?\b|\bevents?\b|\bnews\b|\bcameo\b|\bprotests?\b|\bconflicts?\b|\barticles?\b/g, ' '); f.parts.push('threats only'); }
+        // place — "around Kyiv", "near Ukraine", "of the scope center"
+        m = eat(/(?:\baround|\bnear|\bover|\babove)\s+((?:[a-z][a-z'\-]*)(?:\s+[a-z][a-z'\-]*){0,2})/);
+        if (!m) m = eat(/\bof\s+(?:the\s+)?(scope\s+center|map\s+view)\b/);
+        if (m) {
+            var words = (m[1] || '').split(/\s+/).filter(Boolean);
+            var g = null, cand = '', L;
+            for (L = Math.min(words.length, 3); L >= 1 && !g; L--) {
+                cand = words.slice(0, L).join(' ');
+                if (/^(scope|center|map|red|amber|green|military|jet|jets|private|commercial)$/.test(cand)) continue;
+                g = geocode(cand);
+            }
+            if (/^scope\s+(center)?$|^map$/.test(words.join(' ')) || /\bscope\s+center\b|\bmap\s+view\b/.test(m[0])) {
+                f.center = scopeCenter(); f.parts.push('ring on ' + f.center.label);
+            } else if (g) { f.center = g; f.parts.push('near ' + g.label); }
+            else {
+                f.notes.push('unknown place "' + words.slice(0, 3).join(' ') + '" \u2014 using scope center');
+                f.center = scopeCenter(); f.parts.push('ring on ' + f.center.label);
+            }
+        }
+        if (f.radiusKm != null && f.center == null) { f.center = scopeCenter(); f.parts.push('ring on ' + f.center.label); }
+        // leftover tokens become keywords
+        var words = q.split(/[^a-z0-9\u00c0-\u024f\-']+/).filter(function (w) { return w.length >= 2 && STOPWORDS.indexOf(w) < 0; });
+        f.keywords = words.filter(function (w, i) { return words.indexOf(w) === i; }).slice(0, 6);
+        if (f.keywords.length) f.parts.push('kw: ' + f.keywords.join(', '));
+        return f;
+    }
+
+
+    // ------------------------------------------------------------ results / UI
+    var lastHitCount = 0;
+    function countMatches(f) {
+        var pts = collectPoints(), hits = [], i;
+        for (i = 0; i < pts.length; i++) if (matches(pts[i], f)) hits.push(pts[i]);
+        return { total: pts.length, hits: hits };
+    }
+    function updateResults() {
+        lastParsed = parseQuery(inputEl.value);
+        var q = inputEl.value.trim();
+        if (!q) {
+            resultsHead.innerHTML = activeFilter
+                ? '<span class="gaia-r-num">' + lastHitCount + '</span> objects highlighted on map \u2014 type to refine or Clear Filters.'
+                : 'Type a query or pick a quick filter.';
+            samplesEl.innerHTML = '';
+            syncChips();
+            return;
+        }
+        var r = countMatches(lastParsed);
+        var nT = 0, nA = 0;
+        r.hits.forEach(function (p) { if (p.kind === 'threat') nT++; else nA++; });
+        var head = r.total === 0
+            ? 'Map is empty \u2014 run a scoped investigation first.'
+            : '<span class="gaia-r-num">' + r.hits.length + '</span> of ' + r.total + ' match \u00b7 ' + nT + ' threats \u00b7 ' + nA + ' aircraft';
+        resultsHead.innerHTML = head;
+        var notesHtml = lastParsed.notes.map(function (n) { return '<div class="gaia-r-notes">\u25b8 ' + esc(n) + '</div>'; }).join('');
+        var sampleHtml = '';
+        if (!lastParsed.parts.length && !lastParsed.keywords.length) {
+            notesHtml += '<div class="gaia-r-notes">\u25b8 no criteria recognized yet</div>';
+        }
+        r.hits.slice(0, 3).forEach(function (p) {
+            var d = lastParsed.center ? fmtKm(havKm({ lat: p.lat, lng: p.lng }, lastParsed.center)) : (p.kind === 'threat' ? p.level.toUpperCase() : p.cat || '\u2014');
+            sampleHtml += '<div class="gaia-r-sample"><b>' + esc(p.label) + '</b><span>' + esc(d) + '</span></div>';
+        });
+        samplesEl.innerHTML = notesHtml + sampleHtml;
+        syncChips();
+    }
+    function applyFilter() {
+        activeFilter = parseQuery(inputEl.value);
+        sweepAll();
+        refreshStatuses();
+        var n = countMatches(activeFilter).hits.length;
+        lastHitCount = n;
+        statusMsg('FILTER APPLIED \u2014 ' + n + ' object' + (n === 1 ? '' : 's') + ' highlighted.');
+        updateResults();
+    }
+    function clearFilter() {
+        activeFilter = null;
+        lastParsed = null;
+        inputEl.value = '';
+        sweepAll();
+        refreshStatuses();
+        statusMsg('Filters cleared \u2014 full layer set restored.');
+        updateResults();
+    }
+    function focusResults() {
+        var f = activeFilter || parseQuery(inputEl.value);
+        var pts = collectPoints().filter(function (p) { return matches(p, f); });
+        if (!pts.length) { statusMsg('No matching objects to frame.'); return; }
+        var map = window.fusionMap;
+        if (!map || !map.fitBounds) { statusMsg('Fusion map is not initialized.'); return; }
+        var lamin = 90, lamax = -90, lomin = 180, lomax = -180;
+        pts.forEach(function (p) {
+            lamin = Math.min(lamin, p.lat); lamax = Math.max(lamax, p.lat);
+            lomin = Math.min(lomin, p.lng); lomax = Math.max(lomax, p.lng);
+        });
+        map.fitBounds([[lomin, lamin], [lomax, lamax]], { padding: 70, maxZoom: 9, duration: 900 });
+        statusMsg('Framing ' + pts.length + ' matched object' + (pts.length === 1 ? '' : 's') + '.');
+    }
+
+    // ------------------------------------------------------------------- chips
+    var CHIPS = [
+        { id: 'friend', label: 'Friendly assets', phrase: 'friendly assets within 500 km' },
+        { id: 'red',    label: 'Red threats',     phrase: 'red threats last 24 hours' },
+        { id: 'mil',    label: 'Military air',    phrase: 'military aircraft' },
+        { id: 'jets',   label: 'Jets',            phrase: 'jet aircraft' },
+        { id: 't7d',    label: 'Events 7d',       phrase: 'conflict events last 7 days' },
+        { id: 'ring',   label: 'Scope ring 500km',phrase: 'within 500 km of the scope center' }
+    ];
+    function renderChips() {
+        chipsEl.innerHTML = CHIPS.map(function (c) {
+            return '<button type="button" class="gaia-chip" data-chip="' + c.id + '" data-phrase="' + esc(c.phrase) + '" title="' + esc(c.phrase) + '">' + esc(c.label) + '</button>';
+        }).join('');
+    }
+    function syncChips() {
+        var v = ' ' + inputEl.value.toLowerCase() + ' ';
+        chipsEl.querySelectorAll('.gaia-chip').forEach(function (b) {
+            b.classList.toggle('on', v.indexOf(' ' + (b.getAttribute('data-phrase') || '').toLowerCase() + ' ') >= 0 ||
+                                      v.indexOf((b.getAttribute('data-phrase') || '').toLowerCase()) >= 0);
+        });
+    }
+    function chipToggle(phrase) {
+        var cur = inputEl.value.trim();
+        var low = cur.toLowerCase();
+        if (low.indexOf(phrase.toLowerCase()) >= 0) {
+            inputEl.value = cur.replace(new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '')
+                .replace(/\s*,\s*,/g, ',').replace(/^[,\s]+|[,\s]+$/g, '');
+        } else {
+            inputEl.value = cur ? cur.replace(/[,\s]+$/, '') + ', ' + phrase : phrase;
+        }
+        setOpen(true);
+        updateResults();
+    }
+
+
+    // -------------------------------------------------------------- layer rows
+    function rowHTML(d) {
+        var st = state[d.id] || {};
+        var on = !!st.on;
+        var dormant = !d.host && !hasProvider(d.id);
+        var slider = d.host
+            ? '<input type="range" class="gaia-slider" min="20" max="100" step="5" value="' + Math.round((st.opacity == null ? 1 : st.opacity) * 100) + '" title="Layer opacity">'
+            : '';
+        return '<div class="gaia-row' + (on ? ' on' : '') + (dormant ? ' dormant' : '') + '" data-layer="' + esc(d.id) + '">' +
+            '<span class="gaia-dot" data-gaia-dot></span>' +
+            '<div class="gaia-row-main"><span class="gaia-row-label">' + esc(d.label) + '</span>' +
+            '<span class="gaia-row-meta">' + esc(d.meta) + '</span></div>' +
+            '<span class="gaia-row-status" data-gaia-status data-status="dim">IDLE</span>' +
+            slider +
+            '<button type="button" class="gaia-switch" role="switch" aria-checked="' + on + '" title="Toggle ' + esc(d.label) + '"></button>' +
+            '</div>';
+    }
+    function renderRows() {
+        listEl.innerHTML = REGISTRY.map(rowHTML).join('');
+        refreshStatuses();
+    }
+    function refreshStatuses() {
+        REGISTRY.forEach(function (d) {
+            var row = listEl.querySelector('[data-layer="' + d.id + '"]');
+            if (!row) return;
+            var st = state[d.id] || {};
+            var tag = 'IDLE', cls = 'dim';
+            if (!hasProvider(d.id) && !d.host && !st.on) { tag = 'NO FEED'; cls = 'dim'; }
+            else if (!st.on) { tag = 'IDLE'; cls = 'dim'; }
+            else {
+                if (d.host === 'threats') {
+                    var nT = Array.isArray(window.fusionThreatEvents) ? window.fusionThreatEvents.length : 0;
+                    if (nT > 0) { tag = nT + ' EV'; cls = 'live'; } else { tag = window.fusionMap ? 'EMPTY' : 'STANDBY'; cls = 'warn'; }
+                } else if (d.host === 'aviation') {
+                    var nA = Array.isArray(window.fusionFlights) ? window.fusionFlights.length : 0;
+                    if (nA > 0) { tag = nA + ' TRK'; cls = 'live'; } else { tag = window.fusionMap ? 'EMPTY' : 'STANDBY'; cls = 'warn'; }
+                } else { tag = 'ARMED'; cls = 'busy'; }
+            }
+            var dot = row.querySelector('[data-gaia-dot]');
+            var stat = row.querySelector('[data-gaia-status]');
+            if (dot) dot.setAttribute('data-status', cls);
+            if (stat) { stat.setAttribute('data-status', cls); stat.textContent = tag; }
+        });
+        syncModeChip();
+        metaEl.textContent = REGISTRY.filter(function (d) { return state[d.id] && state[d.id].on; }).length + '/' + REGISTRY.length + ' LAYERS';
+    }
+    function syncModeChip() {
+        if (!modeChip) return;
+        var anyData = ((Array.isArray(window.fusionThreatEvents) && window.fusionThreatEvents.length) ||
+                       (Array.isArray(window.fusionFlights) && window.fusionFlights.length));
+        var mode, label;
+        if (activeFilter) { mode = 'filter'; label = 'FILTERED'; }
+        else if (anyData) { mode = 'live'; label = 'LIVE'; }
+        else { mode = 'standby'; label = 'STANDBY'; }
+        modeChip.setAttribute('data-mode', mode);
+        modeChip.textContent = label;
+        if (panel) panel.classList.toggle('gaia-mode-filter', activeFilter != null);
+    }
+
+    // ------------------------------------------------------- open/close/min/geom
+    var geom = loadGeom();
+    function loadGeom() {
+        try { return JSON.parse(localStorage.getItem(LS_GEOM)) || {}; } catch (e) { return {}; }
+    }
+    function saveGeom() {
+        try {
+            localStorage.setItem(LS_GEOM, JSON.stringify({
+                w: parseInt(panel.style.width, 10),
+                h: parseInt(panel.style.height, 10),
+                right: parseInt(panel.style.right, 10),
+                top: parseInt(panel.style.top, 10)
+            }));
+        } catch (e) {}
+    }
+    function applyGeometry() {
+        var vw = window.innerWidth, vh = window.innerHeight;
+        var w = clamp(geom.w || 380, 320, Math.min(vw - 16, 560));
+        var h = clamp(geom.h || Math.round(vh * 0.72), 260, vh - 24);
+        var right = geom.right;
+        if (right == null) { // first run: avoid covering an open Watch Notes panel
+            right = 20;
+            var wp = $('won-panel');
+            if (wp && !wp.classList.contains('won-hidden') && !wp.classList.contains('won-min')) right += wp.offsetWidth + 12;
+        }
+        right = clamp(right, 8, Math.max(8, vw - w - 8));
+        var top = clamp(geom.top == null ? 76 : geom.top, 8, Math.max(8, vh - 80));
+        panel.style.width = w + 'px';
+        if (!minimized) panel.style.height = h + 'px';
+        panel.style.right = right + 'px';
+        panel.style.top = top + 'px';
+    }
+    function initDrag() {
+        $('gaiaHeader').addEventListener('pointerdown', function (e) {
+            if (e.target.closest('button') || e.button !== 0) return;
+            e.preventDefault();
+            var startX = e.clientX, startY = e.clientY;
+            var startRight = parseInt(panel.style.right, 10) || 20;
+            var startTop = parseInt(panel.style.top, 10) || 76;
+            $('gaiaHeader').setPointerCapture(e.pointerId);
+            function onMove(ev) {
+                var vw = window.innerWidth, vh = window.innerHeight, w = panel.offsetWidth;
+                panel.style.right = clamp(startRight - (ev.clientX - startX), 8, Math.max(8, vw - w - 8)) + 'px';
+                panel.style.top = clamp(startTop + (ev.clientY - startY), 8, Math.max(8, vh - 80)) + 'px';
+            }
+            function onUp() {
+                $('gaiaHeader').removeEventListener('pointermove', onMove);
+                $('gaiaHeader').removeEventListener('pointerup', onUp);
+                saveGeom();
+            }
+            $('gaiaHeader').addEventListener('pointermove', onMove);
+            $('gaiaHeader').addEventListener('pointerup', onUp);
+        });
+    }
+    function initResize() {
+        $('gaiaResizeHandle').addEventListener('pointerdown', function (e) {
+            if (e.button !== 0) return;
+            e.preventDefault();
+            e.stopPropagation();
+            var startX = e.clientX, startY = e.clientY;
+            var startW = panel.offsetWidth, startH = panel.offsetHeight;
+            var startRight = parseInt(panel.style.right, 10) || 20;
+            $('gaiaResizeHandle').setPointerCapture(e.pointerId);
+            function onMove(ev) {
+                var vw = window.innerWidth, vh = window.innerHeight;
+                var w = clamp(startW + (startX - ev.clientX), 320, vw - 16);
+                var h = clamp(startH + (ev.clientY - startY), 260, vh - 24);
+                panel.style.width = w + 'px';
+                panel.style.height = h + 'px';
+                panel.style.right = clamp(startRight - (w - startW), 8, Math.max(8, vw - w - 8)) + 'px';
+            }
+            function onUp() {
+                $('gaiaResizeHandle').removeEventListener('pointermove', onMove);
+                $('gaiaResizeHandle').removeEventListener('pointerup', onUp);
+                saveGeom();
+            }
+            $('gaiaResizeHandle').addEventListener('pointermove', onMove);
+            $('gaiaResizeHandle').addEventListener('pointerup', onUp);
+        });
+    }
+    function setOpen(v, persist) {
+        isOpen = !!v;
+        panel.classList.toggle('gaia-hidden', !isOpen);
+        if (persist !== false) { try { localStorage.setItem(LS_OPEN, isOpen ? '1' : '0'); } catch (e) {} }
+        syncToggleBtns();
+        if (isOpen) { refreshStatuses(); }
+    }
+    function setMinimized(v) {
+        minimized = !!v;
+        panel.classList.toggle('gaia-min', minimized);
+        $('gaiaMinBtn').textContent = minimized ? '\u25a1' : '\u2013';
+        $('gaiaMinBtn').title = minimized ? 'Restore' : 'Minimize';
+        if (!minimized) applyGeometry(); else panel.style.height = 'auto';
+        try { localStorage.setItem(LS_MIN, minimized ? '1' : '0'); } catch (e) {}
+    }
+    function toggle() { setOpen(!isOpen); }
+    function statusMsg(msg) { if (statusEl) statusEl.textContent = msg; }
+    function syncToggleBtns() {
+        var navItem = $('gaiaNavItem');
+        var mapBtn = $('gaiaToggleBtn');
+        if (navItem) navItem.classList.toggle('active', isOpen);
+        if (mapBtn) mapBtn.className = 'retro-map-btn' + (isOpen ? ' retro-map-btn-active' : '');
+    }
+
+
+    // ------------------------------------------- core render hooks (additive)
+    // Wrap the existing global render functions so GAIA re-applies opacity and
+    // filter overlays AFTER each core re-render. The originals run unchanged.
+    var hooksInstalled = false;
+    function installRenderHooks() {
+        if (hooksInstalled) return;
+        ['renderFusionThreatLayer', 'renderFusionAviationLayer'].forEach(function (fn) {
+            var orig = window[fn];
+            if (typeof orig !== 'function' || orig.__gaiaWrapped) return;
+            var wrapped = function () {
+                var r = orig.apply(this, arguments);
+                try { sweepAll(); } catch (e) {}
+                return r;
+            };
+            wrapped.__gaiaWrapped = true;
+            window[fn] = wrapped;
+        });
+        hooksInstalled = true;
+    }
+
+    // ------------------------------------------------------------------ wiring
+    function bindEvents() {
+        $('gaiaCloseBtn').addEventListener('click', function () { setOpen(false); });
+        $('gaiaMinBtn').addEventListener('click', function () { setMinimized(!minimized); });
+        $('gaiaGoBtn').addEventListener('click', updateResults);
+        $('gaiaApplyBtn').addEventListener('click', applyFilter);
+        $('gaiaClearBtn').addEventListener('click', clearFilter);
+        $('gaiaFocusBtn').addEventListener('click', focusResults);
+
+        inputEl.addEventListener('input', updateResults);
+        inputEl.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); applyFilter(); }
+            if (e.key === 'Escape') { clearFilter(); }
+        });
+        chipsEl.addEventListener('click', function (e) {
+            var b = e.target.closest ? e.target.closest('.gaia-chip') : null;
+            if (b) chipToggle(b.getAttribute('data-phrase') || '');
+        });
+
+        listEl.addEventListener('click', function (e) {
+            var sw = e.target.closest ? e.target.closest('.gaia-switch') : null;
+            var row = sw && sw.closest('.gaia-row');
+            if (!row) return;
+            toggleLayerById(row.getAttribute('data-layer'));
+        });
+        listEl.addEventListener('input', function (e) {
+            var t = e.target;
+            if (!t || !t.classList || !t.classList.contains('gaia-slider')) return;
+            var row = t.closest('.gaia-row');
+            if (!row) return;
+            setLayerOpacity(row.getAttribute('data-layer'), parseInt(t.value, 10) / 100);
+            statusMsg(row.getAttribute('data-layer') + ' opacity ' + Math.round(state[row.getAttribute('data-layer')].opacity * 100) + '%.');
+        });
+        listEl.addEventListener('dblclick', function (e) {
+            var row = e.target.closest ? e.target.closest('.gaia-row[data-layer]') : null;
+            if (row && row.getAttribute('data-layer') === 'aviation' && typeof window.fusionToggle3D === 'function') {
+                window.fusionToggle3D();
+                statusMsg('Toggled 3D buildings.');
+            }
+        });
+
+        window.addEventListener('resize', applyGeometry);
+
+        setInterval(function () { if (isOpen) refreshStatuses(); }, 4000);
+    }
+
+    // Sidebar "GAIA" is a panel trigger, not a page — intercept the click in the
+    // capture phase so the app's navigate() handler never sees it.
+    document.addEventListener('click', function (e) {
+        var t = e.target.closest ? e.target.closest('#gaiaNavItem') : null;
+        if (t) { e.preventDefault(); e.stopPropagation(); toggle(); }
+    }, true);
+
+    // Ctrl+Shift+G toggles the controller (Alt+Shift+G alias for browsers that
+    // swallow Ctrl+Shift combos).
+    document.addEventListener('keydown', function (e) {
+        if ((e.key === 'G' || e.key === 'g') && e.shiftKey && (e.ctrlKey || e.metaKey || e.altKey)) {
+            e.preventDefault();
+            toggle();
+        }
+    });
+
+    // -------------------------------------------------------------------- init
+    function init() {
+        panel = $('gaia-panel');
+        if (!panel) return; // add-on markup missing — stay inert
+        listEl = $('gaiaLayerList');
+        statusEl = $('gaiaStatus');
+        metaEl = $('gaiaMeta');
+        modeChip = $('gaiaModeChip');
+        resultsHead = $('gaiaResultsHead');
+        samplesEl = $('gaiaSamples');
+        inputEl = $('gaiaSearchInput');
+        chipsEl = $('gaiaChips');
+
+        installRenderHooks();
+        try { minimized = localStorage.getItem(LS_MIN) === '1'; } catch (e) {}
+        setMinimized(minimized);
+        applyGeometry();
+
+        renderChips();
+        renderRows();
+        bindEvents();
+
+        try { inputEl.value = ''; } catch (e) {}
+        updateResults();
+
+        // Restore persisted layer states onto the host WITHOUT re-render storms:
+        // only flip layers whose stored state differs from the live one.
+        ['threats', 'aviation'].forEach(function (id) {
+            var want = state[id] && state[id].on;
+            if (want !== hostActive(id)) setHostLayer(id, !!want);
+        });
+
+        var storedOpen;
+        try { storedOpen = localStorage.getItem(LS_OPEN); } catch (e) {}
+        setOpen(storedOpen === '1', false); // default closed — power tool
+
+        sweepAll();
+
+        // public API
+        window.GAIA = {
+            toggle: toggle,
+            open: function () { setOpen(true); },
+            close: function () { setOpen(false); },
+            minimize: function () { setMinimized(!minimized); },
+            layers: function () { return REGISTRY.map(function (d) {
+                return { id: d.id, label: d.label, meta: d.meta, on: !!(state[d.id] && state[d.id].on),
+                         opacity: state[d.id] ? state[d.id].opacity : 1, provider: hasProvider(d.id) };
+            }); },
+            registerLayer: function (def) {
+                if (!def || !def.id) return false;
+                var existing = findDef(def.id);
+                if (existing && typeof existing.on === 'function') return false; // live conflict
+                var entry = {
+                    id: def.id,
+                    label: def.label || (existing ? existing.label : def.id),
+                    meta: def.meta || (existing ? 'custom feed' : existing && existing.meta) || 'custom feed',
+                    on: typeof def.on === 'function' ? def.on : null,
+                    opacity: typeof def.opacity === 'function' ? def.opacity : null
+                };
+                if (existing) { REGISTRY.splice(REGISTRY.indexOf(existing), 1, entry); }
+                else { REGISTRY.push(entry); }
+                if (!(def.id in state)) state[def.id] = { on: !!existing && state[def.id].on };
+                saveState();
+                renderRows();
+                return true;
+            },
+            setLayerOpacity: function (id, v) { setLayerOpacity(id, v); },
+            search: function (q) {
+                var f = parseQuery(q);
+                var r = countMatches(f);
+                return { filter: f, hits: r.hits.length, total: r.total,
+                         threats: r.hits.filter(function (p) { return p.kind === 'threat'; }).length,
+                         aircraft: r.hits.filter(function (p) { return p.kind === 'aircraft'; }).length };
+            },
+            applyFilter: function (q) { if (q != null) inputEl.value = q; applyFilter(); },
+            clearFilter: clearFilter,
+            focusResults: focusResults
+        };
+        syncToggleBtns();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
+
 
 </body>
 </html></html>

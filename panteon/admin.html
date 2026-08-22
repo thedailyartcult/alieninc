@@ -8057,6 +8057,14 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
      engine generates all notes locally from live dashboard data.
      ============================================================================ -->
 <style id="won-styles">
+    /* ========================================================================
+       WATCH OFFICER NOTEPAD — styled to match the sc-hud honeycomb tiles and
+       sc-map-pane so the panel reads as part of the same instrument deck.
+       Uses ONLY :root tokens (--bg-card, --border-color, --accent-neon,
+       --green/--red/--amber, --font-mono, --font-tech). Same visual grammar
+       as .sc-hud-tile: 1.5px tinted frame -> clipped inner card, cut-corner
+       polygons alternating per row, mono microtags, wireframe-square motifs.
+       ======================================================================== */
     #won-panel {
         position: fixed;
         right: 20px;
@@ -8068,18 +8076,12 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         min-height: 240px;
         display: flex;
         flex-direction: column;
-        background: linear-gradient(165deg, rgba(10,10,15,0.93) 0%, rgba(7,8,13,0.9) 100%);
-        backdrop-filter: blur(16px) saturate(1.25);
-        -webkit-backdrop-filter: blur(16px) saturate(1.25);
-        border: 1px solid rgba(0,240,255,0.26);
-        border-radius: 14px;
-        box-shadow:
-            0 0 0 1px rgba(255,0,170,0.07),
-            0 0 22px rgba(0,240,255,0.12),
-            0 24px 64px rgba(0,0,0,0.66);
+        background: var(--bg-panel);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 16px 48px rgba(0,0,0,0.55);
         z-index: 1900; /* above topbar (1001) + sidebars (1500); below modals (2000) / toasts (3000) */
-        font-family: Inter, -apple-system, sans-serif;
-        color: #e6ecf5;
+        color: var(--text);
         overflow: hidden;
         transition: transform .38s cubic-bezier(.2,.85,.3,1), opacity .3s ease, height .25s ease;
     }
@@ -8093,52 +8095,45 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
     #won-panel.won-min .won-footer,
     #won-panel.won-min .won-resize-handle { display: none; }
 
-    /* ---- header ---- */
+    /* ---- header (sc-map-pane-top grammar: live dot + mono title + btns) ---- */
     .won-header {
         flex-shrink: 0;
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 10px 10px 10px 14px;
+        padding: 9px 10px 9px 12px;
         cursor: grab;
         user-select: none;
         -webkit-user-select: none;
         touch-action: none;
-        background: linear-gradient(90deg, rgba(0,240,255,0.08), rgba(255,0,170,0.06) 60%, transparent);
-        border-bottom: 1px solid rgba(0,240,255,0.18);
+        background: var(--bg-card);
+        border-bottom: 1px solid var(--border-color);
     }
     .won-header:active { cursor: grabbing; }
     .won-pulse {
-        width: 8px; height: 8px;
+        width: 6px; height: 6px;
         border-radius: 50%;
-        background: #00f0ff;
-        box-shadow: 0 0 6px rgba(0,240,255,.8);
-        animation: won-pulse 2.2s ease-out infinite;
+        background: var(--green);
+        box-shadow: 0 0 6px var(--green);
+        animation: won-pulse 2s ease-in-out infinite;
         flex-shrink: 0;
     }
-    @keyframes won-pulse {
-        0%   { box-shadow: 0 0 0 0 rgba(0,240,255,.5); }
-        70%  { box-shadow: 0 0 0 9px rgba(0,240,255,0); }
-        100% { box-shadow: 0 0 0 0 rgba(0,240,255,0); }
-    }
+    @keyframes won-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
     #won-panel.won-scanning .won-pulse {
-        background: #ff00aa;
-        animation: won-pulse-magenta .7s ease-out infinite;
-    }
-    @keyframes won-pulse-magenta {
-        0%   { box-shadow: 0 0 0 0 rgba(255,0,170,.55); }
-        70%  { box-shadow: 0 0 0 9px rgba(255,0,170,0); }
-        100% { box-shadow: 0 0 0 0 rgba(255,0,170,0); }
+        background: var(--accent-neon);
+        box-shadow: 0 0 6px var(--accent-neon);
+        animation-duration: .8s;
     }
     .won-title {
-        font-family: 'JetBrains Mono', var(--font-mono, monospace);
-        font-size: 11px;
+        font-family: var(--font-mono);
+        font-size: 10px;
         font-weight: 600;
-        letter-spacing: .24em;
-        color: #dff6ff;
+        letter-spacing: .22em;
+        color: var(--text);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        text-transform: uppercase;
     }
     .won-header-btns {
         margin-left: auto;
@@ -8148,40 +8143,49 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         flex-shrink: 0;
     }
     .won-scan-btn {
-        font-family: 'JetBrains Mono', var(--font-mono, monospace);
+        font-family: var(--font-mono);
         font-size: 9px;
         font-weight: 600;
         letter-spacing: .14em;
-        color: #001318;
-        background: linear-gradient(180deg, #4df6ff, #00d5e8);
-        border: 1px solid rgba(0,240,255,0.7);
-        border-radius: 6px;
+        color: var(--accent-neon);
+        background: transparent;
+        border: 1px solid var(--border-color);
+        border-radius: 3px;
         padding: 4px 10px;
         cursor: pointer;
-        box-shadow: 0 0 10px rgba(0,240,255,.35);
-        transition: box-shadow .15s, transform .15s, filter .15s;
+        line-height: 1;
+        text-transform: uppercase;
         white-space: nowrap;
+        transition: background .15s, border-color .15s, box-shadow .15s, transform .1s;
     }
-    .won-scan-btn:hover { box-shadow: 0 0 16px rgba(0,240,255,.65); filter: brightness(1.08); }
+    .won-scan-btn:hover {
+        background: rgba(223, 241, 64, 0.1);
+        border-color: var(--accent-neon);
+        box-shadow: 0 0 8px rgba(223, 241, 64, 0.3);
+    }
     .won-scan-btn:active { transform: translateY(1px); }
     .won-scan-btn:disabled { opacity: .55; cursor: wait; box-shadow: none; }
     .won-hbtn {
-        font-family: 'JetBrains Mono', var(--font-mono, monospace);
+        font-family: var(--font-mono);
         font-size: 9px;
         letter-spacing: .08em;
-        color: #8fb9c9;
-        background: rgba(0,240,255,0.05);
-        border: 1px solid rgba(0,240,255,0.18);
-        border-radius: 6px;
+        color: var(--text-muted);
+        background: transparent;
+        border: 1px solid var(--border-color);
+        border-radius: 3px;
         padding: 4px 7px;
         cursor: pointer;
         line-height: 1;
-        transition: color .15s, border-color .15s, box-shadow .15s;
+        transition: color .15s, border-color .15s, background .15s;
     }
-    .won-hbtn:hover { color: #00f0ff; border-color: rgba(0,240,255,0.55); box-shadow: 0 0 8px rgba(0,240,255,.25); }
-    .won-hbtn.won-danger:hover { color: #ff2f77; border-color: rgba(255,0,170,.6); box-shadow: 0 0 8px rgba(255,0,170,.3); }
+    .won-hbtn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+    .won-hbtn.won-danger:hover {
+        color: var(--red);
+        border-color: rgba(244, 63, 94, 0.45);
+        background: rgba(244, 63, 94, 0.08);
+    }
 
-    /* ---- body / cards ---- */
+    /* ---- body / honeycomb note tiles ---- */
     .won-body {
         flex: 1;
         overflow-y: auto;
@@ -8190,48 +8194,70 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
     }
     .won-body::-webkit-scrollbar { width: 8px; }
     .won-body::-webkit-scrollbar-track { background: transparent; }
-    .won-body::-webkit-scrollbar-thumb { background: rgba(0,240,255,0.16); border-radius: 4px; }
-    .won-body::-webkit-scrollbar-thumb:hover { background: rgba(0,240,255,0.32); }
+    .won-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 4px; }
+    .won-body::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.26); }
 
+    /* Tile = tinted frame (outer) + clipped inner card, mirroring .sc-hud-tile.
+       Cut corners alternate per tile via nth-child, like cut-tr-bl / cut-tl-br. */
     .won-card {
         position: relative;
-        background: rgba(13,17,27,0.78);
-        border: 1px solid rgba(0,240,255,0.13);
-        border-left: 2px solid rgba(0,240,255,0.45);
-        border-radius: 10px;
-        padding: 11px 13px;
+        background: var(--border-color);
+        padding: 1.5px;
         margin-bottom: 10px;
-        transition: border-color .18s, box-shadow .18s;
+        clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+        transition: background .2s ease;
     }
-    .won-card:hover {
-        border-color: rgba(0,240,255,0.38);
-        border-left-color: #00f0ff;
-        box-shadow: 0 0 14px rgba(0,240,255,0.09);
+    #wonList > .won-card:nth-child(even) {
+        clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
     }
-    .won-card.won-card-pinned { border-left-color: #ff00aa; }
-    .won-card.won-flash { animation: won-flash .95s ease-out; }
+    .won-card:hover { background: rgba(255,255,255,0.32); }
+    .won-card.won-card-pinned { background: rgba(223, 241, 64, 0.55); }
+    .won-card-inner {
+        background: var(--bg-card);
+        height: 100%;
+        padding: 11px 13px;
+        clip-path: polygon(0 0, calc(100% - 13px) 0, 100% 13px, 100% 100%, 13px 100%, 0 calc(100% - 13px));
+    }
+    #wonList > .won-card:nth-child(even) .won-card-inner {
+        clip-path: polygon(13px 0, 100% 0, 100% calc(100% - 13px), calc(100% - 13px) 100%, 0 100%, 0 13px);
+    }
+    .won-card.won-flash .won-card-inner { animation: won-flash .95s ease-out; }
     @keyframes won-flash {
-        0%   { background: rgba(0,240,255,0.17); border-color: rgba(0,240,255,0.75); }
-        100% { background: rgba(13,17,27,0.78); }
+        0%   { background: rgba(223, 241, 64, 0.16); }
+        100% { background: var(--bg-card); }
     }
+
+    /* kind tag = sc-hud-tag grammar + wireframe-square marker */
     .won-kind-tag {
-        display: inline-block;
-        font-family: 'JetBrains Mono', var(--font-mono, monospace);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-family: var(--font-mono);
         font-size: 8px;
         letter-spacing: .18em;
-        color: #ff5cb8;
-        border: 1px solid rgba(255,0,170,0.35);
-        border-radius: 4px;
-        padding: 1px 5px;
-        margin-bottom: 6px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        margin-bottom: 7px;
+    }
+    .won-kind-tag::before {
+        content: '';
+        width: 6px; height: 6px;
+        border: 1px solid var(--green);
+        border-radius: 1px;
+        background: var(--green);
+        flex-shrink: 0;
+    }
+    .won-kind-tag.won-kind-scan::before {
+        background: var(--accent-neon);
+        border-color: var(--accent-neon);
     }
     .won-headline {
-        font-family: 'Space Grotesk', var(--font-tech, monospace);
+        font-family: var(--font-tech);
         font-weight: 600;
         font-size: 13px;
         line-height: 1.4;
-        color: #00f0ff;
-        margin-bottom: 8px;
+        color: var(--text);
+        margin: 0 0 8px;
         padding-right: 6px;
     }
     .won-facts { list-style: none; margin: 0 0 9px; padding: 0; }
@@ -8240,26 +8266,26 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         padding-left: 13px;
         font-size: 11px;
         line-height: 1.55;
-        color: #c2cbd9;
+        color: rgba(255,255,255,0.78);
         margin-bottom: 3px;
         word-break: break-word;
     }
+    /* fact bullet = inactive wireframe square */
     .won-facts li::before {
         content: '';
         position: absolute;
         left: 1px; top: 7px;
         width: 5px; height: 5px;
-        background: #ff00aa;
-        transform: rotate(45deg);
-        opacity: .85;
+        border: 1px solid var(--text-muted);
+        border-radius: 1px;
     }
     .won-label {
         display: block;
-        font-family: 'JetBrains Mono', var(--font-mono, monospace);
-        font-size: 8.5px;
-        letter-spacing: .2em;
+        font-family: var(--font-mono);
+        font-size: 8px;
+        letter-spacing: .16em;
         text-transform: uppercase;
-        color: #5d687c;
+        color: var(--text-muted);
         margin-bottom: 2px;
     }
     .won-why { margin-bottom: 8px; }
@@ -8267,26 +8293,38 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
     .won-why-text, .won-angle-text {
         font-size: 11px;
         line-height: 1.5;
-        color: #dde5f0;
+        color: rgba(255,255,255,0.82);
     }
-    .won-angle-text { color: #e8cfe9; font-style: italic; }
+    /* click-to-edit affordance */
+    .won-editable {
+        cursor: text;
+        border-bottom: 1px dashed transparent;
+        transition: border-color .15s ease, background .15s ease;
+    }
+    .won-editable:hover { border-bottom-color: rgba(223, 241, 64, 0.4); }
+    .won-editable[contenteditable="true"] {
+        outline: none;
+        border-bottom-color: var(--accent-neon);
+        background: rgba(223, 241, 64, 0.05);
+    }
+    .won-angle-text { font-style: italic; }
     .won-meta-row {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: 5px 10px;
-        font-family: 'JetBrains Mono', var(--font-mono, monospace);
+        font-family: var(--font-mono);
         font-size: 9px;
         letter-spacing: .06em;
         text-transform: uppercase;
-        color: #7b8595;
-        border-top: 1px dashed rgba(255,255,255,0.09);
+        color: var(--text-muted);
+        border-top: 1px dashed rgba(255,255,255,0.12);
         padding-top: 7px;
     }
     .won-conf { font-weight: 700; }
-    .won-conf[data-level="High"] { color: #00f0ff; }
-    .won-conf[data-level="Medium"] { color: #f59e0b; }
-    .won-conf[data-level="Low"] { color: #ef4444; }
+    .won-conf[data-level="High"] { color: var(--green); }
+    .won-conf[data-level="Medium"] { color: var(--amber); }
+    .won-conf[data-level="Low"] { color: var(--red); }
     .won-meta-src { max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     .won-card-actions {
@@ -8301,24 +8339,36 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
     .won-card:hover .won-card-actions,
     .won-card:focus-within .won-card-actions { opacity: 1; transform: none; }
     .won-mini-btn {
-        font-family: 'JetBrains Mono', var(--font-mono, monospace);
+        font-family: var(--font-mono);
         font-size: 8.5px;
         letter-spacing: .1em;
         text-transform: uppercase;
-        color: #86d7e6;
-        background: rgba(8,11,18,0.94);
-        border: 1px solid rgba(0,240,255,0.28);
-        border-radius: 5px;
+        color: var(--text-muted);
+        background: var(--bg-panel);
+        border: 1px solid var(--border-color);
+        border-radius: 2px;
         padding: 2px 7px;
         cursor: pointer;
         line-height: 1.4;
         transition: all .14s;
     }
-    .won-mini-btn:hover { color: #00f0ff; border-color: #00f0ff; box-shadow: 0 0 8px rgba(0,240,255,.4); }
-    .won-mini-btn.won-mini-danger:hover { color: #ff2f77; border-color: #ff00aa; box-shadow: 0 0 8px rgba(255,0,170,.4); }
-    .won-mini-btn.won-pin-on { color: #ff00aa; border-color: rgba(255,0,170,.65); box-shadow: 0 0 8px rgba(255,0,170,.28); }
+    .won-mini-btn:hover {
+        color: var(--accent-neon);
+        border-color: rgba(223, 241, 64, 0.5);
+        background: rgba(223, 241, 64, 0.08);
+    }
+    .won-mini-btn.won-mini-danger:hover {
+        color: var(--red);
+        border-color: rgba(244, 63, 94, 0.5);
+        background: rgba(244, 63, 94, 0.08);
+    }
+    .won-mini-btn.won-pin-on {
+        color: var(--amber);
+        border-color: rgba(245, 158, 11, 0.55);
+        background: rgba(245, 158, 11, 0.08);
+    }
 
-    /* ---- empty state ---- */
+    /* ---- empty state (wireframe-boxes motif from the tiles) ---- */
     .won-empty {
         height: 100%;
         display: flex;
@@ -8329,13 +8379,15 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         text-align: center;
         padding: 24px;
     }
+    .won-empty-boxes { position: static; }
+    .won-empty-boxes .sc-wireframe-box { width: 12px; height: 12px; }
     .won-empty-text {
-        font-family: 'Space Grotesk', var(--font-tech, monospace);
-        font-size: 12px;
-        font-weight: 300;
-        line-height: 1.6;
-        color: #8a95a8;
-        max-width: 250px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        line-height: 1.7;
+        letter-spacing: .06em;
+        color: var(--text-muted);
+        max-width: 260px;
     }
 
     /* ---- footer ---- */
@@ -8345,16 +8397,16 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-        padding: 7px 14px;
-        border-top: 1px solid rgba(0,240,255,0.14);
-        background: rgba(5,6,10,0.6);
-        font-family: 'JetBrains Mono', var(--font-mono, monospace);
+        padding: 7px 12px;
+        border-top: 1px solid var(--border-color);
+        background: var(--bg-card);
+        font-family: var(--font-mono);
         font-size: 9px;
         letter-spacing: .06em;
-        color: #6b7688;
+        color: var(--text-muted);
     }
     #wonStatus { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    #wonCount { flex-shrink: 0; color: #00c8dd; }
+    #wonCount { flex-shrink: 0; color: var(--accent-neon); }
 
     /* ---- resize handle (bottom-left corner) ---- */
     .won-resize-handle {
@@ -8364,35 +8416,34 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         cursor: nwse-resize;
         z-index: 2;
         touch-action: none;
-        border-bottom-left-radius: 14px;
+        border-bottom-left-radius: 8px;
         background:
             linear-gradient(135deg,
-                transparent 46%, rgba(0,240,255,.38) 46%, rgba(0,240,255,.38) 52%,
-                transparent 52%, transparent 60%, rgba(0,240,255,.26) 60%, rgba(0,240,255,.26) 66%,
+                transparent 46%, rgba(255,255,255,0.38) 46%, rgba(255,255,255,0.38) 52%,
+                transparent 52%, transparent 60%, rgba(255,255,255,0.24) 60%, rgba(255,255,255,0.24) 66%,
                 transparent 66%);
     }
 
-    /* ---- "+ Note" button injected into map hover boxes ---- */
+    /* ---- "+ Note" button injected into map hover boxes (retro-map-btn micro) ---- */
     .maplibregl-popup-content .won-note-btn {
         margin-top: 7px;
-        font-family: 'JetBrains Mono', var(--font-mono, monospace);
+        font-family: var(--font-mono);
         font-size: 9px;
         font-weight: 600;
         letter-spacing: .12em;
         text-transform: uppercase;
-        color: #00e5ff;
-        background: rgba(0,240,255,0.07);
-        border: 1px solid rgba(0,240,255,0.5);
-        border-radius: 5px;
+        color: var(--accent-neon);
+        background: transparent;
+        border: 1px solid var(--border-color);
+        border-radius: 3px;
         padding: 2px 9px;
         cursor: pointer;
-        box-shadow: 0 0 6px rgba(0,240,255,0.3);
-        transition: all .15s;
+        transition: background .15s, border-color .15s, box-shadow .15s;
     }
     .maplibregl-popup-content .won-note-btn:hover {
-        color: #dffaff;
-        background: rgba(0,240,255,0.18);
-        box-shadow: 0 0 12px rgba(0,240,255,0.6);
+        background: rgba(223, 241, 64, 0.1);
+        border-color: var(--accent-neon);
+        box-shadow: 0 0 8px rgba(223, 241, 64, 0.3);
     }
 
     @media (max-width: 768px) {
@@ -8417,17 +8468,7 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
     </div>
     <div class="won-body" id="wonBody">
         <div class="won-empty" id="wonEmpty">
-            <svg width="88" height="88" viewBox="0 0 88 88" fill="none" aria-hidden="true">
-                <circle cx="44" cy="44" r="40" stroke="rgba(0,240,255,0.15)" stroke-width="1"/>
-                <circle cx="44" cy="44" r="27" stroke="rgba(0,240,255,0.26)" stroke-width="1" stroke-dasharray="3 6"/>
-                <circle cx="44" cy="44" r="14" stroke="rgba(0,240,255,0.42)" stroke-width="1"/>
-                <path d="M44 2v10M44 76v10M2 44h10M76 44h10" stroke="rgba(255,0,170,0.5)" stroke-width="1.4"/>
-                <path d="M44 44L64 22" stroke="rgba(0,240,255,0.55)" stroke-width="1.6"/>
-                <path d="M44 44A22 22 0 0 1 62 51" stroke="rgba(0,240,255,0.22)" stroke-width="6" stroke-linecap="round"/>
-                <circle cx="61" cy="30" r="2.6" fill="#ff00aa"/>
-                <circle cx="33" cy="54" r="2" fill="#00f0ff"/>
-                <circle cx="44" cy="44" r="1.6" fill="#dffaff"/>
-            </svg>
+            <div class="sc-wireframe-boxes won-empty-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box"></span></div>
             <div class="won-empty-text">No notes yet &mdash; hover a threat and click&nbsp;+&nbsp;Note, or hit Scan&nbsp;Now</div>
         </div>
         <div class="won-list" id="wonList"></div>
@@ -8459,8 +8500,8 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
         });
     }
-    function hostEvents() { return Array.isArray(window.fusionThreatEvents) ? window.fusionThreatEvents : []; }
-    function hostFlights() { return Array.isArray(window.fusionFlights) ? window.fusionFlights : []; }
+    function hostEvents() { return Array.isArray(fusionThreatEvents) ? fusionThreatEvents : []; }
+    function hostFlights() { return Array.isArray(fusionFlights) ? fusionFlights : []; }
     function scopeLabel() {
         var sc = window.SCScope || {};
         return sc.country || sc.region || 'the watch scope';
@@ -8616,26 +8657,29 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         }).slice(0, MAX_NOTES);
     }
     function cardHTML(n) {
+        var isScan = n.kind === 'scan';
         var facts = (n.facts || []).slice(0, 4).map(function (f) { return '<li>' + esc(f) + '</li>'; }).join('');
         return '' +
         '<article class="won-card' + (n.pinned ? ' won-card-pinned' : '') + '" data-id="' + esc(n.id) + '">' +
-            '<span class="won-kind-tag">' + (n.kind === 'scan' ? 'SCAN' : 'EVENT') + '</span>' +
-            '<h4 class="won-headline">' + esc(n.headline) + '</h4>' +
-            '<ul class="won-facts">' + facts + '</ul>' +
-            '<div class="won-why"><span class="won-label">Why it matters</span>' +
-                '<div class="won-why-text">' + esc(n.why) + '</div></div>' +
-            '<div class="won-angle"><span class="won-label">Suggested angle</span>' +
-                '<div class="won-angle-text">' + esc(n.angle) + '</div></div>' +
-            '<div class="won-meta-row">' +
-                '<span>CONF <span class="won-conf" data-level="' + esc(n.confidence) + '">' + esc(n.confidence) + '</span></span>' +
-                '<span class="won-meta-src">SRC ' + esc(n.source || '\u2014') + '</span>' +
-                '<span>' + fmtTime(n.ts) + '</span>' +
-                '<span>CAMEO ' + esc(n.cameo || '\u2014') + '</span>' +
-            '</div>' +
-            '<div class="won-card-actions">' +
-                '<button type="button" class="won-mini-btn" data-act="copy" data-id="' + esc(n.id) + '">Copy</button>' +
-                '<button type="button" class="won-mini-btn' + (n.pinned ? ' won-pin-on' : '') + '" data-act="pin" data-id="' + esc(n.id) + '">Pin</button>' +
-                '<button type="button" class="won-mini-btn won-mini-danger" data-act="del" data-id="' + esc(n.id) + '">Del</button>' +
+            '<div class="won-card-inner">' +
+                '<span class="won-kind-tag won-kind-' + (isScan ? 'scan' : 'event') + '">' + (isScan ? 'SCAN' : 'EVENT') + '</span>' +
+                '<h4 class="won-headline">' + esc(n.headline) + '</h4>' +
+                '<ul class="won-facts">' + facts + '</ul>' +
+                '<div class="won-why"><span class="won-label">Assessment</span>' +
+                    '<div class="won-why-text won-editable" data-field="why" data-id="' + esc(n.id) + '" title="Click to edit">' + esc(n.why) + '</div></div>' +
+                '<div class="won-angle"><span class="won-label">Recommended action</span>' +
+                    '<div class="won-angle-text won-editable" data-field="angle" data-id="' + esc(n.id) + '" title="Click to edit">' + esc(n.angle) + '</div></div>' +
+                '<div class="won-meta-row">' +
+                    '<span>CONF <span class="won-conf" data-level="' + esc(n.confidence) + '">' + esc(n.confidence) + '</span></span>' +
+                    '<span class="won-meta-src">SRC ' + esc(n.source || '\u2014') + '</span>' +
+                    '<span>' + fmtTime(n.ts) + '</span>' +
+                    '<span>CAMEO ' + esc(n.cameo || '\u2014') + '</span>' +
+                '</div>' +
+                '<div class="won-card-actions">' +
+                    '<button type="button" class="won-mini-btn" data-act="copy" data-id="' + esc(n.id) + '">Copy</button>' +
+                    '<button type="button" class="won-mini-btn' + (n.pinned ? ' won-pin-on' : '') + '" data-act="pin" data-id="' + esc(n.id) + '">Pin</button>' +
+                    '<button type="button" class="won-mini-btn won-mini-danger" data-act="del" data-id="' + esc(n.id) + '">Del</button>' +
+                '</div>' +
             '</div>' +
         '</article>';
     }
@@ -8665,8 +8709,9 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         if (existing) {
             existing.ts = note.ts;
             existing.facts = note.facts;
-            existing.why = note.why;
-            existing.angle = note.angle;
+            // manual edits survive re-scans and AI enhancement passes
+            if (!(existing.edited && existing.edited.why)) existing.why = note.why;
+            if (!(existing.edited && existing.edited.angle)) existing.angle = note.angle;
             existing.confidence = note.confidence;
             existing.caveat = note.caveat;
             saveNotes(); render(); flashCard(existing.id);
@@ -8680,6 +8725,54 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
     function removeNote(id) {
         notes = notes.filter(function (m) { return m.id !== id; });
         saveNotes(); render();
+    }
+
+    // --------------------------------------------- inline text editing (assessment / action)
+    function startEdit(el) {
+        var id = el.getAttribute('data-id');
+        var field = el.getAttribute('data-field');
+        var note = notes.find(function (n) { return n.id === id; });
+        if (!note || el.isContentEditable) return;
+        el.setAttribute('contenteditable', 'true');
+        el.classList.add('won-editing');
+        el.title = 'Enter to save \u00b7 Esc to cancel';
+        el.focus();
+        var rng = document.createRange();
+        rng.selectNodeContents(el);
+        rng.collapse(false);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(rng);
+
+        function done(commit) {
+            el.removeEventListener('blur', onBlur);
+            el.removeEventListener('keydown', onKey);
+            el.removeAttribute('contenteditable');
+            el.classList.remove('won-editing');
+            el.title = 'Click to edit';
+            if (commit) {
+                var txt = el.innerText.replace(/\s+/g, ' ').trim();
+                if (txt && txt !== note[field]) {
+                    note[field] = txt;
+                    note.edited = note.edited || {};
+                    note.edited[field] = true;
+                    saveNotes();
+                    status(field === 'why' ? 'Assessment updated \u2014 edit locked against AI overwrite.' : 'Recommended action updated \u2014 edit locked against AI overwrite.');
+                    flashCard(note.id);
+                } else {
+                    el.textContent = note[field];
+                }
+            } else {
+                el.textContent = note[field];
+            }
+        }
+        function onBlur() { done(true); }
+        function onKey(e) {
+            if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+            else if (e.key === 'Escape') { e.preventDefault(); done(false); }
+        }
+        el.addEventListener('blur', onBlur);
+        el.addEventListener('keydown', onKey);
     }
 
     // --------------------------------------------- single-event note builders
@@ -8713,28 +8806,28 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
 
         var why, angle, conf, caveat;
         if (tone === 'red') {
-            why = 'Active-violence framing inside your watch scope today; same-day verification matters before the story hardens elsewhere.';
+            why = 'Assessment: reporting describes violent activity inside the watch area within the current collection window. Treated as an active I&W trigger; single-cycle spikes can be noise, so corroboration is required before elevation.';
         } else if (tone === 'amber') {
-            why = 'Escalation-adjacent development in scope; early context is cheaper than correction later.';
+            why = 'Assessment: development sits adjacent to established escalation thresholds but below conflict criteria. Assessed as pre-crisis posturing; monitor for repetition across independent sources.';
         } else {
-            why = 'Baseline activity worth logging as contrast for when the situation moves.';
+            why = 'Assessment: activity consistent with the established baseline for this area. Retained for pattern-of-life continuity; principal value is as a reference against future deviation.';
         }
-        if (arts >= 10) why += ' Multi-outlet pickup raises follow-through odds.';
-        else if (arts > 0 && arts < 3) why += ' Thin pickup so far \u2014 could still be early.';
+        if (arts >= 10) why += ' Broad multi-outlet pickup raises assessed reliability of core claims.';
+        else if (arts > 0 && arts < 3) why += ' Thin source base \u2014 specifics remain unconfirmed pending second-source corroboration.';
 
         var hay = ((title || '') + ' ' + (ev.event_type || '')).toLowerCase();
         var kw = window.CONFLICT_KEYWORDS || {};
         function hasAny(list) { return (list || []).some(function (k) { return hay.indexOf(k) !== -1; }); }
         if (hasAny(kw.violence)) {
-            angle = 'Frame as an escalation timeline: what changed on the ground versus the prior baseline, and which officials confirm it.';
+            angle = 'Handling: build an escalation timeline \u2014 ground truth versus prior baseline; attribute each claim to a named official or agency; flag anything resting on a sole source.';
         } else if (hasAny(kw.protest)) {
-            angle = 'Frame through mobilization math: demands, turnout scale, and whether this recurs or disperses within a week.';
+            angle = 'Handling: mobilization ledger \u2014 stated demands, estimated turnout, organizer affiliation; assess recurrence probability inside a seven-day window.';
         } else if (hasAny(kw.arrest)) {
-            angle = 'Frame as an accountability thread: charges filed, custody status, and the legal next steps that follow.';
+            angle = 'Handling: accountability track \u2014 charges, custody status, venue; identify the prosecuting authority and the next procedural milestone.';
         } else if (hasAny(kw.coerce)) {
-            angle = 'Frame as a pressure ledger: who is pressuring whom, with what lever, and against what stated deadline.';
+            angle = 'Handling: pressure mapping \u2014 actor, lever, target, stated deadline; assess whether the demand is negotiable or an ultimatum.';
         } else {
-            angle = 'Frame as a local signal with regional read-through: verify the actors first, then test whether the pattern repeats across scope.';
+            angle = 'Handling: verify actors first, then test for repetition across the scope; single-instance reporting stays parked until a pattern emerges.';
         }
 
         if (geo.latitude != null && title && (arts >= 5 || toneVal != null)) {
@@ -8774,11 +8867,11 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         if (props.lat != null) facts.push('Position [' + (+props.lat).toFixed(2) + ', ' + (+props.lng).toFixed(2) + '] \u00b7 ICAO24 ' + (props.icao24 || 'n/a'));
 
         var why = mil
-            ? 'Military-category asset inside the scoped airspace; posture changes here often precede ground activity.'
-            : 'Live track logged over scope; useful for spotting repeat patterns or unusual routing.';
+            ? 'Assessment: military-category track operating within scoped airspace. Force-posture shifts in this category frequently precede exercise or deployment activity; log for pattern-of-life.'
+            : 'Assessment: routine-category track logged over scope. Value is baseline traffic density; deviation from this profile is the reportable event.';
         var angle = mil
-            ? 'Frame as an airspace-posture check: registration, operator history, and how this track compares with routine traffic.'
-            : 'Frame as a pattern piece: route origin, owner registry, and why this corridor sees this traffic today.';
+            ? 'Handling: registry check \u2014 ICAO24, registration chain, operator history; compare current routing against this asset\u2019s observed norm before drawing conclusions.'
+            : 'Handling: route provenance \u2014 origin airport, owner registry, corridor frequency; flag only if routing departs from the established pattern.';
 
         return {
             kind: 'event',
@@ -8825,8 +8918,8 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
                 'Top locations: ' + (countries.slice(0, 3).join(', ') || 'unspecified'),
                 'Busiest outlet: ' + busiestDomain(evs)
             ],
-            why: 'Concentrated severity inside one watch window usually marks the day\u2019s escalation pocket \u2014 the first place to verify.',
-            angle: 'Frame as a sweep-and-rank brief: confirm the top three flags independently before committing to any single narrative.',
+            why: 'Assessment: severity concentrated inside a single watch window historically marks the day\u2019s primary escalation pocket. Direct verification effort here first; secondary fronts can wait.',
+            angle: 'Handling: sweep-and-rank \u2014 independently confirm the top three flags before committing to any single narrative thread.',
             confidence: reds.length >= 3 ? 'High' : reds.length >= 1 ? 'Medium' : 'Low',
             caveat: 'Severity follows GDELT classification; treat counts as triage, not ground truth.',
             source: 'SC Fusion scan',
@@ -8857,9 +8950,9 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
                 strongNeg + ' sit below \u22125 \u2014 strongly adverse coverage'
             ],
             why: avg < -5
-                ? 'Sustained negative tone marks an active news cycle; expect follow-on coverage within hours.'
-                : 'Tone is holding near neutral \u2014 useful as the reference point when coverage shifts.',
-            angle: 'Frame as a mood-meter sidebar: quantify how dark the coverage has turned versus the weekly baseline.',
+                ? 'Assessment: sustained adverse tone indicates an active coverage cycle; follow-on reporting expected within hours. Prepare holding lines now.'
+                : 'Assessment: tone near neutral \u2014 retained as the reference baseline for detecting the next coverage shift.',
+            angle: 'Handling: quantify the shift \u2014 current average versus weekly baseline; name the outlets driving the delta.',
             confidence: tones.length >= 25 ? 'High' : tones.length >= 8 ? 'Medium' : 'Low',
             caveat: 'Tone is machine-scored; individual outlets can skew the average.',
             source: 'SC Fusion scan',
@@ -8895,9 +8988,9 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
                 'Category mix: ' + (catTop || 'n/a')
             ],
             why: milCount
-                ? 'Military-category traffic inside civilian corridors draws attention; density shifts here often precede exercises or deployments.'
-                : 'Traffic density gives the baseline every aviation story needs before claiming anything unusual.',
-            angle: 'Frame as an airspace pulse-check: compare today\u2019s density with the weekly norm, then explain whatever stands out.',
+                ? 'Assessment: military-category presence inside mixed traffic. Density changes in this cell often precede exercises, rotations, or deployments; treat as a standing watch item.'
+                : 'Assessment: density figure establishes the aviation baseline; anything unusual is only definable against this number.',
+            angle: 'Handling: compare today\u2019s density to the weekly norm; task registry checks on outliers before drawing conclusions.',
             confidence: 'Medium',
             caveat: 'ADS-B only \u2014 aircraft without transponders are invisible to this picture.',
             source: 'SC Fusion scan',
@@ -8921,8 +9014,8 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
                 'Runner-up: ' + (ranked[1] ? ranked[1] + ' (' + m[ranked[1]] + ')' : 'none'),
                 'Distinct outlets in scope: ' + ranked.length
             ],
-            why: 'When one outlet dominates a topic, the story\u2019s framing travels with its editorial line \u2014 independence checks matter more.',
-            angle: 'Frame as a sourcing audit: what does the dominant outlet claim, and who can corroborate it?',
+            why: 'Assessment: single-outlet dominance creates framing risk \u2014 the narrative travels with that outlet\u2019s editorial line. Independent corroboration required before internal use.',
+            angle: 'Handling: sourcing audit \u2014 isolate the dominant outlet\u2019s specific claims; identify which are corroborated elsewhere and which are not.',
             confidence: 'Medium',
             caveat: 'Counts mirror this query\u2019s recall, not total publication volume.',
             source: 'SC Fusion scan',
@@ -8942,9 +9035,9 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
                 'Article volume in scope: ' + mx.articles
             ],
             why: parseFloat(mx.systemic) >= 0.6
-                ? 'Systemic pressure is elevated \u2014 small triggers can move several fronts at once today.'
-                : 'Indices give the quantitative spine for any lead you file from this scope.',
-            angle: 'Frame as the data-graph sidebar: three indices, one sentence each, anchored to today\u2019s event count.',
+                ? 'Assessment: elevated systemic pressure \u2014 low-grade triggers can propagate across multiple fronts today. Raise the watch condition accordingly.'
+                : 'Assessment: indices provide the quantitative spine for products filed from this scope; stable values support baseline assertions.',
+            angle: 'Handling: lead with numbers \u2014 three indices, one sentence each, anchored to today\u2019s event count; avoid adjectives the data cannot carry.',
             confidence: mx.total >= 25 ? 'High' : mx.total >= 8 ? 'Medium' : 'Low',
             caveat: 'Indices derive from the current scoped sample size (' + mx.total + ').',
             source: 'SC Fusion scan',
@@ -8993,8 +9086,8 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
     function briefOf(n) {
         return 'ANGLE HEADLINE\n' + n.headline +
             '\n\nKEY FACTS\n- ' + (n.facts || []).join('\n- ') +
-            '\n\nWHY IT MATTERS\n' + n.why +
-            '\n\nSUGGESTED ANGLE\n' + n.angle;
+            '\n\nASSESSMENT\n' + n.why +
+            '\n\nRECOMMENDED ACTION\n' + n.angle;
     }
     function enhanceNote(note) {
         var url = aiUrl();
@@ -9008,10 +9101,11 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
             signal: ctrl ? ctrl.signal : undefined
         }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
             if (j) {
-                if (typeof j.headline === 'string' && j.headline.trim()) note.headline = j.headline.trim();
-                if (typeof j.why === 'string' && j.why.trim()) note.why = j.why.trim();
-                if (typeof j.angle === 'string' && j.angle.trim()) note.angle = j.angle.trim();
-                if (Array.isArray(j.facts) && j.facts.length) note.facts = j.facts.slice(0, 4).map(String);
+                // length caps keep a misbehaving endpoint from dumping walls of text
+                if (typeof j.headline === 'string' && j.headline.trim()) note.headline = j.headline.trim().slice(0, 160);
+                if (typeof j.why === 'string' && j.why.trim()) note.why = j.why.trim().slice(0, 420);
+                if (typeof j.angle === 'string' && j.angle.trim()) note.angle = j.angle.trim().slice(0, 340);
+                if (Array.isArray(j.facts) && j.facts.length) note.facts = j.facts.slice(0, 4).map(String).map(function (f) { return f.slice(0, 200); });
             }
             return note; // silent fallback keeps template content on any failure
         }).catch(function () { return note; }).then(function (n2) {
@@ -9024,8 +9118,8 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
     function plainBrief(n) {
         return n.headline + '\n\nKEY FACTS\n' +
             (n.facts || []).map(function (f) { return '- ' + f; }).join('\n') +
-            '\n\nWHY IT MATTERS\n' + n.why +
-            '\n\nSUGGESTED ANGLE\n' + n.angle +
+            '\n\nASSESSMENT\n' + n.why +
+            '\n\nRECOMMENDED ACTION\n' + n.angle +
             '\n\nConfidence: ' + n.confidence + ' \u2014 ' + (n.caveat || '') +
             '\nSource: ' + (n.source || '\u2014') + ' | CAMEO ' + (n.cameo || '\u2014') + ' | ' + fmtTime(n.ts);
     }
@@ -9057,8 +9151,8 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         sortedNotes().forEach(function (n, i) {
             md += '## ' + (i + 1) + '. ' + n.headline + '\n\n';
             (n.facts || []).forEach(function (f) { md += '- ' + f + '\n'; });
-            md += '\n**Why it matters:** ' + n.why + '\n\n';
-            md += '**Suggested angle:** ' + n.angle + '\n\n';
+            md += '\n**Assessment:** ' + n.why + '\n\n';
+            md += '**Recommended action:** ' + n.angle + '\n\n';
             md += '> Confidence: ' + n.confidence + ' \u2014 ' + (n.caveat || '') + '  \n';
             md += '> Source: ' + (n.source || '\u2014') + ' \u00b7 CAMEO ' + (n.cameo || '\u2014') + ' \u00b7 ' + fmtTime(n.ts) + '\n\n';
         });
@@ -9100,6 +9194,8 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         });
 
         listEl.addEventListener('click', function (e) {
+            var ed = e.target.closest ? e.target.closest('.won-editable') : null;
+            if (ed && !ed.isContentEditable) { startEdit(ed); return; }
             var btn = e.target.closest('[data-act]');
             if (!btn) return;
             var id = btn.getAttribute('data-id');
@@ -9162,7 +9258,7 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
     }
 
     function init() {
-        panel = $('wonPanel');
+        panel = $('won-panel');
         if (!panel) return; // add-on markup missing \u2014 stay inert
         listEl = $('wonList');
         emptyEl = $('wonEmpty');

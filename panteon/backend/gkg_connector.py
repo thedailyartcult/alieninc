@@ -550,8 +550,18 @@ class GKGConnector:
         # DOC records are single articles; treat each as one event
         num_articles = 1
 
-        # Extract event date (YYYYMMDDHHMMSS)
-        event_date = raw.get("seendate", "")
+        # Extract event date; normalise DOC's compact YYYYMMDDTHHMMSSZ to ISO
+        # so both backends (BigQuery SQLDATE + DOC seendate) render identically.
+        raw_date = str(raw.get("seendate") or "")
+        event_date = ""
+        for fmt in ("%Y%m%dT%H%M%SZ", "%Y%m%d%H%M%S"):
+            try:
+                event_date = datetime.strptime(raw_date, fmt).isoformat()
+                break
+            except ValueError:
+                continue
+        if not event_date:
+            event_date = raw_date
 
         # Build guid
         url = raw.get("url", "") or raw.get("url_mobile", "")

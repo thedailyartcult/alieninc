@@ -124,6 +124,21 @@ def _write_count(result) -> int:
 _STORE_PATH = os.path.join(BACKEND_DIR, "panteon", "api", "gkg_osv2_store.json")
 
 
+def _normalize_event_date(value: str) -> str:
+    """Rewrite compact GDELT DOC dates (YYYYMMDDTHHMMSSZ) to ISO 8601.
+
+    Legacy stores hold raw ``seendate`` strings; BigQuery rows are already ISO.
+    Normalising keeps the fusion map popups on one consistent format.
+    """
+    raw = str(value or "")
+    for fmt in ("%Y%m%dT%H%M%SZ", "%Y%m%d%H%M%S"):
+        try:
+            return datetime.strptime(raw, fmt).isoformat()
+        except ValueError:
+            continue
+    return raw
+
+
 def _load_osv2_store() -> dict:
     if not os.path.exists(_STORE_PATH):
         return {}
@@ -140,6 +155,17 @@ def _load_osv2_store() -> dict:
         }
         if len(pruned) != len(data):
             logger.info("Pruned %s legacy collapsed actor node(s) from store", len(data) - len(pruned))
+        # Normalise pre-fix event_date values so old entries match new writes.
+        fixed = 0
+        for node in pruned.values():
+            if node.get("type") != "gkg_event":
+                continue
+            normalized = _normalize_event_date(node.get("event_date", ""))
+            if normalized != node.get("event_date", ""):
+                node["event_date"] = normalized
+                fixed += 1
+        if fixed:
+            logger.info("Normalised %s compact event_date value(s) from store", fixed)
         return pruned
     except (OSError, json.JSONDecodeError):
         logger.warning("gkg_osv2_store.json unreadable; starting with empty store")
@@ -181,7 +207,7 @@ async def _run_pipeline(config: PipelineConfig) -> dict:
         gkg_events = []
         source_used = "unknown"
         bq_error = None
-        if is_bigquery_available():
+        if is_bigquery_available() and datetime.now(timezone.utc).timestamp() >= _bq_state["quota_blocked_until"]:
             try:
                 import asyncio as _asyncio
                 bq_config = GDELTBigQueryConfig(max_results=config.maxrecords, country_code=config.country_code or "")
@@ -190,9 +216,17 @@ async def _run_pipeline(config: PipelineConfig) -> dict:
                 gkg_events = await _asyncio.to_thread(bq_connector.pull)
                 source_used = "bigquery"
                 logger.info("GDELT BigQuery pull succeeded: %d events", len(gkg_events))
-            except Exception as bq_exc:
+            except Exception as bq_exc:  # noqa: BLE001
                 bq_error = str(bq_exc)
                 logger.warning("GDELT BigQuery failed, falling back to DOC 2.0: %s", bq_exc)
+                if _bq_quota_exceeded(bq_exc):
+                    until = datetime.now(timezone.utc).timestamp() + _BQ_QUOTA_RETRY_S
+                    _bq_state["quota_blocked_until"] = until
+                    logger.warning(
+                        "BigQuery free scan quota exhausted — circuit breaker open, "
+                        "retrying BQ after %s (at %s)",
+                        _BQ_QUOTA_RETRY_S, datetime.fromtimestamp(until, tz=timezone.utc).isoformat(),
+                    )
 
         if not gkg_events:
             # DOC 2.0 fallback (or BigQuery unavailable).
@@ -300,6 +334,16 @@ _run_state: dict = {
 # never retried — retrying cannot change the outcome).
 _TRANSIENT_KINDS = {"rate_limited", "server_error", "network", "timeout"}
 
+# BigQuery quota circuit breaker: a 403 quotaExceeded on the free scan tier is a
+# monthly byte budget — it will NOT recover in minutes. Remember it so every
+# auto-pull doesn't burn a doomed query before falling back to DOC 2.0.
+_BQ_QUOTA_RETRY_S = 6 * 3600
+_bq_state: dict = {"quota_blocked_until": 0.0}
+
+
+def _bq_quota_exceeded(exc: Exception) -> bool:
+    return "quotaexceeded" in str(exc).lower().replace("_", "")
+
 
 def _is_rate_limited(err: str) -> bool:
     return "429" in err or "rate limit" in err.lower()
@@ -386,11 +430,14 @@ async def _validate_query(config: PipelineConfig, force_live: bool = False) -> d
         await GKGConnectorFactory.reset_session()
 
 
-async def _run_pipeline_bg(config: PipelineConfig) -> dict:
+async def _run_pipeline_bg(config: PipelineConfig, allow_transient_retry: bool = True) -> dict:
     """Run the GKG pipeline in the background and publish state for polling.
 
     GDELT rate-limits request bursts from an IP; on a rate-limit failure we wait
     once for the throttle window and retry, so a single "Run" click usually lands.
+    Scheduled auto-pulls pass ``allow_transient_retry=False``: they pre-check the
+    cooldown themselves and prefer deferring to the next tick over blindly
+    burning another request into an active throttle window.
     """
     global _run_state
     _run_state = {
@@ -406,8 +453,9 @@ async def _run_pipeline_bg(config: PipelineConfig) -> dict:
         # One background retry, but ONLY for transient failures. Structural
         # errors (phrase_too_short / or_not_parenthesized / nested_or) never
         # change on retry, so we surface them immediately instead of burning
-        # another request against the per-IP throttle.
-        if phase != "complete":
+        # another request against the per-IP throttle. Auto-pulls disable the
+        # retry entirely (see docstring).
+        if allow_transient_retry and phase != "complete":
             kind = report.get("error_kind", "")
             if kind in _TRANSIENT_KINDS or (not kind and _is_rate_limited(report.get("error", ""))):
                 _run_state["error"] = "transient GDELT failure — retrying once in 60s"
@@ -520,6 +568,116 @@ async def run_pipeline(payload: PipelineConfig = None, background_tasks: Backgro
 async def pipeline_status():
     """Return the current background pipeline run state (idle/running/complete/failed)."""
     return JSONResponse(content=_run_state, status_code=200)
+
+
+# ---------------------------------------------------------------------------
+# Scheduled auto-pull: keeps the fusion map fresh without anyone clicking Run.
+# Guard rails (deliberately conservative — never burst GDELT):
+#   - default cadence 6h; env GKG_AUTOPULL_INTERVAL_S overrides, 0 disables
+#   - single asyncio task; a pull is skipped (never queued) if one is running
+#   - skips while a GDELT cooldown is active and defers to the next tick
+#   - first pull happens shortly after boot so a restart refreshes stale data
+# ---------------------------------------------------------------------------
+_AUTO_PULL_DEFAULT_S = 6 * 3600
+_AUTO_PULL_SKIP_RETRY_S = 15 * 60
+_scheduler_state: dict = {
+    "enabled": False,
+    "interval_s": 0,
+    "first_delay_s": 0,
+    "last_run_at": None,
+    "last_result": None,
+    "next_run_at": None,
+}
+_scheduler_task = None
+
+
+async def _autopull_once() -> str:
+    """One guarded auto-pull attempt. Returns an outcome label."""
+    if _run_state.get("status") == "running":
+        return "skipped_running"
+    if get_rate_state().get("cooldown_active"):
+        return "skipped_cooldown"
+    state = await _run_pipeline_bg(PipelineConfig(), allow_transient_retry=False)
+    return state.get("status", "failed")
+
+
+async def _autopull_loop(interval_s: int, first_delay_s: int) -> None:
+    consecutive_failures = 0
+    try:
+        await asyncio.sleep(first_delay_s)
+        while True:
+            result = await _autopull_once()
+            now = datetime.now(timezone.utc)
+            _scheduler_state["last_run_at"] = now.isoformat()
+            _scheduler_state["last_result"] = result
+            # Guard-rail skip: re-check shortly so a transient cooldown or a
+            # concurrent manual run delays freshness by minutes, not hours.
+            # Hard failure: back off hourly (1h, 2h, … capped at the interval)
+            # so a throttled/angry GDELT gets at most one attempt per window.
+            if result.startswith("skipped"):
+                sleep_s = min(interval_s, _AUTO_PULL_SKIP_RETRY_S)
+                consecutive_failures = 0
+            elif result == "complete":
+                sleep_s = interval_s
+                consecutive_failures = 0
+            else:
+                consecutive_failures += 1
+                sleep_s = min(interval_s, 3600 * consecutive_failures)
+            next_run = now.timestamp() + sleep_s
+            _scheduler_state["next_run_at"] = datetime.fromtimestamp(next_run, tz=timezone.utc).isoformat()
+            logger.info("GKG auto-pull: %s (next in %ss)", result, sleep_s)
+            await asyncio.sleep(sleep_s)
+    except asyncio.CancelledError:
+        raise
+
+
+def start_autopull() -> None:
+    """Start the auto-pull scheduler (called from app lifespan)."""
+    global _scheduler_task
+    try:
+        interval_s = int(os.environ.get("GKG_AUTOPULL_INTERVAL_S", str(_AUTO_PULL_DEFAULT_S)))
+    except ValueError:
+        interval_s = _AUTO_PULL_DEFAULT_S
+    try:
+        first_delay_s = max(15, int(os.environ.get("GKG_AUTOPULL_FIRST_DELAY_S", "90")))
+    except ValueError:
+        first_delay_s = 90
+    _scheduler_state.update(
+        enabled=interval_s > 0, interval_s=interval_s, first_delay_s=first_delay_s,
+        last_run_at=None, last_result=None, next_run_at=None,
+    )
+    if interval_s <= 0:
+        logger.info("GKG auto-pull disabled (GKG_AUTOPULL_INTERVAL_S=0)")
+        return
+    if _scheduler_task is not None and not _scheduler_task.done():
+        return
+    _scheduler_task = asyncio.create_task(_autopull_loop(interval_s, first_delay_s))
+    logger.info("GKG auto-pull scheduler started: first in %ss, then every %ss",
+                first_delay_s, interval_s)
+
+
+async def stop_autopull() -> None:
+    """Cancel the auto-pull scheduler (called from app lifespan shutdown)."""
+    global _scheduler_task
+    if _scheduler_task is not None:
+        _scheduler_task.cancel()
+        try:
+            await _scheduler_task
+        except asyncio.CancelledError:
+            pass
+        _scheduler_task = None
+        logger.info("GKG auto-pull scheduler stopped")
+
+
+@router.get("/pipeline/scheduler")
+async def pipeline_scheduler():
+    """Auto-pull snapshot: enabled, cadence, last outcome, next scheduled run."""
+    state = dict(_scheduler_state)
+    state["bigquery_quota_blocked_until"] = (
+        datetime.fromtimestamp(_bq_state["quota_blocked_until"], tz=timezone.utc).isoformat()
+        if _bq_state["quota_blocked_until"] else None
+    )
+    return JSONResponse(content=state, status_code=200)
 
 
 @router.get("/events")

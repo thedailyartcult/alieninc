@@ -15,7 +15,7 @@ from panteon.api.routes_auth import router as auth_router
 from panteon.api.routes_spinal_craker import router as spinal_craker_router
 from panteon.api.routes_gdelt import router as gdelt_router
 from panteon.api.routes_opensky import router as opensky_router
-from panteon.api.routes_gkg import router as gkg_router
+from panteon.api.routes_gkg import router as gkg_router, start_autopull, stop_autopull
 from panteon.api.routes_yono import router as yono_router
 from panteon.api.routes_tdac import router as tdac_router
 from panteon.api.routes_webhooks import router as webhooks_router
@@ -41,7 +41,9 @@ PANTEON_SITE = Path(os.path.dirname(__file__)).parent.parent
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    start_autopull()
     yield
+    await stop_autopull()
 
 
 app = FastAPI(

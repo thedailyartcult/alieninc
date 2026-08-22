@@ -428,6 +428,17 @@ def _verify_via_supabase(email, password):
     return data
 
 
+def _role_from_auth_result(result):
+    """Extract the app role from a Supabase auth payload.
+
+    Returns None for legacy env-gate logins (no Supabase payload)."""
+    if not isinstance(result, dict):
+        return None
+    u = result.get('user') or {}
+    meta = u.get('app_metadata') or u.get('user_metadata') or {}
+    return (meta.get('role') or 'employee').lower()
+
+
 def _issue_secure_session(user):
     expiry = int(time.time()) + SECURE_SESSION_TTL
     payload = '%d.%s' % (expiry, user)
@@ -753,6 +764,9 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-Type', 'text/html; charset=utf-8')
         self.send_header('Content-Length', str(len(body)))
+        self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+        self.send_header('Pragma', 'no-cache')
+        self.send_header('Expires', '0')
         if self.path in ('/pxpadmin/bin/authform.cgi', '/api/login'):
             self._add_rate_limit_headers()
         self.end_headers()
@@ -1262,9 +1276,15 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             form = {}
         user = (form.get('user', [''])[0] or '').strip()
         password = (form.get('password', [''])[0] or '')
-        default_redirect = '/'
-        redirect = _safe_redirect(form.get('next', [''])[0]) or default_redirect
         result = verify_secure_credentials(user, password)
+        next_path = _safe_redirect(form.get('next', [''])[0])
+        role = _role_from_auth_result(result)
+        if next_path:
+            redirect = next_path
+        elif role in (None, 'security_staff'):
+            redirect = '/moderation/'
+        else:
+            redirect = '/selfservice/'
         if result:
             token = _issue_secure_session(user)
             if isinstance(result, dict):
@@ -1290,8 +1310,9 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                                  MAIN_SESSION_COOKIE + '=' + token +
                                  '; Path=/; HttpOnly; SameSite=Lax' + secure_flag)
             self.end_headers()
-            sys.stderr.write('[SECURE-AUTH] success user=%r redirect=%r from %s\n' % (
-                user, redirect, self.address_string(),
+            sys.stderr.write('[SECURE-AUTH] success user=%r redirect=%r role=%s next=%s from %s\n' % (
+                user, redirect, role or 'env-gate', next_path or '-',
+                self.address_string(),
             ))
             return
         sys.stderr.write('[SECURE-AUTH] fail user=%r from %s\n' % (

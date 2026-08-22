@@ -2248,7 +2248,10 @@
 <div class="sc-map-pane" id="fusionMapPane">
                                   <div class="sc-map-pane-top">
                                       <span class="sc-map-pane-title"><span class="sc-live-dot"></span>Unified map</span>
-                                      <button class="retro-map-btn" id="fusionFullViewBtn" onclick="fusionToggleFullView()">&#8672; Full view</button>
+                                      <span style="display:flex;gap:6px">
+                                          <button class="retro-map-btn" id="wonToggleBtn" onclick="WONote.toggle()" title="Watch Officer Notepad (Ctrl+Shift+N)">Watch Notes</button>
+                                          <button class="retro-map-btn" id="fusionFullViewBtn" onclick="fusionToggleFullView()">&#8672; Full view</button>
+                                      </span>
                                   </div>
                                   <div class="sc-layer-bar">
                                       <span class="sc-layer-label">Layers:</span>
@@ -5976,7 +5979,7 @@ function initFusionMap() {
 
 // Normalize both sources to a common point shape for the unified renderer.
 // {lat, lng, source, type, label, color, popup, raw}
-function normalizeThreatPoint(ev) {
+function normalizeThreatPoint(ev, wonIdx) {
     const geo = parseActionGeo(ev);
     if (!geo) return null;
     const tone = threatLevelForEvent(ev);
@@ -5988,11 +5991,12 @@ function normalizeThreatPoint(ev) {
             '<br>COUNTRY: ' + (geo.country || '-') +
             '<br>TITLE: ' + (ev.title ? (ev.title.length > 90 ? ev.title.slice(0, 90) + '…' : ev.title) : ' — ') +
             '<br>SOURCE: ' + (ev.domain || '-') +
-            '<br>DATE: ' + (ev.event_date || ''),
+            '<br>DATE: ' + (ev.event_date || '') +
+            (wonIdx != null ? '<br><button type="button" class="won-note-btn" data-won-threat="' + wonIdx + '">+ Note</button>' : ''),
     };
 }
 
-function normalizeAircraftPoint(f) {
+function normalizeAircraftPoint(f, wonIdx) {
     const props = f.properties || {};
     const lat = props.lat, lng = props.lng;
     if (lat == null || lng == null) return null;
@@ -6006,7 +6010,8 @@ function normalizeAircraftPoint(f) {
             '<br>SPEED: ' + (props.speed_knots || '?') + ' kts' +
             '<br>HEADING: ' + (props.heading || '?') +
             '<br>ICAO24: ' + (props.icao24 || '?') +
-            '<br>COORD: [' + lat + ', ' + lng + ']',
+            '<br>COORD: [' + lat + ', ' + lng + ']' +
+            (wonIdx != null ? '<br><button type="button" class="won-note-btn" data-won-air="' + wonIdx + '">+ Note</button>' : ''),
     };
 }
 
@@ -6014,8 +6019,8 @@ function renderFusionThreatLayer() {
     fusionThreatMarkers.forEach(m => { try { m.remove(); } catch (e) {} });
     fusionThreatMarkers = [];
     if (!fusionMap || !fusionLayers.threats) return;
-    fusionThreatEvents.forEach(ev => {
-        const p = normalizeThreatPoint(ev);
+    fusionThreatEvents.forEach((ev, wonIdx) => {
+        const p = normalizeThreatPoint(ev, wonIdx);
         if (!p) return;
         const el = document.createElement('div');
         el.className = 'retro-map-node-marker tone-' + (p.color === '#ef4444' ? 'red' : p.color === '#f59e0b' ? 'amber' : 'green');
@@ -6030,8 +6035,8 @@ function renderFusionAviationLayer() {
     fusionAviationMarkers.forEach(m => { try { m.remove(); } catch (e) {} });
     fusionAviationMarkers = [];
     if (!fusionMap || !fusionLayers.aviation) return;
-    fusionFlights.forEach(f => {
-        const p = normalizeAircraftPoint(f);
+    fusionFlights.forEach((f, wonIdx) => {
+        const p = normalizeAircraftPoint(f, wonIdx);
         if (!p) return;
         const el = document.createElement('div');
         el.style.width = '10px'; el.style.height = '10px';
@@ -8044,5 +8049,1168 @@ function initCMBReveal(root) {
 document.addEventListener('DOMContentLoaded', () => initCMBReveal());
 </script>
 
+<!-- ============================================================================
+     WATCH OFFICER NOTEPAD — floating add-on (self-contained, zero-touch).
+     Toggle: "Watch Notes" button on the unified-map pane, or Ctrl+Shift+N.
+     Optional AI hook: localStorage.setItem('sc_won_ai_url','https://endpoint')
+     or window.WONote.config({ aiUrl }) — when unset, the offline template
+     engine generates all notes locally from live dashboard data.
+     ============================================================================ -->
+<style id="won-styles">
+    #won-panel {
+        position: fixed;
+        right: 20px;
+        top: 76px;
+        width: 380px;
+        height: 70vh;
+        min-width: 300px;
+        max-width: min(92vw, 560px);
+        min-height: 240px;
+        display: flex;
+        flex-direction: column;
+        background: linear-gradient(165deg, rgba(10,10,15,0.93) 0%, rgba(7,8,13,0.9) 100%);
+        backdrop-filter: blur(16px) saturate(1.25);
+        -webkit-backdrop-filter: blur(16px) saturate(1.25);
+        border: 1px solid rgba(0,240,255,0.26);
+        border-radius: 14px;
+        box-shadow:
+            0 0 0 1px rgba(255,0,170,0.07),
+            0 0 22px rgba(0,240,255,0.12),
+            0 24px 64px rgba(0,0,0,0.66);
+        z-index: 1900; /* above topbar (1001) + sidebars (1500); below modals (2000) / toasts (3000) */
+        font-family: Inter, -apple-system, sans-serif;
+        color: #e6ecf5;
+        overflow: hidden;
+        transition: transform .38s cubic-bezier(.2,.85,.3,1), opacity .3s ease, height .25s ease;
+    }
+    #won-panel.won-hidden {
+        transform: translateX(calc(100% + 48px));
+        opacity: 0;
+        pointer-events: none;
+    }
+    #won-panel.won-min { height: auto !important; }
+    #won-panel.won-min .won-body,
+    #won-panel.won-min .won-footer,
+    #won-panel.won-min .won-resize-handle { display: none; }
+
+    /* ---- header ---- */
+    .won-header {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 10px 10px 14px;
+        cursor: grab;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
+        background: linear-gradient(90deg, rgba(0,240,255,0.08), rgba(255,0,170,0.06) 60%, transparent);
+        border-bottom: 1px solid rgba(0,240,255,0.18);
+    }
+    .won-header:active { cursor: grabbing; }
+    .won-pulse {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: #00f0ff;
+        box-shadow: 0 0 6px rgba(0,240,255,.8);
+        animation: won-pulse 2.2s ease-out infinite;
+        flex-shrink: 0;
+    }
+    @keyframes won-pulse {
+        0%   { box-shadow: 0 0 0 0 rgba(0,240,255,.5); }
+        70%  { box-shadow: 0 0 0 9px rgba(0,240,255,0); }
+        100% { box-shadow: 0 0 0 0 rgba(0,240,255,0); }
+    }
+    #won-panel.won-scanning .won-pulse {
+        background: #ff00aa;
+        animation: won-pulse-magenta .7s ease-out infinite;
+    }
+    @keyframes won-pulse-magenta {
+        0%   { box-shadow: 0 0 0 0 rgba(255,0,170,.55); }
+        70%  { box-shadow: 0 0 0 9px rgba(255,0,170,0); }
+        100% { box-shadow: 0 0 0 0 rgba(255,0,170,0); }
+    }
+    .won-title {
+        font-family: 'JetBrains Mono', var(--font-mono, monospace);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: .24em;
+        color: #dff6ff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .won-header-btns {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+    }
+    .won-scan-btn {
+        font-family: 'JetBrains Mono', var(--font-mono, monospace);
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: .14em;
+        color: #001318;
+        background: linear-gradient(180deg, #4df6ff, #00d5e8);
+        border: 1px solid rgba(0,240,255,0.7);
+        border-radius: 6px;
+        padding: 4px 10px;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(0,240,255,.35);
+        transition: box-shadow .15s, transform .15s, filter .15s;
+        white-space: nowrap;
+    }
+    .won-scan-btn:hover { box-shadow: 0 0 16px rgba(0,240,255,.65); filter: brightness(1.08); }
+    .won-scan-btn:active { transform: translateY(1px); }
+    .won-scan-btn:disabled { opacity: .55; cursor: wait; box-shadow: none; }
+    .won-hbtn {
+        font-family: 'JetBrains Mono', var(--font-mono, monospace);
+        font-size: 9px;
+        letter-spacing: .08em;
+        color: #8fb9c9;
+        background: rgba(0,240,255,0.05);
+        border: 1px solid rgba(0,240,255,0.18);
+        border-radius: 6px;
+        padding: 4px 7px;
+        cursor: pointer;
+        line-height: 1;
+        transition: color .15s, border-color .15s, box-shadow .15s;
+    }
+    .won-hbtn:hover { color: #00f0ff; border-color: rgba(0,240,255,0.55); box-shadow: 0 0 8px rgba(0,240,255,.25); }
+    .won-hbtn.won-danger:hover { color: #ff2f77; border-color: rgba(255,0,170,.6); box-shadow: 0 0 8px rgba(255,0,170,.3); }
+
+    /* ---- body / cards ---- */
+    .won-body {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 12px;
+    }
+    .won-body::-webkit-scrollbar { width: 8px; }
+    .won-body::-webkit-scrollbar-track { background: transparent; }
+    .won-body::-webkit-scrollbar-thumb { background: rgba(0,240,255,0.16); border-radius: 4px; }
+    .won-body::-webkit-scrollbar-thumb:hover { background: rgba(0,240,255,0.32); }
+
+    .won-card {
+        position: relative;
+        background: rgba(13,17,27,0.78);
+        border: 1px solid rgba(0,240,255,0.13);
+        border-left: 2px solid rgba(0,240,255,0.45);
+        border-radius: 10px;
+        padding: 11px 13px;
+        margin-bottom: 10px;
+        transition: border-color .18s, box-shadow .18s;
+    }
+    .won-card:hover {
+        border-color: rgba(0,240,255,0.38);
+        border-left-color: #00f0ff;
+        box-shadow: 0 0 14px rgba(0,240,255,0.09);
+    }
+    .won-card.won-card-pinned { border-left-color: #ff00aa; }
+    .won-card.won-flash { animation: won-flash .95s ease-out; }
+    @keyframes won-flash {
+        0%   { background: rgba(0,240,255,0.17); border-color: rgba(0,240,255,0.75); }
+        100% { background: rgba(13,17,27,0.78); }
+    }
+    .won-kind-tag {
+        display: inline-block;
+        font-family: 'JetBrains Mono', var(--font-mono, monospace);
+        font-size: 8px;
+        letter-spacing: .18em;
+        color: #ff5cb8;
+        border: 1px solid rgba(255,0,170,0.35);
+        border-radius: 4px;
+        padding: 1px 5px;
+        margin-bottom: 6px;
+    }
+    .won-headline {
+        font-family: 'Space Grotesk', var(--font-tech, monospace);
+        font-weight: 600;
+        font-size: 13px;
+        line-height: 1.4;
+        color: #00f0ff;
+        margin-bottom: 8px;
+        padding-right: 6px;
+    }
+    .won-facts { list-style: none; margin: 0 0 9px; padding: 0; }
+    .won-facts li {
+        position: relative;
+        padding-left: 13px;
+        font-size: 11px;
+        line-height: 1.55;
+        color: #c2cbd9;
+        margin-bottom: 3px;
+        word-break: break-word;
+    }
+    .won-facts li::before {
+        content: '';
+        position: absolute;
+        left: 1px; top: 7px;
+        width: 5px; height: 5px;
+        background: #ff00aa;
+        transform: rotate(45deg);
+        opacity: .85;
+    }
+    .won-label {
+        display: block;
+        font-family: 'JetBrains Mono', var(--font-mono, monospace);
+        font-size: 8.5px;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        color: #5d687c;
+        margin-bottom: 2px;
+    }
+    .won-why { margin-bottom: 8px; }
+    .won-angle { margin-bottom: 9px; }
+    .won-why-text, .won-angle-text {
+        font-size: 11px;
+        line-height: 1.5;
+        color: #dde5f0;
+    }
+    .won-angle-text { color: #e8cfe9; font-style: italic; }
+    .won-meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 5px 10px;
+        font-family: 'JetBrains Mono', var(--font-mono, monospace);
+        font-size: 9px;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: #7b8595;
+        border-top: 1px dashed rgba(255,255,255,0.09);
+        padding-top: 7px;
+    }
+    .won-conf { font-weight: 700; }
+    .won-conf[data-level="High"] { color: #00f0ff; }
+    .won-conf[data-level="Medium"] { color: #f59e0b; }
+    .won-conf[data-level="Low"] { color: #ef4444; }
+    .won-meta-src { max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .won-card-actions {
+        position: absolute;
+        top: 8px; right: 9px;
+        display: flex;
+        gap: 4px;
+        opacity: 0;
+        transform: translateY(-2px);
+        transition: opacity .16s ease, transform .16s ease;
+    }
+    .won-card:hover .won-card-actions,
+    .won-card:focus-within .won-card-actions { opacity: 1; transform: none; }
+    .won-mini-btn {
+        font-family: 'JetBrains Mono', var(--font-mono, monospace);
+        font-size: 8.5px;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        color: #86d7e6;
+        background: rgba(8,11,18,0.94);
+        border: 1px solid rgba(0,240,255,0.28);
+        border-radius: 5px;
+        padding: 2px 7px;
+        cursor: pointer;
+        line-height: 1.4;
+        transition: all .14s;
+    }
+    .won-mini-btn:hover { color: #00f0ff; border-color: #00f0ff; box-shadow: 0 0 8px rgba(0,240,255,.4); }
+    .won-mini-btn.won-mini-danger:hover { color: #ff2f77; border-color: #ff00aa; box-shadow: 0 0 8px rgba(255,0,170,.4); }
+    .won-mini-btn.won-pin-on { color: #ff00aa; border-color: rgba(255,0,170,.65); box-shadow: 0 0 8px rgba(255,0,170,.28); }
+
+    /* ---- empty state ---- */
+    .won-empty {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        text-align: center;
+        padding: 24px;
+    }
+    .won-empty-text {
+        font-family: 'Space Grotesk', var(--font-tech, monospace);
+        font-size: 12px;
+        font-weight: 300;
+        line-height: 1.6;
+        color: #8a95a8;
+        max-width: 250px;
+    }
+
+    /* ---- footer ---- */
+    .won-footer {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 7px 14px;
+        border-top: 1px solid rgba(0,240,255,0.14);
+        background: rgba(5,6,10,0.6);
+        font-family: 'JetBrains Mono', var(--font-mono, monospace);
+        font-size: 9px;
+        letter-spacing: .06em;
+        color: #6b7688;
+    }
+    #wonStatus { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #wonCount { flex-shrink: 0; color: #00c8dd; }
+
+    /* ---- resize handle (bottom-left corner) ---- */
+    .won-resize-handle {
+        position: absolute;
+        left: 0; bottom: 0;
+        width: 20px; height: 20px;
+        cursor: nwse-resize;
+        z-index: 2;
+        touch-action: none;
+        border-bottom-left-radius: 14px;
+        background:
+            linear-gradient(135deg,
+                transparent 46%, rgba(0,240,255,.38) 46%, rgba(0,240,255,.38) 52%,
+                transparent 52%, transparent 60%, rgba(0,240,255,.26) 60%, rgba(0,240,255,.26) 66%,
+                transparent 66%);
+    }
+
+    /* ---- "+ Note" button injected into map hover boxes ---- */
+    .maplibregl-popup-content .won-note-btn {
+        margin-top: 7px;
+        font-family: 'JetBrains Mono', var(--font-mono, monospace);
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        color: #00e5ff;
+        background: rgba(0,240,255,0.07);
+        border: 1px solid rgba(0,240,255,0.5);
+        border-radius: 5px;
+        padding: 2px 9px;
+        cursor: pointer;
+        box-shadow: 0 0 6px rgba(0,240,255,0.3);
+        transition: all .15s;
+    }
+    .maplibregl-popup-content .won-note-btn:hover {
+        color: #dffaff;
+        background: rgba(0,240,255,0.18);
+        box-shadow: 0 0 12px rgba(0,240,255,0.6);
+    }
+
+    @media (max-width: 768px) {
+        #won-panel { right: 8px !important; width: calc(100vw - 16px) !important; }
+        .won-title { letter-spacing: .16em; }
+        .won-scan-btn { padding: 4px 7px; }
+    }
+</style>
+
+<div id="won-panel" class="won-hidden" role="complementary" aria-label="Watch Officer Notepad">
+    <div class="won-header" id="wonHeader">
+        <span class="won-pulse" aria-hidden="true"></span>
+        <span class="won-title">WATCH NOTES&ensp;&middot;&ensp;OFFICER</span>
+        <span class="won-header-btns">
+            <button type="button" class="won-scan-btn" id="wonScanBtn" title="Analyze current live state and add 3&ndash;5 notes">SCAN NOW</button>
+            <button type="button" class="won-hbtn" id="wonExportMdBtn" title="Export as Markdown">MD</button>
+            <button type="button" class="won-hbtn" id="wonExportJsonBtn" title="Export as JSON">JSON</button>
+            <button type="button" class="won-hbtn won-danger" id="wonClearBtn" title="Clear all unpinned notes">CLR</button>
+            <button type="button" class="won-hbtn" id="wonMinBtn" title="Minimize">&ndash;</button>
+            <button type="button" class="won-hbtn won-danger" id="wonCloseBtn" title="Close">&times;</button>
+        </span>
+    </div>
+    <div class="won-body" id="wonBody">
+        <div class="won-empty" id="wonEmpty">
+            <svg width="88" height="88" viewBox="0 0 88 88" fill="none" aria-hidden="true">
+                <circle cx="44" cy="44" r="40" stroke="rgba(0,240,255,0.15)" stroke-width="1"/>
+                <circle cx="44" cy="44" r="27" stroke="rgba(0,240,255,0.26)" stroke-width="1" stroke-dasharray="3 6"/>
+                <circle cx="44" cy="44" r="14" stroke="rgba(0,240,255,0.42)" stroke-width="1"/>
+                <path d="M44 2v10M44 76v10M2 44h10M76 44h10" stroke="rgba(255,0,170,0.5)" stroke-width="1.4"/>
+                <path d="M44 44L64 22" stroke="rgba(0,240,255,0.55)" stroke-width="1.6"/>
+                <path d="M44 44A22 22 0 0 1 62 51" stroke="rgba(0,240,255,0.22)" stroke-width="6" stroke-linecap="round"/>
+                <circle cx="61" cy="30" r="2.6" fill="#ff00aa"/>
+                <circle cx="33" cy="54" r="2" fill="#00f0ff"/>
+                <circle cx="44" cy="44" r="1.6" fill="#dffaff"/>
+            </svg>
+            <div class="won-empty-text">No notes yet &mdash; hover a threat and click&nbsp;+&nbsp;Note, or hit Scan&nbsp;Now</div>
+        </div>
+        <div class="won-list" id="wonList"></div>
+    </div>
+    <div class="won-footer">
+        <span id="wonStatus">Standing by.</span>
+        <span id="wonCount"></span>
+    </div>
+    <div class="won-resize-handle" id="wonResizeHandle" title="Drag to resize"></div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    // ------------------------------------------------------------------ config
+    var LS_NOTES = 'sc_won_notes_v1';
+    var LS_GEOM = 'sc_won_geom_v1';
+    var LS_OPEN = 'sc_won_open_v1';      // settings flag: panel visible
+    var LS_MIN = 'sc_won_min_v1';        // settings flag: minimized
+    var LS_AI_URL = 'sc_won_ai_url';     // optional AI endpoint; unset => offline templates
+    var MAX_NOTES = 200;
+
+    // --------------------------------------------------- host-data accessors
+    function esc(s) {
+        s = s == null ? '' : String(s);
+        if (typeof window.escapeHtml === 'function') return window.escapeHtml(s);
+        return s.replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+    function hostEvents() { return Array.isArray(window.fusionThreatEvents) ? window.fusionThreatEvents : []; }
+    function hostFlights() { return Array.isArray(window.fusionFlights) ? window.fusionFlights : []; }
+    function scopeLabel() {
+        var sc = window.SCScope || {};
+        return sc.country || sc.region || 'the watch scope';
+    }
+    function threatTone(ev) {
+        try { return window.threatLevelForEvent(ev) || 'green'; } catch (e) { return 'green'; }
+    }
+    function geoOf(ev) {
+        try { return window.parseActionGeo(ev); } catch (e) { return null; }
+    }
+    function metricsOf(evs) {
+        try { return window.computeIntelMetrics(evs); } catch (e) { return null; }
+    }
+    function num(v) { var n = parseFloat(v); return Number.isFinite(n) ? n : null; }
+
+    // ------------------------------------------------------------------ state
+    var panel, listEl, emptyEl, statusEl, countEl, scanBtn, toggleBtn;
+    var notes = loadNotes();
+    var geom = loadGeom();
+    var minimized = false;
+    var isOpen = false;
+    var scanning = false;
+
+    function $(id) { return document.getElementById(id); }
+    function uid() { return 'wn_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+    function normKey(s) { return (s || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+    function fmtTime(ts) {
+        var d = new Date(ts);
+        return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' +
+               d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    function truncate(s, n) {
+        s = String(s || '').replace(/\s+/g, ' ').trim();
+        return s.length > n ? s.slice(0, n - 1).replace(/[,;:\s]+\S*$/, '') + '\u2026' : s;
+    }
+
+    function loadNotes() {
+        try {
+            var v = JSON.parse(localStorage.getItem(LS_NOTES));
+            return Array.isArray(v) ? v.filter(Boolean) : [];
+        } catch (e) { return []; }
+    }
+    function saveNotes() {
+        try { localStorage.setItem(LS_NOTES, JSON.stringify(notes.slice(0, MAX_NOTES))); } catch (e) {}
+    }
+    function loadGeom() {
+        try { return JSON.parse(localStorage.getItem(LS_GEOM)) || {}; } catch (e) { return {}; }
+    }
+    function saveGeom() {
+        try {
+            localStorage.setItem(LS_GEOM, JSON.stringify({
+                w: parseInt(panel.style.width, 10),
+                h: parseInt(panel.style.height, 10),
+                right: parseInt(panel.style.right, 10),
+                top: parseInt(panel.style.top, 10)
+            }));
+        } catch (e) {}
+    }
+
+    // --------------------------------------------------------------- geometry
+    function applyGeometry() {
+        var vw = window.innerWidth, vh = window.innerHeight;
+        var w = clamp(geom.w || 380, 300, Math.min(vw - 16, 560));
+        var h = clamp(geom.h || Math.round(vh * 0.7), 240, vh - 24);
+        var right = clamp(geom.right == null ? 20 : geom.right, 8, Math.max(8, vw - w - 8));
+        var top = clamp(geom.top == null ? 76 : geom.top, 8, Math.max(8, vh - 80));
+        panel.style.width = w + 'px';
+        if (!minimized) panel.style.height = h + 'px';
+        panel.style.right = right + 'px';
+        panel.style.top = top + 'px';
+    }
+
+    function initDrag() {
+        var header = $('wonHeader');
+        header.addEventListener('pointerdown', function (e) {
+            if (e.target.closest('button') || e.button !== 0) return;
+            e.preventDefault();
+            var startX = e.clientX, startY = e.clientY;
+            var startRight = parseInt(panel.style.right, 10) || 20;
+            var startTop = parseInt(panel.style.top, 10) || 76;
+            header.setPointerCapture(e.pointerId);
+            function onMove(ev) {
+                var vw = window.innerWidth, vh = window.innerHeight;
+                var w = panel.offsetWidth;
+                panel.style.right = clamp(startRight - (ev.clientX - startX), 8, Math.max(8, vw - w - 8)) + 'px';
+                panel.style.top = clamp(startTop + (ev.clientY - startY), 8, Math.max(8, vh - 80)) + 'px';
+            }
+            function onUp() {
+                header.removeEventListener('pointermove', onMove);
+                header.removeEventListener('pointerup', onUp);
+                saveGeom();
+            }
+            header.addEventListener('pointermove', onMove);
+            header.addEventListener('pointerup', onUp);
+        });
+    }
+
+    function initResize() {
+        var handle = $('wonResizeHandle');
+        handle.addEventListener('pointerdown', function (e) {
+            if (e.button !== 0) return;
+            e.preventDefault();
+            e.stopPropagation();
+            var startX = e.clientX, startY = e.clientY;
+            var startW = panel.offsetWidth, startH = panel.offsetHeight;
+            var startRight = parseInt(panel.style.right, 10) || 20;
+            handle.setPointerCapture(e.pointerId);
+            function onMove(ev) {
+                var vw = window.innerWidth, vh = window.innerHeight;
+                var w = clamp(startW + (startX - ev.clientX), 300, vw - 16);
+                var h = clamp(startH + (ev.clientY - startY), 240, vh - 24);
+                panel.style.width = w + 'px';
+                panel.style.height = h + 'px';
+                panel.style.right = clamp(startRight - (w - startW), 8, Math.max(8, vw - w - 8)) + 'px';
+            }
+            function onUp() {
+                handle.removeEventListener('pointermove', onMove);
+                handle.removeEventListener('pointerup', onUp);
+                saveGeom();
+            }
+            handle.addEventListener('pointermove', onMove);
+            handle.addEventListener('pointerup', onUp);
+        });
+    }
+
+    // ------------------------------------------------------------ open / close
+    function setOpen(v, persist) {
+        isOpen = !!v;
+        panel.classList.toggle('won-hidden', !isOpen);
+        if (persist !== false) { try { localStorage.setItem(LS_OPEN, isOpen ? '1' : '0'); } catch (e) {} }
+        syncToggleBtn();
+    }
+    function setMinimized(v) {
+        minimized = !!v;
+        panel.classList.toggle('won-min', minimized);
+        $('wonMinBtn').textContent = minimized ? '\u25a1' : '\u2013';
+        $('wonMinBtn').title = minimized ? 'Restore' : 'Minimize';
+        if (!minimized) applyGeometry(); else panel.style.height = 'auto';
+        try { localStorage.setItem(LS_MIN, minimized ? '1' : '0'); } catch (e) {}
+    }
+    function toggle() { setOpen(!isOpen); }
+    function syncToggleBtn() {
+        toggleBtn = $('wonToggleBtn');
+        if (toggleBtn) toggleBtn.className = 'retro-map-btn' + (isOpen ? ' retro-map-btn-active' : '');
+    }
+
+    // ---------------------------------------------------------------- rendering
+    function sortedNotes() {
+        return notes.slice().sort(function (a, b) {
+            if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+            return (b.ts || 0) - (a.ts || 0);
+        }).slice(0, MAX_NOTES);
+    }
+    function cardHTML(n) {
+        var facts = (n.facts || []).slice(0, 4).map(function (f) { return '<li>' + esc(f) + '</li>'; }).join('');
+        return '' +
+        '<article class="won-card' + (n.pinned ? ' won-card-pinned' : '') + '" data-id="' + esc(n.id) + '">' +
+            '<span class="won-kind-tag">' + (n.kind === 'scan' ? 'SCAN' : 'EVENT') + '</span>' +
+            '<h4 class="won-headline">' + esc(n.headline) + '</h4>' +
+            '<ul class="won-facts">' + facts + '</ul>' +
+            '<div class="won-why"><span class="won-label">Why it matters</span>' +
+                '<div class="won-why-text">' + esc(n.why) + '</div></div>' +
+            '<div class="won-angle"><span class="won-label">Suggested angle</span>' +
+                '<div class="won-angle-text">' + esc(n.angle) + '</div></div>' +
+            '<div class="won-meta-row">' +
+                '<span>CONF <span class="won-conf" data-level="' + esc(n.confidence) + '">' + esc(n.confidence) + '</span></span>' +
+                '<span class="won-meta-src">SRC ' + esc(n.source || '\u2014') + '</span>' +
+                '<span>' + fmtTime(n.ts) + '</span>' +
+                '<span>CAMEO ' + esc(n.cameo || '\u2014') + '</span>' +
+            '</div>' +
+            '<div class="won-card-actions">' +
+                '<button type="button" class="won-mini-btn" data-act="copy" data-id="' + esc(n.id) + '">Copy</button>' +
+                '<button type="button" class="won-mini-btn' + (n.pinned ? ' won-pin-on' : '') + '" data-act="pin" data-id="' + esc(n.id) + '">Pin</button>' +
+                '<button type="button" class="won-mini-btn won-mini-danger" data-act="del" data-id="' + esc(n.id) + '">Del</button>' +
+            '</div>' +
+        '</article>';
+    }
+    function render() {
+        var view = sortedNotes();
+        countEl.textContent = notes.length + ' NOTE' + (notes.length === 1 ? '' : 'S');
+        emptyEl.style.display = view.length ? 'none' : '';
+        listEl.innerHTML = view.map(cardHTML).join('');
+    }
+    function flashCard(id) {
+        requestAnimationFrame(function () {
+            var el = listEl.querySelector('[data-id="' + id + '"]');
+            if (!el) return;
+            el.classList.add('won-flash');
+            setTimeout(function () { el.classList.remove('won-flash'); }, 1000);
+        });
+    }
+    function status(msg) { statusEl.textContent = msg; }
+
+    // ------------------------------------------------------------- note intake
+    function addNote(note) {
+        note.id = note.id || uid();
+        note.ts = Date.now();
+        note.pinned = !!note.pinned;
+        var key = normKey(note.headline);
+        var existing = notes.find(function (m) { return normKey(m.headline) === key; });
+        if (existing) {
+            existing.ts = note.ts;
+            existing.facts = note.facts;
+            existing.why = note.why;
+            existing.angle = note.angle;
+            existing.confidence = note.confidence;
+            existing.caveat = note.caveat;
+            saveNotes(); render(); flashCard(existing.id);
+            return existing.id;
+        }
+        notes.unshift(note);
+        if (notes.length > MAX_NOTES) notes.length = MAX_NOTES;
+        saveNotes(); render(); flashCard(note.id);
+        return note.id;
+    }
+    function removeNote(id) {
+        notes = notes.filter(function (m) { return m.id !== id; });
+        saveNotes(); render();
+    }
+
+    // --------------------------------------------- single-event note builders
+    function buildThreatNote(ev) {
+        var geo = geoOf(ev) || {};
+        var tone = threatTone(ev);
+        var label = (window.THREAT_LABEL && window.THREAT_LABEL[tone]) || tone.toUpperCase();
+        var country = geo.country || ev.sourcecountry || 'unspecified location';
+        var cameo = ev.event_code || '?';
+        var title = ev.title || '';
+        var arts = parseInt(ev.numMentions || ev.num_articles, 10) || 0;
+        var toneVal = num(ev.avg_tone);
+        var goldVal = num(ev.payload && ev.payload.GoldsteinScale);
+
+        var headline = title
+            ? truncate(title, 120)
+            : label + '-flagged CAMEO ' + cameo + ' activity reported in ' + country;
+
+        var facts = [];
+        facts.push('Location: ' + country + (geo.latitude != null ?
+            ' (' + (+geo.latitude).toFixed(2) + ', ' + (+geo.longitude).toFixed(2) + ')' : ''));
+        if (ev.event_type) facts.push('CAMEO ' + cameo + ' \u00b7 ' + truncate(ev.event_type, 70));
+        facts.push('Reported by ' + (ev.domain || 'unknown outlet') +
+            (arts ? ' \u00b7 ' + arts + ' article' + (arts > 1 ? 's' : '') : ''));
+        if (toneVal != null || goldVal != null) {
+            var bits = [];
+            if (toneVal != null) bits.push('avg tone ' + toneVal.toFixed(1));
+            if (goldVal != null) bits.push('Goldstein ' + goldVal.toFixed(1));
+            facts.push(bits.join(' \u00b7 '));
+        }
+
+        var why, angle, conf, caveat;
+        if (tone === 'red') {
+            why = 'Active-violence framing inside your watch scope today; same-day verification matters before the story hardens elsewhere.';
+        } else if (tone === 'amber') {
+            why = 'Escalation-adjacent development in scope; early context is cheaper than correction later.';
+        } else {
+            why = 'Baseline activity worth logging as contrast for when the situation moves.';
+        }
+        if (arts >= 10) why += ' Multi-outlet pickup raises follow-through odds.';
+        else if (arts > 0 && arts < 3) why += ' Thin pickup so far \u2014 could still be early.';
+
+        var hay = ((title || '') + ' ' + (ev.event_type || '')).toLowerCase();
+        var kw = window.CONFLICT_KEYWORDS || {};
+        function hasAny(list) { return (list || []).some(function (k) { return hay.indexOf(k) !== -1; }); }
+        if (hasAny(kw.violence)) {
+            angle = 'Frame as an escalation timeline: what changed on the ground versus the prior baseline, and which officials confirm it.';
+        } else if (hasAny(kw.protest)) {
+            angle = 'Frame through mobilization math: demands, turnout scale, and whether this recurs or disperses within a week.';
+        } else if (hasAny(kw.arrest)) {
+            angle = 'Frame as an accountability thread: charges filed, custody status, and the legal next steps that follow.';
+        } else if (hasAny(kw.coerce)) {
+            angle = 'Frame as a pressure ledger: who is pressuring whom, with what lever, and against what stated deadline.';
+        } else {
+            angle = 'Frame as a local signal with regional read-through: verify the actors first, then test whether the pattern repeats across scope.';
+        }
+
+        if (geo.latitude != null && title && (arts >= 5 || toneVal != null)) {
+            conf = 'High'; caveat = 'Geo-coded and sourced; details may still rest on one outlet.';
+        } else if (title && (geo.latitude != null || ev.domain)) {
+            conf = 'Medium'; caveat = 'Partially attributed \u2014 cross-check against a second source.';
+        } else {
+            conf = 'Low'; caveat = 'Thin metadata; treat as a pointer, not a story.';
+        }
+
+        return {
+            kind: 'event',
+            headline: headline,
+            facts: facts.slice(0, 4),
+            why: why,
+            angle: angle,
+            confidence: conf,
+            caveat: caveat,
+            source: ev.domain || 'GDELT',
+            cameo: cameo,
+            country: country,
+            ref: { t: 'gdelt', i: hostEvents().indexOf(ev) }
+        };
+    }
+
+    function buildAirNote(props) {
+        props = props || {};
+        var callsign = props.callsign || 'Unknown aircraft';
+        var category = props.category || '?';
+        var mil = /mil/i.test(category);
+        var headline = callsign + ' (' + category + ') tracked over ' + scopeLabel();
+
+        var facts = [];
+        if (props.model) facts.push('Model: ' + props.model);
+        facts.push((props.alt != null ? props.alt + ' ft' : 'Alt n/a') + ' \u00b7 ' +
+                   (props.speed_knots != null ? props.speed_knots + ' kts' : 'n/a') + ' \u00b7 heading ' + (props.heading || 'n/a'));
+        if (props.lat != null) facts.push('Position [' + (+props.lat).toFixed(2) + ', ' + (+props.lng).toFixed(2) + '] \u00b7 ICAO24 ' + (props.icao24 || 'n/a'));
+
+        var why = mil
+            ? 'Military-category asset inside the scoped airspace; posture changes here often precede ground activity.'
+            : 'Live track logged over scope; useful for spotting repeat patterns or unusual routing.';
+        var angle = mil
+            ? 'Frame as an airspace-posture check: registration, operator history, and how this track compares with routine traffic.'
+            : 'Frame as a pattern piece: route origin, owner registry, and why this corridor sees this traffic today.';
+
+        return {
+            kind: 'event',
+            headline: headline,
+            facts: facts.slice(0, 4),
+            why: why,
+            angle: angle,
+            confidence: 'High',
+            caveat: 'Live transponder snapshot \u2014 verify registration before naming operators.',
+            source: 'OpenSky',
+            cameo: category,
+            country: '',
+            ref: { t: 'opensky', i: -1 }
+        };
+    }
+
+    // ------------------------------------------------------------ scan engine
+    function ensureDataLoaded() {
+        if (hostEvents().length || hostFlights().length) return Promise.resolve();
+        if (typeof window.preloadFusionData === 'function') {
+            return window.preloadFusionData().catch(function () {});
+        }
+        return Promise.resolve();
+    }
+
+    function scanTopThreats(evs) {
+        var scored = evs.map(function (ev) {
+            var g = geoOf(ev);
+            return { ev: ev, tone: threatTone(ev), country: (g && g.country) || ev.sourcecountry || '', arts: parseInt(ev.numMentions || ev.num_articles, 10) || 0 };
+        }).filter(function (x) { return x.tone === 'red' || x.tone === 'amber'; })
+          .sort(function (a, b) { return (b.tone === 'red' ? 1e6 : 0) + b.arts - ((a.tone === 'red' ? 1e6 : 0) + a.arts); });
+        if (!scored.length) return null;
+        var reds = scored.filter(function (x) { return x.tone === 'red'; });
+        var countries = [];
+        scored.forEach(function (x) { if (x.country && countries.indexOf(x.country) === -1) countries.push(x.country); });
+        var lead = reds[0] || scored[0];
+        return {
+            kind: 'scan',
+            headline: (reds.length ? 'Red-flag cluster: ' + reds.length + ' severe report' + (reds.length > 1 ? 's' : '') : 'Watch signal: ' + scored.length + ' flagged reports') +
+                (countries.length ? ' centering on ' + countries.slice(0, 3).join(', ') : ''),
+            facts: [
+                scored.length + ' of ' + evs.length + ' events in scope are red/amber-flagged',
+                'Heaviest signal: ' + truncate(lead.ev.title || lead.ev.event_type || 'CAMEO ' + (lead.ev.event_code || '?'), 90),
+                'Top locations: ' + (countries.slice(0, 3).join(', ') || 'unspecified'),
+                'Busiest outlet: ' + busiestDomain(evs)
+            ],
+            why: 'Concentrated severity inside one watch window usually marks the day\u2019s escalation pocket \u2014 the first place to verify.',
+            angle: 'Frame as a sweep-and-rank brief: confirm the top three flags independently before committing to any single narrative.',
+            confidence: reds.length >= 3 ? 'High' : reds.length >= 1 ? 'Medium' : 'Low',
+            caveat: 'Severity follows GDELT classification; treat counts as triage, not ground truth.',
+            source: 'SC Fusion scan',
+            cameo: (lead.ev.event_code || '\u2014')
+        };
+    }
+
+    function busiestDomain(evs) {
+        var m = {};
+        evs.forEach(function (e) { if (e.domain) m[e.domain] = (m[e.domain] || 0) + 1; });
+        var best = Object.keys(m).sort(function (a, b) { return m[b] - m[a]; })[0];
+        return best ? best + ' (' + m[best] + ')' : 'n/a';
+    }
+
+    function scanToneShift(evs) {
+        var tones = evs.map(function (e) { return num(e.avg_tone); }).filter(function (v) { return v != null; });
+        if (tones.length < 5) return null;
+        var avg = tones.reduce(function (a, b) { return a + b; }, 0) / tones.length;
+        var neg = tones.filter(function (v) { return v < 0; }).length;
+        var strongNeg = tones.filter(function (v) { return v < -5; }).length;
+        var share = Math.round(100 * neg / tones.length);
+        return {
+            kind: 'scan',
+            headline: 'Coverage tone averages ' + avg.toFixed(1) + ' across ' + tones.length + ' reports (' + share + '% negative)',
+            facts: [
+                'Average tone ' + avg.toFixed(1) + ' (negative below 0)',
+                neg + ' of ' + tones.length + ' reports carry negative tone',
+                strongNeg + ' sit below \u22125 \u2014 strongly adverse coverage'
+            ],
+            why: avg < -5
+                ? 'Sustained negative tone marks an active news cycle; expect follow-on coverage within hours.'
+                : 'Tone is holding near neutral \u2014 useful as the reference point when coverage shifts.',
+            angle: 'Frame as a mood-meter sidebar: quantify how dark the coverage has turned versus the weekly baseline.',
+            confidence: tones.length >= 25 ? 'High' : tones.length >= 8 ? 'Medium' : 'Low',
+            caveat: 'Tone is machine-scored; individual outlets can skew the average.',
+            source: 'SC Fusion scan',
+            cameo: '\u2014'
+        };
+    }
+
+    function scanAirActivity(fls) {
+        if (!fls.length) return null;
+        var buckets = {};
+        fls.forEach(function (f) {
+            var p = f.properties || {};
+            if (p.lat == null) return;
+            var key = Math.floor(p.lat / 3) * 3 + ',' + Math.floor(p.lng / 3) * 3;
+            (buckets[key] = buckets[key] || []).push(p);
+        });
+        var bestKey = null;
+        Object.keys(buckets).forEach(function (k) { if (!bestKey || buckets[k].length > buckets[bestKey].length) bestKey = k; });
+        if (!bestKey) return null;
+        var cluster = buckets[bestKey];
+        var milCount = fls.filter(function (f) { return /mil/i.test((f.properties || {}).category || ''); }).length;
+        var cats = {};
+        fls.forEach(function (f) { var c = (f.properties || {}).category || '?'; cats[c] = (cats[c] || 0) + 1; });
+        var catTop = Object.keys(cats).sort(function (a, b) { return cats[b] - cats[a]; }).slice(0, 2)
+            .map(function (c) { return c + ' \u00d7' + cats[c]; }).join(', ');
+        return {
+            kind: 'scan',
+            headline: 'Air activity: ' + fls.length + ' tracks in scope; densest cell holds ' + cluster.length + ' around [' + bestKey.split(',')[0] + '\u00b0, ' + bestKey.split(',')[1] + '\u00b0]',
+            facts: [
+                'Total live tracks: ' + fls.length,
+                'Densest 3\u00b0 cell: ' + cluster.length + ' aircraft near [' + bestKey + ']',
+                milCount ? milCount + ' military-category asset' + (milCount > 1 ? 's' : '') + ' airborne' : 'No military-category tracks flagged',
+                'Category mix: ' + (catTop || 'n/a')
+            ],
+            why: milCount
+                ? 'Military-category traffic inside civilian corridors draws attention; density shifts here often precede exercises or deployments.'
+                : 'Traffic density gives the baseline every aviation story needs before claiming anything unusual.',
+            angle: 'Frame as an airspace pulse-check: compare today\u2019s density with the weekly norm, then explain whatever stands out.',
+            confidence: 'Medium',
+            caveat: 'ADS-B only \u2014 aircraft without transponders are invisible to this picture.',
+            source: 'SC Fusion scan',
+            cameo: 'OpenSky'
+        };
+    }
+
+    function scanCoverage(evs) {
+        if (evs.length < 6) return null;
+        var m = {}, total = 0;
+        evs.forEach(function (e) { if (e.domain) { m[e.domain] = (m[e.domain] || 0) + 1; total++; } });
+        var ranked = Object.keys(m).sort(function (a, b) { return m[b] - m[a]; });
+        if (!ranked.length) return null;
+        var share = m[ranked[0]] / Math.max(total, 1);
+        if (share < 0.25) return null;
+        return {
+            kind: 'scan',
+            headline: 'Single-outlet dominance: ' + ranked[0] + ' drives ' + Math.round(100 * share) + '% of scoped coverage',
+            facts: [
+                ranked[0] + ': ' + m[ranked[0]] + ' of ' + total + ' reports',
+                'Runner-up: ' + (ranked[1] ? ranked[1] + ' (' + m[ranked[1]] + ')' : 'none'),
+                'Distinct outlets in scope: ' + ranked.length
+            ],
+            why: 'When one outlet dominates a topic, the story\u2019s framing travels with its editorial line \u2014 independence checks matter more.',
+            angle: 'Frame as a sourcing audit: what does the dominant outlet claim, and who can corroborate it?',
+            confidence: 'Medium',
+            caveat: 'Counts mirror this query\u2019s recall, not total publication volume.',
+            source: 'SC Fusion scan',
+            cameo: '\u2014'
+        };
+    }
+
+    function scanIndices(evs) {
+        var mx = metricsOf(evs);
+        if (!mx || !mx.total) return null;
+        return {
+            kind: 'scan',
+            headline: 'Watch indices \u2014 systemic ' + mx.systemic + ' \u00b7 propagation ' + mx.propagation + ' \u00b7 sensitivity ' + mx.sensitivity,
+            facts: [
+                mx.total + ' events indexed (' + mx.geoCoded + ' geo-coded)',
+                'Negative/flagged: ' + mx.negative + ' \u00b7 red: ' + mx.red,
+                'Article volume in scope: ' + mx.articles
+            ],
+            why: parseFloat(mx.systemic) >= 0.6
+                ? 'Systemic pressure is elevated \u2014 small triggers can move several fronts at once today.'
+                : 'Indices give the quantitative spine for any lead you file from this scope.',
+            angle: 'Frame as the data-graph sidebar: three indices, one sentence each, anchored to today\u2019s event count.',
+            confidence: mx.total >= 25 ? 'High' : mx.total >= 8 ? 'Medium' : 'Low',
+            caveat: 'Indices derive from the current scoped sample size (' + mx.total + ').',
+            source: 'SC Fusion scan',
+            cameo: '\u2014'
+        };
+    }
+
+    function scanNow() {
+        if (scanning) return;
+        scanning = true;
+        scanBtn.disabled = true;
+        scanBtn.textContent = 'SCANNING\u2026';
+        panel.classList.add('won-scanning');
+        status('Pulling live state\u2026');
+        ensureDataLoaded().then(function () {
+            var evs = hostEvents(), fls = hostFlights();
+            if (!evs.length && !fls.length) {
+                status('No live data in scope yet \u2014 run GDELT/OpenSky first.');
+                return;
+            }
+            var cands = [];
+            var b;
+            if ((b = scanTopThreats(evs))) cands.push(b);
+            if ((b = scanToneShift(evs))) cands.push(b);
+            if ((b = scanAirActivity(fls))) cands.push(b);
+            if ((b = scanCoverage(evs))) cands.push(b);
+            if ((b = scanIndices(evs))) cands.push(b);
+            if (!cands.length) { status('Not enough signal in the current feed to build notes.'); return; }
+            var added = 0;
+            cands.forEach(function (note) {
+                enhanceNote(note).then(function (n2) { addNote(n2); added++; status('Scan added ' + added + '/' + cands.length + ' notes.'); });
+            });
+        }).finally(function () {
+            scanning = false;
+            scanBtn.disabled = false;
+            scanBtn.textContent = 'SCAN NOW';
+            panel.classList.remove('won-scanning');
+        });
+    }
+
+    // ------------------------------------------------ optional AI enhancement
+    function aiUrl() {
+        return (window.WONOTE_CFG && window.WONOTE_CFG.aiUrl) ||
+               (function () { try { return localStorage.getItem(LS_AI_URL) || ''; } catch (e) { return ''; } })();
+    }
+    function briefOf(n) {
+        return 'ANGLE HEADLINE\n' + n.headline +
+            '\n\nKEY FACTS\n- ' + (n.facts || []).join('\n- ') +
+            '\n\nWHY IT MATTERS\n' + n.why +
+            '\n\nSUGGESTED ANGLE\n' + n.angle;
+    }
+    function enhanceNote(note) {
+        var url = aiUrl();
+        if (!url) return Promise.resolve(note); // fully offline by default
+        var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+        var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 8000) : null;
+        return fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ task: 'watch_officer_note', brief: briefOf(note) }),
+            signal: ctrl ? ctrl.signal : undefined
+        }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+            if (j) {
+                if (typeof j.headline === 'string' && j.headline.trim()) note.headline = j.headline.trim();
+                if (typeof j.why === 'string' && j.why.trim()) note.why = j.why.trim();
+                if (typeof j.angle === 'string' && j.angle.trim()) note.angle = j.angle.trim();
+                if (Array.isArray(j.facts) && j.facts.length) note.facts = j.facts.slice(0, 4).map(String);
+            }
+            return note; // silent fallback keeps template content on any failure
+        }).catch(function () { return note; }).then(function (n2) {
+            if (timer) clearTimeout(timer);
+            return n2;
+        });
+    }
+
+    // ---------------------------------------------------------------- exports
+    function plainBrief(n) {
+        return n.headline + '\n\nKEY FACTS\n' +
+            (n.facts || []).map(function (f) { return '- ' + f; }).join('\n') +
+            '\n\nWHY IT MATTERS\n' + n.why +
+            '\n\nSUGGESTED ANGLE\n' + n.angle +
+            '\n\nConfidence: ' + n.confidence + ' \u2014 ' + (n.caveat || '') +
+            '\nSource: ' + (n.source || '\u2014') + ' | CAMEO ' + (n.cameo || '\u2014') + ' | ' + fmtTime(n.ts);
+    }
+    function download(name, text, mime) {
+        var blob = new Blob([text], { type: mime });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 400);
+    }
+    function exportJson() {
+        if (!notes.length) { status('Nothing to export.'); return; }
+        var payload = {
+            exported_at: new Date().toISOString(),
+            scope: scopeLabel(),
+            count: notes.length,
+            notes: sortedNotes()
+        };
+        download('watch-officer-notes-' + new Date().toISOString().slice(0, 10) + '.json',
+            JSON.stringify(payload, null, 2), 'application/json');
+        status('Exported JSON.');
+    }
+    function exportMarkdown() {
+        if (!notes.length) { status('Nothing to export.'); return; }
+        var md = '# Watch Officer Notes \u2014 ' + scopeLabel() + '\n\n' +
+            '_Exported ' + new Date().toLocaleString() + ' \u00b7 ' + notes.length + ' notes_\n\n';
+        sortedNotes().forEach(function (n, i) {
+            md += '## ' + (i + 1) + '. ' + n.headline + '\n\n';
+            (n.facts || []).forEach(function (f) { md += '- ' + f + '\n'; });
+            md += '\n**Why it matters:** ' + n.why + '\n\n';
+            md += '**Suggested angle:** ' + n.angle + '\n\n';
+            md += '> Confidence: ' + n.confidence + ' \u2014 ' + (n.caveat || '') + '  \n';
+            md += '> Source: ' + (n.source || '\u2014') + ' \u00b7 CAMEO ' + (n.cameo || '\u2014') + ' \u00b7 ' + fmtTime(n.ts) + '\n\n';
+        });
+        download('watch-officer-notes-' + new Date().toISOString().slice(0, 10) + '.md', md, 'text/markdown');
+        status('Exported Markdown.');
+    }
+    function copyText(t) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(t);
+        }
+        var ta = document.createElement('textarea');
+        ta.value = t;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        ta.remove();
+        return Promise.resolve();
+    }
+
+    // ------------------------------------------------------------------ wiring
+    function initPanel() {
+        if ($('won-panel')) return true;
+        return false;
+    }
+
+    function bindEvents() {
+        scanBtn.addEventListener('click', scanNow);
+        $('wonExportJsonBtn').addEventListener('click', exportJson);
+        $('wonExportMdBtn').addEventListener('click', exportMarkdown);
+        $('wonCloseBtn').addEventListener('click', function () { setOpen(false); });
+        $('wonMinBtn').addEventListener('click', function () { setMinimized(!minimized); });
+        $('wonClearBtn').addEventListener('click', function () {
+            var pinned = notes.filter(function (n) { return n.pinned; }).length;
+            notes = notes.filter(function (n) { return n.pinned; });
+            saveNotes(); render();
+            status(pinned ? 'Cleared \u2014 kept ' + pinned + ' pinned.' : 'All notes cleared.');
+        });
+
+        listEl.addEventListener('click', function (e) {
+            var btn = e.target.closest('[data-act]');
+            if (!btn) return;
+            var id = btn.getAttribute('data-id');
+            var act = btn.getAttribute('data-act');
+            var note = notes.find(function (n) { return n.id === id; });
+            if (!note) return;
+            if (act === 'del') removeNote(id);
+            else if (act === 'pin') { note.pinned = !note.pinned; saveNotes(); render(); }
+            else if (act === 'copy') {
+                copyText(plainBrief(note)).then(
+                    function () { status('Copied to clipboard.'); },
+                    function () { status('Copy failed.'); }
+                );
+            }
+        });
+
+        // "+ Note" buttons inside map hover boxes (delegated; popups live anywhere in DOM)
+        document.addEventListener('click', function (e) {
+            var t = e.target.closest ? e.target.closest('[data-won-threat]') : null;
+            if (t) { noteFromThreat(parseInt(t.getAttribute('data-won-threat'), 10)); return; }
+            var a = e.target.closest ? e.target.closest('[data-won-air]') : null;
+            if (a) { noteFromAircraft(parseInt(a.getAttribute('data-won-air'), 10)); }
+        });
+
+        // Ctrl+Shift+N toggles the notepad (Alt+Shift+N alias: some browsers
+        // reserve Ctrl+Shift+N for private windows and swallow the key)
+        document.addEventListener('keydown', function (e) {
+            var combo = e.shiftKey && (e.key === 'N' || e.key === 'n') && (e.ctrlKey || e.metaKey || e.altKey);
+            if (combo) {
+                e.preventDefault();
+                toggle();
+            }
+        });
+
+        var resizeTimer = null;
+        window.addEventListener('resize', function () {
+            applyGeometry();
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(render, 150);
+        });
+    }
+
+    function noteFromThreat(idx) {
+        var ev = hostEvents()[idx];
+        setOpen(true);
+        if (!ev) { status('Event no longer in the live feed \u2014 refresh the map.'); return; }
+        enhanceNote(buildThreatNote(ev)).then(function (n2) {
+            addNote(n2);
+            status('Note captured from map hover.');
+        });
+    }
+    function noteFromAircraft(idx) {
+        var f = hostFlights()[idx];
+        setOpen(true);
+        if (!f) { status('Track no longer in the live feed \u2014 refresh the map.'); return; }
+        enhanceNote(buildAirNote(f.properties || {})).then(function (n2) {
+            addNote(n2);
+            status('Track noted.');
+        });
+    }
+
+    function init() {
+        panel = $('wonPanel');
+        if (!panel) return; // add-on markup missing \u2014 stay inert
+        listEl = $('wonList');
+        emptyEl = $('wonEmpty');
+        statusEl = $('wonStatus');
+        countEl = $('wonCount');
+        scanBtn = $('wonScanBtn');
+
+        applyGeometry();
+        minimized = false;
+        try { minimized = localStorage.getItem(LS_MIN) === '1'; } catch (e) {}
+        setMinimized(minimized);
+
+        bindEvents();
+        initDrag();
+        initResize();
+        render();
+
+        var storedOpen;
+        try { storedOpen = localStorage.getItem(LS_OPEN); } catch (e) {}
+        setOpen(storedOpen !== '0', false); // default open until user closes it
+
+        // public API
+        window.WONote = {
+            toggle: toggle,
+            open: function () { setOpen(true); },
+            close: function () { setOpen(false); },
+            minimize: function () { setMinimized(!minimized); },
+            scan: scanNow,
+            fromThreat: noteFromThreat,
+            fromAircraft: noteFromAircraft,
+            notes: function () { return notes.slice(); },
+            clear: function () { notes = []; saveNotes(); render(); },
+            config: function (cfg) {
+                cfg = cfg || {};
+                if (cfg.aiUrl != null) { try { localStorage.setItem(LS_AI_URL, cfg.aiUrl); } catch (e) {} }
+                return { aiUrl: aiUrl() };
+            }
+        };
+        syncToggleBtn();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
+
 </body>
-</html>
+</html></html>

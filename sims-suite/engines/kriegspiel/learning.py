@@ -27,8 +27,10 @@ learned parameters; the JSONL dossier is append-only and never rewritten.
 
 from __future__ import annotations
 
+import gzip
 import json
 import os
+import shutil
 import threading
 import time
 from collections import defaultdict
@@ -45,6 +47,9 @@ from sims_core.stats import two_proportion_z, benjamini_hochberg
 _ANALYTICS_DIR = Path(__file__).resolve().parent / "analytics_data"
 _STATE_PATH = _ANALYTICS_DIR / "research_state.json"
 _LOG_PATH = _ANALYTICS_DIR / "research_log.jsonl"
+# Rotate the JSONL dossier once it exceeds this size so it cannot grow
+# unbounded; archives are kept forever under analytics_data/archives/.
+_MAX_LOG_BYTES = 64 * 1024 * 1024
 
 # Self-improvement thresholds. Below 30 samples per (doctrine, terrain) cell
 # we don't trust the win-rate enough to rewrite parameters.
@@ -146,12 +151,31 @@ class ResearchLog:
         except OSError:
             return 0
 
+    def _rotate_if_needed(self) -> None:
+        """Gzip-archive the log when it exceeds _MAX_LOG_BYTES, then start a
+        fresh one. Nothing is ever deleted — the full dossier history stays
+        in analytics_data/archives/, only active-file size stays bounded.
+        ``_count`` is intentionally left cumulative across rotations."""
+        try:
+            if not self._path.exists() or self._path.stat().st_size <= _MAX_LOG_BYTES:
+                return
+            stamp = time.strftime("%Y%m%d-%H%M%S")
+            archive_dir = self._path.parent / "archives"
+            archive_dir.mkdir(exist_ok=True)
+            dest = archive_dir / f"{self._path.name}-{stamp}.gz"
+            with open(self._path, "rb") as src, gzip.open(dest, "wb") as dst:
+                shutil.copyfileobj(src, dst)
+            self._path.unlink()
+        except OSError:
+            pass
+
     def append(self, entry: dict[str, Any]) -> None:
         """Append one entry to the JSONL log. Failures are swallowed — the
         dossier is valuable but must never break the simulation loop."""
         with self._lock:
             try:
                 self._ensure_dir()
+                self._rotate_if_needed()
                 with open(self._path, "a", encoding="utf-8") as fh:
                     fh.write(json.dumps(entry, default=str) + "\n")
                 self._count += 1

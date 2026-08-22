@@ -105,7 +105,9 @@ def _read_count() -> dict[str, int]:
 def _write_count(counts: dict[str, int]) -> None:
     """Write the persistent cumulative counter atomically."""
     try:
-        _COUNT_FILE.write_text(json.dumps(counts))
+        tmp = _COUNT_FILE.parent / (_COUNT_FILE.name + ".tmp")
+        tmp.write_text(json.dumps(counts))
+        tmp.replace(_COUNT_FILE)
     except Exception:
         pass
 

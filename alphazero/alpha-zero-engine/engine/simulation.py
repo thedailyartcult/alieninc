@@ -167,8 +167,16 @@ class SimulationOrchestrator:
 
         return steps
 
-    def run_multiverse(self) -> MultiverseReport:
-        """Run parallel universe simulation."""
+    def run_multiverse(self,
+                       inject_chaos: bool = False,
+                       injection_rate: float = 0.15) -> MultiverseReport:
+        """Run parallel universe simulation.
+
+        ``inject_chaos``/``injection_rate`` pass through to the Monte Carlo
+        engine's per-universe micro-variable injection. Historically this
+        wrapper silently dropped them (the MCP layer advertised chaos but
+        every universe ran clean — ``chaotic_injections: 0``).
+        """
         character = self.create_character()
         relations = self.create_default_relations(character)
 
@@ -177,6 +185,8 @@ class SimulationOrchestrator:
             character, relations,
             num_universes=self.config.num_universes,
             max_workers=self.config.max_workers,
+            inject_chaos=inject_chaos,
+            injection_rate=injection_rate,
         )
 
         # Compute finance metrics

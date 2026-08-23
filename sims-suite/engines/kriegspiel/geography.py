@@ -28,19 +28,24 @@ def terrain_speed_modifier(terrain: TerrainType, unit_type: UnitType) -> float:
     """How fast a unit moves through terrain (1.0 = normal speed)."""
     table = {
         TerrainType.URBAN: {UnitType.INFANTRY: 0.5, UnitType.ARMOR: 0.3,
-                            UnitType.ARTILLERY: 0.3, UnitType.AIR: 1.0},
+                            UnitType.ARTILLERY: 0.3, UnitType.AIR: 1.0,
+                            UnitType.NAVAL: 0.05},
         TerrainType.MOUNTAIN: {UnitType.INFANTRY: 0.4, UnitType.ARMOR: 0.15,
-                               UnitType.ARTILLERY: 0.2, UnitType.AIR: 0.9},
+                               UnitType.ARTILLERY: 0.2, UnitType.AIR: 0.9,
+                               UnitType.NAVAL: 0.05},
         TerrainType.FOREST: {UnitType.INFANTRY: 0.6, UnitType.ARMOR: 0.35,
-                             UnitType.ARTILLERY: 0.4, UnitType.AIR: 0.8},
+                             UnitType.ARTILLERY: 0.4, UnitType.AIR: 0.8,
+                             UnitType.NAVAL: 0.08},
         TerrainType.DESERT: {UnitType.INFANTRY: 0.8, UnitType.ARMOR: 0.9,
-                             UnitType.ARTILLERY: 0.85, UnitType.AIR: 1.0},
+                             UnitType.ARTILLERY: 0.85, UnitType.AIR: 1.0,
+                             UnitType.NAVAL: 0.10},
         TerrainType.COASTAL: {UnitType.INFANTRY: 0.7, UnitType.NAVAL: 1.0,
                               UnitType.AIR: 1.0, UnitType.ARMOR: 0.6},
         TerrainType.WETLAND: {UnitType.INFANTRY: 0.3, UnitType.ARMOR: 0.1,
                               UnitType.NAVAL: 0.9, UnitType.ARTILLERY: 0.15},
         TerrainType.OPEN: {UnitType.INFANTRY: 1.0, UnitType.ARMOR: 1.1,
-                           UnitType.ARTILLERY: 0.95, UnitType.AIR: 1.0},
+                           UnitType.ARTILLERY: 0.95, UnitType.AIR: 1.0,
+                           UnitType.NAVAL: 0.15},
     }
     return table.get(terrain, {}).get(unit_type, 0.8)
 

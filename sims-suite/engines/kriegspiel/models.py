@@ -59,22 +59,33 @@ class Unit:
     engagement_range_km: float = 5.0
 
     def effective_strength(self, terrain: TerrainType) -> float:
-        """Combat strength adjusted for terrain."""
+        """Combat strength adjusted for terrain AND operational domain.
+
+        NAVAL entries are explicit everywhere: ships are not soldiers. Away
+        from water (coastal/wetland) a fleet has no fires, no mobility, and
+        no logistics — the pre-fix default of 1.0 let "8 naval units" fight
+        set-piece battles in the Sahel desert at full strength.
+        """
         modifiers = {
             TerrainType.URBAN: {UnitType.INFANTRY: 1.3, UnitType.ARMOR: 0.6,
-                                 UnitType.ARTILLERY: 0.7, UnitType.AIR: 0.5},
+                                 UnitType.ARTILLERY: 0.7, UnitType.AIR: 0.5,
+                                 UnitType.NAVAL: 0.05},
             TerrainType.MOUNTAIN: {UnitType.INFANTRY: 1.2, UnitType.ARMOR: 0.3,
-                                   UnitType.ARTILLERY: 0.5, UnitType.AIR: 0.6},
+                                   UnitType.ARTILLERY: 0.5, UnitType.AIR: 0.6,
+                                   UnitType.NAVAL: 0.05},
             TerrainType.FOREST: {UnitType.INFANTRY: 1.15, UnitType.ARMOR: 0.5,
-                                 UnitType.ARTILLERY: 0.6, UnitType.AIR: 0.4},
+                                 UnitType.ARTILLERY: 0.6, UnitType.AIR: 0.4,
+                                 UnitType.NAVAL: 0.10},
             TerrainType.DESERT: {UnitType.ARMOR: 1.2, UnitType.INFANTRY: 0.9,
-                                 UnitType.AIR: 1.1, UnitType.ARTILLERY: 1.1},
+                                 UnitType.AIR: 1.1, UnitType.ARTILLERY: 1.1,
+                                 UnitType.NAVAL: 0.15},
             TerrainType.COASTAL: {UnitType.NAVAL: 1.3, UnitType.AIR: 1.1,
                                   UnitType.INFANTRY: 1.0},
             TerrainType.WETLAND: {UnitType.INFANTRY: 0.7, UnitType.ARMOR: 0.2,
                                   UnitType.NAVAL: 1.1},
             TerrainType.OPEN: {UnitType.ARMOR: 1.3, UnitType.AIR: 1.2,
-                               UnitType.ARTILLERY: 1.2, UnitType.INFANTRY: 0.9},
+                               UnitType.ARTILLERY: 1.2, UnitType.INFANTRY: 0.9,
+                               UnitType.NAVAL: 0.25},
         }
         mod = modifiers.get(terrain, {}).get(self.unit_type, 1.0)
         return self.strength * mod * (self.morale / 100) * (self.supply / 100)
@@ -171,6 +182,12 @@ class BattleOutcome:
     # grind). Populated by combat.simulate_battle. Used by the adherence probes
     # to verify breakthrough really changes behavior.
     breakthrough_by: str = ""        # "red", "blue", or ""
+    # Side(s) that disengaged after cumulative losses crossed the culmination
+    # threshold ("red", "blue", "both", or ""). A withdrawn force has shot its
+    # bolt (Clausewitz's culminating point): the battle ends with the other
+    # side holding the field — this is how "attack repulsed, defense held"
+    # outcomes exist instead of every fight resolving to annihilation.
+    withdrawn_by: str = ""
     # Doctrine tags populated by scenarios.generate_scenarios so the
     # self-learning layer (engines.kriegspiel.learning) can attribute
     # outcomes to (doctrine, terrain) pairs. Empty for outcomes created

@@ -12,6 +12,7 @@ from __future__ import annotations
 import concurrent.futures
 import json
 import logging
+import re
 import shutil
 import sys
 from datetime import datetime, timezone
@@ -30,6 +31,13 @@ from .parsers_milrem import parse_milrem
 from .parsers_fas import parse_fas
 from .parsers_wikipedia import parse_wikipedia_infobox, parse_wikipedia_list
 from .parsers_deagel import parse_deagel
+from .parsers_warsanctions import parse_warsanctions_uav
+from .parsers_defenceua import parse_defenceua_article
+from .parsers_baykar import parse_baykar_product
+from .parsers_armyguide import parse_armyguide_product
+from .parsers_globalsecurity import parse_globalsecurity
+from .parsers_hisutton import parse_hisutton_article
+from .parsers_seaforces import parse_seaforces
 from .sitemap import product_urls_from_sitemap, article_urls_from_sitemap, sitemap_urls_to_parse
 from .store import ScanStore
 
@@ -46,6 +54,13 @@ MILREM_HOST = "milremrobotics.com"
 FAS_HOST = "man.fas.org"
 WIKIPEDIA_HOST = "en.wikipedia.org"
 DEAGEL_HOST = "www.deagel.com"
+WARSANCTIONS_HOST = "war-sanctions.gur.gov.ua"
+DEFUA_HOST = "en.defence-ua.com"
+BAYKAR_HOST = "baykartech.com"
+ARMYGUIDE_HOST = "army-guide.com"
+GLOBALSECURITY_HOST = "www.globalsecurity.org"
+HISUTTON_HOST = "www.hisutton.com"
+SEAFORCES_HOST = "www.seaforces.org"
 
 
 def load_catalog_entries(path: Path) -> list[dict]:
@@ -132,11 +147,13 @@ class Engine:
         return added
 
     # ---------------- crawl ----------------
-    def crawl(self, wanted_display: list[str], limit: int | None = None):
+    def crawl(self, wanted_display: list[str], limit: int | None = None,
+              domains: list[str] | None = None):
         fetch_limit = limit or self.settings.limit
         done_fetch = 0
         while True:
-            batch = self.store.next_batch(10, categories=wanted_display)
+            batch = self.store.next_batch(10, categories=wanted_display,
+                                          domains=domains)
             if not batch:
                 break
             if fetch_limit is not None and done_fetch >= fetch_limit:
@@ -273,6 +290,67 @@ class Engine:
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
                     return
+            elif host == WARSANCTIONS_HOST and "/uav/" in url \
+                    and url.rstrip("/").rsplit("/", 1)[-1].isdigit():
+                e = parse_warsanctions_uav(url, fetched.html)
+                if e:
+                    op = self.store.upsert_entry(e, url)
+                    self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
+            elif host == DEFUA_HOST and ("/weapon_and_tech/" in url or "/analysis/" in url):
+                disp = row["category"] or "Uncategorized"
+                e = parse_defenceua_article(url, fetched.html, disp)
+                if e:
+                    op = self.store.upsert_entry(e, url)
+                    self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", disp, e.designation[:50], op, len(e.specs))
+                    return
+            elif host == BAYKAR_HOST and "/en/uav/" in url:
+                e = parse_baykar_product(url, fetched.html)
+                if e:
+                    op = self.store.upsert_entry(e, url)
+                    self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
+            elif host == ARMYGUIDE_HOST and re.search(r"/eng/product\d+\.html$", url):
+                e = parse_armyguide_product(url, fetched.html)
+                if e:
+                    op = self.store.upsert_entry(e, url)
+                    self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category or "Uncategorized",
+                             e.designation[:50], op, len(e.specs))
+                    return
+            elif host == GLOBALSECURITY_HOST and "/military/systems/" in url \
+                    and url.endswith(".htm") and not url.endswith("index.html"):
+                e = parse_globalsecurity(url, fetched.html, row["category"] or "")
+                if e:
+                    op = self.store.upsert_entry(e, url)
+                    self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
+            elif host == HISUTTON_HOST and url.endswith(".html"):
+                e = parse_hisutton_article(url, fetched.html)
+                if e:
+                    op = self.store.upsert_entry(e, url)
+                    self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
+            elif host == SEAFORCES_HOST and re.search(
+                    r"/(?:wpnsys|usnships|marint)/.*\.htm$", url):
+                e = parse_seaforces(url, fetched.html)
+                if e:
+                    op = self.store.upsert_entry(e, url)
+                    self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
             # unknown host/kind or parser returned None: still mark fetched so the
             # page isn't re-fetched on every run (no data extracted).
             self.store.mark(url, "done", status=200)
@@ -315,6 +393,13 @@ class Engine:
                     "https://milremrobotics.com",
                     "https://man.fas.org",
                     "https://en.wikipedia.org",
+                    "https://war-sanctions.gur.gov.ua",
+                    "https://en.defence-ua.com",
+                    "https://baykartech.com",
+                    "https://army-guide.com",
+                    "https://www.globalsecurity.org",
+                    "https://www.hisutton.com",
+                    "https://www.seaforces.org",
                 ],
                 "note": ("Compiled by the A-SAN deep scanner. robots.txt and site ToS are "
                          "respected; every entry carries the exact source URL it was fetched "

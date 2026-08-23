@@ -81,7 +81,10 @@ def create_default_battle(battlefield: Optional[Battlefield] = None,
     red_force = _create_force("Red Force", "red", rng)
     blue_force = _create_force("Blue Force", "blue", rng)
     deploy_force(red_force, battlefield, "red", seed)
-    deploy_force(blue_force, battlefield, "blue", seed + 1 if seed else None)
+    # ``seed + 1 if seed else None`` treated a legitimate seed of 0 as unset,
+    # silently falling back to the unseeded global RNG (non-reproducible runs).
+    deploy_force(blue_force, battlefield, "blue",
+                 seed + 1 if seed is not None else None)
 
     return Battle(
         battlefield=battlefield,
@@ -93,21 +96,51 @@ def create_default_battle(battlefield: Optional[Battlefield] = None,
     )
 
 
-def _create_force(name: str, side: str, rng: random.Random) -> Force:
-    """Generate a plausible force with varied units and a random doctrine."""
-    doctrines = list(Doctrine)
-    doctrine = rng.choice(doctrines)
-    unit_mix = [
-        (UnitType.INFANTRY, rng.randint(3, 6)),
-        (UnitType.ARMOR, rng.randint(1, 3)),
-        (UnitType.ARTILLERY, rng.randint(1, 2)),
-        (UnitType.AIR, rng.randint(1, 2)),
-        (UnitType.RECON, rng.randint(1, 2)),
-        (UnitType.LOGISTICS, rng.randint(1, 2)),
-    ]
+# Doctrine-driven force templates: (unit_type, min, max) rolls. Doctrines
+# field the forces their war-fighting identity implies — armor-heavy maneuver
+# formations, infantry-swarm guerrilla bands, artillery-heavy defensive
+# postures, cyber/recon ISR setups. This also gives terrain real leverage:
+# armor-heavy forces suffer in urban/mountain, infantry swarms suffer in open
+# engagements against armor — matchups stop cancelling out.
+_COMPOSITION_TEMPLATES: dict[Doctrine, list[tuple[UnitType, int, int]]] = {
+    Doctrine.SHOCK: [
+        (UnitType.INFANTRY, 3, 5), (UnitType.ARMOR, 3, 5),
+        (UnitType.ARTILLERY, 1, 2), (UnitType.AIR, 1, 2), (UnitType.RECON, 1, 1),
+    ],
+    Doctrine.MANEUVER: [
+        (UnitType.INFANTRY, 4, 6), (UnitType.ARMOR, 2, 4),
+        (UnitType.RECON, 2, 3), (UnitType.ARTILLERY, 1, 1),
+    ],
+    Doctrine.ATTRITION: [
+        (UnitType.INFANTRY, 5, 7), (UnitType.ARMOR, 1, 3),
+        (UnitType.ARTILLERY, 2, 3), (UnitType.RECON, 1, 1),
+    ],
+    Doctrine.DEFENSIVE: [
+        (UnitType.INFANTRY, 6, 8), (UnitType.ARMOR, 0, 2),
+        (UnitType.ARTILLERY, 2, 3), (UnitType.RECON, 1, 2),
+    ],
+    Doctrine.GUERRILLA: [
+        (UnitType.INFANTRY, 9, 13), (UnitType.RECON, 1, 2),
+    ],
+    Doctrine.LOGISTICAL: [
+        (UnitType.INFANTRY, 3, 5), (UnitType.LOGISTICS, 2, 3),
+        (UnitType.ARMOR, 1, 2), (UnitType.ARTILLERY, 1, 2), (UnitType.RECON, 1, 1),
+    ],
+    Doctrine.INFORMATION: [
+        (UnitType.INFANTRY, 4, 6), (UnitType.CYBER, 2, 3),
+        (UnitType.RECON, 2, 3), (UnitType.AIR, 1, 1),
+    ],
+}
+
+
+def _create_force(name: str, side: str, rng: random.Random,
+                  doctrine: Optional[Doctrine] = None) -> Force:
+    """Generate a plausible force whose composition matches its doctrine."""
+    doctrine = doctrine if doctrine is not None else rng.choice(list(Doctrine))
+    template = _COMPOSITION_TEMPLATES[doctrine]
     units = []
-    for unit_type, count in unit_mix:
-        for _ in range(count):
+    for unit_type, lo, hi in template:
+        for _ in range(rng.randint(lo, hi)):
             units.append(Unit(
                 unit_type=unit_type,
                 strength=rng.uniform(70, 100),
@@ -116,7 +149,17 @@ def _create_force(name: str, side: str, rng: random.Random) -> Force:
                 speed_kmh=rng.uniform(20, 50),
                 engagement_range_km=rng.uniform(3, 15),
             ))
-    return Force(name=name, doctrine=doctrine, units=units, side=side)
+    # Validator bounds keep total force size in [3, 15].
+    while len(units) < 3:
+        units.append(Unit(
+            unit_type=UnitType.INFANTRY,
+            strength=rng.uniform(70, 100),
+            morale=rng.uniform(65, 95),
+            supply=rng.uniform(75, 100),
+            speed_kmh=rng.uniform(20, 50),
+            engagement_range_km=rng.uniform(3, 15),
+        ))
+    return Force(name=name, doctrine=doctrine, units=units[:15], side=side)
 
 
 def generate_scenarios(

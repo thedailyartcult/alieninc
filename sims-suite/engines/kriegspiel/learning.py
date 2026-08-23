@@ -9,10 +9,12 @@ but never *learning* from them. This module closes that loop:
   2. ``distill_findings()`` turns accumulated statistics into human-readable
      research findings ("In mountain terrain, Maneuver doctrine loses 67% of
      engagements against Defensive").
-  3. ``self_improve()`` rewrites the live ``_DOCTRINE_PARAMS`` in
-     ``engines.kriegspiel.combat`` based on what the engine has learned —
-     underperforming doctrines nudge their aggression/risk/supply_focus/
-     morale_drain toward the profile of doctrines that win in that terrain.
+  3. ``self_improve()`` writes per-(doctrine, terrain) parameter overrides
+     into ``engines.kriegspiel.combat._TERRAIN_PARAM_OVERRIDES`` based on
+     what the engine has learned — underperforming doctrines nudge their
+     aggression/risk/supply_focus/morale_drain toward the profile of
+     doctrines that win *in that terrain*. The base doctrine table is never
+     mutated, so a lesson earned in one theater stays scoped to it.
      Every change is clamped, logged, and reversible (the prior values are
      recorded in the research log).
   4. ``ResearchLog`` is an append-only JSONL dossier documenting every
@@ -362,8 +364,8 @@ class DoctrinePerformanceTracker:
 
     # ----------------------------------------------------------- self-improve
     def self_improve(self) -> list[ParamChange]:
-        """Rewrite ``_DOCTRINE_PARAMS`` in ``engines.kriegspiel.combat`` based
-        on observed performance — gated by multiple-testing correction.
+        """Rewrite per-terrain overrides in ``engines.kriegspiel.combat``
+        based on observed performance — gated by multiple-testing correction.
 
         For each (doctrine, terrain) cell with enough samples:
           - if the doctrine is underperforming, its difference from the
@@ -380,7 +382,8 @@ class DoctrinePerformanceTracker:
         """
         with self._lock:
             # Import here so the combat module is loaded by the time we touch it.
-            from engines.kriegspiel.combat import _DOCTRINE_PARAMS
+            from engines.kriegspiel.combat import _DOCTRINE_PARAMS, _TERRAIN_PARAM_OVERRIDES
+            combat_overrides = _TERRAIN_PARAM_OVERRIDES
             changes: list[ParamChange] = []
             now = time.time()
 
@@ -430,6 +433,13 @@ class DoctrinePerformanceTracker:
                 )
 
             # Phase 3 — apply changes only where the difference survives BH.
+            # Adjustments are written as PER-TERRAIN overrides
+            # (combat._TERRAIN_PARAM_OVERRIDES), never into the base
+            # ``_DOCTRINE_PARAMS`` table. Evidence is per-(doctrine, terrain);
+            # under the old design one terrain cell rewrote that doctrine's
+            # behavior in every theater, homogenizing doctrines toward
+            # whatever exploited engine artifacts. Base doctrine identity now
+            # stays canonical; lessons stay scoped to where they were earned.
             for candidate, survive in zip(candidates, rejected):
                 if not survive:
                     continue
@@ -439,12 +449,18 @@ class DoctrinePerformanceTracker:
                 wr = candidate["win_rate"]
                 best_doctrine = candidate["best_doctrine"]
                 p_value = candidate["p_value"]
-                best_params = _DOCTRINE_PARAMS.get(
-                    Doctrine(best_doctrine), _DOCTRINE_PARAMS[Doctrine.ATTRITION]
-                )
-                cur_params = _DOCTRINE_PARAMS.get(
+                d_base = _DOCTRINE_PARAMS.get(
                     Doctrine(doctrine), _DOCTRINE_PARAMS[Doctrine.ATTRITION]
                 )
+                b_base = _DOCTRINE_PARAMS.get(
+                    Doctrine(best_doctrine), _DOCTRINE_PARAMS[Doctrine.ATTRITION]
+                )
+                # Effective current/target = base merged with any existing
+                # same-cell override, so repeated nudges compound correctly.
+                cur_ov = combat_overrides.setdefault((doctrine, terrain), {})
+                cur_params = {**d_base, **cur_ov}
+                target_ov = combat_overrides.get((best_doctrine, terrain), {})
+                best_params = {**b_base, **target_ov}
                 for pfield in ("aggression", "risk", "supply_focus", "morale_drain", "breakthrough"):
                     before = cur_params[pfield]
                     target = best_params[pfield]
@@ -453,7 +469,7 @@ class DoctrinePerformanceTracker:
                     after = max(_PARAM_FLOOR, min(_PARAM_CEIL, before + delta))
                     if abs(after - before) < 1e-4:
                         continue
-                    cur_params[pfield] = round(after, 4)
+                    cur_ov[pfield] = round(after, 4)
                     ch = ParamChange(
                         ts=now, doctrine=doctrine, terrain=terrain,
                         field=pfield, before=round(before, 4),
@@ -461,7 +477,8 @@ class DoctrinePerformanceTracker:
                         rationale=(f"{doctrine} wins {wr:.0%} in {terrain} "
                                    f"vs {best_doctrine} at {candidate['best_wr']:.0%}; "
                                    f"nudging {pfield} toward {best_doctrine} "
-                                   f"({target:.2f}) by {delta:+.3f}"),
+                                   f"({target:.2f}) by {delta:+.3f} "
+                                   f"[override: {doctrine}@{terrain}]"),
                         p_value=round(p_value, 6),
                         fdr_gate=round(bh_threshold, 6),
                         survived_bh=True,
@@ -544,11 +561,13 @@ class DoctrinePerformanceTracker:
         return [e for e in entries if e.get("type") == "finding"][-k:]
 
     def parameters(self) -> dict[str, Any]:
-        """Current evolved doctrine parameters + adjustment counts."""
+        """Current doctrine parameters + adjustment counts."""
         with self._lock:
-            from engines.kriegspiel.combat import _DOCTRINE_PARAMS
+            from engines.kriegspiel.combat import _DOCTRINE_PARAMS, _TERRAIN_PARAM_OVERRIDES
             out: dict[str, Any] = {}
             for doctrine, params in _DOCTRINE_PARAMS.items():
+                n_ov = sum(1 for (d, _t) in _TERRAIN_PARAM_OVERRIDES
+                           if d == doctrine.value)
                 out[doctrine.value] = {
                     "aggression": params["aggression"],
                     "risk": params["risk"],
@@ -556,6 +575,7 @@ class DoctrinePerformanceTracker:
                     "morale_drain": params["morale_drain"],
                     "breakthrough": params.get("breakthrough", 0.0),
                     "adjustments": self._adjustments_per_doctrine.get(doctrine.value, 0),
+                    "terrain_overrides": n_ov,
                 }
             return {
                 "current": out,
@@ -597,7 +617,7 @@ class DoctrinePerformanceTracker:
         never block on a write."""
         try:
             _ANALYTICS_DIR.mkdir(parents=True, exist_ok=True)
-            from engines.kriegspiel.combat import _DOCTRINE_PARAMS
+            from engines.kriegspiel.combat import _TERRAIN_PARAM_OVERRIDES
             payload = {
                 "batches_observed": self._batches_observed,
                 "scenarios_observed": self._scenarios_observed,
@@ -606,8 +626,11 @@ class DoctrinePerformanceTracker:
                 "last_finding_ts": self._last_finding_ts,
                 "adjustments_per_doctrine": dict(self._adjustments_per_doctrine),
                 "bh_gates": self._bh_gates,
-                "current_params": {
-                    d.value: dict(p) for d, p in _DOCTRINE_PARAMS.items()
+                # Learned adjustments are per-(doctrine, terrain) overrides.
+                # The base _DOCTRINE_PARAMS table is canonical source config
+                # and is never persisted or mutated at runtime anymore.
+                "terrain_overrides": {
+                    f"{d}|{t}": dict(p) for (d, t), p in _TERRAIN_PARAM_OVERRIDES.items()
                 },
                 "cells": {
                     f"{d}|{t}": {
@@ -625,9 +648,10 @@ class DoctrinePerformanceTracker:
             pass
 
     def _load_state(self) -> None:
-        """Restore learned state from disk. Also rehydrates
-        ``_DOCTRINE_PARAMS`` in the combat module so self-improvements
-        survive a restart."""
+        """Restore learned state from disk. Rehydrates the per-terrain
+        parameter overrides in the combat module so self-improvements
+        survive a restart. Base ``_DOCTRINE_PARAMS`` are canonical source
+        config and are deliberately NOT overwritten from state."""
         if not self._state_path.exists():
             return
         try:
@@ -653,23 +677,27 @@ class DoctrinePerformanceTracker:
             cell.stalemates = vals.get("stalemates", 0)
             cell.total = vals.get("total", 0)
             cell.decisive_wins = vals.get("decisive_wins", 0)
-        # Rehydrate doctrine parameters into the live combat module.
-        saved_params = payload.get("current_params", {})
+        # Rehydrate per-terrain overrides into the live combat module.
+        # Legacy ``current_params`` (global doctrine drift from the pre-fix
+        # design) is intentionally ignored — those values encoded engine
+        # artifacts and must not silently redefine base doctrines.
+        saved_overrides = payload.get("terrain_overrides", {})
         try:
-            from engines.kriegspiel.combat import _DOCTRINE_PARAMS
-            for doctrine_name, params in saved_params.items():
+            from engines.kriegspiel.combat import _TERRAIN_PARAM_OVERRIDES
+            for key, params in saved_overrides.items():
                 try:
-                    d = Doctrine(doctrine_name)
-                except ValueError:
+                    d_name, t_name = key.split("|", 1)
+                    Doctrine(d_name)
+                    TerrainType(t_name)
+                except (ValueError, KeyError):
                     continue
-                live = _DOCTRINE_PARAMS.get(d)
-                if live:
-                    for k_, v in params.items():
-                        if k_ in live:
-                            live[k_] = float(v)
+                clean = {k_: float(v) for k_, v in params.items()
+                         if isinstance(v, (int, float)) and v == v}
+                if clean:
+                    _TERRAIN_PARAM_OVERRIDES[(d_name, t_name)] = clean
         except Exception:
-            # Combat module not loaded yet — params will rehydrate when it loads
-            # via the gateway's _load_kriegspiel(). Not fatal.
+            # Combat module not loaded yet — overrides will rehydrate when it
+            # loads via the gateway's _load_kriegspiel(). Not fatal.
             pass
 
 
@@ -686,3 +714,287 @@ def get_tracker() -> DoctrinePerformanceTracker:
             if _tracker is None:
                 _tracker = DoctrinePerformanceTracker()
     return _tracker
+
+
+# -------------------------------------------------------------------
+# Campaign-level learning (operational layer)
+#
+# Battles teach tactics; campaigns teach operations. This tracker folds
+# campaign outcomes into the research dossier so tempo/pyrrhic lessons
+# ("an offensive that outruns its replacements stalls and bleeds") are
+# learned alongside doctrine x terrain win rates. Outcomes are bucketed by
+# *sustainment context* because phase-4 validation showed reinforcement
+# asymmetry is a first-order campaign variable — pooling symmetric and
+# asymmetric runs would average the lesson away.
+# -------------------------------------------------------------------
+
+_CAMPAIGN_STATE_PATH = _ANALYTICS_DIR / "campaign_state.json"
+_MIN_CAMPAIGN_SAMPLES = 20      # findings below this n are marked preliminary
+
+
+def sustainment_bucket(red_rate: float, blue_rate: float,
+                       tol: float = 0.05) -> str:
+    """Classify a campaign's sustainment context.
+
+    "symmetric"        — both sides reinforced comparably
+    "red_starved"      — red's replacements lag blue's (attacker outrunning
+                         its supply in the standard offensive role)
+    "blue_starved"     — mirror case
+    """
+    if abs(red_rate - blue_rate) <= tol:
+        return "symmetric"
+    return "red_starved" if red_rate < blue_rate else "blue_starved"
+
+
+@dataclass
+class CampaignCell:
+    """Accumulated campaign statistics for one (matchup, sustainment) cell."""
+
+    red_wins: int = 0
+    blue_wins: int = 0
+    stalemates: int = 0
+    total: int = 0
+    front_sum: float = 0.0
+    red_remaining_sum: float = 0.0
+    blue_remaining_sum: float = 0.0
+    engagements_sum: int = 0
+
+    @property
+    def red_win_share(self) -> float:
+        decided = self.red_wins + self.blue_wins
+        return self.red_wins / decided if decided else 0.0
+
+
+class CampaignPerformanceTracker:
+    """Accumulates campaign outcomes into (matchup, sustainment-bucket) cells
+    and distills operational-tempo findings. Persisted separately from the
+    tactical research state; same audit conventions."""
+
+    def __init__(self,
+                 state_path: Optional[Path] = None,
+                 log_path: Optional[Path] = None) -> None:
+        self._state_path = state_path or _CAMPAIGN_STATE_PATH
+        self._log = ResearchLog(log_path or (_ANALYTICS_DIR / "campaign_log.jsonl"))
+        self._lock = threading.Lock()
+        self._cells: dict[tuple[str, str, str], CampaignCell] = defaultdict(CampaignCell)
+        self._observed_total = 0
+        self._findings_emitted = 0
+        self._last_finding_ts = 0.0
+        self._load_state()
+
+    # ------------------------------------------------------------- observe
+    def record(self,
+               red_doctrine: str,
+               blue_doctrine: str,
+               bucket: str,
+               winner: str,
+               front_final_pct: float,
+               red_remaining_pct: float,
+               blue_remaining_pct: float,
+               engagements_fought: int) -> None:
+        """Record one finished campaign. ``winner`` is 'red'/'blue'/'stalemate'."""
+        with self._lock:
+            cell = self._cells[(red_doctrine, blue_doctrine, bucket)]
+            cell.total += 1
+            if winner == "red":
+                cell.red_wins += 1
+            elif winner == "blue":
+                cell.blue_wins += 1
+            else:
+                cell.stalemates += 1
+            cell.front_sum += float(front_final_pct)
+            cell.red_remaining_sum += float(red_remaining_pct)
+            cell.blue_remaining_sum += float(blue_remaining_pct)
+            cell.engagements_sum += int(engagements_fought)
+            self._observed_total += 1
+            self._save_state()
+
+    def observe_report(self, report: Any,
+                       red_reinforcement: float,
+                       blue_reinforcement: float) -> None:
+        """Duck-typed ingest of a ``CampaignReport`` (+ its sustainment rates)."""
+        self.record(
+            red_doctrine=getattr(report, "red_doctrine", ""),
+            blue_doctrine=getattr(report, "blue_doctrine", ""),
+            bucket=sustainment_bucket(red_reinforcement, blue_reinforcement),
+            winner=getattr(report, "campaign_winner", "stalemate"),
+            front_final_pct=getattr(report, "front_final_pct", 50.0),
+            red_remaining_pct=getattr(report, "red_remaining_pct", 100.0),
+            blue_remaining_pct=getattr(report, "blue_remaining_pct", 100.0),
+            engagements_fought=getattr(report, "engagements_fought", 0),
+        )
+
+    # ------------------------------------------------------------ readouts
+    def table(self) -> dict[str, Any]:
+        """Matchup x sustainment summary for dashboards/research consumers."""
+        with self._lock:
+            out = []
+            for (r_d, b_d, bucket), cell in sorted(self._cells.items()):
+                if not cell.total:
+                    continue
+                out.append({
+                    "red_doctrine": r_d,
+                    "blue_doctrine": b_d,
+                    "sustainment": bucket,
+                    "total": cell.total,
+                    "red_win_share": round(cell.red_win_share, 3),
+                    "stalemates": cell.stalemates,
+                    "avg_front_pct": round(cell.front_sum / cell.total, 1),
+                    "avg_red_remaining_pct": round(cell.red_remaining_sum / cell.total, 1),
+                    "avg_blue_remaining_pct": round(cell.blue_remaining_sum / cell.total, 1),
+                    "avg_engagements": round(cell.engagements_sum / max(cell.total, 1), 2),
+                })
+            return {"cells": out, "observed_total": self._observed_total}
+
+    def findings(self, k: int = 12) -> list[dict[str, Any]]:
+        """Distill operational-tempo lessons from accumulated cells.
+
+        Two finding shapes:
+          - matchup strength: who wins campaigns in a given sustainment context
+          - tempo effect: how an attacker's campaign fortunes shift when
+            replacements outrun (or trail) the advance — only emitted when BOTH
+            buckets of the same matchup have enough samples.
+        """
+        with self._lock:
+            now = time.time()
+            findings: list[dict[str, Any]] = []
+            by_matchup: dict[tuple[str, str], dict[str, CampaignCell]] = defaultdict(dict)
+            for (r_d, b_d, bucket), cell in self._cells.items():
+                if cell.total >= _MIN_CAMPAIGN_SAMPLES:
+                    by_matchup[(r_d, b_d)][bucket] = cell
+                    share = cell.red_win_share
+                    leader = ("red" if share > 0.5 else
+                              ("blue" if share < 0.5 else "neither"))
+                    if leader != "neither":
+                        strong = (cell.red_wins if leader == "red" else cell.blue_wins)
+                        findings.append({
+                            "ts": now,
+                            "kind": "campaign_matchup",
+                            "text": (
+                                f"{r_d} defeats {b_d} in {strong}/{cell.total} "
+                                f"campaigns ({strong / cell.total:.0%}) under "
+                                f"{bucket.replace('_', ' ')} sustainment; avg front "
+                                f"{cell.front_sum / cell.total:.0f}%"
+                            ),
+                            "evidence": {
+                                "matchup": f"{r_d}|{b_d}", "bucket": bucket,
+                                "n": cell.total, "share": round(share, 3),
+                            },
+                        })
+
+            # Tempo effects: same matchup, opposite starvation buckets.
+            for (r_d, b_d), buckets in by_matchup.items():
+                sym = buckets.get("symmetric")
+                starved = buckets.get("red_starved")
+                fed = buckets.get("blue_starved")
+                if sym and starved:
+                    drop = sym.red_win_share - starved.red_win_share
+                    if abs(drop) >= 0.08:
+                        findings.append({
+                            "ts": now,
+                            "kind": "tempo_effect",
+                            "text": (
+                                f"Tempo lesson ({r_d} vs {b_d}): when replacements "
+                                f"outrun the advance, {r_d}'s campaign wins fall "
+                                f"{sym.red_win_share:.0%} -> {starved.red_win_share:.0%}"
+                                f" (Δ{drop:+.0%}, n={sym.total}/{starved.total}) — "
+                                f"offensives need sustainment to convert tactical "
+                                f"wins into ground."
+                            ),
+                            "evidence": {
+                                "matchup": f"{r_d}|{b_d}",
+                                "symmetric_share": round(sym.red_win_share, 3),
+                                "starved_share": round(starved.red_win_share, 3),
+                            },
+                        })
+                if sym and fed:
+                    gain = fed.red_win_share - sym.red_win_share
+                    if abs(gain) >= 0.08:
+                        findings.append({
+                            "ts": now,
+                            "kind": "tempo_effect",
+                            "text": (
+                                f"Tempo lesson ({r_d} vs {b_d}): starving the "
+                                f"defense lifts {r_d} campaign wins "
+                                f"{sym.red_win_share:.0%} -> {fed.red_win_share:.0%}"
+                                f" (Δ{gain:+.0%}, n={sym.total}/{fed.total})."
+                            ),
+                            "evidence": {
+                                "matchup": f"{r_d}|{b_d}",
+                                "symmetric_share": round(sym.red_win_share, 3),
+                                "defender_starved_share": round(fed.red_win_share, 3),
+                            },
+                        })
+
+            new_findings = findings[:k]
+            if new_findings:
+                self._findings_emitted += len(new_findings)
+                self._last_finding_ts = now
+                for f in new_findings:
+                    self._log.append({"type": "campaign_finding", **f})
+            return new_findings
+
+    # --------------------------------------------------------- persistence
+    def _save_state(self) -> None:
+        try:
+            _ANALYTICS_DIR.mkdir(parents=True, exist_ok=True)
+            payload = {
+                "observed_total": self._observed_total,
+                "findings_emitted": self._findings_emitted,
+                "last_finding_ts": self._last_finding_ts,
+                "cells": {
+                    "|".join(key): {
+                        "red_wins": c.red_wins, "blue_wins": c.blue_wins,
+                        "stalemates": c.stalemates, "total": c.total,
+                        "front_sum": c.front_sum,
+                        "red_remaining_sum": c.red_remaining_sum,
+                        "blue_remaining_sum": c.blue_remaining_sum,
+                        "engagements_sum": c.engagements_sum,
+                    } for key, c in self._cells.items()
+                },
+            }
+            tmp = self._state_path.with_suffix(".tmp")
+            with open(tmp, "w", encoding="utf-8") as fh:
+                json.dump(payload, fh)
+            os.replace(tmp, self._state_path)
+        except OSError:
+            pass
+
+    def _load_state(self) -> None:
+        if not self._state_path.exists():
+            return
+        try:
+            with open(self._state_path, "r", encoding="utf-8") as fh:
+                payload = json.load(fh)
+        except (OSError, json.JSONDecodeError):
+            return
+        self._observed_total = payload.get("observed_total", 0)
+        self._findings_emitted = payload.get("findings_emitted", 0)
+        self._last_finding_ts = payload.get("last_finding_ts", 0.0)
+        for key, vals in payload.get("cells", {}).items():
+            parts = key.split("|")
+            if len(parts) != 3:
+                continue
+            cell = self._cells[tuple(parts)]
+            cell.red_wins = vals.get("red_wins", 0)
+            cell.blue_wins = vals.get("blue_wins", 0)
+            cell.stalemates = vals.get("stalemates", 0)
+            cell.total = vals.get("total", 0)
+            cell.front_sum = vals.get("front_sum", 0.0)
+            cell.red_remaining_sum = vals.get("red_remaining_sum", 0.0)
+            cell.blue_remaining_sum = vals.get("blue_remaining_sum", 0.0)
+            cell.engagements_sum = vals.get("engagements_sum", 0)
+
+
+_campaign_tracker: Optional[CampaignPerformanceTracker] = None
+_campaign_tracker_lock = threading.Lock()
+
+
+def get_campaign_tracker() -> CampaignPerformanceTracker:
+    """Process-wide singleton, mirroring :func:`get_tracker`."""
+    global _campaign_tracker
+    if _campaign_tracker is None:
+        with _campaign_tracker_lock:
+            if _campaign_tracker is None:
+                _campaign_tracker = CampaignPerformanceTracker()
+    return _campaign_tracker

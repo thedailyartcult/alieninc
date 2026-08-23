@@ -69,6 +69,28 @@ def parse_weaponsystem(url: str, html: str, category_display: str = "") -> dict 
                     specs.append(f"{label}: {value}" if label else value)
                 else:
                     specs.append(f"{label}: {value}" if label else value)
+
+    # Redesigned "General" facts table (generalFactsTable*) — same label/value
+    # semantics, different markup. Merged with legacy extraction above.
+    seen_labels = {s.split(":", 1)[0].strip().lower() for s in specs if ":" in s}
+    gen_rows = re.findall(
+        r'<div[^>]*class="[^"]*generalFactsTableCellLeft[^"]*">\s*([^<]*?)\s*</div>\s*'
+        r'<div[^>]*class="[^"]*generalFactsTableCellRight[^"]*">(.*?)</div>',
+        html, re.S)
+    for label, value in gen_rows:
+        label = html_lib.unescape(label.strip())
+        value = re.sub(r"\s+", " ", html_lib.unescape(
+            re.sub(r"<[^>]+>", " ", value))).strip()
+        if not label or not value or len(value) > 300:
+            continue
+        ll = label.lower()
+        if ll in seen_labels:
+            continue
+        seen_labels.add(ll)
+        if ll == "type":
+            specs.insert(0, f"Type: {value}")
+        else:
+            specs.append(f"{label}: {value}")
     
     # Extract overview text from related articles section
     overview_m = re.search(r'<div[^>]*class="[^"]*tableblock-2[^"]*">(.*?)</div>', html, re.S)
@@ -159,43 +181,50 @@ def _classify_weaponsystem(title: str, description: str, specs: list[str]) -> st
         if re.search(r'\d[\d.]+x\d+mm|\d[\d.]+mm\b', text):
             return "Small arms"
     
-    # Platform classification
+    # Platform classification.
+    # ORDER MATTERS: ground vehicles before naval — e.g. the LAV-25 is an
+    # amphibious APC and must not be captured by naval keywords.
     if is_aircraft:
         return "Aircraft"
-    
+
     # UAVs
     if any(kw in text for kw in ('uav', 'drone', 'unmanned aerial', 'mq-', 'rq-', 'predator', 'reaper',
                                   'global hawk', 'heron', 'searcher', 'orbiter')):
         return "UAVs"
-    
-    # Naval vessels
-    # Check for naval keywords, but exclude "tank destroyer" (which contains "destroyer")
-    naval_kws = ['ship', 'carrier', 'frigate', 'corvette', 'submarine',
-                 'cruiser', 'lhd', 'lha', 'lpd', 'lsv', 'patrol boat', 'mine countermeasures',
-                 'amphibious', 'naval', 'vessel class']
-    is_naval = any(kw in text for kw in naval_kws)
-    # Check for "destroyer" but exclude "tank destroyer"
-    if 'destroyer' in text and 'tank destroyer' not in text:
-        is_naval = True
-    if is_naval:
-        return "Naval vessels"
-    
-    # Armored vehicles and equipment
-    if any(kw in text for kw in ('tank', 'main battle tank', 'light tank', 'apc', 'ifv', 'armored',
-                                  'armoured', 'mrp', 'btr', 'bmp', 'bradley', 'warrior', 'puma',
-                                  'boxer', 'strv', 'leopard', 'tank destroyer', 'self-propelled',
-                                  'combat vehicle', 'infantry fighting', 'personnel carrier')):
+
+    # Armored vehicles and equipment (checked BEFORE naval: an amphibious APC
+    # is still an APC).
+    ground_kws = ('tank', 'main battle tank', 'light tank', 'apc', 'ifv', 'armored',
+                  'armoured', 'mrp', 'btr', 'bmp', 'bradley', 'warrior', 'puma',
+                  'boxer', 'strv', 'leopard', 'tank destroyer', 'self-propelled',
+                  'combat vehicle', 'infantry fighting', 'personnel carrier',
+                  'assault gun', 'armoured car', 'armored car', 'rekv')
+    has_ground = any(kw in text for kw in ground_kws)
+    if has_ground:
         return "Armored vehicles and equipment"
-    
+
     # UGVs
     if any(kw in text for kw in ('ugv', 'unmanned ground', 'robot combat', 'talon', 'packbot')):
         return "UGVs"
-    
+
     # Automotive vehicles
     if any(kw in text for kw in ('truck', 'humvee', 'hmmwv', 'jlsv', 'logistics', 'fuel tanker',
                                   'recovery vehicle', 'engineering vehicle')):
         return "Automotive vehicles"
-    
+
+    # Naval vessels — only after ground vehicles had their chance. "Amphibious"
+    # alone no longer captures vehicles already matched above.
+    naval_kws = ['ship', 'aircraft carrier', 'frigate', 'corvette', 'submarine',
+                 'cruiser', 'lhd', 'lha', 'lpd', 'lsv', 'patrol boat', 'mine countermeasures',
+                 'naval', 'vessel class']
+    is_naval = any(kw in text for kw in naval_kws)
+    if 'destroyer' in text and 'tank destroyer' not in text:
+        is_naval = True
+    if 'amphibious' in text and not re.search(r'\b(apc|acv|personnel carrier|assault vehicle)\b', text):
+        is_naval = True
+    if is_naval:
+        return "Naval vessels"
+
     # Weapon classification (fallback for entries without clear Type spec)
     if any(kw in text for kw in ('missile', 'rocket', 'tow', 'stinger', 'javelin', 'hellfire', 'cruise',
                                   'ballistic', 'atgm', 'anti-tank guided', 'surface-to-air', 'air-to-air',
@@ -206,5 +235,5 @@ def _classify_weaponsystem(title: str, description: str, specs: list[str]) -> st
                                   'machine gun', 'rifle', 'pistol', 'smg', 'shotgun', 'sniper',
                                   'glock', 'caliber')):
         return "Small arms"
-    
-    return "Aircraft"  # Default fallback
+
+    return ""  # no confident match -> leave Uncategorized rather than guess

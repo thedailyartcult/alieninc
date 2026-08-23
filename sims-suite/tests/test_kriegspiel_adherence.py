@@ -55,31 +55,38 @@ def test_adherence_probe_returns_full_report():
 
 def test_doctrine_behavioral_signatures_differ():
     """The whole point of the probe: doctrines must not all behave alike.
-    After the tactical-deployment + engagement rework, the combat model is
-    aggression-coherent: Shock (aggression 0.95) wins far more than Defensive
-    (aggression 0.3), and aggressive doctrines win with fewer casualties."""
+    After the converge-to-contact + mutual-fire rework, doctrines express
+    clear identities: Shock (aggression 0.95) is the premier *attacker* and
+    wins far more than Defensive (aggression 0.3); Guerrilla/Information
+    cannot win set-piece fights. Winners of aggressive assaults pay heavier
+    casualty prices than passive winners (who only win when the enemy has
+    already collapsed) — so the old 'aggressive wins are cheaper' assertion
+    no longer holds by design."""
     report = run_adherence_probe(terrain=TerrainType.OPEN, n_per_doctrine=60, seed=11)
-    shock = report["observed"]["shock"]
-    defensive = report["observed"]["defensive"]
+    observed = report["observed"]
+    shock = observed["shock"]
+    defensive = observed["defensive"]
     # Shock is declared far more aggressive -> it must win more.
     assert shock["win_rate"] > defensive["win_rate"]
-    # An effective aggressive doctrine wins cheaply -> Shock pays fewer
-    # casualties to win than a losing defensive doctrine. Allow a small
-    # tolerance (±2) for stochastic variance with 60 scenarios per doctrine.
-    assert shock["avg_winner_casualties"] <= defensive["avg_winner_casualties"] + 2
+    # Shock must be the strongest attacking doctrine in the probe.
+    best = max(observed.items(), key=lambda kv: kv[1]["win_rate"])
+    assert best[0] == "shock"
+    # Passive doctrines cannot be top attackers.
+    assert observed["guerrilla"]["win_rate"] < shock["win_rate"]
+    assert observed["information"]["win_rate"] < shock["win_rate"]
 
 
 def test_risk_proxy_is_meaningful_not_constant():
     """Regression guard for the risk→decisiveness anomaly: the risk proxy must
-    not be a near-constant column (decisive_rate ~0 in this model), which made
-    the old Spearman meaningless. After the rework, aggression predicts win rate
-    with Spearman ~1.0, and the risk proxy (winner casualties, inverted) must
-    vary and register a directionally-correct signal."""
+    not be a near-constant column. After the converge-to-contact + mutual-fire
+    rework, win rate depends on aggression AND on supply_focus (posture +
+    retaliation floor), so aggression no longer dominates monotonically — but
+    it must remain a clearly positive predictor (Spearman comfortably above
+    chance) and the risk proxy must still vary across doctrines."""
     report = run_adherence_probe(terrain=TerrainType.OPEN, n_per_doctrine=60, seed=21)
-    # Aggression must strongly predict win rate (the core claim of the rework).
     agg_attr = next(a for a in report["attributes"] if a["attribute"] == "aggression")
     assert agg_attr["proxy"] == "win_rate"
-    assert agg_attr["spearman"] > 0.6
+    assert agg_attr["spearman"] > 0.5
     # The risk proxy must vary across doctrines.
     avcs = {d: o["avg_winner_casualties"] for d, o in report["observed"].items()}
     assert max(avcs.values()) - min(avcs.values()) > 2.0
@@ -122,18 +129,17 @@ def test_shock_is_viable_vs_attrition():
 
 def test_breakthrough_is_recorded_on_outcome():
     """The breakthrough mechanic must populate BattleOutcome.breakthrough_by
-    when a high-breakthrough doctrine converts a local edge into a decisive
-    penetration."""
+    when a high-breakthrough doctrine converts a sustained local edge into a
+    decisive penetration. Forces are near-peer so the fight lasts past the
+    40% sustained-pressure gate (breakthroughs are only attempted once a
+    defense has actually been worn down)."""
     from engines.kriegspiel.models import Force, Battle, Battlefield, Unit, UnitType
     from engines.kriegspiel.geography import deploy_force
-    import random
 
-    # Give Shock a clear force advantage so it reliably breaks through.
     def make_battle(seed):
-        rng = random.Random(seed)
         bf = Battlefield("Test", (30, 30), TerrainType.OPEN, 100000, (20, 20, 40, 40))
         red_units = [Unit(UnitType.INFANTRY, 95, 95, 95) for _ in range(6)]
-        blue_units = [Unit(UnitType.INFANTRY, 60, 50, 60) for _ in range(3)]
+        blue_units = [Unit(UnitType.INFANTRY, 80, 75, 80) for _ in range(6)]
         red = Force("Red", Doctrine.SHOCK, red_units, "red")
         blue = Force("Blue", Doctrine.ATTRITION, blue_units, "blue")
         deploy_force(red, bf, "red", seed); deploy_force(blue, bf, "blue", seed + 1)

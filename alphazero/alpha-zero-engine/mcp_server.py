@@ -65,8 +65,8 @@ async def handle_simulate(params: dict) -> dict:
     universes = params.get("universes", 100)
     strategy = params.get("strategy", "balanced")
     seed = params.get("seed", 42)
-    inject_chaos = params.get("inject_chaos", False)
-    injection_rate = params.get("injection_rate", 0.1)
+    inject_chaos = bool(params.get("inject_chaos", False))
+    injection_rate = float(params.get("injection_rate", 0.1))
 
     SimulationOrchestrator, SimulationConfig, Gender = _load_simulation_module()
 
@@ -100,7 +100,11 @@ async def handle_simulate(params: dict) -> dict:
             "final_state": final.attributes_after if final else {},
         }
     else:
-        report = orchestrator.run_multiverse()
+        # Chaos passthrough: without this, the flag was accepted and silently
+        # dropped — every "chaotic" run was identical to a clean one.
+        report = orchestrator.run_multiverse(
+            inject_chaos=inject_chaos, injection_rate=injection_rate)
+
     def _serialize_result(obj):
         if isinstance(obj, dict):
             return {k: _serialize_result(v) for k, v in obj.items()}
@@ -120,9 +124,19 @@ async def handle_simulate(params: dict) -> dict:
         "beta": report.beta,
         "alpha": report.alpha,
         "avg_years_lived": report.avg_years_lived,
-        "best_net_worth": _serialize_result(report.best_net_worth),
-        "best_happiness": _serialize_result(report.best_happiness),
+        "best_net_worth": {
+            "universe_id": report.best_net_worth.universe_id,
+            "final_net_worth": round(report.best_net_worth.final_net_worth, 2),
+        },
+        "best_happiness": {
+            "universe_id": report.best_happiness.universe_id,
+            "final_happiness": report.best_happiness.final_happiness,
+        },
         "outcome_distribution": _serialize_result(report.outcome_distribution),
+        "high_probability_path": report.high_probability_path,
+        "chaotic_injections": getattr(report, "chaotic_injections", 0),
+        "inject_chaos": inject_chaos,
+        "injection_rate": injection_rate,
     }
 
     workspace = _workspace(params.get("workspace"))
@@ -150,23 +164,34 @@ async def handle_branch(params: dict) -> dict:
 
 
 async def handle_compare_strategies(params: dict) -> dict:
-    initial_value = params.get("initial_value", 100000.0)
-    years = params.get("years", 10)
+    initial_value = float(params.get("initial_value", 100000.0))
+    years = int(params.get("years", 10))
+    seed = int(params.get("seed", 42))
 
+    # Real implementation: one deterministic market path, every strategy
+    # compounded through it via the portfolio engine. The old stub returned
+    # initial_value for every strategy with 0% returns.
     PortfolioEngine, STRATEGIES = _load_finance_module()
+    from finance.market import MarketSimulator
 
-    comparison = {"initial_value": initial_value, "years": years, "strategies": {}}
-    for name in STRATEGIES:
-        comparison["strategies"][name] = {
-            "name": name,
-            "final_value": initial_value,
-            "total_return_pct": 0.0,
-        }
+    market_sim = MarketSimulator(seed=seed)
+    market_returns = [market_sim.get_year_return(2026 + i) for i in range(max(1, years))]
+    comparison = PortfolioEngine.compare_strategies(
+        initial_value=initial_value,
+        years=max(1, years),
+        market_returns=market_returns,
+        seed=seed,
+    )
 
+    result = {
+        "initial_value": initial_value,
+        "years": max(1, years),
+        "market_returns": [round(r, 4) for r in market_returns],
+        "strategies": comparison,
+    }
     workspace = _workspace(params.get("workspace"))
-    cmb_store(workspace, f"compare_{initial_value}_{years}", comparison, repo="alphazero")
-
-    return {"status": "success", "result": comparison}
+    cmb_store(workspace, f"compare_{initial_value}_{years}_{seed}", result, repo="alphazero")
+    return {"status": "success", "result": result}
 
 
 async def handle_recall_history(params: dict) -> dict:
@@ -199,23 +224,39 @@ async def handle_scale_universes(params: dict) -> dict:
 
 async def handle_convergence_analysis(params: dict) -> dict:
     name = params.get("name", "Player")
-    age = params.get("age", 20)
-    universes = params.get("universes", 100)
-    threshold = params.get("threshold", 0.85)
-    seed = params.get("seed", 42)
+    age = int(params.get("age", 20))
+    universes = max(2, int(params.get("universes", 100)))
+    threshold = float(params.get("threshold", 0.85))
+    seed = int(params.get("seed", 42))
 
-    return {
-        "status": "success",
-        "result": {
-            "name": name,
-            "age": age,
-            "universes": universes,
-            "threshold": threshold,
-            "seed": seed,
-            "convergence_probability": 0.0,
-            "message": f"Convergence analysis for {name} across {universes} universes",
-        },
+    # Real implementation: run an actual multiverse and measure convergence
+    # against the requested threshold. The old stub always returned 0.0.
+    SimulationOrchestrator, SimulationConfig, Gender = _load_simulation_module()
+    config = SimulationConfig(
+        name=name, age=age, gender=Gender.MALE,
+        birthplace="Manila", current_city="Manila",
+        happiness=50, health=70, smarts=50, looks=50, karma=50,
+        starting_money=0.0, initial_portfolio=100000.0,
+        seed=seed, num_universes=universes, max_workers=4,
+    )
+    report = SimulationOrchestrator(config).run_multiverse()
+
+    result = {
+        "name": name,
+        "age": age,
+        "universes": universes,
+        "threshold": round(threshold, 3),
+        "seed": seed,
+        "convergence_rate": round(report.convergence_rate, 4),
+        "convergence_probability": round(report.convergence_rate, 4),
+        "high_probability_path": report.convergence_rate >= threshold,
+        "meets_threshold": report.convergence_rate >= threshold,
+        "total_simulations": report.total_simulations,
+        "avg_years_lived": round(report.avg_years_lived, 1),
     }
+    workspace = _workspace(params.get("workspace"))
+    cmb_store(workspace, f"convergence_{seed}_{name}", result, repo="alphazero")
+    return {"status": "success", "result": result}
 
 
 async def handle_compare_universes(params: dict) -> dict:
@@ -241,24 +282,46 @@ async def handle_compare_universes(params: dict) -> dict:
 
 
 async def handle_best_branch(params: dict) -> dict:
+    """Real best-branch surfacing: run a multiverse and pick the top universe
+    by the requested metric. The old stub always returned None."""
     name = params.get("name", "Player")
-    age = params.get("age", 20)
-    universes = params.get("universes", 100)
+    age = int(params.get("age", 20))
+    universes = max(2, int(params.get("universes", 100)))
     metric = params.get("metric", "net_worth")
-    seed = params.get("seed", 42)
+    seed = int(params.get("seed", 42))
 
-    return {
-        "status": "success",
-        "result": {
-            "name": name,
-            "age": age,
-            "universes": universes,
-            "metric": metric,
-            "seed": seed,
-            "best_branch": None,
-            "message": f"Finding best branch by {metric} for {name}",
+    if metric not in ("net_worth", "happiness"):
+        return {"status": "error",
+                "error": f"Unknown metric '{metric}'. Use 'net_worth' or 'happiness'."}
+
+    SimulationOrchestrator, SimulationConfig, Gender = _load_simulation_module()
+    config = SimulationConfig(
+        name=name, age=age, gender=Gender.MALE,
+        birthplace="Manila", current_city="Manila",
+        happiness=50, health=70, smarts=50, looks=50, karma=50,
+        starting_money=0.0, initial_portfolio=100000.0,
+        seed=seed, num_universes=universes, max_workers=4,
+    )
+    report = SimulationOrchestrator(config).run_multiverse()
+
+    best = report.best_net_worth if metric == "net_worth" else report.best_happiness
+    value = (best.final_net_worth if metric == "net_worth"
+             else best.final_happiness)
+    result = {
+        "name": name,
+        "metric": metric,
+        "best_branch": {
+            "universe_id": best.universe_id,
+            "value": round(value, 2) if isinstance(value, float) else value,
+            "final_net_worth": round(best.final_net_worth, 2),
+            "final_happiness": best.final_happiness,
+            "years_lived": best.years_lived,
         },
+        "total_simulations": report.total_simulations,
     }
+    workspace = _workspace(params.get("workspace"))
+    cmb_store(workspace, f"best_branch_{seed}_{name}", result, repo="alphazero")
+    return {"status": "success", "result": result}
 
 
 async def handle_cluster_universes(params: dict) -> dict:
@@ -313,68 +376,156 @@ async def handle_deserialize_universe(params: dict) -> dict:
 
 
 async def handle_portfolio_optimize(params: dict) -> dict:
-    risk_tolerance = params.get("risk_tolerance", 5)
+    """Real optimizer: score every strategy by Sharpe ratio
+    ((expected_return - risk_free) / volatility), filter by the caller's
+    volatility/risk tolerance, and return the ranked candidates plus a
+    target-date glide path when an age is supplied. The old stub returned
+    one hardcoded allocation regardless of inputs."""
+    risk_tolerance = float(params.get("risk_tolerance", 5))
     age = params.get("age")
-    seed = params.get("seed", 42)
+    seed = int(params.get("seed", 42))
+    _ = seed  # scoring is deterministic; kept for API symmetry
 
-    return {
-        "status": "success",
-        "result": {
-            "risk_tolerance": risk_tolerance,
-            "age": age,
-            "seed": seed,
-            "allocations": {"stocks": 0.6, "bonds": 0.3, "cash": 0.1},
-            "message": f"Optimized portfolio for risk tolerance {risk_tolerance}",
-        },
+    from finance.portfolio import STRATEGIES
+
+    risk_free = 0.02
+    scored = []
+    for name, strat in STRATEGIES.items():
+        vol = float(strat["volatility"])
+        exp_ret = float(strat["expected_return"])
+        sharpe = (exp_ret - risk_free) / vol if vol > 0 else 0.0
+        scored.append({
+            "strategy": name,
+            "name": strat["name"],
+            "expected_return": exp_ret,
+            "volatility": vol,
+            "sharpe_ratio": round(sharpe, 3),
+        })
+
+    # Map risk_tolerance 1..10 to max acceptable volatility 0.05..0.50.
+    max_vol = 0.05 + (min(max(risk_tolerance, 1.0), 10.0) - 1) * (0.45 / 9.0)
+    eligible = [s for s in scored if s["volatility"] <= max_vol]
+    eligible.sort(key=lambda s: -s["sharpe_ratio"])
+
+    result: dict[str, object] = {
+        "risk_tolerance": risk_tolerance,
+        "max_acceptable_volatility": round(max_vol, 2),
+        "ranked_strategies": eligible,
+        "recommended": eligible[0] if eligible else None,
     }
+    if age is not None:
+        # Target-date glide path: equity share declines linearly from 90% at
+        # 20y/o to 30% at 70y/o; the recommended strategy fills that sleeve.
+        try:
+            age_v = float(age)
+        except (TypeError, ValueError):
+            age_v = 35.0
+        equity_share = max(0.30, min(0.90, 0.90 - (age_v - 20.0) * 0.012))
+        result["glide_path"] = {
+            "age": age_v,
+            "growth_allocation": round(equity_share, 2),
+            "defensive_allocation": round(1.0 - equity_share, 2),
+            "note": "linear de-risking between ages 20-70",
+        }
+    return {"status": "success", "result": result}
 
 
 async def handle_financial_forecast(params: dict) -> dict:
-    initial_value = params.get("initial_value", 100000.0)
+    """Real Monte Carlo forecast via RiskAnalyzer — percentile bands,
+    probability of loss, worst/best path. The old stub returned hardcoded
+    deterministic compounding curves."""
+    initial_value = float(params.get("initial_value", 100000.0))
     strategy = params.get("strategy", "balanced")
-    years = params.get("years", 10)
-    paths = params.get("paths", 1000)
-    seed = params.get("seed", 42)
+    years = max(1, int(params.get("years", 10)))
+    paths = max(10, min(int(params.get("paths", 1000)), 10000))
+    seed = int(params.get("seed", 42))
 
-    PortfolioEngine, STRATEGIES = _load_finance_module()
-
-    return {
-        "status": "success",
-        "result": {
-            "initial_value": initial_value,
-            "strategy": strategy,
-            "years": years,
-            "paths": paths,
-            "seed": seed,
-            "forecast": {
-                "p50": initial_value * (1.05 ** years),
-                "p10": initial_value * (1.02 ** years),
-                "p90": initial_value * (1.09 ** years),
-            },
-            "message": f"Monte Carlo forecast: {paths} paths over {years} years",
-        },
-    }
+    from finance.risk import RiskAnalyzer
+    forecast = RiskAnalyzer.monte_carlo_forecast(
+        initial_value=initial_value, strategy=strategy,
+        years=years, paths=paths, seed=seed,
+    )
+    return {"status": "success", "result": forecast}
 
 
 async def handle_risk_analysis(params: dict) -> dict:
-    strategy = params.get("strategy", "balanced")
-    initial_value = params.get("initial_value", 100000.0)
-    years = params.get("years", 10)
-    seed = params.get("seed", 42)
+    """Real downside-risk analytics.
 
-    return {
-        "status": "success",
-        "result": {
-            "strategy": strategy,
-            "initial_value": initial_value,
-            "years": years,
-            "seed": seed,
-            "var_95": initial_value * 0.15,
-            "max_drawdown": initial_value * 0.25,
-            "crisis_scenario": initial_value * 0.6,
-            "message": f"Risk analysis for {strategy} strategy over {years} years",
-        },
+    Pentest finding: the previous implementation reported var_95 ==
+    expected_shortfall == max_drawdown == the worst single deterministic
+    market year — mathematically impossible (ES must be at least as bad as
+    VaR, and drawdown compounds across consecutive losses). This version
+    simulates thousands of annual-return outcomes per strategy and computes:
+      - VaR95  = 5th percentile of annual returns
+      - ES95   = mean of returns at or beyond that percentile (strictly
+                 worse-or-equal than VaR by construction)
+      - max drawdown from compounded portfolio value paths
+    """
+    strategy = params.get("strategy", "balanced")
+    initial_value = float(params.get("initial_value", 100000.0))
+    years = max(1, int(params.get("years", 10)))
+    seed = int(params.get("seed", 42))
+
+    from finance.risk import RiskAnalyzer
+
+    # Simulate a distribution of annual strategy returns via Monte Carlo paths.
+    forecast = RiskAnalyzer.monte_carlo_forecast(
+        initial_value=initial_value, strategy=strategy,
+        years=years, paths=1000, seed=seed,
+    )
+
+    # Reconstruct the annual return distribution: run the same generator and
+    # collect per-year strategy returns across paths.
+    import random as _random
+    from finance.portfolio import STRATEGIES
+    from finance.market import MarketSimulator
+    strat = STRATEGIES.get(strategy, STRATEGIES["balanced"])
+    volatility = strat["volatility"]
+    expected = strat["expected_return"]
+    market_sim = MarketSimulator(seed=seed)
+    rng = _random.Random(seed)
+
+    annual_returns = []
+    path_values = []
+    for _ in range(1000):
+        value = initial_value
+        peak = initial_value
+        max_dd = 0.0
+        for i in range(years):
+            market_return = market_sim.get_year_return(2026 + i)
+            r = market_return * (expected / 0.10) + rng.gauss(0, volatility * 0.3)
+            annual_returns.append(r)
+            value = max(0.0, value * (1 + r))
+            peak = max(peak, value)
+            if peak > 0:
+                max_dd = max(max_dd, (peak - value) / peak)
+        path_values.append((value, max_dd))
+
+    var_95 = RiskAnalyzer.compute_var(annual_returns, confidence=0.95)
+    es_95 = RiskAnalyzer.expected_shortfall(annual_returns, confidence=0.95)
+    worst_dd = max(dd for _, dd in path_values)
+    worst_scenario_loss = initial_value * abs(
+        min(s["portfolio_shock"] for s in
+            RiskAnalyzer.stress_test(initial_value, strategy)["scenarios"]))
+
+    result = {
+        "strategy": strategy,
+        "strategy_name": strat["name"],
+        "initial_value": initial_value,
+        "years": years,
+        "seed": seed,
+        # Loss convention: negative numbers are losses.
+        "var_95": round(var_95, 4),
+        "expected_shortfall_95": round(es_95, 4),
+        "max_drawdown": round(worst_dd, 4),
+        "stress_worst_loss_pct": round(worst_scenario_loss / initial_value, 4),
+        "prob_of_loss_10y": forecast["prob_of_loss"],
+        "forecast_percentiles": forecast["percentiles"],
+        "backend": "python",
     }
+    workspace = _workspace(params.get("workspace"))
+    cmb_store(workspace, f"risk_{strategy}_{seed}", result, repo="alphazero")
+    return {"status": "success", "result": result}
 
 
 async def handle_rust_forecast(params: dict) -> dict:

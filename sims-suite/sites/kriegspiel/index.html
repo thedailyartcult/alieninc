@@ -168,6 +168,35 @@
     .provenance-panel__row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 4px; }
     .provenance-panel__row span { font-family: 'SF Mono', Consolas, monospace; font-size: 12px; }
 
+    /* CAMPAIGN OPERATIONS */
+    .campaign-section { max-width: var(--container-max); margin: 56px auto 0; padding: 0 24px; }
+    .campaign-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 8px; }
+    .campaign-header h2 { font-size: 28px; font-weight: 500; letter-spacing: -0.02em; }
+    .campaign-header p { font-size: 15px; color: var(--text-muted); }
+    .front-track { position: relative; height: 40px; background: linear-gradient(90deg, #dc3545 0%, #f6c9cb 48%, #c9ddf6 52%, #1a73e8 100%); border-radius: 20px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.12); }
+    .front-marker { position: absolute; top: -8px; width: 4px; height: 56px; background: #202124; border-radius: 2px; transform: translateX(-50%); transition: left 0.9s ease; box-shadow: 0 0 0 2px #fff; }
+    .front-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+    .front-value { text-align: center; font-size: 14px; font-weight: 600; margin-top: 10px; color: var(--text-body); }
+    .eng-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 16px; }
+    .eng-chip { min-width: 34px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #fff; cursor: default; }
+    .eng-chip--r { background: #dc3545; } .eng-chip--b { background: #1a73e8; } .eng-chip--s { background: #5f6368; }
+    .campaign-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 24px; }
+
+    /* RESEARCH FINDINGS */
+    .findings-panel { max-width: var(--container-max); margin: 32px auto 0; padding: 0 24px; }
+    .findings-card { background: var(--bg-alt); border-radius: var(--radius-media); padding: 28px; }
+    .findings-card h3 { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+    .findings-card__sub { font-size: 14px; color: var(--text-muted); margin-bottom: 18px; }
+    .finding-item { display: flex; gap: 12px; padding: 14px 16px; background: #fff; border-radius: 12px; margin-bottom: 10px; align-items: flex-start; }
+    .finding-badge { flex-shrink: 0; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+    .finding-badge--matchup { background: #e8f0fe; color: #174ea6; }
+    .finding-badge--tempo { background: #fef7e0; color: #b06000; }
+    .finding-text { font-size: 15px; color: var(--text-body); line-height: 1.5; }
+    .matchup-table { width: 100%; border-collapse: collapse; margin-top: 18px; font-size: 14px; }
+    .matchup-table th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); padding: 8px 10px; border-bottom: 1px solid var(--border-color); }
+    .matchup-table td { padding: 8px 10px; border-bottom: 1px solid var(--border-color); color: var(--text-body); font-variant-numeric: tabular-nums; }
+    .empty-note { font-size: 14px; color: var(--text-muted); padding: 12px 0; }
+
     /* FOOTER */
     .site-footer { border-top: 1px solid var(--border-color); margin-top: 64px; padding: 32px 24px; text-align: center; }
     .site-footer p { font-size: 14px; color: var(--text-muted); }
@@ -226,6 +255,44 @@
         <span class="llm-status-pill__dot"></span>
         <span id="llmStatusText">checking…</span>
       </span>
+    </div>
+  </div>
+
+  <!-- CAMPAIGN CONTROLS -->
+  <div class="control-panel" style="margin-top:16px;">
+    <div class="control-group">
+      <label for="campRedDoctrine">Red doctrine (attacker)</label>
+      <select id="campRedDoctrine">
+        <option>maneuver</option><option selected>shock</option><option>attrition</option>
+        <option>defensive</option><option>guerrilla</option><option>logistical</option><option>information</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="campBlueDoctrine">Blue doctrine (defender)</label>
+      <select id="campBlueDoctrine">
+        <option>maneuver</option><option>shock</option><option>attrition</option>
+        <option selected>defensive</option><option>guerrilla</option><option>logistical</option><option>information</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="campCampaigns">Campaigns</label>
+      <input type="number" id="campCampaigns" value="30" min="1" max="500">
+    </div>
+    <div class="control-group">
+      <label for="campRedReinf">Red replacements / interlude</label>
+      <input type="number" id="campRedReinf" value="0.30" step="0.05" min="0" max="1">
+    </div>
+    <div class="control-group">
+      <label for="campBlueReinf">Blue replacements / interlude</label>
+      <input type="number" id="campBlueReinf" value="0.30" step="0.05" min="0" max="1">
+    </div>
+    <div class="control-group">
+      <label for="campSeed">Seed</label>
+      <input type="number" id="campSeed" value="99">
+    </div>
+    <div class="control-group">
+      <label>&nbsp;</label>
+      <button class="btn-pill btn-primary" id="campRunBtn">Run Campaigns</button>
     </div>
   </div>
 
@@ -294,6 +361,38 @@
   <div class="events-list" id="eventsList" style="display:none;">
     <h3>Key Events Across Scenarios</h3>
     <div id="eventsContainer"></div>
+  </div>
+
+  <!-- CAMPAIGN OPERATIONS -->
+  <div class="campaign-section" id="campaignSection">
+    <div class="campaign-header">
+      <h2>Campaign Operations</h2>
+      <p>Multi-engagement operations — attrition carries between fights, replacements arrive each interlude, the front moves with every outcome.</p>
+    </div>
+
+    <div class="status-line" id="campStatusLine" style="text-align:left; padding:0 0 12px;">Configure a matchup and run campaigns.</div>
+
+    <div class="front-track" id="frontTrack" style="display:none;">
+      <div class="front-marker" id="frontMarker" style="left:50%"></div>
+    </div>
+    <div class="front-labels" id="frontLabels" style="display:none;">
+      <span>◀ Red homeland</span><span>Start line (50%)</span><span>Blue homeland ▶</span>
+    </div>
+    <div class="front-value" id="frontValue"></div>
+
+    <div class="eng-strip" id="engStrip"></div>
+
+    <div class="campaign-grid" id="campGrid" style="display:none;"></div>
+  </div>
+
+  <!-- LEARNED FINDINGS -->
+  <div class="findings-panel" id="findingsPanel">
+    <div class="findings-card">
+      <h3>Learned Findings — Operational Research</h3>
+      <div class="findings-card__sub" id="findingsSub">Distilled by the engine from its own campaign observations. Sustainment context is tracked separately because reinforcement asymmetry is a first-order operational variable.</div>
+      <div id="findingsContainer"><div class="empty-note">Loading findings…</div></div>
+      <div id="matchupTableWrap"></div>
+    </div>
   </div>
 
   <footer class="site-footer">
@@ -468,6 +567,135 @@
       el.style.width = Math.max(pct, 2) + '%';
       el.textContent = count + ' (' + pct.toFixed(1) + '%)';
     }
+
+    // --- Campaign operations (phase 4-5 UI) ---
+    document.getElementById('campRunBtn').addEventListener('click', function () {
+      var btn = this;
+      var status = document.getElementById('campStatusLine');
+      var body = JSON.stringify({
+        battlefield: document.getElementById('battlefieldSelect').value === 'random'
+          ? 'random' : document.getElementById('battlefieldSelect').value,
+        red_doctrine: document.getElementById('campRedDoctrine').value,
+        blue_doctrine: document.getElementById('campBlueDoctrine').value,
+        campaigns: parseInt(document.getElementById('campCampaigns').value, 10) || 30,
+        red_reinforcement: parseFloat(document.getElementById('campRedReinf').value),
+        blue_reinforcement: parseFloat(document.getElementById('campBlueReinf').value),
+        seed: parseInt(document.getElementById('campSeed').value, 10) || 99,
+      });
+      btn.disabled = true;
+      status.innerHTML = '<span class="spinner"></span>Running campaigns…';
+      fetch('/api/kriegspiel/campaign/simulate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          btn.disabled = false;
+          if (!d || d.error) { status.textContent = d && d.error ? d.error : 'Campaign request failed.'; return; }
+          status.textContent =
+            d.campaigns + ' campaigns — ' + d.matchup + ', avg ' + d.avg_engagements + ' engagements.';
+          renderCampaign(d);
+          refreshFindings();   // every batch feeds the tracker; refresh lessons
+        })
+        .catch(function () { btn.disabled = false; status.textContent = 'Campaign request failed.'; });
+    });
+
+    function renderCampaign(d) {
+      var track = document.getElementById('frontTrack');
+      var labels = document.getElementById('frontLabels');
+      track.style.display = ''; labels.style.display = '';
+      var front = d.sample_campaign.front_final_pct;
+      // Front % is measured from RED's homeland edge.
+      document.getElementById('frontMarker').style.left = Math.max(0, Math.min(100, front)) + '%';
+      var fv = document.getElementById('frontValue');
+      if (d.avg_front_final_pct > 52.5) {
+        fv.textContent = 'Front averaged ' + d.avg_front_final_pct.toFixed(0) + '% — RED advanced into blue territory';
+      } else if (d.avg_front_final_pct < 47.5) {
+        fv.textContent = 'Front averaged ' + d.avg_front_final_pct.toFixed(0) + '% — BLUE held and pushed back';
+      } else {
+        fv.textContent = 'Front averaged ' + d.avg_front_final_pct.toFixed(0) + '% — near the start line';
+      }
+
+      // Engagement strip from the sample campaign.
+      var strip = document.getElementById('engStrip');
+      strip.innerHTML = '';
+      var sample = d.sample_campaign.engagements || [];
+      for (var i = 0; i < sample.length; i++) {
+        var e = sample[i];
+        var chip = document.createElement('span');
+        chip.className = 'eng-chip eng-chip--' +
+          (e.winner === 'red' ? 'r' : e.winner === 'blue' ? 'b' : 's');
+        chip.textContent = '#' + (i + 1);
+        chip.title = 'Engagement ' + (i + 1) + ': ' + e.winner +
+          ' · casualties r' + e.red_casualties_pct + '% / b' + e.blue_casualties_pct + '%' +
+          (e.withdrawn_by ? ' · withdrew: ' + e.withdrawn_by : '') +
+          (e.breakthrough_by ? ' · breakthrough: ' + e.breakthrough_by : '') +
+          '\n' + (e.key_event || '');
+        strip.appendChild(chip);
+      }
+
+      var grid = document.getElementById('campGrid');
+      grid.style.display = '';
+      grid.innerHTML =
+        card('Red campaigns won', d.campaign_wins.red, 'of ' + d.campaigns)
+      + card('Blue campaigns won', d.campaign_wins.blue, 'of ' + d.campaigns)
+      + card('Stalemates', d.campaign_wins.stalemate, 'no decision')
+      + card('Avg front line', d.avg_front_final_pct + '%', 'from red edge')
+      + card('Red force remaining', d.avg_red_remaining_pct + '%', 'after all engagements')
+      + card('Blue force remaining', d.avg_blue_remaining_pct + '%',
+            d.collapses.blue ? (d.collapses.blue + ' operational collapses') : 'survived');
+    }
+
+    function card(label, value, note) {
+      return '<div class="result-card">'
+        + '<div class="result-card__label">' + label + '</div>'
+        + '<div class="result-card__value">' + value + '</div>'
+        + '<div class="result-card__note">' + note + '</div></div>';
+    }
+
+    // --- Learned findings panel ---
+    function refreshFindings() {
+      fetch('/api/kriegspiel/research/campaign-findings')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d) return;
+          var box = document.getElementById('findingsContainer');
+          var fs = d.findings || [];
+          if (!fs.length) {
+            box.innerHTML = '<div class="empty-note">No distilled findings yet — run campaign batches (20+ per sustainment context) to let the tracker distill operational lessons.</div>';
+          } else {
+            box.innerHTML = '';
+            fs.forEach(function (f) {
+              var div = document.createElement('div');
+              div.className = 'finding-item';
+              var badge = f.kind === 'tempo_effect' ? 'tempo effect' : 'matchup';
+              div.innerHTML = '<span class="finding-badge finding-badge--'
+                + (f.kind === 'tempo_effect' ? 'tempo' : 'matchup') + '">'
+                + badge + '</span><span class="finding-text">'
+                + escapeHtml(f.text) + '</span>';
+              box.appendChild(div);
+            });
+          }
+          var wrap = document.getElementById('matchupTableWrap');
+          var cells = (d.table || {}).cells || [];
+          if (!cells.length) { wrap.innerHTML = ''; return; }
+          var rows = cells.slice(0, 12).map(function (c) {
+            return '<tr><td>' + escapeHtml(c.red_doctrine) + '</td><td>'
+              + escapeHtml(c.blue_doctrine) + '</td><td>'
+              + c.sustainment.replace('_', ' ') + '</td><td>' + c.total
+              + '</td><td>' + (c.red_win_share * 100).toFixed(0) + '%</td><td>'
+              + c.avg_front_pct + '%</td><td>' + c.avg_engagements + '</td></tr>';
+          }).join('');
+          wrap.innerHTML =
+            '<table class="matchup-table"><thead><tr><th>Red</th><th>Blue</th>'
+            + '<th>Sustainment</th><th>Campaigns</th><th>Red win share</th>'
+            + '<th>Avg front</th><th>Avg engagements</th></tr></thead><tbody>'
+            + rows + '</tbody></table>';
+          var sub = document.getElementById('findingsSub');
+          sub.textContent = 'Distilled from ' + ((d.table || {}).observed_total || 0)
+            + ' observed campaigns. Sustainment context is tracked separately because reinforcement asymmetry is a first-order operational variable.';
+        })
+        .catch(function () {});
+    }
+    refreshFindings();
 
     function renderOnMap(bf) {
       if (!bf || !bf.bounds) return;

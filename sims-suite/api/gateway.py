@@ -844,6 +844,11 @@ class SimTodayResponse(BaseModel):
     by_engine_cumulative: dict[str, int]
     window_seconds: int
     as_of: float
+    # Counting unit, made explicit after the pentest flagged the number as
+    # misleading: alpha_zero's background loop reports DECISION EVENTS
+    # (~246 per universe-life), not universe runs. 743M/day is real
+    # event throughput — but consumers must know it is not "simulations".
+    unit: str = "mixed (alpha_zero counts decision events; other engines count scenario runs)"
 
 
 class CoverageResponse(BaseModel):
@@ -930,6 +935,7 @@ async def simulations_today() -> SimTodayResponse:
         by_engine_cumulative=by_engine_cum,
         window_seconds=_WINDOW_S,
         as_of=time.time(),
+        unit="mixed (alpha_zero counts decision events; other engines count scenario runs)",
     )
 
 
@@ -1025,6 +1031,110 @@ async def ks_run(body: dict[str, Any]) -> dict[str, Any]:
 
     result = await asyncio.to_thread(_run)
     return result
+
+
+@app.post("/api/kriegspiel/campaign/simulate")
+async def ks_campaign_simulate(body: dict[str, Any]) -> dict[str, Any]:
+    """Run multi-engagement campaign simulations (operational level).
+
+    Body: { battlefield?, red_doctrine?, blue_doctrine?, campaigns?,
+            engagements?, engagement_hours?, red_reinforcement?,
+            blue_reinforcement?, seed? }
+    Returns aggregated campaign outcomes: win shares, front movement,
+    remaining-force percentages, collapse counts.
+    """
+    if not _ks_available:
+        return {"error": "Kriegspiel engine not available"}
+
+    from engines.kriegspiel.campaign import run_campaign
+    from engines.kriegspiel.models import BATTLEFIELDS, Doctrine
+
+    bf_name = body.get("battlefield", "random")
+    n_campaigns = max(1, min(int(body.get("campaigns", 50)), 500))
+    n_engagements = max(1, min(int(body.get("engagements", 8)), 20))
+    eng_hours = max(6, min(int(body.get("engagement_hours", 24)), 120))
+    r_r = float(body.get("red_reinforcement", 0.30))
+    b_r = float(body.get("blue_reinforcement", 0.30))
+    seed = body.get("seed", None)
+    try:
+        red_doc = Doctrine(body.get("red_doctrine", "maneuver"))
+    except ValueError:
+        red_doc = Doctrine.MANEUVER
+    try:
+        blue_doc = Doctrine(body.get("blue_doctrine", "defensive"))
+    except ValueError:
+        blue_doc = Doctrine.DEFENSIVE
+
+    bf = None
+    if bf_name != "random":
+        for cand in BATTLEFIELDS:
+            if cand.name == bf_name:
+                bf = cand
+                break
+
+    def _run() -> dict[str, Any]:
+        import statistics
+        from engines.kriegspiel.learning import get_campaign_tracker
+        tracker = get_campaign_tracker()
+        reports = [
+            run_campaign(red_doctrine=red_doc, blue_doctrine=blue_doc,
+                         battlefield=bf, n_engagements=n_engagements,
+                         engagement_duration_hours=eng_hours,
+                         red_reinforcement=r_r, blue_reinforcement=b_r,
+                         seed=None if seed is None else int(seed) + i)
+            for i in range(n_campaigns)
+        ]
+        dicts = [r.to_dict() for r in reports]
+        wins = {"red": 0, "blue": 0, "stalemate": 0}
+        for r in reports:
+            wins[r.campaign_winner] += 1
+            tracker.observe_report(r, r_r, b_r)
+        global _ks_sim_count
+        _ks_sim_count += sum(d["engagements_fought"] for d in dicts)
+        _add_count("kriegspiel", sum(d["engagements_fought"] for d in dicts))
+        return {
+            "campaigns": n_campaigns,
+            "matchup": f"{red_doc.value} vs {blue_doc.value}",
+            "reinforcement": {"red": r_r, "blue": b_r},
+            "campaign_wins": wins,
+            "avg_engagements": round(statistics.mean(
+                d["engagements_fought"] for d in dicts), 2),
+            "avg_front_final_pct": round(statistics.mean(
+                d["front_final_pct"] for d in dicts), 1),
+            "avg_red_remaining_pct": round(statistics.mean(
+                d["red_remaining_pct"] for d in dicts), 1),
+            "avg_blue_remaining_pct": round(statistics.mean(
+                d["blue_remaining_pct"] for d in dicts), 1),
+            "collapses": {
+                "red": sum(1 for d in dicts if d["collapsed"] == "red"),
+                "blue": sum(1 for d in dicts if d["collapsed"] == "blue"),
+            },
+            "sample_campaign": dicts[0],
+        }
+
+    return await asyncio.to_thread(_run)
+
+
+@app.get("/api/kriegspiel/research/campaign-table")
+async def ks_campaign_table() -> dict[str, Any]:
+    """Matchup x sustainment summary of accumulated campaign outcomes."""
+    if not _ks_available:
+        return {"error": "Kriegspiel engine not available"}
+    from engines.kriegspiel.learning import get_campaign_tracker
+    return get_campaign_tracker().table()
+
+
+@app.get("/api/kriegspiel/research/campaign-findings")
+async def ks_campaign_findings() -> dict[str, Any]:
+    """Distilled operational-tempo lessons (matchup strength + tempo effects)."""
+    if not _ks_available:
+        return {"error": "Kriegspiel engine not available"}
+    from engines.kriegspiel.learning import get_campaign_tracker
+    tracker = get_campaign_tracker()
+    return {
+        "findings": tracker.findings(),
+        "table": tracker.table(),
+    }
 
 
 # ---------------------------------------------------------------------------

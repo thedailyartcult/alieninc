@@ -22,11 +22,13 @@ import argparse
 import json
 import logging
 import os
+import re
 import sys
 import urllib.parse
+from datetime import datetime, timezone
 from pathlib import Path
 
-from .config import Settings, CATEGORY_KEYS, category_key
+from .config import Settings, CATEGORY_KEYS, category_key, classify_article
 from .engine import Engine
 from .models import CatalogEntry, SourceRef, now_iso
 from .parsers import janes_import_csv
@@ -37,6 +39,8 @@ from .parsers_modernfirearms import parse_modernfirearms_listing, MODERNFIREARMS
 from .parsers_milrem import MILREM_PRODUCT_URLS
 from .parsers_fas import FAS_INDEX_URLS, parse_fas_listing
 from .parsers_wikipedia import WIKIPEDIA_LIST_URLS, parse_wikipedia_list
+from .parsers_warsanctions import parse_warsanctions_uav_listing
+from .parsers_armyguide import parse_armyguide_listing
 from .picklist import CurationRules, curate, write_outputs
 from .patent_feed import feed_patents, feed_from_file
 
@@ -96,7 +100,8 @@ def cmd_discover(args, s: Settings):
 def cmd_crawl(args, s: Settings):
     eng = Engine(s)
     eng.seed_from_catalog()
-    eng.crawl(_categories(args), limit=args.limit)
+    domains = [d.strip() for d in args.domains.split(",")] if getattr(args, "domains", None) else None
+    eng.crawl(_categories(args), limit=args.limit, domains=domains)
     print(json.dumps(eng.status(), indent=2))
     eng.close()
 
@@ -178,6 +183,356 @@ def cmd_discover_sources(args, s: Settings):
         "total_enqueued": sum(summary.values()),
         "status": eng.status(),
         "next": "python -m scan crawl --categories uavs,naval-vessels,armored-vehicles-and-equipment,automotive-vehicles,air-launched-munitions,ew-assets",
+    }, indent=2))
+    eng.close()
+
+
+def cmd_discover_ua(args, s: Settings):
+    """Enumerate the two Ukraine-theater sources (added 2026-08):
+    war-sanctions.gur.gov.ua — GUR portal, UAV catalog via /en/uav pagination;
+    en.defence-ua.com — Defense Express weapon_and_tech articles via monthly
+    post-YYYY-MM.xml sitemaps. robots.txt-gated, polite, cached. Run once, then
+    `crawl`. war-sanctions is crawled at a fixed 3s/host delay (net.py): it is a
+    government intelligence portal operated during an active war."""
+    eng = Engine(s)
+    eng.seed_from_catalog()
+    summary: dict[str, int] = {}
+
+    # --- war-sanctions.gur.gov.ua: paginated UAV catalog (/en/uav?page=N) ---
+    n_ws = 0
+    seen_ids: set[str] = set()
+    empty_pages = 0
+    for page in range(1, args.max_ws_pages + 1):
+        res = eng._fetcher("war-sanctions.gur.gov.ua").fetch(
+            f"https://war-sanctions.gur.gov.ua/en/uav?page={page}&per-page=12",
+            store=eng.store, use_cache=True)
+        if res.status != 200 or not res.html:
+            break
+        urls = parse_warsanctions_uav_listing(res.html)
+        fresh = [u for u in urls
+                 if u.rstrip("/").rsplit("/", 1)[-1] not in seen_ids]
+        for u in urls:
+            seen_ids.add(u.rstrip("/").rsplit("/", 1)[-1])
+        for u in fresh:
+            n_ws += eng.store.enqueue(
+                u, "war-sanctions.gur.gov.ua", category="UAVs", kind="product")
+        if not fresh:
+            empty_pages += 1
+            if empty_pages >= 2 and seen_ids:
+                break
+    summary["war-sanctions.gur.gov.ua"] = n_ws
+
+    # --- en.defence-ua.com: articles from monthly post-YYYY-MM.xml sitemaps.
+    # NOTE: the EN sitemap index omits the post-* files, but they exist mirrored
+    # under https://en.defence-ua.com/sitemap/post-YYYY-MM.xml — we walk the
+    # most recent N months directly (robots.txt does not disallow /sitemap/).
+    n_de = 0
+    loc_re = re.compile(
+        r"<loc>(https://en\.defence-ua\.com/(?:weapon_and_tech|analysis)/[^<]+\.html)</loc>")
+    now = datetime.now(timezone.utc)
+    months = []
+    for back in range(args.de_months):
+        y, m = now.year, now.month - back
+        while m <= 0:
+            m += 12
+            y -= 1
+        months.append(f"{y}-{m:02d}")
+    for ym in months:
+        res = eng._fetcher("en.defence-ua.com").fetch(
+            f"https://en.defence-ua.com/sitemap/post-{ym}.xml",
+            store=eng.store, use_cache=True)
+        if res.status != 200 or not res.html:
+            continue
+        for m in loc_re.finditer(res.html):
+            n_de += eng.store.enqueue(m.group(1), "en.defence-ua.com", kind="article")
+    summary["en.defence-ua.com"] = n_de
+
+    print(json.dumps({
+        "enqueued_by_source": summary,
+        "total_enqueued": sum(summary.values()),
+        "status": eng.status(),
+        "next": ("python -m scan crawl --categories uavs "
+                 "(war-sanctions entries are pre-categorized as UAVs); "
+                 "defence-ua articles self-classify at parse time"),
+    }, indent=2))
+    eng.close()
+
+
+GS_HUB_PAGES = {"ammo", "dumb", "intro", "lasers", "missile", "smart"}
+
+
+def cmd_discover_more(args, s: Settings):
+    """Enumerate the four round-2 sources (added 2026-08-22):
+    baykartech.com (EN sitemap /en/uav/ product pages), army-guide.com
+    (/eng/products.php pagination -> productNNNN.html), www.globalsecurity.org
+    (BFS over /military/systems/ hub pages only — leaves enqueued unfetched),
+    www.hisutton.com (homepage article links). robots.txt-gated, polite,
+    cached. Run once, then `crawl`."""
+    eng = Engine(s)
+    eng.seed_from_catalog()
+    summary: dict[str, int] = {}
+
+    # --- baykartech.com: EN sitemap -> /en/uav/<slug>/ product pages ---
+    n_bk = 0
+    res = eng._fetcher("baykartech.com").fetch(
+        "https://baykartech.com/en/sitemap.xml", store=eng.store, use_cache=True)
+    if res.status == 200 and res.html:
+        for m in re.finditer(r"<loc>(https?://baykartech\.com/en/uav/[^<]+)</loc>", res.html):
+            n_bk += eng.store.enqueue(m.group(1), "baykartech.com",
+                                      category="UAVs", kind="product")
+    summary["baykartech.com"] = n_bk
+
+    # --- army-guide.com: products.php pagination -> detail URLs ---
+    n_ag = 0
+    seen_products: set[str] = set()
+    for p in range(args.ag_pages):
+        lurl = (f"https://army-guide.com/eng/products.php?pageNum={p}"
+                f"&p1=&p2=&p3=1&p4=&p5=&p6=")
+        res = eng._fetcher("army-guide.com").fetch(lurl, store=eng.store,
+                                                   use_cache=True)
+        if res.status != 200 or not res.html:
+            continue
+        fresh = [u for u in parse_armyguide_listing(res.html) if u not in seen_products]
+        for u in fresh:
+            seen_products.add(u)
+            n_ag += eng.store.enqueue(u, "army-guide.com", kind="product")
+    summary["army-guide.com"] = n_ag
+
+    # --- globalsecurity.org: BFS over hub/index pages only; leaves are
+    #     enqueued WITHOUT being fetched (politeness + bounded discovery).
+    n_gs = 0
+    seeds = [
+        "https://www.globalsecurity.org/military/systems/munitions/intro.htm",
+        "https://www.globalsecurity.org/military/systems/munitions/ammo.htm",
+        "https://www.globalsecurity.org/military/systems/munitions/dumb.htm",
+        "https://www.globalsecurity.org/military/systems/munitions/lasers.htm",
+        "https://www.globalsecurity.org/military/systems/munitions/missile.htm",
+        "https://www.globalsecurity.org/military/systems/munitions/smart.htm",
+        "https://www.globalsecurity.org/military/systems/aircraft/index.html",
+        "https://www.globalsecurity.org/military/systems/ground/index.html",
+        "https://www.globalsecurity.org/military/systems/aircraft/systems/index.html",
+    ]
+    link_re = re.compile(r'href="([^"#?]+?\.(?:htm|html))"', re.I)
+    visited: set[str] = set()
+    queue = list(seeds)
+    while queue and len(visited) < args.gs_max_hubs:
+        page_url = queue.pop(0)
+        norm = page_url.split("#")[0]
+        if norm in visited:
+            continue
+        visited.add(norm)
+        res = eng._fetcher("www.globalsecurity.org").fetch(norm, store=eng.store,
+                                                           use_cache=True)
+        if res.status != 200 or not res.html:
+            continue
+        base = norm.rsplit("/", 1)[0]
+        for m in link_re.finditer(res.html):
+            href = m.group(1).split("#")[0]
+            if href.startswith(("http://", "https://")):
+                if "globalsecurity.org" not in href or "/military/systems/" not in href:
+                    continue
+                child = href
+                path = "/" + child.split("globalsecurity.org/", 1)[1]
+            elif href.startswith("/"):
+                child = f"https://www.globalsecurity.org{href}"
+                path = href
+            else:
+                path = f"{base}/{href}"
+                child = f"https://www.globalsecurity.org{path}"
+            is_hub = path.endswith("/index.html") or \
+                any(path.endswith(f"/{hub}.htm") for hub in GS_HUB_PAGES)
+            if is_hub:
+                if child not in visited and len(visited) < args.gs_max_hubs:
+                    queue.append(child)
+                continue
+            n_gs += eng.store.enqueue(child, "www.globalsecurity.org", kind="product")
+    summary["www.globalsecurity.org"] = n_gs
+
+    # --- hisutton.com: homepage article links (flat *.html) ---
+    n_hs = 0
+    res = eng._fetcher("www.hisutton.com").fetch(
+        "https://www.hisutton.com/", store=eng.store, use_cache=True)
+    if res.status == 200 and res.html:
+        for m in re.finditer(r'href="(/[^"/]+?\.html)"', res.html):
+            url2 = f"https://www.hisutton.com{urllib.parse.quote(m.group(1))}"
+            n_hs += eng.store.enqueue(url2, "www.hisutton.com", kind="product")
+    summary["www.hisutton.com"] = n_hs
+
+    print(json.dumps({
+        "enqueued_by_source": summary,
+        "total_enqueued": sum(summary.values()),
+        "status": eng.status(),
+        "next": ("python -m scan crawl (baykar pre-categorized UAVs; army-guide "
+                 "self-categorizes; globalsecurity/hisutton classify at parse time)"),
+    }, indent=2))
+    eng.close()
+
+
+def cmd_discover_seaforces(args, s: Settings):
+    """Enumerate seaforces.org via its flat sitemap.txt (robots allow-all):
+    enqueue /wpnsys/, /usnships/ and /marint/ pages. /usnair/, /usmcair/
+    (squadron org pages) and /spcrep/ are deliberately skipped. Run once,
+    then `crawl`."""
+    eng = Engine(s)
+    eng.seed_from_catalog()
+    res = eng._fetcher("www.seaforces.org").fetch(
+        "https://www.seaforces.org/sitemap.txt", store=eng.store, use_cache=True)
+    n = 0
+    if res.status == 200 and res.html:
+        for line in res.html.splitlines():
+            u = line.strip()
+            if not u or not u.startswith("http"):
+                continue
+            path = urllib.parse.urlsplit(u).path.lower()
+            if any(path.startswith(p) for p in ("/wpnsys/", "/usnships/", "/marint/")) \
+                    and path.endswith(".htm"):
+                n += eng.store.enqueue(u, "www.seaforces.org", kind="product")
+    print(json.dumps({
+        "enqueued_by_source": {"www.seaforces.org": n},
+        "status": eng.status(),
+        "next": "python -m scan crawl",
+    }, indent=2))
+    eng.close()
+
+
+def cmd_recategorize(args, s: Settings):
+    """Catalog quality pass (no inflation):
+    1. Uncategorized entries -> classify_article on title+description+specs.
+    2. weaponsystems.net entries -> re-run the corrected platform classifier
+       (ground vehicles now checked before naval; 'amphibious' APCs no longer
+       misfiled as Naval vessels).
+    3. Report near-duplicate designation groups (punctuation variants) without
+       merging them automatically.
+    Safe to run while crawling (SQLite WAL), best run after."""
+    import re as _re
+    eng = Engine(s)
+    changes: dict[str, int] = {"recategorized_uncategorized": 0,
+                               "reclassified_weaponsystems": 0}
+    from .parsers_weaponsystems import _classify_weaponsystem
+    for row in eng.store.raw_entries():
+        d = row["data"]
+        text = " ".join([row["designation"], d.get("description", ""),
+                         *d.get("specs", [])]).lower()
+        cat = row["category"].strip()
+        new_cat = ""
+        if not cat or cat == "Uncategorized":
+            key = classify_article(text)
+            if key:
+                new_cat = CATEGORY_KEYS[key]
+        elif "weaponsystems.net" in (d.get("sources") or [{}])[0].get("url", ""):
+            fixed = _classify_weaponsystem(row["designation"],
+                                           d.get("description", ""),
+                                           d.get("specs", []))
+            if fixed and fixed != cat and fixed != "Aircraft":
+                # 'Aircraft' was the old blanket fallback — only accept it if
+                # the entry genuinely looks like one.
+                if fixed != "Aircraft" or any(
+                        k in text for k in ("helicopter", "aircraft", "plane",
+                                            "rotor", "wing", "airframe")):
+                    new_cat = fixed
+            elif cat == "Aircraft" and not any(
+                    k in text for k in ("helicopter", "aircraft", "plane",
+                                        "rotorcraft", "airframe", "fuselage",
+                                        "wing ", "jet")) \
+                    and _re.search(r"\b(rifle|pistol|carbine|sniper|handgun|"
+                                   r"revolver|submachine gun)\b", text):
+                # Old blanket-fallback victims: firearms misfiled as Aircraft.
+                new_cat = "Small arms"
+        if new_cat and new_cat != cat:
+            eng.store.set_category(row["fingerprint"], new_cat)
+            changes["recategorized_uncategorized" if (
+                not cat or cat == "Uncategorized")
+                else "reclassified_weaponsystems"] += 1
+
+    # 3. near-duplicate report (normalized keys, no auto-merge)
+    groups: dict[str, list[str]] = {}
+    for row in eng.store.raw_entries():
+        k = " ".join(_re.sub(r"[^a-z0-9]+", " ", row["designation"].lower()).split())
+        src = (row["data"].get("sources") or [{}])[0].get("url", "?")
+        groups.setdefault(k, []).append(
+            f"{row['designation']} [{row['category']}] {src.split('/')[2] if '://' in src else src}")
+    dup_groups = [v for v in groups.values() if len(v) > 1]
+
+    print(json.dumps({
+        "changes": changes,
+        "near_duplicate_groups": len(dup_groups),
+        "examples": dup_groups[:15],
+        "entries": eng.store.entry_count(),
+        "next": ("python -m scan dedupe-keys  (after crawls finish) then "
+                 "python -m scan export"),
+    }, indent=2))
+    eng.close()
+
+
+def cmd_dedupe_keys(args, s: Settings):
+    """Rebuild normalized designation keys and merge punctuation-variant
+    duplicates ('LAV-25' vs 'LAV 25'). Run ONLY when no crawl is writing."""
+    eng = Engine(s)
+    merged = eng.store.rebuild_designation_keys()
+    print(json.dumps({
+        "duplicates_merged": merged,
+        "entries": eng.store.entry_count(),
+        "next": "python -m scan export",
+    }, indent=2))
+    eng.close()
+
+
+def cmd_reenrich_weaponsystems(args, s: Settings):
+    """Re-parse every weaponsystems.net entry from CACHED HTML with the current
+    parser (handles the site's redesigned generalFactsTable* markup) and update
+    specs + category. No network traffic — cache-only by construction."""
+    from .parsers_weaponsystems import parse_weaponsystem
+    eng = Engine(s)
+    updated, spec_upgrades, skipped = 0, 0, 0
+    for row in eng.store.raw_entries():
+        srcs = [x.get("url", "") for x in row["data"].get("sources", [])]
+        ws = [u for u in srcs if "weaponsystems.net" in u]
+        if not ws:
+            continue
+        html = eng.store.get_html(ws[0])
+        if not html:
+            skipped += 1
+            continue
+        e = parse_weaponsystem(ws[0], html, "")
+        if not e:
+            skipped += 1
+            continue
+        d = row["data"]
+        new_specs, new_cat = e.specs, (e.category or "").strip()
+        old_cat = row["category"].strip()
+        changed = False
+        if len(new_specs) > len(d.get("specs", [])):
+            d["specs"] = new_specs
+            spec_upgrades += 1
+            changed = True
+        if new_cat and new_cat != "Aircraft" and new_cat != old_cat:
+            # 'Aircraft' accepted only with real aviation signal in the text
+            text = " ".join([e.designation, e.description, *new_specs]).lower()
+            if new_cat != "Aircraft" or any(
+                    k in text for k in ("helicopter", "aircraft", "plane",
+                                        "rotorcraft", "rotor", "airframe",
+                                        "fuselage", "sortie")):
+                d["category"] = new_cat
+                eng.store.set_category(row["fingerprint"], d["category"])
+                updated += 1
+                changed = True
+        if changed:
+            self_conn_update = (
+                "UPDATE entries SET data=? WHERE fingerprint=?")
+            eng.store._lock.acquire()
+            try:
+                eng.store._conn.execute(
+                    self_conn_update,
+                    (json.dumps(d, ensure_ascii=False), row["fingerprint"]))
+                eng.store._conn.commit()
+            finally:
+                eng.store._lock.release()
+    print(json.dumps({
+        "entries_reclassified": updated,
+        "spec_sets_upgraded": spec_upgrades,
+        "skipped_no_cache_or_unparseable": skipped,
+        "entries_total": eng.store.entry_count(),
+        "next": "python -m scan recategorize && python -m scan dedupe-keys && python -m scan export",
     }, indent=2))
     eng.close()
 
@@ -475,6 +830,42 @@ def main(argv=None):
                               "missilethreat.csis.org, modernfirearms.net and enqueue "
                               "their detail URLs")
     _add_common(dsp)
+    dsp = sub.add_parser("discover-ua",
+                         help="enumerate war-sanctions.gur.gov.ua UAV catalog and "
+                              "en.defence-ua.com weapon_and_tech articles, enqueue "
+                              "their detail URLs")
+    dsp.add_argument("--max-ws-pages", type=int, default=40,
+                     help="max war-sanctions /en/uav listing pages to walk")
+    dsp.add_argument("--de-months", type=int, default=12,
+                     help="how many most-recent defence-ua monthly sitemaps to pull")
+    _add_common(dsp)
+    msp = sub.add_parser("discover-more",
+                         help="enumerate baykartech.com, army-guide.com, "
+                              "globalsecurity.org and hisutton.com; enqueue their "
+                              "detail URLs")
+    msp.add_argument("--ag-pages", type=int, default=70,
+                     help="max army-guide products.php listing pages to walk")
+    msp.add_argument("--gs-max-hubs", type=int, default=60,
+                     help="max globalsecurity hub/index pages to fetch during BFS")
+    _add_common(msp)
+    sfp = sub.add_parser("discover-seaforces",
+                         help="enumerate seaforces.org wpnsys/usnships/marint "
+                              "sections from its flat sitemap.txt and enqueue them")
+    _add_common(sfp)
+    rcp = sub.add_parser("recategorize",
+                         help="quality pass: fill Uncategorized entries, repair "
+                              "weaponsystems.net platform misclassification, "
+                              "report near-duplicates")
+    _add_common(rcp)
+    dkp = sub.add_parser("dedupe-keys",
+                         help="rebuild normalized designation keys and merge "
+                              "punctuation-variant duplicates (run when no crawl "
+                              "is writing)")
+    _add_common(dkp)
+    rew = sub.add_parser("re-enrich-weaponsystems",
+                         help="re-parse weaponsystems.net entries from cached "
+                              "HTML with current parser (handles site redesign)")
+    _add_common(rew)
     wp = sub.add_parser("import-wikipedia",
                         help="parse Wikipedia 'List of military electronics' pages "
                              "(CC BY-SA 4.0) + enqueue EW system pages from "
@@ -509,6 +900,18 @@ def main(argv=None):
         cmd_re_enrich_military(args, s)
     elif args.cmd == "discover-sources":
         cmd_discover_sources(args, s)
+    elif args.cmd == "discover-ua":
+        cmd_discover_ua(args, s)
+    elif args.cmd == "discover-more":
+        cmd_discover_more(args, s)
+    elif args.cmd == "discover-seaforces":
+        cmd_discover_seaforces(args, s)
+    elif args.cmd == "recategorize":
+        cmd_recategorize(args, s)
+    elif args.cmd == "dedupe-keys":
+        cmd_dedupe_keys(args, s)
+    elif args.cmd == "re-enrich-weaponsystems":
+        cmd_reenrich_weaponsystems(args, s)
     elif args.cmd == "import-wikipedia":
         cmd_import_wikipedia(args, s)
     elif args.cmd == "curate":
@@ -521,6 +924,7 @@ def main(argv=None):
 
 def _add_common(sp):
     sp.add_argument("--categories", help="comma-separated keys or names, e.g. aircraft,uavs")
+    sp.add_argument("--domains", help="restrict crawl to these domains (comma-separated)")
     sp.add_argument("--limit", type=int, default=None, help="cap product pages this run")
     sp.add_argument("--delay", type=float, default=1.5, help="min seconds between requests/host")
     sp.add_argument("--workers", type=int, default=1, help="parallel hosts (politeness kept per host)")

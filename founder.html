@@ -382,18 +382,16 @@
 
     /* Premium Interactive Founder Card & Word transform */
     .founder-card {
-      background: #131920;
+      background: var(--hg-color-darkest);
       color: #ffffff;
       border-top: 6px solid var(--hg-color-secondary);
       padding: 28px;
       box-shadow: 0 28px 90px rgba(0, 0, 0, 0.35);
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
       border-radius: 4px;
       position: relative;
       overflow: hidden;
-      min-height: 500px;
       box-sizing: border-box;
     }
 
@@ -402,17 +400,6 @@
       position: absolute;
       inset: 0;
       background: radial-gradient(circle at 76% 22%, rgba(255, 212, 0, 0.15), transparent 50%);
-      pointer-events: none;
-    }
-
-    .founder-card::after {
-      content: "";
-      position: absolute;
-      inset: auto 0 0;
-      height: 6px;
-      background: var(--hg-color-secondary);
-      transform-origin: left;
-      animation: signalScan 7s ease-in-out infinite;
       pointer-events: none;
     }
 
@@ -456,65 +443,60 @@
       top: 0;
       width: 15%;
       text-align: center;
+      white-space: nowrap;
       font-family: var(--hg-font-secondary);
       font-size: clamp(2.8rem, 8vw, 5.5rem);
       font-weight: 900;
       line-height: 1;
       color: #ffffff;
       text-shadow: 0 0 24px rgba(255, 212, 0, 0.25);
-      transition: left 950ms cubic-bezier(0.77, 0, 0.18, 1), color 950ms ease, text-shadow 950ms ease, filter 950ms ease;
+      transition:
+        left var(--d, 950ms) cubic-bezier(0.77, 0, 0.18, 1),
+        color var(--d, 950ms) ease,
+        text-shadow var(--d, 950ms) ease,
+        transform var(--d, 950ms) ease;
     }
 
-    .word-transform__letter--a { left: 0%; }
-    .word-transform__letter--l { left: 20%; }
-    .word-transform__letter--i { left: 40%; }
-    .word-transform__letter--e { left: 60%; }
-    .word-transform__letter--n { left: 80%; }
+    /* Staggered durations: letters land in a wave, not in lockstep */
+    .word-transform__letter--a { left: 0%; --d: 880ms; }
+    .word-transform__letter--l { left: 20%; --d: 915ms; }
+    .word-transform__letter--i { left: 40%; --d: 950ms; }
+    .word-transform__letter--e { left: 60%; --d: 985ms; }
+    .word-transform__letter--n { left: 80%; --d: 1020ms; }
 
-    /* Target state when resolved via hover or JS class */
-    .founder-card.is-resolved .word-transform__letter--a,
-    .founder-card:hover .word-transform__letter--a,
-    .founder-card:focus-within .word-transform__letter--a {
-      left: 80%;
-      color: var(--hg-color-secondary);
-      text-shadow: 0 0 28px rgba(255, 212, 0, 0.45);
-    }
-
-    .founder-card.is-resolved .word-transform__letter--l,
-    .founder-card:hover .word-transform__letter--l,
-    .founder-card:focus-within .word-transform__letter--l {
-      left: 60%;
-    }
-
-    .founder-card.is-resolved .word-transform__letter--i,
-    .founder-card:hover .word-transform__letter--i,
-    .founder-card:focus-within .word-transform__letter--i {
-      left: 40%;
-    }
-
-    .founder-card.is-resolved .word-transform__letter--e,
-    .founder-card:hover .word-transform__letter--e,
-    .founder-card:focus-within .word-transform__letter--e {
-      left: 20%;
-    }
-
-    .founder-card.is-resolved .word-transform__letter--n,
-    .founder-card:hover .word-transform__letter--n,
-    .founder-card:focus-within .word-transform__letter--n {
+    /* Resolved signature: NEIL = word (even 18% rhythm),
+       word space before the initial, then A. */
+    .founder-card:is(.is-resolved, :hover, :focus-within) .word-transform__letter--n {
       left: 0%;
       color: var(--hg-color-secondary);
       text-shadow: 0 0 28px rgba(255, 212, 0, 0.45);
     }
 
-    .word-transform__dot {
-      position: absolute;
-      top: 0;
-      left: 100%;
-      width: 10%;
-      font-family: var(--hg-font-secondary);
-      font-size: clamp(2.8rem, 8vw, 5.5rem);
-      font-weight: 900;
-      line-height: 1;
+    .founder-card:is(.is-resolved, :hover, :focus-within) .word-transform__letter--e {
+      left: 18%;
+    }
+
+    .founder-card:is(.is-resolved, :hover, :focus-within) .word-transform__letter--i {
+      left: 36%;
+    }
+
+    .founder-card:is(.is-resolved, :hover, :focus-within) .word-transform__letter--l {
+      left: 54%;
+    }
+
+    .founder-card:is(.is-resolved, :hover, :focus-within) .word-transform__letter--a {
+      left: 76%;
+      color: var(--hg-color-secondary);
+      text-shadow: 0 0 28px rgba(255, 212, 0, 0.45);
+    }
+
+    /* Signature period kerns naturally off the A — no overlap at any viewport.
+       width:0 keeps it layout-invisible in the ALIEN state. */
+    .word-transform__letter--a::after {
+      content: ".";
+      display: inline-block;
+      width: 0;
+      margin-left: -0.03em;
       color: var(--hg-color-secondary);
       opacity: 0;
       transform: translateX(-0.25rem);
@@ -522,9 +504,7 @@
       transition-delay: 620ms;
     }
 
-    .founder-card.is-resolved .word-transform__dot,
-    .founder-card:hover .word-transform__dot,
-    .founder-card:focus-within .word-transform__dot {
+    .founder-card:is(.is-resolved, :hover, :focus-within) .word-transform__letter--a::after {
       opacity: 1;
       transform: translateX(0);
     }
@@ -556,64 +536,27 @@
       transform: translateY(0.4rem);
     }
 
-    .founder-card.is-resolved .word-transform__caption .phase-source,
-    .founder-card:hover .word-transform__caption .phase-source,
-    .founder-card:focus-within .word-transform__caption .phase-source {
+    .founder-card:is(.is-resolved, :hover, :focus-within) .word-transform__caption .phase-source {
       opacity: 0;
       transform: translateY(-0.4rem);
     }
 
-    .founder-card.is-resolved .word-transform__caption .phase-resolved,
-    .founder-card:hover .word-transform__caption .phase-resolved,
-    .founder-card:focus-within .word-transform__caption .phase-resolved {
+    .founder-card:is(.is-resolved, :hover, :focus-within) .word-transform__caption .phase-resolved {
       opacity: 1;
       transform: translateY(0);
     }
 
-    /* Motion Blur and Cinematic Glow during sliding animation */
+    /* Signal pass while letters are in flight: soft gold swell instead of blur */
     .founder-card.is-transitioning .word-transform__letter {
-      filter: blur(3px);
-      text-shadow: 0 0 35px var(--hg-color-secondary), 0 0 60px var(--hg-color-secondary);
+      text-shadow: 0 0 18px rgba(255, 212, 0, 0.35);
+      transform: scale(1.06);
     }
 
-    /* Founder Card Metrics Grid */
-    .founder-card__grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1px;
-      background: rgba(255, 255, 255, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      margin-top: 24px;
-    }
-
-    .founder-card__metric {
-      background: #1c232d;
-      padding: 14px;
-      min-height: 80px;
-      box-sizing: border-box;
-    }
-
-    .founder-card__metric span {
-      display: block;
-      color: rgba(255, 255, 255, 0.5);
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-
-    .founder-card__metric strong {
-      display: block;
-      font-size: 20px;
-      line-height: 1.05;
-      color: #ffffff;
-      font-weight: 800;
-    }
-
-    @keyframes signalScan {
-      0%, 100% { transform: scaleX(0.16); }
-      50% { transform: scaleX(1); }
+    /* Reduced motion: freeze the machine, keep hover/focus states instant */
+    html.reduced-motion .word-transform__letter,
+    html.reduced-motion .word-transform__letter--a::after,
+    html.reduced-motion .word-transform__caption span {
+      transition: none;
     }
 
     /* Biography/Profile Section - Aligned with index.html */
@@ -1345,7 +1288,6 @@
     }
 
     .skeleton__bar--dark,
-    .skeleton__metrics i,
     .skeleton__word-track i,
     .skeleton__flow-card i {
       background-color: rgba(255, 255, 255, 0.10);
@@ -1463,8 +1405,6 @@
       border-radius: 4px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      min-height: 500px;
       box-sizing: border-box;
     }
 
@@ -1506,34 +1446,6 @@
       width: 60%;
       margin: 0 auto;
     }
-
-    .skeleton__metrics {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1px;
-      background: rgba(255, 255, 255, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      margin-top: 24px;
-    }
-
-    .skeleton__metrics > div {
-      background: #1c232d;
-      padding: 14px;
-      min-height: 80px;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .skeleton__metrics i {
-      display: block;
-      height: 10px;
-      border-radius: 4px;
-    }
-
-    .skeleton__metrics i:first-child { width: 64%; }
-    .skeleton__metrics i:last-child { width: 86%; height: 20px; }
 
     /* Founder profile — mirrors .founder-profile / .infobox */
     .skeleton__profile {
@@ -1933,12 +1845,6 @@
               </span>
             </span>
             <span class="skeleton__bar skeleton__caption"></span>
-            <div class="skeleton__metrics">
-              <div><i></i><i></i></div>
-              <div><i></i><i></i></div>
-              <div><i></i><i></i></div>
-              <div><i></i><i></i></div>
-            </div>
           </div>
         </div>
       </div>
@@ -2076,32 +1982,11 @@ Neil Armstrong was born August 5, 1930. I was born exactly 72 years later, on Au
                 <span class="word-transform__letter word-transform__letter--i">I</span>
                 <span class="word-transform__letter word-transform__letter--e">E</span>
                 <span class="word-transform__letter word-transform__letter--n">N</span>
-                <span class="word-transform__dot">.</span>
               </div>
               <div class="word-transform__caption">
                 <span class="phase-source">company signal: ALIEN</span>
                 <span class="phase-resolved">founder signature: NEIL A.</span>
               </div>
-            </div>
-          </div>
-
-          <!-- Group-related Metrics Grid -->
-          <div class="founder-card__grid">
-            <div class="founder-card__metric">
-              <span>Operating name</span>
-              <strong>Neil A.</strong>
-            </div>
-            <div class="founder-card__metric">
-              <span>Group</span>
-              <strong>Alien.Inc Technologies</strong>
-            </div>
-            <div class="founder-card__metric">
-              <span>Companies</span>
-              <strong>7</strong>
-            </div>
-            <div class="founder-card__metric">
-              <span>Reporting core</span>
-              <strong>KMT</strong>
             </div>
           </div>
         </aside>
@@ -2392,30 +2277,35 @@ Neil Armstrong was born August 5, 1930. I was born exactly 72 years later, on Au
     const identityMachine = document.getElementById("identity-machine");
 
     if (identityMachine) {
+      const REDUCED_MOTION = window.matchMedia &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
       const cycleIdentity = () => {
-        // Trigger motion blur and glowing transition state
+        // Trigger signal pass while letters slide
         identityMachine.classList.add("is-transitioning");
         identityMachine.classList.add("is-resolved");
-        
-        // Remove motion blur once letters have finished sliding (950ms)
+
+        // Clear the signal pass once letters have finished sliding (~1s)
         window.setTimeout(() => {
           identityMachine.classList.remove("is-transitioning");
-        }, 950);
+        }, 1050);
 
         // Keep resolved signature for 3.2s, then cycle back
         window.setTimeout(() => {
           identityMachine.classList.add("is-transitioning");
           identityMachine.classList.remove("is-resolved");
-          
+
           window.setTimeout(() => {
             identityMachine.classList.remove("is-transitioning");
-          }, 950);
+          }, 1050);
         }, 3200);
       };
 
-      // Initial delay of 1.2s, then trigger every 7s
-      window.setTimeout(cycleIdentity, 1200);
-      window.setInterval(cycleIdentity, 7000);
+      if (!REDUCED_MOTION) {
+        // Initial delay of 1.2s, then trigger every 7s
+        window.setTimeout(cycleIdentity, 1200);
+        window.setInterval(cycleIdentity, 7000);
+      }
     }
   </script>
 

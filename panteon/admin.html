@@ -43,6 +43,12 @@
             --font-tech: "Space Grotesk", sans-serif;
             --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
             --sidebar-w: 240px;
+            --z-topbar: 1001;
+            --z-drawer: 1500;
+            --z-dock: 1600;
+            --z-float-panel: 1900;
+            --z-modal: 2000;
+            --z-toast: 3000;
         }
 
         html, body {
@@ -1287,52 +1293,48 @@
             box-shadow: 0 0 8px rgba(34, 211, 238, 0.35);
         }
 
-        .retro-map-node-marker {
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: transform 0.2s ease;
-        }
-        .retro-map-node-marker:hover { transform: scale(1.05); }
+        /* Tactical map markers — NATO-style diamond frames, muted signal tones */
+        .retro-map-node-marker { cursor: pointer; display: flex; flex-direction: column; align-items: center; transition: transform 0.15s ease; }
+        .retro-map-node-marker:hover { transform: scale(1.06); }
+        .retro-map-node-marker.tone-red   { --mk: #d05b5b; --mk-dim: rgba(208, 91, 91, 0.14); --mk-ring: rgba(208, 91, 91, 0.38); }
+        .retro-map-node-marker.tone-amber { --mk: #d1913b; --mk-dim: rgba(209, 145, 59, 0.14); --mk-ring: rgba(209, 145, 59, 0.38); }
+        .retro-map-node-marker.tone-green { --mk: #3fa97c; --mk-dim: rgba(63, 169, 124, 0.14); --mk-ring: rgba(63, 169, 124, 0.38); }
         .retro-map-marker-tag {
             font-family: var(--font-mono);
             text-transform: uppercase;
-            font-size: 10px;
-            color: var(--accent-cyan);
-            border: 1px solid var(--border-color);
-            background: rgba(0, 0, 0, 0.9);
-            padding: 1px 8px;
-            border-radius: 3px;
-            box-shadow: 0 0 10px rgba(223, 241, 64, 0.15);
+            font-size: 9px;
+            letter-spacing: 0.09em;
+            line-height: 1;
+            color: #c8cfd6;
+            background: rgba(7, 10, 15, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-left: 2px solid var(--mk, var(--accent-cyan));
+            padding: 3px 7px 2px 5px;
             white-space: nowrap;
-            transition: all 0.2s ease;
+            transition: color 0.15s ease, border-color 0.15s ease;
         }
-        .retro-map-node-marker:hover .retro-map-marker-tag {
-            color: var(--green);
-            border-color: var(--green);
-            box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+        .retro-map-marker-line { width: 1px; height: 9px; margin: 1px 0; background: linear-gradient(to bottom, var(--mk-ring, rgba(255,255,255,.25)), transparent); }
+        .retro-map-marker-glow { width: 13px; height: 13px; position: relative; }
+        .retro-map-marker-glow::before {
+            content: '';
+            position: absolute; inset: 2px;
+            transform: rotate(45deg);
+            background: var(--mk-dim, rgba(255, 255, 255, 0.08));
+            border: 1.5px solid var(--mk, var(--accent-cyan));
+            animation: mk-halo 2.4s ease-in-out infinite;
         }
-        .retro-map-marker-line { width: 1px; height: 12px; background: var(--border-color); }
-        .retro-map-node-marker:hover .retro-map-marker-line { background: rgba(16, 185, 129, 0.7); }
-        .retro-map-marker-glow {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--accent-cyan);
-            border: 2px solid #000;
-            box-shadow: 0 0 10px rgba(223, 241, 64, 0.7);
-            animation: retro-pulsing-marker 2s infinite ease-in-out;
+        .retro-map-marker-glow::after {
+            content: '';
+            position: absolute; left: 50%; top: 50%;
+            width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px;
+            background: var(--mk, #fff); border-radius: 1px;
         }
-        .retro-map-node-marker.tone-red .retro-map-marker-glow { background: var(--red); box-shadow: 0 0 10px var(--red), 0 0 20px rgba(244, 63, 94, 0.6); }
-        .retro-map-node-marker.tone-red .retro-map-marker-tag { color: var(--red); border-color: rgba(244, 63, 94, 0.5); }
-        .retro-map-node-marker.tone-amber .retro-map-marker-glow { background: var(--amber); box-shadow: 0 0 10px var(--amber), 0 0 20px rgba(245, 158, 11, 0.6); }
-        .retro-map-node-marker.tone-amber .retro-map-marker-tag { color: var(--amber); border-color: rgba(245, 158, 11, 0.5); }
-        .retro-map-node-marker.tone-green .retro-map-marker-glow { background: var(--green); box-shadow: 0 0 10px var(--green), 0 0 20px rgba(16, 185, 129, 0.6); }
-        .retro-map-node-marker.tone-green .retro-map-marker-tag { color: var(--green); border-color: rgba(16, 185, 129, 0.5); }
-        @keyframes retro-pulsing-marker {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.35); opacity: 0.75; }
+        .retro-map-node-marker:hover .retro-map-marker-tag { color: var(--mk); border-color: var(--mk-ring); background: rgba(7, 10, 15, 0.95); }
+        .retro-map-node-marker:hover .retro-map-marker-line { background: var(--mk-ring); }
+        .retro-map-node-marker:hover .retro-map-marker-glow::before { background: var(--mk); animation-play-state: paused; }
+        @keyframes mk-halo {
+            0%, 100% { box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 1px 4px rgba(0,0,0,.45), 0 0 0 0 var(--mk-ring); opacity: 0.92; }
+            50%      { box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 1px 4px rgba(0,0,0,.45), 0 0 0 4px transparent; opacity: 1; }
         }
 
         /* ── Spinal Cracker fusion dashboard ── */
@@ -1614,12 +1616,15 @@
             <span class="topbar-title-divider">/</span>
             <span class="topbar-title" id="topbarTitle">Overview</span>
         </div>
+
+        <nav class="topbar-tabs" id="topbarTabs" aria-label="Open tool tabs"></nav>
+
         <div class="topbar-actions">
-            <button class="topbar-btn">
+            <button class="topbar-btn" id="tbSolver" title="Quick Query workspace">
                 <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8h12M8 2v12"/></svg>
                 Problem Solver
             </button>
-            <button class="topbar-btn">
+            <button class="topbar-btn" id="tbGraph" title="Lineage graph workspace">
                 <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="M8 2v12M2 8h12"/></svg>
                 Graph
             </button>
@@ -1641,152 +1646,152 @@
                     <div class="nav-section-title">Platform</div>
                     <div class="nav-item active" data-page="overview">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
-                        Overview
+                        <span class="nav-label">Overview</span>
                     </div>
                 </div>
                 <div class="nav-section">
                     <div class="nav-section-title">Spinal Cracker</div>
                     <div class="nav-item" data-page="sc-types">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
-                        Object Types
+                        <span class="nav-label">Object Types</span>
                     </div>
                     <div class="nav-item" data-page="sc-objects">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/></svg>
-                        Objects
+                        <span class="nav-label">Objects</span>
                     </div>
                     <div class="nav-item" data-page="sc-links">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="8" r="2.5"/><circle cx="12" cy="8" r="2.5"/><path d="M6.5 8h3"/></svg>
-                        Link Types
+                        <span class="nav-label">Link Types</span>
                     </div>
                     <div class="nav-item" data-page="sc-fusion">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="8" r="4"/><circle cx="11" cy="8" r="4"/><path d="M6 4h5M6 12h5"/></svg>
-                        Spinal Cracker
+                        <span class="nav-label">Spinal Cracker</span>
                     </div>
                     <div class="nav-item" data-page="sc-gdelt">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12l4-8 4 4 4-4v6H2z"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>
-                        GDELT Pipeline
+                        <span class="nav-label">GDELT Pipeline</span>
                     </div>
                     <div class="nav-item" data-page="sc-aviation">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8l3-3v2h6V5l3 3-3 3v-2H5v2z"/><circle cx="14" cy="8" r="1.5"/><path d="M1 12l2-2v4H1z"/></svg>
-                        Aviation Domain
+                        <span class="nav-label">Aviation Domain</span>
                     </div>
                     <div class="nav-item" id="gaiaNavItem" title="GAIA Geo Controller (Ctrl+Shift+G)">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2a10.5 10.5 0 0 1 0 12M8 2a10.5 10.5 0 0 0 0 12"/></svg>
-                        GAIA
+                        <span class="nav-label">GAIA</span>
                     </div>
                 </div>
                 <div class="nav-section">
                     <div class="nav-section-title">YONO</div>
                     <div class="nav-item" data-page="yono-providers">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12V6l6-4 6 4v6l-6 4z"/></svg>
-                        Service Providers
+                        <span class="nav-label">Service Providers</span>
                     </div>
                     <div class="nav-item" data-page="yono-agents">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
-                        Modules
+                        <span class="nav-label">Modules</span>
                     </div>
                     <div class="nav-item" data-page="yono-automations">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 2.5l-3 8h4l-7 5 3-8h-4z"/></svg>
-                        Automations
+                        <span class="nav-label">Automations</span>
                     </div>
                     <div class="nav-item" data-page="yono-functions">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h8M4 8h8M4 12h5"/><circle cx="12" cy="12" r="2"/></svg>
-                        Functions
+                        <span class="nav-label">Functions</span>
                     </div>
                     <div class="nav-item" data-page="yono-executions">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1"/><path d="M5 5h6M5 8h6M5 11h3"/></svg>
-                        Executions
+                        <span class="nav-label">Executions</span>
                     </div>
                     <div class="nav-item" data-page="yono-chat">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12v8H5l-3 3V3z"/></svg>
-                        Quick Query
+                        <span class="nav-label">Quick Query</span>
                     </div>
                 </div>
                 <div class="nav-section">
                     <div class="nav-section-title">Statham</div>
                     <div class="nav-item" data-page="statham-fleet">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
-                        Fleet Status
+                        <span class="nav-label">Fleet Status</span>
                     </div>
                     <div class="nav-item" data-page="statham-environments">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c2.2 2.2 2.2 9.8 0 12M8 2c-2.2 2.2-2.2 9.8 0 12"/></svg>
-                        Environments
+                        <span class="nav-label">Environments</span>
                     </div>
                     <div class="nav-item" data-page="statham-deployments">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2l5 4v6l-5 4-5-4V6z"/></svg>
-                        Deployments
+                        <span class="nav-label">Deployments</span>
                     </div>
                     <div class="nav-item" data-page="statham-pipelines">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h4M10 4h4M2 8h4M10 8h4M2 12h4M10 12h4M6 4v8M10 4v8"/></svg>
-                        Pipelines
+                        <span class="nav-label">Pipelines</span>
                     </div>
                     <div class="nav-item" data-page="statham-smm">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4l3-2h8l3 2M2 4v8c0 1 1 2 2 2h8c1 0 2-1 2-2V4"/><path d="M8 6v4M6 8h4"/></svg>
-                        MiMi Panel
+                        <span class="nav-label">MiMi Panel</span>
                     </div>
                 </div>
                 <div class="nav-section">
                     <div class="nav-section-title">TDAC</div>
                     <div class="nav-item" data-page="tdac-resonance">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 8c2-4 4-6 7 0s5 4 7 0"/></svg>
-                        Resonance Index
+                        <span class="nav-label">Resonance Index</span>
                     </div>
                     <div class="nav-item" data-page="tdac-metrics">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14V9M6 14V5M10 14V7M14 14V3"/></svg>
-                        Metrics
+                        <span class="nav-label">Metrics</span>
                     </div>
                     <div class="nav-item" data-page="tdac-dashboard">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12"/></svg>
-                        Dashboard
+                        <span class="nav-label">Dashboard</span>
                     </div>
                 </div>
                 <div class="nav-section">
                     <div class="nav-section-title">Workspaces</div>
                     <div class="nav-item" data-page="workspaces">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
-                        All Workspaces
+                        <span class="nav-label">All Workspaces</span>
                     </div>
                     <div class="nav-item" data-page="cross-lineage">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><path d="M6 4h4M4 6v4M12 6v4M6 12h4"/></svg>
-                        Cross-Company Flow
+                        <span class="nav-label">Cross-Company Flow</span>
                     </div>
                 </div>
                 <div class="nav-section">
                     <div class="nav-section-title">Contour Analytics</div>
                     <div class="nav-item" data-page="contour-dashboards">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="4" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="7" width="6" height="8" rx="1"/></svg>
-                        Dashboards
+                        <span class="nav-label">Dashboards</span>
                     </div>
                     <div class="nav-item" data-page="contour-schedules">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l3 2"/></svg>
-                        Pipeline Schedules
+                        <span class="nav-label">Pipeline Schedules</span>
                     </div>
                     <div class="nav-item" data-page="contour-quality">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4z"/></svg>
-                        Data Quality
+                        <span class="nav-label">Data Quality</span>
                     </div>
                     <div class="nav-item" data-page="contour-search">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4"/><path d="M10 10l4 4"/></svg>
-                        Search
+                        <span class="nav-label">Search</span>
                     </div>
                 </div>
                 <div class="nav-section">
                     <div class="nav-section-title">Crackerbox Intelligence</div>
                     <div class="nav-item" data-page="crackerbox-dashboard">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2"/><path d="M8 2v2M8 12v2M2 8h2M12 8h2"/></svg>
-                        Intelligence Dashboard
+                        <span class="nav-label">Intelligence Dashboard</span>
                     </div>
                     <div class="nav-item" data-page="crackerbox-investigations">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="2" width="10" height="12" rx="1"/><path d="M6 5h4M6 8h4M6 11h2"/></svg>
-                        Investigations
+                        <span class="nav-label">Investigations</span>
                     </div>
                     <div class="nav-item" data-page="crackerbox-threatmap">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c-2 2.5-2 5.5 0 6s2 3.5 0 6M8 2c2 2.5 2 5.5 0 6s-2 3.5 0 6"/></svg>
-                        Threat Map
+                        <span class="nav-label">Threat Map</span>
                     </div>
                     <div class="nav-item" data-page="crackerbox-entities">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="8" cy="12" r="2"/><path d="M5.5 5.5L7 10.5M10.5 5.5L9 10.5M6 4h4"/></svg>
-                        Threat Entities
+                        <span class="nav-label">Threat Entities</span>
                     </div>
                     <a href="http://localhost:3001" target="_blank" class="nav-item" style="text-decoration:none;color:inherit">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4"/><path d="M10 10l4 4"/><path d="M7 5v4M5 7h4"/></svg>
@@ -1797,96 +1802,92 @@
                     <div class="nav-section-title">CMB</div>
                     <div class="nav-item" data-page="cmb-dashboard">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5c2 2 2 9 0 11M8 2.5c-2 2-2 9 0 11M2.5 8h11M3.5 5.5c2 1 7 1 9 0M3.5 10.5c2-1 7-1 9 0"/></svg>
-                        Memory Dashboard
+                        <span class="nav-label">Memory Dashboard</span>
                     </div>
                     <div class="nav-item" data-page="cmb-status">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M5 7h6M5 9.5h4"/></svg>
-                        System Status
+                        <span class="nav-label">System Status</span>
                     </div>
                     <div class="nav-item" data-page="cmb-workspaces">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5l6-2 6 2M2 5v6l6 2 6-2V5M8 3v6"/><path d="M8 9v4"/></svg>
-                        Workspaces
+                        <span class="nav-label">Workspaces</span>
                     </div>
                     <div class="nav-item" data-page="cmb-history">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 14V7l5-2 5 2v7M8 5v9"/><path d="M8 2.5V5"/></svg>
-                        Timeline
+                        <span class="nav-label">Timeline</span>
                     </div>
                     <div class="nav-item" data-page="cmb-analytics">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14V6M6 14V2M10 14V8M14 14V4"/></svg>
-                        Analytics
+                        <span class="nav-label">Analytics</span>
                     </div>
                     <a href="cmb-product.html" class="nav-item" style="text-decoration:none;color:inherit">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 13V3l10 5-10 5z"/></svg>
-                        Product Page
+                        <span class="nav-label">Product Page</span>
                     </a>
                     <a href="cmb-docs/" class="nav-item" style="text-decoration:none;color:inherit">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12v10H2z"/><path d="M5 7h6M5 9.5h4"/></svg>
-                        Documentation
+                        <span class="nav-label">Documentation</span>
                     </a>
                     <div class="nav-item" data-page="cross-lineage">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><path d="M6 4h4M4 6v4M12 6v4M6 12h4"/></svg>
-                        Cross-Company Sharing
-                    </div>
-                    <div class="nav-item" data-page="cmb-sharing">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12l6-2 6 2M2 12v6l6 2 6-2V12M8 3v6M12 3v6"/></svg>
-                        Memory Sharing
+                        <span class="nav-label">Cross-Company Sharing</span>
                     </div>
                 </div>
                 <div class="nav-section">
                     <div class="nav-section-title">Terranean Engine</div>
                     <div class="nav-item" data-page="terranean-ingest">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h12M8 2v12"/><rect x="3" y="3" width="10" height="10" rx="1"/></svg>
-                        Event Ingestion
+                        <span class="nav-label">Event Ingestion</span>
                     </div>
                     <div class="nav-item" data-page="terranean-causal">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="4" r="1.5"/><circle cx="12" cy="4" r="1.5"/><circle cx="8" cy="12" r="1.5"/><path d="M5 5l2 6M11 5l-2 6M5 4h6"/></svg>
-                        Causal Analysis
+                        <span class="nav-label">Causal Analysis</span>
                     </div>
                     <div class="nav-item" data-page="terranean-purpose">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12l4-8 4 4 4-6"/><circle cx="14" cy="2" r="1"/></svg>
-                        Purpose Modeling
+                        <span class="nav-label">Purpose Modeling</span>
                     </div>
                 </div>
                 <div class="nav-section">
                     <div class="nav-section-title">Group Operations</div>
                     <div class="nav-item" data-page="group-overview">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="4" r="2.5"/><circle cx="3" cy="12" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="13" cy="12" r="2"/><path d="M8 6.5v3M5.5 11L3.5 12M10.5 11l2 1"/></svg>
-                        Group Overview
+                        <span class="nav-label">Group Overview</span>
                     </div>
                     <div class="nav-item" data-page="group-flows">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h4l2 4 2-4h4"/><path d="M2 12h4l2-4 2 4h4"/></svg>
-                        ICT Flows
+                        <span class="nav-label">ICT Flows</span>
                     </div>
                     <div class="nav-item" data-page="group-catalog">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="4" rx="1"/><rect x="2" y="8" width="12" height="4" rx="1"/><path d="M5 4h0M5 10h0M8 4h3M8 10h3"/></svg>
-                        Service Catalog
+                        <span class="nav-label">Service Catalog</span>
                     </div>
                     <div class="nav-item" data-page="group-billing">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M2 6h12"/><path d="M5 9h2M5 11h4"/></svg>
-                        Billing
+                        <span class="nav-label">Billing</span>
                     </div>
                     <div class="nav-item" data-page="group-holdings">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14V6l6-4 6 4v8"/><path d="M6 14v-4h4v4"/></svg>
-                        Holdings & Capital
+                        <span class="nav-label">Holdings & Capital</span>
                     </div>
                 </div>
                 <div class="nav-section">
                     <div class="nav-section-title">Platform Intelligence</div>
                     <div class="nav-item" data-page="lineage-graph">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="3" cy="8" r="1.5"/><circle cx="13" cy="4" r="1.5"/><circle cx="13" cy="12" r="1.5"/><path d="M4.5 8L11.5 4M4.5 8L11.5 12"/></svg>
-                        Lineage Graph
+                        <span class="nav-label">Lineage Graph</span>
                     </div>
                     <div class="nav-item" data-page="lineage-events">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2v12M2 14h12"/><circle cx="5" cy="11" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="11" cy="5" r="1"/></svg>
-                        Lineage Events
+                        <span class="nav-label">Lineage Events</span>
                     </div>
                     <div class="nav-item" data-page="observability">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14V2M2 14h12"/><path d="M4 10l3-3 2 2 4-5"/></svg>
-                        Observability
+                        <span class="nav-label">Observability</span>
                     </div>
                     <div class="nav-item" data-page="audit-logs">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="2" width="10" height="12" rx="1"/><path d="M5 5h6M5 8h6M5 11h4"/></svg>
-                        Audit Logs
+                        <span class="nav-label">Audit Logs</span>
                     </div>
                 </div>
             </nav>
@@ -3691,8 +3692,7 @@ const PAGES = {
     'cmb-status': 'CMB System Status',
     'cmb-workspaces': 'CMB Workspaces',
     'cmb-history': 'CMB Timeline',
-    'cmb-analytics': 'CMB Analytics',
-    'cmb-sharing': 'Memory Sharing'
+    'cmb-analytics': 'CMB Analytics'
 };
 
 async function doLogout() {
@@ -3832,7 +3832,6 @@ function loadPageData(page) {
         case 'group-catalog': loadServiceCatalog(); break;
         case 'group-billing': loadBilling(); break;
         case 'group-holdings': loadHoldings(); break;
-        case 'cmb-sharing': loadCMBSharingInit(); break;
         case 'crackerbox-dashboard': loadOSINTDashboard(); break;
         case 'crackerbox-investigations': break;
         case 'crackerbox-threatmap': break;
@@ -3849,7 +3848,6 @@ function loadPageData(page) {
         case 'cmb-workspaces': loadCMBWorkspaces(); loadCMBSavings(); break;
         case 'cmb-history': loadCMBHistoryInit(); break;
         case 'cmb-analytics': loadCMBAnalyticsInit(); break;
-        case 'cmb-sharing': loadCMBSharingInit(); break;
     }
 }
 
@@ -7200,14 +7198,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (overlay) overlay.remove();
     }
 
-    // Setup nav clicks
+    // Setup nav clicks — DECK-aware: click opens tool panel, Shift+click forces classic page
     document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', () => {
-            navigate(item.dataset.page);
+        item.addEventListener('click', (e) => {
+            if (window.DECK && !DECK.isMobile() && !e.shiftKey) {
+                DECK.openFromNav(item);
+            } else {
+                const pg = item.dataset.page;
+                if (pg) navigate(pg);
+            }
             if (window.innerWidth <= 1024) {
                 document.querySelector('.sidebar').classList.remove('open');
                 document.getElementById('sidebarBackdrop').classList.remove('open');
             }
+        });
+        item.addEventListener('dblclick', () => {
+            const pg = item.dataset.page;
+            if (pg) navigate(pg);
         });
     });
 
@@ -7217,8 +7224,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (hash && PAGES[hash]) navigate(hash);
     });
 
-    // Sidebar toggle
+    // Sidebar toggle: mobile = drawer, desktop = rail/full switch
     document.getElementById('sidebarToggle').addEventListener('click', function() {
+        if (window.DECK && !DECK.isMobile()) { DECK.toggleRail(); return; }
         document.querySelector('.sidebar').classList.toggle('open');
         document.getElementById('sidebarBackdrop').classList.toggle('open');
     });
@@ -9721,6 +9729,45 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         0%   { transform: scale(.55); opacity: .95; }
         100% { transform: scale(1.6); opacity: 0; }
     }
+    .gaia-obj-form { display: flex; gap: 6px; margin-bottom: 8px; }
+    #gaiaObjType {
+        flex: 0 0 122px; background: rgba(0,0,0,.55); color: var(--text);
+        border: 1px solid var(--border-color); font-family: var(--font-mono);
+        font-size: 9px; text-transform: uppercase; letter-spacing: .06em; padding: 7px 6px;
+    }
+    #gaiaObjType:focus { outline: none; border-color: var(--border-hover); }
+    #gaiaObjLabel { flex: 1; min-width: 0; }
+    .gaia-place-on { color: var(--accent-neon) !important; border-color: var(--accent-neon) !important; box-shadow: 0 0 10px rgba(223, 241, 64, .25); }
+    .gaia-pin-wrap { width: 18px; height: 18px; position: relative; cursor: pointer; }
+    .gaia-pin-wrap[data-side="friendly"] { --pin: #3fa97c; }
+    .gaia-pin-wrap[data-side="hostile"]  { --pin: #d05b5b; }
+    .gaia-pin-wrap[data-side="neutral"]  { --pin: #d1913b; }
+    .gaia-pin-wrap[data-side="cvtrack"]  { --pin: var(--accent-neon); }
+    .gaia-pin {
+        position: absolute; inset: 2px; transform: rotate(45deg);
+        background: rgba(7, 10, 15, 0.72);
+        border: 1.5px solid var(--pin, var(--text-muted));
+        border-radius: 2px;
+        box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 1px 4px rgba(0,0,0,.45);
+    }
+    .gaia-pin::after {
+        content: ''; position: absolute; left: 50%; top: 50%;
+        width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px;
+        background: var(--pin, #fff); border-radius: 1px;
+    }
+    .gaia-pin-label {
+        position: absolute; left: 21px; top: -6px; white-space: nowrap;
+        font-family: var(--font-mono); font-size: 8.5px; letter-spacing: .08em;
+        text-transform: uppercase; line-height: 1;
+        color: #c8cfd6; background: rgba(7, 10, 15, 0.88);
+        border: 1px solid rgba(255,255,255,.14); border-left: 2px solid var(--pin, var(--text-muted));
+        padding: 3px 7px 2px 5px;
+        pointer-events: none;
+    }
+    .gaia-drone-dot {
+        position: absolute; inset: 0; border-radius: 50%; background: var(--accent-neon);
+        box-shadow: 0 0 8px var(--accent-neon); animation: gaia-pulse 1.6s ease-in-out infinite;
+    }
     .gaia-dim { display: none !important; }
 
     @media (max-width: 768px) {
@@ -9758,7 +9805,21 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
             <button type="button" class="gaia-act-btn" id="gaiaFocusBtn" title="Frame all matching objects">Focus</button>
             <button type="button" class="gaia-act-btn gaia-clear" id="gaiaClearBtn" title="Remove map filters">Clear Filters</button>
         </div>
-        <div class="gaia-hint">Understood: within N km &middot; last N min/h/d/w &middot; around / near &lt;region or country&gt; &middot; red / amber / green &middot; military / jet / private / commercial air &middot; friendly / hostile assets &middot; any free keyword.</div>
+        <div class="gaia-section-tag"><span class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></span>03 &middot; Object Input</div>
+        <div class="gaia-obj-form">
+            <select id="gaiaObjType" title="Object type to place">
+                <option value="friendly">FRIENDLY ASSET</option>
+                <option value="hostile">HOSTILE ASSET</option>
+                <option value="neutral">NEUTRAL SITE</option>
+                <option value="cvtrack">CV TRACK</option>
+            </select>
+            <input type="text" id="gaiaObjLabel" placeholder="label (optional)" maxlength="48" spellcheck="false" autocomplete="off">
+        </div>
+        <div class="gaia-actions">
+            <button type="button" class="gaia-act-btn gaia-apply" id="gaiaPlaceBtn" title="Arm placement, then click the map">Place on Map</button>
+            <button type="button" class="gaia-act-btn gaia-clear" id="gaiaObjClearBtn" title="Remove every placed object">Clear All</button>
+        </div>
+        <div class="gaia-hint">Search: within N km &middot; last N min/h/d/w &middot; around / near &lt;place&gt; or the scope center &middot; red / amber / green &middot; military / jet / private / commercial air &middot; friendly / hostile assets &middot; computer-vision detections &middot; drones &middot; keywords. Objects: right-click a placed pin to remove it.</div>
     </div>
     <div class="gaia-footer">
         <span id="gaiaStatus">Standing by.</span>
@@ -9784,9 +9845,15 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
     var REGISTRY = [
         { id: 'threats',   label: 'CAMEO Threat Events', meta: 'GDELT \u00b7 live feed',        host: 'threats' },
         { id: 'aviation',  label: 'Aircraft Tracks',     meta: 'OpenSky \u00b7 live feed',      host: 'aviation' },
-        { id: 'drones',    label: 'Drone / Telemetry',   meta: 'no feed registered \u00b7 pluggable' },
-        { id: 'satellite', label: 'Satellite Imagery',   meta: 'no feed registered \u00b7 pluggable' },
-        { id: 'weather',   label: 'Weather Patterns',    meta: 'no feed registered \u00b7 pluggable' },
+        { id: 'drones',    label: 'Drone / Telemetry',   meta: 'SIM \u00b7 synthetic UAV feed',
+          on: function (v) { providerDrones(v); },
+          opacity: function (v) { droneOpacity = clamp(v, 0.2, 1); sweepAll(); } },
+        { id: 'satellite', label: 'Satellite Imagery',   meta: 'ESRI World Imagery \u00b7 raster overlay',
+          on: function (v) { providerSatellite(v); },
+          opacity: function (v) { rasterOpacity('gaia-sat', v); } },
+        { id: 'weather',   label: 'Weather Patterns',    meta: 'RainViewer radar \u00b7 live tiles',
+          on: function (v) { providerWeather(v); },
+          opacity: function (v) { rasterOpacity('gaia-wx', v); } },
         { id: 'actorheat', label: 'Actor Network Heat',  meta: 'no feed registered \u00b7 pluggable' }
     ];
 
@@ -9815,9 +9882,9 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
     var DEFAULT_STATE = {
         threats:   { on: true,  opacity: 1 },
         aviation:  { on: true,  opacity: 1 },
-        drones:    { on: false },
-        satellite: { on: false },
-        weather:   { on: false },
+        drones:    { on: false, opacity: 1 },
+        satellite: { on: false, opacity: 1 },
+        weather:   { on: false, opacity: 1 },
         actorheat: { on: false }
     };
     function loadState() {
@@ -9868,7 +9935,9 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         var st = state[id]; if (!st) return;
         st.opacity = clamp(v, 0.2, 1);
         saveState();
-        applyOpacities();
+        var d = findDef(id);
+        if (d && typeof d.opacity === 'function') { try { d.opacity(st.opacity); } catch (e) {} }
+        else applyOpacities();
     }
 
     function toggleLayerById(id) {
@@ -9911,6 +9980,28 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
             domain: '', country: '', raw: f, ts: null
         };
     }
+    function normObj(o) {
+        if (!o || num(o.lat) == null || num(o.lng) == null) return null;
+        var side = o.kind === 'cvtrack' ? '' : (o.side || '');
+        return {
+            kind: o.kind === 'cvtrack' ? 'cvtrack' : 'asset',
+            lat: num(o.lat), lng: num(o.lng),
+            side: side,
+            level: side === 'hostile' ? 'red' : side === 'friendly' ? 'green' : 'amber',
+            cat: '', label: o.label || (o.kind === 'cvtrack' ? 'CV TRACK' : 'ASSET'),
+            title: o.note || '', domain: '', country: '',
+            raw: o, ts: num(o.ts)
+        };
+    }
+    function normDrone(d) {
+        if (!d || num(d.lat) == null || num(d.lng) == null) return null;
+        return {
+            kind: 'drone', lat: num(d.lat), lng: num(d.lng),
+            side: '', level: 'amber', cat: 'uav',
+            label: d.label || 'UAV', title: 'SIM telemetry \u00b7 alt ' + Math.round(d.altM || 0) + ' m \u00b7 hdg ' + Math.round(d.heading || 0),
+            domain: '', country: '', raw: d, ts: Date.now()
+        };
+    }
     function dateOf(ev) {
         if (!ev) return null;
         var v = ev.event_date || ev.datetime || ev.seen_date || '';
@@ -9923,20 +10014,23 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         var fls = Array.isArray(window.fusionFlights) ? window.fusionFlights : [];
         for (i = 0; i < evs.length; i++) { var t = normThreat(evs[i]); if (t && t.lat != null && t.lng != null) out.push(t); }
         for (i = 0; i < fls.length; i++) { var a = normAir(fls[i]); if (a && a.lat != null && a.lng != null) out.push(a); }
+        for (i = 0; i < gaiaObjects.length; i++) { var o = normObj(gaiaObjects[i]); if (o && o.lat != null && o.lng != null) out.push(o); }
+        for (i = 0; i < dronePts.length; i++) { var d = normDrone(dronePts[i]); if (d && d.lat != null && d.lng != null) out.push(d); }
         return out;
     }
 
     function matches(p, f) {
         if (!p || !f) return false;
         if (f.types.indexOf(p.kind) < 0) return false;
-        if (p.kind === 'threat') {
-            if (f.levels && f.levels.indexOf(p.level) < 0) return false;
-            if (f.sinceTs != null) { if (p.ts == null || p.ts < f.sinceTs) return false; }
-        } else {
+        if (p.kind === 'aircraft') {
             if (f.airCats && f.airCats.indexOf(p.cat) < 0) return false;
+        } else {
+            if (f.levels && f.levels.indexOf(p.level) < 0) return false;
+            if (f.sides && p.kind === 'asset' && f.sides.indexOf(p.side) < 0) return false;
+            if (f.sinceTs != null) { if (p.ts == null || p.ts < f.sinceTs) return false; }
         }
         if (f.keywords.length) {
-            var hay = (p.label + ' ' + p.title + ' ' + p.domain + ' ' + p.country).toLowerCase();
+            var hay = (p.label + ' ' + p.title + ' ' + p.domain + ' ' + p.country + ' ' + (p.side || '')).toLowerCase();
             for (var i = 0; i < f.keywords.length; i++) if (hay.indexOf(f.keywords[i]) < 0) return false;
         }
         if (f.center != null && f.radiusKm != null) {
@@ -9973,6 +10067,20 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
             if (el) el.style.opacity = op;
         }
     }
+    function sweepList(markers, src, fn, opac) {
+        var mask = [], i, el;
+        for (i = 0; i < src.length; i++) {
+            var p = fn(src[i]);
+            mask.push(activeFilter ? (p ? matches(p, activeFilter) : false) : true);
+        }
+        for (i = 0; i < markers.length; i++) {
+            el = markers[i] && markers[i].getElement ? markers[i].getElement() : null;
+            if (!el) continue;
+            if (opac != null) el.style.opacity = opac;
+            el.classList.toggle('gaia-dim', activeFilter ? !mask[i] : false);
+            el.classList.toggle('gaia-hit', activeFilter ? !!mask[i] : false);
+        }
+    }
     function sweepAll() {
         var tm = maskFor('threat'), am = maskFor('aircraft');
         var th = Array.isArray(window.fusionThreatMarkers) ? window.fusionThreatMarkers : [];
@@ -9992,12 +10100,270 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
             el.classList.toggle('gaia-dim', activeFilter ? !am[i] : false);
             el.classList.toggle('gaia-hit', activeFilter ? !!am[i] : false);
         }
+        sweepList(objMarkers, gaiaObjects, normObj);
+        sweepList(droneMarkers, dronePts, normDrone, droneOpacity);
         syncModeChip();
     }
 
 
+    // ------------------------------------------- built-in providers + objects
+    var LS_OBJECTS = 'sc_gaia_objects_v1';
+    var objMarkers = [], gaiaObjects = [];
+    var droneMarkers = [], dronePts = [], droneTimer = null, droneOpacity = 1;
+    var wxTimer = null, wxFrameTime = null, wxErr = '', satErr = '';
+    var placing = false;
+
+    function loadObjects() {
+        try {
+            var v = JSON.parse(localStorage.getItem(LS_OBJECTS));
+            if (Array.isArray(v)) gaiaObjects = v.filter(function (o) { return o && num(o.lat) != null && num(o.lng) != null; });
+        } catch (e) {}
+    }
+    function saveObjects() {
+        try { localStorage.setItem(LS_OBJECTS, JSON.stringify(gaiaObjects)); } catch (e) {}
+    }
+    function ensureFusionMap() {
+        var m = window.fusionMap;
+        if ((!m || !m.addSource) && typeof window.initFusionMap === 'function') {
+            try { m = window.initFusionMap(); } catch (e) { m = null; }
+        }
+        return m && m.addSource ? m : null;
+    }
+    function firstSymbolId(m) {
+        var ls = (m.getStyle() && m.getStyle().layers) || [];
+        for (var i = 0; i < ls.length; i++) if (ls[i].type === 'symbol') return ls[i].id;
+        return undefined;
+    }
+    function addRasterOverlay(id, tiles, wanted) {
+        var m = ensureFusionMap();
+        if (!m) return false;
+        try {
+            if (!m.getSource(id)) m.addSource(id, { type: 'raster', tiles: [tiles], tileSize: 256, attribution: '' });
+            if (!m.getLayer(id)) {
+                var st = state[id === 'gaia-sat' ? 'satellite' : 'weather'] || {};
+                m.addLayer({ id: id, type: 'raster', source: id, paint: { 'raster-opacity': st.opacity == null ? 0.85 : st.opacity } }, firstSymbolId(m));
+            }
+            m.setLayoutProperty(id, 'visibility', wanted ? 'visible' : 'none');
+            return true;
+        } catch (e) { return false; }
+    }
+    function rasterOpacity(id, v) {
+        var m = ensureFusionMap();
+        if (m && m.getLayer(id)) { try { m.setPaintProperty(id, 'raster-opacity', clamp(v, 0.2, 1)); } catch (e) {} }
+    }
+    function hideRasterOverlay(id) {
+        var m = ensureFusionMap();
+        if (!m) return;
+        try { if (m.getLayer(id)) m.setLayoutProperty(id, 'visibility', 'none'); } catch (e) {}
+    }
+    function providerSatellite(want) {
+        satErr = '';
+        if (!want) { hideRasterOverlay('gaia-sat'); return; }
+        var url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+        if (!addRasterOverlay('gaia-sat', url, true)) {
+            satErr = 'loading';
+            setTimeout(function () {
+                if (state.satellite && state.satellite.on) {
+                    satErr = addRasterOverlay('gaia-sat', url, true) ? '' : 'no map';
+                    refreshStatuses();
+                }
+            }, 1500);
+        }
+    }
+    function providerWeather(want) {
+        wxErr = '';
+        if (wxTimer) { clearInterval(wxTimer); wxTimer = null; }
+        if (!want) { hideRasterOverlay('gaia-wx'); return; }
+        pullWeatherFrame(true);
+        wxTimer = setInterval(function () { if (state.weather && state.weather.on) pullWeatherFrame(false); else providerWeather(false); }, 600000);
+    }
+    function pullWeatherFrame(first) {
+        var url = '';
+        var apply = function () {
+            var m = ensureFusionMap();
+            if (!m) {
+                if (first) setTimeout(function () { if (state.weather && state.weather.on && url) { var mm = ensureFusionMap(); if (mm) replaceWeatherSource(mm, url); } }, 1500);
+                return;
+            }
+            replaceWeatherSource(m, url);
+            refreshStatuses();
+        };
+        if (typeof window.fetch !== 'function') { wxErr = 'fetch unsupported'; refreshStatuses(); return; }
+        fetch('https://api.rainviewer.com/public/weather-maps.json').then(function (r) { return r.json(); }).then(function (j) {
+            var frames = (j && j.radar && j.radar.past) || [];
+            var f = frames[frames.length - 1];
+            if (!f || !j.host || !f.path) throw new Error('no frame');
+            wxFrameTime = f.time * 1000;
+            url = j.host + f.path + '/256/{z}/{x}/{y}/2/1_1.png';
+            apply();
+        }).catch(function () {
+            wxErr = 'radar unreachable';
+            wxFrameTime = null;
+            refreshStatuses();
+        });
+    }
+    function replaceWeatherSource(m, url) {
+        try {
+            if (m.getLayer('gaia-wx')) m.removeLayer('gaia-wx');
+            if (m.getSource('gaia-wx')) m.removeSource('gaia-wx');
+        } catch (e) {}
+        addRasterOverlay('gaia-wx', url, true);
+    }
+    function seedDrones() {
+        if (dronePts.length) return;
+        var c = scopeCenter(), i, names = ['DR-01', 'DR-02', 'DR-03', 'DR-04'];
+        for (i = 0; i < names.length; i++) {
+            dronePts.push({
+                id: 'drn' + i, label: names[i], cx: c.lat, cy: c.lng,
+                rKm: 12 + i * 14, phase: i * Math.PI / 2, speed: 0.05 + i * 0.02,
+                altM: 120 + i * 40, heading: 90, lat: c.lat, lng: c.lng
+            });
+        }
+        stepDrones(0);
+    }
+    function stepDrones(dtMs) {
+        var now = Date.now(), degPerKm = 1 / 111;
+        dronePts.forEach(function (d) {
+            d.phase += d.speed * ((dtMs || 4000) / 1000);
+            d.lat = d.cx + Math.cos(d.phase) * d.rKm * degPerKm;
+            d.lng = d.cy + Math.sin(d.phase) * d.rKm * degPerKm / Math.max(0.2, Math.cos(d.cx * Math.PI / 180));
+            d.heading = ((d.phase * 180 / Math.PI) % 360 + 360) % 360;
+            d.ts = now;
+        });
+    }
+    function droneEl(d) {
+        var wrap = document.createElement('div');
+        wrap.className = 'gaia-pin-wrap';
+        var dot = document.createElement('div'); dot.className = 'gaia-drone-dot';
+        var lab = document.createElement('span'); lab.className = 'gaia-pin-label'; lab.textContent = d.label;
+        wrap.appendChild(dot); wrap.appendChild(lab);
+        wrap.title = d.label + ' \u00b7 SIM UAV \u00b7 alt ' + Math.round(d.altM) + ' m';
+        return wrap;
+    }
+    function renderDroneMarkers() {
+        var m = ensureFusionMap();
+        droneMarkers.forEach(function (mk) { try { mk.remove(); } catch (e) {} });
+        droneMarkers = [];
+        if (!m) return;
+        dronePts.forEach(function (d) {
+            droneMarkers.push(new maplibregl.Marker({ element: droneEl(d), anchor: 'center' }).setLngLat([d.lng, d.lat]).addTo(m));
+        });
+        sweepAll();
+    }
+    function removeDroneMarkers() {
+        droneMarkers.forEach(function (mk) { try { mk.remove(); } catch (e) {} });
+        droneMarkers = [];
+    }
+    function providerDrones(want) {
+        if (want) {
+            seedDrones();
+            renderDroneMarkers();
+            if (droneTimer) clearInterval(droneTimer);
+            droneTimer = setInterval(function () {
+                stepDrones(4000);
+                if (state.drones && state.drones.on) renderDroneMarkers();
+            }, 4000);
+        } else {
+            if (droneTimer) { clearInterval(droneTimer); droneTimer = null; }
+            removeDroneMarkers();
+        }
+    }
+    function pinWrapFor(o) {
+        var wrap = document.createElement('div');
+        var side = o.kind === 'cvtrack' ? 'cvtrack' : (o.side || 'neutral');
+        wrap.className = 'gaia-pin-wrap';
+        wrap.setAttribute('data-side', side);
+        var pin = document.createElement('div');
+        pin.className = 'gaia-pin';
+        pin.setAttribute('data-side', side);
+        wrap.appendChild(pin);
+        if (o.label) {
+            var lab = document.createElement('span'); lab.className = 'gaia-pin-label'; lab.textContent = o.label;
+            wrap.appendChild(lab);
+        }
+        wrap.title = (o.label || o.kind.toUpperCase()) + ' \u00b7 placed ' + new Date(o.ts || Date.now()).toLocaleString() + ' \u00b7 right-click to remove';
+        wrap.addEventListener('contextmenu', function (e) {
+            e.preventDefault(); e.stopPropagation();
+            removeObjectById(o.id);
+        });
+        return wrap;
+    }
+    function renderObjectMarkers() {
+        var m = ensureFusionMap();
+        objMarkers.forEach(function (mk) { try { mk.remove(); } catch (e) {} });
+        objMarkers = [];
+        if (!m) return;
+        gaiaObjects.forEach(function (o) {
+            var mk = new maplibregl.Marker({ element: pinWrapFor(o), anchor: 'center' }).setLngLat([o.lng, o.lat]).addTo(m);
+            mk.__gaiaId = o.id;
+            objMarkers.push(mk);
+        });
+        sweepAll();
+    }
+    function removeObjectById(id) {
+        var idx = -1, i;
+        for (i = 0; i < gaiaObjects.length; i++) if (gaiaObjects[i].id === id) { idx = i; break; }
+        if (idx < 0) return;
+        var gone = gaiaObjects.splice(idx, 1)[0];
+        if (objMarkers[idx]) { try { objMarkers[idx].remove(); } catch (e) {} objMarkers.splice(idx, 1); }
+        saveObjects();
+        statusMsg((gone.label || 'Object') + ' removed.');
+        updateResults();
+    }
+    function clearAllObjects() {
+        if (!gaiaObjects.length) { statusMsg('No placed objects.'); return; }
+        var n = gaiaObjects.length;
+        gaiaObjects = [];
+        saveObjects();
+        renderObjectMarkers();
+        statusMsg(n + ' placed object' + (n === 1 ? '' : 's') + ' cleared.');
+        updateResults();
+    }
+    function cancelPlacing(silent) {
+        if (!placing) return;
+        placing = false;
+        var b = $('gaiaPlaceBtn');
+        if (b) b.classList.remove('gaia-place-on');
+        var m = window.fusionMap;
+        if (m && m.getCanvas) { try { m.getCanvas().style.cursor = ''; } catch (e) {} }
+        if (!silent) statusMsg('Placement cancelled.');
+    }
+    function startPlacing(side, label) {
+        var t = side || ($('gaiaObjType') ? $('gaiaObjType').value : 'friendly');
+        var m = ensureFusionMap();
+        if (!m) { statusMsg('Fusion map is not available on this view.'); return; }
+        if (!m.__gaiaPlaceBound) {
+            m.__gaiaPlaceBound = true;
+            m.on('click', function (e) {
+                if (!placing) return;
+                var feat = {
+                    id: 'go_' + Date.now().toString(36),
+                    kind: placing.side === 'cvtrack' ? 'cvtrack' : 'asset',
+                    side: placing.side,
+                    label: placing.label || '',
+                    note: '',
+                    lat: e.lngLat.lat, lng: e.lngLat.lng, ts: Date.now()
+                };
+                gaiaObjects.push(feat);
+                saveObjects();
+                var mk = new maplibregl.Marker({ element: pinWrapFor(feat), anchor: 'center' }).setLngLat([feat.lng, feat.lat]).addTo(m);
+                mk.__gaiaId = feat.id;
+                objMarkers.push(mk);
+                statusMsg((feat.label || feat.kind.toUpperCase()) + ' placed at ' + feat.lat.toFixed(4) + ', ' + feat.lng.toFixed(4) + '.');
+                cancelPlacing(true);
+                sweepAll();
+                updateResults();
+            });
+        }
+        placing = { side: t, label: label != null ? label : ($('gaiaObjLabel') ? $('gaiaObjLabel').value.trim() : '') };
+        $('gaiaPlaceBtn').classList.add('gaia-place-on');
+        try { m.getCanvas().style.cursor = 'crosshair'; } catch (e) {}
+        setOpen(true);
+        statusMsg('PLACEMENT ARMED \u2014 click the map to drop the object. Esc cancels.');
+    }
+
     // ------------------------------------------------------------- query parser
-    var STOPWORDS = 'show|me|all|the|a|an|of|in|on|for|from|with|within|and|or|to|is|are|was|were|detected|last|minutes|minute|min|hours|hour|hrs|days|day|weeks|week|km|kilometers|miles|meters|around|near|only|please|map|filter|assets|asset|objects|object|feed|feeds|tracks|track'.split('|');
+    var STOPWORDS = 'show|me|all|the|a|an|of|in|on|for|from|with|within|and|or|to|is|are|was|were|detected|last|minutes|minute|min|hours|hour|hrs|days|day|weeks|week|km|kilometers|miles|meters|around|near|only|please|map|filter|assets|asset|objects|object|feed|feeds|tracks|track|radius|ring|circle|area'.split('|');
 
     function geocode(name) {
         name = (name || '').toLowerCase().replace(/\s+/g, ' ').trim();
@@ -10035,15 +10401,16 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
     }
 
     function parseQuery(raw) {
-        var f = { types: ['threat', 'aircraft'], levels: null, airCats: null, keywords: [], center: null, radiusKm: null,
+        var f = { types: ['threat', 'aircraft'], levels: null, airCats: null, sides: null, keywords: [], center: null, radiusKm: null,
                   sinceTs: null, notes: [], parts: [] };
         var q = ' ' + String(raw || '').toLowerCase().replace(/\s+/g, ' ').trim() + ' ';
         if (!q.trim()) return f;
 
         function eat(re) { var m = q.match(re); if (m) { q = q.replace(m[0], ' '); return m; } return null; }
+        function pushType(t) { if (f.types.indexOf(t) < 0) f.types.push(t); }
 
-        // radius — "within 10km", "within 50 km", "500 mile ring"
-        var m = eat(/\bwithin\s+([\d.,]+)\s*(km|kilometers?|kilometres?|m|meters?|metres?|mi|mi\.|miles?)\b/);
+        // radius — "within 10km", "within a 50 km radius", "500 mile ring"
+        var m = eat(/\bwithin\s+(?:a\s+)?([\d.,]+)\s*(km|kilometers?|kilometres?|m|meters?|metres?|mi|mi\.|miles?)\b/);
         if (m) {
             var v = parseFloat(m[1].replace(',', '.'));
             var u = m[2];
@@ -10058,7 +10425,7 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
             if (Number.isFinite(n) && n > 0) {
                 f.sinceTs = Date.now() - n * mult;
                 f.parts.push('last ' + n + ' ' + unit.replace(/s$/, '') + (n === 1 ? '' : 's'));
-                f.notes.push('time filter applies to dated CAMEO events \u00b7 aircraft are live positions');
+                f.notes.push('time filter applies to dated events, placed objects and CV tracks \u00b7 aircraft are live positions');
             }
         }
         // threat levels
@@ -10076,17 +10443,27 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         if (ac.length) { f.airCats = ac; f.parts.push('air: ' + ac.join('/')); }
         // friendly / hostile profiles
         if (/\bfriendly\b|\ballied\b|\bnato\b/.test(q)) {
-            f.levels = f.levels || ['green']; if (!f.levels.length) f.levels = ['green'];
+            if (!f.levels || !f.levels.length) f.levels = ['green'];
             f.airCats = ['commercial', 'jet', 'private'];
+            f.sides = ['friendly']; pushType('asset');
             q = q.replace(/\bfriendly\b|\ballied\b|\bnato\b/g, ' ');
             f.parts.push('friendly profile');
         } else if (/\bhostile\b|\benemy\b|\badversar/.test(q)) {
             f.levels = ['red']; f.airCats = ['military'];
+            f.sides = ['hostile']; pushType('asset');
             q = q.replace(/\bhostile\b|\benemy\b|\badversar\w*/g, ' ');
             f.parts.push('hostile profile');
         }
         // object types
-        if (/\bdrones?\b|\buav\b|\btelemetry\b/.test(q)) { f.notes.push('no drone feed registered \u2014 register via GAIA.registerLayer'); q = q.replace(/\bdrones?\b|\buav\b|\btelemetry\b/g, ' '); }
+        if (/\b(computer[\s\-]*vision|cv)\b/.test(q)) {
+            f.types = ['cvtrack'];
+            q = q.replace(/\bcomputer[\s\-]*vision\b|\bcv\b|\bdetections?\b|\bdetected\b|\bscans?\b/g, ' ');
+            f.parts.push('CV tracks only');
+        } else if (/\bdrones?\b|\buavs?\b|\btelemetry\b/.test(q)) {
+            f.types = ['drone'];
+            q = q.replace(/\bdrones?\b|\buavs?\b|\btelemetry\b/g, ' ');
+            f.parts.push('drones only');
+        }
         if (/\baircraft\b|\bplanes?\b|\bflights?\b|\bairspace\b|\baviation\b/.test(q)) { f.types = ['aircraft']; q = q.replace(/\baircraft\b|\bplanes?\b|\bflights?\b|\bairspace\b|\baviation\b/g, ' '); f.parts.push('aircraft only'); }
         else if (/\bthreats?\b|\bevents?\b|\bnews\b|\bcameo\b|\bprotests?\b|\bconflicts?\b|\barticles?\b/.test(q)) { f.types = ['threat']; q = q.replace(/\bthreats?\b|\bevents?\b|\bnews\b|\bcameo\b|\bprotests?\b|\bconflicts?\b|\barticles?\b/g, ' '); f.parts.push('threats only'); }
         // place — "around Kyiv", "near Ukraine", "of the scope center"
@@ -10136,11 +10513,14 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
             return;
         }
         var r = countMatches(lastParsed);
-        var nT = 0, nA = 0;
-        r.hits.forEach(function (p) { if (p.kind === 'threat') nT++; else nA++; });
+        var KIND_TAG = { threat: 'thr', aircraft: 'air', asset: 'obj', cvtrack: 'cv', drone: 'drn' };
+        var cnts = {};
+        r.hits.forEach(function (p) { cnts[p.kind] = (cnts[p.kind] || 0) + 1; });
+        var brk = Object.keys(KIND_TAG).filter(function (k) { return cnts[k]; })
+            .map(function (k) { return cnts[k] + ' ' + KIND_TAG[k]; }).join(' \u00b7 ');
         var head = r.total === 0
-            ? 'Map is empty \u2014 run a scoped investigation first.'
-            : '<span class="gaia-r-num">' + r.hits.length + '</span> of ' + r.total + ' match \u00b7 ' + nT + ' threats \u00b7 ' + nA + ' aircraft';
+            ? 'Map is empty \u2014 run a scoped investigation or place objects first.'
+            : '<span class="gaia-r-num">' + r.hits.length + '</span> of ' + r.total + ' match \u00b7 ' + (brk || '0');
         resultsHead.innerHTML = head;
         var notesHtml = lastParsed.notes.map(function (n) { return '<div class="gaia-r-notes">\u25b8 ' + esc(n) + '</div>'; }).join('');
         var sampleHtml = '';
@@ -10148,7 +10528,8 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
             notesHtml += '<div class="gaia-r-notes">\u25b8 no criteria recognized yet</div>';
         }
         r.hits.slice(0, 3).forEach(function (p) {
-            var d = lastParsed.center ? fmtKm(havKm({ lat: p.lat, lng: p.lng }, lastParsed.center)) : (p.kind === 'threat' ? p.level.toUpperCase() : p.cat || '\u2014');
+            var d = lastParsed.center ? fmtKm(havKm({ lat: p.lat, lng: p.lng }, lastParsed.center))
+                : (p.side ? p.side.toUpperCase() : p.kind === 'threat' ? p.level.toUpperCase() : (p.cat || '\u2014'));
             sampleHtml += '<div class="gaia-r-sample"><b>' + esc(p.label) + '</b><span>' + esc(d) + '</span></div>';
         });
         samplesEl.innerHTML = notesHtml + sampleHtml;
@@ -10190,6 +10571,8 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
     // ------------------------------------------------------------------- chips
     var CHIPS = [
         { id: 'friend', label: 'Friendly assets', phrase: 'friendly assets within 500 km' },
+        { id: 'fr10',   label: 'Friendly 10km',   phrase: 'friendly assets within 10 km of the scope center' },
+        { id: 'cv30',   label: 'CV last 30m',     phrase: 'computer vision detections last 30 minutes' },
         { id: 'red',    label: 'Red threats',     phrase: 'red threats last 24 hours' },
         { id: 'mil',    label: 'Military air',    phrase: 'military aircraft' },
         { id: 'jets',   label: 'Jets',            phrase: 'jet aircraft' },
@@ -10227,7 +10610,7 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         var st = state[d.id] || {};
         var on = !!st.on;
         var dormant = !d.host && !hasProvider(d.id);
-        var slider = d.host
+        var slider = (d.host || typeof d.opacity === 'function')
             ? '<input type="range" class="gaia-slider" min="20" max="100" step="5" value="' + Math.round((st.opacity == null ? 1 : st.opacity) * 100) + '" title="Layer opacity">'
             : '';
         return '<div class="gaia-row' + (on ? ' on' : '') + (dormant ? ' dormant' : '') + '" data-layer="' + esc(d.id) + '">' +
@@ -10258,6 +10641,19 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
                 } else if (d.host === 'aviation') {
                     var nA = Array.isArray(window.fusionFlights) ? window.fusionFlights.length : 0;
                     if (nA > 0) { tag = nA + ' TRK'; cls = 'live'; } else { tag = window.fusionMap ? 'EMPTY' : 'STANDBY'; cls = 'warn'; }
+                } else if (d.id === 'drones') {
+                    if (droneTimer) { tag = dronePts.length + ' DRN'; cls = 'live'; }
+                    else { tag = 'ARMED'; cls = 'busy'; }
+                } else if (d.id === 'satellite') {
+                    if (satErr) { tag = satErr.toUpperCase(); cls = 'warn'; }
+                    else { tag = 'TILE'; cls = 'live'; }
+                } else if (d.id === 'weather') {
+                    if (wxErr) { tag = 'NO RADAR'; cls = 'err'; }
+                    else if (wxFrameTime) {
+                        var ageMin = Math.round((Date.now() - wxFrameTime) / 60000);
+                        tag = ageMin >= 20 ? ageMin + 'M OLD' : 'RADAR';
+                        cls = ageMin >= 20 ? 'warn' : 'live';
+                    } else { tag = 'PULL'; cls = 'busy'; }
                 } else { tag = 'ARMED'; cls = 'busy'; }
             }
             var dot = row.querySelector('[data-gaia-dot]');
@@ -10271,7 +10667,8 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
     function syncModeChip() {
         if (!modeChip) return;
         var anyData = ((Array.isArray(window.fusionThreatEvents) && window.fusionThreatEvents.length) ||
-                       (Array.isArray(window.fusionFlights) && window.fusionFlights.length));
+                       (Array.isArray(window.fusionFlights) && window.fusionFlights.length) ||
+                       gaiaObjects.length || dronePts.length);
         var mode, label;
         if (activeFilter) { mode = 'filter'; label = 'FILTERED'; }
         else if (anyData) { mode = 'live'; label = 'LIVE'; }
@@ -10414,6 +10811,8 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         $('gaiaApplyBtn').addEventListener('click', applyFilter);
         $('gaiaClearBtn').addEventListener('click', clearFilter);
         $('gaiaFocusBtn').addEventListener('click', focusResults);
+        $('gaiaPlaceBtn').addEventListener('click', function () { if (placing) cancelPlacing(); else startPlacing(); });
+        $('gaiaObjClearBtn').addEventListener('click', clearAllObjects);
 
         inputEl.addEventListener('input', updateResults);
         inputEl.addEventListener('keydown', function (e) {
@@ -10466,6 +10865,7 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
             e.preventDefault();
             toggle();
         }
+        if (e.key === 'Escape' && placing) cancelPlacing();
     });
 
     // -------------------------------------------------------------------- init
@@ -10490,6 +10890,9 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         renderRows();
         bindEvents();
 
+        loadObjects();
+        renderObjectMarkers();
+
         try { inputEl.value = ''; } catch (e) {}
         updateResults();
 
@@ -10498,6 +10901,9 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         ['threats', 'aviation'].forEach(function (id) {
             var want = state[id] && state[id].on;
             if (want !== hostActive(id)) setHostLayer(id, !!want);
+        });
+        ['drones', 'satellite', 'weather'].forEach(function (id) {
+            setCustomLayer(id, !!(state[id] && state[id].on)); // symmetric restore: also hides layers left visible
         });
 
         var storedOpen;
@@ -10529,7 +10935,7 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
                 };
                 if (existing) { REGISTRY.splice(REGISTRY.indexOf(existing), 1, entry); }
                 else { REGISTRY.push(entry); }
-                if (!(def.id in state)) state[def.id] = { on: !!existing && state[def.id].on };
+                if (!(def.id in state)) state[def.id] = { on: !!(existing && state[def.id] && state[def.id].on) };
                 saveState();
                 renderRows();
                 return true;
@@ -10544,7 +10950,13 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
             },
             applyFilter: function (q) { if (q != null) inputEl.value = q; applyFilter(); },
             clearFilter: clearFilter,
-            focusResults: focusResults
+            focusResults: focusResults,
+            objects: function () { return gaiaObjects.map(function (o) {
+                return { id: o.id, kind: o.kind, side: o.side, label: o.label, lat: o.lat, lng: o.lng, ts: o.ts }; }); },
+            placeObject: function (side, label) { startPlacing(side, label); },
+            clearObjects: clearAllObjects,
+            drones: function () { return dronePts.map(function (d) {
+                return { id: d.id, label: d.label, lat: d.lat, lng: d.lng, altM: d.altM, heading: d.heading }; }); }
         };
         syncToggleBtns();
     }
@@ -10558,5 +10970,1406 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
 </script>
 
 
+<style id="deck-styles">
+    /* ---- Command Deck: composable workspace engine ---- */
+    #deck-root { position: relative; flex: 1; min-height: 0; display: flex; background: var(--bg); }
+    #deck-root[hidden] { display: none; }
+
+    .deck-grid {
+        flex: 1; min-width: 0; min-height: 0; position: relative;
+        display: grid;
+        grid-template-columns: var(--deck-lw, 0fr) var(--deck-sl, 6px) minmax(0, 2.4fr) var(--deck-sr, 6px) var(--deck-rw, 0fr);
+        grid-template-rows: minmax(0, 1fr) var(--deck-sb, 0px) var(--deck-bh, 0fr);
+        grid-template-areas:
+            "zl sl stage sr zr"
+            "zb zb zb  zb  zb";
+        gap: 0;
+    }
+    .deck-zone { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+    .deck-zone[data-zone="L"] { grid-area: zl; border-right: 1px solid var(--border-color); }
+    .deck-zone[data-zone="R"] { grid-area: zr; border-left: 1px solid var(--border-color); }
+    .deck-zone[data-zone="B"] { grid-area: zb; border-top: 1px solid var(--border-color); flex-direction: row; }
+    .deck-zone:empty { visibility: hidden; border-color: transparent; }
+
+    .deck-split { background: transparent; cursor: col-resize; position: relative; z-index: 5; transition: background .15s; }
+    .deck-split::after { content: ''; position: absolute; inset: 0; background: var(--border-color); opacity: 0; transition: opacity .15s; }
+    .deck-split:hover::after, .deck-split.active::after { opacity: 1; background: var(--accent-cyan); }
+    .deck-split[data-split="L"] { grid-area: sl; }
+    .deck-split[data-split="R"] { grid-area: sr; }
+    .deck-split[data-split="B"] { grid-area: zb; cursor: row-resize; }
+    .deck-split:empty { display: none; }
+
+    .deck-stage { grid-area: stage; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+    .deck-tabs {
+        display: none; align-items: stretch; gap: 1px; height: 30px; flex-shrink: 0;
+        background: var(--bg-sidebar); border-bottom: 1px solid var(--border-color);
+        overflow-x: auto; scrollbar-width: none;
+    }
+    .deck-tabs.has-tabs { display: flex; }
+    .deck-tab {
+        display: flex; align-items: center; gap: 7px; padding: 0 10px 0 12px;
+        font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase;
+        color: var(--text-muted); cursor: pointer; border-right: 1px solid var(--border-color);
+        white-space: nowrap; max-width: 220px;
+    }
+    .deck-tab:hover { color: var(--text); }
+    .deck-tab.active { color: var(--accent-cyan); background: rgba(124, 58, 237, 0.1); box-shadow: inset 0 -2px 0 var(--accent-cyan); }
+    .deck-tab svg { width: 11px; height: 11px; flex-shrink: 0; opacity: .7; }
+    .deck-tab-x { margin-left: 4px; padding: 2px 3px; color: var(--text-muted); border-radius: 2px; font-size: 10px; line-height: 1; }
+    .deck-tab-x:hover { color: var(--red); background: rgba(239, 68, 68, .12); }
+    .deck-stage-body { flex: 1; min-height: 0; position: relative; display: flex; }
+    .deck-stage-body .deck-panel { flex: 1; }
+
+    /* ---- Panels ---- */
+    .deck-panel {
+        display: flex; flex-direction: column; min-width: 0; min-height: 0;
+        background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 4px;
+        margin: 4px; overflow: hidden; position: relative;
+        transition: box-shadow .15s, border-color .15s;
+    }
+    .deck-panel.deck-focus { border-color: rgba(217, 180, 254, .35); box-shadow: 0 0 14px rgba(124, 58, 237, .12); }
+    .deck-phead {
+        display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 4px 0 10px; flex-shrink: 0;
+        background: var(--bg-panel, var(--bg-sidebar)); border-bottom: 1px solid var(--border-color);
+        cursor: grab; user-select: none; touch-action: none;
+    }
+    .deck-phead:active { cursor: grabbing; }
+    .deck-pdot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-cyan); box-shadow: 0 0 6px var(--accent-cyan); flex-shrink: 0; }
+    .deck-ptitle {
+        flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        font-family: var(--font-mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--text);
+    }
+    .deck-ptag { font-family: var(--font-mono); font-size: 8px; letter-spacing: .1em; color: var(--text-muted); opacity: .7; }
+    .deck-pbtns { display: flex; align-items: center; gap: 1px; }
+    .deck-pbtns button {
+        width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+        color: var(--text-muted); border-radius: 3px; font-size: 11px; line-height: 1;
+        font-family: var(--font-mono);
+    }
+    .deck-pbtns button:hover { color: var(--text); background: rgba(124, 58, 237, .12); }
+    .deck-pbtns button.deck-x:hover { color: var(--red); background: rgba(239, 68, 68, .12); }
+    .deck-pbody { flex: 1; min-height: 0; overflow: auto; padding: 12px; position: relative; }
+    .deck-panel.deck-collapse .deck-pbody,
+    .deck-panel.deck-collapse .deck-rh { display: none; }
+    .deck-panel.deck-collapse { flex: 0 0 auto !important; }
+    .deck-panel.deck-collapse .deck-phead { border-bottom: none; cursor: default; }
+
+    .deck-pbody .page {
+        display: block !important; opacity: 1 !important; transform: none !important;
+        height: 100%;
+    }
+
+    /* float layer */
+    #deck-floats { position: absolute; inset: 0; pointer-events: none; z-index: var(--z-float-panel, 1900); }
+    .deck-panel.deck-float {
+        position: absolute; pointer-events: auto; margin: 0;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, .55), 0 0 0 1px rgba(255, 255, 255, .06);
+        border-radius: 5px;
+    }
+    .deck-panel.deck-max {
+        position: absolute !important; inset: 6px; margin: 0; z-index: 40;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, .6);
+    }
+
+    /* resize handles (float mode) */
+    .deck-rh { position: absolute; z-index: 45; touch-action: none; }
+    .deck-rh-n { top: -3px; left: 8px; right: 8px; height: 7px; cursor: n-resize; }
+    .deck-rh-s { bottom: -3px; left: 8px; right: 8px; height: 7px; cursor: s-resize; }
+    .deck-rh-e { right: -3px; top: 8px; bottom: 8px; width: 7px; cursor: e-resize; }
+    .deck-rh-w { left: -3px; top: 8px; bottom: 8px; width: 7px; cursor: w-resize; }
+    .deck-rh-ne, .deck-rh-nw, .deck-rh-se, .deck-rh-sw { width: 13px; height: 13px; }
+    .deck-rh-ne { top: -4px; right: -4px; cursor: ne-resize; }
+    .deck-rh-nw { top: -4px; left: -4px; cursor: nw-resize; }
+    .deck-rh-se { bottom: -4px; right: -4px; cursor: se-resize; }
+    .deck-rh-sw { bottom: -4px; left: -4px; cursor: sw-resize; }
+
+    /* drop hints during tear-off drag */
+    .deck-drop-l::before, .deck-drop-r::after, .deck-drop-b::after, .deck-drop-s::before {
+        content: ''; position: absolute; z-index: 60; pointer-events: none;
+        border: 2px dashed var(--accent-cyan); background: rgba(34, 197, 194, .07); border-radius: 6px;
+    }
+    .deck-drop-l::before { left: 4px; top: 4px; bottom: 4px; width: 26%; }
+    .deck-drop-r::after { right: 4px; top: 4px; bottom: 4px; width: 26%; }
+    .deck-drop-b::after { left: 4px; right: 4px; bottom: 4px; height: 30%; }
+    .deck-drop-s::before { left: 4px; right: 4px; top: 4px; bottom: 4px; }
+
+    /* ---- Launcher rail ---- */
+    .sidebar.rail-mode { width: 52px; min-width: 52px; }
+    .sidebar.rail-mode .nav-label { display: none; }
+    .sidebar.rail-mode .nav-item { justify-content: center; padding: 9px 0; gap: 0; }
+    .sidebar.rail-mode .nav-section-title {
+        font-size: 7px; padding: 6px 0 2px; text-align: center; letter-spacing: 0; opacity: .35;
+    }
+    .sidebar.rail-mode .nav-section-title::after { content: '·'; }
+    .sidebar.rail-mode .nav-section-title { font-size: 0; }
+    .sidebar.rail-mode .nav-section-title::before { content: '···'; font-size: 8px; letter-spacing: 2px; }
+    .sidebar.rail-mode .sidebar-footer > *:not(.rail-only) { display: none; }
+    .nav-item.rail-hidden { display: none; }
+    @media (min-width: 1025px) {
+        .sidebar-toggle { display: flex; }
+    }
+    @media (max-width: 1024px) {
+        .sidebar.rail-mode { width: var(--sidebar-w); min-width: var(--sidebar-w); }
+        .sidebar.rail-mode .nav-label { display: inline; }
+        .sidebar.rail-mode .nav-item { justify-content: flex-start; padding: 6px 16px; gap: 10px; }
+        .nav-item.rail-hidden { display: flex; }
+    }
+
+    /* ---- Workspace switcher (topbar) ---- */
+    .deck-ws { position: relative; }
+    .deck-ws-btn {
+        display: flex; align-items: center; gap: 7px; height: 28px; padding: 0 10px;
+        border: 1px solid var(--border-color); border-radius: 4px;
+        font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase;
+        color: var(--text-muted);
+    }
+    .deck-ws-btn:hover { color: var(--text); border-color: var(--accent-cyan); }
+    .deck-ws-btn .deck-caret { font-size: 8px; opacity: .6; }
+    .deck-ws-menu {
+        position: absolute; top: calc(100% + 6px); left: 0; min-width: 240px; z-index: var(--z-modal, 2000);
+        background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 5px;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, .55); padding: 6px; display: none;
+    }
+    .deck-ws-menu.open { display: block; }
+    .deck-ws-row {
+        display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 3px;
+        font-size: 11px; color: var(--text-muted); cursor: pointer;
+    }
+    .deck-ws-row:hover { background: rgba(124, 58, 237, .1); color: var(--text); }
+    .deck-ws-row.active { color: var(--accent-cyan); }
+    .deck-ws-row .deck-ws-del { margin-left: auto; color: var(--text-muted); font-size: 10px; padding: 2px 4px; border-radius: 2px; }
+    .deck-ws-row .deck-ws-del:hover { color: var(--red); background: rgba(239, 68, 68, .12); }
+    .deck-ws-new { display: flex; gap: 6px; padding: 6px; border-top: 1px solid var(--border-color); margin-top: 4px; }
+    .deck-ws-new input { flex: 1; min-width: 0; }
+    .deck-ws-sep { height: 1px; background: var(--border-color); margin: 4px 2px; }
+    .deck-kbd {
+        font-family: var(--font-mono); font-size: 8px; border: 1px solid var(--border-color);
+        border-radius: 3px; padding: 2px 5px; color: var(--text-muted); letter-spacing: .05em;
+    }
+
+    /* ---- Help ("what do these controls do?") ---- */
+    .deck-help { position: relative; margin-left: 6px; }
+    .deck-help-btn {
+        display: flex; align-items: center; justify-content: center; width: 28px; height: 28px;
+        border: 1px solid var(--border-color); border-radius: 4px;
+        font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);
+    }
+    .deck-help-btn:hover, .deck-help.open .deck-help-btn { color: var(--accent-cyan); border-color: var(--accent-cyan); }
+    .deck-help-pop {
+        position: absolute; top: calc(100% + 6px); right: 0; width: 400px; max-width: calc(100vw - 40px);
+        z-index: var(--z-modal, 2000);
+        background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 5px;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, .55); padding: 13px 15px; display: none;
+    }
+    .deck-help.open .deck-help-pop { display: block; }
+    .deck-help-pop h5 {
+        font-family: var(--font-mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
+        color: var(--accent-cyan); margin: 10px 0 3px;
+    }
+    .deck-help-pop h5:first-child { margin-top: 0; }
+    .deck-help-pop p { font-size: 11px; line-height: 1.55; color: var(--text-muted); margin: 0; }
+    .deck-help-pop p b { color: var(--text); font-weight: 600; }
+    @media (max-width: 1024px) {
+        .deck-help { display: none; }
+    }
+
+    /* ---- Ctrl+K palette ---- */
+    #deckPalette {
+        position: fixed; inset: 0; z-index: var(--z-toast, 3000); display: none;
+        background: rgba(0, 0, 0, .55); backdrop-filter: blur(3px);
+    }
+    #deckPalette.open { display: flex; align-items: flex-start; justify-content: center; padding-top: 14vh; }
+    .deck-pal-card {
+        width: min(560px, calc(100vw - 32px)); background: var(--bg-card);
+        border: 1px solid var(--border-hover, var(--border-color)); border-radius: 8px;
+        box-shadow: 0 30px 90px rgba(0, 0, 0, .65); overflow: hidden;
+    }
+    .deck-pal-input {
+        width: 100%; border: none; border-bottom: 1px solid var(--border-color); outline: none;
+        background: transparent; color: var(--text); font-size: 14px; padding: 14px 16px; border-radius: 0;
+    }
+    .deck-pal-list { max-height: 46vh; overflow-y: auto; padding: 6px; }
+    .deck-pal-item {
+        display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 4px;
+        cursor: pointer; color: var(--text-muted); font-size: 12px;
+    }
+    .deck-pal-item svg { width: 13px; height: 13px; flex-shrink: 0; opacity: .7; }
+    .deck-pal-item.sel { background: rgba(124, 58, 237, .14); color: var(--text); }
+    .deck-pal-item .deck-pal-kind {
+        margin-left: auto; font-family: var(--font-mono); font-size: 8px; letter-spacing: .1em;
+        text-transform: uppercase; opacity: .55; flex-shrink: 0;
+    }
+    .deck-pal-empty { padding: 18px; text-align: center; color: var(--text-muted); font-size: 11px; }
+    .deck-pal-head {
+        padding: 10px 10px 4px; margin-top: 2px;
+        font-family: var(--font-mono); font-size: 8px; letter-spacing: .14em;
+        text-transform: uppercase; color: var(--text-muted);
+        border-top: 1px solid var(--border-color);
+        display: flex; align-items: center; gap: 6px;
+    }
+    .deck-pal-head::before { content: '\25b8'; font-size: 7px; opacity: .5; }
+    .deck-pal-head:first-child { border-top: none; margin-top: 0; }
+    .deck-pal-spacer { width: 13px; display: inline-block; flex-shrink: 0; }
+    .deck-pal-kind {
+        max-width: 150px; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* ---- Topbar mission tabs (Maven-style) ---- */
+    .topbar-tabs {
+        flex: 1; min-width: 0; height: 100%; margin: 0 10px;
+        display: none; align-items: flex-end; gap: 2px;
+        overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+    }
+    .topbar-tabs::-webkit-scrollbar { display: none; }
+    .topbar.has-deck .topbar-tabs { display: flex; }
+    .topbar.has-deck .topbar-title-divider,
+    .topbar.has-deck #topbarTitle { display: none; }
+    .tb-tab {
+        position: relative; display: flex; align-items: center; gap: 7px;
+        max-width: 190px; min-width: 0; height: 34px; padding: 0 8px 0 11px; flex-shrink: 0;
+        color: var(--text-muted); cursor: pointer; user-select: none;
+        border: 1px solid transparent; border-bottom: none;
+        border-radius: 5px 5px 0 0; white-space: nowrap;
+        transition: color .15s, background .15s, border-color .15s;
+    }
+    .tb-tab svg { width: 12px; height: 12px; flex-shrink: 0; opacity: .65; }
+    .tb-tab span.tb-label { overflow: hidden; text-overflow: ellipsis; }
+    .tb-tab:hover { color: var(--text); background: rgba(124, 58, 237, .07); }
+    .tb-tab.active {
+        color: var(--accent-cyan); background: rgba(124, 58, 237, .13);
+        border-color: rgba(124, 58, 237, .3);
+        box-shadow: inset 0 2px 0 var(--accent-cyan), 0 -6px 14px rgba(124, 58, 237, .08);
+        text-shadow: 0 0 8px rgba(0, 240, 255, .25);
+    }
+    .tb-tab.active svg { opacity: 1; }
+    .tb-x {
+        width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;
+        border-radius: 3px; color: var(--text-muted); font-size: 11px; line-height: 1;
+        font-family: var(--font-mono); flex-shrink: 0; margin-right: -3px;
+    }
+    .tb-x:hover { color: var(--red); background: rgba(239, 68, 68, .15); }
+    .tb-new {
+        width: 24px; height: 24px; flex-shrink: 0; margin: 0 4px 5px;
+        display: flex; align-items: center; justify-content: center;
+        border: 1px dashed var(--border-color); border-radius: 4px;
+        color: var(--text-muted); font-size: 13px; line-height: 1;
+    }
+    .tb-new:hover { color: var(--accent-cyan); border-color: var(--accent-cyan); background: rgba(124, 58, 237, .1); }
+    .tb-overlay-tag {
+        font-family: var(--font-mono); font-size: 7px; letter-spacing: .1em;
+        color: var(--amber); border: 1px solid rgba(245, 158, 11, .35);
+        padding: 1px 3px; border-radius: 2px; flex-shrink: 0;
+    }
+
+    /* ---- panel chrome hierarchy: no fake tabs inside panels ---- */
+    .deck-panel.in-stage .deck-phead {
+        position: absolute; top: 6px; right: 6px; z-index: 30;
+        height: 26px; padding: 0 3px; gap: 2px; cursor: grab;
+        background: rgba(10, 10, 14, .85); backdrop-filter: blur(4px);
+        border: 1px solid var(--border-color); border-radius: 4px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, .45);
+        opacity: 0; pointer-events: none; transition: opacity .15s;
+    }
+    .deck-panel.in-stage:hover .deck-phead,
+    .deck-panel.in-stage:focus-within .deck-phead { opacity: 1; pointer-events: auto; }
+    .deck-panel.in-stage .deck-phead .deck-pdot,
+    .deck-panel.in-stage .deck-phead .deck-ptitle,
+    .deck-panel.in-stage .deck-phead .deck-ptag,
+    .deck-panel.in-stage .deck-phead [data-act="collapse"],
+    .deck-panel.in-stage .deck-phead [data-act="page"] { display: none; }
+
+    .deck-panel:not(.deck-float):not(.in-stage) .deck-phead {
+        height: 24px; padding: 0 2px 0 8px; gap: 6px;
+        background: transparent; border-bottom-color: rgba(124, 58, 237, .18);
+    }
+    .deck-panel:not(.deck-float):not(.in-stage) .deck-ptitle {
+        font-size: 8px; color: var(--text-muted); letter-spacing: .09em;
+    }
+    .deck-panel:not(.deck-float):not(.in-stage) .deck-pbtns button { width: 18px; height: 18px; font-size: 10px; }
+    .deck-panel:not(.deck-float):not(.in-stage) .deck-pdot { width: 5px; height: 5px; box-shadow: none; }
+
+    .deck-split-v { position: relative; height: 5px; flex-shrink: 0; cursor: row-resize; z-index: 5; }
+    .deck-split-v::after { content: ''; position: absolute; inset: 0; background: var(--border-color); opacity: 0; transition: opacity .15s; }
+    .deck-split-v:hover::after, .deck-split-v.active::after { opacity: 1; background: var(--accent-cyan); }
+
+    .deck-rail-chip {
+        display: none; align-items: center; margin-top: 8px; padding: 6px 9px;
+        border: 1px dashed var(--border-color); border-radius: 4px;
+        color: var(--text-muted); font-family: var(--font-mono); font-size: 9px;
+        letter-spacing: .06em; cursor: pointer;
+    }
+    .deck-rail-chip:hover { color: var(--accent-cyan); border-color: var(--accent-cyan); background: rgba(124, 58, 237, .08); }
+    .sidebar.rail-mode .deck-rail-chip { justify-content: center; padding: 6px 2px; font-size: 12px; }
+
+
+</style>
+
+<script>
+(function () {
+    'use strict';
+
+    var LS_LAYOUT = 'sc_deck_layout_v1';
+    var LS_WS     = 'sc_deck_workspaces_v1';
+    var LS_AWS    = 'sc_deck_ws_active_v1';
+    var LS_RAIL   = 'sc_deck_rail_v1';      // {mode:'rail'|'full', hidden:[ids]}
+    var LS_WFOCUS = 'sc_deck_ws_focus_v1';  // {wsName: lastFocusedToolId}
+    var MAX_SIDE = 2, MAX_BOTTOM = 1;
+
+    function $(id) { return document.getElementById(id); }
+    function esc(s) {
+        s = s == null ? '' : String(s);
+        if (typeof window.escapeHtml === 'function') return window.escapeHtml(s);
+        return s.replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+    }
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+    function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+    function read(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+
+    // ------------------------------------------------------------------ tools
+    var TOOLS = {};          // id -> {id,title,label,icon,el,home,parent,index,loaded,win,platform}
+    var PLATFORM_ORDER = [];
+    var PREF_ZONE = { 'sc-fusion': 'S', 'lineage-graph': 'S', 'crackerbox-threatmap': 'S', 'overview': 'S' };
+
+    function labelOf(item) {
+        var l = item.querySelector('.nav-label');
+        return (l ? l.textContent : item.textContent).trim();
+    }
+    function buildTools() {
+        PLATFORM_ORDER.length = 0;
+        document.querySelectorAll('.nav-section').forEach(function (sec) {
+            var tEl = sec.querySelector('.nav-section-title');
+            var plat = tEl ? tEl.textContent.trim() : 'Platform';
+            if (PLATFORM_ORDER.indexOf(plat) < 0) PLATFORM_ORDER.push(plat);
+            sec.querySelectorAll('.nav-item').forEach(function (item) {
+                var pg = item.dataset.page;
+                var iconSvg = item.querySelector('svg');
+                var icon = iconSvg ? iconSvg.outerHTML : '';
+                var label = labelOf(item);
+                if (pg) {
+                    if (!TOOLS[pg]) TOOLS[pg] = {
+                        id: pg, title: (window.PAGES && PAGES[pg]) || label, label: label,
+                        icon: icon, el: $('page-' + pg), win: null
+                    };
+                    TOOLS[pg].platform = plat;
+                } else if (item.id === 'gaiaNavItem') {
+                    TOOLS.gaia = { id: 'gaia', title: 'GAIA Geo Controller', label: label || 'GAIA', icon: icon, el: null, win: 'gaia', platform: plat };
+                }
+            });
+        });
+        if (!TOOLS.won) {
+            TOOLS.won = { id: 'won', title: 'Watch Notes', label: 'Watch Notes', icon: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10v12H3z"/><path d="M5.5 5h5M5.5 8h5M5.5 11h3"/></svg>', el: null, win: 'won', platform: 'Controllers' };
+        } else if (!TOOLS.won.platform) TOOLS.won.platform = 'Controllers';
+        Object.keys(TOOLS).forEach(function (id) {
+            var t = TOOLS[id];
+            if (!t.platform) t.platform = 'Controllers';
+            if (t.el) { t.parent = t.el.parentNode; t.index = Array.prototype.indexOf.call(t.parent.children, t.el); }
+        });
+    }
+    function findTool(id) { return TOOLS[id] || null; }
+
+    // ------------------------------------------------------------------ state
+    function freshState() {
+        return { sizes: { l: 20, r: 24, b: 26 }, zones: { L: [], R: [], B: [], S: [] },
+                 floats: {}, mode: {}, collapsed: {}, maximized: null, tabOrder: [], zsplits: { L: 50, R: 50 } };
+    }
+    var S = freshState();
+    var root, grid, floatsEl, stageBody, tabsEl, topbarEl;
+    var focusZ = 10;
+    var silentFocus = false;   // suppress per-focus persistence while (re)building a layout
+
+    function persist() { store(LS_LAYOUT, { v: 1, sizes: S.sizes, zones: S.zones, floats: S.floats, mode: S.mode, collapsed: S.collapsed, tabOrder: S.tabOrder, zsplits: S.zsplits }); }
+
+    // ------------------------------------------------------------------- dom
+    function ensureDom() {
+        if ($('deck-root')) return;
+        root = document.createElement('div');
+        root.id = 'deck-root';
+        root.hidden = true;
+        root.innerHTML =
+            '<div class="deck-grid">' +
+                '<section class="deck-zone" data-zone="L"></section>' +
+                '<div class="deck-split" data-split="L" title="Drag to resize"></div>' +
+                '<section class="deck-stage">' +
+                    '<div class="deck-tabs"></div>' +
+                    '<div class="deck-stage-body"></div>' +
+                '</section>' +
+                '<div class="deck-split" data-split="R" title="Drag to resize"></div>' +
+                '<section class="deck-zone" data-zone="R"></section>' +
+                '<div class="deck-split" data-split="B" title="Drag to resize"></div>' +
+                '<section class="deck-zone" data-zone="B"></section>' +
+            '</div>' +
+            '<div id="deck-floats"></div>';
+        var main = document.querySelector('.main-container');
+        main.insertBefore(root, main.firstChild);
+        grid = root.querySelector('.deck-grid');
+        floatsEl = root.querySelector('#deck-floats');
+        stageBody = root.querySelector('.deck-stage-body');
+        tabsEl = root.querySelector('.deck-tabs');
+
+        grid.querySelectorAll('.deck-split').forEach(bindSplitter);
+        bindFloatLayer();
+        tabsDelegate();
+    }
+
+    function zoneEl(z) { return grid.querySelector('.deck-zone[data-zone="' + z + '"]'); }
+    function panelByTool(id) { return root.querySelector('.deck-panel[data-tool="' + id + '"]'); }
+
+    function applySizes() {
+        var hasL = S.zones.L.length > 0, hasR = S.zones.R.length > 0, hasB = S.zones.B.length > 0;
+        var l = hasL ? S.sizes.l : 0, r = hasR ? S.sizes.r : 0, b = hasB ? S.sizes.b : 0;
+        var mid = Math.max(30, 100 - l - r);
+        var top = Math.max(20, 100 - b);
+        grid.style.setProperty('--deck-lw', l + 'fr');
+        grid.style.setProperty('--deck-rw', r + 'fr');
+        grid.style.setProperty('--deck-bh', b + 'fr');
+        grid.style.setProperty('--deck-sl', hasL ? '6px' : '0px');
+        grid.style.setProperty('--deck-sr', hasR ? '6px' : '0px');
+        grid.style.setProperty('--deck-sb', hasB ? '6px' : '0px');
+        grid.style.gridTemplateRows = 'minmax(0,' + top + 'fr) ' + (hasB ? '6px' : '0px') + ' minmax(0,' + b + 'fr)';
+    }
+
+    function scheduleMapResize() {
+        clearTimeout(scheduleMapResize._t);
+        scheduleMapResize._t = setTimeout(function () {
+            ['fusionMap', 'aviationMap', 'threatMap'].forEach(function (k) {
+                try { if (window[k] && typeof window[k].resize === 'function') window[k].resize(); } catch (e) {}
+            });
+            try { window.dispatchEvent(new Event('deck-layout')); } catch (e) {}
+        }, 260);
+    }
+
+    // ---------------------------------------------------------------- panels
+    function panelHTML(t) {
+        return '<header class="deck-phead">' +
+            '<span class="deck-pdot"></span>' +
+            '<span class="deck-ptitle">' + esc(t.title) + '</span>' +
+            '<span class="deck-ptag"></span>' +
+            '<nav class="deck-pbtns">' +
+                '<button type="button" data-act="page" title="Open as full page">&#8618;</button>' +
+                '<button type="button" data-act="max" title="Maximize">&#9633;</button>' +
+                '<button type="button" data-act="collapse" title="Collapse">&ndash;</button>' +
+                '<button type="button" data-act="close" title="Close" class="deck-x">&times;</button>' +
+            '</nav>' +
+        '</header>' +
+        '<div class="deck-pbody"></div>' +
+        ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'].map(function (d) {
+            return '<span class="deck-rh deck-rh-' + d + '" data-dir="' + d + '"></span>';
+        }).join('');
+    }
+
+    function createPanel(t, zone) {
+        var p = document.createElement('section');
+        p.className = 'deck-panel';
+        p.dataset.tool = t.id;
+        p.innerHTML = panelHTML(t);
+        p.querySelector('.deck-pbody').appendChild(t.el);
+        t.el.classList.add('deck-live');
+        if (zone === 'F') { floatsEl.appendChild(p); setMode(p, 'float'); }
+        else if (zone === 'S') { stageBody.appendChild(p); setMode(p, 'stage'); }
+        else { zoneEl(zone).appendChild(p); setMode(p, zone === 'B' ? 'docked-b' : 'docked'); }
+        bindPanel(p, t);
+        syncPanelChrome(p);
+        if (zone === 'L' || zone === 'R') applyZoneSplit(zone);
+        focusPanel(p);
+        return p;
+    }
+
+    function setMode(p, m) {
+        var t = findTool(p.dataset.tool);
+        p.classList.toggle('deck-float', m === 'float');
+        p.classList.remove('deck-max');
+        if (t) S.mode[t.id] = m;
+        if (m !== 'float') {
+            delete p.style.left; delete p.style.top; delete p.style.width; delete p.style.height; delete p.style.zIndex;
+        }
+    }
+
+    function placeFloat(p, geo) {
+        var r = root.getBoundingClientRect();
+        var g = geo || S.floats[p.dataset.tool] || {};
+        var w = clamp(g.w || 560, 320, Math.max(320, r.width - 40));
+        var h = clamp(g.h || Math.round(r.height * 0.72), 200, Math.max(200, r.height - 30));
+        var x = g.x != null ? g.x : Math.max(10, r.width - w - 30);
+        var y = g.y != null ? g.y : 18;
+        p.style.width = w + 'px'; p.style.height = h + 'px';
+        p.style.left = clamp(x, 0, Math.max(0, r.width - w)) + 'px';
+        p.style.top = clamp(y, 0, Math.max(0, r.height - 60)) + 'px';
+        S.floats[p.dataset.tool] = { x: parseFloat(p.style.left), y: parseFloat(p.style.top), w: w, h: h };
+    }
+
+    function focusPanel(p) {
+        root.querySelectorAll('.deck-panel').forEach(function (x) { x.classList.remove('deck-focus'); });
+        p.classList.add('deck-focus');
+        focusZ += 1;
+        p.style.zIndex = focusZ;
+        S.focus = p.dataset.tool;
+        if (!silentFocus) wsFocusSet(wsActiveName(), p.dataset.tool);
+        var t = findTool(p.dataset.tool);
+        if (t) $('topbarTitle').textContent = t.title;
+        if (p.classList.contains('deck-float')) { placeFloat(p, S.floats[p.dataset.tool]); p.style.zIndex = focusZ; }
+        renderTabs();
+    }
+
+    // mount/unmount ----------------------------------------------------------
+    function unmountTool(t) {
+        if (!t.parent || !t.el) return;
+        try {
+            t.parent.insertBefore(t.el, t.parent.children[t.index] || null);
+        } catch (e) { t.parent.appendChild(t.el); }
+        t.el.classList.remove('deck-live');
+        var hash = (window.location.hash || '').slice(1);
+        if (hash === t.id && typeof window.navigate === 'function') navigate(t.id);
+    }
+
+    function removeFromState(id) {
+        ['L', 'R', 'B', 'S'].forEach(function (z) {
+            var i = S.zones[z].indexOf(id);
+            if (i >= 0) S.zones[z].splice(i, 1);
+        });
+        var ti = S.tabOrder.indexOf(id);
+        if (ti >= 0) S.tabOrder.splice(ti, 1);
+        delete S.collapsed[id];
+        if (S.maximized === id) S.maximized = null;
+    }
+
+    // public-ish ops ---------------------------------------------------------
+    function open(id, opts) {
+        opts = opts || {};
+        var t = findTool(id);
+        if (!t) return false;
+        if (t.win) { runWindowTool(t); return true; }
+        if (!t.el) return false;
+        var existing = panelByTool(id);
+        if (existing) {
+            if (!rootVisible()) showRoot(true);
+            focusPanel(existing);
+            if (existing.classList.contains('deck-collapse')) toggleCollapse(existing);
+            return true;
+        }
+        var zone = opts.zone || PREF_ZONE[id] || 'R';
+        if (zone === 'B' && S.zones.B.length >= MAX_BOTTOM) zone = 'S';
+        else if ((zone === 'L' || zone === 'R') && S.zones[zone].length >= MAX_SIDE) zone = 'S';
+        S.zones[zone].push(id);
+        if (S.tabOrder.indexOf(id) < 0) S.tabOrder.push(id);
+        if (!rootVisible()) showRoot(true);
+        createPanel(t, zone);
+        loadToolData(t);
+        applySizes(); persist(); scheduleMapResize();
+        return true;
+    }
+
+    function close(id) {
+        var t = findTool(id); var p = panelByTool(id);
+        if (!t || !p) return;
+        p.querySelector('.deck-pbody').appendChild(t.el); // keep node alive while moving
+        removeFromState(id);
+        p.remove();
+        applyZoneSplit('L'); applyZoneSplit('R');
+        unmountTool(t);
+        if (!anyPanels()) showRoot(false);
+        applySizes(); persist(); renderTabs(); scheduleMapResize();
+    }
+
+    function anyPanels() { return !!root.querySelector('.deck-panel'); }
+    function rootVisible() { return !root.hidden; }
+    function showRoot(v) {
+        root.hidden = !v;
+        var content = document.querySelector('.main-container .content');
+        if (content) content.style.display = v ? 'none' : '';
+        var bar = document.querySelector('.topbar');
+        if (bar) bar.classList.toggle('has-deck', !!v);
+        if (!v) {
+            var hash = (window.location.hash || '').slice(1);
+            $('topbarTitle').textContent = (window.PAGES && PAGES[hash]) || 'Overview';
+        }
+        renderTopbarTabs();
+        scheduleMapResize();
+    }
+    function exitDeck() { // close everything, return classic
+        Object.keys(TOOLS).forEach(function (id) { if (panelByTool(id)) close(id); });
+        showRoot(false);
+    }
+
+    function loadToolData(t) {
+        if (t.loaded) return;
+        t.loaded = true;
+        if (typeof window.loadPageData === 'function') {
+            try { loadPageData(t.id); } catch (e) {}
+        }
+        if (typeof window.initCMBReveal === 'function') { try { initCMBReveal(t.el); } catch (e) {} }
+    }
+
+    function runWindowTool(t) {
+        if (t.win === 'gaia' && window.GAIA) { GAIA.open(); return; }
+        if (t.win === 'won' && window.WONote) { WONote.toggle(); return; }
+    }
+
+    // interactions ------------------------------------------------------------
+    function toggleCollapse(p) {
+        p.classList.toggle('deck-collapse');
+        S.collapsed[p.dataset.tool] = p.classList.contains('deck-collapse');
+        persist(); scheduleMapResize();
+    }
+
+    function toggleMax(p) {
+        if (p.classList.contains('deck-max')) {
+            p.classList.remove('deck-max'); S.maximized = null;
+        } else {
+            root.querySelectorAll('.deck-panel').forEach(function (x) { x.classList.remove('deck-max'); });
+            p.classList.add('deck-max'); S.maximized = p.dataset.tool;
+        }
+        persist(); scheduleMapResize();
+    }
+
+    function undockToFloating(p, px, py) {
+        var id = p.dataset.tool;
+        removeFromState(id);
+        floatsEl.appendChild(p);
+        setMode(p, 'float');
+        syncPanelChrome(p);
+        applyZoneSplit('L'); applyZoneSplit('R');
+        placeFloat(p, { x: px - 120, y: py - 15 });
+        applySizes(); persist(); renderTabs(); scheduleMapResize();
+    }
+
+    function dockPanel(p, zone) {
+        var id = p.dataset.tool;
+        if ((zone === 'L' || zone === 'R') && S.zones[zone].length >= MAX_SIDE) zone = 'S';
+        if (zone === 'B' && S.zones.B.length >= MAX_BOTTOM) zone = 'S';
+        removeFromState(id);
+        if (zone === 'S') stageBody.appendChild(p);
+        else zoneEl(zone).appendChild(p);
+        setMode(p, zone === 'S' ? 'stage' : zone === 'B' ? 'docked-b' : 'docked');
+        S.zones[zone].push(id);
+        if (S.tabOrder.indexOf(id) < 0) S.tabOrder.push(id);
+        syncPanelChrome(p);
+        if (zone === 'L' || zone === 'R') applyZoneSplit(zone);
+        applySizes(); persist(); renderTabs(); scheduleMapResize();
+    }
+
+    function dropZoneFor(px, py) {
+        var r = grid.getBoundingClientRect();
+        if (px < r.left || px > r.right || py < r.top || py > r.bottom) return null;
+        var rx = (px - r.left) / r.width, ry = (py - r.top) / r.height;
+        if (rx < 0.16) return 'L';
+        if (rx > 0.84) return 'R';
+        if (ry > 0.72) return 'B';
+        return 'S';
+    }
+
+    function clearHints() { grid.classList.remove('deck-drop-l', 'deck-drop-r', 'deck-drop-b', 'deck-drop-s'); }
+
+    function bindPanel(p, t) {
+        var head = p.querySelector('.deck-phead');
+        head.addEventListener('pointerdown', function (e) {
+            if (e.target.closest('button')) return;
+            if (e.button !== 0) return;
+            e.preventDefault();
+            focusPanel(p);
+            var startX = e.clientX, startY = e.clientY;
+            var floating = p.classList.contains('deck-float');
+            var startLeft = parseFloat(p.style.left) || 0, startTop = parseFloat(p.style.top) || 0;
+            var moved = false;
+            head.setPointerCapture(e.pointerId);
+            function onMove(ev) {
+                if (!moved && !floating) {
+                    if (Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY) < 7) return;
+                    moved = true;
+                    undockToFloating(p, ev.clientX, ev.clientY);
+                    startLeft = parseFloat(p.style.left) || 0; startTop = parseFloat(p.style.top) || 0;
+                }
+                moved = true;
+                var rr = root.getBoundingClientRect();
+                p.style.left = clamp(startLeft + (ev.clientX - startX), 0, rr.width - 80) + 'px';
+                p.style.top = clamp(startTop + (ev.clientY - startY), 0, rr.height - 40) + 'px';
+                var dz = dropZoneFor(ev.clientX, ev.clientY);
+                clearHints();
+                if (dz === 'L') grid.classList.add('deck-drop-l');
+                else if (dz === 'R') grid.classList.add('deck-drop-r');
+                else if (dz === 'B') grid.classList.add('deck-drop-b');
+                else if (dz === 'S') grid.classList.add('deck-drop-s');
+            }
+            function onUp(ev) {
+                head.removeEventListener('pointermove', onMove);
+                head.removeEventListener('pointerup', onUp);
+                clearHints();
+                if (moved) {
+                    var dz = dropZoneFor(ev.clientX, ev.clientY);
+                    if (dz) {
+                        dockPanel(p, dz);
+                        applySizes(); renderTabs(); scheduleMapResize();
+                    } else {
+                        S.floats[p.dataset.tool] = { x: parseFloat(p.style.left), y: parseFloat(p.style.top), w: parseFloat(p.style.width), h: parseFloat(p.style.height) };
+                        persist();
+                    }
+                }
+            }
+            head.addEventListener('pointermove', onMove);
+            head.addEventListener('pointerup', onUp);
+        });
+
+        p.addEventListener('click', function (e) {
+            var b = e.target.closest('button[data-act]');
+            if (!b) return;
+            var act = b.dataset.act;
+            if (act === 'close') close(p.dataset.tool);
+            else if (act === 'collapse') toggleCollapse(p);
+            else if (act === 'max') toggleMax(p);
+            else if (act === 'page') { var id = p.dataset.tool; close(id); navigate(id); }
+        });
+
+        p.addEventListener('pointerdown', function () { focusPanel(p); }, true);
+
+        p.querySelectorAll('.deck-rh').forEach(function (rh) {
+            rh.addEventListener('pointerdown', function (e) {
+                e.preventDefault(); e.stopPropagation();
+                var dir = rh.dataset.dir;
+                var sx = e.clientX, sy = e.clientY;
+                var w0 = p.offsetWidth, h0 = p.offsetHeight, l0 = parseFloat(p.style.left) || 0, t0 = parseFloat(p.style.top) || 0;
+                rh.setPointerCapture(e.pointerId);
+                function mv(ev) {
+                    var dx = ev.clientX - sx, dy = ev.clientY - sy;
+                    var rr = root.getBoundingClientRect();
+                    var w = w0, h = h0, l = l0, tp = t0;
+                    if (dir.indexOf('e') >= 0) w = clamp(w0 + dx, 300, rr.width - l0 - 4);
+                    if (dir.indexOf('s') >= 0) h = clamp(h0 + dy, 160, rr.height - t0 - 4);
+                    if (dir.indexOf('w') >= 0) { w = clamp(w0 - dx, 300, l0 + w0 - 4); l = l0 + w0 - w; }
+                    if (dir.indexOf('n') >= 0) { h = clamp(h0 - dy, 160, t0 + h0 - 4); tp = t0 + h0 - h; }
+                    p.style.width = w + 'px'; p.style.height = h + 'px';
+                    p.style.left = l + 'px'; p.style.top = tp + 'px';
+                }
+                function up() {
+                    rh.removeEventListener('pointermove', mv);
+                    rh.removeEventListener('pointerup', up);
+                    S.floats[p.dataset.tool] = { x: parseFloat(p.style.left), y: parseFloat(p.style.top), w: p.offsetWidth, h: p.offsetHeight };
+                    persist(); scheduleMapResize();
+                }
+                rh.addEventListener('pointermove', mv);
+                rh.addEventListener('pointerup', up);
+            });
+        });
+    }
+
+    // splitters ----------------------------------------------------------------
+    function bindSplitter(sp) {
+        sp.addEventListener('pointerdown', function (e) {
+            e.preventDefault();
+            var which = sp.dataset.split;
+            var r = grid.getBoundingClientRect();
+            sp.classList.add('active');
+            sp.setPointerCapture(e.pointerId);
+            function mv(ev) {
+                if (which === 'L') S.sizes.l = clamp(((ev.clientX - r.left) / r.width) * 100, 12, 42);
+                if (which === 'R') S.sizes.r = clamp(((r.right - ev.clientX) / r.width) * 100, 12, 42);
+                if (which === 'B') S.sizes.b = clamp(((r.bottom - ev.clientY) / r.height) * 100, 10, 55);
+                applySizes();
+            }
+            function up() {
+                sp.classList.remove('active');
+                sp.removeEventListener('pointermove', mv);
+                sp.removeEventListener('pointerup', up);
+                persist(); scheduleMapResize();
+            }
+            sp.addEventListener('pointermove', mv);
+            sp.addEventListener('pointerup', up);
+        });
+    }
+
+    function bindFloatLayer() {
+        // clicks pass through empty float layer
+        floatsEl.addEventListener('pointerdown', function (e) { if (e.target === floatsEl) e.stopPropagation(); });
+    }
+
+    // ------------------------------------------------- panel chrome + zone splits
+    function syncPanelChrome(p) {
+        p.classList.toggle('in-stage', !!p.closest('.deck-stage-body'));
+    }
+    function applyZoneSplit(z) {
+        var ze = zoneEl(z);
+        if (!ze) return;
+        ze.querySelectorAll(':scope > .deck-split-v').forEach(function (s) { s.remove(); });
+        var panels = ze.querySelectorAll(':scope > .deck-panel');
+        if (panels.length === 2) {
+            var sp = document.createElement('div');
+            sp.className = 'deck-split-v';
+            sp.dataset.zsplit = z;
+            ze.insertBefore(sp, panels[1]);
+            bindZoneSplitter(sp, z);
+            panels[0].style.flex = '0 0 ' + clamp(S.zsplits[z] || 50, 15, 85) + '%';
+            panels[1].style.flex = '1 1 auto';
+        } else {
+            panels.forEach(function (p) { p.style.flex = ''; });
+        }
+    }
+    function bindZoneSplitter(sp, z) {
+        if (sp._bound) return;
+        sp._bound = true;
+        sp.addEventListener('pointerdown', function (e) {
+            e.preventDefault();
+            var r = zoneEl(z).getBoundingClientRect();
+            sp.classList.add('active');
+            sp.setPointerCapture(e.pointerId);
+            function mv(ev) {
+                S.zsplits[z] = clamp(((ev.clientY - r.top) / r.height) * 100, 15, 85);
+                applyZoneSplit(z);
+            }
+            function up() {
+                sp.classList.remove('active');
+                sp.removeEventListener('pointermove', mv);
+                sp.removeEventListener('pointerup', up);
+                persist(); scheduleMapResize();
+            }
+            sp.addEventListener('pointermove', mv);
+            sp.addEventListener('pointerup', up);
+        });
+    }
+
+    // stage tabs ---------------------------------------------------------------
+    function renderTabs() {
+        var ids = [];
+        stageBody.querySelectorAll('.deck-panel').forEach(function (p) { ids.push(p.dataset.tool); });
+        tabsEl.classList.toggle('has-tabs', ids.length > 0);
+        tabsEl.innerHTML = ids.map(function (id) {
+            var t = findTool(id);
+            return '<div class="deck-tab' + (id === S.focus ? ' active' : '') + '" data-tool="' + esc(id) + '">' +
+                (t ? t.icon : '') + '<span>' + esc(t ? t.title : id) + '</span>' +
+                '<button type="button" class="deck-tab-x" title="Close">&times;</button></div>';
+        }).join('');
+        renderTopbarTabs();
+    }
+
+    // ------------------------------------------------------- topbar mission tabs
+    function overlayOpen(id) {
+        var m = { gaia: ['gaia-panel', 'gaia-hidden'], won: ['won-panel', 'won-hidden'] }[id];
+        if (!m) return false;
+        var el = $(m[0]);
+        return !!(el && !el.classList.contains(m[1]));
+    }
+    function currentTabs() {
+        var out = [];
+        S.tabOrder.forEach(function (id) { if (panelByTool(id)) out.push(id); });
+        ['gaia', 'won'].forEach(function (id) {
+            var t = findTool(id);
+            if (t && t.win && overlayOpen(id) && out.indexOf(id) < 0) out.push(id);
+        });
+        return out;
+    }
+    function renderTopbarTabs() {
+        if (!topbarEl || !document.body.contains(topbarEl)) return;
+        var ids = currentTabs();
+        var sig = ids.join('|') + '#' + (S.focus || '');
+        if (renderTopbarTabs._sig === sig) return;
+        renderTopbarTabs._sig = sig;
+        var html = ids.map(function (id) {
+            var t = findTool(id) || { title: id, icon: '' };
+            var act = id === S.focus ? ' active' : '';
+            var ov = t.win ? '<span class="tb-overlay-tag">WIN</span>' : '';
+            return '<div class="tb-tab' + act + '" data-tab="' + esc(id) + '" title="' + esc(t.title) + '">' +
+                (t.icon || '') + '<span class="tb-label">' + esc(t.title) + '</span>' + ov +
+                '<button type="button" class="tb-x" data-tbx="' + esc(id) + '" title="Close">&times;</button></div>';
+        }).join('');
+        html += '<button type="button" class="tb-new" data-new="1" title="New tab \u2014 search tools (Ctrl+K)">+</button>';
+        topbarEl.innerHTML = html;
+    }
+    function initTopbar() {
+        topbarEl = $('topbarTabs');
+        if (topbarEl && !topbarEl._bound) {
+            topbarEl._bound = true;
+            topbarEl.addEventListener('click', function (e) {
+                if (e.target.closest('[data-new]')) { togglePalette(); return; }
+                var xb = e.target.closest('[data-tbx]');
+                if (xb) {
+                    e.stopPropagation();
+                    var xid = xb.dataset.tbx, xt = findTool(xid);
+                    if (xt && xt.win) {
+                        if (xid === 'gaia' && window.GAIA) GAIA.close();
+                        else if (xid === 'won' && window.WONote) WONote.toggle();
+                        renderTopbarTabs._sig = null;
+                        setTimeout(renderTopbarTabs, 60);
+                        return;
+                    }
+                    close(xid);
+                    return;
+                }
+                var tab = e.target.closest('.tb-tab');
+                if (!tab) return;
+                var id = tab.dataset.tab, t = findTool(id);
+                if (t && t.win) { runWindowTool(t); return; }
+                var p = panelByTool(id);
+                if (p) { if (p.classList.contains('deck-collapse')) toggleCollapse(p); focusPanel(p); }
+            });
+            topbarEl.addEventListener('auxclick', function (e) {
+                if (e.button !== 1) return;
+                var tb = e.target.closest('.tb-tab');
+                if (!tb) return;
+                var t2 = findTool(tb.dataset.tab);
+                if (t2 && t2.win) return;
+                close(tb.dataset.tab);
+            });
+        }
+        var solver = $('tbSolver'), graph = $('tbGraph');
+        if (solver && !solver._bound) {
+            solver._bound = true;
+            solver.addEventListener('click', function () { if (isMobile()) navigate('yono-chat'); else open('yono-chat'); });
+        }
+        if (graph && !graph._bound) {
+            graph._bound = true;
+            graph.addEventListener('click', function () { if (isMobile()) navigate('lineage-graph'); else open('lineage-graph'); });
+        }
+        setInterval(renderTopbarTabs, 1200);
+    }
+
+    function tabsDelegate() {
+        tabsEl.addEventListener('click', function (e) {
+            var tab = e.target.closest('.deck-tab');
+            if (!tab) return;
+            var id = tab.dataset.tool;
+            if (e.target.closest('.deck-tab-x')) { close(id); return; }
+            var p = panelByTool(id);
+            if (p) { focusPanel(p); p.scrollIntoView({ block: 'nearest' }); }
+        });
+    }
+
+    // ------------------------------------------------------------ workspaces
+    var SEED_WS = {
+        'Watchfloor': { sizes: { l: 0, r: 24, b: 26 }, zones: { L: [], R: ['sc-gdelt'], B: ['observability'], S: ['sc-fusion'] }, floats: {}, mode: {}, collapsed: {} },
+        'Targeting':  { sizes: { l: 20, r: 24, b: 0 }, zones: { L: ['sc-types'], R: ['sc-objects'], B: [], S: ['sc-fusion'] }, floats: {}, mode: {}, collapsed: {} },
+        'Ops':        { sizes: { l: 0, r: 22, b: 24 }, zones: { L: [], R: ['statham-fleet'], B: ['audit-logs'], S: ['overview'] }, floats: {}, mode: {}, collapsed: {} }
+    };
+
+    function wsAll() {
+        var w = read(LS_WS);
+        if (!w || typeof w !== 'object') {
+            w = JSON.parse(JSON.stringify(SEED_WS));
+            store(LS_WS, w);
+        }
+        return w;
+    }
+    function wsActiveName() { return read(LS_AWS) || 'Classic'; }
+    function wsSetActive(n) { store(LS_AWS, n); updateWsBtn(); }
+    function wsFocusAll() { var m = read(LS_WFOCUS); return (m && typeof m === 'object' && !Array.isArray(m)) ? m : {}; }
+    function wsFocusGet(n) { return wsFocusAll()[n] || null; }
+    function wsFocusSet(n, id) {
+        if (!n || n === 'Classic' || !id) return;
+        var m = wsFocusAll(); if (m[n] === id) return;
+        m[n] = id; store(LS_WFOCUS, m);
+    }
+    function wsFocusForget(n) { var m = wsFocusAll(); if (!(n in m)) return; delete m[n]; store(LS_WFOCUS, m); }
+    function serializeCurrent() {
+        return { sizes: JSON.parse(JSON.stringify(S.sizes)), zones: JSON.parse(JSON.stringify(S.zones)),
+                 floats: JSON.parse(JSON.stringify(S.floats)), mode: {}, collapsed: JSON.parse(JSON.stringify(S.collapsed)),
+                 zsplits: JSON.parse(JSON.stringify(S.zsplits)), focus: S.focus || null };
+    }
+    function saveCurrentAs(name) {
+        var w = wsAll();
+        w[name] = serializeCurrent();
+        store(LS_WS, w);
+        wsFocusSet(name, S.focus);
+        wsSetActive(name);
+        renderWsMenu();
+    }
+    function applyLayout(l, wsName) {
+        wsName = wsName || wsActiveName();
+        var preFocus = wsFocusGet(wsName);   // read BEFORE any panel (re)build can touch the map
+        // teardown
+        Object.keys(TOOLS).forEach(function (id) { if (panelByTool(id)) { var t = TOOLS[id]; panelByTool(id).remove(); removeFromState(id); unmountTool(t); } });
+        S = freshState();
+        if (l && l.zones) {
+            S.sizes = Object.assign(S.sizes, l.sizes || {});
+            if (l.zsplits) S.zsplits = Object.assign(S.zsplits, l.zsplits);
+            ['L', 'R', 'B', 'S'].forEach(function (z) {
+                (l.zones[z] || []).forEach(function (id) {
+                    if (findTool(id) && findTool(id).el && !findTool(id).win) S.zones[z].push(id);
+                });
+            });
+        }
+        if (!anyOpenPlanned()) { showRoot(false); persist(); return; }
+        showRoot(true);
+        silentFocus = true;
+        try {
+            ['L', 'R', 'B'].forEach(function (z) {
+                S.zones[z].forEach(function (id) { var t = findTool(id); var p = createPanel(t, z); loadToolData(t); if (S.collapsed[id]) p.classList.add('deck-collapse'); });
+                if (z === 'L' || z === 'R') applyZoneSplit(z);
+            });
+            S.zones.S.forEach(function (id) { var t = findTool(id); var p = createPanel(t, 'S'); loadToolData(t); });
+        } finally { silentFocus = false; }
+        S.tabOrder = [].concat(S.zones.S, S.zones.L, S.zones.R, S.zones.B);
+        // last-focused restore: live per-ws record wins, saved snapshot focus is the fallback
+        var f = null, cands = [preFocus, wsFocusGet(wsName), l && l.focus];
+        for (var ci = 0; ci < cands.length && !f; ci++) {
+            var cid = cands[ci];
+            if (cid && findTool(cid) && findTool(cid).el && S.tabOrder.indexOf(cid) >= 0) f = cid;
+        }
+        if (!f) f = S.zones.S[0] || (S.zones.R[0] || (S.zones.L[0] || null));
+        S.focus = f;
+        applySizes(); renderTabs(); persist(); scheduleMapResize();
+        var fp = f && panelByTool(f); if (fp) focusPanel(fp);
+    }
+    function anyOpenPlanned() { return S.zones.L.length + S.zones.R.length + S.zones.B.length + S.zones.S.length > 0; }
+    function captureCurrentToActive() {
+        var act = wsActiveName();
+        if (!act || act === 'Classic') return;
+        var w = wsAll();
+        w[act] = serializeCurrent();
+        store(LS_WS, w);
+        wsFocusSet(act, S.focus);
+    }
+    function applyWorkspace(name) {
+        if (name === wsActiveName()) return;
+        captureCurrentToActive();   // workspaces are live: unsaved edits survive switching
+        if (name === 'Classic') { exitDeck(); wsSetActive('Classic'); renderWsMenu(); return; }
+        var w = wsAll()[name];
+        if (!w) return;
+        wsSetActive(name);
+        applyLayout(w, name);
+        renderWsMenu();
+    }
+    function deleteWs(name) {
+        var w = wsAll(); delete w[name]; store(LS_WS, w);
+        wsFocusForget(name);
+        if (wsActiveName() === name) { wsSetActive('Classic'); }
+        renderWsMenu();
+    }
+
+    // workspace UI -------------------------------------------------------------
+    var wsBtn, wsMenu;
+    function buildWsUI() {
+        var actions = document.querySelector('.topbar-actions');
+        if (!actions || $('deckWsBtn')) return;
+        var wrap = document.createElement('div');
+        wrap.className = 'deck-ws';
+        wrap.innerHTML =
+            '<button type="button" class="deck-ws-btn" id="deckWsBtn"><span class="deck-ws-dot">&#9638;</span><span id="deckWsName">Classic</span><span class="deck-caret">&#9662;</span></button>' +
+            '<div class="deck-ws-menu" id="deckWsMenu"></div>';
+        actions.insertBefore(wrap, actions.firstChild);
+        wsBtn = $('deckWsBtn'); wsMenu = $('deckWsMenu');
+        wsBtn.addEventListener('click', function (e) { e.stopPropagation(); wsMenu.classList.toggle('open'); renderWsMenu(); });
+        document.addEventListener('click', function (e) { if (!e.target.closest('.deck-ws')) wsMenu.classList.remove('open'); });
+        updateWsBtn();
+        buildHelpUI(wrap);
+    }
+    function buildHelpUI(wsWrap) {
+        var actions = document.querySelector('.topbar-actions');
+        if (!actions || $('deckHelpBtn')) return;
+        var help = document.createElement('div');
+        help.className = 'deck-help';
+        help.innerHTML =
+            '<button type="button" class="deck-help-btn" id="deckHelpBtn" aria-haspopup="true" aria-expanded="false" title="What do these controls do?">?</button>' +
+            '<div class="deck-help-pop" id="deckHelpPop" role="tooltip" aria-label="Deck controls explained">' +
+                '<h5>Mission tabs &middot; top strip</h5>' +
+                '<p><b>Click</b> brings a tool forward &middot; <b>middle-click or &times;</b> closes it &middot; <b>+</b> opens search.</p>' +
+                '<h5>Center stage</h5>' +
+                '<p>The tab bar on top of the stage switches panels. Hover a stage panel to reveal its <b>undock / maximize / collapse / close</b> actions.</p>' +
+                '<h5>Docks &middot; left, right, bottom</h5>' +
+                '<p><b>Drag a tab</b> toward a screen edge to dock it there; drag a panel header back into the stage to re-tab it. Drag the <b>inner splitter</b> between stacked panels to resize them.</p>' +
+                '<h5>Floating panels</h5>' +
+                '<p>Drag a panel header off any zone to detach it as a window; grab any edge or corner to resize; drop it onto a zone to redock.</p>' +
+                '<h5>Ctrl+K palette</h5>' +
+                '<p>Search every tool, workspace and command. Opening an unpinned rail tool from the palette automatically re-pins it.</p>' +
+                '<h5>Rail &middot; sidebar</h5>' +
+                '<p><b>Click</b> opens as a center stage tab &middot; <b>Shift+click</b> opens the classic full page &middot; <b>right-click</b> pins/unpins the icon.</p>' +
+                '<h5>Workspaces &#9638;</h5>' +
+                '<p>Saved layouts you can switch between. Switching <b>auto-saves your edits</b> into the workspace you leave, including which tab was focused.</p>' +
+            '</div>';
+        actions.insertBefore(help, wsWrap.nextSibling);
+        var helpBtn = $('deckHelpBtn');
+        var hideT = null;
+        function helpShow() { clearTimeout(hideT); help.classList.add('open'); helpBtn.setAttribute('aria-expanded', 'true'); }
+        function helpHide() { help.classList.remove('open'); helpBtn.setAttribute('aria-expanded', 'false'); }
+        help.addEventListener('mouseenter', helpShow);
+        help.addEventListener('mouseleave', function () { clearTimeout(hideT); hideT = setTimeout(helpHide, 200); });
+        help.addEventListener('keydown', function (e) { if (e.key === 'Escape') helpHide(); e.stopPropagation(); });
+        helpBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            help.classList.toggle('open');
+            helpBtn.setAttribute('aria-expanded', String(help.classList.contains('open')));
+        });
+        document.addEventListener('click', function (e) { if (!e.target.closest('.deck-help')) helpHide(); });
+    }
+    function updateWsBtn() { var n = $('deckWsName'); if (n) n.textContent = wsActiveName(); }
+    function renderWsMenu() {
+        if (!wsMenu) return;
+        var all = wsAll(), act = wsActiveName();
+        var html = Object.keys(all).map(function (n) {
+            return '<div class="deck-ws-row' + (n === act ? ' active' : '') + '" data-ws="' + esc(n) + '">' +
+                '<span>&#9638;</span><span>' + esc(n) + '</span>' +
+                '<button type="button" class="deck-ws-del" data-del="' + esc(n) + '" title="Delete workspace">&#10005;</button></div>';
+        }).join('');
+        html += '<div class="deck-ws-row" data-act="save">&#128190; Save current layout here</div>';
+        html += '<div class="deck-ws-row" data-act="exit">&#8592; Exit to Classic view</div>';
+        html += '<div class="deck-ws-new"><input type="text" id="deckWsNewName" placeholder="new workspace name" maxlength="24"><button type="button" class="retro-map-btn" id="deckWsAdd">Add</button></div>';
+        wsMenu.innerHTML = html;
+        wsMenu.querySelectorAll('[data-ws]').forEach(function (row) {
+            row.addEventListener('click', function (e) {
+                if (e.target.closest('[data-del]')) { deleteWs(row.dataset.ws); e.stopPropagation(); return; }
+                applyWorkspace(row.dataset.ws);
+                wsMenu.classList.remove('open');
+            });
+        });
+        wsMenu.querySelectorAll('[data-del]').forEach(function (b) {
+            b.addEventListener('click', function (e) { e.stopPropagation(); deleteWs(b.dataset.del); });
+        });
+        var saveRow = wsMenu.querySelector('[data-act="save"]');
+        saveRow.addEventListener('click', function () {
+            var act2 = wsActiveName();
+            if (act2 === 'Classic') saveCurrentAs('Workspace ' + (Object.keys(wsAll()).length + 1));
+            else saveCurrentAs(act2);
+            wsMenu.classList.remove('open');
+        });
+        var exitRow = wsMenu.querySelector('[data-act="exit"]');
+        exitRow.addEventListener('click', function () { applyWorkspace('Classic'); wsMenu.classList.remove('open'); });
+        var inp = $('deckWsNewName'), add = $('deckWsAdd');
+        add.addEventListener('click', function () {
+            var v = (inp.value || '').trim();
+            if (!v) return;
+            saveCurrentAs(v);
+            wsMenu.classList.remove('open');
+        });
+        inp.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { add.click(); }
+            if (e.key === 'Escape') wsMenu.classList.remove('open');
+            e.stopPropagation();
+        });
+    }
+
+    // ------------------------------------------------------------ rail / rail pins
+    var railHidden = {};
+    function initRail() {
+        var st = read(LS_RAIL) || {};
+        var sidebar = document.querySelector('.sidebar');
+        if (st.mode === 'rail') sidebar.classList.add('rail-mode');
+        (st.hidden || []).forEach(function (id) { railHidden[id] = true; });
+        applyRailPins();
+        document.querySelectorAll('.nav-item').forEach(function (item) {
+            var id = item.dataset.page || (item.id === 'gaiaNavItem' ? 'gaia' : null);
+            if (!id) return;
+            var lbl = labelOf(item) || (TOOLS[id] && TOOLS[id].title) || id;
+            item.title = lbl + ' \u00b7 click: open tab \u00b7 Shift+click: full page \u00b7 right-click: pin/unpin';
+            item.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+                railHidden[id] = !railHidden[id];
+                applyRailPins(); saveRail(); toastRail(id);
+            });
+        });
+        var foot = document.querySelector('.sidebar-footer');
+        if (foot && !$('deckRailHint')) {
+            var hint = document.createElement('div');
+            hint.className = 'rail-only';
+            hint.id = 'deckRailHint';
+            hint.style.cssText = 'margin-top:6px;line-height:1.5;';
+            hint.textContent = 'DECK: click opens tab \u00b7 Shift+click full page \u00b7 right-click pin/unpin \u00b7 Ctrl+K search';
+            foot.appendChild(hint);
+        }
+        if (foot && !$('deckRailChip')) {
+            var chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'deck-rail-chip rail-only';
+            chip.id = 'deckRailChip';
+            chip.addEventListener('click', function () { togglePalette(); });
+            foot.appendChild(chip);
+        }
+        updateRailChip();
+    }
+    function applyRailPins() {
+        document.querySelectorAll('.nav-item').forEach(function (item) {
+            var id = item.dataset.page || (item.id === 'gaiaNavItem' ? 'gaia' : null);
+            item.classList.toggle('rail-hidden', !!railHidden[id]);
+        });
+        updateRailChip();
+    }
+    function updateRailChip() {
+        var chip = $('deckRailChip');
+        if (!chip) return;
+        var n = Object.keys(railHidden).filter(function (k) { return railHidden[k]; }).length;
+        chip.style.display = n ? 'flex' : 'none';
+        chip.textContent = '\u22ef ' + n + ' hidden';
+        chip.title = n + ' unpinned tool' + (n === 1 ? '' : 's') + ' \u2014 click to browse (opening from the palette re-pins it)';
+    }
+    function saveRail() {
+        var sidebar = document.querySelector('.sidebar');
+        store(LS_RAIL, { mode: sidebar.classList.contains('rail-mode') ? 'rail' : 'full', hidden: Object.keys(railHidden).filter(function (k) { return railHidden[k]; }) });
+    }
+    function toastRail(id) {
+        if (typeof window.toast === 'function') {
+            var t = TOOLS[id];
+            toast((railHidden[id] ? 'Unpinned from rail: ' : 'Pinned to rail: ') + (t ? t.title : id));
+        }
+    }
+    function toggleRail() {
+        var sidebar = document.querySelector('.sidebar');
+        sidebar.classList.toggle('rail-mode');
+        saveRail();
+        scheduleMapResize();
+    }
+
+    // ------------------------------------------------------------ Ctrl+K palette
+    function palEntries(q) {
+        q = (q || '').trim().toLowerCase();
+        var groups = [], gi = {};
+        function grp(name) {
+            if (!gi[name]) { gi[name] = { head: name, items: [] }; groups.push(gi[name]); }
+            return gi[name];
+        }
+        PLATFORM_ORDER.forEach(grp);
+        grp('Controllers');
+        var wsGrp = grp('Workspaces'), actGrp = grp('Actions');
+
+        Object.keys(TOOLS).forEach(function (id) {
+            var t = TOOLS[id];
+            if (q && (t.title + ' ' + t.label + ' ' + t.platform).toLowerCase().indexOf(q) < 0) return;
+            grp(t.platform).items.push({
+                kind: (t.win ? 'WIN \u00b7 ' : '') + t.platform,
+                label: t.title, icon: t.icon, sub: '',
+                run: function () {
+                    if (railHidden[id]) { railHidden[id] = false; applyRailPins(); saveRail(); }
+                    open(id, { zone: 'S' });
+                }
+            });
+        });
+        Object.keys(wsAll()).forEach(function (n) {
+            if (q && ('workspace ' + n).toLowerCase().indexOf(q) < 0) return;
+            wsGrp.items.push({ kind: 'workspace', label: 'Workspace: ' + n, sub: '', icon: '', run: function () { applyWorkspace(n); } });
+        });
+        [
+            { label: 'Save current layout', run: function () { var a = wsActiveName(); if (a === 'Classic') saveCurrentAs('Workspace ' + (Object.keys(wsAll()).length + 1)); else saveCurrentAs(a); } },
+            { label: 'Exit to Classic view', run: function () { applyWorkspace('Classic'); } },
+            { label: 'Toggle launcher rail', run: function () { toggleRail(); } }
+        ].forEach(function (a) {
+            if (q && ('action ' + a.label).toLowerCase().indexOf(q) < 0) return;
+            actGrp.items.push({ kind: 'action', label: a.label, sub: '', icon: '', run: a.run });
+        });
+
+        var flat = [], count = 0;
+        groups.forEach(function (g) {
+            if (!g.items.length) return;
+            flat.push({ head: g.head });
+            g.items.forEach(function (it) { if (count < 30) { flat.push(it); count++; } });
+        });
+        return flat;
+    }
+
+    function buildPalette() {
+        if ($('deckPalette')) return;
+        var pal = document.createElement('div');
+        pal.id = 'deckPalette';
+        pal.innerHTML =
+            '<div class="deck-pal-card">' +
+                '<input class="deck-pal-input" id="deckPalInput" placeholder="Search tools, workspaces, commands\u2026" spellcheck="false" autocomplete="off">' +
+                '<div class="deck-pal-list" id="deckPalList"></div>' +
+            '</div>';
+        document.body.appendChild(pal);
+        var input = $('deckPalInput'), list = $('deckPalList'), sel = 0;
+
+        function render() {
+            var entries = palEntries(input.value);
+            var items = entries.filter(function (en) { return !en.head; });
+            sel = clamp(sel, 0, Math.max(0, items.length - 1));
+            var ii = 0;
+            list.innerHTML = items.length
+                ? entries.map(function (en) {
+                    if (en.head) return '<div class="deck-pal-head">' + esc(en.head) + '</div>';
+                    var cls = 'deck-pal-item' + (ii === sel ? ' sel' : '');
+                    var idx = ii++;
+                    return '<div class="' + cls + '" data-i="' + idx + '">' + (en.icon || '<span class="deck-pal-spacer"></span>') + '<span>' + esc(en.label) + '</span><span class="deck-pal-kind">' + esc(en.kind) + '</span></div>';
+                }).join('')
+                : '<div class="deck-pal-empty">No matches.</div>';
+            list._items = items;
+            list._entries = entries;
+        }
+        function runSel() {
+            var items = list._items || [];
+            var en = items[sel];
+            if (!en) return;
+            pal.classList.remove('open');
+            input.value = '';
+            en.run();
+        }
+        pal.addEventListener('mousedown', function (e) { if (e.target === pal) pal.classList.remove('open'); });
+        list.addEventListener('click', function (e) {
+            var it = e.target.closest('.deck-pal-item');
+            if (!it) return;
+            sel = parseInt(it.dataset.i, 10) || 0;
+            runSel();
+        });
+        input.addEventListener('input', function () { sel = 0; render(); });
+        input.addEventListener('keydown', function (e) {
+            var items = list._items || [];
+            if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(items.length - 1, sel + 1); render(); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(0, sel - 1); render(); }
+            else if (e.key === 'Enter') { e.preventDefault(); runSel(); }
+            else if (e.key === 'Escape') { pal.classList.remove('open'); }
+        });
+        pal._render = render;
+    }
+    function togglePalette() {
+        if (isMobile()) return;
+        var pal = $('deckPalette');
+        if (!pal) buildPalette();
+        pal = $('deckPalette');
+        pal.classList.toggle('open');
+        if (pal.classList.contains('open')) { $('deckPalInput').value = ''; $('deckPalette')._render(); setTimeout(function () { $('deckPalInput').focus(); }, 0); }
+    }
+
+    // ------------------------------------------------------------ api / boot
+    function isMobile() { return window.innerWidth <= 1024; }
+
+    function openFromNav(item) {
+        var id = item.dataset.page || (item.id === 'gaiaNavItem' ? 'gaia' : null);
+        if (!id) { var pgFallback = item.dataset.page; if (pgFallback) navigate(pgFallback); return; }
+        var t = findTool(id);
+        if (!t) { if (item.dataset.page) navigate(item.dataset.page); return; }
+        open(id, { zone: 'S' });
+    }
+
+    window.DECK = {
+        open: function (id, opts) { return open(id, opts); },
+        close: close,
+        openFromNav: openFromNav,
+        exitDeck: exitDeck,
+        toggleRail: toggleRail,
+        togglePalette: togglePalette,
+        isMobile: isMobile,
+        tools: function () { return Object.keys(TOOLS).map(function (k) { return { id: k, title: TOOLS[k].title, win: !!TOOLS[k].win }; }); },
+        layout: function () { return JSON.parse(JSON.stringify(S.zones)); }
+    };
+
+    document.addEventListener('keydown', function (e) {
+        if ((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
+            var tag = (e.target && e.target.tagName) || '';
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+            e.preventDefault();
+            togglePalette();
+        }
+    });
+
+    window.addEventListener('resize', function () {
+        if (isMobile() && root && rootVisible()) {
+            // collapse to classic on mobile — capture first so panels rehydrate intact
+            captureCurrentToActive();
+            Object.keys(TOOLS).forEach(function (id) { if (panelByTool(id)) close(id); });
+            showRoot(false);
+        }
+    });
+
+    function boot() {
+        buildTools();
+        ensureDom();
+        buildWsUI();
+        initRail();
+        buildPalette();
+        initTopbar();
+        var saved = read(LS_LAYOUT);
+        if (saved && saved.v === 1 && saved.zones &&
+            (saved.zones.L || []).concat(saved.zones.R || []).concat(saved.zones.B || []).concat(saved.zones.S || []).length) {
+            if (Array.isArray(saved.tabOrder)) S.tabOrder = saved.tabOrder.filter(function (id) { return findTool(id); });
+            applyLayout(saved);
+        }
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+    else boot();
+})();
+</script>
+
 </body>
-</html></html>
+</html>

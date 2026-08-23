@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import hashlib
+import re
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 
@@ -67,8 +68,11 @@ class CatalogEntry:
         return hashlib.sha256(f"{norm}::{spec_blob}".encode()).hexdigest()
 
     def designation_key(self) -> str:
-        """Merge key: lower-case, spaces collapsed."""
-        return " ".join(self.designation.lower().split())
+        """Merge key: lower-case, punctuation folded to spaces, whitespace
+        collapsed — so 'LAV-25', 'LAV 25' and 'lav_25' all merge."""
+        s = self.designation.lower()
+        s = re.sub(r"[^a-z0-9]+", " ", s)
+        return s.strip()
 
 
 def entry_to_json(e: CatalogEntry) -> str:

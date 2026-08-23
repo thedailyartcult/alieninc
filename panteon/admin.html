@@ -1540,9 +1540,11 @@
         /* Aircraft platform glyphs (Maven-style heading-oriented symbology).
            Rotation is applied by MapLibre on the marker ROOT element around its
            anchor — this element must stay transform-free. */
-        .ac-glyph { width: 20px; height: 20px; cursor: pointer; filter: drop-shadow(0 0 2px currentColor); }
-        .ac-glyph svg { width: 16px; height: 16px; display: block; margin: 0 auto; }
-        .ac-glyph-mil { filter: drop-shadow(0 0 2px currentColor) drop-shadow(0 0 5px rgba(239, 68, 68, 0.75)); }
+        .ac-glyph { width: 22px; height: 22px; cursor: pointer; filter: drop-shadow(0 0 2px currentColor) drop-shadow(0 1px 3px rgba(0, 0, 0, 0.85)); }
+        .ac-glyph svg { width: 20px; height: 20px; display: block; margin: 0 auto; }
+        .ac-glyph .ac-ring { transition: stroke-opacity 0.2s ease; }
+        .ac-glyph:hover .ac-ring { stroke-opacity: 0.85; }
+        .ac-glyph-mil { filter: drop-shadow(0 0 2px currentColor) drop-shadow(0 0 6px rgba(239, 68, 68, 0.8)); }
 
         /* MIL contacts panel — Maven-style bottom-right map rail */
         .sc-mil-panel {
@@ -1573,6 +1575,49 @@
         .sc-mil-meta { flex-shrink: 0; opacity: 0.85; }
         .sc-mil-empty { padding: 8px; font-size: 9px; color: var(--text-muted); }
         .sc-legend-plane { width: 11px; height: 11px; vertical-align: -2px; margin-right: 3px; }
+
+        /* Live feed badge — anti-placebo: proves data age in real time */
+        .fusion-live-badge {
+            display: inline-flex; align-items: center; gap: 5px; margin-left: auto;
+            padding: 3px 8px; border: 1px solid rgba(34, 197, 68, 0.45); border-radius: 999px;
+            font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em;
+            color: #22c544; text-transform: uppercase; background: rgba(34, 197, 68, 0.08);
+        }
+        .fusion-live-badge.fusion-live-stale { border-color: rgba(245, 158, 11, 0.5); color: #f59e0b; background: rgba(245, 158, 11, 0.08); }
+        .fusion-live-dot {
+            width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+            animation: fusionLivePulse 1.6s ease-in-out infinite;
+        }
+        @keyframes fusionLivePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+        /* Selected aircraft — Maven-style lock-on ring */
+        .ac-glyph { position: relative; cursor: pointer; }
+        .ac-glyph.ac-glyph-selected::after {
+            content: ''; position: absolute; inset: -7px; border-radius: 50%;
+            border: 1.5px solid var(--accent-neon);
+            box-shadow: 0 0 8px rgba(223, 241, 64, 0.65), inset 0 0 4px rgba(223, 241, 64, 0.35);
+            animation: acLockPulse 1.4s ease-in-out infinite; pointer-events: none;
+        }
+        @keyframes acLockPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.18); opacity: 0.55; } }
+
+        /* Track dossier card (selected aircraft) */
+        .fusion-track-card {
+            position: absolute; left: 10px; top: 76px; z-index: 6; width: 268px;
+            max-width: calc(100% - 20px); background: rgba(0, 0, 0, 0.85);
+            border: 1px solid rgba(223, 241, 64, 0.45); border-radius: 6px;
+            font-family: var(--font-mono); overflow: hidden; backdrop-filter: blur(4px);
+        }
+        .fusion-track-card.fusion-track-hidden { display: none; }
+        .ftc-head { display: flex; align-items: center; gap: 6px; padding: 7px 9px; border-bottom: 1px solid rgba(223, 241, 64, 0.25); }
+        .ftc-title { font-size: 12px; font-weight: 600; color: var(--accent-neon); letter-spacing: 0.06em; }
+        .ftc-cat { font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; border: 1px solid currentColor; }
+        .ftc-close { margin-left: auto; padding: 2px 7px; font-size: 10px; }
+        .ftc-grid { display: grid; grid-template-columns: 58px 1fr 58px 1fr; gap: 3px 6px; padding: 8px 9px; font-size: 9px; }
+        .ftc-grid .k { color: var(--text-muted); letter-spacing: 0.1em; }
+        .ftc-grid .v { color: var(--text-light); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ftc-route { padding: 7px 9px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 9px; color: var(--text-muted); line-height: 1.55; }
+        .ftc-route b { color: var(--text-light); }
+        .ftc-actions { display: flex; gap: 6px; padding: 0 9px 9px; }
 
         /* Collapsible intel cards (map-first layout) */
         .sc-intel-card > .card-header {
@@ -2189,6 +2234,9 @@
                                   <select class="sc-scope-select" id="scCountrySelect" onchange="scSelectCountry(this)">
                                       <option value="">-- Country --</option>
                                   </select>
+                                  <select class="sc-scope-select" id="scZoneSelect" onchange="scSelectZone(this)">
+                                      <option value="">-- Zone --</option>
+                                  </select>
                               </div>
                               <div class="sc-scope-row">
                                   <span class="sc-scope-step">What</span>
@@ -2327,6 +2375,16 @@
                                       <button class="retro-map-btn retro-map-btn-active" id="fusionLayerAviation" onclick="fusionToggleLayer('aviation')">Aircraft <b id="fusionAircraftCount">0</b></button>
                                       <button class="retro-map-btn" id="fusionLayer3d" onclick="fusionToggle3D()">3D</button>
                                   </div>
+                                  <div class="sc-layer-bar">
+                                      <span class="sc-layer-label">Traffic:</span>
+                                      <button class="retro-map-btn retro-map-btn-active" data-fcat="commercial" onclick="fusionToggleCat('commercial')">Commercial <b id="fcatCommercial">0</b></button>
+                                      <button class="retro-map-btn retro-map-btn-active" data-fcat="jet" onclick="fusionToggleCat('jet')">Jets <b id="fcatJet">0</b></button>
+                                      <button class="retro-map-btn retro-map-btn-active" data-fcat="private" onclick="fusionToggleCat('private')">Private <b id="fcatPrivate">0</b></button>
+                                      <button class="retro-map-btn retro-map-btn-active" data-fcat="military" onclick="fusionToggleCat('military')">Military <b id="fcatMilitary">0</b></button>
+                                      <button class="retro-map-btn retro-map-btn-active" id="fusionMotionBtn" onclick="fusionToggleMotion()" title="Dead-reckoning glide between feed refreshes">Motion</button>
+                                      <button class="retro-map-btn" id="fusionFovBtn" onclick="fusionToggleFov()" title="Maven-style sensor footprint cones">FOV</button>
+                                      <span class="fusion-live-badge fusion-live-stale" id="fusionLiveBadge"><span class="fusion-live-dot"></span><span id="fusionLiveText">LIVE · waiting</span></span>
+                                  </div>
                                   <div class="sc-map-canvas-wrap">
                                       <div class="retro-map-canvas" id="fusionMap"></div>
                                       <div id="fusionMapHud" class="sc-map-hud">Select a region and theme to begin.</div>
@@ -2338,6 +2396,19 @@
                                               <span class="sc-intel-chevron" style="margin-left:auto" id="fusionMilChevron">&#9662;</span>
                                           </button>
                                           <div class="sc-mil-body" id="fusionMilBody"></div>
+                                      </div>
+                                      <div id="fusionTrackCard" class="fusion-track-card fusion-track-hidden">
+                                          <div class="ftc-head">
+                                              <span class="ftc-title" id="ftcCallsign">&mdash;</span>
+                                              <span class="ftc-cat" id="ftcCat"></span>
+                                              <button type="button" class="retro-map-btn ftc-close" onclick="deselectFusionAircraft()" title="Deselect">&#10005;</button>
+                                          </div>
+                                          <div class="ftc-grid" id="ftcGrid"></div>
+                                          <div class="ftc-route" id="ftcRoute">Resolving route&hellip;</div>
+                                          <div class="ftc-actions">
+                                              <button type="button" class="retro-map-btn" id="ftcFollowBtn" onclick="fusionToggleFollow()">Follow: off</button>
+                                              <button type="button" class="retro-map-btn" onclick="fusionFlyToSelected()">Center</button>
+                                          </div>
                                       </div>
                                       <div id="gaiaTimeBar" class="gtb-hidden" role="group" aria-label="Satellite imagery control">
                                           <div class="gtb-pill-row">
@@ -6332,6 +6403,7 @@ function normalizeAircraftPoint(f, wonIdx) {
     const props = f.properties || {};
     const lat = props.lat, lng = props.lng;
     if (lat == null || lng == null) return null;
+    const icaoSafe = String(props.icao24 || '').replace(/[^a-zA-Z0-9]/g, '');
     return {
         lat: lat, lng: lng, source: 'opensky', type: 'aviation',
         label: (props.callsign || '—') + ' [' + (props.category || '?') + ']',
@@ -6343,20 +6415,26 @@ function normalizeAircraftPoint(f, wonIdx) {
             '<br>HEADING: ' + (props.heading || '?') +
             '<br>ICAO24: ' + (props.icao24 || '?') +
             '<br>COORD: [' + lat + ', ' + lng + ']' +
-            (wonIdx != null ? '<br><button type="button" class="won-note-btn" data-won-air="' + wonIdx + '">+ Note</button>' : ''),
+            (icaoSafe ? '<br><button type="button" class="won-note-btn" onclick="selectFusionAircraft(\'' + icaoSafe + '\')">&#9678; Track</button>' : '') +
+            (wonIdx != null ? ' <button type="button" class="won-note-btn" data-won-air="' + wonIdx + '">+ Note</button>' : ''),
     };
 }
 
-const AC_PLANE_PATH_D = 'M12 2 C12.9 2 13.5 3 13.5 4.3 L13.55 10.2 L21.8 14.7 L21.8 16.1 L13.5 13.7 L13.45 17.7 L17.5 20.3 L17.5 21.3 L13.05 20.5 L12.6 22 L11.4 22 L10.95 20.5 L6.5 21.3 L6.5 20.3 L10.55 17.7 L10.5 13.7 L2.2 16.1 L2.2 14.7 L10.45 10.2 L10.5 4.3 C10.5 3 11.1 2 12 2 Z';
+// Maven-style platform symbology: north-up jet silhouette inside a sensor ring;
+// MapLibre rotates the marker root about its anchor natively (GPU, clockwise)
+// so heading stays exact through pan/rotate/pitch. Transform-free element.
+const AC_PLANE_BODY_D = 'M12 1.2 L13.4 4.6 L13.5 9.1 L22 14.2 L22 15.8 L13.5 13.3 L13.5 17.1 L16.3 19.3 L16.3 20.9 L12 19.7 L7.7 20.9 L7.7 19.3 L10.5 17.1 L10.5 13.3 L2 15.8 L2 14.2 L10.5 9.1 L10.6 4.6 Z';
 
-// Maven-style platform symbology: north-up jet silhouette; MapLibre rotates the
-// marker root about its anchor natively (GPU) so heading stays exact through
-// pan/rotate/pitch. This element itself must remain transform-free.
 function aircraftGlyphEl(color, category) {
     const el = document.createElement('div');
     el.className = 'ac-glyph' + (category === 'military' ? ' ac-glyph-mil' : '');
     el.style.color = color;
-    el.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="' + AC_PLANE_PATH_D + '"/></svg>';
+    el.innerHTML =
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+            '<circle class="ac-ring" cx="12" cy="12" r="10.4" fill="none" stroke="currentColor" stroke-opacity="0.3" stroke-width="1"/>' +
+            '<path fill="currentColor" d="' + AC_PLANE_BODY_D + '"/>' +
+            '<circle cx="12" cy="5.6" r="0.9" fill="#000000" fill-opacity="0.35"/>' +
+        '</svg>';
     return el;
 }
 
@@ -6473,24 +6551,553 @@ function renderFusionThreatLayer() {
 }
 
 function renderFusionAviationLayer() {
-    fusionAviationMarkers.forEach(m => { try { m.remove(); } catch (e) {} });
-    fusionAviationMarkers = [];
+    // Category chips always show FULL feed counts (pre-filter), so the analyst
+    // sees what a chip would reveal before enabling it.
+    const catCounts = { commercial: 0, jet: 0, private: 0, military: 0 };
+    fusionFlights.forEach(f => {
+        const c = (f.properties || {}).category;
+        if (c in catCounts) catCounts[c]++;
+    });
+    [['commercial', 'fcatCommercial'], ['jet', 'fcatJet'], ['private', 'fcatPrivate'], ['military', 'fcatMilitary']].forEach(([c, id]) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = String(catCounts[c]);
+    });
     fusionMilContacts = [];
-    updateFusionMilPanel();
-    if (!fusionMap || !fusionLayers.aviation) return;
+
+    if (!fusionMap || !fusionLayers.aviation) {
+        Object.values(fusionAircraftIndex).forEach(e => { try { e.mk.remove(); } catch (err) {} });
+        fusionAircraftIndex = {};
+        fusionAviationMarkers = [];
+        updateFusionMilPanel();
+        updateFovLayer();
+        return 0;
+    }
+
+    // DIFF UPDATE — reuse existing markers instead of tearing down ~2000 DOM
+    // nodes every cycle (the old rebuild froze the UI mid-click).
+    const seen = new Set();
+    let plotted = 0;
     fusionFlights.forEach((f, wonIdx) => {
+        const props = f.properties || {};
+        if (props.category && fusionCatFilter[props.category] === false) return; // chip-filtered
         const p = normalizeAircraftPoint(f, wonIdx);
         if (!p) return;
-        const props = f.properties || {};
+        const icaoSafe = String(props.icao24 || '').replace(/[^a-zA-Z0-9]/g, '');
+        const key = icaoSafe.toLowerCase();
+        seen.add(key);
+        const existing = key ? fusionAircraftIndex[key] : null;
+        if (existing) {
+            existing.f = f;
+            existing.lngLat = [p.lng, p.lat];
+            existing.lastTick = null; // authoritative position resets dead-reckoning
+            try { existing.mk.setLngLat(existing.lngLat); } catch (err) {}
+            try { if (existing.popup) existing.popup.setHTML(p.popup); } catch (err) {}
+            plotted++;
+            if (props.category === 'military') {
+                fusionMilContacts.push({ callsign: props.callsign || '---', model: props.model || '?', alt: props.alt, spd: props.speed_knots, lng: p.lng, lat: p.lat, mk: existing.mk });
+            }
+            return;
+        }
         const el = aircraftGlyphEl(p.color, props.category);
+        if (fusionSelectedIcao && key === fusionSelectedIcao) {
+            el.classList.add('ac-glyph-selected');
+        }
+        el.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            if (icaoSafe) selectFusionAircraft(icaoSafe);
+        });
         const popup = new maplibregl.Popup({ closeButton: false, offset: 6 }).setHTML(p.popup);
         const mk = aircraftMarker(el, props).setLngLat([p.lng, p.lat]).setPopup(popup).addTo(fusionMap);
-        fusionAviationMarkers.push(mk);
+        if (key) fusionAircraftIndex[key] = { mk: mk, popup: popup, f: f, lngLat: [p.lng, p.lat], lastTick: null };
+        plotted++;
         if (props.category === 'military') {
             fusionMilContacts.push({ callsign: props.callsign || '---', model: props.model || '?', alt: props.alt, spd: props.speed_knots, lng: p.lng, lat: p.lat, mk: mk });
         }
     });
+
+    // Drop aircraft that vanished from the feed or got chip-filtered out.
+    Object.keys(fusionAircraftIndex).forEach(k => {
+        if (!seen.has(k)) {
+            try { fusionAircraftIndex[k].mk.remove(); } catch (err) {}
+            delete fusionAircraftIndex[k];
+        }
+    });
+    fusionAviationMarkers = Object.values(fusionAircraftIndex).map(e => e.mk);
     updateFusionMilPanel();
+    updateFovLayer();
+    return plotted;
+}
+
+// ============================================================================
+// Traffic category chips — multi-select visibility per aircraft class.
+// ============================================================================
+
+const fusionCatFilter = { commercial: true, jet: true, private: true, military: true };
+
+function fusionToggleCat(cat) {
+    if (!(cat in fusionCatFilter)) return;
+    fusionCatFilter[cat] = !fusionCatFilter[cat];
+    const btn = document.querySelector('[data-fcat="' + cat + '"]');
+    if (btn) btn.className = 'retro-map-btn' + (fusionCatFilter[cat] ? ' retro-map-btn-active' : '');
+    renderFusionAviationLayer();
+    const hudEl = document.getElementById('fusionMapHud');
+    if (hudEl) hudEl.textContent = fusionThreatMarkers.length + ' threats · ' + fusionAviationMarkers.length + ' aircraft plotted';
+}
+
+// ============================================================================
+// Sensor footprint (FOV) cones — Maven-style wedges projected along each
+// platform's heading. One GPU fill layer for the whole sky; the selected
+// aircraft gets a brighter, wider cone in the accent color.
+// ============================================================================
+
+let fusionFovEnabled = false;
+let fusionFovLayersAdded = false;
+
+function ensureFusionFovLayers() {
+    if (!fusionMap || fusionFovLayersAdded) return;
+    fusionMap.addSource('sc-fov', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    fusionMap.addLayer({
+        id: 'sc-fov-fill', type: 'fill', source: 'sc-fov',
+        paint: {
+            'fill-color': ['get', 'color'],
+            'fill-opacity': ['case', ['boolean', ['get', 'sel'], false], 0.24, 0.12],
+        },
+    });
+    fusionMap.addLayer({
+        id: 'sc-fov-line', type: 'line', source: 'sc-fov',
+        paint: { 'line-color': ['get', 'color'], 'line-width': 1, 'line-opacity': 0.42 },
+    });
+    fusionFovLayersAdded = true;
+}
+
+function fovConeFeature(lngLat, headingDeg, radiusKm, halfAngleDeg, color, selected) {
+    const pts = [[lngLat[0], lngLat[1]]];
+    const steps = 6;
+    for (let i = 0; i <= steps; i++) {
+        const brg = (headingDeg - halfAngleDeg + (2 * halfAngleDeg) * (i / steps)) * Math.PI / 180;
+        const dLat = (radiusKm * Math.cos(brg)) / 110.574;
+        const dLng = (radiusKm * Math.sin(brg)) / (111.320 * Math.max(0.2, Math.cos(lngLat[1] * Math.PI / 180)));
+        pts.push([lngLat[0] + dLng, lngLat[1] + dLat]);
+    }
+    pts.push(pts[0]);
+    return {
+        type: 'Feature',
+        properties: { color: color, sel: !!selected },
+        geometry: { type: 'Polygon', coordinates: [pts] },
+    };
+}
+
+function updateFovLayer() {
+    if (!fusionMap || !fusionFovLayersAdded) return;
+    const empty = { type: 'FeatureCollection', features: [] };
+    if (!fusionFovEnabled) {
+        try { fusionMap.getSource('sc-fov').setData(empty); } catch (e) {}
+        return;
+    }
+    const feats = [];
+    for (const icao in fusionAircraftIndex) {
+        const e = fusionAircraftIndex[icao];
+        const p = (e.f && e.f.properties) || {};
+        const gs = Number(p.speed_knots), hdg = Number(p.heading);
+        if (!e.lngLat || !isFinite(gs) || gs < 40 || !isFinite(hdg)) continue;
+        const altM = Number(p.alt);
+        let rKm = isFinite(altM) && altM > 0 ? Math.min(85, Math.max(4, altM / 300)) : 18;
+        const isSel = !!fusionSelectedIcao && icao === fusionSelectedIcao;
+        feats.push(fovConeFeature(e.lngLat, hdg, rKm * (isSel ? 1.25 : 1), 22,
+            isSel ? '#DFF140' : getColorForCategory(p.category), isSel));
+    }
+    try { fusionMap.getSource('sc-fov').setData({ type: 'FeatureCollection', features: feats }); } catch (e) {}
+}
+
+function fusionToggleFov() {
+    fusionFovEnabled = !fusionFovEnabled;
+    const btn = document.getElementById('fusionFovBtn');
+    if (btn) btn.className = 'retro-map-btn' + (fusionFovEnabled ? ' retro-map-btn-active' : '');
+    ensureFusionFovLayers();
+    updateFovLayer();
+}
+
+// ============================================================================
+// Motion engine — 1 Hz dead-reckoning: between authoritative feed refreshes
+// every airborne marker glides along its ground speed and heading, so the sky
+// visibly moves even while civilian ADS-B snapshots are minutes apart.
+// ============================================================================
+
+let fusionMotionEnabled = true;
+
+function fusionToggleMotion() {
+    fusionMotionEnabled = !fusionMotionEnabled;
+    const btn = document.getElementById('fusionMotionBtn');
+    if (btn) btn.className = 'retro-map-btn' + (fusionMotionEnabled ? ' retro-map-btn-active' : '');
+}
+
+function fusionMotionTick() {
+    if (document.hidden || !fusionMap) return;
+    if (fusionMotionEnabled) {
+        const nowMs = Date.now();
+        for (const icao in fusionAircraftIndex) {
+            const e = fusionAircraftIndex[icao];
+            const p = (e.f && e.f.properties) || {};
+            const gs = Number(p.speed_knots), hdg = Number(p.heading);
+            if (!e.lngLat || !isFinite(gs) || gs < 40 || !isFinite(hdg)) continue;
+            const dt = e.lastTick ? Math.min(120, (nowMs - e.lastTick) / 1000) : 0;
+            e.lastTick = nowMs;
+            if (dt <= 0) continue;
+            const km = gs * 1.852 * dt / 3600;
+            const rad = hdg * Math.PI / 180;
+            const lat = e.lngLat[1];
+            const nLat = lat + (km * Math.cos(rad)) / 110.574;
+            const nLng = e.lngLat[0] + (km * Math.sin(rad)) / (111.320 * Math.max(0.2, Math.cos(lat * Math.PI / 180)));
+            e.lngLat = [nLng, nLat];
+            try { e.mk.setLngLat(e.lngLat); } catch (err) {}
+        }
+        if (fusionFovEnabled) updateFovLayer();
+    }
+    // Follow camera: pursue the selected track every second so lock-on is
+    // continuous, not a one-shot center at selection time.
+    if (fusionFollow && fusionSelectedIcao) {
+        const selEntry = fusionAircraftIndex[fusionSelectedIcao];
+        if (selEntry && selEntry.lngLat) {
+            try { fusionMap.easeTo({ center: selEntry.lngLat, duration: 950 }); } catch (err) {}
+        }
+    }
+}
+
+// ============================================================================
+// Track selection / trails / follow camera (Maven-style lock-on).
+// Click an aircraft -> persistent selection ring + dossier card with position
+// history trail, projected speed vector and adsbdb origin/destination route.
+// ============================================================================
+
+let fusionAircraftIndex = {};
+let fusionSelectedIcao = null;
+let fusionFollow = false;
+let fusionTrackLayersAdded = false;
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+    const R = 6371, rad = Math.PI / 180;
+    const dLat = (lat2 - lat1) * rad, dLng = (lng2 - lng1) * rad;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+function ensureFusionTrackLayers() {
+    if (!fusionMap || fusionTrackLayersAdded) return;
+    // Trail polyline from fix history
+    fusionMap.addSource('sc-track-line', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    fusionMap.addLayer({ id: 'sc-track-line', type: 'line', source: 'sc-track-line', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#DFF140', 'line-width': 2.2, 'line-opacity': 0.85 } });
+    fusionMap.addSource('sc-track-dots', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    fusionMap.addLayer({ id: 'sc-track-dots', type: 'circle', source: 'sc-track-dots', paint: { 'circle-radius': 2.6, 'circle-color': '#DFF140', 'circle-opacity': 0.75 } });
+    // Projected speed vector (where it will be in ~10 min)
+    fusionMap.addSource('sc-track-vector', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    fusionMap.addLayer({ id: 'sc-track-vector', type: 'line', source: 'sc-track-vector', layout: { 'line-cap': 'round' }, paint: { 'line-color': '#22d3ee', 'line-width': 1.8, 'line-opacity': 0.9, 'line-dasharray': [2, 2] } });
+    // Route origin -> aircraft -> destination
+    fusionMap.addSource('sc-route-line', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    fusionMap.addLayer({ id: 'sc-route-line', type: 'line', source: 'sc-route-line', layout: { 'line-cap': 'round' }, paint: { 'line-color': '#f59e0b', 'line-width': 1.6, 'line-opacity': 0.7, 'line-dasharray': [1.5, 2] } });
+    fusionMap.addSource('sc-route-airports', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    fusionMap.addLayer({ id: 'sc-route-airports-fill', type: 'circle', source: 'sc-route-airports', paint: { 'circle-radius': 4.5, 'circle-color': '#f59e0b', 'circle-stroke-color': '#000', 'circle-stroke-width': 1.5 } });
+    try {
+        fusionMap.addLayer({ id: 'sc-route-airports-label', type: 'symbol', source: 'sc-route-airports', layout: { 'text-field': ['get', 'label'], 'text-font': ['Noto Sans Regular'], 'text-size': 10, 'text-offset': [0, 1.1], 'text-anchor': 'top' }, paint: { 'text-color': '#f59e0b', 'text-halo-color': '#000', 'text-halo-width': 1.2 } });
+    } catch (e) { /* label font unavailable on this style — circles still render */ }
+    fusionTrackLayersAdded = true;
+}
+
+function clearFusionTrackOverlays() {
+    if (!fusionMap || !fusionTrackLayersAdded) return;
+    ['sc-track-line', 'sc-track-dots', 'sc-track-vector', 'sc-route-line'].forEach(id => {
+        try { fusionMap.getSource(id).setData({ type: 'FeatureCollection', features: [] }); } catch (e) {}
+    });
+    try { fusionMap.getSource('sc-route-airports').setData({ type: 'FeatureCollection', features: [] }); } catch (e) {}
+}
+
+function drawFusionTrack(track, flightProps, route) {
+    ensureFusionTrackLayers();
+    if (!fusionMap) return;
+    // Switching targets must never leak the previous aircraft's lines.
+    clearFusionTrackOverlays();
+    const fixes = (track && track.fixes) || [];
+    const empty = { type: 'FeatureCollection', features: [] };
+    if (fixes.length >= 2) {
+        const coords = fixes.filter(fx => fx.lat != null && fx.lng != null).map(fx => [fx.lng, fx.lat]);
+        fusionMap.getSource('sc-track-line').setData(coords.length >= 2 ? { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } } : empty);
+        fusionMap.getSource('sc-track-dots').setData({ type: 'FeatureCollection', features: coords.map(c => ({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: c } })) });
+    } else {
+        fusionMap.getSource('sc-track-line').setData(empty);
+        fusionMap.getSource('sc-track-dots').setData(empty);
+    }
+    // Speed vector: heading-projected 10-minute dead-reckoning line.
+    const gsKts = Number(flightProps && flightProps.speed_knots);
+    const hdg = Number(flightProps && flightProps.heading);
+    const cur = fusionSelectedIcao ? (fusionAircraftIndex[fusionSelectedIcao] || {}).lngLat : null;
+    if (cur && isFinite(gsKts) && isFinite(hdg) && gsKts > 20) {
+        const kmAhead = gsKts * (10 / 60) * 1.852;
+        const rad = hdg * Math.PI / 180;
+        const dLat = (kmAhead * Math.cos(rad)) / 110.574;
+        const dLng = (kmAhead * Math.sin(rad)) / (111.320 * Math.max(0.2, Math.cos(cur[1] * Math.PI / 180)));
+        fusionMap.getSource('sc-track-vector').setData({
+            type: 'Feature', properties: {},
+            geometry: { type: 'LineString', coordinates: [cur, [cur[0] + dLng, cur[1] + dLat]] },
+        });
+    } else {
+        fusionMap.getSource('sc-track-vector').setData(empty);
+    }
+    // Route line origin -> current -> destination + airport markers.
+    const feats = [];
+    const rPts = [];
+    if (route && route.found && route.origin && route.origin.lat != null) {
+        rPts.push(route.origin);
+    }
+    if (route && route.found && route.destination && route.destination.lat != null) {
+        rPts.push(route.destination);
+    }
+    if (rPts.length === 2 && cur) {
+        fusionMap.getSource('sc-route-line').setData({
+            type: 'Feature', properties: {},
+            geometry: { type: 'LineString', coordinates: [[route.origin.lng, route.origin.lat], cur, [route.destination.lng, route.destination.lat]] },
+        });
+        [route.origin, route.destination].forEach((a, i) => {
+            feats.push({
+                type: 'Feature',
+                properties: { label: (a.icao || a.iata || '?') + (a.municipality ? ' · ' + a.municipality : '') },
+                geometry: { type: 'Point', coordinates: [a.lng, a.lat] },
+            });
+        });
+    }
+    fusionMap.getSource('sc-route-airports').setData({ type: 'FeatureCollection', features: feats });
+}
+
+function ftcRow(k, v) { return '<span class="k">' + k + '</span><span class="v">' + v + '</span>'; }
+
+function renderTrackCard(flightProps, track, route) {
+    const card = document.getElementById('fusionTrackCard');
+    if (!card || !flightProps) return;
+    card.classList.remove('fusion-track-hidden');
+    document.getElementById('ftcCallsign').textContent = flightProps.callsign || flightProps.icao24 || '—';
+    const catEl = document.getElementById('ftcCat');
+    catEl.textContent = flightProps.category || '?';
+    catEl.style.color = getColorForCategory(flightProps.category);
+    const fixes = (track && track.fixes) || [];
+    const lastFix = fixes.length ? fixes[fixes.length - 1] : null;
+    const ageS = lastFix ? Math.round(Date.now() / 1000 - lastFix.t) : null;
+    document.getElementById('ftcGrid').innerHTML =
+        ftcRow('MODEL', escapeHtml(String(flightProps.model || '?'))) +
+        ftcRow('REG', escapeHtml(String(flightProps.registration || '—'))) +
+        ftcRow('ALT', (flightProps.alt != null ? Number(flightProps.alt).toLocaleString() + ' ft' : '—')) +
+        ftcRow('SPD', (flightProps.speed_knots != null ? Math.round(Number(flightProps.speed_knots)) + ' kts' : '—')) +
+        ftcRow('HDG', (flightProps.heading != null ? Number(flightProps.heading) + '°' : '—')) +
+        ftcRow('SQUAWK', escapeHtml(String(flightProps.squawk || '—'))) +
+        ftcRow('ICAO24', escapeHtml(String(flightProps.icao24 || '—'))) +
+        ftcRow('FIXES', String(fixes.length)) +
+        ftcRow('POS', ((flightProps.lat != null ? Number(flightProps.lat).toFixed(3) : '—') + ', ' + (flightProps.lng != null ? Number(flightProps.lng).toFixed(3) : '—'))) +
+        ftcRow('AGE', (ageS != null ? ageS + 's ago' : '—'));
+    // Route block. undefined = lookup still in flight; false-y found = none filed.
+    const rEl = document.getElementById('ftcRoute');
+    const cs = String(flightProps.callsign || '').trim();
+    if (route === null || route === undefined) {
+        rEl.innerHTML = cs ? 'Resolving route&hellip;' : 'No callsign — route lookup not possible.';
+    } else if (route && route.found && route.origin && route.destination) {
+        const fmt = a => [a.icao || a.iata || '?', a.municipality || a.name || '', a.country || ''].filter(Boolean).join(' · ');
+        let etaTxt = '';
+        try {
+            const dist = haversineKm(Number(flightProps.lat), Number(flightProps.lng), Number(route.destination.lat), Number(route.destination.lng));
+            const gs = Number(flightProps.speed_knots);
+            if (gs > 40) {
+                const h = dist / (gs * 1.852);
+                etaTxt = ' · ETA ' + (h >= 1 ? Math.floor(h) + 'h ' : '') + Math.round((h % 1) * 60) + 'm';
+            }
+            etaTxt += ' · ' + Math.round(dist) + ' km to go';
+        } catch (e) {}
+        rEl.innerHTML = '<b>DEP</b> ' + escapeHtml(fmt(route.origin)) + '<br><b>ARR</b> ' + escapeHtml(fmt(route.destination)) + escapeHtml(etaTxt);
+    } else if (route && route.reason === 'lookup_unavailable') {
+        rEl.innerHTML = 'Route lookup temporarily unavailable.';
+    } else {
+        rEl.innerHTML = 'No filed route for this callsign (GA / military traffic often has none).';
+    }
+}
+
+let _fusionSelectSeq = 0;
+
+async function selectFusionAircraft(icao24Raw) {
+    const icao24 = String(icao24Raw || '').toLowerCase();
+    if (!icao24 || !fusionMap) return;
+    const selToken = ++_fusionSelectSeq;
+    fusionSelectedIcao = icao24;
+    // Re-stamp highlight without a full re-render.
+    fusionAviationMarkers.forEach(mk => {
+        const el = mk.getElement() && mk.getElement().firstChild;
+        if (!el) return;
+        el.classList.remove('ac-glyph-selected');
+    });
+    const entry = fusionAircraftIndex[icao24];
+    if (entry) {
+        const el = entry.mk.getElement().firstChild;
+        if (el) el.classList.add('ac-glyph-selected');
+    }
+    const props = entry ? (entry.f.properties || {}) : {};
+    renderTrackCard(props, { fixes: [] }, undefined); // "Resolving…" skeleton
+    try { fusionMap.flyTo({ center: (entry && entry.lngLat) || fusionMap.getCenter(), zoom: Math.max(fusionMap.getZoom(), 6.5), duration: 550 }); } catch (e) {}
+
+    let lastTrack = { fixes: [] };
+    let lastProps = props;
+    let lastRoute = null; // null = still resolving, false-y .found = none filed
+    const repaint = () => {
+        if (selToken !== _fusionSelectSeq) return; // user picked another plane meanwhile
+        renderTrackCard(lastProps, lastTrack, lastRoute);
+        drawFusionTrack(lastTrack, lastProps, lastRoute);
+    };
+
+    // Trail + dossier first — no adsbdb dependency, paints instantly.
+    api('/opensky/flights/track/' + encodeURIComponent(icao24) + '?with_route=false').then(d => {
+        if (!d || d.error || selToken !== _fusionSelectSeq) return;
+        lastTrack = d.track || { fixes: [] };
+        lastProps = Object.assign({}, props, d.flight || {});
+        repaint();
+    }).catch(() => {});
+
+    // Route enrichment in parallel so it never blocks the trail.
+    const cs = String(props.callsign || '').trim();
+    if (cs) {
+        api('/opensky/flights/route/' + encodeURIComponent(cs)).then(r => {
+            if (!r || selToken !== _fusionSelectSeq) return;
+            lastRoute = r;
+            repaint();
+        }).catch(() => {});
+    }
+}
+
+function deselectFusionAircraft() {
+    fusionSelectedIcao = null;
+    setFusionFollow(false);
+    fusionAviationMarkers.forEach(mk => {
+        const el = mk.getElement() && mk.getElement().firstChild;
+        if (el) el.classList.remove('ac-glyph-selected');
+    });
+    const card = document.getElementById('fusionTrackCard');
+    if (card) card.classList.add('fusion-track-hidden');
+    clearFusionTrackOverlays();
+}
+
+function setFusionFollow(on) {
+    fusionFollow = !!on;
+    const btn = document.getElementById('ftcFollowBtn');
+    if (btn) {
+        btn.textContent = 'Follow: ' + (fusionFollow ? 'on' : 'off');
+        btn.className = 'retro-map-btn' + (fusionFollow ? ' retro-map-btn-active' : '');
+    }
+}
+
+function fusionToggleFollow() {
+    setFusionFollow(!fusionFollow);
+    if (fusionFollow) fusionFlyToSelected(true);
+}
+
+function fusionFlyToSelected(zoomIn) {
+    if (!fusionMap || !fusionSelectedIcao) return;
+    const entry = fusionAircraftIndex[fusionSelectedIcao];
+    if (entry && entry.lngLat) {
+        try {
+            fusionMap.flyTo({ center: entry.lngLat, zoom: Math.max(fusionMap.getZoom(), zoomIn ? 7.5 : fusionMap.getZoom()), duration: 900 });
+        } catch (e) {}
+    }
+}
+
+// ============================================================================
+// LIVE loop — 30s auto-refresh + opportunistic pipeline auto-run.
+// The badge proves freshness ("LIVE · updated 12s · next 18s") instead of
+// claiming liveness. Pauses when the tab is hidden.
+// ============================================================================
+
+const FUSION_LIVE_INTERVAL_MS = 30000;
+let fusionLiveTimer = null;
+let fusionCountdownTimer = null;
+let fusionMotionTimer = null;
+let fusionNextRefreshAt = 0;
+let fusionLastRefreshAt = 0;
+let fusionFeedMeta = null;
+let fusionAutoRunAt = 0;
+
+function updateFusionLiveBadge() {
+    const badge = document.getElementById('fusionLiveBadge');
+    const txt = document.getElementById('fusionLiveText');
+    if (!badge || !txt) return;
+    const nowSec = Date.now() / 1000;
+    const meta = fusionFeedMeta;
+    const ageS = meta && meta.last_success_ts ? Math.max(0, Math.round(nowSec - meta.last_success_ts)) : null;
+    const nextS = fusionNextRefreshAt ? Math.max(0, Math.ceil((fusionNextRefreshAt - Date.now()) / 1000)) : null;
+    const stale = ageS == null || ageS > 120;
+    badge.classList.toggle('fusion-live-stale', stale);
+    const src = meta && meta.last_source ? String(meta.last_source).replace('opensky-', '').toUpperCase() : null;
+    txt.textContent = (stale ? 'CATCHING UP' : 'LIVE') +
+        (ageS != null ? ' · updated ' + (ageS < 60 ? ageS + 's' : Math.round(ageS / 60) + 'm') + ' ago' : '') +
+        (nextS != null ? ' · next ' + nextS + 's' : '') +
+        (src ? ' · ' + src : '');
+}
+
+async function fusionRefreshFlights() {
+    if (!scScopeComplete()) return;
+    fusionNextRefreshAt = Date.now() + FUSION_LIVE_INTERVAL_MS;
+    let flData = null;
+    try {
+        flData = await api('/opensky/flights?limit=2000');
+    } catch (e) { /* keep previous frame on transient errors */ }
+    if (flData && Array.isArray(flData.flights)) {
+        let flights = flData.flights;
+        fusionFeedMeta = flData.meta || fusionFeedMeta;
+        const bbox = scBbox();
+        if (bbox) {
+            flights = flights.filter(f => {
+                const p = normalizeAircraftPoint(f);
+                if (!p) return false;
+                return p.lat >= bbox.lamin && p.lat <= bbox.lamax &&
+                       p.lng >= bbox.lomin && p.lng <= bbox.lomax;
+            });
+        }
+        fusionFlights = flights;
+        updateFusionKpis();
+        renderFusionAviationLayer();
+        // Keep lock-on through authoritative refreshes too.
+        if (fusionFollow && fusionSelectedIcao) {
+            const se = fusionAircraftIndex[fusionSelectedIcao];
+            if (se && se.lngLat) {
+                try { fusionMap.easeTo({ center: se.lngLat, duration: 800 }); } catch (e) {}
+            }
+        }
+        const hud = document.getElementById('fusionMapHud');
+        if (hud) hud.textContent = fusionThreatMarkers.length + ' threats · ' + fusionAviationMarkers.length + ' aircraft plotted';
+    }
+    // Opportunistic auto-run: when the fast lane is due and idle, fire the
+    // backend pull so positions keep advancing without any manual button.
+    const meta = fusionFeedMeta;
+    const nowMs = Date.now();
+    if (meta && meta.can_pull_adsb_now && !_fusionRunPending() && nowMs - fusionAutoRunAt > FUSION_LIVE_INTERVAL_MS * 0.9) {
+        fusionAutoRunAt = nowMs;
+        api('/opensky/pipeline/run', { method: 'POST', body: JSON.stringify({ fetch_military: true }) }).catch(() => {});
+    }
+    updateFusionLiveBadge();
+}
+
+function _fusionRunPending() {
+    // Cheap guard: the backend also rejects double runs; this just avoids spam.
+    return Date.now() - fusionAutoRunAt < 8000;
+}
+
+function startFusionLiveLoop() {
+    stopFusionLiveLoop();
+    fusionRefreshFlights();
+    fusionLiveTimer = setInterval(() => {
+        if (document.hidden) return;
+        fusionRefreshFlights();
+    }, FUSION_LIVE_INTERVAL_MS);
+    fusionCountdownTimer = setInterval(() => {
+        if (!document.hidden) updateFusionLiveBadge();
+    }, 1000);
+    fusionMotionTimer = setInterval(fusionMotionTick, 1000);
+}
+
+function stopFusionLiveLoop() {
+    if (fusionLiveTimer) { clearInterval(fusionLiveTimer); fusionLiveTimer = null; }
+    if (fusionCountdownTimer) { clearInterval(fusionCountdownTimer); fusionCountdownTimer = null; }
+    if (fusionMotionTimer) { clearInterval(fusionMotionTimer); fusionMotionTimer = null; }
 }
 
 function fitFusionBounds() {
@@ -6644,6 +7251,19 @@ const SC_REGION_BBOXES = {
     'Africa': { lamin: -35.0, lomin: -20.0, lamax: 38.0, lomax: 55.0, countries: ['Egypt','Nigeria','Kenya','Ethiopia','Morocco','Algeria','Libya','Sudan','Somalia','South Africa','Tunisia','Ghana','Uganda','Tanzania','Angola','Zimbabwe'] },
 };
 
+// Sub-national conflict-zone bboxes (region drill-downs). `regions` limits
+// which parent scopes list a zone; empty = listed under every scope.
+const SC_CONFLICT_ZONES = {
+    'Ukraine — East (Donbas)':      { lamin: 46.5, lomin: 34.0, lamax: 52.5, lomax: 40.5, regions: ['Eastern Europe'] },
+    'Ukraine — West / Kyiv':        { lamin: 48.0, lomin: 22.0, lamax: 52.8, lomax: 34.5, regions: ['Eastern Europe'] },
+    'Russia — Border Belts':        { lamin: 49.5, lomin: 33.0, lamax: 56.5, lomax: 44.0, regions: ['Eastern Europe'] },
+    'Israel & Lebanon':             { lamin: 29.5, lomin: 33.5, lamax: 36.5, lomax: 37.5, regions: ['Middle East'] },
+    'Iran & Gulf Approaches':       { lamin: 24.0, lomin: 44.0, lamax: 34.0, lomax: 61.5, regions: ['Middle East'] },
+    'Red Sea / Bab-el-Mandeb':      { lamin: 11.5, lomin: 32.0, lamax: 28.5, lomax: 44.5, regions: ['Middle East', 'Africa'] },
+    'Taiwan Strait':                { lamin: 21.0, lomin: 116.5, lamax: 27.0, lomax: 124.0, regions: ['East Asia'] },
+    'Korean Peninsula':             { lamin: 33.5, lomin: 124.5, lamax: 39.5, lomax: 131.0, regions: ['East Asia'] },
+};
+
 // FIPS-10-4 country code map (for GDELT BigQuery ActionGeo_CountryCode + DOC 2.0 sourcecountry)
 const COUNTRY_FIPS = {
     'Russia':'RS','Ukraine':'UP','Belarus':'BO','Poland':'PL','Romania':'RO','Bulgaria':'BU',
@@ -6668,12 +7288,18 @@ const COUNTRY_FIPS = {
 let SCScope = {
     region: 'Worldwide',      // key into SC_REGION_BBOXES
     country: '',              // country name (overrides region if set)
+    zone: '',                 // sub-national conflict zone (overrides region bbox)
     preset: 'Conflicts',      // QUERY_PRESETS name
     timeWindow: '24h',        // 24h | 72h | 7d
     query: '(military OR war OR battle OR conflict OR offensive)',  // derived from preset
 };
 
 function scBbox() {
+    // Sub-national zone wins over everything (finest scope first).
+    if (SCScope.zone && SC_CONFLICT_ZONES[SCScope.zone]) {
+        const z = SC_CONFLICT_ZONES[SCScope.zone];
+        return { lamin: z.lamin, lomin: z.lomin, lamax: z.lamax, lomax: z.lomax };
+    }
     if (SCScope.country) {
         const cap = COUNTRY_CAPITALS[SCScope.country];
         if (cap) {
@@ -6698,11 +7324,15 @@ function scScopeComplete() {
 function scSelectRegion(btn) {
     SCScope.region = btn.dataset.scopeRegion;
     SCScope.country = ''; // region resets country
+    SCScope.zone = '';
     document.querySelectorAll('[data-scope-region]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     const sel = document.getElementById('scCountrySelect');
     if (sel) sel.value = '';
+    const zsel = document.getElementById('scZoneSelect');
+    if (zsel) zsel.value = '';
     scPopulateCountries();
+    scPopulateZones();
     scUpdateEmptyState();
 }
 
@@ -6710,8 +7340,39 @@ function scSelectCountry(sel) {
     SCScope.country = sel.value || '';
     if (SCScope.country) {
         document.querySelectorAll('[data-scope-region]').forEach(b => b.classList.remove('active'));
+        SCScope.zone = '';
+        const zsel = document.getElementById('scZoneSelect');
+        if (zsel) zsel.value = '';
     } else if (SCScope.region) {
         // re-highlight the active region
+        document.querySelectorAll('[data-scope-region]').forEach(b => {
+            if (b.dataset.scopeRegion === SCScope.region) b.classList.add('active');
+        });
+    }
+    scUpdateEmptyState();
+}
+
+// Sub-national drill-down: conflict zones relevant to the active scope.
+function scPopulateZones() {
+    const sel = document.getElementById('scZoneSelect');
+    if (!sel) return;
+    let zones = Object.keys(SC_CONFLICT_ZONES);
+    if (SCScope.region && SCScope.region !== 'Worldwide') {
+        zones = zones.filter(z => !SC_CONFLICT_ZONES[z].regions || SC_CONFLICT_ZONES[z].regions.includes(SCScope.region));
+    }
+    sel.innerHTML = '<option value="">-- Zone --</option>' +
+        zones.map(z => '<option value="' + z.replace(/"/g, '&quot;') + '">' + escapeHtml(z) + '</option>').join('');
+}
+
+function scSelectZone(sel) {
+    SCScope.zone = sel.value || '';
+    if (SCScope.zone) {
+        // A zone narrows the country scope too.
+        SCScope.country = '';
+        const csel = document.getElementById('scCountrySelect');
+        if (csel) csel.value = '';
+        document.querySelectorAll('[data-scope-region]').forEach(b => b.classList.remove('active'));
+    } else if (SCScope.region) {
         document.querySelectorAll('[data-scope-region]').forEach(b => {
             if (b.dataset.scopeRegion === SCScope.region) b.classList.add('active');
         });
@@ -6762,6 +7423,7 @@ function applyFusionPreset(name) {
 
 function initScopeBuilder() {
     scPopulateCountries();
+    scPopulateZones();
     renderFusionPresets();
     applyFusionPreset('Conflicts');
     // Highlight default region (Worldwide)
@@ -6787,6 +7449,7 @@ async function preloadFusionData() {
         ]);
         events = gkgEventsFrom(evData && evData.events);
         flights = (flData && flData.flights) || [];
+        if (flData && flData.meta) fusionFeedMeta = flData.meta;
     } catch (e) { /* keep empty */ }
     // Filter to scope bbox (client-side post-filter; backend scoping happens on run)
     const bbox = scBbox();
@@ -6829,6 +7492,8 @@ async function renderFusionMap(forceReload) {
     if (hud) hud.textContent = fusionThreatMarkers.length + ' threats · ' + fusionAviationMarkers.length + ' aircraft plotted';
     requestAnimationFrame(() => { if (fusionMap) fusionMap.resize(); });
     fitFusionBounds();
+    // Anti-placebo: once the map is up, positions keep advancing on their own.
+    startFusionLiveLoop();
 }
 
 function fusionToggleLayer(name) {
@@ -6881,21 +7546,23 @@ async function fusionRunGdelt() {
 async function fusionRunOpenSky() {
     const el = document.getElementById('fusionValidateStatus');
     const bbox = scBbox();
-    const scopeLabel = SCScope.country || SCScope.region;
+    const scopeLabel = SCScope.country || SCScope.zone || SCScope.region;
     const rate = await api('/opensky/pipeline/rate').catch(() => null);
-    if (rate && !rate.can_pull_now) {
-        if (el) el.innerHTML = '<span style="color:var(--amber)">⏸ OpenSky: wait ' + Math.ceil(rate.anon_seconds_left) + 's (anon ~1 req/15min) — try Run GDELT only for ' + scopeLabel + '</span>';
+    if (rate && !rate.can_pull_adsb_now) {
+        const waitS = Math.ceil(rate.adsb_seconds_left || 0);
+        if (el) el.innerHTML = '<span style="color:var(--amber)">⏸ Feed: wait ' + waitS + 's until next pull' + (rate.opensky_seconds_left > 0 ? ' · OpenSky enrichment due in ' + Math.ceil(rate.opensky_seconds_left) + 's' : '') + '</span>';
         return;
     }
-    if (el) el.innerHTML = '<span style="color:var(--amber)">⟳ Running OpenSky for ' + scopeLabel + ' (background, can take >1min)…</span>';
+    if (el) el.innerHTML = '<span style="color:var(--amber)">⟳ Running feed pull for ' + scopeLabel + ' (background)…</span>';
     try {
         const payload = { client_id: '', client_secret: '', fetch_military: true, request_timeout: 30, max_retries: 5 };
         if (bbox) { payload.lamin = bbox.lamin; payload.lomin = bbox.lomin; payload.lamax = bbox.lamax; payload.lomax = bbox.lomax; }
         const start = await api('/opensky/pipeline/run', { method: 'POST', body: JSON.stringify(payload) });
         if (start.status === 'rejected') {
-            if (el) el.innerHTML = '<span style="color:var(--amber)">⏸ OpenSky: ' + escapeHtml(start.message || 'not due') + '</span>';
+            if (el) el.innerHTML = '<span style="color:var(--amber)">⏸ Feed: ' + escapeHtml(start.message || 'not due') + '</span>';
             return;
         }
+        fusionAutoRunAt = Date.now(); // don't double-fire vs live loop
     } catch (e) { if (el) el.innerHTML = '<span style="color:var(--red)">✗ ' + escapeHtml(e.message) + '</span>'; return; }
     // Poll status.
     const t0 = Date.now();

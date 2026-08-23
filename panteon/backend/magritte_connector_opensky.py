@@ -294,6 +294,10 @@ class OpenSkyConfig:
     lomin: float | None = None
     lamax: float | None = None
     lomax: float | None = None
+    # Router-level cadence control: when True the OpenSky states/all pull is
+    # skipped entirely (adsb.fi-only refresh). The persisted router gate decides
+    # when OpenSky is due; the connector must not second-guess it per-instance.
+    force_skip_open_sky: bool = False
 
 
 @dataclass
@@ -723,6 +727,7 @@ class OpenSkyConnector:
 
         # Determine if OpenSky is due for a fetch
         skip_open_sky = (
+            self.config.force_skip_open_sky or
             now < self._opensky_cooldown_until or
             (now - self._os_snapshot_time) < self._open_sky_interval()
         )
@@ -732,15 +737,18 @@ class OpenSkyConnector:
 
         token = None if skip_open_sky else await self._get_open_sky_token(session)
 
-        # Phase 1+2: adsb.fi military AND OpenSky in parallel
+        # Phase 1+2: adsb.fi military AND OpenSky in parallel (OpenSky skipped
+        # cleanly when the router gate says it is not due).
         mil_task = self._fetch_adsb_fi_mil(session)
         os_task = self._fetch_open_sky_snapshot(session, token) if not skip_open_sky else None
 
-        mil_results, os_results = await asyncio.gather(
-            mil_task,
-            os_task or asyncio.sleep(0, result=None)(),
-            return_exceptions=True,
-        )
+        if os_task is not None:
+            mil_results, os_results = await asyncio.gather(
+                mil_task, os_task, return_exceptions=True
+            )
+        else:
+            mil_results = await mil_task
+            os_results = 'skipped'  # sentinel: gate said not due (NOT a failure)
 
         # Process military feed results
         if isinstance(mil_results, list):
@@ -754,7 +762,8 @@ class OpenSkyConnector:
                 self._os_snapshot_time = now
         open_sky_worked = len(self._os_snapshot) > 0
 
-        # Re-check for 429 handling (mirrors osiris cooldown)
+        # Re-check for 429 handling (mirrors osiris cooldown).
+        # 'skipped' = gate deferral, must not enter the failure cooldown.
         if os_results is None:
             self._opensky_cooldown_until = now + self.config.cooldown_ms
             logger.warning("OpenSky 429 — cooling down %d min", self.config.cooldown_ms // 60000)
@@ -810,9 +819,12 @@ class OpenSkyConnector:
             else:
                 commercial.append(record.to_dict())
 
-        source = 'opensky-auth' if (self.has_open_sky_creds() and open_sky_worked) else (
-            'opensky-anon' if open_sky_worked else 'regional'
-        )
+        if open_sky_worked:
+            source = 'opensky-auth' if self.has_open_sky_creds() else 'opensky-anon'
+        elif mil_count > 0:
+            source = 'adsbfi-mil'
+        else:
+            source = 'regional'
 
         report = {
             "commercial_flights": commercial,

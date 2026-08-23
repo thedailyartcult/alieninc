@@ -26,10 +26,14 @@ from panteon.spinal_craker.service import OntologyService
 THEATER_TYPE = "kriegspiel_theater"
 FORCE_TYPE = "kriegspiel_force"
 ASSESSMENT_TYPE = "kriegspiel_assessment"
+WORLD_COUNTRY_TYPE = "world_country"      # REAL nations (World Bank stats)
+ARSENAL_SYSTEM_TYPE = "arsenal_system"    # REAL weapon systems (a-san catalog)
 
 LT_LOCATED_IN = "ks_located_in"    # force -> theater
 LT_ASSESSED_IN = "ks_assessed_in"  # assessment -> theater
 LT_OPPOSES = "ks_opposes"          # force(red) -> force(blue)
+LT_PARTIES_TO = "ks_parties_to"    # world_country -> theater
+LT_OPERATES = "ks_operates"        # world_country -> arsenal_system
 
 AT_RUN_BATTLE = "kriegspiel_run_battle"
 
@@ -64,11 +68,37 @@ _WAR_OBJECT_TYPES = {
             "decisive_battles": "number", "convergence_rate": "number",
             "red_win_pct": "number", "blue_win_pct": "number",
             "avg_red_casualties": "number", "avg_blue_casualties": "number",
+            "est_red_casualties_soldiers": "number",
+            "est_blue_casualties_soldiers": "number",
+            "commitment_fraction": "number",
             "avg_duration_hours": "number", "dominant_winner": "string",
             "seed": "number", "duration_ms": "number", "executed_at": "string",
             "lat": "number", "lng": "number",
             "source_event_id": "string", "source_event_title": "string",
             "source_country": "string",
+        },
+    },
+    WORLD_COUNTRY_TYPE: {
+        "display_name": "World Country (REAL)",
+        "description": "Real nation with official World Bank statistics: population, "
+                       "armed forces personnel, military expenditure.",
+        "icon": "flag",
+        "properties_schema": {
+            "iso3": "string", "iso2": "string", "name": "string",
+            "population": "number", "population_year": "number",
+            "armed_forces_personnel": "number", "troops_year": "number",
+            "military_expenditure_usd": "number", "milspend_year": "number",
+            "lat": "number", "lng": "number", "area_km2": "number",
+            "source": "string", "ingested_at": "string",
+        },
+    },
+    ARSENAL_SYSTEM_TYPE: {
+        "display_name": "Arsenal System (REAL)",
+        "description": "Real weapon system from Alien Inc's proprietary a-san catalog.",
+        "icon": "crosshair",
+        "properties_schema": {
+            "category": "string", "designation": "string", "country": "string",
+            "manufacturer": "string", "fetched_at": "string",
         },
     },
 }
@@ -81,6 +111,10 @@ _WAR_LINK_TYPES = [
      "Battle assessment was run against the theater."),
     (LT_OPPOSES, "Opposes", FORCE_TYPE, FORCE_TYPE,
      "Red/blue matchup evaluated by an assessment."),
+    (LT_PARTIES_TO, "Parties To", WORLD_COUNTRY_TYPE, THEATER_TYPE,
+     "Real nation is a belligerent party to the theater."),
+    (LT_OPERATES, "Operates", WORLD_COUNTRY_TYPE, ARSENAL_SYSTEM_TYPE,
+     "Nation operates this real weapon system (a-san catalog)."),
 ]
 
 _ACTION_TYPES = [
@@ -185,10 +219,13 @@ async def _upsert_war_object(db: AsyncSession, type_id, pk: str,
 
 
 async def emit_battle_report(db: AsyncSession, report: dict, mode: str = "battle",
-                             source_event: dict | None = None) -> dict:
+                             source_event: dict | None = None,
+                             real_context: dict | None = None) -> dict:
     """
     Persist a gateway battle/campaign report as ontology objects + links.
-    Never raises into the sim path — callers wrap this best-effort.
+    real_context (optional): {red_personnel, blue_personnel, red_iso,
+    blue_iso} from INGESTED World Bank data — enables ABSOLUTE casualty
+    estimates on the assessment. Never raises into the sim path.
     """
     await ensure_war_ontology(db)
     svc = OntologyService(db)
@@ -251,6 +288,10 @@ async def emit_battle_report(db: AsyncSession, report: dict, mode: str = "battle
         props = {
             "side": side, "doctrine": doc, "theater": theater_name,
         }
+        if real_context and real_context.get(f"{side}_iso"):
+            props["country_iso"] = real_context[f"{side}_iso"]
+        if real_context and real_context.get(f"{side}_personnel"):
+            props["real_active_personnel"] = real_context[f"{side}_personnel"]
         if reinf.get(side) is not None:
             props["reinforcement"] = reinf.get(side)
         if remaining.get(side) is not None:
@@ -306,6 +347,15 @@ async def emit_battle_report(db: AsyncSession, report: dict, mode: str = "battle
             "source_event_title": str(source_event.get("title") or "")[:200],
             "source_country": str(source_event.get("country") or ""),
         })
+    if real_context and real_context.get("red_personnel"):
+        try:
+            from panteon.real_world import estimate_absolute_casualties
+            est = estimate_absolute_casualties(report, real_context)
+            if est:
+                assess_props.update(est)
+                assess_props["real_anchored"] = True
+        except Exception:
+            pass
 
     atype = (await svc.get_object_type_by_name(ASSESSMENT_TYPE)).id
     assessment, was_new = await _upsert_war_object(
@@ -351,15 +401,73 @@ async def record_action_execution(db: AsyncSession, theater_object_id: str | Non
     exec_row.completed_at = datetime.now(timezone.utc)
 
 
+async def link_arsenal_flagships(db: AsyncSession, per_category: int = 3,
+                                 only_isos: list[str] | None = None) -> dict:
+    """
+    Materialize CURATED flagship weapon systems from the proprietary a-san
+    catalog (read-only adapter) as arsenal_system ontology objects linked to
+    their operator nation via ks_operates. Deterministic selection.
+    """
+    from panteon import arsenal as arsenal_mod
+
+    await ensure_war_ontology(db)
+    svc = OntologyService(db)
+
+    ctype = await svc.get_object_type_by_name(WORLD_COUNTRY_TYPE)
+    atype = await svc.get_object_type_by_name(ARSENAL_SYSTEM_TYPE)
+    lt_row = (await db.execute(
+        select(LinkType).where(LinkType.name == LT_OPERATES))).scalar_one_or_none()
+    if not (ctype and atype and lt_row):
+        return {"error": "war ontology types missing"}
+
+    countries = (await db.execute(
+        select(Object).where(Object.object_type_id == str(ctype.id)))).scalars().all()
+
+    created = updated = linked = 0
+    per_country = []
+    for c in countries:
+        props = c.properties or {}
+        if only_isos and props.get("iso3") not in {i.upper() for i in only_isos}:
+            continue
+        flagships = arsenal_mod.curated_flagships(
+            props.get("name") or "", per_category=max(1, min(int(per_category), 10)))
+        n_new = 0
+        for f in flagships:
+            meta = {k: v for k, v in f.items() if k != "pk"}
+            sys_obj, was_new = await _upsert_war_object(db, atype.id, f["pk"], meta)
+            created += was_new
+            n_new += was_new
+            updated += not was_new
+            linked += await _ensure_link(db, lt_row.id, c.id, sys_obj.id,
+                                         {"relationship": "operates"})
+        if flagships:
+            per_country.append({"country": props.get("name"),
+                                "iso3": props.get("iso3"), "systems": len(flagships),
+                                "new": n_new})
+
+    return {"materialized": created, "updated": updated, "links": linked,
+            "countries": per_country}
+
+
 async def graph_snapshot(db: AsyncSession, limit: int = 400) -> dict:
     """Nodes + edges for map rendering of the war ontology subgraph."""
     type_names = (await db.execute(
         select(ObjectType).where(ObjectType.name.in_(list(_WAR_OBJECT_TYPES)))
     )).scalars().all()
     tid_map = {str(t.id): t.name for t in type_names}
-    nodes = (await db.execute(
-        select(Object).where(Object.object_type_id.in_(list(tid_map)))
-        .order_by(Object.created_at.desc()).limit(limit))).scalars().all()
+    core_tids = [tid for tid, name in tid_map.items() if name != ARSENAL_SYSTEM_TYPE]
+
+    # Core entities first (theaters/forces/assessments/countries), then arsenal.
+    nodes = list((await db.execute(
+        select(Object).where(Object.object_type_id.in_(core_tids))
+        .order_by(Object.created_at.desc()).limit(limit))).scalars().all())
+    remaining = max(0, int(limit) - len(nodes))
+    if remaining and ARSENAL_SYSTEM_TYPE in set(tid_map.values()):
+        arsenal_tid = [tid for tid, name in tid_map.items()
+                       if name == ARSENAL_SYSTEM_TYPE]
+        nodes += list((await db.execute(
+            select(Object).where(Object.object_type_id.in_(arsenal_tid))
+            .order_by(Object.created_at.desc()).limit(remaining))).scalars().all())
 
     node_ids = [n.id for n in nodes]
     edges = []

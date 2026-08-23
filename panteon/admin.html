@@ -2276,6 +2276,32 @@
                                       <div class="retro-map-canvas" id="fusionMap"></div>
                                       <div id="fusionMapHud" class="sc-map-hud">Select a region and theme to begin.</div>
                                       <div id="fusionScopeEmpty" class="sc-scope-empty">Select a WHERE and WHAT to scope your investigation.<br>The map, KPIs, and tables will populate after a scoped run.</div>
+                                      <div id="gaiaTimeBar" class="gtb-hidden" role="group" aria-label="Temporal imagery timeline">
+                                          <div class="gtb-row">
+                                              <button type="button" class="gtb-btn" id="gtbPlayBtn" title="Play">&#9654;</button>
+                                              <div class="gtb-track-wrap">
+                                                  <input type="range" id="gtbSlider" min="0" max="0" step="1" value="0" disabled aria-label="Imagery era">
+                                                  <div class="gtb-ticks" id="gtbTicks"></div>
+                                              </div>
+                                              <select id="gtbSpeed" class="gtb-speed" title="Playback speed">
+                                                  <option value="2000">0.5&times;</option>
+                                                  <option value="1000" selected>1&times;</option>
+                                                  <option value="500">2&times;</option>
+                                                  <option value="250">4&times;</option>
+                                              </select>
+                                              <button type="button" class="gtb-btn" id="gtbCdBtn" title="Change Detection mode">&#916;</button>
+                                          </div>
+                                          <div class="gtb-row gtb-row-sub">
+                                              <span id="gtbDate">ERA &mdash;</span>
+                                              <span class="gtb-tools gtb-hidden" id="gtbCdTools">
+                                                  <button type="button" class="gtb-ab" id="gtbAbA" title="Set era A to current slider position">A: &mdash;</button>
+                                                  <button type="button" class="gtb-ab" id="gtbAbB" title="Set era B to current slider position">B: &mdash;</button>
+                                                  <button type="button" class="gtb-ab gtb-run" id="gtbRunBtn" title="Run pixel-diff between eras A and B">RUN</button>
+                                                  <button type="button" class="gtb-ab" id="gtbClrBtn" title="Clear change overlays">CLR</button>
+                                              </span>
+                                              <span id="gtbProv"></span>
+                                          </div>
+                                      </div>
                                   </div>
                                   <div class="sc-legend">
                                       <span class="sc-legend-label">LEGEND:</span>
@@ -2710,6 +2736,21 @@
                               </div>
                               <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Every battle run emits typed objects + links into the Spinal Cracker semantic layer (kriegspiel_theater / kriegspiel_force / kriegspiel_assessment). They render as a linked graph on the Unified Intelligence Map.</p>
                               <div id="simsOntPanel"><div class="empty-state">Loading ontology...</div></div>
+                          </div>
+
+                          <!-- Real-world anchoring -->
+                          <div class="card" style="margin-bottom:16px">
+                              <div class="card-header">
+                                  <span class="card-title">Real-World Anchors — official statistics</span>
+                                  <div style="display:flex;gap:8px;align-items:center">
+                                      <button class="btn btn-secondary btn-sm" onclick="loadSimsReal()">Refresh</button>
+                                      <button class="btn btn-secondary btn-sm" id="simsFlagBtn" onclick="simsLinkFlagships()">LINK ARSENAL</button>
+                                      <button class="btn btn-primary btn-sm" id="simsIngestBtn" onclick="simsIngestRealWorld()">INGEST WORLD BANK</button>
+                                  </div>
+                              </div>
+                              <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Pulls official World Bank statistics (population · armed forces personnel · military expenditure) + capital coordinates for every theater party nation, then links each to its theaters. Assessments translate casualty percentages into estimated absolute soldier losses using these baselines.</p>
+                              <div id="simsRealStatus" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);min-height:14px;margin-bottom:8px">Not ingested yet this session.</div>
+                              <div id="simsRealPanel"><div class="empty-state">No real-world data loaded — hit INGEST WORLD BANK.</div></div>
                           </div>
 
                           <!-- Real-world coupling: threat → theater matcher -->
@@ -9535,6 +9576,13 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
     .sims-ont-assess.w-red { background:var(--red); box-shadow:0 0 7px rgba(239,68,68,.85); }
     .sims-ont-assess.w-blue { background:var(--accent-cyan); box-shadow:0 0 7px rgba(34,197,232,.85); }
     @keyframes sims-pulse { 0%,100% { opacity:.55; } 50% { opacity:1; } }
+    /* ---- real-world nation markers ---- */
+    .sims-real-marker { border-radius:50%; border:2px solid var(--green); background:rgba(16,185,129,.18); box-shadow:0 0 8px rgba(16,185,129,.5); cursor:pointer; position:relative; }
+    .sims-real-marker.sz-s { width:10px; height:10px; }
+    .sims-real-marker.sz-m { width:14px; height:14px; }
+    .sims-real-marker.sz-l { width:20px; height:20px; border-color:var(--accent-neon); background:rgba(223,241,64,.15); box-shadow:0 0 10px rgba(223,241,64,.55); }
+    .sims-real-marker.sz-xl { width:26px; height:26px; border-color:var(--accent-cyan); background:rgba(34,197,232,.18); box-shadow:0 0 12px rgba(34,197,232,.6); }
+    .sims-real-marker .sims-real-tag { position:absolute; left:calc(100% + 4px); top:-2px; white-space:nowrap; font-family:var(--font-mono); font-size:9px; letter-spacing:.08em; color:var(--text); background:rgba(0,0,0,.78); border:1px solid var(--border-color); border-radius:3px; padding:1px 5px; }
     .sims-flash-row { display:flex; align-items:center; gap:10px; padding:6px 8px; border-bottom:1px dashed var(--border-color); font-size:11px; }
     #simsBattleResults table, #simsCampaignResults table { width:100%; font-size:10px; }
     #simsMatrixBody td, #simsParamsBody td, #simsMatrixHead th { font-family:var(--font-mono); font-size:9px; }
@@ -9546,15 +9594,18 @@ const SIMS = {
     outcomes: {},        // battlefield name -> last battle report (drives map popups)
     learning: null,      // last strategy-table payload (drives confidence overlay)
     ont: null,           // war ontology graph {nodes, edges, counts}
+    real: null,          // ingested world_country summaries
     matches: [],         // last flashpoint matches (event -> theater)
     loaded: false,
 };
-let fusionSimWarMarkers = [], fusionSimLearnMarkers = [], fusionSimOntMarkers = [];
+let fusionSimWarMarkers = [], fusionSimLearnMarkers = [], fusionSimOntMarkers = [], fusionSimRealMarkers = [];
 
 const ONT_TYPE_LABEL = {
     kriegspiel_theater: 'THEATER',
     kriegspiel_force: 'FORCE',
     kriegspiel_assessment: 'ASSESSMENT',
+    world_country: 'COUNTRY (REAL)',
+    arsenal_system: 'ARSENAL (REAL)',
 };
 
 function simsEsc(s) {
@@ -9571,10 +9622,12 @@ function initSimsWarRoom() {
     if (!SIMS.loaded) {
         loadSimsBattlefields();
         loadSimsResearch();
+        loadSimsReal();
         loadOntologyGraph();
         SIMS.loaded = true;
     } else {
         loadSimsResearch();
+        loadSimsReal();
         loadOntologyGraph();
     }
     simsGatewayHealth();
@@ -9675,6 +9728,13 @@ function renderBattleResults(r) {
     }
     const evts = Array.isArray(r.key_events) ? r.key_events.slice(0, 6)
         .map(e => `<li style="margin-left:14px">${simsEsc(typeof e === 'string' ? e : (e.text || e.event || JSON.stringify(e)))}</li>`).join('') : '';
+    const est = (r.ontology && r.ontology.est_casualties_soldiers) || null;
+    const estBlock = est ?
+        `<div style="margin-top:8px;padding:6px 8px;border:1px dashed var(--green);border-radius:4px;font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">
+            REAL-WORLD TRANSLATION (est., ${(est.commitment_fraction * 100).toFixed(0)}% commitment):
+            <b style="color:var(--red)">≈ ${simsFmtNum(est.est_red_casualties_soldiers)} soldiers</b> red ·
+            <b style="color:var(--accent-cyan)">≈ ${simsFmtNum(est.est_blue_casualties_soldiers)} soldiers</b> blue
+         </div>` : '';
     document.getElementById('simsBattleResults').innerHTML =
         `<div style="margin-bottom:6px;font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">${simsEsc(r.battlefield)} · ${r.scenarios_run} runs · convergence ${(100 * (r.convergence_rate || 0)).toFixed(0)}%</div>` +
         simsOutcomeBar(r.red_wins, r.blue_wins, r.stalemates) +
@@ -9682,7 +9742,7 @@ function renderBattleResults(r) {
             <div class="card-sub">RED CAS <b style="color:var(--red)">${Number(r.avg_red_casualties).toFixed(1)}%</b></div>
             <div class="card-sub">BLUE CAS <b style="color:var(--accent-cyan)">${Number(r.avg_blue_casualties).toFixed(1)}%</b></div>
             <div class="card-sub">AVG DUR <b>${Number(r.avg_duration_hours).toFixed(1)}h</b></div>
-         </div>${bb}` +
+         </div>${estBlock}${bb}` +
         (evts ? `<div class="card-sub" style="margin-top:10px;font-family:var(--font-mono)">KEY EVENTS</div><ul style="font-size:10px;color:var(--text-muted);line-height:1.6">${evts}</ul>` : '');
 }
 
@@ -9842,12 +9902,16 @@ function registerSimsGaiaLayers() {
         id: 'sims-ontology', label: 'War Ontology', meta: 'SIMS \u00b7 sc_objects graph',
         on: v => { fusionLayers.simsOnt = v; renderFusionOntLayer(); },
     });
+    window.GAIA.registerLayer({
+        id: 'sims-real', label: 'Real World', meta: 'SIMS \u00b7 nations + arsenal',
+        on: v => { fusionLayers.simsReal = v; renderFusionRealLayer(); },
+    });
     // Re-attach sims layers after any core fusion map reload (additive wrap).
     if (typeof window.renderFusionMap === 'function' && !window.renderFusionMap.__simsWrapped) {
         const origRender = window.renderFusionMap;
         window.renderFusionMap = function () {
             const res = origRender.apply(this, arguments);
-            setTimeout(() => { renderFusionSimWarLayer(); renderFusionSimLearningLayer(); renderFusionOntLayer(); }, 400);
+            setTimeout(() => { renderFusionSimWarLayer(); renderFusionSimLearningLayer(); renderFusionOntLayer(); renderFusionRealLayer(); }, 400);
             return res;
         };
         window.renderFusionMap.__simsWrapped = true;
@@ -9855,6 +9919,7 @@ function registerSimsGaiaLayers() {
     // Default both layers on so the war is visible immediately.
     fusionLayers.simsWar = true;
     fusionLayers.simsOnt = true;
+    fusionLayers.simsReal = false; // opt-in: dense real-world layer
     renderFusionSimWarLayer();
     // Theaters may not be fetched yet when arriving via Spinal Cracker first.
     if (!SIMS.battlefields.length) {
@@ -10019,6 +10084,7 @@ async function loadOntologyGraph() {
         if (chip && g.counts) chip.textContent = `${g.counts.nodes} OBJECTS · ${g.counts.edges} LINKS`;
         renderOntPanel();
         renderFusionOntLayer();
+        renderFusionRealLayer();
     } catch (e) { /* gateway or route offline — silent */ }
 }
 
@@ -10093,7 +10159,8 @@ function renderFusionOntLayer() {
                     'line-color': ['match', ['get', 'lt'],
                         'ks_assessed_in', '#DFF140',
                         'ks_opposes', '#ef4444',
-                        'ks_located_in', '#22c5ee'],
+                        'ks_located_in', '#22c5ee',
+                        'rgba(148,163,184,.5)'],
                     'line-width': 1.1, 'line-opacity': 0.65,
                     'line-dasharray': [2, 2],
                 },
@@ -10102,6 +10169,7 @@ function renderFusionOntLayer() {
     }
 
     SIMS.ont.nodes.forEach(n => {
+        if (n.type === 'world_country' || n.type === 'arsenal_system') return; // real layer owns these
         const c = ontNodeCoords(n);
         if (!c) return;
         const p = n.properties || {};
@@ -10143,6 +10211,111 @@ function renderOntPanel() {
             <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">${simsEsc((p.executed_at || '').replace('T', ' ').slice(0, 16))}</span>
         </div>`;
     }).join('');
+}
+
+// --------------------------- real-world anchoring --------------------------
+function simsFmtNum(v) {
+    if (v == null) return '--';
+    if (v >= 1e9) return (v / 1e9).toFixed(1) + 'B';
+    if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+    if (v >= 1e3) return (v / 1e3).toFixed(0) + 'k';
+    return String(Math.round(v));
+}
+
+async function loadSimsReal() {
+    try {
+        const r = await api('sims/ontology/real');
+        SIMS.real = r;
+        renderRealPanel();
+        renderFusionRealLayer();
+    } catch (e) { /* silent */ }
+}
+
+async function simsIngestRealWorld() {
+    const btn = document.getElementById('simsIngestBtn'), st = document.getElementById('simsRealStatus');
+    btn.disabled = true; st.textContent = 'Pulling official World Bank statistics for theater parties...';
+    try {
+        const r = await api('sims/ontology/ingest-real', { method: 'POST', timeout: 120000, body: '{}' });
+        st.textContent = `Ingested ${r.ingested} nations from official sources` +
+            (r.errors && r.errors.length ? ` (${r.errors.length} unavailable).` : '.');
+        loadSimsReal();
+        loadOntologyGraph();
+    } catch (e) {
+        st.textContent = 'Ingestion failed: ' + e.message;
+    } finally { btn.disabled = false; }
+}
+
+async function simsLinkFlagships() {
+    const btn = document.getElementById('simsFlagBtn'), st = document.getElementById('simsRealStatus');
+    btn.disabled = true; st.textContent = 'Linking curated flagship systems from the arsenal catalog...';
+    try {
+        const r = await api('sims/ontology/arsenal/link-flagships', { method: 'POST', timeout: 120000, body: '{"per_category":3}' });
+        if (r.error) throw new Error(r.error);
+        st.textContent = `Arsenal linked: ${r.materialized} new systems, ${r.links} nation→system links.`;
+        loadOntologyGraph();
+    } catch (e) {
+        st.textContent = 'Arsenal linking failed: ' + e.message;
+    } finally { btn.disabled = false; }
+}
+
+function renderRealPanel() {
+    const panel = document.getElementById('simsRealPanel');
+    if (!panel) return;
+    const countries = (SIMS.real && SIMS.real.countries) || [];
+    if (!countries.length) { panel.innerHTML = '<div class="empty-state">No real-world data loaded — hit INGEST WORLD BANK.</div>'; return; }
+    panel.innerHTML =
+        '<div class="table-wrap" style="max-height:240px;overflow:auto"><table>' +
+        '<thead><tr><th>Nation</th><th>Population</th><th>Active Troops</th><th>Mil. Budget</th><th>Parties To</th></tr></thead><tbody>' +
+        countries.map(c =>
+            `<tr><td style="color:var(--text)">${simsEsc(c.name || c.iso3)}<span style="color:var(--text-dim);font-size:8px"> ${simsEsc(c.iso3 || '')}</span></td>` +
+            `<td>${simsFmtNum(c.population)}${c.population_year ? ` <span style="color:var(--text-dim);font-size:8px">'${String(c.population_year).slice(2)}</span>` : ''}</td>` +
+            `<td style="color:${c.armed_forces_personnel ? 'var(--accent-cyan)' : 'var(--text-dim)'}">${simsFmtNum(c.armed_forces_personnel)}</td>` +
+            `<td>${c.military_expenditure_usd ? '$' + simsFmtNum(c.military_expenditure_usd) : '--'}</td>` +
+            `<td style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">${simsEsc((c.parties_to || []).join(', ') || '--')}</td></tr>`
+        ).join('') +
+        '</tbody></table></div>';
+}
+
+function renderFusionRealLayer() {
+    fusionSimRealMarkers.forEach(m => {
+        try { m.remove(); } catch (e) {}
+        try { m._el && m._el.remove(); } catch (e) {}
+    });
+    fusionSimRealMarkers = [];
+    if (!fusionMap || !fusionLayers.simsReal || !SIMS.ont || !Array.isArray(SIMS.ont.nodes)) return;
+
+    // nations -> theaters via edges, for popup context
+    SIMS.ont.nodes.forEach(n => {
+        if (n.type !== 'world_country') return;
+        const p = n.properties || {};
+        const c = ontNodeCoords(n);
+        if (!c) return;
+        const parties = [];
+        SIMS.ont.edges.forEach(e => {
+            if (e.source !== n.id || e.link_type !== 'ks_parties_to') return;
+            const t = SIMS.ont.nodes.find(x => x.id === e.target);
+            if (t && t.properties && t.properties.name) parties.push(t.properties.name);
+        });
+        const troops = p.armed_forces_personnel || 0;
+        const sizeCls = troops > 1e6 ? 'sz-xl' : troops > 300e3 ? 'sz-l' : troops > 50e3 ? 'sz-m' : 'sz-s';
+        const el = document.createElement('div');
+        el.className = 'sims-real-marker ' + sizeCls;
+        el.title = `${p.name} — ${simsFmtNum(troops)} active troops`;
+        el.innerHTML = `<span class="sims-real-tag">${simsEsc(p.name || p.iso3)} · ${simsFmtNum(troops)}</span>`;
+        const rows = [
+            ['Population', simsFmtNum(p.population) + (p.population_year ? ` ('${String(p.population_year).slice(2)})` : '')],
+            ['Active personnel', simsFmtNum(troops) + (p.troops_year ? ` ('${String(p.troops_year).slice(2)})` : '')],
+            ['Mil. expenditure', p.military_expenditure_usd ? '$' + simsFmtNum(p.military_expenditure_usd) : '--'],
+            ['Source', p.source || '--'],
+        ].map(([k, v]) => `<tr><td style="color:var(--text-muted);padding-right:10px">${simsEsc(k)}</td><td style="color:var(--text);text-align:right">${simsEsc(v)}</td></tr>`).join('');
+        const popupHtml = `<b>REAL NATION</b> · ${simsEsc(p.name || p.iso3)}<br>` +
+            `<table style="margin-top:6px;font-size:10px;font-family:var(--font-mono)">${rows}</table>` +
+            (parties.length ? `<div style="margin-top:4px;font-family:var(--font-mono);font-size:9px;color:var(--accent-neon)">PARTIES TO: ${simsEsc(parties.join(', '))}</div>` : '');
+        const popup = new maplibregl.Popup({ closeButton: false, offset: 8 }).setHTML(popupHtml);
+        const mk = new maplibregl.Marker({ element: el }).setLngLat(c).setPopup(popup).addTo(fusionMap);
+        mk._el = el;
+        fusionSimRealMarkers.push(mk);
+    });
 }
 // ============================ /SIMS WAR ROOM ===============================
 </script>
@@ -10596,10 +10769,79 @@ function renderOntPanel() {
     }
     .gaia-dim { display: none !important; }
 
+    #gaiaTimeBar {
+        position: absolute; left: 12px; right: 64px; bottom: 12px; z-index: 5;
+        background: rgba(8, 10, 8, 0.92); border: 1px solid var(--border-subtle);
+        border-radius: 6px; padding: 8px 12px 7px;
+        font-family: var(--font-mono); color: var(--text-muted, #8a8f98);
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5); backdrop-filter: blur(6px);
+    }
+    #gaiaTimeBar.gtb-hidden { display: none; }
+    #gaiaTimeBar.gtb-cd-active { border-color: rgba(223, 241, 64, 0.5); box-shadow: 0 0 14px rgba(223, 241, 64, 0.15), 0 4px 18px rgba(0, 0, 0, 0.5); }
+    .gtb-row { display: flex; align-items: center; gap: 10px; }
+    .gtb-row-sub { margin-top: 5px; justify-content: space-between; gap: 12px; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+    .gtb-btn {
+        width: 26px; height: 26px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+        background: transparent; color: var(--accent-neon); border: 1px solid var(--border-light);
+        border-radius: 4px; cursor: pointer; font-size: 11px; line-height: 1; padding: 0;
+    }
+    .gtb-btn:hover { border-color: var(--accent-neon); box-shadow: 0 0 8px rgba(223, 241, 64, 0.25); }
+    .gtb-btn.is-on { background: rgba(223, 241, 64, 0.12); border-color: var(--accent-neon); color: var(--accent-neon); }
+    .gtb-track-wrap { position: relative; flex: 1 1 auto; padding-bottom: 7px; min-width: 80px; }
+    #gtbSlider {
+        width: 100%; appearance: none; -webkit-appearance: none; height: 3px;
+        background: var(--border-light); border-radius: 2px; outline: none; cursor: pointer; margin: 0;
+    }
+    #gtbSlider::-webkit-slider-thumb {
+        -webkit-appearance: none; width: 11px; height: 11px; border-radius: 50%;
+        background: var(--accent-neon); box-shadow: 0 0 6px rgba(223, 241, 64, 0.6); border: none;
+    }
+    #gtbSlider::-moz-range-thumb {
+        width: 11px; height: 11px; border-radius: 50%;
+        background: var(--accent-neon); box-shadow: 0 0 6px rgba(223, 241, 64, 0.6); border: none;
+    }
+    #gtbSlider:disabled { opacity: 0.35; cursor: default; }
+    .gtb-ticks { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; pointer-events: none; }
+    .gtb-tick { position: absolute; bottom: 0; width: 1px; height: 3px; background: rgba(255, 255, 255, 0.25); transform: translateX(-0.5px); }
+    .gtb-tick-y { height: 6px; background: rgba(223, 241, 64, 0.55); }
+    .gtb-speed {
+        background: var(--bg-input, #111315); color: var(--text-muted, #8a8f98);
+        border: 1px solid var(--border-subtle); border-radius: 4px;
+        font-family: var(--font-mono); font-size: 9px; padding: 4px; cursor: pointer;
+    }
+    .gtb-ab {
+        height: 26px; padding: 0 8px; background: transparent; color: var(--text-muted, #8a8f98);
+        border: 1px solid var(--border-subtle); border-radius: 4px; cursor: pointer;
+        font-family: var(--font-mono); font-size: 9px; letter-spacing: .06em; text-transform: uppercase;
+    }
+    .gtb-ab:hover { border-color: var(--border-light); }
+    .gtb-ab.is-set { color: var(--accent-neon); border-color: rgba(223, 241, 64, 0.4); }
+    .gtb-run { color: #000; background: var(--accent-neon); border-color: var(--accent-neon); font-weight: 700; }
+    #gtbDate { color: var(--accent-neon); white-space: nowrap; }
+    #gtbProv { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; flex: 1 1 auto; }
+    #gtbProv b { color: var(--accent-neon); font-weight: 600; }
+    .gtb-tools { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+    .gaia-cd-chips { display: flex; gap: 6px; margin: 8px 0 6px; flex-wrap: wrap; }
+    .gaia-cd-chip {
+        font-family: var(--font-mono); font-size: 9px; letter-spacing: .06em; padding: 4px 8px;
+        background: transparent; color: var(--text-muted, #8a8f98);
+        border: 1px solid var(--border-subtle); border-radius: 4px; cursor: pointer; text-transform: uppercase;
+    }
+    .gaia-cd-chip.is-on { color: var(--accent-neon); border-color: rgba(223, 241, 64, 0.45); background: rgba(223, 241, 64, 0.08); }
+    .gaia-cd-oprow { display: flex; align-items: center; gap: 8px; margin: 2px 0 8px; }
+    .gaia-cd-oprow label {
+        font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em;
+        color: var(--text-muted, #8a8f98); text-transform: uppercase; flex: 0 0 auto;
+    }
+    .gaia-cd-oprow input[type="range"] { flex: 1 1 auto; width: auto; }
+    .gaia-cd-status { font-family: var(--font-mono); font-size: 10px; letter-spacing: .04em; color: var(--text-muted, #8a8f98); }
+
     @media (max-width: 768px) {
         #gaia-panel { right: 8px !important; width: calc(100vw - 16px) !important; }
         .gaia-title { letter-spacing: .16em; }
         input[type="range"].gaia-slider { width: 60px; }
+        #gaiaTimeBar { left: 8px; right: 8px; bottom: 8px; }
+        #gtbProv { display: none; }
     }
 </style>
 
@@ -10645,6 +10887,20 @@ function renderOntPanel() {
             <button type="button" class="gaia-act-btn gaia-apply" id="gaiaPlaceBtn" title="Arm placement, then click the map">Place on Map</button>
             <button type="button" class="gaia-act-btn gaia-clear" id="gaiaObjClearBtn" title="Remove every placed object">Clear All</button>
         </div>
+        <div class="gaia-section-tag"><span class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></span>04 &middot; Temporal Analysis</div>
+        <div class="gaia-cd-chips" id="gaiaCdChips">
+            <button type="button" class="gaia-cd-chip is-on" data-cls="structural" title="Toggle structural-change outlines">Structural</button>
+            <button type="button" class="gaia-cd-chip is-on" data-cls="cleared" title="Toggle cleared-terrain heat zones">Cleared</button>
+            <button type="button" class="gaia-cd-chip is-on" data-cls="movement" title="Toggle movement ghost footprints">Movement</button>
+        </div>
+        <div class="gaia-cd-oprow">
+            <label for="gaiaCdOpacity">Overlay</label>
+            <input type="range" class="gaia-slider" id="gaiaCdOpacity" min="20" max="100" step="5" value="60">
+        </div>
+        <div class="gaia-actions">
+            <button type="button" class="gaia-act-btn gaia-clear" id="gaiaCdClearBtn" title="Remove all change-detection overlays">Clear Overlays</button>
+        </div>
+        <div class="gaia-cd-status" id="gaiaCdStatus">Enable Satellite Imagery, scrub the timeline bar, use &#916; for change detection.</div>
         <div class="gaia-hint">Search: within N km &middot; last N min/h/d/w &middot; around / near &lt;place&gt; or the scope center &middot; red / amber / green &middot; military / jet / private / commercial air &middot; friendly / hostile assets &middot; computer-vision detections &middot; drones &middot; keywords. Objects: right-click a placed pin to remove it.</div>
     </div>
     <div class="gaia-footer">
@@ -10976,6 +11232,9 @@ function renderOntPanel() {
     function rasterOpacity(id, v) {
         var m = ensureFusionMap();
         if (m && m.getLayer(id)) { try { m.setPaintProperty(id, 'raster-opacity', clamp(v, 0.2, 1)); } catch (e) {} }
+        if (id === 'gaia-sat' && m && tActiveLayer && m.getLayer(tActiveLayer)) {
+            try { m.setPaintProperty(tActiveLayer, 'raster-opacity', clamp(v, 0.2, 1)); } catch (e) {}
+        }
     }
     function hideRasterOverlay(id) {
         var m = ensureFusionMap();
@@ -10984,6 +11243,7 @@ function renderOntPanel() {
     }
     function providerSatellite(want) {
         satErr = '';
+        temporalShow(want);
         if (!want) { hideRasterOverlay('gaia-sat'); return; }
         var url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
         if (!addRasterOverlay('gaia-sat', url, true)) {
@@ -10996,6 +11256,561 @@ function renderOntPanel() {
             }, 1500);
         }
     }
+    var WB = { items: [], loaded: false, pending: [] };
+    var tIdx = -1, tApplyTimer = null, tProvTimer = null, tPlayTimer = null, tRetryTimer = null;
+    var tPlaying = false, tSpeedMs = 1000, tActiveLayer = null, tMoveBound = false;
+    var cdModeOn = false, cdA = null, cdB = null, cdBusy = false, cdAlpha = 0.6;
+    var cdVisible = { structural: true, cleared: true, movement: true };
+    var CD_DEFS = [
+        ['gaia-cd-struct-line', 'line', 'structural', false, function (a) {
+            return { 'line-color': '#DFF140', 'line-width': 1.4, 'line-opacity': a };
+        }],
+        ['gaia-cd-clear-fill', 'fill', 'cleared', false, function (a) {
+            return { 'fill-color': '#f59e0b', 'fill-opacity': ['*', ['get', 'score'], ['*', 0.35, a]] };
+        }],
+        ['gaia-cd-clear-line', 'line', 'cleared', false, function (a) {
+            return { 'line-color': '#f59e0b', 'line-width': 1, 'line-dasharray': [2, 2], 'line-opacity': a };
+        }],
+        ['gaia-cd-move-line', 'line', 'movement', false, function (a) {
+            return { 'line-color': '#f43f5e', 'line-width': 1.2, 'line-dasharray': [1, 1.5], 'line-opacity': a };
+        }],
+        ['gaia-cd-move-dot', 'circle', 'movement', true, function (a) {
+            return { 'circle-radius': 3, 'circle-color': '#f43f5e', 'circle-opacity': ['*', 0.85, a] };
+        }]
+    ];
+
+    function tEl(id) { return document.getElementById(id); }
+    function satOpacityVal() {
+        var st = state.satellite || {};
+        return st.opacity == null ? 0.85 : clamp(st.opacity, 0.2, 1);
+    }
+    function cdAlphaExpr() { return ['*', ['get', 'score'], cdAlpha]; }
+    function wbTileUrl(it) {
+        return String(it.itemURL).replace('{level}', '{z}').replace('{row}', '{y}').replace('{col}', '{x}');
+    }
+    function loadWaybackIndex(done) {
+        if (WB.loaded) { done(true); return; }
+        if (!window.fetch || typeof window.fetch !== 'function') { done(false); return; }
+        WB.pending.push(done);
+        if (WB.pending.length > 1) return;
+        var finish = function (ok) {
+            var q = WB.pending.slice();
+            WB.pending = [];
+            q.forEach(function (f) { try { f(ok); } catch (e) {} });
+        };
+        fetch('https://s3-us-west-2.amazonaws.com/config.maptiles.arcgis.com/waybackconfig.json')
+            .then(function (r) { return r.json(); })
+            .then(function (cfg) {
+                var arr = [];
+                Object.keys(cfg || {}).forEach(function (k) {
+                    var it = cfg[k];
+                    if (!it || !it.itemURL) return;
+                    var rel = parseInt(k, 10) || 0;
+                    var md = /Wayback (\d{4}-\d{2}-\d{2})/.exec(it.itemTitle || '');
+                    var mr = /WB_(\d{4})_R(\d+)/.exec(it.layerIdentifier || '');
+                    var label = md ? md[1] : (mr ? mr[1] + ' r' + mr[2] : 'r' + k);
+                    var ts = md ? Date.parse(md[1] + 'T00:00:00Z')
+                        : (mr ? Date.parse(mr[1] + '-01-01T00:00:00Z') + parseInt(mr[2], 10) * 86400000
+                            : rel * 86400000);
+                    arr.push({ rel: rel, label: label, ts: ts, itemURL: it.itemURL, metaUrl: it.metadataLayerUrl || '' });
+                });
+                arr.sort(function (a, b) { return a.ts - b.ts; });
+                WB.items = arr;
+                WB.loaded = arr.length > 0;
+                buildTimeline();
+                finish(WB.loaded);
+            })
+            .catch(function () { finish(false); });
+    }
+    function buildTimeline() {
+        var s = tEl('gtbSlider');
+        if (!s) return;
+        var n = WB.items.length;
+        s.max = String(Math.max(0, n - 1));
+        s.disabled = n === 0;
+        var ticks = tEl('gtbTicks');
+        if (ticks) {
+            var html = '', years = {};
+            for (var i = 0; i < n; i++) {
+                var y = String(WB.items[i].label).slice(0, 4);
+                var firstOfYear = !years[y];
+                years[y] = 1;
+                html += '<span class="gtb-tick' + (firstOfYear ? ' gtb-tick-y' : '') + '" style="left:' +
+                    (n > 1 ? (i / (n - 1)) * 100 : 0) + '%"></span>';
+            }
+            ticks.innerHTML = html;
+        }
+        if (n) setSliderPos(n - 1, true);
+    }
+    function setSliderPos(i, instant) {
+        if (!WB.loaded || !WB.items.length) return;
+        tIdx = clamp(Math.round(i), 0, WB.items.length - 1);
+        var s = tEl('gtbSlider');
+        if (s) s.value = String(tIdx);
+        var d = tEl('gtbDate');
+        if (d) d.textContent = 'ERA ' + String(WB.items[tIdx].label).toUpperCase();
+        scheduleEra(instant);
+    }
+    function scheduleEra(instant) {
+        clearTimeout(tApplyTimer);
+        if (instant) { tApplyTimer = null; applyEra(); return; }
+        tApplyTimer = setTimeout(applyEra, 160);
+    }
+    function ensureTLayer(m, id, url, instant) {
+        try {
+            if (!m.getSource(id)) m.addSource(id, { type: 'raster', tiles: [url], tileSize: 256, attribution: '' });
+            if (!m.getLayer(id)) {
+                m.addLayer({
+                    id: id, type: 'raster', source: id,
+                    paint: { 'raster-opacity': 0, 'raster-opacity-transition': { duration: instant ? 0 : 240, delay: 0 } }
+                }, firstSymbolId(m));
+            }
+            m.setLayoutProperty(id, 'visibility', 'visible');
+            return true;
+        } catch (e) { return false; }
+    }
+    function retryEraSoon() {
+        if (tRetryTimer) return;
+        tRetryTimer = setTimeout(function () {
+            tRetryTimer = null;
+            if (state.satellite && state.satellite.on && tIdx >= 0) applyEra();
+        }, 1200);
+    }
+    function applyEra() {
+        if (!(state.satellite && state.satellite.on) || tIdx < 0 || !WB.items[tIdx]) return;
+        var m = ensureFusionMap();
+        if (!m || !m.isStyleLoaded || !m.isStyleLoaded()) { retryEraSoon(); return; }
+        var url = wbTileUrl(WB.items[tIdx]);
+        if (!tActiveLayer) {
+            if (!ensureTLayer(m, 'gaia-sat-a', url, true)) { retryEraSoon(); return; }
+            tActiveLayer = 'gaia-sat-a';
+            try { m.setPaintProperty(tActiveLayer, 'raster-opacity', satOpacityVal()); } catch (e) {}
+            try { if (m.getLayer('gaia-sat')) m.setLayoutProperty('gaia-sat', 'visibility', 'none'); } catch (e) {}
+        } else {
+            var nextId = tActiveLayer === 'gaia-sat-a' ? 'gaia-sat-b' : 'gaia-sat-a';
+            try {
+                if (m.getLayer(nextId)) m.removeLayer(nextId);
+                if (m.getSource(nextId)) m.removeSource(nextId);
+            } catch (e) {}
+            if (!ensureTLayer(m, nextId, url, false)) { retryEraSoon(); return; }
+            try {
+                m.setPaintProperty(nextId, 'raster-opacity', satOpacityVal());
+                m.setPaintProperty(tActiveLayer, 'raster-opacity', 0);
+                tActiveLayer = nextId;
+            } catch (e) {}
+        }
+        if (!tMoveBound && m.on) {
+            tMoveBound = true;
+            m.on('moveend', scheduleProv);
+        }
+        scheduleProv();
+        refreshStatuses();
+    }
+    function lngToMercX(lng) { return 6378137.0 * lng * Math.PI / 180; }
+    function latToMercY(lat) {
+        var s = Math.sin(clamp(lat, -85.05, 85.05) * Math.PI / 180);
+        return 6378137.0 * Math.log((1 + s) / (1 - s)) / 2;
+    }
+    function scheduleProv() { clearTimeout(tProvTimer); tProvTimer = setTimeout(queryProv, 650); }
+    function queryProv() {
+        var el = tEl('gtbProv');
+        if (!el || !(state.satellite && state.satellite.on) || tIdx < 0 || !WB.items[tIdx]) return;
+        var metaUrl = WB.items[tIdx].metaUrl;
+        var m = ensureFusionMap();
+        if (!metaUrl || !m) { el.textContent = ''; return; }
+        var c = m.getCenter(), half = 900;
+        var x = lngToMercX(c.lng), y = latToMercY(c.lat);
+        var geom = encodeURIComponent(JSON.stringify({ x: x, y: y, spatialReference: { wkid: 102100 } }));
+        var ext = [x - half, y - half, x + half, y + half].join(',');
+        var url = metaUrl + '/identify?f=json&geometryType=esriGeometryPoint&geometry=' + geom +
+            '&tolerance=2&mapExtent=' + encodeURIComponent(ext) + '&imageDisplay=400,400,96&layers=all';
+        el.textContent = 'verifying capture \u2026';
+        fetch(url).then(function (r) { return r.json(); }).then(function (j) {
+            var best = null;
+            ((j && j.results) || []).forEach(function (rr) {
+                var a = rr.attributes || {};
+                if (a.SRC_RES == null) return;
+                var v = parseFloat(a.SRC_RES);
+                if (!best || v < best.v) best = { v: v, a: a };
+            });
+            if (!best) { el.textContent = ''; return; }
+            var dt = String(best.a.SRC_DATE || '');
+            var nice = /^\d{8}$/.test(dt) ? dt.slice(4, 6) + '/' + dt.slice(6, 8) + '/' + dt.slice(0, 4) : dt;
+            el.innerHTML = '<b>AUTHENTIC</b> \u00b7 ' +
+                esc(String(best.a.SRC_DESC || best.a.NICE_NAME || 'Esri archive')) + ' \u00b7 ' +
+                esc(String(best.a.SRC_RES)) + 'm \u00b7 captured ' + esc(nice);
+        }).catch(function () { el.textContent = 'capture metadata unavailable'; });
+    }
+    function startPlayTimer() { tPlayTimer = setInterval(function () { setSliderPos((tIdx + 1) % Math.max(1, WB.items.length)); }, tSpeedMs); }
+    function stopPlayTimer() { clearInterval(tPlayTimer); tPlayTimer = null; }
+    function playPause() {
+        if (!WB.loaded || !WB.items.length) return;
+        tPlaying = !tPlaying;
+        var b = tEl('gtbPlayBtn');
+        if (b) { b.innerHTML = tPlaying ? '&#10074;&#10074;' : '&#9654;'; b.title = tPlaying ? 'Pause' : 'Play'; }
+        if (tPlaying) startPlayTimer(); else stopPlayTimer();
+    }
+    function temporalTeardown() {
+        tPlaying = false;
+        stopPlayTimer();
+        clearTimeout(tApplyTimer); tApplyTimer = null;
+        clearTimeout(tProvTimer); tProvTimer = null;
+        clearTimeout(tRetryTimer); tRetryTimer = null;
+        var b = tEl('gtbPlayBtn');
+        if (b) { b.innerHTML = '&#9654;'; b.title = 'Play'; }
+        var m = ensureFusionMap();
+        if (m) {
+            ['gaia-sat-a', 'gaia-sat-b'].forEach(function (id) {
+                try { if (m.getLayer(id)) m.removeLayer(id); } catch (e) {}
+                try { if (m.getSource(id)) m.removeSource(id); } catch (e) {}
+            });
+            try {
+                if (m.getLayer('gaia-sat')) m.setLayoutProperty('gaia-sat', 'visibility', state.satellite && state.satellite.on ? 'visible' : 'none');
+            } catch (e) {}
+        }
+        tActiveLayer = null;
+        tIdx = -1;
+        clearCd(true);
+        setCdMode(false);
+    }
+    function temporalShow(v) {
+        var bar = tEl('gaiaTimeBar');
+        if (!bar) return;
+        if (v) {
+            bar.classList.remove('gtb-hidden');
+            loadWaybackIndex(function (ok) {
+                if (!ok) {
+                    var d = tEl('gtbDate');
+                    if (d) d.textContent = 'ARCHIVE UNREACHABLE';
+                } else if (tIdx < 0 && WB.items.length) {
+                    setSliderPos(WB.items.length - 1, true);
+                }
+            });
+        } else {
+            temporalTeardown();
+            bar.classList.add('gtb-hidden');
+        }
+    }
+    function tileRange(m, z) {
+        var b = m.getBounds(), n = Math.pow(2, z);
+        var x0 = Math.floor((clamp(b.getWest(), -179.999, 179.999) + 180) / 360 * n);
+        var x1 = Math.floor((clamp(b.getEast(), -179.999, 179.999) + 180) / 360 * n);
+        var nRad = b.getNorth() * Math.PI / 180, sRad = clamp(b.getSouth(), -85.05, 85.05) * Math.PI / 180;
+        nRad = clamp(nRad, -85.05, 85.05);
+        var y0 = Math.floor((1 - Math.log(Math.tan(nRad) + 1 / Math.cos(nRad)) / Math.PI) / 2 * n);
+        var y1 = Math.floor((1 - Math.log(Math.tan(sRad) + 1 / Math.cos(sRad)) / Math.PI) / 2 * n);
+        x0 = clamp(x0, 0, n - 1); x1 = clamp(x1, 0, n - 1);
+        y0 = clamp(y0, 0, n - 1); y1 = clamp(y1, 0, n - 1);
+        if (x1 < x0) x1 = x0;
+        if (y1 < y0) y1 = y0;
+        return { x0: x0, x1: x1, y0: y0, y1: y1, n: n, count: (x1 - x0 + 1) * (y1 - y0 + 1) };
+    }
+    function loadTileImg(url) {
+        return new Promise(function (res, rej) {
+            var im = new Image();
+            im.crossOrigin = 'anonymous';
+            var to = setTimeout(function () { rej(new Error('tile timeout')); }, 15000);
+            im.onload = function () { clearTimeout(to); res(im); };
+            im.onerror = function () { clearTimeout(to); rej(new Error('tile blocked')); };
+            im.src = url;
+        });
+    }
+    function fetchMosaic(era, tr, z) {
+        var jobs = [], coords = [];
+        for (var ty = tr.y0; ty <= tr.y1; ty++) {
+            for (var tx = tr.x0; tx <= tr.x1; tx++) {
+                coords.push([tx, ty]);
+                jobs.push(loadTileImg(String(era.itemURL)
+                    .replace('{level}', z).replace('{row}', ty).replace('{col}', tx)));
+            }
+        }
+        return Promise.all(jobs).then(function (imgs) {
+            var cw = (tr.x1 - tr.x0 + 1) * 256, ch = (tr.y1 - tr.y0 + 1) * 256;
+            var cv = document.createElement('canvas');
+            cv.width = cw; cv.height = ch;
+            var ctx = cv.getContext('2d');
+            imgs.forEach(function (im, i) {
+                ctx.drawImage(im, (coords[i][0] - tr.x0) * 256, (coords[i][1] - tr.y0) * 256, 256, 256);
+            });
+            var data = ctx.getImageData(0, 0, cw, ch);
+            return { data: data.data, w: cw, h: ch };
+        });
+    }
+    function normalizeMosaic(dst, ref) {
+        var medianLuma = function (d) {
+            var vals = [], i;
+            for (i = 0; i + 2 < d.length; i += 397 * 4) {
+                vals.push(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]);
+            }
+            vals.sort(function (a, b) { return a - b; });
+            return vals.length ? vals[Math.floor(vals.length / 2)] : 128;
+        };
+        var ratio = clamp(medianLuma(ref) / Math.max(1, medianLuma(dst)), 0.85, 1.18);
+        for (var i = 0; i + 2 < dst.length; i += 4) {
+            dst[i] = Math.min(255, dst[i] * ratio);
+            dst[i + 1] = Math.min(255, dst[i + 1] * ratio);
+            dst[i + 2] = Math.min(255, dst[i + 2] * ratio);
+        }
+    }
+    function diffMosaic(A, B, tr, z) {
+        var BS = 16;
+        normalizeMosaic(B.data, A.data);
+        var bw = Math.ceil(A.w / BS), bh = Math.ceil(A.h / BS), grid = [];
+        var by, bx;
+        for (by = 0; by < bh; by++) {
+            for (bx = 0; bx < bw; bx++) grid.push(null);
+        }
+        for (by = 0; by < bh; by++) {
+            for (bx = 0; bx < bw; bx++) {
+                var dL = 0, gr = 0, cxA = 0, cxB = 0, mx = 0, cnt = 0, yy, xx;
+                for (yy = by * BS; yy < (by + 1) * BS && yy < A.h; yy += 2) {
+                    for (xx = bx * BS; xx < (bx + 1) * BS && xx < A.w; xx += 2) {
+                        var ia = (yy * A.w + xx) * 4;
+                        var la = 0.299 * A.data[ia] + 0.587 * A.data[ia + 1] + 0.114 * A.data[ia + 2];
+                        var lb = 0.299 * B.data[ia] + 0.587 * B.data[ia + 1] + 0.114 * B.data[ia + 2];
+                        dL += lb - la;
+                        gr += B.data[ia + 1] / (1 + B.data[ia] + B.data[ia + 2]) -
+                              A.data[ia + 1] / (1 + A.data[ia] + A.data[ia + 2]);
+                        cxA += Math.max(A.data[ia], A.data[ia + 1], A.data[ia + 2]) - Math.min(A.data[ia], A.data[ia + 1], A.data[ia + 2]);
+                        cxB += Math.max(B.data[ia], B.data[ia + 1], B.data[ia + 2]) - Math.min(B.data[ia], B.data[ia + 1], B.data[ia + 2]);
+                        mx = Math.max(mx, Math.abs(lb - la));
+                        cnt++;
+                    }
+                }
+                if (!cnt) continue;
+                dL /= cnt; gr /= cnt; cxA /= cnt; cxB /= cnt;
+                if ((Math.abs(dL) > 15 && mx > 36) || (gr < -0.07 && Math.abs(dL) > 9)) {
+                    grid[by * bw + bx] = { dl: dL, gr: gr, mx: mx, ca: cxA, cb: cxB };
+                }
+            }
+        }
+        var seen = {}, comps = [];
+        for (var gi = 0; gi < grid.length; gi++) {
+            if (!grid[gi] || seen[gi]) continue;
+            var q = [gi], members = [];
+            seen[gi] = true;
+            var minX = bw, maxX = 0, minY = bh, maxY = 0;
+            while (q.length) {
+                var cur = q.pop(), cy = Math.floor(cur / bw), cx = cur % bw;
+                members.push(grid[cur]);
+                if (cx < minX) minX = cx;
+                if (cx > maxX) maxX = cx;
+                if (cy < minY) minY = cy;
+                if (cy > maxY) maxY = cy;
+                [[cy - 1, cx], [cy + 1, cx], [cy, cx - 1], [cy, cx + 1]].forEach(function (nb) {
+                    var ni = nb[0] * bw + nb[1];
+                    if (nb[0] < 0 || nb[1] < 0 || nb[0] >= bh || nb[1] >= bw || seen[ni] || !grid[ni]) return;
+                    seen[ni] = true;
+                    q.push(ni);
+                });
+            }
+            if (!members.length) continue;
+            var area = members.length, dl = 0, gr = 0, mxm = 0, cam = 0, cbm = 0;
+            members.forEach(function (mm) {
+                dl += mm.dl; gr += mm.gr; mxm = Math.max(mxm, mm.mx);
+                cam += mm.ca || 0; cbm += mm.cb || 0;
+            });
+            dl /= area; gr /= area; cam /= area; cbm /= area;
+            var cls = null;
+            if (area <= 4 && mxm > 80) cls = 'movement';
+            else if (cbm < cam * 0.55 && cbm < 40) cls = 'structural';
+            else if (gr < -0.05 && cam > 30) cls = 'cleared';
+            else if (dl > 13 || dl < -34) cls = 'structural';
+            if (!cls) continue;
+            comps.push({ cls: cls, area: area, dl: dl, score: clamp(Math.abs(dl) / 90, 0.25, 1),
+                         bx0: minX, bx1: maxX, by0: minY, by1: maxY });
+        }
+        var fc = { type: 'FeatureCollection', features: [] };
+        comps.forEach(function (cp) {
+            var sw = pxToLngLat(cp.bx0 * BS, (cp.by1 + 1) * BS, tr, z);
+            var ne = pxToLngLat((cp.bx1 + 1) * BS, cp.by0 * BS, tr, z);
+            fc.features.push({
+                type: 'Feature',
+                properties: { cls: cp.cls, score: cp.score },
+                geometry: { type: 'Polygon', coordinates: [[sw, [ne[0], sw[1]], ne, [sw[0], ne[1]], sw]] }
+            });
+            if (cp.cls === 'movement') {
+                var cxx = pxToLngLat(((cp.bx0 + cp.bx1 + 1) / 2) * BS, ((cp.by0 + cp.by1 + 1) / 2) * BS, tr, z);
+                fc.features.push({
+                    type: 'Feature',
+                    properties: { cls: cp.cls, score: cp.score },
+                    geometry: { type: 'Point', coordinates: cxx }
+                });
+            }
+        });
+        return fc;
+    }
+    function pxToLngLat(px, py, tr, z) {
+        var gx = tr.x0 * 256 + px, gy = tr.y0 * 256 + py, n = tr.n;
+        var lng = gx / (n * 256) * 360 - 180;
+        var nn = Math.PI - 2 * Math.PI * gy / (n * 256);
+        var lat = 180 / Math.PI * Math.atan(0.5 * (Math.exp(nn) - Math.exp(-nn)));
+        return [lng, lat];
+    }
+    function removeCdLayers(m) {
+        CD_DEFS.slice().reverse().forEach(function (d) {
+            try { if (m.getLayer(d[0])) m.removeLayer(d[0]); } catch (e) {}
+        });
+        try { if (m.getSource('gaia-cd')) m.removeSource('gaia-cd'); } catch (e) {}
+    }
+    function ensureCdLayers(m, fc) {
+        removeCdLayers(m);
+        m.addSource('gaia-cd', { type: 'geojson', data: fc });
+        var before = firstSymbolId(m);
+        CD_DEFS.forEach(function (d) {
+            m.addLayer({
+                id: d[0], type: d[1], source: 'gaia-cd',
+                filter: ['all', ['==', ['get', 'cls'], d[2]], ['==', ['geometry-type'], d[3] ? 'Point' : 'Polygon']],
+                paint: d[4](cdAlphaExpr())
+            }, before);
+        });
+        applyCdVisibility(m);
+    }
+    function applyCdVisibility(mArg) {
+        var m = mArg || ensureFusionMap();
+        if (!m) return;
+        CD_DEFS.forEach(function (d) {
+            if (!m.getLayer(d[0])) return;
+            try { m.setLayoutProperty(d[0], 'visibility', cdVisible[d[2]] ? 'visible' : 'none'); } catch (e) {}
+        });
+    }
+    function repaintCdAlpha() {
+        var m = ensureFusionMap();
+        if (!m) return;
+        CD_DEFS.forEach(function (d) {
+            if (!m.getLayer(d[0])) return;
+            try { m.setPaintProperty(d[0], d[1] === 'fill' ? 'fill-opacity' : (d[1] === 'circle' ? 'circle-opacity' : 'line-opacity'), d[4](cdAlphaExpr())[d[1] === 'fill' ? 'fill-opacity' : (d[1] === 'circle' ? 'circle-opacity' : 'line-opacity')]); } catch (e) {}
+        });
+    }
+    function clearCd(silent) {
+        cdA = cdB = null;
+        markAB();
+        var m = ensureFusionMap();
+        if (m) removeCdLayers(m);
+        if (!silent) cdStatus('Overlays cleared.');
+    }
+    function markAB() {
+        ['A', 'B'].forEach(function (k) {
+            var chip = tEl('gtbAb' + k);
+            if (!chip) return;
+            var idx = k === 'A' ? cdA : cdB;
+            chip.textContent = k + ': ' + (idx == null || !WB.items[idx] ? '\u2014' : WB.items[idx].label);
+            chip.classList.toggle('is-set', idx != null);
+        });
+    }
+    function cdStatus(msg) {
+        var st = tEl('gaiaCdStatus');
+        if (st) st.textContent = msg;
+        statusMsg(msg);
+    }
+    function setCdMode(v) {
+        cdModeOn = !!v;
+        var btn = tEl('gtbCdBtn');
+        if (btn) btn.classList.toggle('is-on', cdModeOn);
+        var tools = tEl('gtbCdTools');
+        if (tools) tools.classList.toggle('gtb-hidden', !cdModeOn);
+        var bar = tEl('gaiaTimeBar');
+        if (bar) bar.classList.toggle('gtb-cd-active', cdModeOn);
+        if (!cdModeOn) {
+            cdA = cdB = null;
+            markAB();
+        }
+        cdStatus(cdModeOn ? 'CD mode: scrub, then set eras A and B.' : 'Heuristic pixel-diff \u00b7 verify captures before acting.');
+    }
+    function runChangeDetect() {
+        if (cdBusy) return;
+        if (cdA == null || cdB == null) { cdStatus('Set eras A and B first.'); return; }
+        if (cdA === cdB) { cdStatus('Eras A and B must differ.'); return; }
+        var m = ensureFusionMap();
+        if (!m) return;
+        if (m.getZoom() < 14) { cdStatus('Zoom to 14+ for building-level pixels.'); return; }
+        var z = Math.min(17, Math.floor(m.getZoom())), tr = tileRange(m, z);
+        while (tr.count > 24 && z > 14) { z -= 1; tr = tileRange(m, z); }
+        if (tr.count > 36) { cdStatus('Viewport too wide \u2014 zoom in further.'); return; }
+        cdBusy = true;
+        cdStatus('Fetching ' + tr.count + ' tiles \u00d7 2 eras \u2026');
+        Promise.all([fetchMosaic(WB.items[cdA], tr, z), fetchMosaic(WB.items[cdB], tr, z)])
+            .then(function (pair) {
+                cdStatus('Diffing pixels \u2026');
+                var fc = diffMosaic(pair[0], pair[1], tr, z);
+                ensureCdLayers(m, fc);
+                cdBusy = false;
+                var n = fc.features.filter(function (f) { return f.geometry.type === 'Polygon'; }).length;
+                cdStatus(n ? n + ' heuristic change zone' + (n === 1 ? '' : 's') + ' \u00b7 verify against captures.'
+                           : 'No significant change detected.');
+            })
+            .catch(function (err) {
+                cdBusy = false;
+                var msgv = String((err && err.message) || err);
+                cdStatus(msgv.indexOf('blocked') > -1
+                    ? 'Pixel analysis blocked (CORS/tile) \u2014 timeline unaffected.'
+                    : 'Change detection failed: ' + msgv);
+            });
+    }
+    function temporalInit() {
+        var s = tEl('gtbSlider');
+        if (!s || s.__gtbWired) return;
+        s.__gtbWired = true;
+        s.addEventListener('input', function () { setSliderPos(parseInt(s.value, 10) || 0, false); });
+        s.addEventListener('change', function () { setSliderPos(parseInt(s.value, 10) || 0, true); });
+        var pb = tEl('gtbPlayBtn');
+        if (pb) pb.addEventListener('click', playPause);
+        var sp = tEl('gtbSpeed');
+        if (sp) sp.addEventListener('change', function () {
+            tSpeedMs = parseInt(sp.value, 10) || 1000;
+            if (tPlaying) { stopPlayTimer(); startPlayTimer(); }
+        });
+        var cb = tEl('gtbCdBtn');
+        if (cb) cb.addEventListener('click', function () { setCdMode(!cdModeOn); });
+        var sa = tEl('gtbAbA');
+        if (sa) sa.addEventListener('click', function () {
+            if (tIdx < 0) { cdStatus('Scrub to an era first.'); return; }
+            cdA = tIdx;
+            markAB();
+            cdStatus(cdB == null ? 'Now pick era B.' : 'Press RUN to diff.');
+        });
+        var sb = tEl('gtbAbB');
+        if (sb) sb.addEventListener('click', function () {
+            if (tIdx < 0) { cdStatus('Scrub to an era first.'); return; }
+            cdB = tIdx;
+            markAB();
+            cdStatus(cdA == null ? 'Now pick era A.' : 'Press RUN to diff.');
+        });
+        var rn = tEl('gtbRunBtn');
+        if (rn) rn.addEventListener('click', runChangeDetect);
+        var cl = tEl('gtbClrBtn');
+        if (cl) cl.addEventListener('click', function () { clearCd(false); });
+        var cc = tEl('gaiaCdClearBtn');
+        if (cc) cc.addEventListener('click', function () { clearCd(false); });
+        var op = tEl('gaiaCdOpacity');
+        if (op) op.addEventListener('input', function () {
+            cdAlpha = clamp((parseInt(op.value, 10) || 60) / 100, 0.2, 1);
+            repaintCdAlpha();
+        });
+        var chips = tEl('gaiaCdChips');
+        if (chips) chips.addEventListener('click', function (ev) {
+            var b = ev.target && ev.target.closest ? ev.target.closest('.gaia-cd-chip') : null;
+            if (!b) return;
+            var k = b.getAttribute('data-cls');
+            if (!k) return;
+            cdVisible[k] = !cdVisible[k];
+            b.classList.toggle('is-on', cdVisible[k]);
+            applyCdVisibility();
+        });
+    }
+    function temporalState() {
+        return {
+            active: !!(state.satellite && state.satellite.on && tIdx >= 0),
+            playing: tPlaying,
+            index: tIdx,
+            count: WB.items.length,
+            era: tIdx >= 0 && WB.items[tIdx] ? WB.items[tIdx].label : null,
+            cdMode: cdModeOn,
+            cdEras: cdModeOn ? { a: cdA == null || !WB.items[cdA] ? null : WB.items[cdA].label,
+                                 b: cdB == null || !WB.items[cdB] ? null : WB.items[cdB].label } : null
+        };
+    }
+
     function providerWeather(want) {
         wxErr = '';
         if (wxTimer) { clearInterval(wxTimer); wxTimer = null; }
@@ -11722,6 +12537,8 @@ function renderOntPanel() {
         try { inputEl.value = ''; } catch (e) {}
         updateResults();
 
+        temporalInit();
+
         // Restore persisted layer states onto the host WITHOUT re-render storms:
         // only flip layers whose stored state differs from the live one.
         ['threats', 'aviation'].forEach(function (id) {
@@ -11782,7 +12599,17 @@ function renderOntPanel() {
             placeObject: function (side, label) { startPlacing(side, label); },
             clearObjects: clearAllObjects,
             drones: function () { return dronePts.map(function (d) {
-                return { id: d.id, label: d.label, lat: d.lat, lng: d.lng, altM: d.altM, heading: d.heading }; }); }
+                return { id: d.id, label: d.label, lat: d.lat, lng: d.lng, altM: d.altM, heading: d.heading }; }); },
+            temporal: temporalState,
+            temporalGoto: function (idx) { if (WB.loaded && WB.items.length) setSliderPos(clamp(Math.round(idx), 0, WB.items.length - 1), true); },
+            changeDetect: function (a, b) {
+                setCdMode(true);
+                cdA = clamp(parseInt(a, 10) || 0, 0, Math.max(0, WB.items.length - 1));
+                cdB = clamp(parseInt(b, 10) || 0, 0, Math.max(0, WB.items.length - 1));
+                markAB();
+                runChangeDetect();
+            },
+            clearChangeDetection: function () { clearCd(false); }
         };
         syncToggleBtns();
     }

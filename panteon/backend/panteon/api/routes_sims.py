@@ -48,9 +48,30 @@ async def _gateway(method: str, path: str, request: Request | None = None,
 
 
 async def _emit_ontology(db: AsyncSession, report: dict, user: SupabaseUser,
-                         mode: str, source_event: dict | None = None) -> dict:
+                         mode: str, source_event: dict | None = None,
+                         battlefield: str | None = None) -> dict:
     try:
-        summary = await emit_battle_report(db, report, mode=mode, source_event=source_event)
+        real_context = None
+        try:
+            from panteon.real_world import resolve_baselines
+            real_context = await resolve_baselines(db, battlefield or report.get("battlefield") or "")
+        except Exception:
+            real_context = None
+        summary = await emit_battle_report(db, report, mode=mode, source_event=source_event,
+                                           real_context=real_context)
+        if real_context and (real_context.get("red_personnel") or real_context.get("blue_personnel")):
+            summary["real_anchored"] = {
+                "red": {"iso3": real_context.get("red_iso"),
+                        "personnel": real_context.get("red_personnel")},
+                "blue": {"iso3": real_context.get("blue_iso"),
+                         "personnel": real_context.get("blue_personnel")},
+            }
+            try:
+                from panteon.real_world import estimate_absolute_casualties
+                summary["est_casualties_soldiers"] = estimate_absolute_casualties(
+                    report, real_context)
+            except Exception:
+                pass
         await graph_action_record(db, summary, report, user)
         return summary
     except Exception as exc:  # ontology must never break a sim response
@@ -83,11 +104,104 @@ async def sims_ontology_bootstrap(user: SupabaseUser = Depends(get_current_user)
 
 
 @router.get("/ontology/graph")
-async def sims_ontology_graph(limit: int = 400,
+async def sims_ontology_graph(limit: int = 600,
                               user: SupabaseUser = Depends(get_current_user),
                               db: AsyncSession = Depends(get_db)):
-    limit = max(1, min(limit, 2000))
+    limit = max(1, min(limit, 3000))
     return await graph_snapshot(db, limit=limit)
+
+
+@router.post("/ontology/ingest-real")
+async def sims_ingest_real(request: Request,
+                           user: SupabaseUser = Depends(get_current_user),
+                           db: AsyncSession = Depends(get_db)):
+    """
+    Manual refresh of REAL-WORLD data: pulls official World Bank statistics
+    (population, armed forces personnel, military expenditure) + capital
+    coordinates for theater parties and upserts world_country ontology objects.
+    Editor+ role (writes to the semantic layer).
+    """
+    if ROLE_LEVELS.get(user.role, 0) < ROLE_LEVELS["editor"]:
+        raise HTTPException(status_code=403, detail="Editor role required for real-data ingestion")
+    from panteon.real_world import ALL_PARTIES, ingest_real_countries
+    body = {}
+    try:
+        body = await request.json()
+    except Exception:
+        pass
+    isos = body.get("countries") or ALL_PARTIES
+    try:
+        return await ingest_real_countries(db, isos=isos)
+    except Exception as exc:
+        raise HTTPException(status_code=502,
+                            detail=f"Real-world ingestion failed: {exc}") from exc
+
+
+@router.get("/ontology/real")
+async def sims_real_summary(user: SupabaseUser = Depends(get_current_user),
+                            db: AsyncSession = Depends(get_db)):
+    """Summary of ingested REAL nations currently in the ontology."""
+    from sqlalchemy import select as _select
+    from panteon.spinal_craker.models import Object, ObjectType
+    from panteon.real_world import THEATER_PARTIES
+
+    row = (await db.execute(
+        _select(ObjectType.id).where(ObjectType.name == "world_country")
+    )).scalar_one_or_none()
+    if row is None:
+        return {"ingested": False, "countries": []}
+    objs = (await db.execute(
+        _select(Object).where(Object.object_type_id == str(row))
+    )).scalars().all()
+    countries = []
+    for o in objs:
+        p = o.properties or {}
+        parties_to = [t for t, cs in THEATER_PARTIES.items()
+                      if (p.get("iso3") or "").upper() in {c.upper() for c in cs}]
+        countries.append({
+            "iso3": p.get("iso3"), "name": p.get("name"),
+            "population": p.get("population"), "population_year": p.get("population_year"),
+            "armed_forces_personnel": p.get("armed_forces_personnel"),
+            "military_expenditure_usd": p.get("military_expenditure_usd"),
+            "lat": p.get("lat"), "lng": p.get("lng"),
+            "parties_to": parties_to, "ingested_at": p.get("ingested_at"),
+        })
+    countries.sort(key=lambda c: -(c.get("armed_forces_personnel") or 0))
+    return {"ingested": True, "count": len(countries), "countries": countries}
+
+
+@router.get("/ontology/arsenal")
+async def sims_arsenal_query(country: str | None = None, category: str | None = None,
+                             q: str | None = None, limit: int = 30, offset: int = 0,
+                             user: SupabaseUser = Depends(get_current_user)):
+    """
+    LIVE read-only query into Alien Inc's proprietary a-san weapon catalog.
+    Nothing is copied or logged; results are served only to authenticated users.
+    """
+    from panteon import arsenal
+    return arsenal.query_entries(country=country, category=category, q=q,
+                                 limit=limit, offset=offset)
+
+
+@router.post("/ontology/arsenal/link-flagships")
+async def sims_arsenal_link_flagships(request: Request,
+                                      user: SupabaseUser = Depends(get_current_user),
+                                      db: AsyncSession = Depends(get_db)):
+    """
+    Materialize curated flagship weapon systems per ingested nation as
+    ontology objects linked via ks_operates. Editor+ role.
+    """
+    if ROLE_LEVELS.get(user.role, 0) < ROLE_LEVELS["editor"]:
+        raise HTTPException(status_code=403, detail="Editor role required")
+    from panteon.war_ontology import link_arsenal_flagships
+    body = {}
+    try:
+        body = await request.json()
+    except Exception:
+        pass
+    return await link_arsenal_flagships(
+        db, per_category=int(body.get("per_category", 3)),
+        only_isos=body.get("countries"))
 
 
 @router.post("/ontology/flashpoint")
@@ -109,7 +223,8 @@ async def sims_ontology_flashpoint(request: Request,
     if not report.get("error"):
         report["ontology"] = await _emit_ontology(
             db, report, user, mode="flashpoint",
-            source_event=body.get("source_event"))
+            source_event=body.get("source_event"),
+            battlefield=payload["battlefield"])
     return report
 
 
@@ -129,7 +244,8 @@ async def sims_kriegspiel_run(request: Request,
     }
     report = await _gateway("POST", "kriegspiel/run", request, payload)
     if not report.get("error"):
-        report["ontology"] = await _emit_ontology(db, report, user, mode="battle")
+        report["ontology"] = await _emit_ontology(db, report, user, mode="battle",
+                                                  battlefield=payload["battlefield"])
     return report
 
 
@@ -160,7 +276,8 @@ async def sims_kriegspiel_campaign(request: Request,
             "avg_front_final_pct": campaign.get("avg_front_final_pct"),
         }
         campaign["ontology"] = await _emit_ontology(
-            db, report, user, mode="campaign")
+            db, report, user, mode="campaign",
+            battlefield=report.get("battlefield"))
     return campaign
 
 

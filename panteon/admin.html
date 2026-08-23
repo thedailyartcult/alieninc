@@ -1537,6 +1537,61 @@
         }
         .sc-metric-value { font-family: var(--font-tech); font-size: 24px; font-weight: 300; color: var(--accent-neon); padding: 8px 0; }
 
+        /* Aircraft platform glyphs (Maven-style heading-oriented symbology).
+           Rotation is applied by MapLibre on the marker ROOT element around its
+           anchor — this element must stay transform-free. */
+        .ac-glyph { width: 20px; height: 20px; cursor: pointer; filter: drop-shadow(0 0 2px currentColor); }
+        .ac-glyph svg { width: 16px; height: 16px; display: block; margin: 0 auto; }
+        .ac-glyph-mil { filter: drop-shadow(0 0 2px currentColor) drop-shadow(0 0 5px rgba(239, 68, 68, 0.75)); }
+
+        /* MIL contacts panel — Maven-style bottom-right map rail */
+        .sc-mil-panel {
+            position: absolute; right: 10px; bottom: 30px; z-index: 6;
+            width: 252px; max-width: calc(100% - 20px);
+            background: rgba(0, 0, 0, 0.82); border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 6px; font-family: var(--font-mono); overflow: hidden;
+            backdrop-filter: blur(4px);
+        }
+        .sc-mil-panel.sc-mil-hidden { display: none; }
+        .sc-mil-head {
+            display: flex; align-items: center; gap: 6px; width: 100%;
+            background: none; border: 0; padding: 6px 8px; cursor: pointer;
+            color: inherit; font: inherit; text-align: left;
+        }
+        .sc-mil-title { font-size: 9px; letter-spacing: 0.12em; color: #ef4444; text-transform: uppercase; }
+        .sc-mil-body { max-height: 190px; overflow-y: auto; border-top: 1px solid rgba(239, 68, 68, 0.25); }
+        .sc-mil-panel.sc-mil-collapsed .sc-mil-body { display: none; }
+        .sc-mil-row {
+            display: flex; align-items: baseline; gap: 6px;
+            padding: 4px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 9px; color: var(--text-muted); cursor: pointer;
+        }
+        .sc-mil-row:last-child { border-bottom: 0; }
+        .sc-mil-row:hover { background: rgba(239, 68, 68, 0.12); }
+        .sc-mil-row b { color: #ef4444; font-weight: 600; flex-shrink: 0; }
+        .sc-mil-type { color: var(--text-light); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .sc-mil-meta { flex-shrink: 0; opacity: 0.85; }
+        .sc-mil-empty { padding: 8px; font-size: 9px; color: var(--text-muted); }
+        .sc-legend-plane { width: 11px; height: 11px; vertical-align: -2px; margin-right: 3px; }
+
+        /* Collapsible intel cards (map-first layout) */
+        .sc-intel-card > .card-header {
+            width: 100%; background: none; border: 0; padding: 0; margin-bottom: 0;
+            color: inherit; font: inherit; text-align: left; cursor: pointer;
+        }
+        .sc-intel-card.open > .card-header { margin-bottom: 10px; }
+        .sc-intel-chevron {
+            font-family: var(--font-mono); font-size: 9px; color: var(--text-muted);
+            transition: transform 0.18s ease; display: inline-block;
+        }
+        .sc-intel-card.open .sc-intel-chevron { transform: rotate(180deg); }
+        .sc-intel-count {
+            font-family: var(--font-mono); font-size: 9px; color: var(--accent-neon);
+            border: 1px solid rgba(223, 241, 64, 0.35); border-radius: 3px; padding: 0 5px;
+        }
+        .sc-intel-body { max-height: 0; overflow: hidden; transition: max-height 0.28s ease; }
+        .sc-intel-card.open .sc-intel-body { max-height: 280px; }
+
         @media (max-width: 768px) {
             .sc-query-row { flex-direction: column; align-items: stretch; }
             .sc-query-input { min-width: unset; }
@@ -2276,39 +2331,66 @@
                                       <div class="retro-map-canvas" id="fusionMap"></div>
                                       <div id="fusionMapHud" class="sc-map-hud">Select a region and theme to begin.</div>
                                       <div id="fusionScopeEmpty" class="sc-scope-empty">Select a WHERE and WHAT to scope your investigation.<br>The map, KPIs, and tables will populate after a scoped run.</div>
-                                      <div id="gaiaTimeBar" class="gtb-hidden" role="group" aria-label="Temporal imagery timeline">
-                                          <div class="gtb-row">
-                                              <button type="button" class="gtb-btn" id="gtbPlayBtn" title="Play">&#9654;</button>
-                                              <div class="gtb-track-wrap">
-                                                  <input type="range" id="gtbSlider" min="0" max="0" step="1" value="0" disabled aria-label="Imagery era">
-                                                  <div class="gtb-ticks" id="gtbTicks"></div>
-                                              </div>
-                                              <select id="gtbSpeed" class="gtb-speed" title="Playback speed">
-                                                  <option value="2000">0.5&times;</option>
-                                                  <option value="1000" selected>1&times;</option>
-                                                  <option value="500">2&times;</option>
-                                                  <option value="250">4&times;</option>
-                                              </select>
-                                              <button type="button" class="gtb-btn" id="gtbCdBtn" title="Change Detection mode">&#916;</button>
+                                      <div id="fusionMilPanel" class="sc-mil-panel sc-mil-hidden">
+                                          <button type="button" class="sc-mil-head" onclick="fusionMilToggle()" aria-expanded="true">
+                                              <span class="sc-mil-title">MIL Contacts</span>
+                                              <b class="sc-intel-count" id="fusionMilCount">0</b>
+                                              <span class="sc-intel-chevron" style="margin-left:auto" id="fusionMilChevron">&#9662;</span>
+                                          </button>
+                                          <div class="sc-mil-body" id="fusionMilBody"></div>
+                                      </div>
+                                      <div id="gaiaTimeBar" class="gtb-hidden" role="group" aria-label="Satellite imagery control">
+                                          <div class="gtb-pill-row">
+                                              <span class="gtb-pill-tag" id="gtbPillTag">SAT</span>
+                                              <input type="range" class="gtb-mini-slider" id="gtbOpacityMini" min="20" max="100" step="5" value="100" aria-label="Imagery opacity">
+                                              <span class="gtb-tiles" id="gtbTiles"></span>
+                                              <button type="button" class="gtb-btn gtb-expand" id="gtbExpandBtn" title="Timeline &amp; scope tools" aria-expanded="false">&#9662;</button>
                                           </div>
-                                          <div class="gtb-row gtb-row-sub">
-                                              <span id="gtbDate">ERA &mdash;</span>
-                                              <span class="gtb-tools gtb-hidden" id="gtbCdTools">
-                                                  <button type="button" class="gtb-ab" id="gtbAbA" title="Set era A to current slider position">A: &mdash;</button>
-                                                  <button type="button" class="gtb-ab" id="gtbAbB" title="Set era B to current slider position">B: &mdash;</button>
-                                                  <button type="button" class="gtb-ab gtb-run" id="gtbRunBtn" title="Run pixel-diff between eras A and B">RUN</button>
-                                                  <button type="button" class="gtb-ab" id="gtbClrBtn" title="Clear change overlays">CLR</button>
-                                              </span>
-                                              <span id="gtbProv"></span>
+                                          <div class="gtb-popover gtb-collapsed" id="gtbPopover">
+                                              <div class="gtb-row">
+                                                  <button type="button" class="gtb-btn" id="gtbPlayBtn" title="Play">&#9654;</button>
+                                                  <div class="gtb-track-wrap">
+                                                      <input type="range" id="gtbSlider" min="0" max="0" step="1" value="0" disabled aria-label="Imagery era">
+                                                      <div class="gtb-ticks" id="gtbTicks"></div>
+                                                  </div>
+                                                  <select id="gtbSpeed" class="gtb-speed" title="Playback speed">
+                                                      <option value="2000">0.5&times;</option>
+                                                      <option value="1000" selected>1&times;</option>
+                                                      <option value="500">2&times;</option>
+                                                      <option value="250">4&times;</option>
+                                                  </select>
+                                                  <button type="button" class="gtb-btn" id="gtbCdBtn" title="Change Detection mode">&#916;</button>
+                                              </div>
+                                              <div class="gtb-row gtb-row-sub">
+                                                  <span id="gtbDate">ERA &mdash;</span>
+                                                  <span class="gtb-tools gtb-hidden" id="gtbCdTools">
+                                                      <button type="button" class="gtb-ab" id="gtbAbA" title="Set era A to current slider position">A: &mdash;</button>
+                                                      <button type="button" class="gtb-ab" id="gtbAbB" title="Set era B to current slider position">B: &mdash;</button>
+                                                      <button type="button" class="gtb-ab gtb-run" id="gtbRunBtn" title="Run pixel-diff between eras A and B">RUN</button>
+                                                      <button type="button" class="gtb-ab" id="gtbClrBtn" title="Clear change overlays">CLR</button>
+                                                  </span>
+                                                  <span id="gtbProv"></span>
+                                              </div>
+                                              <div class="gtb-scope-row" id="gtbScopeRow">
+                                                  <span class="gtb-scope-label">SCOPE</span>
+                                                  <button type="button" class="gtb-schip" data-sat-scope="selection" title="Only the selected region/country">SEL</button>
+                                                  <button type="button" class="gtb-schip" data-sat-scope="viewport" title="Only the current map view">VIEW</button>
+                                                  <button type="button" class="gtb-schip" data-sat-scope="world" title="Whole world (heavier)">WORLD</button>
+                                                  <span class="gtb-scope-name" id="gtbScopeName">VIEW</span>
+                                              </div>
                                           </div>
                                       </div>
                                   </div>
+                                  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><path id="ac-plane-path" d="M12 2 C12.9 2 13.5 3 13.5 4.3 L13.55 10.2 L21.8 14.7 L21.8 16.1 L13.5 13.7 L13.45 17.7 L17.5 20.3 L17.5 21.3 L13.05 20.5 L12.6 22 L11.4 22 L10.95 20.5 L6.5 21.3 L6.5 20.3 L10.55 17.7 L10.5 13.7 L2.2 16.1 L2.2 14.7 L10.45 10.2 L10.5 4.3 C10.5 3 11.1 2 12 2 Z"/></defs></svg>
                                   <div class="sc-legend">
                                       <span class="sc-legend-label">LEGEND:</span>
-                                      <span><span class="sc-legend-dot" style="background:#ef4444;box-shadow:0 0 4px #ef4444"></span> Threat-RED / Military</span>
-                                      <span><span class="sc-legend-dot" style="background:#f59e0b;box-shadow:0 0 4px #f59e0b"></span> Threat-AMBER / Private</span>
-                                      <span><span class="sc-legend-dot" style="background:#22c544;box-shadow:0 0 4px #22c544"></span> Threat-GREEN / Commercial</span>
-                                      <span><span class="sc-legend-dot" style="background:#22d3ee;box-shadow:0 0 4px #22d3ee"></span> Jet</span>
+                                      <span><span class="sc-legend-dot" style="background:#ef4444;box-shadow:0 0 4px #ef4444"></span> Threat-RED</span>
+                                      <span><span class="sc-legend-dot" style="background:#f59e0b;box-shadow:0 0 4px #f59e0b"></span> Threat-AMBER</span>
+                                      <span><span class="sc-legend-dot" style="background:#22c544;box-shadow:0 0 4px #22c544"></span> Threat-GREEN</span>
+                                      <span><svg class="sc-legend-plane" viewBox="0 0 24 24" aria-hidden="true"><use href="#ac-plane-path" fill="#ef4444"/></svg> Military</span>
+                                      <span><svg class="sc-legend-plane" viewBox="0 0 24 24" aria-hidden="true"><use href="#ac-plane-path" fill="#22d3ee"/></svg> Jet</span>
+                                      <span><svg class="sc-legend-plane" viewBox="0 0 24 24" aria-hidden="true"><use href="#ac-plane-path" fill="#22c544"/></svg> Commercial</span>
+                                      <span><svg class="sc-legend-plane" viewBox="0 0 24 24" aria-hidden="true"><use href="#ac-plane-path" fill="#f59e0b"/></svg> Private</span>
                                   </div>
                               </div>
                           </div>
@@ -2348,21 +2430,60 @@
                           });
                           </script>
 
-                          <!-- Intelligence panels: 3-column responsive grid -->
+                          <!-- Intelligence panels: collapsible accordions (map-first layout) -->
                           <div class="sc-intel-grid">
-                              <div class="card">
-                                  <div class="card-header"><span style="display:flex;align-items:center;gap:6px"><span class="sc-intel-index">01</span><span class="card-title">Recent Threat Events</span></span><span class="tag tag-red">GDELT</span></div>
-                                  <div id="fusionThreatTable" class="sc-data-list"></div>
+                              <div class="card sc-intel-card" id="intelCardThreats">
+                                  <button type="button" class="card-header sc-intel-toggle" onclick="scIntelToggle(this)" aria-expanded="false" aria-controls="fusionThreatTable">
+                                      <span style="display:flex;align-items:center;gap:6px"><span class="sc-intel-index">01</span><span class="card-title">Recent Threat Events</span><b class="sc-intel-count" id="intelCountThreats">0</b></span>
+                                      <span style="display:flex;align-items:center;gap:6px"><span class="tag tag-red">GDELT</span><span class="sc-intel-chevron">&#9662;</span></span>
+                                  </button>
+                                  <div class="sc-intel-body"><div id="fusionThreatTable" class="sc-data-list"></div></div>
                               </div>
-                              <div class="card">
-                                  <div class="card-header"><span style="display:flex;align-items:center;gap:6px"><span class="sc-intel-index">02</span><span class="card-title">Military Aircraft</span></span><span class="tag tag-blue">OpenSky</span></div>
-                                  <div id="fusionAircraftTable" class="sc-data-list"></div>
+                              <div class="card sc-intel-card" id="intelCardAircraft">
+                                  <button type="button" class="card-header sc-intel-toggle" onclick="scIntelToggle(this)" aria-expanded="false" aria-controls="fusionAircraftTable">
+                                      <span style="display:flex;align-items:center;gap:6px"><span class="sc-intel-index">02</span><span class="card-title">Military Aircraft</span><b class="sc-intel-count" id="intelCountAircraft">0</b></span>
+                                      <span style="display:flex;align-items:center;gap:6px"><span class="tag tag-blue">OpenSky</span><span class="sc-intel-chevron">&#9662;</span></span>
+                                  </button>
+                                  <div class="sc-intel-body"><div id="fusionAircraftTable" class="sc-data-list"></div></div>
                               </div>
-                              <div class="card">
-                                  <div class="card-header"><span style="display:flex;align-items:center;gap:6px"><span class="sc-intel-index">03</span><span class="card-title">Actor Network</span></span><span class="tag tag-green">CAMEO</span></div>
-                                  <div id="fusionActorTable" class="sc-data-list"></div>
+                              <div class="card sc-intel-card" id="intelCardActors">
+                                  <button type="button" class="card-header sc-intel-toggle" onclick="scIntelToggle(this)" aria-expanded="false" aria-controls="fusionActorTable">
+                                      <span style="display:flex;align-items:center;gap:6px"><span class="sc-intel-index">03</span><span class="card-title">Actor Network</span><b class="sc-intel-count" id="intelCountActors">0</b></span>
+                                      <span style="display:flex;align-items:center;gap:6px"><span class="tag tag-green">CAMEO</span><span class="sc-intel-chevron">&#9662;</span></span>
+                                  </button>
+                                  <div class="sc-intel-body"><div id="fusionActorTable" class="sc-data-list"></div></div>
                               </div>
                           </div>
+
+                          <script>
+                          // Spinal Cracker: intel accordions (collapsed by default, state persisted, map reflows)
+                          (function () {
+                              var KEY = 'sc_intel_open_v1';
+                              function readState() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
+                              window.scIntelToggle = function (btn) {
+                                  var card = btn.closest('.sc-intel-card');
+                                  if (!card) return;
+                                  var open = card.classList.toggle('open');
+                                  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                                  var s = readState(); s[card.id] = open;
+                                  try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
+                                  setTimeout(function () {
+                                      if (typeof fusionMap !== 'undefined' && fusionMap) { try { fusionMap.resize(); } catch (e) {} }
+                                  }, 300);
+                              };
+                              document.addEventListener('DOMContentLoaded', function () {
+                                  var s = readState();
+                                  ['intelCardThreats', 'intelCardAircraft', 'intelCardActors'].forEach(function (id) {
+                                      if (!s[id]) return;
+                                      var card = document.getElementById(id);
+                                      if (!card || !card.classList.contains('sc-intel-card')) return;
+                                      card.classList.add('open');
+                                      var t = card.querySelector('.sc-intel-toggle');
+                                      if (t) t.setAttribute('aria-expanded', 'true');
+                                  });
+                              });
+                          })();
+                          </script>
 
                           <!-- Tactical metrics -->
                           <div class="sc-metrics-grid">
@@ -5610,16 +5731,11 @@ async function renderAirspaceMap() {
             const lng = props.lng;
             if (lat == null || lng == null) continue;
             const color = getColorForCategory(props.category);
-            const el = document.createElement('div');
-            el.style.width = '12px';
-            el.style.height = '12px';
-            el.style.borderRadius = '50%';
-            el.style.background = color;
-            el.style.boxShadow = `0 0 6px ${color}`;
+            const el = aircraftGlyphEl(color, props.category);
             el.title = (props.callsign || '—') + ' [' + (props.category || '?') + ']' +
                 '\n' + (props.model || '?') + ' @ ' + (props.alt || '?') + 'ft' +
                 '\n' + (props.speed_knots || '?') + ' kts';
-            const marker = new maplibregl.Marker(el).setLngLat([lng, lat]);
+            const marker = aircraftMarker(el, props).setLngLat([lng, lat]);
             marker.addTo(map);
             aviationMarkers.push(marker);
             plotted++;
@@ -6231,6 +6347,115 @@ function normalizeAircraftPoint(f, wonIdx) {
     };
 }
 
+const AC_PLANE_PATH_D = 'M12 2 C12.9 2 13.5 3 13.5 4.3 L13.55 10.2 L21.8 14.7 L21.8 16.1 L13.5 13.7 L13.45 17.7 L17.5 20.3 L17.5 21.3 L13.05 20.5 L12.6 22 L11.4 22 L10.95 20.5 L6.5 21.3 L6.5 20.3 L10.55 17.7 L10.5 13.7 L2.2 16.1 L2.2 14.7 L10.45 10.2 L10.5 4.3 C10.5 3 11.1 2 12 2 Z';
+
+// Maven-style platform symbology: north-up jet silhouette; MapLibre rotates the
+// marker root about its anchor natively (GPU) so heading stays exact through
+// pan/rotate/pitch. This element itself must remain transform-free.
+function aircraftGlyphEl(color, category) {
+    const el = document.createElement('div');
+    el.className = 'ac-glyph' + (category === 'military' ? ' ac-glyph-mil' : '');
+    el.style.color = color;
+    el.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="' + AC_PLANE_PATH_D + '"/></svg>';
+    return el;
+}
+
+// ADS-B heading = degrees clockwise from true north, matching MapLibre rotation semantics.
+function aircraftMarkerRotation(headingDeg) {
+    const h = Number(headingDeg);
+    return isFinite(h) ? ((h % 360) + 360) % 360 : 0;
+}
+
+function aircraftMarker(el, props) {
+    return new maplibregl.Marker({
+        element: el,
+        anchor: 'center',
+        rotation: aircraftMarkerRotation(props.heading),
+        rotationAlignment: 'map',
+        pitchAlignment: 'map',
+    });
+}
+
+// ============================================================================
+// MIL contacts rail (bottom-right map overlay, Maven-style) — lists live
+// military platforms with type-code enrichment from the a-san airframe index.
+// ============================================================================
+
+let fusionMilContacts = [];
+let _asanIndexPromise = null;
+const _asanTypeCache = {};
+
+function loadAsanIndex() {
+    if (!_asanIndexPromise) {
+        _asanIndexPromise = fetch('/static/a-san-aircraft-index.json')
+            .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .catch(() => null);
+    }
+    return _asanIndexPromise;
+}
+
+// Resolve an ADS-B model/type code ("C130J", "K35R") to an a-san airframe record.
+function resolveMilType(model, idx) {
+    if (!idx || !idx.types || !model) return null;
+    const norm = String(model).toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!norm || norm.length > 8) return null;
+    if (_asanTypeCache[norm] !== undefined) return _asanTypeCache[norm];
+    const types = idx.types;
+    let hit = types[norm] || null;                                   // exact: c130j
+    if (!hit && /[a-z]$/.test(norm)) hit = types[norm.replace(/[a-z]+$/, '')] || null; // kc135r -> kc135
+    if (!hit) {                                                      // prefix relax: a400 -> a400m
+        const keys = Object.keys(types);
+        for (const k of keys) { if (k.length > norm.length && k.startsWith(norm)) { hit = types[k]; break; } }
+    }
+    _asanTypeCache[norm] = hit;
+    return hit;
+}
+
+function fusionMilToggle() {
+    const panel = document.getElementById('fusionMilPanel');
+    const btn = panel && panel.querySelector('.sc-mil-head');
+    if (!panel) return;
+    const collapsed = panel.classList.toggle('sc-mil-collapsed');
+    if (btn) btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+}
+
+function fusionMilFocus(i) {
+    const c = fusionMilContacts[i];
+    if (!c || !fusionMap) return;
+    try {
+        fusionMap.flyTo({ center: [c.lng, c.lat], zoom: Math.max(fusionMap.getZoom(), 7), duration: 900 });
+        if (c.mk && c.mk.togglePopup) c.mk.togglePopup();
+    } catch (e) {}
+}
+
+async function updateFusionMilPanel(contacts) {
+    const list = Array.isArray(contacts) ? contacts : fusionMilContacts;
+    const panel = document.getElementById('fusionMilPanel');
+    const body = document.getElementById('fusionMilBody');
+    const countEl = document.getElementById('fusionMilCount');
+    if (!panel || !body || !countEl) return;
+    countEl.textContent = String(list.length);
+    if (!list.length) {
+        panel.classList.add('sc-mil-hidden');
+        body.innerHTML = '';
+        return;
+    }
+    panel.classList.remove('sc-mil-hidden');
+    body.innerHTML = '<div class="sc-mil-empty">Resolving airframe types…</div>';
+    const idx = await loadAsanIndex();
+    body.innerHTML = list.map((c, i) => {
+        const rec = resolveMilType(c.model, idx);
+        const fl = (typeof c.alt === 'number' || typeof c.alt === 'string') && c.alt !== '' && !isNaN(Number(c.alt)) ? 'FL' + Math.round(Number(c.alt) / 100) : '—';
+        const kt = (c.spd != null && !isNaN(Number(c.spd))) ? Math.round(Number(c.spd)) + 'kt' : '—';
+        const typeLabel = rec ? c.model + ' · ' + escapeHtml(rec.d) : escapeHtml(String(c.model));
+        const origin = rec && rec.c ? '<span style="opacity:.7"> · ' + escapeHtml(rec.c) + '</span>' : '';
+        return '<div class="sc-mil-row" onclick="fusionMilFocus(' + i + ')" title="Fly to contact">' +
+            '<b>' + escapeHtml(c.callsign) + '</b>' +
+            '<span class="sc-mil-type">' + typeLabel + origin + '</span>' +
+            '<span class="sc-mil-meta">' + fl + ' ' + kt + '</span></div>';
+    }).join('');
+}
+
 function renderFusionThreatLayer() {
     fusionThreatMarkers.forEach(m => { try { m.remove(); } catch (e) {} });
     fusionThreatMarkers = [];
@@ -6250,20 +6475,22 @@ function renderFusionThreatLayer() {
 function renderFusionAviationLayer() {
     fusionAviationMarkers.forEach(m => { try { m.remove(); } catch (e) {} });
     fusionAviationMarkers = [];
+    fusionMilContacts = [];
+    updateFusionMilPanel();
     if (!fusionMap || !fusionLayers.aviation) return;
     fusionFlights.forEach((f, wonIdx) => {
         const p = normalizeAircraftPoint(f, wonIdx);
         if (!p) return;
-        const el = document.createElement('div');
-        el.style.width = '10px'; el.style.height = '10px';
-        el.style.borderRadius = '50%';
-        el.style.background = p.color;
-        el.style.boxShadow = '0 0 5px ' + p.color;
-        el.style.cursor = 'pointer';
+        const props = f.properties || {};
+        const el = aircraftGlyphEl(p.color, props.category);
         const popup = new maplibregl.Popup({ closeButton: false, offset: 6 }).setHTML(p.popup);
-        const mk = new maplibregl.Marker({ element: el }).setLngLat([p.lng, p.lat]).setPopup(popup).addTo(fusionMap);
+        const mk = aircraftMarker(el, props).setLngLat([p.lng, p.lat]).setPopup(popup).addTo(fusionMap);
         fusionAviationMarkers.push(mk);
+        if (props.category === 'military') {
+            fusionMilContacts.push({ callsign: props.callsign || '---', model: props.model || '?', alt: props.alt, spd: props.speed_knots, lng: p.lng, lat: p.lat, mk: mk });
+        }
     });
+    updateFusionMilPanel();
 }
 
 function fitFusionBounds() {
@@ -6345,6 +6572,8 @@ function updateFusionKpis() {
     fusionFlights.forEach(f => { const c = (f.properties || {}).category || '?'; if (cats[c] != null) cats[c]++; if (c === 'military') military++; });
     document.getElementById('fusionKpiAircraft').textContent = fusionFlights.length;
     document.getElementById('fusionKpiMilitary').textContent = military;
+    const intelCountT = document.getElementById('intelCountThreats'); if (intelCountT) intelCountT.textContent = m.total;
+    const intelCountA = document.getElementById('intelCountAircraft'); if (intelCountA) intelCountA.textContent = military;
     document.getElementById('fusionAircraftCount').textContent = fusionAviationMarkers.length;
     const countries = new Set(fusionThreatEvents.map(e => { const g = parseActionGeo(e); return g ? g.country : null; }).filter(Boolean));
     document.getElementById('fusionKpiCountries').textContent = countries.size;
@@ -6391,6 +6620,7 @@ function updateFusionKpis() {
     const actorCounts = {};
     actors.forEach(a => { actorCounts[a.actor1] = (actorCounts[a.actor1] || 0) + 1; });
     const topActors = Object.entries(actorCounts).sort((a, b) => b[1] - a[1]).slice(0, 20);
+    const intelCountAc = document.getElementById('intelCountActors'); if (intelCountAc) intelCountAc.textContent = topActors.length;
     document.getElementById('fusionActorTable').innerHTML = topActors.map(([name, count]) =>
         '<div style="margin-bottom:3px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
         '<span style="color:var(--accent-neon)">' + escapeHtml(name) + '</span>' +
@@ -10770,16 +11000,49 @@ function renderFusionRealLayer() {
     .gaia-dim { display: none !important; }
 
     #gaiaTimeBar {
-        position: absolute; left: 12px; right: 64px; bottom: 12px; z-index: 5;
+        position: absolute; left: 12px; bottom: 12px; z-index: 5;
+        max-width: calc(100% - 24px);
         background: rgba(8, 10, 8, 0.92); border: 1px solid var(--border-subtle);
-        border-radius: 6px; padding: 8px 12px 7px;
+        border-radius: 999px; padding: 3px 4px 3px 8px;
         font-family: var(--font-mono); color: var(--text-muted, #8a8f98);
         box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5); backdrop-filter: blur(6px);
     }
     #gaiaTimeBar.gtb-hidden { display: none; }
+    .gtb-pill-row { display: flex; align-items: center; gap: 8px; height: 26px; }
+    .gtb-pill-tag {
+        font-size: 9px; letter-spacing: .14em; color: var(--accent-neon);
+        text-shadow: 0 0 6px rgba(223, 241, 64, 0.4); flex: 0 0 auto; user-select: none;
+    }
+    .gtb-mini-slider {
+        width: 74px; appearance: none; -webkit-appearance: none; height: 3px;
+        background: var(--border-light); border-radius: 2px; outline: none; cursor: pointer; margin: 0;
+    }
+    .gtb-mini-slider::-webkit-slider-thumb {
+        -webkit-appearance: none; width: 10px; height: 10px; border-radius: 50%;
+        background: var(--accent-neon); box-shadow: 0 0 6px rgba(223, 241, 64, 0.6); border: none;
+    }
+    .gtb-mini-slider::-moz-range-thumb {
+        width: 10px; height: 10px; border-radius: 50%;
+        background: var(--accent-neon); box-shadow: 0 0 6px rgba(223, 241, 64, 0.6); border: none;
+    }
+    #gaiaTimeBar.gtb-narrow .gtb-mini-slider { display: none; }
+    .gtb-tiles { font-size: 8.5px; letter-spacing: .08em; white-space: nowrap; opacity: .75; flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; }
+    #gaiaTimeBar.gtb-narrow .gtb-tiles { display: none; }
+    .gtb-btn.gtb-expand { width: 24px; height: 24px; border-color: transparent; font-size: 9px; }
+    .gtb-popover {
+        position: absolute; left: 0; bottom: calc(100% + 8px);
+        width: var(--gtb-w, 380px);
+        max-width: calc(100vw - 32px);
+        background: rgba(8, 10, 8, 0.94); border: 1px solid var(--border-subtle);
+        border-radius: 8px; padding: 8px 12px 7px;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55); backdrop-filter: blur(6px);
+        cursor: default;
+    }
+    .gtb-popover.gtb-collapsed { display: none; }
     #gaiaTimeBar.gtb-cd-active { border-color: rgba(223, 241, 64, 0.5); box-shadow: 0 0 14px rgba(223, 241, 64, 0.15), 0 4px 18px rgba(0, 0, 0, 0.5); }
+    #gaiaTimeBar.gtb-cd-active .gtb-popover { border-color: rgba(223, 241, 64, 0.5); }
     .gtb-row { display: flex; align-items: center; gap: 10px; }
-    .gtb-row-sub { margin-top: 5px; justify-content: space-between; gap: 12px; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+    .gtb-row-sub { margin-top: 5px; justify-content: space-between; gap: 12px; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; flex-wrap: wrap; }
     .gtb-btn {
         width: 26px; height: 26px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
         background: transparent; color: var(--accent-neon); border: 1px solid var(--border-light);
@@ -10821,6 +11084,25 @@ function renderFusionRealLayer() {
     #gtbProv { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; flex: 1 1 auto; }
     #gtbProv b { color: var(--accent-neon); font-weight: 600; }
     .gtb-tools { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+    .gtb-scope-row {
+        display: flex; align-items: center; gap: 5px; margin-top: 7px; padding-top: 6px;
+        border-top: 1px solid var(--border-subtle); flex-wrap: wrap;
+    }
+    .gtb-scope-label { font-size: 8.5px; letter-spacing: .14em; color: var(--text-muted, #8a8f98); opacity: .7; flex: 0 0 auto; }
+    .gtb-schip {
+        height: 20px; padding: 0 8px; background: transparent; color: var(--text-muted, #8a8f98);
+        border: 1px solid var(--border-subtle); border-radius: 999px; cursor: pointer;
+        font-family: var(--font-mono); font-size: 8.5px; letter-spacing: .08em;
+    }
+    .gtb-schip:hover { border-color: var(--border-light); color: var(--text); }
+    .gtb-schip.is-on {
+        color: #000; background: var(--accent-neon); border-color: var(--accent-neon);
+        font-weight: 700; box-shadow: 0 0 8px rgba(223, 241, 64, 0.35);
+    }
+    .gtb-scope-name {
+        font-size: 8.5px; letter-spacing: .1em; color: var(--accent-neon);
+        margin-left: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%;
+    }
     .gaia-cd-chips { display: flex; gap: 6px; margin: 8px 0 6px; flex-wrap: wrap; }
     .gaia-cd-chip {
         font-family: var(--font-mono); font-size: 9px; letter-spacing: .06em; padding: 4px 8px;
@@ -10840,7 +11122,8 @@ function renderFusionRealLayer() {
         #gaia-panel { right: 8px !important; width: calc(100vw - 16px) !important; }
         .gaia-title { letter-spacing: .16em; }
         input[type="range"].gaia-slider { width: 60px; }
-        #gaiaTimeBar { left: 8px; right: 8px; bottom: 8px; }
+        #gaiaTimeBar { left: 8px; bottom: 8px; max-width: calc(100vw - 16px); }
+        .gtb-popover { width: min(var(--gtb-w, 380px), calc(100vw - 32px)); }
         #gtbProv { display: none; }
     }
 </style>
@@ -11204,6 +11487,135 @@ function renderFusionRealLayer() {
     function saveObjects() {
         try { localStorage.setItem(LS_OBJECTS, JSON.stringify(gaiaObjects)); } catch (e) {}
     }
+    // ------------------------------------------- satellite scope engine
+    // Limits imagery tile requests to a geographic window so enabling satellite
+    // never downloads world-wide tiles. Modes: viewport | selection | world.
+    var ESRI_SAT_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+    var LS_SAT_SCOPE = 'sc_gaia_sat_scope_v1';
+    var satScopeMode = 'viewport';
+    try { var ssv = localStorage.getItem(LS_SAT_SCOPE); if (ssv === 'selection' || ssv === 'viewport' || ssv === 'world') satScopeMode = ssv; } catch (e) {}
+    var gaiaSrcBounds = {};      // sourceId -> applied bounds key ('' = worldwide)
+    var satMoveTimer = null, satMoveBound = false;
+
+    function boundsKey(b) {
+        return Array.isArray(b) ? b.map(function (v) { return Math.round(v * 1000) / 1000; }).join(',') : '';
+    }
+    function gaiaSatBounds() { // [w,s,e,n] or null (=worldwide)
+        if (satScopeMode === 'world') return null;
+        if (satScopeMode === 'selection') {
+            var sb = typeof window.scBbox === 'function' ? window.scBbox() : null;
+            if (sb) return [sb.lomin, sb.lamin, sb.lomax, sb.lamax];
+            // no selection committed yet -> fall back to viewport
+        }
+        var m = ensureFusionMap();
+        if (!m || !m.getBounds) return null;
+        try {
+            var b = m.getBounds();
+            var padX = (b.getEast() - b.getWest()) * 0.15;
+            var padY = (b.getNorth() - b.getSouth()) * 0.15;
+            return [clamp(b.getWest() - padX, -180, 180), clamp(b.getSouth() - padY, -85.0511, 85.0511),
+                    clamp(b.getEast() + padX, -180, 180), clamp(b.getNorth() + padY, -85.0511, 85.0511)];
+        } catch (e) { return null; }
+    }
+    function gaiaModeShort() {
+        if (satScopeMode === 'world') return 'WORLD';
+        if (satScopeMode === 'selection') return typeof window.scBbox === 'function' && window.scBbox() ? 'SEL' : 'VIEW';
+        return 'VIEW';
+    }
+    function gaiaScopeName() {
+        var sc = window.SCScope || {};
+        var nm = sc.country || sc.region || '';
+        if (satScopeMode === 'viewport') return 'CURRENT VIEW';
+        if (satScopeMode === 'world') return 'WORLDWIDE';
+        return nm ? String(nm).toUpperCase() : 'CURRENT VIEW';
+    }
+    function viewportNoPad(m) {
+        try {
+            var b = m.getBounds();
+            return [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
+        } catch (e) { return null; }
+    }
+    function insideBounds(vp, bnd) {
+        return !!vp && !!bnd && vp[0] >= bnd[0] - 1e-6 && vp[1] >= bnd[1] - 1e-6 &&
+               vp[2] <= bnd[2] + 1e-6 && vp[3] <= bnd[3] + 1e-6;
+    }
+    function applyGaiaScope(force) {
+        syncGtbScopeChips();
+        updateGtbTiles();
+        if (!(state.satellite && state.satellite.on)) return;
+        var key = boundsKey(gaiaSatBounds());
+        if (!force && gaiaSrcBounds['gaia-sat'] === key) return;
+        addRasterOverlay('gaia-sat', ESRI_SAT_URL, true, gaiaSatBounds());
+        gaiaSrcBounds['__sel'] = boundsKey(gaiaSelKey());
+        var m = ensureFusionMap();
+        if (m && tActiveLayer && tIdx >= 0 && WB.items[tIdx]) ensureTLayer(m, tActiveLayer, wbTileUrl(WB.items[tIdx]), true);
+        refreshStatuses();
+    }
+    function bindSatMoveHook() {
+        var m = ensureFusionMap();
+        if (!m || !m.on || satMoveBound) return;
+        satMoveBound = true;
+        m.on('moveend', function () {
+            if (!(state.satellite && state.satellite.on)) return;
+            clearTimeout(satMoveTimer);
+            satMoveTimer = setTimeout(function () {
+                if (!(state.satellite && state.satellite.on)) return;
+                updateGtbTiles();
+                if (satScopeMode === 'world') return;
+                if (satScopeMode === 'selection') {
+                    // re-scope when the committed region/country selection changed
+                    if (boundsKey(gaiaSelKey()) !== gaiaSrcBounds['__sel']) applyGaiaScope(true);
+                    return;
+                }
+                // viewport mode: rebuild only when the view outgrew the padded window
+                var mm = ensureFusionMap();
+                var key = gaiaSrcBounds['gaia-sat'];
+                var applied = (key && key !== '') ? key.split(',').map(Number) : null;
+                if (!mm || !insideBounds(viewportNoPad(mm), applied)) applyGaiaScope(false);
+            }, 450);
+        });
+    }
+    function gaiaSelKey() {
+        var sb = typeof window.scBbox === 'function' ? window.scBbox() : null;
+        return sb ? [sb.lomin, sb.lamin, sb.lomax, sb.lamax] : null;
+    }
+    function updateGtbTiles() {
+        var el = document.getElementById('gtbTiles');
+        if (!el) return;
+        el.title = '';
+        var m = ensureFusionMap();
+        if (!(state.satellite && state.satellite.on) || !m || !m.getZoom || !tileRange) { el.textContent = ''; return; }
+        try {
+            var z = clamp(Math.round(m.getZoom()), 0, 19);
+            var tr = tileRange(m, z);
+            var b = gaiaSatBounds();
+            var est = tr.count;
+            if (b) est = overlapTileCount(tr, b, z);
+            el.textContent = '\u2248' + est + ' TILE' + (est === 1 ? '' : 'S');
+            el.title = b ? 'Scoped imagery \u2014 tiles load inside the scope box only' : 'Worldwide imagery \u2014 every visible tile loads';
+        } catch (e) { el.textContent = ''; }
+    }
+    function latToTileY(lat, n) {
+        var r = clamp(lat, -85.05, 85.05) * Math.PI / 180;
+        return Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n);
+    }
+    function lngToTileX(lng, n) {
+        return Math.floor((clamp(lng, -179.999, 179.999) + 180) / 360 * n);
+    }
+    function spanOverlap(a0, a1, b0, b1) {
+        if (a1 < a0 || b1 < b0) return 0;
+        return Math.max(0, Math.min(a1, b1) - Math.max(a0, b0) + 1);
+    }
+    function overlapTileCount(tr, b, z) {
+        var x0 = clamp(lngToTileX(b[0], tr.n), tr.x0, tr.x1 + 1);
+        var x1 = clamp(lngToTileX(b[2], tr.n), tr.x0, tr.x1 + 1);
+        var y0 = clamp(latToTileY(b[3], tr.n), tr.y0, tr.y1 + 1);
+        var y1 = clamp(latToTileY(b[1], tr.n), tr.y0, tr.y1 + 1);
+        var ow = spanOverlap(tr.x0, tr.x1, x0, Math.max(x0, x1 - 1));
+        var oh = spanOverlap(tr.y0, tr.y1, y0, Math.max(y0, y1 - 1));
+        return ow * oh;
+    }
+
     function ensureFusionMap() {
         var m = window.fusionMap;
         if ((!m || !m.addSource) && typeof window.initFusionMap === 'function') {
@@ -11216,16 +11628,31 @@ function renderFusionRealLayer() {
         for (var i = 0; i < ls.length; i++) if (ls[i].type === 'symbol') return ls[i].id;
         return undefined;
     }
-    function addRasterOverlay(id, tiles, wanted) {
+    function addRasterOverlay(id, tiles, wanted, bounds) {
         var m = ensureFusionMap();
         if (!m) return false;
+        var key = boundsKey(bounds);
         try {
-            if (!m.getSource(id)) m.addSource(id, { type: 'raster', tiles: [tiles], tileSize: 256, attribution: '' });
+            // Rebuild the source when the geographic scope changed: MapLibre
+            // cannot mutate a raster source's bounds in place.
+            if (gaiaSrcBounds[id] !== undefined && gaiaSrcBounds[id] !== key && m.getSource(id)) {
+                try { if (m.getLayer(id)) m.removeLayer(id); } catch (e2) {}
+                try { m.removeSource(id); } catch (e3) {}
+            }
+            if (!m.getSource(id)) {
+                var spec = { type: 'raster', tiles: [tiles], tileSize: 256, attribution: '' };
+                if (key) spec.bounds = bounds;
+                m.addSource(id, spec);
+            }
+            gaiaSrcBounds[id] = key;
             if (!m.getLayer(id)) {
                 var st = state[id === 'gaia-sat' ? 'satellite' : 'weather'] || {};
                 m.addLayer({ id: id, type: 'raster', source: id, paint: { 'raster-opacity': st.opacity == null ? 0.85 : st.opacity } }, firstSymbolId(m));
             }
-            m.setLayoutProperty(id, 'visibility', wanted ? 'visible' : 'none');
+            var vis = wanted ? 'visible' : 'none';
+            // while a Wayback era layer is live it sits above the base imagery
+            if (id === 'gaia-sat' && wanted && tActiveLayer && m.getLayer(tActiveLayer)) vis = 'none';
+            m.setLayoutProperty(id, 'visibility', vis);
             return true;
         } catch (e) { return false; }
     }
@@ -11234,6 +11661,10 @@ function renderFusionRealLayer() {
         if (m && m.getLayer(id)) { try { m.setPaintProperty(id, 'raster-opacity', clamp(v, 0.2, 1)); } catch (e) {} }
         if (id === 'gaia-sat' && m && tActiveLayer && m.getLayer(tActiveLayer)) {
             try { m.setPaintProperty(tActiveLayer, 'raster-opacity', clamp(v, 0.2, 1)); } catch (e) {}
+        }
+        if (id === 'gaia-sat') {
+            var mo = document.getElementById('gtbOpacityMini');
+            if (mo && document.activeElement !== mo) mo.value = String(Math.round(clamp(v, 0.2, 1) * 100));
         }
     }
     function hideRasterOverlay(id) {
@@ -11245,16 +11676,18 @@ function renderFusionRealLayer() {
         satErr = '';
         temporalShow(want);
         if (!want) { hideRasterOverlay('gaia-sat'); return; }
-        var url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-        if (!addRasterOverlay('gaia-sat', url, true)) {
+        if (!addRasterOverlay('gaia-sat', ESRI_SAT_URL, true, gaiaSatBounds())) {
             satErr = 'loading';
             setTimeout(function () {
                 if (state.satellite && state.satellite.on) {
-                    satErr = addRasterOverlay('gaia-sat', url, true) ? '' : 'no map';
+                    satErr = addRasterOverlay('gaia-sat', ESRI_SAT_URL, true, gaiaSatBounds()) ? '' : 'no map';
                     refreshStatuses();
                 }
             }, 1500);
         }
+        bindSatMoveHook();
+        syncGtbScopeChips();
+        updateGtbTiles();
     }
     var WB = { items: [], loaded: false, pending: [] };
     var tIdx = -1, tApplyTimer = null, tProvTimer = null, tPlayTimer = null, tRetryTimer = null;
@@ -11358,7 +11791,17 @@ function renderFusionRealLayer() {
     }
     function ensureTLayer(m, id, url, instant) {
         try {
-            if (!m.getSource(id)) m.addSource(id, { type: 'raster', tiles: [url], tileSize: 256, attribution: '' });
+            var b = gaiaSatBounds(), key = boundsKey(b);
+            if (gaiaSrcBounds[id] !== undefined && gaiaSrcBounds[id] !== key && m.getSource(id)) {
+                try { if (m.getLayer(id)) m.removeLayer(id); } catch (e2) {}
+                try { m.removeSource(id); } catch (e3) {}
+            }
+            if (!m.getSource(id)) {
+                var spec = { type: 'raster', tiles: [url], tileSize: 256, attribution: '' };
+                if (key) spec.bounds = b;
+                m.addSource(id, spec);
+            }
+            gaiaSrcBounds[id] = key;
             if (!m.getLayer(id)) {
                 m.addLayer({
                     id: id, type: 'raster', source: id,
@@ -11463,6 +11906,7 @@ function renderFusionRealLayer() {
             ['gaia-sat-a', 'gaia-sat-b'].forEach(function (id) {
                 try { if (m.getLayer(id)) m.removeLayer(id); } catch (e) {}
                 try { if (m.getSource(id)) m.removeSource(id); } catch (e) {}
+                delete gaiaSrcBounds[id];
             });
             try {
                 if (m.getLayer('gaia-sat')) m.setLayoutProperty('gaia-sat', 'visibility', state.satellite && state.satellite.on ? 'visible' : 'none');
@@ -11478,6 +11922,8 @@ function renderFusionRealLayer() {
         if (!bar) return;
         if (v) {
             bar.classList.remove('gtb-hidden');
+            gtbFit();
+            syncGtbScopeChips();
             loadWaybackIndex(function (ok) {
                 if (!ok) {
                     var d = tEl('gtbDate');
@@ -11797,6 +12243,81 @@ function renderFusionRealLayer() {
             b.classList.toggle('is-on', cdVisible[k]);
             applyCdVisibility();
         });
+
+        // ---- compact pill: expander, opacity mini-slider, scope chips
+        var exb = tEl('gtbExpandBtn');
+        if (exb && !exb.__gtbWired) {
+            exb.__gtbWired = true;
+            exb.addEventListener('click', function () {
+                var pop = tEl('gtbPopover');
+                if (!pop) return;
+                var collapsed = pop.classList.toggle('gtb-collapsed');
+                exb.setAttribute('aria-expanded', String(!collapsed));
+                exb.innerHTML = collapsed ? '&#9662;' : '&#9661;';
+                if (!collapsed) { gtbFit(); updateGtbTiles(); }
+            });
+        }
+        var mo = tEl('gtbOpacityMini');
+        if (mo && !mo.__gtbWired) {
+            mo.__gtbWired = true;
+            mo.value = String(Math.round(satOpacityVal() * 100));
+            mo.addEventListener('input', function () {
+                setLayerOpacity('satellite', clamp((parseInt(mo.value, 10) || 85) / 100, 0.2, 1));
+                var rs = listEl ? listEl.querySelector('[data-layer="satellite"] input.gaia-slider') : null;
+                if (rs) rs.value = mo.value;
+            });
+        }
+        var popEl = tEl('gtbPopover');
+        if (popEl && !popEl.__gtbWired) {
+            popEl.__gtbWired = true;
+            popEl.addEventListener('click', function (ev) {
+                var chip = ev.target && ev.target.closest ? ev.target.closest('.gtb-schip') : null;
+                if (!chip) return;
+                var mode = chip.getAttribute('data-sat-scope');
+                if (mode !== 'selection' && mode !== 'viewport' && mode !== 'world') return;
+                satScopeMode = mode;
+                try { localStorage.setItem(LS_SAT_SCOPE, mode); } catch (e) {}
+                applyGaiaScope(true);
+                statusMsg('Satellite scope: ' + gaiaScopeName() + '.');
+            });
+        }
+        gtbObserveHost();
+    }
+    function syncGtbScopeChips() {
+        var row = tEl('gtbScopeRow');
+        if (row) {
+            var chips = row.querySelectorAll('.gtb-schip');
+            for (var i = 0; i < chips.length; i++) {
+                chips[i].classList.toggle('is-on', chips[i].getAttribute('data-sat-scope') === satScopeMode);
+            }
+        }
+        var nm = tEl('gtbScopeName');
+        if (nm) nm.textContent = gaiaScopeName();
+    }
+    function gtbFit() {
+        var bar = tEl('gaiaTimeBar');
+        if (!bar) return;
+        var host = bar.parentElement;
+        var w = (host && host.clientWidth) || window.innerWidth || 360;
+        bar.classList.toggle('gtb-narrow', w < 340);
+        var pop = tEl('gtbPopover');
+        if (pop) pop.style.setProperty('--gtb-w', Math.min(Math.max(w - 16, 200), 420) + 'px');
+    }
+    function gtbObserveHost() {
+        gtbFit();
+        var bar = tEl('gaiaTimeBar');
+        if (!bar) return;
+        var host = bar.parentElement;
+        if (typeof ResizeObserver === 'function' && host) {
+            if (!host.__gtbRO) {
+                try {
+                    host.__gtbRO = new ResizeObserver(function () { gtbFit(); });
+                    host.__gtbRO.observe(host);
+                } catch (e) { window.addEventListener('resize', gtbFit); }
+            }
+        } else {
+            window.addEventListener('resize', gtbFit);
+        }
     }
     function temporalState() {
         return {
@@ -12287,7 +12808,7 @@ function renderFusionRealLayer() {
                     else { tag = 'ARMED'; cls = 'busy'; }
                 } else if (d.id === 'satellite') {
                     if (satErr) { tag = satErr.toUpperCase(); cls = 'warn'; }
-                    else { tag = 'TILE'; cls = 'live'; }
+                    else { tag = 'TILE\u00b7' + gaiaModeShort(); cls = 'live'; }
                 } else if (d.id === 'weather') {
                     if (wxErr) { tag = 'NO RADAR'; cls = 'err'; }
                     else if (wxFrameTime) {
@@ -12561,6 +13082,8 @@ function renderFusionRealLayer() {
             open: function () { setOpen(true); },
             close: function () { setOpen(false); },
             minimize: function () { setMinimized(!minimized); },
+            applyScope: function () { applyGaiaScope(true); },
+            satScope: function () { return { mode: satScopeMode, name: gaiaScopeName(), bounds: gaiaSatBounds() }; },
             layers: function () { return REGISTRY.map(function (d) {
                 return { id: d.id, label: d.label, meta: d.meta, on: !!(state[d.id] && state[d.id].on),
                          opacity: state[d.id] ? state[d.id].opacity : 1, provider: hasProvider(d.id) };

@@ -1681,6 +1681,13 @@
                     </div>
                 </div>
                 <div class="nav-section">
+                    <div class="nav-section-title">SIMS</div>
+                    <div class="nav-item" data-page="sims-war" title="Kriegspiel war-simulation war room">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14L8 2l6 12"/><path d="M4.5 9.5h7M3 14h10"/></svg>
+                        <span class="nav-label">War Room</span>
+                    </div>
+                </div>
+                <div class="nav-section">
                     <div class="nav-section-title">YONO</div>
                     <div class="nav-item" data-page="yono-providers">
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12V6l6-4 6 4v6l-6 4z"/></svg>
@@ -2565,6 +2572,155 @@
                                   </div>
                               </div>
                               <!-- Airspace Map Tab -->
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- SIMS — Kriegspiel War Room -->
+                  <div class="page" id="page-sims-war">
+                      <div class="section">
+                          <div class="section-header">
+                              <div class="section-title">SIMS — Kriegspiel War Room</div>
+                              <div style="display:flex;gap:10px;align-items:center">
+                                  <span class="tag tag-green" id="simsGatewayTag">GATEWAY: ?</span>
+                                  <span class="tag tag-blue" id="simsLearningTag">LEARNING: ?</span>
+                              </div>
+                          </div>
+                          <p class="section-subtitle" style="font-size:11px;color:var(--text-muted);margin-bottom:16px">Kriegspiel Monte Carlo warfare simulations over real-world theaters. Every run feeds the learning layer; outcomes surface on the Spinal Cracker fusion map via the GAIA geo-controller.</p>
+
+                          <div class="grid grid-4" style="margin-bottom:16px">
+                              <div class="card" style="padding:12px 14px;border-left:2px solid var(--red)">
+                                  <div class="card-title">Last Run — Red</div>
+                                  <div id="simsStatRed" style="font-size:18px;font-weight:600;font-family:var(--font-tech);color:var(--red)">--</div>
+                                  <div class="card-sub" id="simsStatRedSub">win rate</div>
+                              </div>
+                              <div class="card" style="padding:12px 14px;border-left:2px solid var(--accent-cyan)">
+                                  <div class="card-title">Last Run — Blue</div>
+                                  <div id="simsStatBlue" style="font-size:18px;font-weight:600;font-family:var(--font-tech);color:var(--accent-cyan)">--</div>
+                                  <div class="card-sub" id="simsStatBlueSub">win rate</div>
+                              </div>
+                              <div class="card" style="padding:12px 14px;border-left:2px solid var(--amber)">
+                                  <div class="card-title">Stalemates</div>
+                                  <div id="simsStatStalemate" style="font-size:18px;font-weight:600;font-family:var(--font-tech);color:var(--amber)">--</div>
+                                  <div class="card-sub" id="simsStatScenariosSub">awaiting first run</div>
+                              </div>
+                              <div class="card" style="padding:12px 14px;border-left:2px solid var(--green)">
+                                  <div class="card-title">Decisive Battles</div>
+                                  <div id="simsStatDecisive" style="font-size:18px;font-weight:600;font-family:var(--font-tech);color:var(--green)">--</div>
+                                  <div class="card-sub" id="simsStatDurationSub">of last batch</div>
+                              </div>
+                          </div>
+
+                          <div class="grid grid-2" style="margin-bottom:16px">
+                              <!-- Battle console -->
+                              <div class="card">
+                                  <div class="card-header">
+                                      <span class="card-title">Battle Console</span>
+                                      <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">single-battle Monte Carlo batch</span>
+                                  </div>
+                                  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+                                      <select id="simsBfSelect" class="sc-scope-select" style="flex:1;min-width:160px"></select>
+                                      <input id="simsScenarios" type="number" min="100" max="50000" step="100" value="2000" title="Scenario branches" style="width:90px">
+                                      <input id="simsSeed" type="number" value="42" title="Seed" style="width:76px">
+                                      <button class="btn btn-primary btn-sm" id="simsRunBtn" onclick="runKriegspielBattle()">RUN BATTLE</button>
+                                  </div>
+                                  <div id="simsRunStatus" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);min-height:14px;margin-bottom:8px">Idle — pick a theater and run.</div>
+                                  <div id="simsBattleResults"><div class="empty-state">No simulation run yet.</div></div>
+                              </div>
+                              <!-- Campaign console -->
+                              <div class="card">
+                                  <div class="card-header">
+                                      <span class="card-title">Campaign Console</span>
+                                      <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">multi-engagement campaign runs</span>
+                                  </div>
+                                  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+                                      <select id="simsCampBf" class="sc-scope-select" style="flex:1;min-width:150px"></select>
+                                      <input id="simsCampaigns" type="number" min="1" max="500" value="50" title="Campaigns" style="width:80px">
+                                      <input id="simsEngagements" type="number" min="1" max="20" value="8" title="Engagements per campaign" style="width:80px">
+                                  </div>
+                                  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+                                      <select id="simsCampRedDoc" class="sc-scope-select" title="Red doctrine"></select>
+                                      <span style="align-self:center;font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">VS</span>
+                                      <select id="simsCampBlueDoc" class="sc-scope-select" title="Blue doctrine"></select>
+                                      <input id="simsEngHours" type="number" min="6" max="120" value="24" title="Hours per engagement" style="width:76px">
+                                      <button class="btn btn-primary btn-sm" id="simsCampBtn" onclick="runKriegspielCampaign()">RUN CAMPAIGN</button>
+                                  </div>
+                                  <div style="display:flex;gap:14px;margin-bottom:10px;font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">
+                                      <label>RED REINF <input id="simsRedReinf" type="number" min="0" max="1" step="0.05" value="0.30" style="width:58px"></label>
+                                      <label>BLUE REINF <input id="simsBlueReinf" type="number" min="0" max="1" step="0.05" value="0.30" style="width:58px"></label>
+                                  </div>
+                                  <div id="simsCampStatus" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);min-height:14px;margin-bottom:8px">Idle — doctrine matchup ready.</div>
+                                  <div id="simsCampaignResults"><div class="empty-state">No campaign run yet.</div></div>
+                              </div>
+                          </div>
+
+                          <!-- Research & Learning -->
+                          <div class="card" style="margin-bottom:16px">
+                              <div class="card-header">
+                                  <span class="card-title">Research &amp; Learning Layer</span>
+                                  <div style="display:flex;gap:8px;align-items:center">
+                                      <button class="btn btn-secondary btn-sm" onclick="loadSimsResearch()">Refresh</button>
+                                      <button class="btn btn-primary btn-sm" id="simsImproveBtn" onclick="simsSelfImprove()">SELF-IMPROVE</button>
+                                  </div>
+                              </div>
+                              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" id="simsGateChips"></div>
+                              <div class="grid grid-2">
+                                  <div>
+                                      <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px">Strategy matrix — win rate by doctrine × terrain</div>
+                                      <div class="table-wrap" style="max-height:260px;overflow:auto">
+                                          <table>
+                                              <thead id="simsMatrixHead"></thead>
+                                              <tbody id="simsMatrixBody"><tr><td colspan="2"><div class="empty-state">Loading research state...</div></td></tr></tbody>
+                                          </table>
+                                      </div>
+                                  </div>
+                                  <div>
+                                      <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px">Live doctrine parameters</div>
+                                      <div class="table-wrap" style="max-height:260px;overflow:auto">
+                                          <table>
+                                              <thead><tr><th>Doctrine</th><th>Aggr</th><th>Risk</th><th>Supply</th><th>Morale</th><th>Bkthr</th><th>Adj</th></tr></thead>
+                                              <tbody id="simsParamsBody"><tr><td colspan="7"><div class="empty-state">Loading...</div></td></tr></tbody>
+                                          </table>
+                                      </div>
+                                  </div>
+                              </div>
+                              <div class="grid grid-2" style="margin-top:12px">
+                                  <div>
+                                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                                          <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--text-muted);text-transform:uppercase">Findings feed</span>
+                                          <button class="btn btn-sm" onclick="simsRunAdherence()" style="font-size:9px;padding:2px 8px">ADHERENCE PROBE</button>
+                                      </div>
+                                      <div id="simsFindingsList" style="max-height:220px;overflow:auto;font-size:11px;line-height:1.5;color:var(--text-muted)"><div class="empty-state">Loading findings...</div></div>
+                                  </div>
+                                  <div>
+                                      <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px">BH-gate — multiple-testing significance</div>
+                                      <div id="simsGateDetail" style="font-size:11px;color:var(--text-muted)"><div class="empty-state">Loading gates...</div></div>
+                                  </div>
+                              </div>
+                          </div>
+
+                          <!-- War Ontology — Palantir-style digital twin -->
+                          <div class="card" style="margin-bottom:16px">
+                              <div class="card-header">
+                                  <span class="card-title">War Ontology — Spinal Cracker objects</span>
+                                  <div style="display:flex;gap:8px;align-items:center">
+                                      <span class="sims-chip" id="simsOntCountChip">0 OBJECTS</span>
+                                      <button class="btn btn-secondary btn-sm" onclick="loadOntologyGraph()">Sync</button>
+                                  </div>
+                              </div>
+                              <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Every battle run emits typed objects + links into the Spinal Cracker semantic layer (kriegspiel_theater / kriegspiel_force / kriegspiel_assessment). They render as a linked graph on the Unified Intelligence Map.</p>
+                              <div id="simsOntPanel"><div class="empty-state">Loading ontology...</div></div>
+                          </div>
+
+                          <!-- Real-world coupling: threat → theater matcher -->
+                          <div class="card">
+                              <div class="card-header">
+                                  <span class="card-title">Flashpoint Matcher — live intel to theater</span>
+                                  <button class="btn btn-secondary btn-sm" onclick="simsMatchThreats()">Scan Fusion Feed</button>
+                              </div>
+                              <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Geo-matches negative-tone GDELT events currently loaded on the fusion map to the nearest simulated theater, then prefills the Battle Console.</p>
+                              <div id="simsMatchStatus" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);margin-bottom:8px">No scan performed yet.</div>
+                              <div id="simsThreatList"></div>
                           </div>
                       </div>
                   </div>
@@ -3645,6 +3801,16 @@ let providerCache = [];
 let refreshInterval = null;
 let authToken = null;
 let currentUser = null;
+let userRole = null;
+function isSuperAdmin() { return userRole === 'superadmin'; }
+function canAccessMimi() { return userRole === 'superadmin' || userRole === 'mimi'; }
+function isMimiOnly() { return userRole === 'mimi'; }
+async function fetchMyRole() {
+    try {
+        const d = await api('/auth/me');
+        return (d.role || 'viewer').toLowerCase();
+    } catch (_) { return 'viewer'; }
+}
 const CMB_API_TOKEN = (window.CMB_API_TOKEN || '');
 const CMB_BASE_URL = '/cmb/';
 
@@ -3656,6 +3822,7 @@ const PAGES = {
     'sc-types': 'Object Types',
     'sc-objects': 'Objects',
     'sc-links': 'Link Types',
+    'sims-war': 'SIMS — Kriegspiel War Room',
     'yono-providers': 'Service Providers',
     'yono-agents': 'Modules',
     'yono-automations': 'Automations',
@@ -3779,6 +3946,8 @@ async function checkHealth() {
 }
 
 function navigate(page) {
+    if (isMimiOnly()) page = 'statham-smm';
+    else if (page === 'statham-smm' && !canAccessMimi()) page = 'overview';
     document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
     document.querySelectorAll('.page').forEach(p => {
         p.classList.remove('active');
@@ -3804,7 +3973,8 @@ function loadPageData(page) {
         case 'sc-types': loadObjectTypes(); loadActionTypes(); break;
         case 'sc-objects': loadObjectTypeFilter(); loadObjects(); break;
         case 'sc-links': loadLinkTypes(); break;
-        case 'sc-fusion': initScopeBuilder(); renderFusionMap(); break;
+        case 'sc-fusion': initScopeBuilder(); renderFusionMap(); registerSimsGaiaLayers(); break;
+        case 'sims-war': initSimsWarRoom(); break;
         case 'sc-gdelt': loadGdeltHealth(); loadGdeltSnapshot(); refreshGdeltBqStatus(); break;
         case 'sc-aviation': loadAviationHealth(); loadAviationSnapshot(); loadAviationFlights(); break;
         case 'yono-providers': loadProviders(); loadModels(); break;
@@ -3869,8 +4039,10 @@ async function loadOverview() {
     document.getElementById('countPatrons').textContent = '--';
     document.getElementById('countMetrics').textContent = '--';
     document.getElementById('overviewFeed').innerHTML = '<div class="empty-state">Activity feed paused (TDAC not in use)</div>';
-    renderWorkflowOrders();
-    loadSmmLinks().then(() => renderWorkflowOrders()).catch(() => {});
+    if (canAccessMimi()) {
+        renderWorkflowOrders();
+        loadSmmLinks().then(() => renderWorkflowOrders()).catch(() => {});
+    }
 }
 
 async function loadObjectTypes() {
@@ -7161,6 +7333,15 @@ function showApp(user) {
         document.getElementById('userName').textContent = name;
         document.getElementById('userAvatar').textContent = name.charAt(0).toUpperCase();
     }
+    const navItems = document.querySelectorAll('.nav-item');
+    if (isMimiOnly()) {
+        navItems.forEach(n => {
+            n.style.display = (n.dataset && n.dataset.page === 'statham-smm') ? '' : 'none';
+        });
+    } else if (!canAccessMimi()) {
+        const mimiNav = document.querySelector('.nav-item[data-page="statham-smm"]');
+        if (mimiNav) mimiNav.style.display = 'none';
+    }
     init();
 }
 
@@ -7179,8 +7360,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (session) {
             authToken = session.access_token;
             currentUser = { email: session.user.email, id: session.user.id };
+            userRole = await fetchMyRole();
             showApp(currentUser);
-            const hash = window.location.hash.slice(1) || 'overview';
+            let hash = window.location.hash.slice(1) || 'overview';
+            if (isMimiOnly()) hash = 'statham-smm';
             navigate(hash);
         } else {
             // No session - redirect to login with return URL
@@ -9319,6 +9502,649 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         init();
     }
 })();
+</script>
+
+<!-- ============================================================================
+     SIMS — KRIEGSPIEL WAR ROOM (self-contained, zero-touch).
+     Talks to the sims-suite gateway through the panteon proxy
+     (/api/v1/sims/* -> localhost:8090). Renders theater outcome markers on
+     the fusion map and registers GAIA layers via window.GAIA.registerLayer().
+     Core fusion data arrays and render functions are never modified — the
+     fusion map refresh hook below is additive-only.
+     ============================================================================ -->
+<style id="sims-styles">
+    .sims-outcome-bar { display:flex; height:14px; border-radius:4px; overflow:hidden; border:1px solid var(--border-color); font-family:var(--font-mono); }
+    .sims-outcome-bar div { display:flex; align-items:center; justify-content:center; font-size:9px; letter-spacing:.08em; color:#000; min-width:0; }
+    .sims-kv { display:flex; justify-content:space-between; gap:8px; padding:3px 0; border-bottom:1px dashed var(--border-color); font-size:11px; }
+    .sims-kv b { font-family:var(--font-mono); font-weight:500; }
+    .sims-chip { font-family:var(--font-mono); font-size:9px; letter-spacing:.1em; text-transform:uppercase; border:1px solid var(--border-color); border-radius:3px; padding:3px 8px; color:var(--text-muted); }
+    .sims-chip[data-tone="good"] { color:var(--green); border-color:rgba(16,185,129,.4); }
+    .sims-chip[data-tone="warn"] { color:var(--amber); border-color:rgba(245,158,11,.4); }
+    .sims-chip[data-tone="bad"]  { color:var(--red); border-color:rgba(244,63,94,.4); }
+    .sims-war-marker { width:14px; height:14px; border-radius:50%; border:2px solid var(--accent-neon); background:rgba(223,241,64,.15); box-shadow:0 0 10px rgba(223,241,64,.5); cursor:pointer; position:relative; }
+    .sims-war-marker.sims-hot { background:rgba(244,63,94,.35); border-color:var(--red); box-shadow:0 0 12px rgba(244,63,94,.65); }
+    .sims-war-marker .sims-war-tag { position:absolute; left:18px; top:-4px; white-space:nowrap; font-family:var(--font-mono); font-size:9px; letter-spacing:.1em; color:var(--text); background:rgba(0,0,0,.75); border:1px solid var(--border-color); border-radius:3px; padding:2px 6px; text-transform:uppercase; }
+    .sims-learn-marker { width:26px; height:26px; border-radius:50%; border:1px dashed var(--green); box-shadow:0 0 6px rgba(16,185,129,.35); cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:8px; color:var(--green); }
+    /* ---- war ontology markers (Palantir-style typed objects) ---- */
+    .sims-ont-theater { width:16px; height:16px; transform:rotate(45deg); border:2px solid var(--accent-neon); background:rgba(223,241,64,.10); box-shadow:0 0 9px rgba(223,241,64,.45); cursor:pointer; position:relative; }
+    .sims-ont-theater > span { position:absolute; inset:3px; border:1px solid rgba(223,241,64,.55); }
+    .sims-ont-force { width:11px; height:11px; transform:rotate(45deg); cursor:pointer; border:1.5px solid rgba(0,0,0,.65); }
+    .sims-ont-force.side-red { background:var(--red); box-shadow:0 0 7px rgba(239,68,68,.8); }
+    .sims-ont-force.side-blue { background:var(--accent-cyan); box-shadow:0 0 7px rgba(34,197,232,.8); }
+    .sims-ont-assess { width:9px; height:9px; border-radius:50%; background:var(--amber); box-shadow:0 0 6px rgba(245,158,11,.8); cursor:pointer; animation:sims-pulse 1.8s ease-in-out infinite; }
+    .sims-ont-assess.w-red { background:var(--red); box-shadow:0 0 7px rgba(239,68,68,.85); }
+    .sims-ont-assess.w-blue { background:var(--accent-cyan); box-shadow:0 0 7px rgba(34,197,232,.85); }
+    @keyframes sims-pulse { 0%,100% { opacity:.55; } 50% { opacity:1; } }
+    .sims-flash-row { display:flex; align-items:center; gap:10px; padding:6px 8px; border-bottom:1px dashed var(--border-color); font-size:11px; }
+    #simsBattleResults table, #simsCampaignResults table { width:100%; font-size:10px; }
+    #simsMatrixBody td, #simsParamsBody td, #simsMatrixHead th { font-family:var(--font-mono); font-size:9px; }
+</style>
+<script>
+// ============================== SIMS WAR ROOM ==============================
+const SIMS = {
+    battlefields: [], doctrines: ['attrition', 'maneuver', 'shock', 'defensive', 'guerrilla', 'logistical', 'information'],
+    outcomes: {},        // battlefield name -> last battle report (drives map popups)
+    learning: null,      // last strategy-table payload (drives confidence overlay)
+    ont: null,           // war ontology graph {nodes, edges, counts}
+    matches: [],         // last flashpoint matches (event -> theater)
+    loaded: false,
+};
+let fusionSimWarMarkers = [], fusionSimLearnMarkers = [], fusionSimOntMarkers = [];
+
+const ONT_TYPE_LABEL = {
+    kriegspiel_theater: 'THEATER',
+    kriegspiel_force: 'FORCE',
+    kriegspiel_assessment: 'ASSESSMENT',
+};
+
+function simsEsc(s) {
+    s = s == null ? '' : String(s);
+    return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function simsPct(part, total) { return total > 0 ? Math.round(100 * part / total) : 0; }
+
+async function simsApi(path, opts = {}) {
+    return api('sims/' + path, opts);
+}
+
+function initSimsWarRoom() {
+    if (!SIMS.loaded) {
+        loadSimsBattlefields();
+        loadSimsResearch();
+        loadOntologyGraph();
+        SIMS.loaded = true;
+    } else {
+        loadSimsResearch();
+        loadOntologyGraph();
+    }
+    simsGatewayHealth();
+    registerSimsGaiaLayers();
+}
+
+async function simsGatewayHealth() {
+    const tag = document.getElementById('simsGatewayTag');
+    try {
+        const h = await simsApi('health');
+        if (h && h.status) { tag.textContent = 'GATEWAY: ONLINE'; tag.className = 'tag tag-green'; }
+        else { tag.textContent = 'GATEWAY: DEGRADED'; tag.className = 'tag tag-blue'; }
+    } catch (e) {
+        tag.textContent = 'GATEWAY: OFFLINE'; tag.className = 'tag';
+        const st = document.getElementById('simsRunStatus');
+        if (st) st.textContent = 'Sims gateway unreachable: ' + e.message;
+    }
+}
+
+async function loadSimsBattlefields() {
+    try {
+        const bfs = await simsApi('kriegspiel/battlefields');
+        if (!Array.isArray(bfs)) throw new Error('bad payload');
+        SIMS.battlefields = bfs.filter(b => b.source === 'canonical' || true);
+        const opts = bfs.map(b =>
+            `<option value="${simsEsc(b.name)}">${simsEsc(b.name)} · ${simsEsc(b.terrain)}</option>`).join('');
+        for (const id of ['simsBfSelect', 'simsCampBf']) {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = `<option value="random">Random theater</option>` + opts;
+        }
+        const docs = SIMS.doctrines.map(d => `<option value="${d}">${d}</option>`).join('');
+        for (const [id, def] of [['simsCampRedDoc', 'maneuver'], ['simsCampBlueDoc', 'defensive']]) {
+            const el = document.getElementById(id);
+            if (el) { el.innerHTML = docs; el.value = def; }
+        }
+    } catch (e) {
+        const st = document.getElementById('simsRunStatus');
+        if (st) st.textContent = 'Failed to load theaters: ' + e.message;
+    }
+}
+
+function simsOutcomeBar(red, blue, stale) {
+    const t = red + blue + stale || 1;
+    return '<div class="sims-outcome-bar">' +
+        `<div style="width:${simsPct(red, t)}%;background:var(--red)" title="Red ${simsPct(red, t)}%">R ${simsPct(red, t)}%</div>` +
+        `<div style="width:${simsPct(blue, t)}%;background:var(--accent-cyan)" title="Blue ${simsPct(blue, t)}%">B ${simsPct(blue, t)}%</div>` +
+        `<div style="width:${simsPct(stale, t)}%;background:var(--amber)" title="Stalemate ${simsPct(stale, t)}%">${stale ? simsPct(stale, t) + '%' : ''}</div>` +
+        '</div>';
+}
+
+async function runKriegspielBattle() {
+    const btn = document.getElementById('simsRunBtn'), status = document.getElementById('simsRunStatus');
+    const bf = document.getElementById('simsBfSelect').value;
+    const scenarios = parseInt(document.getElementById('simsScenarios').value, 10) || 1000;
+    const seed = parseInt(document.getElementById('simsSeed').value, 10) || 42;
+    btn.disabled = true; status.textContent = `Simulating ${scenarios} battles over ${bf}...`;
+    try {
+        const r = await simsApi('kriegspiel/run', {
+            method: 'POST', timeout: 180000,
+            body: JSON.stringify({ battlefield: bf, scenarios, seed }),
+        });
+        if (r.error) throw new Error(r.error);
+        SIMS.outcomes[r.battlefield] = r;
+        const o = r.ontology || {};
+        status.textContent = `Done in ${((r.duration_ms || 0) / 1000).toFixed(1)}s — ${r.scenarios_run} scenarios.` +
+            (o.emitted ? ` Ontology: +${o.objects_created} objects, +${o.links_created} links.` :
+             o.error ? ` Ontology writeback failed: ${o.error}` : '');
+        renderBattleResults(r);
+        renderFusionSimWarLayer(); renderFusionSimLearningLayer();
+        loadOntologyGraph();
+        loadSimsResearch(); // learning layer observed this batch
+    } catch (e) {
+        status.textContent = 'Run failed: ' + e.message;
+    } finally { btn.disabled = false; }
+}
+
+function renderBattleResults(r) {
+    const decided = r.red_wins + r.blue_wins;
+    document.getElementById('simsStatRed').textContent = (decided ? Math.round(100 * r.red_wins / decided) : 0) + '%';
+    document.getElementById('simsStatRedSub').textContent = `of decided · ${r.battlefield}`;
+    document.getElementById('simsStatBlue').textContent = (decided ? Math.round(100 * r.blue_wins / decided) : 0) + '%';
+    document.getElementById('simsStatBlueSub').textContent = `of decided · n=${r.scenarios_run}`;
+    document.getElementById('simsStatStalemate').textContent = simsPct(r.stalemates, r.scenarios_run) + '%';
+    document.getElementById('simsStatStalemate').parentElement.querySelector('.card-sub').textContent = `${r.stalemates} of ${r.scenarios_run}`;
+    document.getElementById('simsStatDecisive').textContent = r.decisive_battles;
+    const decSub = document.getElementById('simsStatDurationSub');
+    if (decSub) decSub.textContent = `avg ${(r.avg_duration_hours || 0).toFixed(1)}h per battle`;
+
+    let bb = '';
+    if (r.best_branch) {
+        const b = r.best_branch;
+        bb = `<div class="card-sub" style="margin-top:10px;font-family:var(--font-mono)">BEST BRANCH</div>
+              <div class="sims-kv"><span>Winner</span><b>${simsEsc(b.winner)}</b></div>
+              <div class="sims-kv"><span>Matchup</span><b>${simsEsc(b.red_doctrine)} vs ${simsEsc(b.blue_doctrine)}</b></div>
+              <div class="sims-kv"><span>Score</span><b>${b.score != null ? Number(b.score).toFixed(2) : '--'}</b></div>
+              <div class="sims-kv"><span>Casualties R/B</span><b>${Number(b.red_casualties_pct).toFixed(1)}% / ${Number(b.blue_casualties_pct).toFixed(1)}%</b></div>
+              <div class="sims-kv" style="border-bottom:none"><span>Key event</span><b style="text-align:right">${simsEsc(b.key_event || '--')}</b></div>`;
+    }
+    const evts = Array.isArray(r.key_events) ? r.key_events.slice(0, 6)
+        .map(e => `<li style="margin-left:14px">${simsEsc(typeof e === 'string' ? e : (e.text || e.event || JSON.stringify(e)))}</li>`).join('') : '';
+    document.getElementById('simsBattleResults').innerHTML =
+        `<div style="margin-bottom:6px;font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">${simsEsc(r.battlefield)} · ${r.scenarios_run} runs · convergence ${(100 * (r.convergence_rate || 0)).toFixed(0)}%</div>` +
+        simsOutcomeBar(r.red_wins, r.blue_wins, r.stalemates) +
+        `<div class="grid grid-3" style="margin-top:10px">
+            <div class="card-sub">RED CAS <b style="color:var(--red)">${Number(r.avg_red_casualties).toFixed(1)}%</b></div>
+            <div class="card-sub">BLUE CAS <b style="color:var(--accent-cyan)">${Number(r.avg_blue_casualties).toFixed(1)}%</b></div>
+            <div class="card-sub">AVG DUR <b>${Number(r.avg_duration_hours).toFixed(1)}h</b></div>
+         </div>${bb}` +
+        (evts ? `<div class="card-sub" style="margin-top:10px;font-family:var(--font-mono)">KEY EVENTS</div><ul style="font-size:10px;color:var(--text-muted);line-height:1.6">${evts}</ul>` : '');
+}
+
+async function runKriegspielCampaign() {
+    const btn = document.getElementById('simsCampBtn'), status = document.getElementById('simsCampStatus');
+    const body = {
+        battlefield: document.getElementById('simsCampBf').value,
+        campaigns: parseInt(document.getElementById('simsCampaigns').value, 10) || 50,
+        engagements: parseInt(document.getElementById('simsEngagements').value, 10) || 8,
+        engagement_hours: parseInt(document.getElementById('simsEngHours').value, 10) || 24,
+        red_doctrine: document.getElementById('simsCampRedDoc').value,
+        blue_doctrine: document.getElementById('simsCampBlueDoc').value,
+        red_reinforcement: parseFloat(document.getElementById('simsRedReinf').value) || 0.30,
+        blue_reinforcement: parseFloat(document.getElementById('simsBlueReinf').value) || 0.30,
+        seed: parseInt(document.getElementById('simsSeed').value, 10) || null,
+    };
+    btn.disabled = true;
+    status.textContent = `Running ${body.campaigns} campaigns (${body.engagements} engagements × ${body.engagement_hours}h)...`;
+    try {
+        const r = await simsApi('kriegspiel/campaign/simulate', { method: 'POST', timeout: 180000, body: JSON.stringify(body) });
+        if (r.error) throw new Error(r.error);
+        const o = r.ontology || {};
+        status.textContent = 'Campaign complete.' +
+            (o.emitted ? ` Ontology: +${o.objects_created} objects, +${o.links_created} links.` :
+             o.error ? ` Ontology writeback failed: ${o.error}` : '');
+        renderCampaignResults(r, body);
+        loadOntologyGraph();
+    } catch (e) {
+        status.textContent = 'Campaign failed: ' + e.message;
+    } finally { btn.disabled = false; }
+}
+
+function renderCampaignResults(r, req) {
+    const w = r.campaign_wins || {}, tot = (w.red || 0) + (w.blue || 0) + (w.stalemate || 0) || 1;
+    const sc = r.sample_campaign || {};
+    const engRows = Array.isArray(sc.engagements) ? sc.engagements.slice(0, 10).map(e =>
+        `<tr><td>#${e.index}</td><td style="color:${e.winner === 'red' ? 'var(--red)' : e.winner === 'blue' ? 'var(--accent-cyan)' : 'var(--amber)'}">${simsEsc(e.winner)}${e.decisive ? ' ★' : ''}</td>` +
+        `<td>R ${Number(e.red_casualties_pct).toFixed(0)}% / B ${Number(e.blue_casualties_pct).toFixed(0)}%</td><td>${Number(e.duration_hours).toFixed(1)}h</td><td>${simsEsc((e.key_event || '').slice(0, 60))}</td></tr>`).join('') : '';
+    document.getElementById('simsCampaignResults').innerHTML =
+        `<div style="margin-bottom:6px;font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">${simsEsc(sc.battlefield || req.battlefield)} · ${simsEsc(req.red_doctrine)} vs ${simsEsc(req.blue_doctrine)} · ${tot} campaigns</div>` +
+        simsOutcomeBar(w.red || 0, w.blue || 0, w.stalemate || 0) +
+        `<div class="grid grid-3" style="margin-top:10px">
+            <div class="card-sub">FRONT FINAL <b>${Number(r.avg_front_final_pct).toFixed(1)}%</b></div>
+            <div class="card-sub">FORCES LEFT <b style="color:var(--red)">R ${Number(r.avg_red_remaining_pct).toFixed(0)}%</b> <b style="color:var(--accent-cyan)">B ${Number(r.avg_blue_remaining_pct).toFixed(0)}%</b></div>
+            <div class="card-sub">COLLAPSES <b>R ${(r.collapses || {}).red || 0}</b> / <b>B ${(r.collapses || {}).blue || 0}</b></div>
+         </div>
+         <div class="card-sub" style="margin:10px 0 4px;font-family:var(--font-mono)">SAMPLE CAMPAIGN — ${sc.engagements_fought || 0} engagements, winner: <b style="color:var(--text)">${simsEsc(sc.campaign_winner || '--')}</b></div>` +
+        (engRows ? `<div class="table-wrap"><table><thead><tr><th>Eng</th><th>Winner</th><th>Casualties</th><th>Dur</th><th>Key event</th></tr></thead><tbody>${engRows}</tbody></table></div>` : '');
+}
+
+// ------------------------------ research layer ------------------------------
+async function loadSimsResearch() {
+    try {
+        const [table, params, gate, findings] = await Promise.all([
+            simsApi('research/strategy-table'),
+            simsApi('research/parameters'),
+            simsApi('research/bh-gate?k=20'),
+            simsApi('research/findings?k=12'),
+        ]);
+        if (!table.error && table.matrix) { SIMS.learning = table; renderStrategyMatrix(table); }
+        if (params.current) renderDoctrineParams(params);
+        if (!gate.error) renderGate(gate);
+        if (findings.findings) renderFindings(findings.findings);
+        const lt = document.getElementById('simsLearningTag');
+        if (params.current) {
+            lt.textContent = `LEARNING: ${params.total_adjustments || 0} ADJ`;
+            lt.className = 'tag tag-blue';
+        }
+    } catch (e) { /* gateway offline — tags already show it */ }
+}
+
+function renderStrategyMatrix(t) {
+    const head = document.getElementById('simsMatrixHead');
+    head.innerHTML = '<tr><th>DOCTRINE</th>' + t.terrains.map(x => `<th>${simsEsc(x.slice(0, 7).toUpperCase())}</th>`).join('') + '</tr>';
+    document.getElementById('simsMatrixBody').innerHTML = t.doctrines.map((doc, i) =>
+        '<tr><td style="color:var(--text)">' + simsEsc(doc) + '</td>' + (t.matrix[i] || []).map(cell => {
+            if (!cell || cell.win_rate == null) return '<td style="color:var(--text-dim)">·</td>';
+            const pct = Math.round(100 * cell.win_rate);
+            const col = pct >= 55 ? 'var(--green)' : pct <= 45 ? 'var(--red)' : 'var(--amber)';
+            return `<td style="color:${col}" title="${cell.samples} samples">${pct}%<span style="color:var(--text-dim)">/${cell.samples}</span></td>`;
+        }).join('') + '</tr>').join('');
+}
+
+function renderDoctrineParams(p) {
+    document.getElementById('simsParamsBody').innerHTML = Object.entries(p.current).map(([doc, v]) =>
+        `<tr><td style="color:var(--text)">${simsEsc(doc)}</td>` +
+        ['aggression', 'risk', 'supply_focus', 'morale_drain', 'breakthrough'].map(k =>
+            `<td title="${v.terrain_overrides || 0} terrain overrides">${Number(v[k]).toFixed(2)}</td>`).join('') +
+        `<td>${v.adjustments || 0}</td></tr>`).join('');
+}
+
+function renderGate(g) {
+    const chips = [
+        { label: `FDR ≤ ${g.fdr}`, tone: g.hypotheses_survived > 0 ? 'good' : 'warn' },
+        { label: `${g.hypotheses_tested} tested`, tone: null },
+        { label: `${g.hypotheses_survived} survived BH`, tone: g.hypotheses_survived > 0 ? 'good' : 'warn' },
+        { label: `${g.gates_ran} gates`, tone: null },
+    ];
+    document.getElementById('simsGateChips').innerHTML = chips.map(c =>
+        `<span class="sims-chip"${c.tone ? ` data-tone="${c.tone}"` : ''}>${simsEsc(c.label)}</span>`).join('');
+    document.getElementById('simsGateDetail').innerHTML = (g.recent_gates || []).slice(-6).reverse().map(gt =>
+        `<div class="sims-kv"><span>${new Date(gt.ts * 1000).toLocaleString()}</span>` +
+        `<b>${gt.survived_bh}/${gt.candidates_tested} survived · fdr ${gt.fdr} · ${gt.scenarios} scen</b></div>`).join('') ||
+        '<div class="empty-state">No gates recorded yet.</div>';
+}
+
+function renderFindings(fs) {
+    document.getElementById('simsFindingsList').innerHTML = fs.length ? fs.slice().reverse().map(f =>
+        `<div style="padding:4px 0;border-bottom:1px dashed var(--border-color)">
+            <span class="sims-chip" style="margin-right:6px">${simsEsc(f.kind)}</span>${simsEsc(f.text)}
+         </div>`).join('') : '<div class="empty-state">No findings yet.</div>';
+}
+
+async function simsSelfImprove() {
+    if (!confirm('Trigger self-improvement? This mutates doctrine parameters based on statistically significant (BH-gated) findings.')) return;
+    const btn = document.getElementById('simsImproveBtn');
+    btn.disabled = true; btn.textContent = 'IMPROVING...';
+    try {
+        const pre = await simsApi('research/bh-gate?k=5');
+        const r = await simsApi('research/improve', { method: 'POST', timeout: 180000, body: '{}' });
+        if (r.error) throw new Error(r.error);
+        const changes = r.changes || [];
+        alert(`Self-improvement complete: ${r.changes_applied} parameter change(s).\n\n` +
+            (changes.length ? changes.map(c => `${c.doctrine}/${c.terrain} ${c.field}: ${Number(c.before).toFixed(2)}→${Number(c.after).toFixed(2)} (win ${(100 * c.win_rate).toFixed(0)}%, p=${Number(c.p_value).toFixed(4)})`).join('\n') : 'No change survived the significance gate.') +
+            (pre && !pre.error ? `\n\nGate context: ${pre.hypotheses_tested} tested, ${pre.hypotheses_survived} survived at FDR ${pre.fdr}.` : ''));
+        loadSimsResearch();
+    } catch (e) {
+        alert('Self-improvement failed: ' + e.message);
+    } finally { btn.disabled = false; btn.textContent = 'SELF-IMPROVE'; }
+}
+
+async function simsRunAdherence() {
+    const out = document.getElementById('simsFindingsList');
+    out.innerHTML = '<div class="empty-state">Running adherence probe (60 battles/doctrine, terrain=open)...</div>';
+    try {
+        const r = await simsApi('research/adherence?terrain=open&n=60&seed=42', { timeout: 180000 });
+        if (r.error) throw new Error(r.error);
+        out.innerHTML = `<div class="sims-kv"><span>Overall adherence (Spearman)</span><b style="color:${r.adherence > 0.3 ? 'var(--green)' : 'var(--amber)'}">${Number(r.adherence).toFixed(3)}</b></div>` +
+            `<div class="sims-kv"><span>Doctrines probed</span><b>${r.n_per_doctrine}/doctrine</b></div>` +
+            (r.attributes || []).map(a => `<div class="sims-kv"><span>${simsEsc(a.attribute)}</span><b>ρ=${Number(a.spearman).toFixed(2)}</b></div>`).join('');
+    } catch (e) { out.innerHTML = `<div class="empty-state">Probe failed: ${simsEsc(e.message)}</div>`; }
+}
+
+// ------------------------ fusion map layers (GAIA) ------------------------
+function registerSimsGaiaLayers() {
+    if (!window.GAIA || window.__simsGaiaRegistered) return;
+    window.__simsGaiaRegistered = true;
+    window.GAIA.registerLayer({
+        id: 'sims-war', label: 'Kriegspiel Theaters', meta: 'SIMS \u00b7 war sim',
+        on: v => { fusionLayers.simsWar = v; renderFusionSimWarLayer(); },
+    });
+    window.GAIA.registerLayer({
+        id: 'sims-learning', label: 'Doctrine Confidence', meta: 'SIMS \u00b7 learning overlay',
+        on: v => { fusionLayers.simsLearning = v; renderFusionSimLearningLayer(); },
+    });
+    window.GAIA.registerLayer({
+        id: 'sims-ontology', label: 'War Ontology', meta: 'SIMS \u00b7 sc_objects graph',
+        on: v => { fusionLayers.simsOnt = v; renderFusionOntLayer(); },
+    });
+    // Re-attach sims layers after any core fusion map reload (additive wrap).
+    if (typeof window.renderFusionMap === 'function' && !window.renderFusionMap.__simsWrapped) {
+        const origRender = window.renderFusionMap;
+        window.renderFusionMap = function () {
+            const res = origRender.apply(this, arguments);
+            setTimeout(() => { renderFusionSimWarLayer(); renderFusionSimLearningLayer(); renderFusionOntLayer(); }, 400);
+            return res;
+        };
+        window.renderFusionMap.__simsWrapped = true;
+    }
+    // Default both layers on so the war is visible immediately.
+    fusionLayers.simsWar = true;
+    fusionLayers.simsOnt = true;
+    renderFusionSimWarLayer();
+    // Theaters may not be fetched yet when arriving via Spinal Cracker first.
+    if (!SIMS.battlefields.length) {
+        loadSimsBattlefields().then(() => {
+            renderFusionSimWarLayer();
+            renderFusionSimLearningLayer();
+        });
+    }
+    loadOntologyGraph();
+}
+
+function simsTerrainColor(terrain) {
+    return { urban: '#a78bfa', mountain: '#94a3b8', forest: '#22c544', desert: '#f59e0b',
+             coastal: '#38bdf8', wetland: '#2dd4bf', open: '#DFF140' }[terrain] || '#DFF140';
+}
+
+function simsBestDoctrineFor(terrain) {
+    if (!SIMS.learning || !Array.isArray(SIMS.learning.matrix)) return null;
+    const ti = SIMS.learning.terrains.indexOf(terrain);
+    if (ti < 0) return null;
+    let best = null;
+    SIMS.learning.doctrines.forEach((doc, di) => {
+        const cell = (SIMS.learning.matrix[di] || [])[ti];
+        if (cell && cell.win_rate != null && (!best || cell.win_rate > best.win_rate)) best = { doc, win_rate: cell.win_rate, samples: cell.samples };
+    });
+    return best;
+}
+
+function renderFusionSimWarLayer() {
+    fusionSimWarMarkers.forEach(m => { try { m.remove(); } catch (e) {} });
+    fusionSimWarMarkers = [];
+    if (!fusionMap || !fusionLayers.simsWar) return;
+    SIMS.battlefields.forEach(bf => {
+        if (!bf.center) return;
+        const out = SIMS.outcomes[bf.name];
+        const decided = out ? (out.red_wins + out.blue_wins) : 0;
+        const redPct = decided ? Math.round(100 * out.red_wins / decided) : null;
+        const el = document.createElement('div');
+        el.className = 'sims-war-marker' + (redPct != null && redPct >= 55 ? ' sims-hot' : '');
+        el.innerHTML = `<div class="sims-war-tag">${simsEsc(bf.name)}</div>`;
+        const popupHtml =
+            `<b>KRIEGSPIEL THEATER</b> · ${simsEsc(bf.name)}` +
+            `<br>TERRAIN: ${simsEsc(bf.terrain)} · AREA: ${Math.round(bf.area_km2).toLocaleString()} km²` +
+            (out
+                ? `<br><br><b>LAST RUN</b>: ${out.scenarios_run} scenarios` +
+                  `<br>RED ${redPct}% · BLUE ${decided ? 100 - redPct : 0}% · STALEMATE ${simsPct(out.stalemates, out.scenarios_run)}%` +
+                  `<br>CAS R/B: ${Number(out.avg_red_casualties).toFixed(1)}% / ${Number(out.avg_blue_casualties).toFixed(1)}%`
+                : `<br><br>No simulation run yet from this console.`) +
+            `<br><button type="button" class="won-note-btn" onclick="document.querySelector('[data-page=sims-war]').click();document.getElementById('simsBfSelect').value='${simsEsc(bf.name).replace(/'/g, '')}'">SIM IN WAR ROOM</button>`;
+        const popup = new maplibregl.Popup({ closeButton: false, offset: 10 }).setHTML(popupHtml);
+        const mk = new maplibregl.Marker({ element: el }).setLngLat([bf.center[1], bf.center[0]]).setPopup(popup).addTo(fusionMap);
+        fusionSimWarMarkers.push(mk);
+    });
+}
+
+function renderFusionSimLearningLayer() {
+    fusionSimLearnMarkers.forEach(m => { try { m.remove(); } catch (e) {} });
+    fusionSimLearnMarkers = [];
+    if (!fusionMap || !fusionLayers.simsLearning) return;
+    SIMS.battlefields.forEach(bf => {
+        if (!bf.center) return;
+        const best = simsBestDoctrineFor(bf.terrain);
+        if (!best) return;
+        const el = document.createElement('div');
+        el.className = 'sims-learn-marker';
+        el.title = `${best.doc} wins ${Math.round(100 * best.win_rate)}% on ${bf.terrain}`;
+        el.innerHTML = `<span>${Math.round(100 * best.win_rate)}</span>`;
+        const popup = new maplibregl.Popup({ closeButton: false, offset: 6 })
+            .setHTML(`<b>LEARNED EDGE</b> · ${simsEsc(bf.terrain)}<br>DOCTRINE: ${simsEsc(best.doc)}<br>WIN RATE: ${(100 * best.win_rate).toFixed(1)}% across ${best.samples} samples`);
+        const mk = new maplibregl.Marker({ element: el }).setLngLat([bf.center[1], bf.center[0]]).setPopup(popup).addTo(fusionMap);
+        fusionSimLearnMarkers.push(mk);
+    });
+}
+
+// --------------------- flashpoint matcher (intel IN) -----------------------
+function simsHavKm(aLat, aLng, bLat, bLng) {
+    const R = 6371, dLat = (bLat - aLat) * Math.PI / 180, dLng = (bLng - aLng) * Math.PI / 180;
+    const s = Math.sin(dLat / 2) ** 2 + Math.cos(aLat * Math.PI / 180) * Math.cos(bLat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
+}
+
+function simsNearestTheater(lat, lng) {
+    let best = null;
+    SIMS.battlefields.forEach(bf => {
+        if (!bf.center) return;
+        const km = simsHavKm(lat, lng, bf.center[0], bf.center[1]);
+        if (!best || km < best.km) best = { bf, km };
+    });
+    return best;
+}
+
+function parseActionGeoSafe(ev) {
+    if (typeof parseActionGeo === 'function') { try { return parseActionGeo(ev); } catch (e) {} }
+    return null;
+}
+
+async function simsRunFlashpoint(m) {
+    const statusEl = document.getElementById('simsMatchStatus');
+    const bfName = m.near.bf.name;
+    statusEl.textContent = `Running flashpoint simulation over ${bfName}...`;
+    try {
+        const r = await api('sims/ontology/flashpoint', {
+            method: 'POST', timeout: 180000,
+            body: JSON.stringify({
+                battlefield: bfName,
+                scenarios: parseInt(document.getElementById('simsScenarios').value, 10) || 1000,
+                seed: parseInt(document.getElementById('simsSeed').value, 10) || 42,
+                source_event: {
+                    id: (m.ev.guid || m.ev.id || m.ev.event_code || ''),
+                    title: (m.ev.title || ''),
+                    country: (m.geo.country || m.ev.sourcecountry || ''),
+                },
+            }),
+        });
+        if (r.error) throw new Error(r.error);
+        SIMS.outcomes[r.battlefield] = r;
+        const o = r.ontology || {};
+        statusEl.textContent = o.emitted
+            ? `Assessment emitted: +${o.objects_created} objects, +${o.links_created} links — see the War Ontology layer on the map.`
+            : `Simulation done but ontology writeback failed: ${o.error || 'unknown'}`;
+        renderBattleResults(r);
+        loadOntologyGraph();
+        loadSimsResearch();
+    } catch (e) {
+        statusEl.textContent = 'Flashpoint failed: ' + e.message;
+    }
+}
+
+function simsMatchThreats() {
+    const statusEl = document.getElementById('simsMatchStatus'), listEl = document.getElementById('simsThreatList');
+    if (!SIMS.battlefields.length) { statusEl.textContent = 'Theaters not loaded yet.'; return; }
+    const events = Array.isArray(window.fusionThreatEvents) ? window.fusionThreatEvents : [];
+    if (!events.length) { statusEl.textContent = 'No GDELT events on the fusion map — run the pipeline in Spinal Cracker first.'; listEl.innerHTML = ''; return; }
+    const matches = [];
+    events.forEach(ev => {
+        const geo = parseActionGeoSafe(ev);
+        if (!geo) return;
+        const near = simsNearestTheater(geo.latitude, geo.longitude);
+        const tone = (typeof threatLevelForEvent === 'function') ? threatLevelForEvent(ev) : 'green';
+        if (near && tone !== 'green') matches.push({ ev, geo, near, tone });
+    });
+    SIMS.matches = matches;
+    matches.sort((a, b) => (a.near.km - b.near.km));
+    const top = matches.slice(0, 12);
+    statusEl.textContent = `${matches.length} negative-tone events geo-matched to theaters (showing ${top.length}).`;
+    listEl.innerHTML = top.length ? top.map((m, i) =>
+        `<div class="sims-flash-row">
+            <span class="sims-chip" data-tone="${m.tone === 'red' ? 'bad' : 'warn'}">${m.tone.toUpperCase()}</span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${simsEsc(m.ev.title || '')}">${simsEsc((m.ev.title || m.ev.event_type || 'event').slice(0, 80))}</span>
+            <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">${simsEsc(m.geo.country || '')} → ${simsEsc(m.near.bf.name)} @ ${Math.round(m.near.km).toLocaleString()} km</span>
+            <button class="btn btn-primary btn-sm" style="font-size:9px;padding:2px 8px"
+                onclick="simsRunFlashpoint(SIMS.matches[${i}])">SIM IT</button>
+         </div>`).join('') : '<div class="empty-state">No negative-tone events within range of a theater.</div>';
+}
+// ------------------------ war ontology (sc_objects) ------------------------
+async function loadOntologyGraph() {
+    try {
+        const g = await api('sims/ontology/graph?limit=400');
+        if (!g || !Array.isArray(g.nodes)) return;
+        SIMS.ont = g;
+        const chip = document.getElementById('simsOntCountChip');
+        if (chip && g.counts) chip.textContent = `${g.counts.nodes} OBJECTS · ${g.counts.edges} LINKS`;
+        renderOntPanel();
+        renderFusionOntLayer();
+    } catch (e) { /* gateway or route offline — silent */ }
+}
+
+function ontNodeCoords(n) {
+    const p = (n && n.properties) || {};
+    return (typeof p.lat === 'number' && typeof p.lng === 'number') ? [p.lng, p.lat] : null;
+}
+
+function simsOntLinkedNames(nodeId) {
+    if (!SIMS.ont) return [];
+    const byId = {};
+    SIMS.ont.nodes.forEach(nd => { byId[nd.id] = nd; });
+    const names = [];
+    SIMS.ont.edges.forEach(e => {
+        let other = null, lt = e.link_type || '';
+        if (e.source === nodeId) other = byId[e.target];
+        else if (e.target === nodeId) other = byId[e.source];
+        if (!other) return;
+        const label = lt.replace('ks_', '').replace(/_/g, ' ');
+        names.push(`${label} → ${ONT_TYPE_LABEL[other.type] || other.type}: ${(other.properties && other.properties.name) || other.pk}`);
+    });
+    return names.slice(0, 5);
+}
+
+function ontPopupHtml(n) {
+    const p = n.properties || {};
+    const rows = Object.entries(p)
+        .filter(([k]) => !['lat', 'lng', 'bounds'].includes(k))
+        .slice(0, 12)
+        .map(([k, v]) => `<tr><td style="color:var(--text-muted);padding-right:10px">${simsEsc(k)}</td><td style="color:var(--text);text-align:right">${simsEsc(v == null ? '—' : String(v))}</td></tr>`).join('');
+    const links = simsOntLinkedNames(n.id)
+        .map(l => `<div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">↳ ${simsEsc(l)}</div>`).join('');
+    return `<b>${simsEsc(ONT_TYPE_LABEL[n.type] || n.type)}</b> · ${simsEsc(n.pk)}` +
+        `<table style="margin-top:6px;font-size:10px;font-family:var(--font-mono)">${rows}</table>${links}`;
+}
+
+function renderFusionOntLayer() {
+    fusionSimOntMarkers.forEach(m => {
+        try { m.remove(); } catch (e) {}
+        try { m._el && m._el.remove(); } catch (e) {}
+    });
+    fusionSimOntMarkers = [];
+    if (!fusionMap) return;
+    // link lines live in a GeoJSON layer — drop any stale one first
+    try {
+        if (fusionMap.getLayer('sims-ont-links')) fusionMap.removeLayer('sims-ont-links');
+        if (fusionMap.getSource('sims-ont-links')) fusionMap.removeSource('sims-ont-links');
+    } catch (e) {}
+    if (!fusionLayers.simsOnt || !SIMS.ont || !Array.isArray(SIMS.ont.nodes)) return;
+
+    const byId = {};
+    SIMS.ont.nodes.forEach(nd => { byId[nd.id] = nd; });
+
+    const feats = [];
+    SIMS.ont.edges.forEach(e => {
+        const s = byId[e.source], t = byId[e.target];
+        if (!s || !t) return;
+        const a = ontNodeCoords(s), b = ontNodeCoords(t);
+        if (!a || !b) return;
+        feats.push({
+            type: 'Feature',
+            properties: { lt: e.link_type || '' },
+            geometry: { type: 'LineString', coordinates: [a, b] },
+        });
+    });
+    if (feats.length) {
+        try {
+            fusionMap.addSource('sims-ont-links', { type: 'geojson', data: { type: 'FeatureCollection', features: feats } });
+            fusionMap.addLayer({
+                id: 'sims-ont-links', type: 'line', source: 'sims-ont-links',
+                paint: {
+                    'line-color': ['match', ['get', 'lt'],
+                        'ks_assessed_in', '#DFF140',
+                        'ks_opposes', '#ef4444',
+                        'ks_located_in', '#22c5ee'],
+                    'line-width': 1.1, 'line-opacity': 0.65,
+                    'line-dasharray': [2, 2],
+                },
+            });
+        } catch (e) {}
+    }
+
+    SIMS.ont.nodes.forEach(n => {
+        const c = ontNodeCoords(n);
+        if (!c) return;
+        const p = n.properties || {};
+        const el = document.createElement('div');
+        let title = '';
+        if (n.type === 'kriegspiel_theater') {
+            el.className = 'sims-ont-theater';
+            el.innerHTML = '<span></span>';
+            title = p.name || '';
+        } else if (n.type === 'kriegspiel_force') {
+            el.className = 'sims-ont-force side-' + (p.side === 'red' ? 'red' : 'blue');
+            title = `${(p.doctrine || '?')} (${p.side})`;
+        } else {
+            el.className = 'sims-ont-assess' +
+                (p.dominant_winner === 'red' ? ' w-red' : p.dominant_winner === 'blue' ? ' w-blue' : '');
+            title = `${p.mode || 'battle'} · ${(p.matchup || '')}`;
+        }
+        const popup = new maplibregl.Popup({ closeButton: false, offset: 8 }).setHTML(ontPopupHtml(n));
+        const mk = new maplibregl.Marker({ element: el }).setLngLat(c).setPopup(popup).addTo(fusionMap);
+        mk._el = el;
+        if (title) el.title = title;
+        fusionSimOntMarkers.push(mk);
+    });
+}
+
+function renderOntPanel() {
+    const panel = document.getElementById('simsOntPanel');
+    if (!panel || !SIMS.ont) return;
+    const assessments = SIMS.ont.nodes.filter(n => n.type === 'kriegspiel_assessment')
+        .sort((a, b) => ((b.properties || {}).executed_at || '').localeCompare((a.properties || {}).executed_at || ''))
+        .slice(0, 6);
+    if (!assessments.length) { panel.innerHTML = '<div class="empty-state">No assessments emitted yet — run a battle.</div>'; return; }
+    panel.innerHTML = assessments.map(a => {
+        const p = a.properties || {};
+        const tone = p.dominant_winner === 'red' ? 'bad' : p.dominant_winner === 'blue' ? 'good' : 'warn';
+        return `<div class="sims-flash-row">
+            <span class="sims-chip" data-tone="${tone}">${simsEsc((p.dominant_winner || '?').toUpperCase())} ${Number(p.red_win_pct || 0)}%</span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${simsEsc(p.theater || a.pk)} · ${simsEsc(p.matchup || '')} · ${simsEsc(String(p.scenarios_run || ''))} runs${p.source_event_title ? ' · ⚡ ' + simsEsc(String(p.source_event_title).slice(0, 40)) : ''}</span>
+            <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">${simsEsc((p.executed_at || '').replace('T', ' ').slice(0, 16))}</span>
+        </div>`;
+    }).join('');
+}
+// ============================ /SIMS WAR ROOM ===============================
 </script>
 
 <!-- ============================================================================

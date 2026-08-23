@@ -82,6 +82,9 @@ def resolve_role(email: str) -> str:
     superadmins = [e.strip().lower() for e in (settings.superadmin_emails or "").split(",") if e.strip()]
     if email_lower in superadmins:
         return "superadmin"
+    mimi_only = [e.strip().lower() for e in (settings.mimi_only_emails or "").split(",") if e.strip()]
+    if email_lower in mimi_only:
+        return "mimi"
     admins = [e.strip().lower() for e in (settings.admin_emails or "").split(",") if e.strip()]
     if email_lower in admins:
         return "admin"
@@ -154,7 +157,7 @@ async def get_current_user(
 
 
 def require_role(minimum_role: str):
-    role_hierarchy = {"viewer": 0, "editor": 1, "admin": 2, "superadmin": 3}
+    role_hierarchy = {"viewer": 0, "mimi": 0, "editor": 1, "admin": 2, "superadmin": 3}
     async def role_checker(current_user: SupabaseUser = Depends(get_current_user)):
         user_level = role_hierarchy.get(current_user.role, 0)
         required_level = role_hierarchy.get(minimum_role, 0)
@@ -165,3 +168,15 @@ def require_role(minimum_role: str):
             )
         return current_user
     return role_checker
+
+
+def require_smm_access():
+    """MiMi Panel access: superadmins always; dedicated MiMi-only operators."""
+    async def smm_checker(current_user: SupabaseUser = Depends(get_current_user)):
+        if current_user.role not in ("superadmin", "mimi"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Requires MiMi panel access",
+            )
+        return current_user
+    return smm_checker

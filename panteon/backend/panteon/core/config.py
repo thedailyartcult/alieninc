@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     superadmin_emails: Optional[str] = None
     admin_emails: Optional[str] = None
     editor_emails: Optional[str] = None
+    mimi_only_emails: Optional[str] = None
 
     allowed_email_domains: str = "alieninc.tech"
 

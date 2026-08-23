@@ -1,11 +1,12 @@
 import os
 from pathlib import Path
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from panteon.core.config import settings
+from panteon.core.auth import verify_supabase_token
 from panteon.core.database import init_db
 from panteon.core.security import (
     SecurityHeadersMiddleware, RateLimitMiddleware, AuditMiddleware, ALLOWED_ORIGINS,
@@ -34,6 +35,7 @@ from panteon.api.routes_research import router as research_router
 from panteon.api.routes_ngram import router as ngram_router
 from panteon.api.routes_actor_graph import router as actor_graph_router
 from panteon.api.routes_smm import router as smm_router
+from panteon.api.routes_sims import router as sims_router
 
 PANTEON_SITE = Path(os.path.dirname(__file__)).parent.parent
 
@@ -58,6 +60,23 @@ app = FastAPI(
 app.add_middleware(AuditMiddleware)
 app.add_middleware(RateLimitMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
+
+
+@app.middleware("http")
+async def mimi_scope_guard(request: Request, call_next):
+    """MiMi-only operators are fenced to auth + SMM endpoints; everything
+    else under /api/v1 returns 403 for that role."""
+    path = request.url.path
+    if path.startswith("/api/v1") and not path.startswith(("/api/v1/auth", "/api/v1/smm")):
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.lower().startswith("bearer "):
+            user = await verify_supabase_token(auth_header[7:].strip())
+            if user is not None and user.role == "mimi":
+                return JSONResponse(
+                    status_code=403,
+                    content={"detail": "This account is scoped to the MiMi Panel only"},
+                )
+    return await call_next(request)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
@@ -90,6 +109,7 @@ app.include_router(research_router, prefix="/api/v1")
 app.include_router(ngram_router, prefix="/api/v1")
 app.include_router(actor_graph_router, prefix="/api/v1")
 app.include_router(smm_router, prefix="/api/v1")
+app.include_router(sims_router, prefix="/api/v1")
 
 
 @app.get("/")

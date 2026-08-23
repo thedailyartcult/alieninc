@@ -6,13 +6,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import httpx
 
 from panteon.core.database import get_db
-from panteon.core.auth import get_current_user
+from panteon.core.auth import require_smm_access
 from panteon.yono.models import LLMProvider
 from panteon.yono.secrets import decrypt_secret
 from panteon.statham.models import SmmLink, SmmOrder
 from sqlalchemy import case, func
 
-router = APIRouter(prefix="/smm", tags=["SMM Panel"], dependencies=[Depends(get_current_user)])
+router = APIRouter(prefix="/smm", tags=["SMM Panel"], dependencies=[Depends(require_smm_access())])
 
 NAIZOP_BASE = "https://naizop.com/api/v2"
 

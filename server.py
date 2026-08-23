@@ -245,6 +245,31 @@ def _get_sb_tokens(token):
         return _sb_sessions['map'].get(token)
 
 
+# Every secure-portal login attempt (success or failure) lands here as an
+# append-only JSONL record: who, when, from where, with what outcome.
+LOGIN_AUDIT_PATH = os.environ.get(
+    'SECURE_LOGIN_AUDIT_FILE',
+    os.path.join(ROOT, 'data', 'compliance', 'login_audit.jsonl'))
+
+
+def _log_login_attempt(email, ok, remote_ip, user_agent):
+    try:
+        d = os.path.dirname(LOGIN_AUDIT_PATH)
+        if d:
+            os.makedirs(d, exist_ok=True)
+        record = {
+            'ts': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+            'email': email,
+            'ip': remote_ip,
+            'user_agent': user_agent,
+            'result': 'success' if ok else 'failure',
+        }
+        with open(LOGIN_AUDIT_PATH, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(record, sort_keys=True) + '\n')
+    except Exception as e:
+        sys.stderr.write('[LOGIN-AUDIT] append failed: %s\n' % e)
+
+
 def _append_selfservice_notification(record):
     """Append a submission notification to the JSONL audit feed (best-effort)."""
     try:
@@ -1008,6 +1033,9 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             self._send_json_error('Email and password required')
             return
         result = verify_secure_credentials(user, password)
+        _log_login_attempt(user, bool(result),
+                           self.client_address[0] if self.client_address else '?',
+                           self.headers.get('User-Agent', ''))
         if result:
             token = _issue_secure_session(user)
             if isinstance(result, dict):
@@ -1277,6 +1305,9 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         user = (form.get('user', [''])[0] or '').strip()
         password = (form.get('password', [''])[0] or '')
         result = verify_secure_credentials(user, password)
+        _log_login_attempt(user, bool(result),
+                           self.client_address[0] if self.client_address else '?',
+                           self.headers.get('User-Agent', ''))
         next_path = _safe_redirect(form.get('next', [''])[0])
         role = _role_from_auth_result(result)
         if next_path:

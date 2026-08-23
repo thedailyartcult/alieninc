@@ -15309,34 +15309,22 @@ function renderFusionRealLayer() {
 })();
 </script>
 
-<style id="tb-styles">
-    #tbSwitch { position: absolute; top: 10px; left: 10px; z-index: 25; display: flex; gap: 6px; }
-    .tb-btn {
-        font-family: var(--font-mono, 'JetBrains Mono', monospace); font-size: 9px; letter-spacing: .09em;
-        text-transform: uppercase; color: #9aa0b8; background: rgba(8, 10, 18, 0.78);
-        border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 3px; padding: 4px 9px;
-        cursor: pointer; backdrop-filter: blur(4px); transition: color .15s, background .15s, border-color .15s;
-    }
-    .tb-btn:hover { color: #e6e8f2; border-color: rgba(255, 255, 255, 0.3); }
-    .tb-btn.tb-active { color: #0a0c14; background: var(--accent-neon, #DFF140); border-color: var(--accent-neon, #DFF140); }
-</style>
-
 <script id="tb-addon">
 // ============================================================================
-// TACTICAL BASEMAP ADD-ON — Maven-style basemap for the Spinal Cracker fusion
-// map ONLY. Pure add-on: zero core lines touched. Repaints the OpenFreeMap
-// dark style (indigo land / light water / violet roads) + terrarium-DEM
-// hillshade + low-zoom NE2 relief, with a TACTICAL/DARK switch persisted to
-// localStorage (sc_basemap_v1). Any runtime map layers (sc-*, gaia-*,
-// sims-*, 3d-buildings) are snapshotted before a style swap and re-added
-// after, so GAIA overlays / tracks / FOV survive basemap changes.
+// TACTICAL BASEMAP ADD-ON v2 — Maven-style basemap for the Spinal Cracker
+// fusion map ONLY. Pure add-on, zero core edits. Control lives in the GAIA
+// panel Layers list (row "Tactical Terrain" via GAIA.registerLayer — no map
+// buttons). Zero network: the pristine dark style is captured from the map
+// itself and repainted in place (indigo land / light water / violet roads +
+// terrarium-DEM hillshade). Runtime layers (sc-*, sims-*, gaia-*,
+// 3d-buildings) survive swaps WITH their exact visibility, so a hidden GAIA
+// satellite overlay can never resurrect as visible.
 // ============================================================================
 (function () {
     'use strict';
     if (typeof maplibregl === 'undefined' || !maplibregl.Map) return;
 
     var LS_KEY = 'sc_basemap_v1';
-    var DARK_URL = 'https://tiles.openfreemap.org/styles/dark';
     var HALO = '#161930';
     var PAINT = {
         'background': { 'background-color': '#262b47' },
@@ -15385,7 +15373,7 @@ function renderFusionRealLayer() {
         'place_country': { 'text-color': '#c9cde2', 'text-halo-color': HALO }
     };
 
-    var state = { choice: readChoice(), fusion: null, cache: null, cacheReady: false };
+    var state = { choice: 'dark', fusion: null, pristine: null };
 
     function readChoice() {
         try { return localStorage.getItem(LS_KEY) === 'tactical' ? 'tactical' : 'dark'; }
@@ -15399,7 +15387,7 @@ function renderFusionRealLayer() {
         return null;
     }
 
-    function tacticalFrom(dark) {
+    function repaint(dark) {
         var st = clone(dark);
         st.layers.forEach(function (l) {
             var o = PAINT[l.id];
@@ -15407,50 +15395,40 @@ function renderFusionRealLayer() {
             if (!l.paint) l.paint = {};
             Object.keys(o).forEach(function (k) { l.paint[k] = o[k]; });
         });
-        var at = 0;
+        var at = st.layers.length;
         for (var i = 0; i < st.layers.length; i++) { if (st.layers[i].id === 'landuse_park') { at = i + 1; break; } }
         st.sources['tb-dem'] = {
             type: 'raster-dem',
             tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
             tileSize: 256, encoding: 'terrarium', maxzoom: 15
         };
-        st.layers.splice(at, 0,
-            {
-                id: 'tb-hillshade', type: 'hillshade', source: 'tb-dem', minzoom: 5,
-                paint: {
-                    'hillshade-exaggeration': 0.4,
-                    'hillshade-shadow-color': '#101327',
-                    'hillshade-highlight-color': '#cdd4ea',
-                    'hillshade-accent-color': '#101327'
-                }
-            },
-            {
-                id: 'tb-relief', type: 'raster', source: 'ne2_shaded',
-                paint: { 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 0, 0.12, 5.5, 0.12, 6.5, 0] }
+        st.layers.splice(at, 0, {
+            id: 'tb-hillshade', type: 'hillshade', source: 'tb-dem', minzoom: 5,
+            paint: {
+                'hillshade-exaggeration': 0.3,
+                'hillshade-shadow-color': '#101327',
+                'hillshade-highlight-color': '#cdd4ea',
+                'hillshade-accent-color': '#101327'
             }
-        );
+        });
         return st;
     }
 
-    function tacticalStyle() {
-        if (state.cache) return Promise.resolve(state.cache);
-        return fetch(DARK_URL).then(function (r) { return r.json(); }).then(function (j) {
-            state.cache = tacticalFrom(j);
-            state.cacheReady = true;
-            return state.cache;
-        });
-    }
-    tacticalStyle().catch(function () {});
-
     function snapshot(m) {
-        var st = null;
-        try { st = m.getStyle(); } catch (e) {}
-        var keep = { sources: {}, layers: [] };
+        var keep = { sources: {}, layers: [] }, st = null;
+        try { st = m.getStyle(); } catch (e) { return keep; }
         if (!st || !st.layers) return keep;
         Object.keys(st.sources || {}).forEach(function (id) {
-            if (isRuntimeId(id)) keep.sources[id] = st.sources[id];
+            if (isRuntimeId(id)) keep.sources[id] = clone(st.sources[id]);
         });
-        st.layers.forEach(function (l) { if (isRuntimeId(l.id)) keep.layers.push(l); });
+        st.layers.forEach(function (l) {
+            if (!isRuntimeId(l.id)) return;
+            var c = clone(l), vis = null;
+            try { vis = m.getLayoutProperty(l.id, 'visibility'); } catch (e) {}
+            if (!c.layout) c.layout = {};
+            c.layout.visibility = vis === 'none' ? 'none' : 'visible';
+            keep.layers.push(c);
+        });
         return keep;
     }
 
@@ -15463,20 +15441,31 @@ function renderFusionRealLayer() {
         try { symId = firstSymbolId(m.getStyle()); } catch (e) {}
         keep.layers.forEach(function (l) {
             if (m.getLayer(l.id)) return;
-            try { m.addLayer(l, l.type === 'raster' ? symId : undefined); } catch (e) {}
+            var vis = (l.layout && l.layout.visibility) || 'visible';
+            try {
+                m.addLayer(l, l.type === 'raster' ? symId : undefined);
+                m.setLayoutProperty(l.id, 'visibility', vis);
+            } catch (e) {}
         });
     }
 
-    function patchSetStyle(inst) {
+    function patchMap(inst) {
         if (inst.__tbPatched) return;
         inst.__tbPatched = true;
         var orig = inst.setStyle.bind(inst);
         inst.setStyle = function (spec, opts) {
             var keep = snapshot(inst);
             var r = orig(spec, opts);
-            inst.once('style.load', function () { reapply(inst, keep); });
+            inst.once('style.load', function () {
+                reapply(inst, keep);
+                try { if (window.GAIA && typeof window.GAIA.applyScope === 'function') window.GAIA.applyScope(); } catch (e) {}
+            });
             return r;
         };
+        inst.once('style.load', function () {
+            try { if (!state.pristine) state.pristine = clone(inst.getStyle()); } catch (e) { return; }
+            if (state.choice === 'tactical') inst.setStyle(repaint(state.pristine));
+        });
     }
 
     function getFusion() {
@@ -15484,24 +15473,44 @@ function renderFusionRealLayer() {
         return state.fusion;
     }
 
+    function currentChoice() {
+        try {
+            if (window.GAIA && typeof window.GAIA.layers === 'function') {
+                var rows = window.GAIA.layers();
+                for (var i = 0; i < rows.length; i++) {
+                    if (rows[i].id === 'tactical-terrain') return rows[i].on ? 'tactical' : 'dark';
+                }
+            }
+        } catch (e) {}
+        return readChoice();
+    }
+
+    function applyChoice(c, persist) {
+        if (c !== 'tactical' && c !== 'dark') return;
+        state.choice = c;
+        if (persist) persistChoice(c);
+        var m = getFusion();
+        if (!m) return;
+        if (c === 'dark') {
+            if (state.pristine) m.setStyle(clone(state.pristine));
+            return;
+        }
+        if (state.pristine) { m.setStyle(repaint(state.pristine)); return; }
+        m.once('style.load', function () {
+            try { if (!state.pristine) state.pristine = clone(m.getStyle()); } catch (e) { return; }
+            if (state.choice === 'tactical') m.setStyle(repaint(state.pristine));
+        });
+    }
+
     var _Map = maplibregl.Map;
     function TBMap(opts) {
         opts = opts || {};
         var isFusion = opts.container === 'fusionMap';
-        var deferSwap = false;
-        if (isFusion && state.choice === 'tactical') {
-            if (state.cacheReady) { opts.style = clone(state.cache); }
-            else { opts.style = DARK_URL; deferSwap = true; }
-        }
         var inst = new _Map(opts);
         if (isFusion) {
             state.fusion = inst;
-            patchSetStyle(inst);
-            if (deferSwap) {
-                tacticalStyle().then(function (st) {
-                    if (state.choice === 'tactical') inst.setStyle(clone(st));
-                }).catch(function () {});
-            }
+            state.choice = currentChoice();
+            patchMap(inst);
         }
         return inst;
     }
@@ -15509,57 +15518,29 @@ function renderFusionRealLayer() {
     Object.setPrototypeOf(TBMap, _Map);
     maplibregl.Map = TBMap;
 
-    function updateUI() {
-        var host = document.getElementById('tbSwitch');
-        if (!host) return;
-        var btns = host.querySelectorAll('.tb-btn');
-        for (var i = 0; i < btns.length; i++) {
-            btns[i].classList.toggle('tb-active', btns[i].getAttribute('data-tb') === state.choice);
+    function registerGaiaRow(attempt) {
+        if (window.GAIA && typeof window.GAIA.registerLayer === 'function') {
+            window.GAIA.registerLayer({
+                id: 'tactical-terrain',
+                label: 'Tactical Terrain',
+                meta: 'Maven-style basemap \u00b7 hillshade',
+                on: function (v) { applyChoice(v ? 'tactical' : 'dark', true); }
+            });
+            return;
         }
-    }
-
-    function setChoice(c) {
-        if (c !== 'tactical' && c !== 'dark') return;
-        state.choice = c;
-        persistChoice(c);
-        updateUI();
-        var m = getFusion();
-        if (!m) return;
-        if (c === 'tactical') {
-            tacticalStyle().then(function (st) {
-                if (state.choice === 'tactical') m.setStyle(clone(st));
-            }).catch(function () {});
-        } else {
-            m.setStyle(DARK_URL);
-        }
-    }
-
-    function ensureUI() {
-        if (document.getElementById('tbSwitch')) return;
-        var host = document.getElementById('fusionMap');
-        if (!host) return;
-        var d = document.createElement('div');
-        d.id = 'tbSwitch';
-        d.innerHTML = '<button type="button" class="tb-btn" data-tb="tactical" title="Maven-style tactical terrain basemap">Tactical</button>' +
-                      '<button type="button" class="tb-btn" data-tb="dark" title="Default dark basemap">Dark</button>';
-        host.appendChild(d);
-        d.addEventListener('click', function (e) {
-            var b = e.target && e.target.closest ? e.target.closest('.tb-btn') : null;
-            if (b) setChoice(b.getAttribute('data-tb'));
-        });
-        updateUI();
+        if (attempt < 20) setTimeout(function () { registerGaiaRow(attempt + 1); }, 500);
     }
 
     window.TB = {
         get: function () { return state.choice; },
-        set: setChoice,
-        style: tacticalStyle
+        set: function (c) { applyChoice(c, true); }
     };
 
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensureUI);
-    else ensureUI();
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { registerGaiaRow(0); });
+    else registerGaiaRow(0);
 })();
 </script>
 
 </body>
+
 </html>

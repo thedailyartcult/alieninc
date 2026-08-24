@@ -49,5 +49,6 @@ async def init_db():
     from panteon.crackerbox.models import Investigation, Finding, Evidence, ThreatEntity, GeoEvent, PatternAlert, TimelineEvent, CountryRiskProfile
     from panteon.contour.models import Dashboard, Chart, PipelineSchedule, PipelineScheduleRun, DataQualityRule, DataQualityViolation, SearchIndex
     from panteon.aip.models import Workflow, WorkflowRun, RagDocument, RagChunk, KnowledgeEntity, KnowledgeRelation, GuardPolicy, GuardEvent, Prompt, PromptVersion, PromptEvaluation
+    from panteon.arsenal_store import ArsCategory, ArsItem, ArsSnapshot, ArsOntologyLink
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

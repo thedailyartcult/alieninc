@@ -216,6 +216,45 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
+        .user-menu-wrap { position: relative; }
+        .user-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 220px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+            display: none;
+            z-index: var(--z-float-panel);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+        }
+        .user-menu.open { display: block; }
+        .user-menu-email {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-muted);
+            padding-bottom: 10px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            word-break: break-all;
+        }
+        .user-menu-signout {
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text);
+            font-family: var(--font-mono);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .user-menu-signout:hover { border-color: var(--accent-neon); color: var(--accent-neon); }
+
         .workspace-shell { display: flex; flex: 1; overflow: hidden; position: relative; }
 
         .sidebar {
@@ -1484,6 +1523,28 @@
         .sc-map-pane .sc-layer-bar { margin-bottom: 0; }
         .sc-map-pane .sc-legend { margin-bottom: 0; }
         .sc-map-pane-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        /* Arsenal Store category glyphs (icons ported from the a-san catalog design) */
+        .ars-cat-strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px; scrollbar-width: thin; }
+        .ars-cat-card { flex: 0 0 auto; display: flex; align-items: center; gap: 7px;
+            padding: 7px 10px; background: rgba(255,255,255,.03);
+            border: 1px solid var(--border-light); border-radius: 6px; cursor: pointer;
+            transition: border-color .15s ease, background .15s ease; }
+        .ars-cat-card:hover { background: rgba(223,241,64,.06); border-color: var(--accent-neon); }
+        .ars-cat-card.active { border-color: var(--accent-neon); background: rgba(223,241,64,.08); }
+        .ars-cat-card img { width: 26px; height: 26px; object-fit: contain; }
+        .ars-cat-glyph { width: 26px; height: 26px; color: var(--accent-neon); }
+        .ars-cat-name { font-family: var(--font-tech); font-size: 10px; letter-spacing: .04em;
+            text-transform: uppercase; color: var(--text-light); white-space: nowrap; }
+        .ars-cat-count { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); white-space: nowrap; }
+        .ars-item-icon { width: 18px; height: 18px; object-fit: contain; vertical-align: -4px; margin-right: 6px; }
+        /* MAVEN theater mode — fullscreen common operating picture */
+        body.maven-theater { overflow: hidden; }
+        body.maven-theater #fusionMapPane {
+            position: fixed; inset: 0; z-index: 9999;
+            border-radius: 0; border: none; padding: 10px 14px 14px;
+            background-color: var(--bg-card);
+        }
+        body.maven-theater .sc-map-canvas-wrap { height: auto; flex: 1; min-height: 0; }
         .sc-map-pane-title {
             display: flex; align-items: center; gap: 8px;
             font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.14em;
@@ -1496,7 +1557,7 @@
         }
         @keyframes sc-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         .sc-map-canvas-wrap {
-            position: relative; height: clamp(340px, 55vh, 560px);
+            position: relative; height: clamp(420px, 72vh, 880px);
             border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden;
         }
 
@@ -1732,9 +1793,15 @@
                 <span class="status-dot" id="apiStatusDot"></span>
                 <span id="apiStatusText">Connecting...</span>
             </div>
-            <div class="user-badge" id="userBadge" onclick="doLogout()" title="Click to sign out">
-                <div class="user-avatar" id="userAvatar">A</div>
-                <span id="userName">Admin</span>
+            <div class="user-menu-wrap" id="userMenuWrap">
+                <div class="user-badge" id="userBadge" title="Account">
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <span id="userName">Admin</span>
+                </div>
+                <div class="user-menu" id="userMenu">
+                    <div class="user-menu-email" id="userMenuEmail">&mdash;</div>
+                    <button class="user-menu-signout" id="userSignOutBtn" type="button">Sign out</button>
+                </div>
             </div>
         </div>
     </header>
@@ -2227,6 +2294,7 @@
                               <div class="sc-scope-row">
                                   <span class="sc-scope-step">Where</span>
                                   <button class="sc-scope-btn" data-scope-region="Worldwide" onclick="scSelectRegion(this)">Worldwide</button>
+                                  <button class="sc-scope-btn" data-scope-region="Baltic" onclick="scSelectRegion(this)">Baltic</button>
                                   <button class="sc-scope-btn" data-scope-region="Eastern Europe" onclick="scSelectRegion(this)">Eastern Europe</button>
                                   <button class="sc-scope-btn" data-scope-region="Middle East" onclick="scSelectRegion(this)">Middle East</button>
                                   <button class="sc-scope-btn" data-scope-region="East Asia" onclick="scSelectRegion(this)">East Asia</button>
@@ -2365,8 +2433,10 @@
                                       <span class="sc-map-pane-title"><span class="sc-live-dot"></span>Unified map</span>
                                       <span style="display:flex;gap:6px">
                                           <button class="retro-map-btn" id="wonToggleBtn" onclick="WONote.toggle()" title="Watch Officer Notepad (Ctrl+Shift+N)">Watch Notes</button>
-                                          <button class="retro-map-btn" id="gaiaToggleBtn" onclick="window.GAIA&amp;&amp;GAIA.toggle()" title="GAIA Geo Controller (Ctrl+Shift+G)">GAIA</button>
-                                          <button class="retro-map-btn" id="fusionFullViewBtn" onclick="fusionToggleFullView()">&#8672; Full view</button>
+                                           <button class="retro-map-btn" id="gaiaToggleBtn" onclick="window.GAIA&amp;&amp;GAIA.toggle()" title="GAIA Geo Controller (Ctrl+Shift+G)">GAIA</button>
+                                           <button class="retro-map-btn" id="fusionFullViewBtn" onclick="fusionToggleFullView()">&#8672; Full view</button>
+                                           <button class="retro-map-btn" id="fusionTheaterBtn" onclick="fusionToggleTheater()" title="Fullscreen common operating picture (Esc exits)">&#11041; Theater</button>
+                                           <button type="button" class="retro-map-btn" id="mavenToggleBtn" disabled title="MAVEN Smart Layer — maneuver tasking">&#9670; MAVEN</button>
                                       </span>
                                   </div>
                                   <div class="sc-layer-bar">
@@ -2386,8 +2456,35 @@
                                       <span class="fusion-live-badge fusion-live-stale" id="fusionLiveBadge"><span class="fusion-live-dot"></span><span id="fusionLiveText">LIVE · waiting</span></span>
                                   </div>
                                   <div class="sc-map-canvas-wrap">
-                                      <div class="retro-map-canvas" id="fusionMap"></div>
-                                      <div id="fusionMapHud" class="sc-map-hud">Select a region and theme to begin.</div>
+                                       <div class="retro-map-canvas" id="fusionMap"></div>
+                                       <div id="fusionMapHud" class="sc-map-hud">Select a region and theme to begin.</div>
+                                       <div id="mavenHudBadge" class="maven-badge maven-hidden">MAVEN 0T · 0A · 0D</div>
+                                       <div id="mavenAoiHint" class="maven-aoi-hint maven-hidden">CLICK MAP TO SET AOI CENTER &middot; ESC CANCELS</div>
+                                       <div id="mavenDrawer" class="maven-drawer maven-hidden">
+                                           <div class="maven-head">
+                                               <span class="maven-title">MAVEN SMART LAYER</span>
+                                               <span class="maven-live" id="mavenLiveTag">sc_ontology native</span>
+                                           </div>
+                                           <div class="maven-tabs">
+                                               <button data-mtab="tasks" class="active">TASKS</button>
+                                               <button data-mtab="assets">ASSETS</button>
+                                               <button data-mtab="coa">COA</button>
+                                               <button data-mtab="queue">QUEUE</button>
+                                           </div>
+                                           <div class="maven-body">
+                                               <section data-mpanel="tasks">
+                                                   <button class="maven-btn" id="mavenNewTaskBtn">+ NEW TASK (CLICK MAP)</button>
+                                                   <div id="mavenTaskList"></div>
+                                               </section>
+                                               <section data-mpanel="assets" class="maven-hide"><div id="mavenAssetList"></div></section>
+                                               <section data-mpanel="coa" class="maven-hide">
+                                                   <button class="maven-btn" id="mavenCoaBtn">GENERATE COAs</button>
+                                                   <div id="mavenCoaList"></div>
+                                               </section>
+                                               <section data-mpanel="queue" class="maven-hide"><div id="mavenQueueList"></div></section>
+                                           </div>
+                                           <div id="mavenDetRail"></div>
+                                       </div>
                                       <div id="fusionScopeEmpty" class="sc-scope-empty">Select a WHERE and WHAT to scope your investigation.<br>The map, KPIs, and tables will populate after a scoped run.</div>
                                       <div id="fusionMilPanel" class="sc-mil-panel sc-mil-hidden">
                                           <button type="button" class="sc-mil-head" onclick="fusionMilToggle()" aria-expanded="true">
@@ -2481,6 +2578,23 @@
                                   if (typeof fusionMap !== 'undefined' && fusionMap) { try { fusionMap.resize(); } catch (e) {} }
                               }, 380);
                           }
+                          // MAVEN theater mode — fullscreen COP; Esc exits
+                          function fusionToggleTheater(force) {
+                              var on = typeof force === 'boolean' ? force : !document.body.classList.contains('maven-theater');
+                              document.body.classList.toggle('maven-theater', on);
+                              var btn = document.getElementById('fusionTheaterBtn');
+                              if (btn) btn.innerHTML = on ? '&#8679; Exit theater' : '&#11041; Theater';
+                              setTimeout(function () {
+                                  if (typeof fusionMap !== 'undefined' && fusionMap) { try { fusionMap.resize(); } catch (e) {} }
+                                  if (on && typeof fitFusionBounds === 'function') fitFusionBounds();
+                              }, 380);
+                          }
+                          document.addEventListener('keydown', function (e) {
+                              if (e.key === 'Escape' && document.body.classList.contains('maven-theater')) {
+                                  if (window.MAVEN && window.MAVEN.isAoiMode && window.MAVEN.isAoiMode()) return;
+                                  fusionToggleTheater(false);
+                              }
+                          });
                           </script>
 
                           <script>
@@ -2943,6 +3057,24 @@
                               <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Pulls official World Bank statistics (population · armed forces personnel · military expenditure) + capital coordinates for every theater party nation, then links each to its theaters. Assessments translate casualty percentages into estimated absolute soldier losses using these baselines.</p>
                               <div id="simsRealStatus" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);min-height:14px;margin-bottom:8px">Not ingested yet this session.</div>
                               <div id="simsRealPanel"><div class="empty-state">No real-world data loaded — hit INGEST WORLD BANK.</div></div>
+                          </div>
+
+                              <!-- Arsenal browser — a-san catalog (structured store) -->
+                              <div class="card" style="margin-bottom:16px">
+                                  <div class="card-header">
+                                      <span class="card-title">Arsenal Browser — a-san catalog</span>
+                                      <span id="arsenalTotals" style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)"></span>
+                                  </div>
+                                  <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Structured catalog store (a-san one-way import). Category glyphs ported from the A-SAN design. Catalog reference data only — real-time numbers come from the live connectors (OpenSky, GDELT).</p>
+                                  <div id="arsenalCatStrip" class="ars-cat-strip"><div class="empty-state" style="width:100%">Loading category glyphs…</div></div>
+                                  <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+                                      <input type="text" id="arsenalQ" placeholder="Search systems…" style="flex:2;min-width:180px;padding:8px 12px;font-size:12px" onkeydown="if(event.key==='Enter')arsenalSearch(0)">
+                                      <select id="arsenalCountry" style="flex:1;min-width:130px;padding:8px;font-size:12px"><option value="">All nations</option></select>
+                                      <select id="arsenalCategory" style="flex:1;min-width:160px;padding:8px;font-size:12px"><option value="">All categories</option></select>
+                                      <button class="btn btn-primary btn-sm" onclick="arsenalSearch(0)">SEARCH</button>
+                                  </div>
+                              <div id="arsenalStatus" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);min-height:14px;margin-bottom:6px"></div>
+                              <div id="arsenalPanel"><div class="empty-state">Search the catalog above.</div></div>
                           </div>
 
                           <!-- Real-world coupling: threat → theater matcher -->
@@ -4095,17 +4227,79 @@ const PAGES = {
     'cmb-analytics': 'CMB Analytics'
 };
 
-async function doLogout() {
-    await supabaseClient.auth.signOut();
+// ---- Auth resilience ----------------------------------------------------
+// Cross-tab channel: hard sign-out in one tab ends the others cleanly
+// instead of letting them race on a revoked session.
+const AUTH_CHANNEL = ('BroadcastChannel' in window) ? new BroadcastChannel('panteon-auth') : null;
+function broadcastAuth(msg) { try { if (AUTH_CHANNEL) AUTH_CHANNEL.postMessage(msg); } catch (_) {} }
+
+function clearLocalSession() {
     authToken = null;
     currentUser = null;
-    localStorage.removeItem('hs_session');
+    try {
+        localStorage.removeItem('hs_session');
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith('sb-') && k.indexOf('-auth-token') !== -1) localStorage.removeItem(k);
+        }
+    } catch (_) {}
+}
+
+async function doLogout(opts = {}) {
+    const hard = opts.hard !== false; // user-initiated default
+    try { if (hard) await supabaseClient.auth.signOut(); } catch (_) {}
+    clearLocalSession();
     if (refreshInterval) clearInterval(refreshInterval);
+    if (hard) broadcastAuth({ type: 'signed-out' });
     window.location.href = '/login.html';
 }
 
+// Auto-logout: session looks dead from THIS tab's view. Clean local state
+// only — never a global signOut(), which used to nuke sibling tabs that
+// still held valid tokens.
+let autoLogoutAt = 0;
+function autoLogout(reason) {
+    console.warn('[auth] auto-logout:', reason);
+    const now = Date.now();
+    if (now - autoLogoutAt < 2000) return;
+    autoLogoutAt = now;
+    doLogout({ hard: false });
+}
+
+if (AUTH_CHANNEL) AUTH_CHANNEL.onmessage = (ev) => {
+    const m = ev.data || {};
+    if (m.type === 'signed-out') {
+        try { clearLocalSession(); } catch (_) {}
+        if (refreshInterval) clearInterval(refreshInterval);
+        window.location.href = '/login.html';
+    }
+};
+
+// Single-flight refresh: a burst of parallel 401s must rotate the session
+// ONCE, not stampede Supabase with N concurrent refresh-token grants
+// (concurrent reuse of one refresh token can get the family revoked).
+let refreshInFlight = null;
+async function refreshAccessToken() {
+    if (!refreshInFlight) {
+        const p = (async () => {
+            try {
+                const { data } = await supabaseClient.auth.refreshSession();
+                return (data && data.session && data.session.access_token) ? data.session.access_token : null;
+            } catch (_) {
+                return null;
+            }
+        })();
+        refreshInFlight = p;
+        // Share only while PENDING: once settled, the next 401 must be able
+        // to start a genuinely fresh rotation instead of reusing a stale one.
+        p.then(() => { if (refreshInFlight === p) refreshInFlight = null; },
+               () => { if (refreshInFlight === p) refreshInFlight = null; });
+    }
+    return refreshInFlight;
+}
+
 async function api(path, opts = {}) {
-    const url = API_BASE + path;
+    const url = API_BASE.replace(/\/+$/, '') + '/' + String(path).replace(/^\/+/, '');
     const headers = { 'Content-Type': 'application/json', ...opts.headers };
     if (!authToken) {
         const { data } = await supabaseClient.auth.getSession();
@@ -4116,8 +4310,25 @@ async function api(path, opts = {}) {
     const timeoutMs = opts.timeout || 15000;
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-        const res = await fetch(url, { headers, ...opts, signal: controller.signal });
-        if (res.status === 401) { doLogout(); throw new Error('Session expired'); }
+        let res = await fetch(url, { headers, ...opts, signal: controller.signal });
+        if (res.status === 401) {
+            // Self-heal: rotate once via the shared lock and retry. Only a
+            // retry that is ALSO 401 (or a failed rotation) may end the
+            // session — timeouts, 5xx and network blips must not log the
+            // user out of an otherwise valid session.
+            const tok = await refreshAccessToken();
+            if (tok) {
+                authToken = tok;
+                headers['Authorization'] = 'Bearer ' + tok;
+                res = await fetch(url, { headers, ...opts, signal: controller.signal });
+                if (res.status !== 401) {
+                    if (!res.ok) { const err = await res.json().catch(() => ({ detail: res.statusText })); throw new Error(err.detail || 'HTTP ' + res.status); }
+                    return await res.json();
+                }
+            }
+            autoLogout('401 after refresh on ' + path);
+            throw new Error('Session expired');
+        }
         if (!res.ok) { const err = await res.json().catch(() => ({ detail: res.statusText })); throw new Error(err.detail || 'HTTP ' + res.status); }
         return await res.json();
     } catch (e) {
@@ -6340,6 +6551,9 @@ let fusionThreatEvents = [];
 let fusionFlights = [];
 let fusionLayers = { threats: true, aviation: true, '3d': true };
 let fusion3dAdded = false;
+// Cross-block consumers (GAIA integrations, MAVEN) read these via window.*;
+// top-level `let` bindings are NOT window properties, so mirror them here.
+window.fusionFlights = fusionFlights;
 
 function initFusionMap() {
     if (fusionMapInitialized) { if (fusionMap) fusionMap.resize(); return fusionMap; }
@@ -6355,6 +6569,7 @@ function initFusionMap() {
         attributionControl: { compact: true },
         canvasContextAttributes: { antialias: true },
     });
+    window.fusionMap = fusionMap;
     fusionMap.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
     fusionMap.on('style.load', () => {
         if (!fusionMap || fusionMap.getLayer('3d-buildings')) return;
@@ -7147,6 +7362,7 @@ async function fusionRefreshFlights() {
             });
         }
         fusionFlights = flights;
+        window.fusionFlights = fusionFlights;
         updateFusionKpis();
         renderFusionAviationLayer();
         // Keep lock-on through authoritative refreshes too.
@@ -7340,6 +7556,7 @@ function updateFusionKpis() {
 // ============================================================================
 const SC_REGION_BBOXES = {
     'Worldwide': null,
+    'Baltic': { lamin: 53.5, lomin: 15.5, lamax: 66.2, lomax: 30.5, countries: ['Denmark','Germany','Poland','Lithuania','Latvia','Estonia','Finland','Sweden','Norway','Russia'] },
     'Eastern Europe': { lamin: 44.0, lomin: 20.0, lamax: 60.0, lomax: 42.0, countries: ['Russia','Ukraine','Belarus','Poland','Romania','Bulgaria','Hungary','Moldova','Czech Republic','Czechia','Slovakia','Georgia','Armenia','Azerbaijan'] },
     'Middle East': { lamin: 12.0, lomin: 25.0, lamax: 42.0, lomax: 65.0, countries: ['Turkey','Turkiye','Iran','Iraq','Israel','Saudi Arabia','Pakistan','Afghanistan','Syria','Lebanon','Jordan','Yemen','United Arab Emirates','Qatar','Kuwait','Oman'] },
     'East Asia': { lamin: 15.0, lomin: 95.0, lamax: 55.0, lomax: 145.0, countries: ['China','Japan','South Korea','North Korea','Taiwan','Philippines','Vietnam','Thailand','Myanmar','Cambodia','Laos','Malaysia'] },
@@ -7349,6 +7566,8 @@ const SC_REGION_BBOXES = {
 // Sub-national conflict-zone bboxes (region drill-downs). `regions` limits
 // which parent scopes list a zone; empty = listed under every scope.
 const SC_CONFLICT_ZONES = {
+    'Baltic — Guardian AOI (Exercise)': { lamin: 55.5, lomin: 17.0, lamax: 60.5, lomax: 24.5, regions: ['Baltic'] },
+    'Baltic — Gulf of Finland':     { lamin: 59.2, lomin: 21.5, lamax: 60.6, lomax: 30.3, regions: ['Baltic'] },
     'Ukraine — East (Donbas)':      { lamin: 46.5, lomin: 34.0, lamax: 52.5, lomax: 40.5, regions: ['Eastern Europe'] },
     'Ukraine — West / Kyiv':        { lamin: 48.0, lomin: 22.0, lamax: 52.8, lomax: 34.5, regions: ['Eastern Europe'] },
     'Russia — Border Belts':        { lamin: 49.5, lomin: 33.0, lamax: 56.5, lomax: 44.0, regions: ['Eastern Europe'] },
@@ -7564,6 +7783,8 @@ async function preloadFusionData() {
     }
     fusionThreatEvents = events;
     fusionFlights = flights;
+    window.fusionThreatEvents = fusionThreatEvents;
+    window.fusionFlights = fusionFlights;
     updateFusionKpis();
     refreshFusionRateMeter();
     refreshFusionBqStatus();
@@ -8326,33 +8547,49 @@ async function findLeveragePoints() {
     } catch (e) { document.getElementById('leverageResults').innerHTML = '<div class="empty-state">Error: ' + e.message + '</div>'; }
 }
 
-async function restoreSession() {
-    try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (session) return session;
-    } catch (e) {
-        console.warn('getSession failed, trying localStorage fallback', e);
-    }
-    const raw = localStorage.getItem('hs_session');
-    if (raw) {
-        try {
-            const stored = JSON.parse(raw);
-            if (stored.access_token && stored.refresh_token) {
-                const { data, error } = await supabaseClient.auth.setSession({ access_token: stored.access_token, refresh_token: stored.refresh_token });
-                if (!error && data.session) return data.session;
-            }
-        } catch (e) {
-            console.warn('setSession from localStorage failed', e);
+        function sessionIsFresh(s) {
+            if (!s || !s.expires_at) return false;
+            return Date.now() < (s.expires_at * 1000) - 30000; // 30s skew margin
         }
-    }
-    return null;
-}
+
+        async function restoreSession() {
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session) {
+                    if (sessionIsFresh(session)) return session;
+                    // A stored-but-stale session must never be handed to the
+                    // API layer: it 401s everywhere and doLogout() bounces the
+                    // user to login even though fresh tokens sit in
+                    // hs_session. Rotate it; if that fails, fall through.
+                    try {
+                        const { data: ref } = await supabaseClient.auth.refreshSession();
+                        if (ref && ref.session && sessionIsFresh(ref.session)) return ref.session;
+                    } catch (e) {}
+                }
+            } catch (e) {
+                console.warn('getSession failed, trying localStorage fallback', e);
+            }
+            const raw = localStorage.getItem('hs_session');
+            if (raw) {
+                try {
+                    const stored = JSON.parse(raw);
+                    if (stored.access_token && stored.refresh_token) {
+                        const { data, error } = await supabaseClient.auth.setSession({ access_token: stored.access_token, refresh_token: stored.refresh_token });
+                        if (!error && data.session && sessionIsFresh(data.session)) return data.session;
+                    }
+                } catch (e) {
+                    console.warn('setSession from localStorage failed', e);
+                }
+            }
+            return null;
+        }
 
 function init() {
     checkHealth();
     updateCountdown();
     setInterval(updateCountdown, 1000);
     refreshInterval = setInterval(() => {
+        if (document.hidden) return; // background tab: don't race the visible one
         checkHealth();
         const currentHash = window.location.hash.slice(1) || 'overview';
         if (currentHash === 'overview') loadOverview();
@@ -8438,6 +8675,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.addEventListener('hashchange', () => {
         const hash = window.location.hash.slice(1);
         if (hash && PAGES[hash]) navigate(hash);
+    });
+
+    // User badge menu — stray clicks on your own name must never log you out
+    const userMenu = document.getElementById('userMenu');
+    document.getElementById('userBadge').addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.getElementById('userMenuEmail').textContent = (currentUser && currentUser.email) || 'Signed in';
+        userMenu.classList.toggle('open');
+    });
+    document.getElementById('userSignOutBtn').addEventListener('click', () => {
+        userMenu.classList.remove('open');
+        doLogout();
+    });
+    document.addEventListener('click', (e) => {
+        const wrap = document.getElementById('userMenuWrap');
+        if (userMenu.classList.contains('open') && wrap && !wrap.contains(e.target)) userMenu.classList.remove('open');
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') userMenu.classList.remove('open'); });
+
+    // Zombie-tab guard: a hidden tab must not churn tokens or fire fan-outs
+    // that race the visible tab's refresh rotation.
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && authToken) checkHealth();
     });
 
     // Sidebar toggle: mobile = drawer, desktop = rail/full switch
@@ -10626,6 +10886,28 @@ function initSimsWarRoom() {
     registerSimsGaiaLayers();
 }
 
+async function simsProbe(path) {
+    const out = { url: API_BASE.replace(/\/+$/, '') + '/' + String(path).replace(/^\/+/, ''), host: location.host };
+    try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (!authToken) {
+            const { data } = await supabaseClient.auth.getSession();
+            if (data.session) authToken = data.session.access_token;
+        }
+        if (authToken) headers['Authorization'] = 'Bearer ' +
+            authToken.slice(0, 10) + '...(' + authToken.length + ' chars)';
+        else out.token = 'NONE';
+        const res = await fetch(out.url, { headers, cache: 'no-store' });
+        out.status = res.status;
+        out.headers = {};
+        res.headers.forEach((v, k) => {
+            if (/^(cf-|server|content-type|cache-control|age$)/i.test(k)) out.headers[k] = v;
+        });
+        out.body = (await res.text()).slice(0, 250);
+    } catch (e) { out.fetchError = String(e); }
+    return out;
+}
+
 async function simsGatewayHealth() {
     const tag = document.getElementById('simsGatewayTag');
     try {
@@ -10634,8 +10916,19 @@ async function simsGatewayHealth() {
         else { tag.textContent = 'GATEWAY: DEGRADED'; tag.className = 'tag tag-blue'; }
     } catch (e) {
         tag.textContent = 'GATEWAY: OFFLINE'; tag.className = 'tag';
+        tag.title = e.message + ' @ ' + location.host;
         const st = document.getElementById('simsRunStatus');
-        if (st) st.textContent = 'Sims gateway unreachable: ' + e.message;
+        if (st) st.textContent = 'Sims gateway unreachable: ' + e.message + ' — running probe…';
+        simsProbe('sims/health').then(probe => {
+            let box = document.getElementById('simsDiagBox');
+            if (!box && st && st.parentElement) {
+                box = document.createElement('pre');
+                box.id = 'simsDiagBox';
+                box.style.cssText = 'font-family:var(--font-mono);font-size:9px;color:var(--accent-cyan);background:rgba(0,0,0,.4);border:1px solid var(--border-color);border-radius:4px;padding:6px;margin-top:6px;white-space:pre-wrap;word-break:break-all';
+                st.parentElement.appendChild(box);
+            }
+            if (box) box.textContent = '[edge probe] ' + JSON.stringify(probe, null, 1);
+        });
     }
 }
 
@@ -11220,6 +11513,8 @@ async function loadSimsReal() {
         SIMS.real = r;
         renderRealPanel();
         renderFusionRealLayer();
+        arsenalEnsureOptions();
+        loadArsenalCategories();
     } catch (e) { /* silent */ }
 }
 
@@ -11257,15 +11552,191 @@ function renderRealPanel() {
     if (!countries.length) { panel.innerHTML = '<div class="empty-state">No real-world data loaded — hit INGEST WORLD BANK.</div>'; return; }
     panel.innerHTML =
         '<div class="table-wrap" style="max-height:240px;overflow:auto"><table>' +
-        '<thead><tr><th>Nation</th><th>Population</th><th>Active Troops</th><th>Mil. Budget</th><th>Parties To</th></tr></thead><tbody>' +
+        '<thead><tr><th>Nation</th><th>Population</th><th>Active Troops</th><th>Mil. Budget</th><th>Equipment</th><th>Parties To</th></tr></thead><tbody>' +
         countries.map(c =>
             `<tr><td style="color:var(--text)">${simsEsc(c.name || c.iso3)}<span style="color:var(--text-dim);font-size:8px"> ${simsEsc(c.iso3 || '')}</span></td>` +
             `<td>${simsFmtNum(c.population)}${c.population_year ? ` <span style="color:var(--text-dim);font-size:8px">'${String(c.population_year).slice(2)}</span>` : ''}</td>` +
             `<td style="color:${c.armed_forces_personnel ? 'var(--accent-cyan)' : 'var(--text-dim)'}">${simsFmtNum(c.armed_forces_personnel)}</td>` +
             `<td>${c.military_expenditure_usd ? '$' + simsFmtNum(c.military_expenditure_usd) : '--'}</td>` +
+            `<td id="arsCnt_${simsEsc(c.iso3 || 'NA')}" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">…</td>` +
             `<td style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">${simsEsc((c.parties_to || []).join(', ') || '--')}</td></tr>`
-        ).join('') +
+        ).join(' ') +
         '</tbody></table></div>';
+    loadArsenalCounts(countries);
+}
+
+async function loadArsenalCounts(countries) {
+    const results = await Promise.allSettled(
+        countries.filter(c => c.name).map(c =>
+            api('sims/ontology/arsenal/counts?country=' + encodeURIComponent(c.name))));
+    results.forEach((r, i) => {
+        const c = countries.filter(x => x.name)[i];
+        const cell = document.getElementById('arsCnt_' + simsEsc(c.iso3 || 'NA'));
+        if (!cell) return;
+        let val = '--';
+        if (r.status === 'fulfilled' && r.value && r.value.available) {
+            val = String(r.value.total ?? 0);
+            c.__equipment_total = r.value.total ?? 0;
+            c.__equipment_counts = r.value.counts || {};
+        }
+        cell.textContent = val;
+    });
+}
+
+// ------------------------ arsenal browser (a-san live) ----------------------
+let _arsenalOffset = 0;
+const ARSENAL_CATS_FALLBACK = ['aircraft', 'uavs', 'air-launched-munitions',
+    'rocket-and-missile-weapons', 'sea-launched-cruise-missiles', 'ew-assets',
+    'ugvs', 'armored-vehicles-and-equipment', 'automotive-vehicles',
+    'small-arms', 'naval-vessels'];
+
+function arsenalCatLabel(k) {
+    return String(k).replace(/-/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase());
+}
+
+const ARSENAL_GLYPH_FALLBACK =
+    '<svg class="ars-cat-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">' +
+    '<circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/><circle cx="12" cy="12" r="2.5"/></svg>';
+
+function arsIconFor(key, cls) {
+    const p = (SIMS.arsCatIcons || {})[key];
+    if (!p) return ARSENAL_GLYPH_FALLBACK;
+    return `<img class="${cls || 'ars-item-icon'}" src="${simsEsc(p)}" alt="" loading="lazy">`;
+}
+
+async function loadArsenalCategories() {
+    try {
+        const r = await api('arsenal/categories');
+        if (r.error) throw new Error(r.error);
+        SIMS.arsCatIcons = {};
+        (r.categories || []).forEach(c => { SIMS.arsCatIcons[c.key] = c.icon_path; });
+        const sel = document.getElementById('arsenalCategory');
+        if (sel && sel.options.length <= 1 && r.categories.length) {
+            sel.innerHTML = '<option value="">All categories</option>';
+            r.categories.forEach(c => {
+                const o = document.createElement('option');
+                o.value = c.key; o.textContent = c.display_name;
+                sel.appendChild(o);
+            });
+        }
+        const strip = document.getElementById('arsenalCatStrip');
+        if (!strip) return;
+        strip.innerHTML = (r.categories || []).map(c =>
+            `<div class="ars-cat-card${((document.getElementById('arsenalCategory') || {}).value === c.key) ? ' active' : ''}" onclick="arsenalPickCategory('${simsEsc(c.key)}')" title="${simsEsc(c.display_name)} — ${c.count.toLocaleString()} systems">` +
+            arsIconFor(c.key, '') +
+            `<span class="ars-cat-name">${simsEsc(c.display_name)}</span>` +
+            `<span class="ars-cat-count">${c.count.toLocaleString()}</span></div>`
+        ).join('') +
+        `<div style="flex:0 0 auto;display:flex;align-items:center;padding-left:6px"><span class="ars-cat-count">${(r.total_active ?? 0).toLocaleString()} total</span></div>`;
+    } catch (e) {
+        const strip = document.getElementById('arsenalCatStrip');
+        if (strip) strip.innerHTML = '<div class="empty-state" style="width:100%">Category glyphs unavailable: ' + simsEsc(e.message) + '</div>';
+    }
+}
+
+function arsenalPickCategory(key) {
+    const sel = document.getElementById('arsenalCategory');
+    if (!sel) return;
+    sel.value = (sel.value === key) ? '' : key;
+    loadArsenalCategories();
+    arsenalSearch(0);
+}
+
+function arsenalEnsureOptions() {
+    const catSel = document.getElementById('arsenalCategory');
+    if (catSel && catSel.options.length <= 1) {
+        const cats = (SIMS.arsenalCats && SIMS.arsenalCats.length) ? SIMS.arsenalCats : ARSENAL_CATS_FALLBACK;
+        cats.forEach(k => {
+            const o = document.createElement('option');
+            o.value = k; o.textContent = arsenalCatLabel(k);
+            catSel.appendChild(o);
+        });
+    }
+    const cSel = document.getElementById('arsenalCountry');
+    if (cSel && cSel.options.length <= 1) {
+        (((SIMS.real || {}).countries) || []).filter(c => c.name).forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.name; o.textContent = `${c.name} (${c.__equipment_total ?? '…'})`;
+            cSel.appendChild(o);
+        });
+    }
+}
+
+async function arsenalSearch(offset) {
+    const q = (document.getElementById('arsenalQ') || {}).value || '';
+    const country = (document.getElementById('arsenalCountry') || {}).value || '';
+    const category = (document.getElementById('arsenalCategory') || {}).value || '';
+    const st = document.getElementById('arsenalStatus');
+    const panel = document.getElementById('arsenalPanel');
+    if (!panel) return;
+    _arsenalOffset = Math.max(0, offset);
+    const limit = 25;
+    const params = new URLSearchParams({ limit: String(limit), offset: String(_arsenalOffset) });
+    if (q.trim()) params.set('q', q.trim());
+    if (country) params.set('country', country);
+    if (category) params.set('category', category);
+    const reqUrl = 'sims/ontology/arsenal?' + params.toString();
+    st.textContent = 'Querying catalog…';
+    try {
+        const r = await api(reqUrl);
+        if (r.error) throw new Error(r.error);
+        if (!r.available) throw new Error(r.error || 'catalog unavailable');
+        if (Array.isArray(r.categories) && r.categories.length &&
+            (!SIMS.arsenalCats || !SIMS.arsenalCats.length)) {
+            SIMS.arsenalCats = r.categories;
+            const sel = document.getElementById('arsenalCategory');
+            if (sel && sel.options.length <= 1) {
+                sel.innerHTML = '<option value="">All categories</option>';
+                r.categories.forEach(k => {
+                    const o = document.createElement('option');
+                    o.value = k; o.textContent = arsenalCatLabel(k);
+                    sel.appendChild(o);
+                });
+            }
+        }
+        document.getElementById('arsenalTotals').textContent =
+            `${(r.catalog_totals?.entries ?? 0).toLocaleString()} entries · ${r.catalog_totals?.categories ?? 0} categories`;
+        st.textContent = `${r.total_matched_estimate} match(es)` +
+            (r.total_matched_estimate > _arsenalOffset + limit
+                ? ` — showing ${_arsenalOffset + 1}–${_arsenalOffset + r.entries.length}` : '');
+        if (!r.entries.length) {
+            panel.innerHTML = '<div class="empty-state">No systems matched.</div>';
+            return;
+        }
+        panel.innerHTML =
+            '<div class="table-wrap" style="max-height:420px;overflow:auto"><table>' +
+            '<thead><tr><th>Designation</th><th>Nation</th><th>Manufacturer</th><th>Specs / Description</th><th>Sources</th></tr></thead><tbody>' +
+            r.entries.map(e =>
+                `<tr><td style="color:var(--text);max-width:220px"><div>${arsIconFor(e.category || '')}${simsEsc(e.designation || '')}</div>` +
+                (e.alt_names && e.alt_names.length
+                    ? `<div style="color:var(--text-dim);font-size:9px">aka ${simsEsc(e.alt_names.slice(0, 3).join(', '))}</div>` : '') +
+                `<div style="font-family:var(--font-mono);font-size:8px;color:var(--accent-purple);margin-top:2px">${simsEsc(arsenalCatLabel(e.category || ''))}${e.fetched_at ? ' · ' + simsEsc(String(e.fetched_at).slice(0, 10)) : ''}</div></td>` +
+                `<td style="font-size:11px">${simsEsc(e.country || '--')}</td>` +
+                `<td style="font-size:11px;color:var(--text-muted)">${simsEsc(e.manufacturer || '--')}</td>` +
+                `<td style="max-width:340px;font-size:10px;color:var(--text-dim)">` +
+                (Object.keys(e.specs_parsed || {}).length
+                    ? '<div style="font-family:var(--font-mono);font-size:9px">' + Object.entries(e.specs_parsed).slice(0, 5).map(([k, v]) => `${simsEsc(k.replace(/_/g, ' '))}: <span style="color:var(--text)">${simsEsc(String(v))}</span>`).join('<br>') + '</div>' : '') +
+                (e.description ? `<div style="margin-top:2px">${simsEsc(String(e.description).slice(0, 160))}${String(e.description).length > 160 ? '…' : ''}</div>` : '') +
+                ((e.specs_extra && e.specs_extra.length)
+                    ? `<div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);margin-top:2px">+ ${simsEsc(e.specs_extra.slice(0, 3).join(' · '))}</div>` : '') +
+                '</td>' +
+                `<td style="max-width:140px;font-family:var(--font-mono);font-size:9px">` +
+                ((e.sources || []).length
+                    ? e.sources.slice(0, 2).map(s => s.url
+                        ? `<a href="${simsEsc(s.url)}" target="_blank" rel="noopener" style="color:var(--accent-cyan)">${simsEsc(s.label || s.url)}</a>`
+                        : simsEsc(s.label || '')).join('<br>') + ((e.sources.length > 2) ? `<br>+${e.sources.length - 2} more` : '')
+                    : '--') +
+                '</td></tr>'
+            ).join(' ') +
+            '</tbody></table></div>' +
+            '<div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end">' +
+            `<button class="btn btn-secondary btn-sm" onclick="arsenalSearch(${Math.max(0, _arsenalOffset - limit)})"${_arsenalOffset === 0 ? ' disabled' : ''}>← PREV</button>` +
+            `<button class="btn btn-secondary btn-sm" onclick="arsenalSearch(${_arsenalOffset + limit})"${_arsenalOffset + limit >= r.total_matched_estimate ? ' disabled' : ''}>NEXT →</button>` +
+            '</div>';
+    } catch (e) {
+        st.textContent = 'Arsenal query failed: ' + e.message +
+            ' — GET /api/v1/' + reqUrl + ' @ ' + location.host;
+    }
 }
 
 function renderFusionRealLayer() {
@@ -15311,13 +15782,16 @@ function renderFusionRealLayer() {
 
 <script id="tb-addon">
 // ============================================================================
-// TACTICAL BASEMAP ADD-ON v2 — Maven-style basemap for the Spinal Cracker
+// TACTICAL BASEMAP ADD-ON v2.1 — Maven-style basemap for the Spinal Cracker
 // fusion map ONLY. Pure add-on, zero core edits. Control lives in the GAIA
 // panel Layers list (row "Tactical Terrain" via GAIA.registerLayer — no map
 // buttons). Zero network: the pristine dark style is captured from the map
-// itself and repainted in place (indigo land / light water / violet roads +
-// terrarium-DEM hillshade). Runtime layers (sc-*, sims-*, gaia-*,
-// 3d-buildings) survive swaps WITH their exact visibility, so a hidden GAIA
+// itself and repainted in place (Maven palette: purple-indigo land #302f52 /
+// pale water #c9cdcc / vivid purple borders, sampled from maven-terrain.png,
+// + terrarium-DEM hillshade). Style swaps force diff:false — MapLibre's diff
+// path never fires style.load, which silently dropped every runtime layer
+// (gaia-sat satellite imagery, sc-*/sims-* markers, 3d-buildings). Runtime
+// layers survive swaps WITH their exact visibility, so a hidden GAIA
 // satellite overlay can never resurrect as visible.
 // ============================================================================
 (function () {
@@ -15325,52 +15799,57 @@ function renderFusionRealLayer() {
     if (typeof maplibregl === 'undefined' || !maplibregl.Map) return;
 
     var LS_KEY = 'sc_basemap_v1';
-    var HALO = '#161930';
+    // Palette sampled from Palantir Maven reference (maven-terrain.png):
+    // purple-indigo landmass #302f52, neutral pale water #c9cdcc, vivid purple
+    // borders, light glyphs on land / mid-gray glyphs on water.
+    var HALO_LAND = '#232244';
+    var HALO_WATER = '#e2e4e2';
     var PAINT = {
-        'background': { 'background-color': '#262b47' },
-        'water': { 'fill-color': '#c6cbd8' },
-        'landcover_ice_shelf': { 'fill-color': '#d8dce4' },
-        'landcover_glacier': { 'fill-color': '#d8dce4' },
-        'landuse_residential': { 'fill-color': '#2c3154' },
-        'landcover_wood': { 'fill-color': '#293452' },
-        'landuse_park': { 'fill-color': '#2b3457' },
-        'waterway': { 'line-color': '#bcc2d4' },
-        'building': { 'fill-color': '#343b64' },
-        'aeroway-taxiway': { 'line-color': '#4d5280' },
-        'aeroway-runway-casing': { 'line-color': '#232741' },
-        'aeroway-area': { 'fill-color': '#343b64' },
-        'aeroway-runway': { 'line-color': '#7d84b8' },
-        'road_area_pier': { 'line-color': '#4d5280' },
-        'road_pier': { 'line-color': '#4d5280' },
-        'highway_path': { 'line-color': '#4d5280' },
-        'highway_minor': { 'line-color': '#4d5280' },
-        'highway_major_casing': { 'line-color': '#232741' },
-        'highway_major_subtle': { 'line-color': '#5a5f8e' },
-        'highway_major_inner': { 'line-color': '#8b7fc9' },
-        'highway_motorway_casing': { 'line-color': '#232741' },
-        'highway_motorway_subtle': { 'line-color': '#6a6fa8' },
-        'highway_motorway_inner': { 'line-color': '#a79ce0' },
-        'road_oneway': { 'line-color': '#9aa2cc' },
-        'road_oneway_opposite': { 'line-color': '#9aa2cc' },
-        'railway_transit': { 'line-color': '#5f64a0' },
-        'railway_transit_dashline': { 'line-color': '#4a4f78' },
-        'railway_minor': { 'line-color': '#5f64a0' },
-        'railway_minor_dashline': { 'line-color': '#4a4f78' },
-        'railway': { 'line-color': '#5f64a0' },
-        'railway_dashline': { 'line-color': '#4a4f78' },
-        'boundary_state': { 'line-color': '#676ca6' },
-        'boundary_country_z0-4': { 'line-color': '#9a8fd0' },
-        'boundary_country_z5-': { 'line-color': '#9a8fd0' },
-        'water_name': { 'text-color': '#7e86ab', 'text-halo-color': HALO },
-        'highway_name_other': { 'text-color': '#9aa0c0', 'text-halo-color': HALO },
-        'highway_name_motorway': { 'text-color': '#9aa0c0', 'text-halo-color': HALO },
-        'place_other': { 'text-color': '#a7accb', 'text-halo-color': HALO },
-        'place_suburb': { 'text-color': '#a7accb', 'text-halo-color': HALO },
-        'place_village': { 'text-color': '#a7accb', 'text-halo-color': HALO },
-        'place_town': { 'text-color': '#b0b5d0', 'text-halo-color': HALO },
-        'place_city': { 'text-color': '#c2c7de', 'text-halo-color': HALO },
-        'place_state': { 'text-color': '#9fa4c4', 'text-halo-color': HALO },
-        'place_country': { 'text-color': '#c9cde2', 'text-halo-color': HALO }
+        'background': { 'background-color': '#302f52' },
+        'water': { 'fill-color': '#c9cdcc' },
+        'landcover_ice_shelf': { 'fill-color': '#cfd3d4' },
+        'landcover_glacier': { 'fill-color': '#cfd3d4' },
+        'landuse_residential': { 'fill-color': '#37365e' },
+        'landcover_wood': { 'fill-color': '#2d2c50' },
+        'landuse_park': { 'fill-color': '#2f2e55' },
+        'waterway': { 'line-color': '#c9cdcc' },
+        'building': { 'fill-color': '#3d3c68' },
+        'aeroway-taxiway': { 'line-color': '#56557f' },
+        'aeroway-runway-casing': { 'line-color': '#262548' },
+        'aeroway-area': { 'fill-color': '#3d3c68' },
+        'aeroway-runway': { 'line-color': '#8f8cc0' },
+        'road_area_pier': { 'fill-color': '#3d3c68' },
+        'road_pier': { 'line-color': '#56557f' },
+        'highway_path': { 'line-color': '#56557f' },
+        'highway_minor': { 'line-color': '#56557f' },
+        'highway_major_casing': { 'line-color': '#262548' },
+        'highway_major_subtle': { 'line-color': '#67669a' },
+        'highway_major_inner': { 'line-color': '#9d94d6' },
+        'highway_motorway_casing': { 'line-color': '#262548' },
+        'highway_motorway_subtle': { 'line-color': '#7573ab' },
+        'highway_motorway_inner': { 'line-color': '#b3aae8' },
+        'railway_transit': { 'line-color': '#636292' },
+        'railway_transit_dashline': { 'line-color': '#4a4978' },
+        'railway_minor': { 'line-color': '#636292' },
+        'railway_minor_dashline': { 'line-color': '#4a4978' },
+        'railway': { 'line-color': '#636292' },
+        'railway_dashline': { 'line-color': '#4a4978' },
+        'boundary_state': { 'line-color': '#5f5396' },
+        'boundary_country_z0-4': { 'line-color': '#6d2bd8' },
+        'boundary_country_z5-': { 'line-color': '#6d2bd8' },
+        'water_name': { 'text-color': '#8a8f96', 'text-halo-color': HALO_WATER },
+        'highway_name_other': { 'text-color': '#a9abbe', 'text-halo-color': HALO_LAND },
+        'highway_name_motorway': { 'text-color': '#a9abbe', 'text-halo-color': HALO_LAND },
+        'place_other': { 'text-color': '#9fa1b5', 'text-halo-color': HALO_LAND },
+        'place_suburb': { 'text-color': '#9fa1b5', 'text-halo-color': HALO_LAND },
+        'place_village': { 'text-color': '#a4a6ba', 'text-halo-color': HALO_LAND },
+        'place_town': { 'text-color': '#b4b6c8', 'text-halo-color': HALO_LAND },
+        'place_city': { 'text-color': '#cfd0da', 'text-halo-color': HALO_LAND },
+        'place_city_large': { 'text-color': '#d6d7e0', 'text-halo-color': HALO_LAND },
+        'place_state': { 'text-color': '#8f91a8', 'text-halo-color': HALO_LAND },
+        'place_country_other': { 'text-color': '#cfd0da', 'text-halo-color': HALO_LAND },
+        'place_country_minor': { 'text-color': '#d2d3dc', 'text-halo-color': HALO_LAND },
+        'place_country_major': { 'text-color': '#d6d7e0', 'text-halo-color': HALO_LAND }
     };
 
     var state = { choice: 'dark', fusion: null, pristine: null };
@@ -15388,12 +15867,20 @@ function renderFusionRealLayer() {
     }
 
     function repaint(dark) {
+        // Only apply paint props the layer TYPE supports — an invalid prop
+        // (e.g. line-color on a symbol layer) fails strict style validation
+        // on full reload and the whole style is rejected (dark screen).
+        var TYPE_OF = { 'background-color': 'background', 'fill-color': 'fill', 'line-color': 'line',
+                        'text-color': 'symbol', 'text-halo-color': 'symbol' };
         var st = clone(dark);
         st.layers.forEach(function (l) {
             var o = PAINT[l.id];
             if (!o) return;
             if (!l.paint) l.paint = {};
-            Object.keys(o).forEach(function (k) { l.paint[k] = o[k]; });
+            Object.keys(o).forEach(function (k) {
+                if (TYPE_OF[k] !== l.type) return;
+                l.paint[k] = o[k];
+            });
         });
         var at = st.layers.length;
         for (var i = 0; i < st.layers.length; i++) { if (st.layers[i].id === 'landuse_park') { at = i + 1; break; } }
@@ -15405,10 +15892,10 @@ function renderFusionRealLayer() {
         st.layers.splice(at, 0, {
             id: 'tb-hillshade', type: 'hillshade', source: 'tb-dem', minzoom: 5,
             paint: {
-                'hillshade-exaggeration': 0.3,
-                'hillshade-shadow-color': '#101327',
-                'hillshade-highlight-color': '#cdd4ea',
-                'hillshade-accent-color': '#101327'
+                'hillshade-exaggeration': 0.35,
+                'hillshade-shadow-color': '#1f1e40',
+                'hillshade-highlight-color': '#504f80',
+                'hillshade-accent-color': '#26254a'
             }
         });
         return st;
@@ -15443,7 +15930,7 @@ function renderFusionRealLayer() {
             if (m.getLayer(l.id)) return;
             var vis = (l.layout && l.layout.visibility) || 'visible';
             try {
-                m.addLayer(l, l.type === 'raster' ? symId : undefined);
+                m.addLayer(l, (l.type === 'raster' && symId) ? symId : undefined);
                 m.setLayoutProperty(l.id, 'visibility', vis);
             } catch (e) {}
         });
@@ -15455,7 +15942,13 @@ function renderFusionRealLayer() {
         var orig = inst.setStyle.bind(inst);
         inst.setStyle = function (spec, opts) {
             var keep = snapshot(inst);
-            var r = orig(spec, opts);
+            // MapLibre's setStyle diff path (default) NEVER fires 'style.load',
+            // so reapply() below would never run and the diff would silently
+            // drop every runtime layer (gaia-sat imagery, sc-*/sims-* markers,
+            // 3d-buildings). Force a full reload so style.load always fires.
+            var full = { diff: false };
+            if (opts) for (var k in opts) full[k] = opts[k];
+            var r = orig(spec, full);
             inst.once('style.load', function () {
                 reapply(inst, keep);
                 try { if (window.GAIA && typeof window.GAIA.applyScope === 'function') window.GAIA.applyScope(); } catch (e) {}
@@ -15538,6 +16031,1458 @@ function renderFusionRealLayer() {
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { registerGaiaRow(0); });
     else registerGaiaRow(0);
+})();
+</script>
+
+<style id="gaia-integrations-styles">
+    /* ============================================================================
+       GAIA INTEGRATIONS — zero-touch add-on section for the GAIA · GEO CONTROLLER
+       panel. Reuses the exact .gaia-row / .gaia-switch / status grammar; adds ONLY:
+       a live count badge (.gi-count), a collapse chevron, and marker symbology for
+       AIS vessels, TAK CoT contacts and OTHT-Gold long-range tracks.
+       Uses existing :root tokens exclusively. --gi-gold is the one sanctioned new
+       accent: OTHT-Gold must read distinct from Threat-AMBER (#f59e0b) on the map.
+       ============================================================================ */
+    :root { --gi-gold: #ffd166; }
+
+    #gaiaIntTag { cursor: pointer; user-select: none; -webkit-user-select: none; }
+    #gaiaIntTag:hover { color: var(--text-muted); }
+    .gi-chev {
+        font-size: 8px; color: var(--text-dim); line-height: 1;
+        transition: transform .18s cubic-bezier(.2,.85,.3,1); flex-shrink: 0;
+    }
+    #gaiaIntTag.gi-closed .gi-chev { transform: rotate(-90deg); }
+    #gaiaIntList.gi-collapsed { display: none; }
+
+    /* live count badge next to the layer name ("AIS source 1 · 47") */
+    .gi-count {
+        display: inline-block;
+        font-family: var(--font-mono);
+        font-size: 8px;
+        letter-spacing: .08em;
+        line-height: 1;
+        color: var(--text-muted);
+        border: 1px solid var(--border-color);
+        border-radius: 999px;
+        padding: 2px 6px 1px;
+        margin-left: 7px;
+        vertical-align: 1px;
+        flex-shrink: 0;
+        text-transform: uppercase;
+    }
+    .gi-row.on .gi-count { color: var(--accent-neon); border-color: rgba(223, 241, 64, 0.45); }
+    .gi-row .gi-count[data-hot="1"] { color: var(--green); border-color: rgba(34, 197, 94, 0.4); }
+
+    /* ---- map symbology ----
+       Ships / CoT / OTH reuse the aviation glyph language: north-up silhouette in a
+       ring, rotated natively by MapLibre about its anchor (GPU, heading-exact). */
+    .gi-mk { position: relative; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
+    .gi-mk svg { overflow: visible; }
+
+    .gi-vessel { filter: drop-shadow(0 0 3px currentColor); }
+    .gi-vessel-ring { stroke: currentColor; stroke-opacity: .3; stroke-width: 1; fill: none; }
+
+    .gi-tak {
+        width: 15px; height: 15px; border-radius: 50%;
+        border: 1.5px solid var(--green);
+        background: rgba(16, 185, 129, 0.08);
+        box-shadow: 0 0 8px rgba(16, 185, 129, 0.35), inset 0 0 5px rgba(16, 185, 129, 0.18);
+        display: flex; align-items: center; justify-content: center;
+    }
+    .gi-tak i { width: 4px; height: 4px; border-radius: 50%; background: var(--green); box-shadow: 0 0 5px var(--green); }
+    .gi-tak.gi-unk {
+        border-radius: 3px; border-style: dashed; border-color: var(--text-muted);
+        background: rgba(138, 143, 152, 0.07); box-shadow: none;
+    }
+    .gi-tak.gi-unk i { background: var(--text-muted); box-shadow: none; border-radius: 1px; }
+    .gi-tak.gi-hst { border-color: var(--red); transform: rotate(45deg); border-bottom-left-radius: 3px;
+                     background: rgba(239, 68, 68, 0.08); box-shadow: 0 0 8px rgba(239, 68, 68, 0.35); }
+    .gi-tak.gi-hst i { background: var(--red); box-shadow: 0 0 5px var(--red); border-radius: 1px; transform: rotate(-45deg); }
+
+    .gi-oth-wrap { position: relative; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
+    .gi-oth-trail {
+        position: absolute; right: 55%; top: 50%; width: 30px; height: 2px;
+        transform-origin: right center;
+        background: linear-gradient(to left, var(--gi-gold), rgba(255, 209, 102, 0));
+        opacity: .75; pointer-events: none;
+    }
+    .gi-oth {
+        width: 11px; height: 11px; transform: rotate(45deg);
+        border: 1.5px solid var(--gi-gold); background: rgba(255, 209, 102, 0.12);
+        box-shadow: 0 0 10px rgba(255, 209, 102, 0.6), 0 0 24px rgba(255, 209, 102, 0.25),
+                    inset 0 0 5px rgba(255, 209, 102, 0.35);
+    }
+</style>
+
+<script id="gaia-integrations">
+// ============================================================================
+// GAIA INTEGRATIONS ADD-ON v1 — three armable data sources on the Unified Map.
+//
+// Pure add-on, zero core edits (same contract as tb-addon): injects an
+// "INTEGRATIONS" collapsible sub-section directly under the Tactical Terrain
+// row of the GAIA · GEO CONTROLLER Layers list, keeps the bottom layer counter
+// ("X/N LAYERS"), the map HUD ("… threats · … aircraft plotted") and the GAIA
+// footer strip in sync via observed DOM writes, and renders tracks as MapLibre
+// markers using the existing icon language + legend colors.
+//
+// FREE/OPEN DATA ONLY — no paid keys, no hardcoded secrets:
+//   1. AIS source 1          → AISStream.io free WebSocket feed. Get a key at
+//                              https://aisstream.io and put it in GI_CONFIG.ais.apiKey
+//                              (or localStorage 'sc_ais_key'). No key = clearly
+//                              labeled SIM fleet around the scope center.
+//   2. FutureForces TAK src 1 → Cursor-on-Target over WebSocket or polling HTTP,
+//                              FreeTAKServer / PyTAK compatible. Empty URL = local
+//                              CoT mock generator that emits REAL CoT 2.0 XML
+//                              through the same parser, so pointing it at a live
+//                              FreeTAKServer later is a config change only.
+//   3. OTHT-Gold             → over-the-horizon style long-range track fusion:
+//                              filters the LIVE OpenSky aircraft array + AIS
+//                              contacts for high-interest (fast/high/military)
+//                              movers; gold glow symbology. Falls back to a small
+//                              simulated OTH picture when feeds are quiet.
+//
+// Every source degrades gracefully: dead feed → subtle OFFLINE chip next to the
+// toggle, UI never breaks. Swap-in points for commercial feeds = GI_CONFIG only.
+// ============================================================================
+(function () {
+    'use strict';
+    if (typeof maplibregl === 'undefined' || !maplibregl.Marker) return;
+
+    // ------------------------------------------------------------- config ----
+    // CONFIG SURFACE for future sources: add an entry here + a provider in
+    // PROVIDERS below. Nothing else needs to change.
+    var GI_CONFIG = {
+        ais: {
+            label: 'AIS source 1',
+            meta: 'AISStream.io \u00b7 free WS feed',
+            // FREE TIER KEY (https://aisstream.io). Override at runtime with
+            // localStorage.setItem('sc_ais_key', '<key>'). Leave '' for SIM mode.
+            apiKey: '',
+            url: 'wss://stream.aisstream.io/v0/stream',
+            maxMarkers: 80,      // DOM marker cap — keep the map snappy
+            staleMs: 600000,     // drop contacts silent >10 min (live feed)
+            retryMax: 3,         // reconnect attempts before showing OFFLINE
+            simVessels: 16,      // synthetic fleet size when no key configured
+            tickMs: 4000
+        },
+        tak: {
+            label: 'FutureForces TAK source 1',
+            meta: 'CoT gateway \u00b7 FreeTAK compatible',
+            transport: 'websocket',   // 'websocket' | 'poll'
+            // Point at a CoT-over-WebSocket bridge (FreeTAKServer + ws relay,
+            // PyTAK --cot-url ws://...) e.g. 'ws://freetak:8000/cot'. ''
+            // = local CoT mock stream (real XML through the same parser).
+            wsUrl: '',
+            pollUrl: '',              // used when transport === 'poll'
+            pollMs: 15000,
+            staleMs: 180000,
+            retryMax: 3,
+            simContacts: 7,
+            tickMs: 5000
+        },
+        otht: {
+            label: 'OTHT-Gold',
+            meta: 'OpenSky + AIS fused \u00b7 long-range',
+            mode: 'fused',            // 'fused' | 'sim'
+            minSpeedKts: 430,         // high-interest thresholds for fused picks
+            minAltFt: 28000,
+            minVesselKts: 22,         // fast movers on the AIS picture
+            minShow: 4,               // below this the SIM OTH picture backfills
+            simTracks: 5,
+            refreshMs: 5000
+        }
+    };
+    var SRC_IDS = ['ais', 'tak', 'otht'];
+    var LS_STATE = 'sc_gaia_integrations_v1';
+    var LS_COLLAPSE = 'sc_gaia_int_collapsed_v1';
+
+    // ---------------------------------------------------------------- state --
+    var state = { ais: { on: false }, tak: { on: false }, otht: { on: false } };
+    var pts = { ais: [], tak: [], otht: [] };       // live contact arrays
+    var markers = { ais: [], tak: [], otht: [] };   // maplibregl.Marker pools
+    var timers = { ais: null, tak: null, otht: null };
+    var socks = { ais: null, tak: null };           // WebSocket handles
+    var linkState = { ais: 'idle', tak: 'idle', otht: 'idle' }; // idle|connecting|live|sim|offline
+    var listEl = null, metaEl = null, hudEl = null, statusEl = null, legendDone = false;
+    var lastMetaWritten = '', lastHudWritten = '';
+
+    try {
+        var saved = JSON.parse(localStorage.getItem(LS_STATE));
+        if (saved && typeof saved === 'object') SRC_IDS.forEach(function (id) {
+            if (saved[id] && typeof saved[id].on === 'boolean') state[id].on = saved[id].on;
+        });
+    } catch (e) {}
+
+    function saveState() { try { localStorage.setItem(LS_STATE, JSON.stringify(state)); } catch (e) {} }
+    function esc(s) {
+        s = s == null ? '' : String(s);
+        if (typeof window.escapeHtml === 'function') return window.escapeHtml(s);
+        return s.replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+    function cfgKey(id, key) {
+        if (key !== 'apiKey') return GI_CONFIG[id][key];
+        var lsKey = '';
+        try { lsKey = localStorage.getItem('sc_ais_key') || ''; } catch (e) {}
+        return lsKey || GI_CONFIG.ais.apiKey || '';
+    }
+    function scopeBbox() {
+        try { if (typeof window.scBbox === 'function') return window.scBbox(); } catch (e) {}
+        return null;
+    }
+    function scopeCenter() {
+        var b = scopeBbox();
+        if (b) return { lat: (b.lamin + b.lamax) / 2, lng: (b.lomin + b.lomax) / 2 };
+        try {
+            if (window.fusionMap && window.fusionMap.getCenter) {
+                var c = window.fusionMap.getCenter();
+                return { lat: c.lat, lng: c.lng };
+            }
+        } catch (e) {}
+        return { lat: 20, lng: 20 };
+    }
+    function ensureMap() {
+        var m = window.fusionMap;
+        if ((!m || !m.addSource) && typeof window.initFusionMap === 'function') {
+            try { m = window.initFusionMap(); } catch (e) { m = null; }
+        }
+        return m && m.addSource ? m : null;
+    }
+
+    // ------------------------------------------------------- panel section ---
+    function injectSection() {
+        listEl = document.getElementById('gaiaIntList');
+        if (listEl) return true; // idempotent
+        var anchor = document.getElementById('gaiaLayerList');
+        if (!anchor) return false;
+        var wrap = document.createElement('div');
+        wrap.innerHTML =
+            '<div class="gaia-section-tag" id="gaiaIntTag" role="button" tabindex="0" aria-expanded="true" title="Toggle INTEGRATIONS">' +
+                '<span class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span>' +
+                '<span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box"></span></span>' +
+                '<span>INTEGRATIONS</span>' +
+                '<span class="gi-chev" aria-hidden="true">&#9662;</span>' +
+            '</div>' +
+            '<div class="gaia-layer-list" id="gaiaIntList"></div>';
+        var intTag = wrap.children[0], intList = wrap.children[1];
+        anchor.insertAdjacentElement('afterend', intTag);       // section tag under the Layers rows
+        intTag.insertAdjacentElement('afterend', intList);      // integrations list under the tag
+        listEl = document.getElementById('gaiaIntList');
+        renderRows();
+        bindRows();
+        var closed = false;
+        try { closed = localStorage.getItem(LS_COLLAPSE) === '1'; } catch (e) {}
+        setCollapsed(closed, false);
+        return true;
+    }
+    function setCollapsed(closed, persist) {
+        var tag = document.getElementById('gaiaIntTag');
+        if (listEl) listEl.classList.toggle('gi-collapsed', !!closed);
+        if (tag) {
+            tag.classList.toggle('gi-closed', !!closed);
+            tag.setAttribute('aria-expanded', closed ? 'false' : 'true');
+        }
+        if (persist !== false) { try { localStorage.setItem(LS_COLLAPSE, closed ? '1' : '0'); } catch (e) {} }
+    }
+
+    function rowHTML(id) {
+        var c = GI_CONFIG[id];
+        var on = !!state[id].on;
+        return '<div class="gaia-row gi-row' + (on ? ' on' : '') + '" data-int="' + id + '">' +
+            '<span class="gaia-dot" data-int-dot></span>' +
+            '<div class="gaia-row-main"><span class="gaia-row-label">' + esc(c.label) +
+                '<span class="gi-count" data-int-count hidden></span></span>' +
+            '<span class="gaia-row-meta">' + esc(c.meta) + '</span></div>' +
+            '<span class="gaia-row-status" data-int-status data-status="dim">IDLE</span>' +
+            '<button type="button" class="gaia-switch" role="switch" aria-checked="' + on + '" title="Toggle ' + esc(c.label) + '"></button>' +
+            '</div>';
+    }
+    function renderRows() {
+        if (!listEl) return;
+        listEl.innerHTML = SRC_IDS.map(rowHTML).join('');
+        refreshStatuses();
+    }
+    function bindRows() {
+        listEl.addEventListener('click', function (e) {
+            var sw = e.target.closest ? e.target.closest('.gaia-switch') : null;
+            var row = sw && sw.closest('.gaia-row');
+            if (!row) return;
+            toggle(row.getAttribute('data-int'));
+        });
+        var tag = document.getElementById('gaiaIntTag');
+        if (tag) {
+            var flip = function () { setCollapsed(!listEl.classList.contains('gi-collapsed')); };
+            tag.addEventListener('click', flip);
+            tag.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+            });
+        }
+    }
+
+    // ------------------------------------------------------------ statuses ---
+    function statusFor(id) {
+        var n = pts[id].length, st = state[id].on;
+        if (!st) return { tag: 'IDLE', cls: 'dim' };
+        if (linkState[id] === 'offline') return { tag: 'OFFLINE', cls: 'err' };
+        if (linkState[id] === 'sim') return n ? { tag: 'SIM\u00b7' + n, cls: 'warn' } : { tag: 'ARMED', cls: 'busy' };
+        if (linkState[id] === 'connecting') return { tag: 'ARMED', cls: 'busy' };
+        return n ? { tag: n + ' ' + (id === 'ais' ? 'SHP' : id === 'tak' ? 'COT' : 'OTH'), cls: 'live' }
+                 : { tag: 'ARMED', cls: 'busy' };
+    }
+    function refreshStatuses() {
+        SRC_IDS.forEach(function (id) {
+            var row = listEl && listEl.querySelector('[data-int="' + id + '"]');
+            if (!row) return;
+            var s = statusFor(id), n = pts[id].length;
+            row.classList.toggle('on', !!state[id].on);
+            var dot = row.querySelector('[data-int-dot]');
+            var stat = row.querySelector('[data-int-status]');
+            var cnt = row.querySelector('[data-int-count]');
+            if (dot) dot.setAttribute('data-status', s.cls);
+            if (stat) { stat.setAttribute('data-status', s.cls); stat.textContent = s.tag; }
+            if (cnt) {
+                cnt.hidden = !(state[id].on && n > 0);
+                cnt.textContent = '\u00b7 ' + n;
+                cnt.setAttribute('data-hot', s.cls === 'live' ? '1' : '0');
+            }
+            var swb = row.querySelector('.gaia-switch');
+            if (swb) swb.setAttribute('aria-checked', state[id].on ? 'true' : 'false');
+        });
+        writeMeta();
+    }
+
+    // ------------------------------------------- chrome: counter/HUD/status --
+    function armedIds() { return SRC_IDS.filter(function (id) { return state[id].on; }); }
+    function baseRegistryCounts() {
+        var out = { on: 0, total: 0 };
+        try {
+            (window.GAIA.layers() || []).forEach(function (r) { out.total++; if (r.on) out.on++; });
+        } catch (e) {}
+        return out;
+    }
+    function writeMeta() {
+        if (!metaEl) return;
+        var b = baseRegistryCounts();
+        var armed = armedIds().length;
+        lastMetaWritten = (b.on + armed) + '/' + (b.total + SRC_IDS.length) + ' LAYERS';
+        if (metaEl.textContent !== lastMetaWritten) metaEl.textContent = lastMetaWritten;
+    }
+    function hudSuffix() {
+        var parts = [];
+        SRC_IDS.forEach(function (id) {
+            if (state[id].on && pts[id].length) parts.push((id === 'ais' ? 'AIS ' : id === 'tak' ? 'TAK ' : 'OTH ') + pts[id].length);
+        });
+        return parts.length ? ' \u00b7 INTEGRATIONS ' + parts.join(' \u00b7 ') : '';
+    }
+    function footerSummary() {
+        if (!statusEl) return;
+        var armed = armedIds();
+        if (!armed.length) { statusEl.textContent = 'Standing by.'; return; }
+        statusEl.textContent = 'INTEGRATIONS ARMED \u2014 ' + armed.map(function (id) {
+            var s = statusFor(id);
+            return GI_CONFIG[id].label + ' (' + s.tag + ')';
+        }).join(' \u00b7 ');
+    }
+
+    // ------------------------------------------------------------- markers ---
+    var SHIP_D = 'M12 2.2 L14.6 7.6 L13.9 20 L10.1 20 L9.4 7.6 Z M12 4.6 L12 17'; // hull + centerline
+    function vesselColor(cat) {
+        return cat === 'military' ? '#ef4444' : cat === 'private' ? '#f59e0b' : '#22d3ee';
+    }
+    function mkRemove(list) { (list || []).forEach(function (mk) { try { mk.remove(); } catch (e) {} }); }
+    function renderSource(id) {
+        var m = ensureMap();
+        mkRemove(markers[id]);
+        markers[id] = [];
+        if (!m) return;
+        var cap = id === 'ais' ? GI_CONFIG.ais.maxMarkers : 120;
+        pts[id].slice(0, cap).forEach(function (p) {
+            var el = document.createElement('div');
+            el.className = 'gi-mk';
+            var rot = ((Number(p.heading) % 360) + 360) % 360 || 0;
+            var mk;
+            if (id === 'ais') {
+                el.title = p.label + ' \u00b7 AIS ' + p.cat.toUpperCase() + ' \u00b7 ' + Math.round(p.speed) + ' kts \u00b7 HDG ' + Math.round(rot);
+                el.style.color = vesselColor(p.cat);
+                el.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+                    '<circle class="gi-vessel-ring" cx="12" cy="12" r="10.4"/>' +
+                    '<path d="' + SHIP_D + '" fill="currentColor" stroke="none"/></svg>';
+                mk = new maplibregl.Marker({ element: el, anchor: 'center', rotation: rot, rotationAlignment: 'map', pitchAlignment: 'map' });
+            } else if (id === 'tak') {
+                var aff = p.cat === 'friendly' ? '' : p.cat === 'hostile' ? ' gi-hst' : ' gi-unk';
+                el.title = p.label + ' \u00b7 TAK ' + p.cat.toUpperCase() + ' \u00b7 type ' + (p.cotType || '?');
+                el.innerHTML = '<div class="gi-tak' + aff + '"><i></i></div>';
+                mk = new maplibregl.Marker({ element: el, anchor: 'center' });
+            } else {
+                el.title = p.label + ' \u00b7 OTHT-GOLD \u00b7 ' + Math.round(p.speed) + ' kts' +
+                    (p.alt ? ' \u00b7 FL' + Math.round(Number(p.alt) / 100) : '') + ' \u00b7 HDG ' + Math.round(rot);
+                el.innerHTML = '<div class="gi-oth-wrap">' +
+                    '<div class="gi-oth-trail" style="transform:rotate(' + (rot - 90) + 'deg)"></div>' +
+                    '<div class="gi-oth"></div></div>';
+                mk = new maplibregl.Marker({ element: el, anchor: 'center', rotation: rot, rotationAlignment: 'map', pitchAlignment: 'map' });
+            }
+            try { mk.setLngLat([p.lng, p.lat]).addTo(m); markers[id].push(mk); } catch (e) {}
+        });
+    }
+    function renderAllArmed() { SRC_IDS.forEach(function (id) { if (state[id].on) renderSource(id); }); }
+
+    // ------------------------------------------------------ toggle plumbing --
+    function toggle(id, force) {
+        var want = force != null ? !!force : !state[id].on;
+        if (state[id].on === want) return;
+        state[id].on = want;
+        saveState();
+        PROVIDERS[id](want);
+        refreshStatuses();
+        ensureLegend();
+        footerSummary();
+    }
+
+    // ============================================================== PROVIDERS
+    var PROVIDERS = {
+        // ------------------------------------------------------------- AIS ---
+        ais: function (want) {
+            if (timers.ais) { clearInterval(timers.ais); timers.ais = null; }
+            closeSock('ais');
+            if (!want) { pts.ais = []; linkState.ais = 'idle'; renderSource('ais'); return; }
+            var c = GI_CONFIG.ais;
+            if (cfgKey('ais', 'apiKey')) {
+                linkState.ais = 'connecting';
+                connectAis(0);
+            } else {
+                linkState.ais = 'sim';
+                seedSimVessels(c.simVessels);
+            }
+            timers.ais = setInterval(function () {
+                if (!state.ais.on) return;
+                stepContacts(pts.ais, GI_CONFIG.ais.tickMs);
+                pruneStale(pts.ais, c.staleMs, 'ais');
+                renderSource('ais');
+                refreshStatuses();
+            }, c.tickMs);
+        },
+        // ------------------------------------------------------------- TAK ---
+        tak: function (want) {
+            if (timers.tak) { clearInterval(timers.tak); timers.tak = null; }
+            closeSock('tak');
+            if (!want) { pts.tak = []; linkState.tak = 'idle'; renderSource('tak'); return; }
+            var c = GI_CONFIG.tak;
+            if (c.transport === 'websocket' && c.wsUrl) {
+                linkState.tak = 'connecting';
+                connectTak(0);
+            } else if (c.transport === 'poll' && c.pollUrl) {
+                linkState.tak = 'connecting';
+                pollTak();
+                timers.tak = setInterval(function () { if (state.tak.on) pollTak(); }, c.pollMs);
+            } else {
+                // Local CoT mock: REAL CoT 2.0 XML pushed through the same parser.
+                linkState.tak = 'sim';
+            }
+            timers.tak = setInterval(function () {
+                if (!state.tak.on) return;
+                if (linkState.tak === 'sim') mockCoTTick();
+                stepContacts(pts.tak, GI_CONFIG.tak.tickMs);
+                pruneStale(pts.tak, c.staleMs, 'tak');
+                renderSource('tak');
+                refreshStatuses();
+            }, c.tickMs);
+        },
+        // ------------------------------------------------------------ OTHT ---
+        otht: function (want) {
+            if (timers.otht) { clearInterval(timers.otht); timers.otht = null; }
+            if (!want) { pts.otht = []; linkState.otht = 'idle'; renderSource('otht'); return; }
+            seedSimOth(GI_CONFIG.otht.simTracks); // backfill; replaced as fused data flows
+            linkState.otht = 'live';
+            buildOthPicture();
+            timers.otht = setInterval(function () {
+                if (!state.otht.on) return;
+                buildOthPicture();
+                stepContacts(pts.otht.filter(function (p) { return p.sim; }), GI_CONFIG.otht.refreshMs * 2);
+                renderSource('otht');
+                refreshStatuses();
+            }, GI_CONFIG.otht.refreshMs);
+        }
+    };
+    function closeSock(id) {
+        if (socks[id]) { try { socks[id].onclose = null; socks[id].close(); } catch (e) {} socks[id] = null; }
+    }
+
+    // --------------------------------------------------------- AIS provider --
+    function connectAis(attempt) {
+        var c = GI_CONFIG.ais;
+        var ws;
+        // Relay mode: key stays server-side (backend injects AISSTREAM_API_KEY).
+        var useRelay = false;
+        try { useRelay = c.relay === true || localStorage.getItem('sc_ais_relay') === '1'; } catch (e) {}
+        if (useRelay && typeof authToken === 'string' && authToken) {
+            var proto = location.protocol === 'https:' ? 'wss://' : 'ws://';
+            try { ws = new WebSocket(proto + location.host + '/api/v1/maven/ais/ws?token=' + encodeURIComponent(authToken)); }
+            catch (e) { aisFail(attempt); return; }
+        } else {
+            try { ws = new WebSocket(c.url); } catch (e) { aisFail(attempt); return; }
+        }
+        socks.ais = ws;
+        ws.onopen = function () {
+            // aisstream.io wire format: each BBoxID is [[sw_lat, sw_lon], [ne_lat, ne_lon]]
+            var b = scopeBbox();
+            var box = b ? [[[b.lamin, b.lomin], [b.lamax, b.lomax]]] : [[[-85, -180], [85, 180]]];
+            var sub = {
+                APIVersion: 'v1',
+                BBoxIDs: box,
+                FilterMessageTypes: ['PositionReport', 'StaticDataReport']
+            };
+            if (!useRelay) sub.APIKey = cfgKey('ais', 'apiKey');
+            ws.send(JSON.stringify(sub));
+            linkState.ais = 'live';
+            refreshStatuses();
+        };
+        ws.onmessage = function (ev) {
+            var msg;
+            try { msg = JSON.parse(ev.data); } catch (e) { return; }
+            ingestAisMessage(msg);
+        };
+        ws.onerror = function () { /* onclose follows */ };
+        ws.onclose = function () {
+            socks.ais = null;
+            if (!state.ais.on) return;
+            if (attempt < c.retryMax) {
+                setTimeout(function () { if (state.ais.on) connectAis(attempt + 1); }, 1500 * (attempt + 1));
+            } else {
+                linkState.ais = pts.ais.length ? linkState.ais : 'offline';
+                refreshStatuses();
+                footerSummary();
+            }
+        };
+    }
+    function aisFail(attempt) {
+        if (attempt < GI_CONFIG.ais.retryMax) setTimeout(function () { if (state.ais.on) connectAis(attempt + 1); }, 1500);
+        else { linkState.ais = 'offline'; refreshStatuses(); }
+    }
+    function upsert(arr, id, fields) {
+        var i;
+        for (i = 0; i < arr.length; i++) if (arr[i].id === id) break;
+        if (i < arr.length) { Object.assign(arr[i], fields, { ts: Date.now() }); return arr[i]; }
+        var p = Object.assign({ id: id, ts: Date.now(), ts0: Date.now(), heading: 0, speed: 0 }, fields);
+        arr.push(p);
+        return p;
+    }
+    function ingestAisMessage(msg) {
+        if (!msg || !msg.MessageType) return;
+        var md = msg.MetaData || {}, body = msg.Message || {};
+        var lat = md.latitude, lng = md.longitude;
+        if (lat == null && body.PositionReport) { lat = body.PositionReport.Latitude; lng = lng == null ? body.PositionReport.Longitude : lng; }
+        if (lat == null || lng == null) {
+            // StaticDataReport may arrive alone — enrich name/type on the MMSI.
+            if (msg.MessageType === 'StaticDataReport') {
+                var rd = (body.StaticDataReport || {}).ReportedData || {};
+                var mm = md.MMSI || body.StaticDataReport && body.StaticDataReport.UserID;
+                if (mm != null) {
+                    var ex = pts.ais.filter(function (p) { return p.id === String(mm); })[0];
+                    if (ex) {
+                        if (rd.Name) ex.label = String(rd.Name).trim();
+                        var t = parseInt(rd.Type, 10);
+                        if (Number.isFinite(t)) ex.cat = aisCat(t);
+                        renderSource('ais'); refreshStatuses();
+                    }
+                }
+            }
+            return;
+        }
+        var pr = body.PositionReport || {};
+        var sog = parseFloat(pr.Sog); var cog = parseFloat(pr.Cog);
+        var p = upsert(pts.ais, String(md.MMSI || pr.UserID || ('unk-' + lat.toFixed(3))), {
+            lat: Number(lat), lng: Number(lng),
+            speed: Number.isFinite(sog) ? sog : 0,
+            heading: Number.isFinite(cog) ? cog : 0,
+            cat: 'commercial',
+            label: (md.ShipName || '').trim() || ('MMSI ' + (md.MMSI || pr.UserID || '?'))
+        });
+        p.live = true;
+    }
+    function aisCat(t) { // AIS ship-type codes → design-language categories
+        if (t === 35) return 'military';
+        if (t === 36 || t === 37 || (t >= 40 && t <= 49)) return 'private';
+        return 'commercial';
+    }
+    function seedSimVessels(n) {
+        pts.ais = [];
+        var c = scopeCenter(), degKm = 1 / 111;
+        var names = ['MV MERIDIAN', 'ST ARGOSY', 'FV NORTHWIND', 'MT CORAL SEA', 'MV KESTREL', 'ST HALCYON',
+                     'FV BOREALIS', 'MV SOLENNE', 'YT PILOT-4', 'MV TASMAN', 'FS VIGILANT', 'ST CYGNET',
+                     'MV ORINOCO', 'FV PELAGIA', 'MS TRANQUIL', 'MV ANDES'];
+        for (var i = 0; i < n; i++) {
+            var r = (40 + (i * 137) % 380) * degKm;                       // 40–420 km ring
+            var brg = (i * 222.5 * Math.PI / 180);
+            var cat = i % 10 === 3 ? 'military' : (i % 3 === 0 ? 'private' : 'commercial');
+            upsert(pts.ais, 'sim-' + (211000000 + i * 7717), {
+                lat: c.lat + Math.cos(brg) * r, lng: c.lng + Math.sin(brg) * r / Math.max(.2, Math.cos(c.lat * Math.PI / 180)),
+                speed: 8 + (i * 3.7) % 18, heading: (i * 47) % 360,
+                cat: cat, label: names[i % names.length] + ' ' + (Math.floor(i / names.length) + 1)
+            }).sim = true;
+        }
+    }
+
+    // ---------------------------------------------------- contact kinematics -
+    function stepContacts(arr, dtMs) {
+        var now = Date.now(), dtH = Math.max(1, dtMs) / 3600000, degKm = 1 / 111;
+        arr.forEach(function (p) {
+            var spd = Number(p.speed) || 0;                       // knots → nm/h ≈ km/h*0.54; use kt-nautical deg approx
+            var distKm = spd * 1.852 * dtH;
+            var rad = (p.heading || 0) * Math.PI / 180;
+            p.lat += Math.cos(rad) * distKm * degKm;
+            p.lng += Math.sin(rad) * distKm * degKm / Math.max(.2, Math.cos(p.lat * Math.PI / 180));
+            p.heading = (((p.heading || 0) + (Math.sin(now / 9000 + p.lat) * 1.4)) % 360 + 360) % 360;
+            p.ts = now;
+        });
+    }
+    function pruneStale(arr, staleMs, srcId) {
+        var now = Date.now();
+        for (var i = arr.length - 1; i >= 0; i--) {
+            var keepLive = !arr[i].sim && (now - (arr[i].ts || 0)) < staleMs;
+            var keepSim = arr[i].sim && state[srcId] && state[srcId].on; // sims persist while their source is armed
+            if (!(keepLive || keepSim)) arr.splice(i, 1);
+        }
+    }
+
+    // --------------------------------------------------------- TAK provider --
+    function ingestCoT(text) {
+        // Accepts concatenated CoT 2.0 XML events or JSON lines — both land here.
+        var chunks = String(text).split(/(?=<event[\s>])/g);
+        chunks.forEach(function (chunk) {
+            chunk = chunk.trim();
+            if (!chunk) return;
+            if (chunk[0] === '{') {
+                try { ingestCoTJson(JSON.parse(chunk)); } catch (e) {}
+                return;
+            }
+            var doc;
+            try { doc = new DOMParser().parseFromString(chunk, 'text/xml'); } catch (e) { return; }
+            var evs = doc.getElementsByTagName('event');
+            for (var i = 0; i < evs.length; i++) cotEventToPoint(evs[i]);
+        });
+    }
+    function cotEventToPoint(ev) {
+        var pt = ev.getElementsByTagName('point')[0];
+        if (!ev.getAttribute || !pt) return;
+        var lat = parseFloat(pt.getAttribute('lat')), lng = parseFloat(pt.getAttribute('lon'));
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+        var uid = ev.getAttribute('uid') || ('cot-' + lat.toFixed(4));
+        var type = ev.getAttribute('type') || 'a-u-A';
+        var affChar = (type.split('-')[1] || 'u').toLowerCase();
+        var cat = affChar === 'f' || affChar === 'n' ? 'friendly'
+                : affChar === 'h' || affChar === 's' || affChar === 'j' ? 'hostile' : 'unknown';
+        var det = ev.getElementsByTagName('detail')[0];
+        var csEl = det && det.getElementsByTagName ? det.getElementsByTagName('contact')[0] : null;
+        var trkEl = det && det.getElementsByTagName ? det.getElementsByTagName('track')[0] : null;
+        var course = trkEl ? parseFloat(trkEl.getAttribute('course')) : NaN;
+        var speed = trkEl ? parseFloat(trkEl.getAttribute('speed')) : NaN; // m/s
+        var callsign = (csEl && csEl.getAttribute && csEl.getAttribute('callsign')) || uid;
+        upsert(pts.tak, uid, {
+            lat: lat, lng: lng,
+            heading: Number.isFinite(course) ? course : 0,
+            speed: Number.isFinite(speed) ? speed * 1.94384 : 0,
+            cat: cat, label: callsign, cotType: type
+        }).live = true;
+    }
+    function ingestCoTJson(j) {
+        if (!j || !Number.isFinite(parseFloat(j.lat))) return;
+        upsert(pts.tak, j.uid || j.callsign || ('j-' + j.lat), {
+            lat: parseFloat(j.lat), lng: parseFloat(j.lng),
+            heading: parseFloat(j.course) || 0, speed: (parseFloat(j.speed) || 0) * 1.94384,
+            cat: j.cat || 'unknown', label: j.callsign || j.uid || 'CoT', cotType: j.type || 'a-u-A'
+        }).live = true;
+    }
+    function connectTak(attempt) {
+        var c = GI_CONFIG.tak, ws;
+        try { ws = new WebSocket(c.wsUrl); } catch (e) { takOffline(); return; }
+        socks.tak = ws;
+        ws.onopen = function () { linkState.tak = 'live'; refreshStatuses(); };
+        ws.onmessage = function (ev) { ingestCoT(typeof ev.data === 'string' ? ev.data : ''); renderSource('tak'); refreshStatuses(); };
+        ws.onerror = function () {};
+        ws.onclose = function () {
+            socks.tak = null;
+            if (!state.tak.on) return;
+            if (attempt < c.retryMax) setTimeout(function () { if (state.tak.on) connectTak(attempt + 1); }, 1500 * (attempt + 1));
+            else takOffline();
+        };
+    }
+    function takOffline() {
+        linkState.tak = pts.tak.length ? linkState.tak : 'offline';
+        refreshStatuses(); footerSummary();
+    }
+    function pollTak() {
+        if (typeof fetch !== 'function') { takOffline(); return; }
+        fetch(GI_CONFIG.tak.pollUrl).then(function (r) { return r.text(); }).then(function (t) {
+            linkState.tak = 'live';
+            ingestCoT(t);
+            renderSource('tak'); refreshStatuses();
+        }).catch(function () { takOffline(); });
+    }
+    // Local CoT mock generator — emits genuine CoT 2.0 event XML through ingestCoT,
+    // so swapping wsUrl to a live FreeTAKServer exercises identical code paths.
+    var MOCK_TAK = [
+        { uid: 'FF-TAK-01', type: 'a-f-A-M-FQF', aff: 'f', cs: 'FF-ALPHA-1' },
+        { uid: 'FF-TAK-02', type: 'a-f-A-M-FQF', aff: 'f', cs: 'FF-ALPHA-2' },
+        { uid: 'FF-TAK-03', type: 'a-f-G-E-V-C', aff: 'f', cs: 'FF-CONVOY-7' },
+        { uid: 'FF-TAK-04', type: 'a-u-A-M-FQ', aff: 'u', cs: 'UNK-TRACK-44' },
+        { uid: 'FF-TAK-05', type: 'a-u-A-M-FQ', aff: 'u', cs: 'UNK-TRACK-51' },
+        { uid: 'FF-TAK-06', type: 'a-u-S-N-I', aff: 'u', cs: 'UNK-SIGNAL-09' },
+        { uid: 'FF-TAK-07', type: 'a-f-A-M-FQ', aff: 'f', cs: 'FF-BRAVO-3' }
+    ];
+    function iso(msAgo) { return new Date(Date.now() - (msAgo || 0)).toISOString(); }
+    function mockCoTTick() {
+        var c = scopeCenter(), degKm = 1 / 111;
+        MOCK_TAK.slice(0, GI_CONFIG.tak.simContacts).forEach(function (m, i) {
+            var r = (25 + i * 33) * degKm, brg = (i * 51.4 + Date.now() / 240000) * Math.PI / 180;
+            var lat = c.lat + Math.cos(brg) * r;
+            var lng = c.lng + Math.sin(brg) * r / Math.max(.2, Math.cos(c.lat * Math.PI / 180));
+            var xml = '<event version="2.0" uid="' + m.uid + '" type="' + m.type + '"' +
+                ' time="' + iso(0) + '" start="' + iso(0) + '" stale="' + iso(-300000) + '" how="m-g">' +
+                '<point lat="' + lat.toFixed(5) + '" lon="' + lng.toFixed(5) + '" hae="120" ce="12" le="20"/>' +
+                '<detail><contact callsign="' + m.cs + '"/><track course="' + Math.round(((brg * 180 / Math.PI) % 360 + 360) % 360) + '" speed="' + (40 + i * 9) + '"/>' +
+                '<__group name="' + (m.aff === 'f' ? 'Blue' : 'Unknown') + '" role="Team Member"/></detail></event>';
+            ingestCoT(xml);
+            var p = pts.tak.filter(function (q) { return q.id === m.uid; })[0];
+            if (p) { p.sim = true; delete p.live; } // mock stays flagged synthetic
+        });
+    }
+
+    // -------------------------------------------------------- OTHT provider --
+    function flightProps() {
+        var out = [];
+        try {
+            (window.fusionFlights || []).forEach(function (f) {
+                var p = f && f.properties;
+                if (p && p.lat != null && p.lng != null) out.push(p);
+            });
+        } catch (e) {}
+        return out;
+    }
+    function buildOthPicture() {
+        var c = GI_CONFIG.otht, found = [];
+        if (c.mode === 'fused') {
+            flightProps().forEach(function (p) {
+                var spd = parseFloat(p.speed_knots), alt = parseFloat(String(p.alt).replace(/[^\d.]/g, ''));
+                var hot = (Number.isFinite(spd) && spd >= c.minSpeedKts) ||
+                          (Number.isFinite(alt) && alt >= c.minAltFt) ||
+                          p.category === 'military';
+                if (hot) found.push({
+                    id: 'oth-air-' + (p.icao24 || p.callsign || (p.lat + ',' + p.lng)),
+                    lat: Number(p.lat), lng: Number(p.lng),
+                    speed: Number.isFinite(spd) ? spd : 0, alt: Number.isFinite(alt) ? alt : 0,
+                    heading: parseFloat(p.heading) || 0,
+                    label: p.callsign || p.icao24 || 'AIR', kind: 'AIR'
+                });
+            });
+            pts.ais.forEach(function (p) {
+                if (p.speed >= c.minVesselKts) found.push({
+                    id: 'oth-sea-' + p.id, lat: p.lat, lng: p.lng,
+                    speed: p.speed, alt: 0, heading: p.heading, label: p.label, kind: 'SEA'
+                });
+            });
+        }
+        // Simulated long-range tracks fill the picture only while fused data is
+        // thin; they never churn (top-up semantics, no strip/re-seed cycling).
+        var nowTs = Date.now();
+        var wantSim = GI_CONFIG.otht.mode === 'sim' || found.length < GI_CONFIG.otht.minShow;
+        pts.otht = pts.otht.filter(function (p) {
+            if (p.sim) return wantSim && state.otht.on;
+            return nowTs - (p.ts || 0) < 300000; // fused contacts vanish 5 min after their feed stops listing them
+        });
+        if (wantSim) {
+            var have = pts.otht.reduce(function (n, p) { return n + (p.sim ? 1 : 0); }, 0);
+            if (have < GI_CONFIG.otht.simTracks) seedSimOth(GI_CONFIG.otht.simTracks - have);
+        }
+        found.forEach(function (p) { p.ts = Date.now(); p.live = true; upsert(pts.otht, p.id, p); });
+        linkState.otht = found.length ? 'live' : (pts.otht.length ? 'sim' : 'idle');
+    }
+    function seedSimOth(n) {
+        var c = scopeCenter(), degKm = 1 / 111;
+        for (var i = 0; i < n; i++) {
+            var r = (480 + i * 130) * degKm, brg = (i * 77 + Date.now() / 600000) * Math.PI / 180;
+            upsert(pts.otht, 'oth-sim-' + i, {
+                lat: c.lat + Math.cos(brg) * r,
+                lng: c.lng + Math.sin(brg) * r / Math.max(.2, Math.cos(c.lat * Math.PI / 180)),
+                speed: 430 + i * 45, heading: ((brg * 180 / Math.PI) + 180) % 360,
+                label: 'OTH-SIM-' + (i + 1), kind: 'AIR'
+            }).sim = true;
+        }
+    }
+
+    // --------------------------------------------------- legend + observers --
+    function ensureLegend() {
+        if (legendDone || !armedIds().length) return;
+        var leg = document.querySelector('.sc-legend');
+        if (!leg) return;
+        var dot = function (color, glow, label) {
+            return '<span><span class="sc-legend-dot" style="background:' + color + ';box-shadow:0 0 4px ' + (glow || color) + '"></span> ' + label + '</span>';
+        };
+        leg.insertAdjacentHTML('beforeend',
+            dot('#22d3ee', null, 'Vessel') +
+            dot('#22c544', null, 'TAK-Friendly') +
+            dot('#8a8f98', null, 'TAK-Unknown') +
+            dot('#ffd166', '#ffd166', 'OTH-Gold'));
+        legendDone = true;
+    }
+    function wireChrome() {
+        metaEl = document.getElementById('gaiaMeta');
+        hudEl = document.getElementById('fusionMapHud');
+        statusEl = document.getElementById('gaiaStatus');
+        if (metaEl) {
+            new MutationObserver(function () {
+                if (metaEl.textContent !== lastMetaWritten) writeMeta();
+            }).observe(metaEl, { childList: true, characterData: true, subtree: true });
+        }
+        if (hudEl) {
+            new MutationObserver(function () {
+                var suffix = hudSuffix();
+                var base = hudEl.textContent.replace(/\s*\u00b7 INTEGRATIONS.*$/, '');
+                var want = base + suffix;
+                if (hudEl.textContent !== want) { lastHudWritten = want; hudEl.textContent = want; }
+            }).observe(hudEl, { childList: true, characterData: true, subtree: true });
+        }
+        // Re-add markers after any core fusion-map rebuild (additive wrap).
+        if (typeof window.renderFusionMap === 'function' && !window.renderFusionMap.__giWrapped) {
+            var origRender = window.renderFusionMap;
+            window.renderFusionMap = function () {
+                var res = origRender.apply(this, arguments);
+                setTimeout(renderAllArmed, 450);
+                return res;
+            };
+            window.renderFusionMap.__giWrapped = true;
+        }
+    }
+
+    // -------------------------------------------------------------- public ---
+    window.GAIA_INTEGRATIONS = {
+        toggle: function (id, on) { if (GI_CONFIG[id]) toggle(id, on); },
+        state: function () { return JSON.parse(JSON.stringify(state)); },
+        counts: function () { return { ais: pts.ais.length, tak: pts.tak.length, otht: pts.otht.length }; },
+        config: GI_CONFIG   // ← swap-in point for real/commercial feeds
+    };
+
+    // ---------------------------------------------------------------- boot ---
+    var bootTries = 0;
+    function boot() {
+        // Gate on the GAIA controller itself: rows rendered + public API live —
+        // so counter math (GAIA.layers) and DOM anchors are guaranteed.
+        var anchor = document.getElementById('gaiaLayerList');
+        if (!anchor || !anchor.children.length || !window.GAIA || typeof window.GAIA.layers !== 'function') {
+            if (++bootTries < 40) setTimeout(boot, 500);
+            return;
+        }
+        if (!injectSection()) return;
+        wireChrome();
+        SRC_IDS.forEach(function (id) { if (state[id].on) { PROVIDERS[id](true); } });
+        if (armedIds().length) { ensureLegend(); footerSummary(); }
+        refreshStatuses();
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(boot, 350); });
+    else setTimeout(boot, 350);
+})();
+</script>
+
+<style id="maven-smart-layer-styles">
+/* ── MAVEN Smart Layer — Palantir-style tasking drawer over the COP ── */
+#mavenToggleBtn { color: var(--accent-neon); }
+.maven-drawer {
+    position: absolute; top: 58px; right: 10px; bottom: 34px; width: 330px;
+    display: flex; flex-direction: column;
+    background: color-mix(in srgb, var(--bg-card) 92%, transparent);
+    border: 1px solid var(--border-color); border-radius: 6px;
+    font-family: var(--font-mono); font-size: 10px; color: var(--text-primary);
+    backdrop-filter: blur(6px); z-index: 30;
+}
+.maven-hidden { display: none !important; }
+.maven-body section.maven-hide { display: none; }
+.maven-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; border-bottom: 1px solid var(--border-color);
+}
+.maven-title { letter-spacing: .14em; text-transform: uppercase; color: var(--accent-neon); }
+.maven-live { color: var(--text-muted); letter-spacing: .08em; }
+.maven-tabs { display: flex; gap: 4px; padding: 6px 8px 0; }
+.maven-tabs button {
+    flex: 1; background: transparent; border: 1px solid var(--border-color);
+    border-radius: 4px 4px 0 0; color: var(--text-muted);
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: .1em;
+    padding: 5px 0; cursor: pointer;
+}
+.maven-tabs button.active { color: var(--accent-neon); border-bottom-color: transparent; background: rgba(223,241,64,.06); }
+.maven-body { flex: 1; overflow-y: auto; padding: 8px; border-top: 1px solid var(--border-color); }
+.maven-body section > .maven-empty { color: var(--text-muted); padding: 14px 4px; text-align: center; letter-spacing: .06em; }
+.maven-btn {
+    width: 100%; margin-bottom: 8px; padding: 7px 0; cursor: pointer;
+    background: rgba(223,241,64,.08); border: 1px solid rgba(223,241,64,.45);
+    border-radius: 4px; color: var(--accent-neon);
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
+}
+.maven-btn:hover { background: rgba(223,241,64,.16); }
+.maven-btn[disabled] { opacity: .45; cursor: wait; }
+.maven-row {
+    border: 1px solid var(--border-color); border-radius: 4px;
+    padding: 7px 8px; margin-bottom: 6px; line-height: 1.55;
+}
+.maven-row b { color: var(--text-primary); }
+.maven-row .mv-sub { color: var(--text-muted); }
+.maven-chip { display: inline-block; padding: 1px 6px; border-radius: 3px; border: 1px solid var(--border-color); margin-right: 4px; }
+.maven-chip.high { color: #ff8080; border-color: rgba(255,128,128,.5); }
+.maven-chip.medium { color: var(--amber); border-color: rgba(245,158,11,.5); }
+.maven-chip.low { color: var(--text-muted); }
+.maven-chip.ok { color: #80e000; border-color: rgba(128,224,0,.5); }
+.maven-form input[type=text], .maven-form select {
+    width: 100%; background: rgba(0,0,0,.25); color: var(--text-primary);
+    border: 1px solid var(--border-color); border-radius: 4px;
+    font-family: var(--font-mono); font-size: 10px; padding: 5px 6px; margin: 3px 0 8px;
+}
+.maven-radios { display: flex; gap: 10px; margin: 4px 0 8px; }
+.maven-radios label { cursor: pointer; color: var(--text-muted); }
+.maven-radios label.sel { color: var(--accent-neon); }
+.maven-radius { display: flex; gap: 6px; margin: 4px 0 8px; }
+.maven-radius button {
+    flex: 1; padding: 4px 0; cursor: pointer; border-radius: 4px;
+    background: transparent; border: 1px solid var(--border-color);
+    color: var(--text-muted); font-family: var(--font-mono); font-size: 9px;
+}
+.maven-radius button.active { color: var(--accent-neon); border-color: rgba(223,241,64,.5); }
+.maven-coa-bars { margin-top: 5px; }
+.maven-bar { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+.maven-bar span { width: 52px; color: var(--text-muted); }
+.maven-bar i { flex: 1; height: 4px; background: rgba(255,255,255,.08); border-radius: 2px; position: relative; overflow: hidden; }
+.maven-bar i::after { content: ''; position: absolute; inset: 0 auto 0 0; width: var(--w, 0%);
+    background: var(--accent-neon); border-radius: 2px; }
+.maven-rank { float: right; color: var(--accent-neon); border: 1px solid rgba(223,241,64,.5); border-radius: 3px; padding: 0 5px; }
+.maven-det-actions { display: flex; gap: 6px; margin-top: 4px; }
+.maven-det-actions button {
+    flex: 1; cursor: pointer; padding: 3px 0; border-radius: 3px;
+    background: transparent; border: 1px solid var(--border-color);
+    color: var(--text-muted); font-family: var(--font-mono); font-size: 9px;
+}
+.maven-det-actions button.yes { color: #80e000; border-color: rgba(128,224,0,.5); }
+.maven-det-actions button.no { color: #ff8080; border-color: rgba(255,128,128,.5); }
+.maven-asset-glyph svg, .maven-det-glyph svg { filter: drop-shadow(0 0 3px rgba(0,0,0,.9)); }
+.maven-badge {
+    position: absolute; left: 10px; bottom: 34px; z-index: 25;
+    padding: 3px 8px; border-radius: 4px;
+    background: rgba(0,0,0,.65); border: 1px solid rgba(223,241,64,.35);
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: .1em;
+    color: var(--accent-neon); pointer-events: none;
+}
+.sc-map-canvas-wrap.maven-crosshair { cursor: crosshair; }
+#mavenAoiHint {
+    position: absolute; top: 58px; left: 50%; transform: translateX(-50%); z-index: 31;
+    padding: 6px 12px; border-radius: 4px; background: rgba(0,0,0,.75);
+    border: 1px solid rgba(223,241,64,.45); color: var(--accent-neon);
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: .1em;
+}
+</style>
+
+<script id="maven-smart-layer">
+/* ══════════════════════════════════════════════════════════════════════
+   MAVEN Smart Layer — Palantir-Maven-style maneuver-tasking loop on the
+   Spinal Cracker unified map. Backend-native: every object below lives in
+   sc_* ontology tables; COA scores come from REAL kriegsimulation runs.
+   Symbology: MIL-STD-2525D affinity frames drawn as inline SVG
+   (friendly cyan arch/rect #80E0FF · unknown yellow quatrefoil #FFEC00 ·
+   hostile red diamond reserved for hostile-designated contacts).
+   ══════════════════════════════════════════════════════════════════════ */
+(function () {
+    'use strict';
+    var $ = function (id) { return document.getElementById(id); };
+    var CYAN = '#80E0FF', YEL = '#FFEC00', GRAY = '#8a8f98';
+
+    var S = {
+        open: false, booted: false, busy: false, timer: null,
+        state: { assets: [], tasks: [], detections: [], coas: [] },
+        aoiMode: false, aoiRadius: 25, pending: null,
+        assetClass: 'uas',
+        markers: [],           // asset DOM markers
+        detMarkers: {},        // pk -> marker (diffed)
+        aoiShownFor: '',       // task pk whose AOI ring is drawn
+        fitDone: {}            // callsign -> map auto-framed once
+    };
+
+    /* ---------------------------------------------------------- svg ---- */
+    function svgFrame(kind) {
+        var s;
+        if (kind === 'uas') {          // MIL-STD-2525 air-friendly arch
+            s = '<svg width="26" height="26" viewBox="0 0 24 24">' +
+                '<path d="M4 20 V12 A8 8 0 0 1 20 12 V20 Z" fill="rgba(0,10,20,.55)" stroke="' + CYAN + '" stroke-width="1.6"/>' +
+                '<circle cx="12" cy="14.5" r="2.1" fill="' + CYAN + '"/></svg>';
+        } else if (kind === 'usv') {   // surface-friendly rectangle
+            s = '<svg width="26" height="26" viewBox="0 0 24 24">' +
+                '<rect x="3.5" y="7" width="17" height="12" rx="1" fill="rgba(0,10,20,.55)" stroke="' + CYAN + '" stroke-width="1.6"/>' +
+                '<path d="M7 13 h10 M12 9.5 v7" stroke="' + CYAN + '" stroke-width="1.4"/></svg>';
+        } else if (kind === 'det') {   // unknown-affinity quatrefoil
+            s = '<svg width="20" height="20" viewBox="0 0 24 24">' +
+                '<path d="M12 1 C15 1 17 3 17 6 L17 7 L18 7 C21 7 23 9 23 12 C23 15 21 17 18 17 L17 17 L17 18 C17 21 15 23 12 23 C9 23 7 21 7 18 L7 17 L6 17 C3 17 1 15 1 12 C1 9 3 7 6 7 L7 7 L7 6 C7 3 9 1 12 1 Z" fill="rgba(20,18,0,.5)" stroke="' + YEL + '" stroke-width="1.6"/>' +
+                '</svg>';
+        } else if (kind === 'det-ok') { // validated → known/friendly frame
+            s = '<svg width="20" height="20" viewBox="0 0 24 24">' +
+                '<rect x="3" y="5" width="18" height="14" rx="4" fill="rgba(0,14,20,.5)" stroke="' + CYAN + '" stroke-width="1.7"/>' +
+                '<path d="M7.5 12 l3 3 l6 -6" stroke="' + CYAN + '" stroke-width="1.8" fill="none"/></svg>';
+        } else if (kind === 'det-no') { // rejected → dimmed quatrefoil
+            s = '<svg width="20" height="20" viewBox="0 0 24 24" style="opacity:.45">' +
+                '<path d="M12 1 C15 1 17 3 17 6 L17 7 L18 7 C21 7 23 9 23 12 C23 15 21 17 18 17 L17 17 L17 18 C17 21 15 23 12 23 C9 23 7 21 7 18 L7 17 L6 17 C3 17 1 15 1 12 C1 9 3 7 6 7 L7 7 L7 6 C7 3 9 1 12 1 Z" fill="rgba(30,30,30,.4)" stroke="' + GRAY + '" stroke-width="1.5"/>' +
+                '<path d="M8 8 L16 16" stroke="' + GRAY + '" stroke-width="1.5"/></svg>';
+        } else {                        // task anchor: neon objective pip
+            s = '<svg width="18" height="18" viewBox="0 0 24 24">' +
+                '<circle cx="12" cy="12" r="7.5" fill="none" stroke="#DFF140" stroke-width="1.6"/>' +
+                '<circle cx="12" cy="12" r="2" fill="#DFF140"/></svg>';
+        }
+        var wrap = document.createElement('div');
+        wrap.className = kind.indexOf('det') === 0 ? 'maven-det-glyph' : 'maven-asset-glyph';
+        wrap.innerHTML = s;
+        wrap.style.cssText = 'cursor:pointer;display:flex;';
+        return wrap;
+    }
+
+    /* ------------------------------------------------------ geometry ---- */
+    function circlePoly(lat, lng, km, steps) {
+        steps = steps || 36;
+        var pts = [], dLat = km / 111.32, dLng = km / (111.32 * Math.cos(lat * Math.PI / 180));
+        for (var i = 0; i < steps; i++) {
+            var a = i / steps * 2 * Math.PI;
+            pts.push([lng + dLng * Math.sin(a), lat + dLat * Math.cos(a)]);
+        }
+        pts.push(pts[0]);
+        return pts;
+    }
+    function fovPoly(lat, lng, hdgDeg, km) {
+        var spread = 30, steps = 7, pts = [[lng, lat]], dLat = km / 111.32,
+            dLng = km / (111.32 * Math.cos(lat * Math.PI / 180));
+        for (var i = 0; i <= steps; i++) {
+            var b = (hdgDeg - spread + (2 * spread) * i / steps) * Math.PI / 180;
+            pts.push([lng + dLng * Math.sin(b), lat + dLat * Math.cos(b)]);
+        }
+        return pts;
+    }
+
+    /* --------------------------------------------------------- layers ---- */
+    // NB: admin.html declares `let fusionMap` (global lexical binding, NOT a
+    // window property) — always resolve through getMap().
+    function getMap() {
+        try {
+            if (typeof fusionMap !== 'undefined' && fusionMap && fusionMap.on) return fusionMap;
+        } catch (e) {}
+        return (window.fusionMap && window.fusionMap.on) ? window.fusionMap : null;
+    }
+    function ensureLayers() {
+        var m = getMap();
+        if (!m || m.getSource('maven-aoi')) return;
+        m.addSource('maven-aoi', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        m.addLayer({ id: 'maven-aoi-fill', type: 'fill', source: 'maven-aoi',
+            paint: { 'fill-color': '#DFF140', 'fill-opacity': 0.05 } });
+        m.addLayer({ id: 'maven-aoi-line', type: 'line', source: 'maven-aoi',
+            paint: { 'line-color': '#DFF140', 'line-width': 1.4, 'line-dasharray': [3, 2], 'line-opacity': 0.85 } });
+        m.addSource('maven-fov', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        m.addLayer({ id: 'maven-fov-fill', type: 'fill', source: 'maven-fov',
+            paint: { 'fill-color': CYAN, 'fill-opacity': 0.07 } });
+        m.addLayer({ id: 'maven-fov-line', type: 'line', source: 'maven-fov',
+            paint: { 'line-color': CYAN, 'line-width': 1, 'line-opacity': 0.55 } });
+    }
+    function setData(src, feats) {
+        try { getMap().getSource(src).setData({ type: 'FeatureCollection', features: feats }); } catch (e) {}
+    }
+
+    function drawGeo() {
+        ensureLayers();
+        var feats = [], fov = [];
+        S.state.tasks.forEach(function (t) {
+            if (t.aoi_lat == null) return;
+            feats.push({ type: 'Feature', properties: { name: t.name },
+                geometry: { type: 'Polygon', coordinates: [circlePoly(t.aoi_lat, t.aoi_lng, t.aoi_radius_km || 25)] } });
+        });
+        S.state.assets.forEach(function (a) {
+            if (a.state === 'transit' && a.heading_deg != null)
+                fov.push({ type: 'Feature', properties: {},
+                    geometry: { type: 'Polygon', coordinates: [fovPoly(a.lat, a.lng, a.heading_deg, a.detect_radius_km)] } });
+        });
+        setData('maven-aoi', feats);
+        setData('maven-fov', fov);
+    }
+
+    /* -------------------------------------------------------- markers ---- */
+    function clearMarkers() {
+        S.markers.forEach(function (mk) { try { mk.remove(); } catch (e) {} });
+        S.markers = [];
+        Object.keys(S.detMarkers).forEach(function (k) {
+            try { S.detMarkers[k].remove(); } catch (e) {}
+        });
+        S.detMarkers = {};
+    }
+    function drawMarkers() {
+        var m = getMap();
+        if (!m) return;
+        // Assets: reuse DOM nodes in place (diff updater keeps it snappy)
+        S.state.assets.forEach(function (a, i) {
+            if (!S.fitDone[a.callsign] && a.lat != null) {
+                S.fitDone[a.callsign] = true;
+                var t = null;
+                S.state.tasks.forEach(function (x) { if (x.pk === a.task_pk) t = x; });
+                try {
+                    var b = [[Math.min(a.lng, t ? t.aoi_lng : a.lng), Math.min(a.lat, t ? t.aoi_lat : a.lat)],
+                             [Math.max(a.lng, t ? t.aoi_lng : a.lng), Math.max(a.lat, t ? t.aoi_lat : a.lat)]];
+                    m.fitBounds(b, { padding: 120, maxZoom: 8, duration: 1600 });
+                } catch (e) {}
+            }
+        });
+        while (S.markers.length < S.state.assets.length) {
+            var idx = S.markers.length, a0 = S.state.assets[idx];
+            var el = svgFrame(a0.asset_class);
+            el.title = a0.callsign;
+            var mk = new maplibregl.Marker({ element: el }).addTo(m);
+            S.markers.push(mk);
+        }
+        while (S.markers.length > S.state.assets.length) { S.markers.pop().remove(); }
+        S.state.assets.forEach(function (a, i) {
+            var mk = S.markers[i];
+            mk.setLngLat([a.lng, a.lat]);
+            mk.getElement().title = a.callsign + ' · ' + a.state +
+                (a.eta_remaining_s ? ' · ETA ' + Math.round(a.eta_remaining_s / 60) + 'min' : '');
+        });
+        // Detections: diff by pk
+        var seen = {};
+        S.state.detections.forEach(function (d) {
+            seen[d.pk] = true;
+            var kind = d.validated === true ? 'det-ok' : (d.validated === false ? 'det-no' : 'det');
+            var mk = S.detMarkers[d.pk];
+            if (!mk) {
+                var el = svgFrame(kind);
+                var dm = new maplibregl.Marker({ element: el }).setLngLat([d.lng, d.lat]).addTo(m);
+                dm.getElement().addEventListener('click', function () { renderDetRail(true); });
+                S.detMarkers[d.pk] = dm;
+            } else {
+                mk.setLngLat([d.lng, d.lat]);
+            }
+        });
+        Object.keys(S.detMarkers).forEach(function (pk) {
+            if (!seen[pk]) { S.detMarkers[pk].remove(); delete S.detMarkers[pk]; }
+        });
+    }
+
+    /* ----------------------------------------------------- data plane ---- */
+    async function refresh() {
+        if (S.busy) return;
+        S.busy = true;
+        try {
+            await api('/maven/tick', { method: 'POST' }).catch(function () {});
+            S.state = await api('/maven/state');
+            drawGeo();
+            drawMarkers();
+            renderBadge();
+            renderLists();
+            renderDetRail();
+        } catch (e) { /* transient */ }
+        S.busy = false;
+    }
+    function startPolling() {
+        if (S.timer) return;
+        refresh();
+        S.timer = setInterval(refresh, 4000);
+    }
+    function stopPolling() {
+        clearInterval(S.timer);
+        S.timer = null;
+        clearMarkers();
+        setData('maven-aoi', []);
+        setData('maven-fov', []);
+        S.fitDone = {};
+        var b = $('mavenHudBadge');
+        if (b) b.classList.add('maven-hidden');
+    }
+
+    /* ------------------------------------------------------------ ui ---- */
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g,
+            function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+    }
+    function renderBadge() {
+        var b = $('mavenHudBadge');
+        if (!b) return;
+        var nVal = S.state.detections.filter(function (d) { return d.validated !== true; }).length;
+        b.textContent = 'MAVEN ' + S.state.tasks.length + 'T \u00b7 ' + S.state.assets.length + 'A \u00b7 ' + nVal + 'D';
+        b.classList.toggle('maven-hidden', !S.open);
+    }
+    function renderLists() { renderTasks(); renderAssets(); renderCoas(); renderQueue(); }
+
+    function renderTasks() {
+        var host = $('mavenTaskList');
+        if (!host) return;
+        var html = '';
+        if (S.pending) html += taskForm();
+        if (!S.state.tasks.length && !S.pending)
+            html += '<div class="maven-empty">NO TASKS<br>+ NEW TASK, then click the map</div>';
+        S.state.tasks.forEach(function (t) {
+            var dispatched = S.state.assets.some(function (a) { return a.task_pk === t.pk; });
+            html += '<div class="maven-row"><b>' + esc(t.name) + '</b>' +
+                '<span class="maven-chip ' + esc(t.priority) + '">' + esc((t.priority || '').toUpperCase()) + '</span>' +
+                (dispatched ? '<span class="maven-chip ok">ACTIVE</span>' : '') +
+                '<br><span class="mv-sub">' + Number(t.aoi_lat).toFixed(2) + 'N ' + Number(t.aoi_lng).toFixed(2) + 'E \u00b7 r=' + esc(t.aoi_radius_km) + 'km' +
+                ' \u00b7 ' + esc(t.assets || 0) + 'A/' + esc(t.detections || 0) + 'D</span>';
+            if (!dispatched) {
+                html += '<div class="maven-det-actions">' +
+                    '<button class="yes" data-dispatch="' + esc(t.id) + '" data-cls="uas">\u25B3 DISPATCH UAS</button>' +
+                    '<button class="yes" data-dispatch="' + esc(t.id) + '" data-cls="usv">\u25CB DISPATCH USV</button></div>';
+            }
+            html += '</div>';
+        });
+        host.innerHTML = html;
+        host.querySelectorAll('[data-dispatch]').forEach(function (btn) {
+            btn.onclick = function () {
+                dispatch(btn.getAttribute('data-dispatch'), btn.getAttribute('data-cls'));
+            };
+        });
+        var mkBtn = $('mavenMakeTask');
+        if (mkBtn) mkBtn.onclick = submitPending;
+        host.querySelectorAll('[data-rad]').forEach(function (b) {
+            b.onclick = function () {
+                S.aoiRadius = parseInt(b.getAttribute('data-rad'), 10);
+                host.querySelectorAll('[data-rad]').forEach(function (x) { x.classList.remove('active'); });
+                b.classList.add('active');
+            };
+        });
+        host.querySelectorAll('[data-ac]').forEach(function (r) {
+            r.onclick = function () {
+                S.assetClass = r.getAttribute('data-ac');
+                host.querySelectorAll('[data-ac]').forEach(function (x) { x.classList.remove('sel'); });
+                r.classList.add('sel');
+            };
+        });
+    }
+    function taskForm() {
+        var p = S.pending || {};
+        return '<div class="maven-form maven-row"><b>NEW TASK @ ' + Number(p.lat || 0).toFixed(3) + 'N ' + Number(p.lng || 0).toFixed(3) + 'E</b>' +
+            '<input type="text" id="mavenTaskName" placeholder="TASK NAME" maxlength="60">' +
+            '<select id="mavenTaskPri"><option value="low">PRIORITY LOW</option>' +
+            '<option value="medium" selected>PRIORITY MEDIUM</option><option value="high">PRIORITY HIGH</option></select>' +
+            '<div class="maven-radius">' + [10, 25, 50].map(function (r) {
+                return '<button data-rad="' + r + '"' + (r === S.aoiRadius ? ' class="active"' : '') + '>' + r + ' km</button>';
+            }).join('') + '</div>' +
+            '<div class="maven-radios">' +
+            '<label data-ac="uas"' + (S.assetClass === 'uas' ? ' class="sel"' : '') +'>\u25B3 UAS</label>' +
+            '<label data-ac="usv"' + (S.assetClass === 'usv' ? ' class="sel"' : '') +'>\u25CB USV</label></div>' +
+            '<button class="maven-btn" id="mavenMakeTask">\u2713 CREATE + DISPATCH</button></div>';
+    }
+    async function submitPending() {
+        if (!S.pending) return;
+        var name = ($('mavenTaskName') || {}).value || '';
+        var pri = ($('mavenTaskPri') || {}).value || 'medium';
+        var region = 'Global';
+        try {
+            var bboxes = (typeof SC_REGION_BBOXES !== 'undefined') ? SC_REGION_BBOXES : {};
+            Object.keys(bboxes).forEach(function (k) {
+                var b = bboxes[k];
+                if (!b) return;
+                if (S.pending.lat >= b.lamin && S.pending.lat <= b.lamax &&
+                    S.pending.lng >= b.lomin && S.pending.lng <= b.lomax) region = k;
+            });
+        } catch (e) {}
+        var theater = region === 'Baltic' ? 'Baltic Guardian' : (region === 'Global' ? 'Global Commons' : region + ' Theater');
+        if (!name) name = (region.replace(/[^A-Za-z]/g, '').slice(0, 6).toUpperCase() || 'TASK') +
+            '-' + Date.now().toString(36).toUpperCase().slice(-5);
+        try {
+            var t = await api('/maven/task', { method: 'POST', body: JSON.stringify({
+                name: name,
+                aoi_lat: S.pending.lat, aoi_lng: S.pending.lng,
+                aoi_radius_km: S.aoiRadius, priority: pri,
+                theater: theater
+            })});
+            await dispatch(t.task_id, S.assetClass);
+            S.pending = null;
+            exitAoiMode();
+            refresh();
+        } catch (e) { console.warn('maven task failed', e); }
+    }
+    async function dispatch(taskId, cls) {
+        try {
+            await api('/maven/task/' + taskId + '/dispatch', { method: 'POST',
+                body: JSON.stringify({ asset_class: cls }) });
+            refresh();
+        } catch (e) { console.warn('dispatch failed', e); }
+    }
+    function renderAssets() {
+        var host = $('mavenAssetList');
+        if (!host) return;
+        if (!S.state.assets.length) { host.innerHTML = '<div class="maven-empty">NO ASSETS AIRBORNE</div>'; return; }
+        host.innerHTML = S.state.assets.map(function (a) {
+            var glyph = a.asset_class === 'uas' ? '\u25B3' : '\u25CB';
+            var sim = a.speedup && a.speedup !== 1 ? ' \u00b7 SIM\u00d7' + Math.round(a.speedup) : '';
+            return '<div class="maven-row"><b>' + glyph + ' ' + esc(a.callsign) + '</b>' +
+                '<span class="maven-chip ' + (a.state === 'on-station' ? 'ok' : 'medium') + '">' + esc(a.state.toUpperCase()) + '</span>' +
+                '<br><span class="mv-sub">from ' + esc(a.origin) + sim + ' \u00b7 ' + a.lat.toFixed(2) + 'N ' + a.lng.toFixed(2) + 'E \u00b7 ' +
+                Math.round(a.heading_deg) + '\u00B0' + (a.eta_remaining_s ? ' \u00b7 ETA ' + Math.ceil(a.eta_remaining_s / 60) + 'm' : '') + '</span></div>';
+        }).join('');
+    }
+    function renderCoas() {
+        var host = $('mavenCoaList');
+        if (!host) return;
+        if (!S.state.coas.length) { host.innerHTML = '<div class="maven-empty">NO COAs<br>GENERATE runs 3 real campaign sims</div>'; return; }
+        var sorted = S.state.coas.slice().sort(function (a, b) { return (a.overall || 0) - (b.overall || 0); });
+        host.innerHTML = sorted.map(function (c, i) {
+            var rank = sorted.length - i;
+            return '<div class="maven-row"><span class="maven-rank">#' + rank + '</span><b>' + esc(c.title) + '</b>' +
+                '<br><span class="mv-sub">' + esc(c.summary) + '</span>' +
+                '<div class="maven-coa-bars">' +
+                bar('RISK', c.risk_score) + bar('LOG', c.logistics_score) + bar('TIME', c.time_score) + '</div>' +
+                '<span class="mv-sub">RED ' + esc(c.red_win_pct) + '% \u00b7 BLUE ' + esc(c.blue_win_pct) + '% \u00b7 STALE ' + esc(c.stalemate_pct) + '%' +
+                ' \u00b7 ' + esc(c.scenarios_run) + ' runs \u00b7 sim ' + esc(c.sim_ref) + '</span></div>';
+        }).join('');
+    }
+    function bar(label, v) {
+        v = Math.max(0, Math.min(100, Number(v) || 0));
+        return '<div class="maven-bar"><span>' + label + '</span><i style="--w:' + v + '%"></i><span>' + Math.round(v) + '</span></div>';
+    }
+    function renderQueue() {
+        var host = $('mavenQueueList');
+        if (!host) return;
+        var flights = (typeof fusionFlights !== 'undefined' && Array.isArray(fusionFlights)) ? fusionFlights : [];
+        var rows = flights.map(function (f) {
+            var p = f.properties || f;
+            var mil = (p.category === 'military') ? 50 : 0;
+            var spd = Number(p.speed_knots || 0), alt = Number(p.alt || 0);
+            var score = mil + (spd >= 430 ? 30 : 0) + (alt >= 8500 ? 20 : 0) + Math.min(19, spd / 100);
+            return { p: p, score: score };
+        }).filter(function (r) { return r.score >= 30 && r.p.lat != null; })
+          .sort(function (a, b) { return b.score - a.score; }).slice(0, 8);
+        if (!rows.length) { host.innerHTML = '<div class="maven-empty">NO HIGH-INTEREST TRACKS IN SCOPE</div>'; return; }
+        host.innerHTML = rows.map(function (r, i) {
+            return '<div class="maven-row"><b>#' + (i + 1) + ' ' + esc(r.p.callsign || r.p.icao24 || '?') + '</b>' +
+                '<span class="maven-chip ' + (r.p.category === 'military' ? 'high' : 'low') + '">' + esc(String(r.p.category || '').toUpperCase()) + '</span>' +
+                '<br><span class="mv-sub">' + Math.round(Number(r.p.speed_knots) || 0) + ' kt \u00b7 ' +
+                (r.p.lat != null ? Number(r.p.lat).toFixed(2) + 'N ' + Number(r.p.lng).toFixed(2) + 'E' : '') + '</span>' +
+                '<div class="maven-det-actions"><button class="yes" data-qtask="' + i + '">+ TASK THIS TRACK</button></div></div>';
+        }).join('');
+        host.querySelectorAll('[data-qtask]').forEach(function (btn) {
+            btn.onclick = function () {
+                var r = rows[parseInt(btn.getAttribute('data-qtask'), 10)];
+                enterAoiMode();
+                S.pending = { lat: r.p.lat, lng: r.p.lng };
+                selectTab('tasks');
+                renderTasks();
+            };
+        });
+    }
+    function renderDetRail(force) {
+        var rail = $('mavenDetRail');
+        if (!rail) return;
+        var pending = S.state.detections.filter(function (d) { return d.validated === null || typeof d.validated === 'undefined'; })
+            .slice(0, 6);
+        if (force && !pending.length) {
+            rail.innerHTML = '';
+            return;
+        }
+        rail.innerHTML = pending.length
+            ? '<div style="padding:6px 8px;border-top:1px solid var(--border-color)"><b>VALIDATE DETECTIONS</b></div>' +
+              pending.map(function (d) {
+                  return '<div class="maven-row" style="margin:6px 8px"><b>' + esc(d.label) + '</b> ' +
+                      '<span class="maven-chip medium">' + esc(d.det_class) + '</span>' +
+                      '<br><span class="mv-sub">' + esc(d.track_source) + ':' + esc(d.track_id) + ' \u00b7 conf ' + esc(Math.round((d.confidence || 0) * 100)) + '% \u00b7 ' + esc(d.asset_callsign) + '</span>' +
+                      '<div class="maven-det-actions">' +
+                      '<button class="yes" data-val="' + esc(d.id) + '" data-v="true">CONFIRM</button>' +
+                      '<button class="no" data-val="' + esc(d.id) + '" data-v="false">REJECT</button></div></div>';
+              }).join('')
+            : '';
+        rail.querySelectorAll('[data-val]').forEach(function (b) {
+            b.onclick = async function () {
+                try {
+                    await api('/maven/detection/' + b.getAttribute('data-val') + '/validate', {
+                        method: 'POST', body: JSON.stringify({ verdict: b.getAttribute('data-v') === 'true' }) });
+                    refresh();
+                } catch (e) {}
+            };
+        });
+    }
+
+    /* -------------------------------------------------- aoi interaction ---- */
+    function enterAoiMode() {
+        S.aoiMode = true;
+        var wrap = document.querySelector('.sc-map-canvas-wrap');
+        if (wrap) wrap.classList.add('maven-crosshair');
+        $('mavenAoiHint').classList.remove('maven-hidden');
+    }
+    function exitAoiMode() {
+        S.aoiMode = false;
+        var wrap = document.querySelector('.sc-map-canvas-wrap');
+        if (wrap) wrap.classList.remove('maven-crosshair');
+        $('mavenAoiHint').classList.add('maven-hidden');
+    }
+    function selectTab(name) {
+        document.querySelectorAll('.maven-tabs button').forEach(function (b) {
+            b.classList.toggle('active', b.getAttribute('data-mtab') === name);
+        });
+        document.querySelectorAll('.maven-body section[data-mpanel]').forEach(function (sec) {
+            sec.classList.toggle('maven-hide', sec.getAttribute('data-mpanel') !== name);
+        });
+    }
+
+    /* ----------------------------------------------------------- boot ---- */
+    function toggleDrawer() {
+        S.open = !S.open;
+        $('mavenDrawer').classList.toggle('maven-hidden', !S.open);
+        $('mavenToggleBtn').classList.toggle('retro-map-btn-active', S.open);
+        if (S.open) { startPolling(); } else { stopPolling(); }
+    }
+    function wireOnce() {
+        if (S.booted) return;
+        S.booted = true;
+        $('mavenToggleBtn').onclick = toggleDrawer;
+        document.querySelectorAll('.maven-tabs button').forEach(function (b) {
+            b.onclick = function () { selectTab(b.getAttribute('data-mtab')); };
+        });
+        $('mavenNewTaskBtn').onclick = function () {
+            if (!S.aoiMode) { enterAoiMode(); }
+            else { exitAoiMode(); S.pending = null; renderTasks(); }
+        };
+        $('mavenCoaBtn').onclick = async function () {
+            var btn = $('mavenCoaBtn');
+            btn.disabled = true;
+            btn.textContent = 'RUNNING CAMPAIGN SIMS\u2026';
+            try {
+                await api('/maven/coa/generate', { method: 'POST',
+                    body: JSON.stringify({ theater: 'Baltic Guardian', scenarios: 300, seed: 42 }) });
+                refresh();
+            } catch (e) { console.warn('coa failed', e); }
+            btn.disabled = false;
+            btn.textContent = 'GENERATE COAs';
+        };
+        var m = getMap();
+        if (m) {
+            m.on('click', function (e) {
+                if (!S.aoiMode) return;
+                S.pending = { lat: e.lngLat.lat, lng: e.lngLat.lng };
+                selectTab('tasks');
+                renderTasks();
+            });
+        }
+        document.addEventListener('keydown', function (ev) {
+            if (ev.key === 'Escape' && S.aoiMode) { exitAoiMode(); S.pending = null; renderTasks(); }
+        });
+    }
+    function boot(tries) {
+        tries = tries || 0;
+        if (!$('mavenDrawer') || typeof api !== 'function' || typeof maplibregl === 'undefined') {
+            if (++tries < 60) setTimeout(function () { boot(tries); }, 500);
+            return;
+        }
+        var waitMap = setInterval(function () {
+            var fm = getMap();
+            if (fm) {
+                clearInterval(waitMap);
+                wireOnce();
+                window.MAVEN = {
+                    toggle: toggleDrawer, refresh: refresh,
+                    isAoiMode: function () { return S.aoiMode; },
+                    isOpen: function () { return S.open; }
+                };
+                $('mavenToggleBtn').disabled = false;
+            }
+        }, 500);
+    }
+    if (document.readyState === 'loading')
+        document.addEventListener('DOMContentLoaded', function () { setTimeout(boot, 400); });
+    else setTimeout(boot, 400);
 })();
 </script>
 

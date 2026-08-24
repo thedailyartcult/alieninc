@@ -146,20 +146,23 @@ def capability_counts(country_raw: str) -> dict:
 
 
 def query_entries(country: str | None = None, category: str | None = None,
-                  q: str | None = None, limit: int = 50, offset: int = 0) -> dict:
+                  q: str | None = None, limit: int = 50, offset: int = 0,
+                  include_description: bool = True) -> dict:
     """
     Live query over the proprietary catalog.
-    Filters combine with AND; q matches designation/description substring.
-    Returns metadata + entries (never logged).
+    Filters combine with AND; q matches designation/alt_names/description/
+    manufacturer/specs substring. Returns metadata + entries (never logged).
     """
     view = load_catalog()
     if not view.get("available"):
         return view
     limit = max(1, min(int(limit), 200))
+    offset = max(0, int(offset))
 
     norm_country = normalize_country(country) if country else None
     cats = [category] if category else view["categories"]
     hits = []
+    matched = 0  # total matches seen (incl. skipped-by-offset)
     qlow = (q or "").lower()
 
     for cat in cats:
@@ -172,35 +175,45 @@ def query_entries(country: str | None = None, category: str | None = None,
             iterable = enumerate(entries)
         for i, e in iterable:
             if qlow:
-                hay = " ".join([e.get("designation") or "", e.get("description") or "",
+                hay = " ".join([e.get("designation") or "",
+                                " ".join(e.get("alt_names") or []),
+                                e.get("description") or "",
+                                e.get("manufacturer") or "",
                                 " ".join(e.get("specs") or [])]).lower()
                 if qlow not in hay:
                     continue
+            matched += 1
+            if matched <= offset or len(hits) >= limit:
+                continue
             specs = {}
+            unparsed_specs = []
             for s in (e.get("specs") or []):
                 parsed = _parse_spec_value(s)
                 if parsed:
                     specs[parsed[0]] = parsed[1]
+                elif s.strip():
+                    unparsed_specs.append(s.strip())
             hits.append({
                 "category": cat,
                 "designation": e.get("designation"),
+                "alt_names": e.get("alt_names") or [],
                 "country": normalize_country(e.get("country")) or e.get("country"),
                 "manufacturer": e.get("manufacturer") or None,
+                **({"description": e.get("description")} if include_description else {}),
                 "specs_parsed": specs,
-                "sources_count": len(e.get("sources") or []),
+                "specs_extra": unparsed_specs[:8],
+                "sources": [{"label": s.get("label"), "url": s.get("url")}
+                            for s in (e.get("sources") or [])],
                 "fetched_at": e.get("fetched_at"),
             })
-            if len(hits) >= offset + limit:
-                break
-        if len(hits) >= offset + limit:
-            break
 
     return {
         "available": True,
         "query": {"country": norm_country, "category": category, "q": q},
-        "total_matched_estimate": len(hits) + (offset if hits else 0),
+        "total_matched_estimate": matched,
         "offset": offset, "limit": limit,
-        "entries": hits[offset:offset + limit],
+        "entries": hits,
+        "categories": view["categories"],
         "catalog_totals": {"entries": view["total_entries"],
                            "categories": len(view["categories"])},
     }
@@ -225,12 +238,17 @@ def curated_flagships(country_raw: str, per_category: int = 2) -> list[dict]:
                         reverse=True)[:per_category]
         for i in ranked:
             e = entries[i]
+            specs = [s for s in (e.get("specs") or []) if s.strip()]
             flagships.append({
                 "pk": f"arsenal:{cat}:{(e.get('designation') or '').strip().lower()[:80]}",
                 "category": cat,
                 "designation": e.get("designation"),
                 "country": norm_country,
                 "manufacturer": e.get("manufacturer") or None,
+                "description": (e.get("description") or "")[:400],
+                "alt_names": e.get("alt_names") or [],
+                "top_specs": specs[:6],
+                "sources_count": len(e.get("sources") or []),
                 "fetched_at": e.get("fetched_at"),
             })
     return flagships

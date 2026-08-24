@@ -425,6 +425,10 @@ async def link_arsenal_flagships(db: AsyncSession, per_category: int = 3,
 
     created = updated = linked = 0
     per_country = []
+    try:
+        from panteon.arsenal_store import ArsItem, ArsOntologyLink, fingerprint
+    except Exception:
+        ArsItem = None
     for c in countries:
         props = c.properties or {}
         if only_isos and props.get("iso3") not in {i.upper() for i in only_isos}:
@@ -433,13 +437,31 @@ async def link_arsenal_flagships(db: AsyncSession, per_category: int = 3,
             props.get("name") or "", per_category=max(1, min(int(per_category), 10)))
         n_new = 0
         for f in flagships:
-            meta = {k: v for k, v in f.items() if k != "pk"}
+            meta = {k: v for k, v in f.items()
+                    if k != "pk" and v not in (None, [], "")}
             sys_obj, was_new = await _upsert_war_object(db, atype.id, f["pk"], meta)
             created += was_new
             n_new += was_new
             updated += not was_new
             linked += await _ensure_link(db, lt_row.id, c.id, sys_obj.id,
                                          {"relationship": "operates"})
+            if ArsItem is not None and f.get("category") and f.get("designation"):
+                try:
+                    fp = fingerprint(f["category"], f["designation"])
+                    item_id = (await db.execute(
+                        select(ArsItem.id).where(ArsItem.fingerprint == fp)
+                    )).scalar_one_or_none()
+                    if item_id:
+                        exists = (await db.execute(
+                            select(ArsOntologyLink.id).where(
+                                ArsOntologyLink.ars_item_id == item_id,
+                                ArsOntologyLink.sc_object_id == sys_obj.id)
+                        )).scalar_one_or_none()
+                        if not exists:
+                            db.add(ArsOntologyLink(ars_item_id=item_id,
+                                                   sc_object_id=sys_obj.id))
+                except Exception:
+                    pass
         if flagships:
             per_country.append({"country": props.get("name"),
                                 "iso3": props.get("iso3"), "systems": len(flagships),
@@ -450,11 +472,20 @@ async def link_arsenal_flagships(db: AsyncSession, per_category: int = 3,
 
 
 async def graph_snapshot(db: AsyncSession, limit: int = 400) -> dict:
-    """Nodes + edges for map rendering of the war ontology subgraph."""
-    type_names = (await db.execute(
-        select(ObjectType).where(ObjectType.name.in_(list(_WAR_OBJECT_TYPES)))
+    """Nodes + edges for map rendering of the war ontology subgraph.
+    Includes MAVEN Smart Layer types when present (tasks/assets/detections/COAs)."""
+    try:
+        from panteon.maven import _MAVEN_OBJECT_TYPES as _MV_TYPES
+        mv_names = [n for n in _MV_TYPES]
+    except Exception:
+        mv_names = []
+
+    all_names = list(_WAR_OBJECT_TYPES) + [n for n in mv_names
+                                           if n not in _WAR_OBJECT_TYPES]
+    type_rows = (await db.execute(
+        select(ObjectType).where(ObjectType.name.in_(all_names))
     )).scalars().all()
-    tid_map = {str(t.id): t.name for t in type_names}
+    tid_map = {str(t.id): t.name for t in type_rows}
     core_tids = [tid for tid, name in tid_map.items() if name != ARSENAL_SYSTEM_TYPE]
 
     # Core entities first (theaters/forces/assessments/countries), then arsenal.
@@ -499,6 +530,6 @@ async def graph_snapshot(db: AsyncSession, limit: int = 400) -> dict:
         "counts": {
             "nodes": len(nodes), "edges": len(edges),
             "by_type": {name: sum(1 for n in nodes if tid_map.get(str(n.object_type_id)) == name)
-                        for name in _WAR_OBJECT_TYPES},
+                        for name in all_names},
         },
     }

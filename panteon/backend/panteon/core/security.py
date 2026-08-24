@@ -116,11 +116,16 @@ class AuditMiddleware(BaseHTTPMiddleware):
 
         auth_header = request.headers.get("authorization", "")
         user_email = None
+        auth_state = "none"  # no Authorization header at all
         if auth_header.startswith("Bearer "):
+            auth_state = "present"
             from panteon.core.auth import decode_supabase_claims
             claims = decode_supabase_claims(auth_header[7:])
             if claims:
                 user_email = claims.get("email")
+                exp = claims.get("exp")
+                if exp and time.time() >= float(exp):
+                    auth_state = "expired"  # header present but token past exp
 
         log_level = "warning" if status_code >= 400 else "info"
         getattr(logger, log_level)(
@@ -131,6 +136,7 @@ class AuditMiddleware(BaseHTTPMiddleware):
             duration_ms=duration_ms,
             client=client_ip,
             user=user_email or "anonymous",
+            auth=auth_state,
             ua=user_agent[:80],
         )
 

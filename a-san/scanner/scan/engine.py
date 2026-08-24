@@ -40,6 +40,7 @@ from .parsers_hisutton import parse_hisutton_article
 from .parsers_seaforces import parse_seaforces
 from .sitemap import product_urls_from_sitemap, article_urls_from_sitemap, sitemap_urls_to_parse
 from .store import ScanStore
+from .sanity import looks_like_news_headline
 
 log = logging.getLogger("scan")
 
@@ -88,6 +89,14 @@ class Engine:
         return self.fetchers[host]
 
     # ---------------- seeding ----------------
+    def _admit(self, entry: CatalogEntry, url: str) -> str:
+        """Sanity gate: refuse news-headline designations into the catalog."""
+        if looks_like_news_headline(entry.designation):
+            log.info("[gate] rejected headline designation: %s (%s)",
+                     (entry.designation or "")[:60], url)
+            return "rejected"
+        return self.store.upsert_entry(entry, url)
+
     def seed_from_catalog(self):
         """Load existing catalog entries so they are not re-created (dedupe)."""
         for e in load_catalog_entries(self.settings.catalog_path):
@@ -96,7 +105,7 @@ class Engine:
             except Exception:
                 continue
             src = entry.sources[0].url if entry.sources else ""
-            self.store.upsert_entry(entry, src)
+            self._admit(entry, src)
         n = self.store.entry_count()
         log.info("seeded catalog: %d existing entries in scan store", n)
 
@@ -187,8 +196,9 @@ class Engine:
                 e = parse_patent(url, fetched.html, disp, system_designation=pub,
                                  auto_classify=True)
                 if e:
-                    op = self.store.upsert_entry(e, url)
-                    self.store.link_parsed(url, e)
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (patent)", disp, e.designation[:50], op)
                     return
@@ -196,8 +206,9 @@ class Engine:
                 disp = row["category"] or "Uncategorized"
                 e = parse_news_article(url, fetched.html, disp)
                 if e:
-                    op = self.store.upsert_entry(e, url)
-                    self.store.link_parsed(url, e)
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (news)", disp, e.designation[:50], op)
                     return
@@ -205,8 +216,9 @@ class Engine:
                 disp = row["category"] or "Uncategorized"
                 e = parse_armyrecognition(url, fetched.html, disp)
                 if e:
-                    op = self.store.upsert_entry(e, url)
-                    self.store.link_parsed(url, e)
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", disp, e.designation[:50], op, len(e.specs))
                     return
@@ -214,16 +226,18 @@ class Engine:
                 disp = row["category"] or "Uncategorized"
                 e = parse_weaponsystem(url, fetched.html, disp)
                 if e:
-                    op = self.store.upsert_entry(e, url)
-                    self.store.link_parsed(url, e)
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", disp, e.designation[:50], op, len(e.specs))
                     return
             elif host == MILITARYFACTORY_HOST and "detail.php?aircraft_id=" in url:
                 e = parse_militaryfactory_detail(url, fetched.html)
                 if e:
-                    op = self.store.upsert_entry(e, url)
-                    self.store.link_parsed(url, e)
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
                     return
@@ -231,8 +245,9 @@ class Engine:
                 disp = row["category"] or "Uncategorized"
                 e = parse_designation(url, fetched.html, disp)
                 if e:
-                    op = self.store.upsert_entry(e, url)
-                    self.store.link_parsed(url, e)
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
                     return
@@ -240,8 +255,9 @@ class Engine:
                 disp = row["category"] or "Uncategorized"
                 e = parse_missilethreat(url, fetched.html, disp)
                 if e:
-                    op = self.store.upsert_entry(e, url)
-                    self.store.link_parsed(url, e)
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
                     return
@@ -250,8 +266,9 @@ class Engine:
                 disp = row["category"] or "Uncategorized"
                 e = parse_modernfirearms(url, fetched.html, disp)
                 if e:
-                    op = self.store.upsert_entry(e, url)
-                    self.store.link_parsed(url, e)
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
                     return
@@ -259,8 +276,9 @@ class Engine:
                 disp = row["category"] or "UGVs"
                 e = parse_milrem(url, fetched.html, disp)
                 if e:
-                    op = self.store.upsert_entry(e, url)
-                    self.store.link_parsed(url, e)
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
                     return
@@ -268,8 +286,9 @@ class Engine:
                 disp = row["category"] or "Uncategorized"
                 e = parse_fas(url, fetched.html, disp)
                 if e:
-                    op = self.store.upsert_entry(e, url)
-                    self.store.link_parsed(url, e)
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
                     return
@@ -277,16 +296,18 @@ class Engine:
                 disp = row["category"] or "Uncategorized"
                 e = parse_wikipedia_infobox(url, fetched.html, disp)
                 if e:
-                    op = self.store.upsert_entry(e, url)
-                    self.store.link_parsed(url, e)
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
                     return
             elif host == DEAGEL_HOST:
                 e = parse_deagel(url, fetched.html)
                 if e:
-                    op = self.store.upsert_entry(e, url)
-                    self.store.link_parsed(url, e)
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
                     return
@@ -294,8 +315,9 @@ class Engine:
                     and url.rstrip("/").rsplit("/", 1)[-1].isdigit():
                 e = parse_warsanctions_uav(url, fetched.html)
                 if e:
-                    op = self.store.upsert_entry(e, url)
-                    self.store.link_parsed(url, e)
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
                     return
@@ -303,24 +325,27 @@ class Engine:
                 disp = row["category"] or "Uncategorized"
                 e = parse_defenceua_article(url, fetched.html, disp)
                 if e:
-                    op = self.store.upsert_entry(e, url)
-                    self.store.link_parsed(url, e)
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", disp, e.designation[:50], op, len(e.specs))
                     return
             elif host == BAYKAR_HOST and "/en/uav/" in url:
                 e = parse_baykar_product(url, fetched.html)
                 if e:
-                    op = self.store.upsert_entry(e, url)
-                    self.store.link_parsed(url, e)
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
                     return
             elif host == ARMYGUIDE_HOST and re.search(r"/eng/product\d+\.html$", url):
                 e = parse_armyguide_product(url, fetched.html)
                 if e:
-                    op = self.store.upsert_entry(e, url)
-                    self.store.link_parsed(url, e)
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", e.category or "Uncategorized",
                              e.designation[:50], op, len(e.specs))
@@ -329,16 +354,18 @@ class Engine:
                     and url.endswith(".htm") and not url.endswith("index.html"):
                 e = parse_globalsecurity(url, fetched.html, row["category"] or "")
                 if e:
-                    op = self.store.upsert_entry(e, url)
-                    self.store.link_parsed(url, e)
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
                     return
             elif host == HISUTTON_HOST and url.endswith(".html"):
                 e = parse_hisutton_article(url, fetched.html)
                 if e:
-                    op = self.store.upsert_entry(e, url)
-                    self.store.link_parsed(url, e)
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
                     return
@@ -346,8 +373,9 @@ class Engine:
                     r"/(?:wpnsys|usnships|marint)/.*\.htm$", url):
                 e = parse_seaforces(url, fetched.html)
                 if e:
-                    op = self.store.upsert_entry(e, url)
-                    self.store.link_parsed(url, e)
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
                     return

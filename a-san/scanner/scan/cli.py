@@ -43,6 +43,7 @@ from .parsers_warsanctions import parse_warsanctions_uav_listing
 from .parsers_armyguide import parse_armyguide_listing
 from .picklist import CurationRules, curate, write_outputs
 from .patent_feed import feed_patents, feed_from_file
+from .play_build import build_play_dataset
 
 
 def _settings(args) -> Settings:
@@ -756,11 +757,29 @@ def cmd_build_web(args, s: Settings):
         out = s.root.parent / out
     eng.export_web(out)
     eng.close()
+    # Refresh Panteon's MIL-contacts airframe index from the fresh export.
+    try:
+        from .aircraft_index import build_index, DEFAULT_OUT
+        idx_out = Path(os.environ.get("PANTEON_AIRCRAFT_INDEX", str(DEFAULT_OUT)))
+        idx = build_index(Path(out) / "data" / "aircraft.json")
+        idx_out.parent.mkdir(parents=True, exist_ok=True)
+        idx_out.write_text(json.dumps(idx, ensure_ascii=False,
+                                      separators=(",", ":")), encoding="utf-8")
+        print(f"aircraft index: {idx['count']} type keys -> {idx_out}")
+    except Exception as exc:
+        print(f"aircraft index refresh skipped: {exc}")
     print(json.dumps({
         "out": str(out),
         "note": "serve with:  python3 -m http.server 8000 --directory %s" % out,
         "deployed": "https://a-san.alieninc.tech/category.html",
     }, indent=2))
+
+
+def cmd_build_play(args, s: Settings):
+    """Resolve one verified Wikipedia lead image per curated flagship entry
+    and write the identification-game dataset (data/play.json)."""
+    report = build_play_dataset(s, force_refresh=args.requery)
+    print(json.dumps(report, indent=2))
 
 
 def cmd_patent_feed(args, s: Settings):
@@ -807,6 +826,12 @@ def main(argv=None):
     wp = sub.add_parser("build-web")
     wp.add_argument("--out", default=None, help="output dir (default <scanner>/web)")
     _add_common(wp)
+    bp = sub.add_parser("build-play",
+                        help="build data/play.json: resolve a verified Wikipedia "
+                             "lead image for every curated flagship picklist entry")
+    bp.add_argument("--requery", action="store_true",
+                    help="ignore the resolution cache and re-query Wikipedia")
+    _add_common(bp)
     fp = sub.add_parser("patent-feed", help="enqueue patent pub-numbers as google-patents URLs")
     fp.add_argument("--query", default="guided missile defense", help="search text for the API feed")
     fp.add_argument("--category", default="Rocket and missile weapons", help="category to assign (key or display name)")
@@ -918,6 +943,8 @@ def main(argv=None):
         cmd_curate(args, s)
     elif args.cmd == "build-web":
         cmd_build_web(args, s)
+    elif args.cmd == "build-play":
+        cmd_build_play(args, s)
     elif args.cmd == "patent-feed":
         cmd_patent_feed(args, s)
 

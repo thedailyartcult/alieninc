@@ -23,7 +23,8 @@ def mini_catalog(tmp_path, monkeypatch):
         "total_entries": 3,
         "entries": {
             "aircraft": [
-                {"designation": "F-5 Tiger", "country": "Taiwan", "manufacturer": "Northrop",
+                {"designation": "F-5 Tiger", "alt_names": ["F-5E Freedom Fighter"],
+                 "country": "Taiwan", "manufacturer": "Northrop",
                  "description": "Light fighter",
                  "specs": ["Maximum Speed: 1,060 mph", "Crew: 2"],
                  "sources": [{"label": "x", "url": "https://x"}],
@@ -65,6 +66,34 @@ def test_capability_counts_and_query(mini_catalog):
     assert r["entries"][0]["specs_parsed"]["displacement"] == "9,800 tons"
     search = arsenal.query_entries(q="tiger")
     assert any(e["designation"] == "F-5 Tiger" for e in search["entries"])
+
+
+def test_query_entries_full_fidelity(mini_catalog):
+    r = arsenal.query_entries(country="Taiwan", category="aircraft")
+    e = r["entries"][0]
+    assert e["description"] == "Light fighter"          # description returned
+    assert e["alt_names"] == ["F-5E Freedom Fighter"]   # alt names returned
+    assert e["sources"][0]["url"] == "https://x"         # attribution kept
+    assert r["categories"] == ["aircraft", "naval-vessels"]
+    # exact total with pagination (not capped at limit)
+    page = arsenal.query_entries(limit=1)
+    assert page["total_matched_estimate"] == 3
+    assert len(page["entries"]) == 1
+    off = arsenal.query_entries(limit=1, offset=2)
+    assert len(off["entries"]) == 1 and off["offset"] == 2
+
+
+def test_query_searches_manufacturer_and_alt_names(mini_catalog):
+    assert any(e["designation"] == "F-5 Tiger"
+               for e in arsenal.query_entries(q="northrop")["entries"])
+    assert any(e["designation"] == "F-5 Tiger"
+               for e in arsenal.query_entries(q="freedom fighter")["entries"])
+
+
+def test_specs_extra_keeps_unparsed_lines():
+    assert arsenal._parse_spec_value("Maximum Speed: 1,060 mph") == \
+        ("maximum_speed", "1,060 mph")
+    assert arsenal._parse_spec_value("no colon here") is None
 
 
 def test_curated_flagships_deterministic(mini_catalog):

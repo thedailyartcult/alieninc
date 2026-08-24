@@ -36,6 +36,8 @@ from panteon.api.routes_ngram import router as ngram_router
 from panteon.api.routes_actor_graph import router as actor_graph_router
 from panteon.api.routes_smm import router as smm_router
 from panteon.api.routes_sims import router as sims_router
+from panteon.api.routes_maven import router as maven_router
+from panteon.api.routes_arsenal import router as arsenal_store_router
 
 PANTEON_SITE = Path(os.path.dirname(__file__)).parent.parent
 
@@ -110,6 +112,8 @@ app.include_router(ngram_router, prefix="/api/v1")
 app.include_router(actor_graph_router, prefix="/api/v1")
 app.include_router(smm_router, prefix="/api/v1")
 app.include_router(sims_router, prefix="/api/v1")
+app.include_router(maven_router, prefix="/api/v1")
+app.include_router(arsenal_store_router, prefix="/api/v1")
 
 
 @app.get("/")

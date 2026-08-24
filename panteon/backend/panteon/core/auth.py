@@ -95,6 +95,13 @@ def resolve_role(email: str) -> str:
 
 
 async def verify_supabase_token(token: str) -> Optional[SupabaseUser]:
+    # Fast path: reject obviously expired tokens locally (no network hop,
+    # no cache poisoning). Signature is still enforced by the remote verify.
+    claims = decode_supabase_claims(token)
+    exp = claims.get("exp") if claims else None
+    if exp and time.time() >= float(exp) - 15:  # 15s clock-skew margin
+        _verify_cache.set(token, None)
+        return None
     cached, user = _verify_cache.get(token)
     if cached:
         return user
@@ -115,9 +122,12 @@ async def verify_supabase_token(token: str) -> Optional[SupabaseUser]:
                 timeout=10,
             )
     except httpx.HTTPError:
-        _verify_cache.set(token, None)
+        # NEVER negative-cache a network failure: a perfectly valid token
+        # would be treated as invalid for the whole TTL, forcing every call
+        # to 401 and stampeding clients into mass refresh-token rotations.
         return None
     if resp.status_code != 200:
+        # Definitive rejection by Supabase — safe to negative-cache.
         _verify_cache.set(token, None)
         return None
     data = resp.json()

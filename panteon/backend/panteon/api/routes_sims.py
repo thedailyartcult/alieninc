@@ -183,6 +183,14 @@ async def sims_arsenal_query(country: str | None = None, category: str | None = 
                                  limit=limit, offset=offset)
 
 
+@router.get("/ontology/arsenal/counts")
+async def sims_arsenal_counts(country: str,
+                              user: SupabaseUser = Depends(get_current_user)):
+    """Real equipment counts per category for one nation from the a-san catalog."""
+    from panteon import arsenal
+    return arsenal.capability_counts(country)
+
+
 @router.post("/ontology/arsenal/link-flagships")
 async def sims_arsenal_link_flagships(request: Request,
                                       user: SupabaseUser = Depends(get_current_user),

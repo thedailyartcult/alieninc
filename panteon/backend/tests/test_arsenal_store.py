@@ -162,8 +162,9 @@ async def test_arsenal_api_categories_and_compare(api_client, tmp_path):
         assert icons["aircraft"].endswith("aircraft.png")
 
         r = await api_client.get("/api/v1/arsenal/items?q=falcon")
-        items = r.json()["items"]
-        assert len(items) == 1 and items[0]["designation"].startswith("F-16")
+        entries = r.json()["entries"]
+        assert len(entries) == 1 and entries[0]["designation"].startswith("F-16")
+        assert entries[0]["specs_parsed"], "specs must be parsed for admin UI"
 
         r = await api_client.get(
             "/api/v1/arsenal/capabilities/compare?countries=USA,France,Turkey")

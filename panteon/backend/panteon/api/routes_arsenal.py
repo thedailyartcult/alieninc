@@ -31,6 +31,7 @@ ALLOWED_ICONS = {
     "electronic-warfare-systems.png", "missile-and-rocket-weapons.png",
     "sea-launched-cruise-missiles.png", "small-arms.png",
     "unmanned-aerial-vehicles.png", "unmanned-ground-vehicles.png",
+    "naval-vessels.png",
 }
 
 LIVE_NOTE = ("catalog reference data only - real-time numbers come from the "
@@ -90,7 +91,12 @@ async def query_items(country: str | None = None, category: str | None = None,
                       user: SupabaseUser = Depends(get_current_user),
                       db: AsyncSession = Depends(get_db)):
     """Structured catalog query. Filters combine with AND; q matches
-    designation/manufacturer/description substrings."""
+    designation/manufacturer/description substrings.
+
+    Response mirrors the legacy sims/ontology/arsenal shape (entries,
+    total_matched_estimate, catalog_totals) so the admin Arsenal Browser
+    consumes this store route directly — the store is the source of truth.
+    """
     conds = []
     if not include_retired:
         conds.append(ArsItem.active.is_(True))
@@ -116,18 +122,46 @@ async def query_items(country: str | None = None, category: str | None = None,
     rows = (await db.execute(
         base.order_by(ArsItem.designation).limit(limit).offset(offset))
     ).scalars().all()
-    items = [{
-        "id": str(r.id), "fingerprint": r.fingerprint[:16],
-        "designation": r.designation, "alt_names": r.alt_names or [],
-        "country": r.country_norm or r.country_raw,
-        "manufacturer": r.manufacturer, "category_key": r.category_key,
-        "description": r.description,
-        "specs_count": len(r.specs or []), "sources_count": len(r.sources or []),
-        "fetched_at": r.fetched_at, "active": bool(r.active),
-        "ontology_pk": r.ontology_pk,
-    } for r in rows]
-    return {"items": items, "total_matched": total,
-            "offset": offset, "limit": limit, "meta": await _meta(db)}
+
+    cat_rows = (await db.execute(select(ArsCategory))).scalars().all()
+    display_by_key = {c.key: c.display_name for c in cat_rows}
+    active_total = (await db.execute(
+        select(func.count()).select_from(ArsItem)
+        .where(ArsItem.active.is_(True)))).scalar_one()
+
+    entries = []
+    for r in rows:
+        specs_parsed, specs_extra = {}, []
+        for s in (r.specs or []):
+            parsed = arsenal_mod._parse_spec_value(s) if hasattr(
+                arsenal_mod, "_parse_spec_value") else None
+            if parsed:
+                specs_parsed[parsed[0]] = parsed[1]
+            elif s.strip():
+                specs_extra.append(s.strip())
+        entries.append({
+            "id": str(r.id), "fingerprint": r.fingerprint[:16],
+            "designation": r.designation, "alt_names": r.alt_names or [],
+            "country": r.country_norm or r.country_raw,
+            "manufacturer": r.manufacturer,
+            "category": display_by_key.get(r.category_key, r.category_key or ""),
+            "category_key": r.category_key,
+            "description": r.description,
+            "specs_parsed": specs_parsed,
+            "specs_extra": specs_extra[:8],
+            "sources": [{"label": s.get("label"), "url": s.get("url")}
+                        for s in (r.sources or [])],
+            "specs_count": len(r.specs or []),
+            "sources_count": len(r.sources or []),
+            "fetched_at": r.fetched_at, "active": bool(r.active),
+            "ontology_pk": r.ontology_pk,
+        })
+    return {"entries": entries, "total_matched_estimate": total,
+            "offset": offset, "limit": limit,
+            "categories": [c.key for c in cat_rows],
+            "catalog_totals": {"entries": active_total,
+                               "categories": len(cat_rows)},
+            "meta": await _meta(db)}
 
 
 @router.get("/items/{item_id}")

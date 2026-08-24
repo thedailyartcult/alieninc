@@ -14,6 +14,9 @@ class FakeGatewayResponse:
         self.content = content
         self.headers = {"content-type": "application/json"}
 
+    def json(self):
+        return _json.loads(self.content)
+
 
 class FakeGatewayClient:
     last_url = None
@@ -103,3 +106,36 @@ async def test_sims_improve_allowed_for_editor(client, monkeypatch):
     assert response.status_code == 200
     assert response.json()["changes_applied"] == 1
     assert FakeGatewayClient.last_url == "http://localhost:8090/api/research/improve"
+
+
+@pytest.mark.asyncio
+async def test_chronos_powers_proxies_to_gateway(client, monkeypatch):
+    monkeypatch.setattr(routes_sims.httpx, "AsyncClient", FakeGatewayClient)
+    _override_role("viewer")
+    try:
+        response = await client.get("/api/v1/sims/chronos/powers/1939")
+    finally:
+        app.dependency_overrides.clear()
+    assert response.status_code == 200
+    assert FakeGatewayClient.last_url == "http://localhost:8090/api/chronos/powers/1939"
+
+
+@pytest.mark.asyncio
+async def test_chronos_replay_proxies_and_skips_ontology_on_error(client, monkeypatch):
+    monkeypatch.setattr(routes_sims.httpx, "AsyncClient", FakeGatewayClient)
+    _override_role("viewer")
+    try:
+        response = await client.post("/api/v1/sims/chronos/replay",
+                                     json={"battle_key": "cdb90-387"})
+    finally:
+        app.dependency_overrides.clear()
+    assert response.status_code == 200
+    assert response.json()["changes_applied"] == 1
+    assert FakeGatewayClient.last_url == "http://localhost:8090/api/chronos/replay"
+    assert FakeGatewayClient.last_body == _json.dumps({"battle_key": "cdb90-387"})
+
+
+@pytest.mark.asyncio
+async def test_chronos_battles_requires_auth(client):
+    response = await client.get("/api/v1/sims/chronos/battles")
+    assert response.status_code == 401

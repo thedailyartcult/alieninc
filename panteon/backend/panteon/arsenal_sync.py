@@ -49,8 +49,6 @@ async def _ensure_ars_tables() -> None:
                 sync_conn, tables=tables))
 
 # key -> icon file under /api/v1/arsenal/icons/ (allowlisted FileResponse).
-# naval-vessels has no PNG in the source set yet -> falls back to an inline
-# SVG glyph in the UI.
 CATEGORY_ICONS = {    "aircraft": "aircraft.png",
     "uavs": "unmanned-aerial-vehicles.png",
     "air-launched-munitions": "air-launched-weapons.png",
@@ -61,7 +59,7 @@ CATEGORY_ICONS = {    "aircraft": "aircraft.png",
     "armored-vehicles-and-equipment": "armored-vehicles-and-equipment.png",
     "automotive-vehicles": "automotive-vehicles.png",
     "small-arms": "small-arms.png",
-    "naval-vessels": None,
+    "naval-vessels": "naval-vessels.png",
 }
 
 

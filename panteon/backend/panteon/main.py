@@ -137,7 +137,11 @@ async def root():
 async def admin():
     admin_file = PANTEON_SITE / "admin.html"
     if admin_file.exists():
-        return FileResponse(admin_file)
+        # no-cache: browsers must revalidate every load — stale dashboards
+        # have shipped broken UI silently before (arsenal icons incident).
+        return FileResponse(admin_file, headers={
+            "Cache-Control": "no-cache",
+        })
     return {"detail": "Admin dashboard not found"}
 
 

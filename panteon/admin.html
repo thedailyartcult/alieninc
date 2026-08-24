@@ -1531,12 +1531,12 @@
             transition: border-color .15s ease, background .15s ease; }
         .ars-cat-card:hover { background: rgba(223,241,64,.06); border-color: var(--accent-neon); }
         .ars-cat-card.active { border-color: var(--accent-neon); background: rgba(223,241,64,.08); }
-        .ars-cat-card img { width: 26px; height: 26px; object-fit: contain; }
-        .ars-cat-glyph { width: 26px; height: 26px; color: var(--accent-neon); }
+        .ars-cat-card img { width: 36px; height: 36px; object-fit: contain; }
+        .ars-cat-glyph { width: 36px; height: 36px; color: var(--accent-neon); }
         .ars-cat-name { font-family: var(--font-tech); font-size: 10px; letter-spacing: .04em;
             text-transform: uppercase; color: var(--text-light); white-space: nowrap; }
         .ars-cat-count { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); white-space: nowrap; }
-        .ars-item-icon { width: 18px; height: 18px; object-fit: contain; vertical-align: -4px; margin-right: 6px; }
+        .ars-item-icon { width: 24px; height: 24px; object-fit: contain; vertical-align: -6px; margin-right: 7px; }
         /* MAVEN theater mode — fullscreen common operating picture */
         body.maven-theater { overflow: hidden; }
         body.maven-theater #fusionMapPane {
@@ -2920,6 +2920,12 @@
                           </div>
                           <p class="section-subtitle" style="font-size:11px;color:var(--text-muted);margin-bottom:16px">Kriegspiel Monte Carlo warfare simulations over real-world theaters. Every run feeds the learning layer; outcomes surface on the Spinal Cracker fusion map via the GAIA geo-controller.</p>
 
+                          <div style="display:flex;gap:2px;margin-bottom:0">
+                              <button class="gdelt-tab active" data-tab="future" onclick="switchSimsTab('future')">Future Ops</button>
+                              <button class="gdelt-tab" data-tab="chronos" onclick="switchSimsTab('chronos')">Chronos — Historical What-If</button>
+                          </div>
+                          <div id="simsTabFuture" class="gdelt-tab-content active">
+
                           <div class="grid grid-4" style="margin-bottom:16px">
                               <div class="card" style="padding:12px 14px;border-left:2px solid var(--red)">
                                   <div class="card-title">Last Run — Red</div>
@@ -3086,6 +3092,58 @@
                               <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Geo-matches negative-tone GDELT events currently loaded on the fusion map to the nearest simulated theater, then prefills the Battle Console.</p>
                               <div id="simsMatchStatus" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);margin-bottom:8px">No scan performed yet.</div>
                               <div id="simsThreatList"></div>
+                          </div>
+                          </div>
+
+                          <div id="simsTabChronos" class="gdelt-tab-content">
+                              <p style="font-size:11px;color:var(--text-muted);margin-bottom:14px">Historical what-if engine. Battles replay from verified data (CDB90 corpus; national power from Correlates of War NMC v7.0, 1816-2022). The engine must reproduce the recorded outcome before counterfactual branches unlock — no placebo history.</p>
+
+                              <div class="card" style="margin-bottom:14px">
+                                  <div class="card-header">
+                                      <span class="card-title">National Power — Any Year</span>
+                                      <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">CINC composite: milper, milex, steel, energy, population</span>
+                                  </div>
+                                  <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+                                      <input id="chronosYear" type="number" min="1816" max="2022" step="1" value="1939" style="width:90px">
+                                      <input type="range" min="1816" max="2022" value="1939" id="chronosYearSlider" style="flex:1;min-width:200px" oninput="document.getElementById('chronosYear').value=this.value" onchange="loadChronosPowers()">
+                                      <button class="btn btn-primary btn-sm" onclick="loadChronosPowers()">SHOW POWERS</button>
+                                  </div>
+                                  <div id="chronosPowersBody"><div class="empty-state">Pick a year to rank the great powers of that moment.</div></div>
+                              </div>
+
+                              <div class="grid grid-2">
+                                  <div class="card">
+                                      <div class="card-header">
+                                          <span class="card-title">Historical Replay — Fidelity Gate</span>
+                                          <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">real OOB, real strengths</span>
+                                      </div>
+                                      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+                                          <select id="chronosBattleSelect" class="sc-scope-select" style="flex:1;min-width:220px"><option>Loading battles...</option></select>
+                                          <input id="chronosUniverses" type="number" min="100" max="5000" step="100" value="400" title="Branches" style="width:86px">
+                                          <button class="btn btn-primary btn-sm" id="chronosReplayBtn" onclick="runChronosReplay()">REPLAY</button>
+                                      </div>
+                                      <div id="chronosReplayStatus" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);min-height:14px;margin-bottom:8px">Idle — pick a battle and replay it against the historical record.</div>
+                                      <div id="chronosReplayResults"><div class="empty-state">No replay yet.</div></div>
+                                  </div>
+                                  <div class="card">
+                                      <div class="card-header">
+                                          <span class="card-title">Counterfactual Branch</span>
+                                          <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">gated on fidelity</span>
+                                      </div>
+                                      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+                                          <select id="chronosVarSelect" class="sc-scope-select" style="flex:1;min-width:180px">
+                                              <option value="attacker_strength_mult">Attacker strength ×</option>
+                                              <option value="defender_strength_mult">Defender strength ×</option>
+                                              <option value="attacker_quality_add">Attacker quality +</option>
+                                              <option value="defender_quality_add">Defender quality +</option>
+                                          </select>
+                                          <input id="chronosVarValue" type="number" step="0.1" value="1.5" style="width:80px" title="Override value">
+                                          <button class="btn btn-primary btn-sm" id="chronosWhatIfBtn" onclick="runChronosWhatIf()">RUN WHAT-IF</button>
+                                      </div>
+                                      <div id="chronosWhatIfStatus" style="font-family:var(--mno, monospace);font-family:var(--font-mono);font-size:10px;color:var(--text-muted);min-height:14px;margin-bottom:8px">Run a passing replay first — counterfactuals unlock only when the engine reproduces history.</div>
+                                      <div id="chronosWhatIfResults"><div class="empty-state">No counterfactual yet.</div></div>
+                                  </div>
+                              </div>
                           </div>
                       </div>
                   </div>
@@ -10870,6 +10928,193 @@ async function simsApi(path, opts = {}) {
     return api('sims/' + path, opts);
 }
 
+// ============================================================================
+// Chronos — historical what-if engine
+// ============================================================================
+const CHRONOS = { loaded: false, battles: [], lastReplay: null };
+
+function switchSimsTab(tab) {
+    document.querySelectorAll('#page-sims-war .gdelt-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('#page-sims-war .gdelt-tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelector(`#page-sims-war .gdelt-tab[data-tab="${tab}"]`).classList.add('active');
+    document.getElementById(tab === 'chronos' ? 'simsTabChronos' : 'simsTabFuture').classList.add('active');
+    if (tab === 'chronos' && !CHRONOS.loaded) initChronos();
+}
+
+async function initChronos() {
+    CHRONOS.loaded = true;
+    loadChronosPowers();
+    try {
+        const rows = await simsApi('chronos/battles?war=WORLD%20WAR%20II&limit=200');
+        CHRONOS.battles = Array.isArray(rows) ? rows : [];
+        const sel = document.getElementById('chronosBattleSelect');
+        sel.innerHTML = CHRONOS.battles.map(b =>
+            `<option value="cdb90-${b.isqno}">${b.isqno} · ${b.name}${b.start_date ? ' (' + String(b.start_date).slice(0, 10) + ')' : ''}</option>`
+        ).join('') || '<option value="">No battles found</option>';
+    } catch (e) {
+        document.getElementById('chronosBattleSelect').innerHTML = `<option value="">Load failed: ${e.message}</option>`;
+    }
+}
+
+async function loadChronosPowers() {
+    const year = parseInt(document.getElementById('chronosYear').value, 10) || 1939;
+    document.getElementById('chronosYearSlider').value = year;
+    const body = document.getElementById('chronosPowersBody');
+    body.innerHTML = '<div class="empty-state"><span class="loading"></span></div>';
+    try {
+        const r = await simsApi('chronos/powers/' + year);
+        if (r.error) throw new Error(r.error);
+        const maxCinc = Math.max(...r.top.map(t => t.cinc || 0), 0.001);
+        const stateName = { USA: 'United States', GMY: 'Germany', RUS: 'Russia/USSR', UKG: 'United Kingdom', CHN: 'China', FRN: 'France', ITA: 'Italy', JPN: 'Japan' };
+        body.innerHTML = r.top.map(t => `
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <div style="width:120px;font-size:11px;font-family:var(--font-mono);color:var(--text-muted)">${stateName[t.stateabb] || t.stateabb}</div>
+                <div style="flex:1;height:14px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden">
+                    <div style="height:100%;width:${Math.round(100 * (t.cinc || 0) / maxCinc)}%;background:linear-gradient(90deg,var(--accent-cyan),var(--green))"></div>
+                </div>
+                <div style="width:150px;font-size:10px;font-family:var(--font-mono);color:var(--text)">
+                    CINC ${(t.cinc * 100).toFixed(1)}% · ${Math.round((t.milper || 0) * 1000).toLocaleString()} troops
+                </div>
+            </div>`).join('') +
+            `<div style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono);margin-top:6px">Source: ${r.source} · milper in thousands (troops shown absolute)</div>`;
+    } catch (e) {
+        body.innerHTML = `<div class="empty-state">Power data unavailable: ${e.message}</div>`;
+    }
+}
+
+async function runChronosReplay() {
+    const btn = document.getElementById('chronosReplayBtn'), status = document.getElementById('chronosReplayStatus');
+    const battleKey = document.getElementById('chronosBattleSelect').value;
+    const universes = parseInt(document.getElementById('chronosUniverses').value, 10) || 400;
+    if (!battleKey) { status.textContent = 'Pick a battle first.'; return; }
+    btn.disabled = true; status.textContent = `Replaying ${battleKey} across ${universes} branches...`;
+    try {
+        const r = await simsApi('chronos/replay', {
+            method: 'POST', timeout: 180000,
+            body: JSON.stringify({ battle_key: battleKey, universes }),
+        });
+        if (r.error) throw new Error(r.error);
+        CHRONOS.lastReplay = r;
+        renderChronosReplay(r);
+        status.textContent = r.passed
+            ? `FIDELITY GATE PASSED — engine reproduces the recorded outcome (${Math.round(r.checks.winner_fidelity * 100)}% of branches). Counterfactuals unlocked.`
+            : `FIDELITY GATE FAILED — predicted ${r.predicted_winner}, history says ${r.actual_winner}. What-if remains locked for this battle.`;
+    } catch (e) {
+        status.textContent = 'Replay failed: ' + e.message;
+    } finally { btn.disabled = false; }
+}
+
+function renderChronosReplay(r) {
+    const b = r.battle || {};
+    const att = b.attacker || {}, dfd = b.defender || {};
+    const wd = r.win_distribution || {};
+    const bar = (label, pct, color) => `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <div style="width:70px;font-size:10px;font-family:var(--font-mono);color:var(--text-muted)">${label}</div>
+            <div style="flex:1;height:12px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden">
+                <div style="height:100%;width:${Math.round(pct)}%;background:${color}"></div>
+            </div>
+            <div style="width:44px;font-size:10px;font-family:var(--font-mono)">${Math.round(pct)}%</div>
+        </div>`;
+    const kvRow = (k, v) => `<div class="sims-kv" style="display:flex;justify-content:space-between;font-size:10px;font-family:var(--font-mono);padding:2px 0"><span style="color:var(--text-muted)">${k}</span><b>${v}</b></div>`;
+    document.getElementById('chronosReplayResults').innerHTML = `
+        <div style="margin-bottom:8px">
+            <div style="font-family:var(--font-tech);font-size:13px;margin-bottom:2px">${b.name || '--'} <span style="color:var(--text-muted)">· ${b.year || '?'} · era: ${b.era || '?'}</span></div>
+            <div style="font-size:10px;color:var(--text-muted)">${att.actors || []} (${Math.round(att.strength || 0).toLocaleString()} men, ${att.tanks || 0} tanks, ${att.aircraft || 0} aircraft)
+                vs ${dfd.actors || []} (${Math.round(dfd.strength || 0).toLocaleString()} men)</div>
+        </div>
+        ${bar('ATTACKER', (wd.attacker || 0) * 100, 'var(--red)')}
+        ${bar('DEFENDER', (wd.defender || 0) * 100, 'var(--accent-cyan)')}
+        ${bar('STALEMATE', (wd.stalemate || 0) * 100, 'var(--amber)')}
+        <div style="display:flex;gap:16px;margin-top:8px">
+            <div style="flex:1">${kvRow('History says', r.actual_winner)}${kvRow('Engine predicts', r.predicted_winner)}</div>
+            <div style="flex:1">${kvRow('Attacker cas. sim/actual', `${((r.simulated_attacker_casualty_fraction || 0) * 100).toFixed(1)}% / ${((r.actual_attacker_casualty_fraction || 0) * 100).toFixed(1)}%`)}${kvRow('Defender cas. sim/actual', `${((r.simulated_defender_casualty_fraction || 0) * 100).toFixed(1)}% / ${((r.actual_defender_casualty_fraction || 0) * 100).toFixed(1)}%`)}</div>
+        </div>
+        <div style="margin-top:6px;font-size:10px;font-family:var(--font-mono);color:${r.passed ? 'var(--green)' : 'var(--red)'}">
+            FIDELITY SCORE ${(r.fidelity_score * 100).toFixed(0)}% · ${r.passed ? 'GATE OPEN' : 'GATE LOCKED'}
+        </div>
+        ${renderChronosOob(r.oob)}`;
+}
+
+function renderChronosOob(oob) {
+    if (!oob || !oob.length) return '';
+    const eqStr = e => {
+        const parts = [];
+        for (const [k, v] of Object.entries(e.equipment || {})) {
+            if (typeof v === 'number') parts.push(`${v.toLocaleString()} ${k.replace(/_/g, ' ')}`);
+        }
+        return parts.join(', ');
+    };
+    const side = (name, rows, color) => {
+        if (!rows.length) return '';
+        return `<div style="flex:1;min-width:220px">
+            <div style="font-size:10px;font-family:var(--font-mono);color:${color};margin-bottom:4px;text-transform:uppercase">${name}</div>
+            ${rows.map(e => `
+                <div style="padding:5px 8px;margin-bottom:4px;background:rgba(255,255,255,0.03);border-left:2px solid ${color};border-radius:0 3px 3px 0">
+                    <div style="font-size:11px;font-family:var(--font-tech)">${e.unit_name}${e.engagement_fraction && e.engagement_fraction < 1 ? ` <span style="color:var(--text-muted);font-size:9px">(engaged ${Math.round(e.engagement_fraction * 100)}%)</span>` : ''}</div>
+                    <div style="font-size:9px;font-family:var(--font-mono);color:var(--text-muted)">
+                        ${e.echelon || ''} · ${Math.round(e.strength || 0).toLocaleString()} men${eqStr(e) ? ' · ' + eqStr(e) : ''} · ${e.confidence}
+                    </div>
+                </div>`).join('')}
+        </div>`;
+    };
+    return `<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border-color)">
+        <div style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);margin-bottom:6px">ORDER OF BATTLE — curated from the historical record</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+            ${side('Attacking', oob.filter(e => e.side === 'attacker'), 'var(--red)')}
+            ${side('Defending', oob.filter(e => e.side === 'defender'), 'var(--accent-cyan)')}
+        </div>
+        <div style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono);margin-top:4px">Source: ${oob[0].source || 'curated references'}</div>
+    </div>`;
+}
+
+async function runChronosWhatIf() {
+    const btn = document.getElementById('chronosWhatIfBtn'), status = document.getElementById('chronosWhatIfStatus');
+    if (!CHRONOS.lastReplay || !CHRONOS.lastReplay.passed) {
+        status.textContent = 'Locked — run a passing replay first.'; return;
+    }
+    const battleKey = document.getElementById('chronosBattleSelect').value;
+    const variable = document.getElementById('chronosVarSelect').value;
+    let value = parseFloat(document.getElementById('chronosVarValue').value) || 1.5;
+    if (variable.endsWith('_mult')) value = Math.abs(value);
+    else value = Math.abs(value);
+    const universes = parseInt(document.getElementById('chronosUniverses').value, 10) || 400;
+    btn.disabled = true; status.textContent = 'Branching counterfactual timelines...';
+    try {
+        const r = await simsApi('chronos/what-if', {
+            method: 'POST', timeout: 180000,
+            body: JSON.stringify({ battle_key: battleKey, override: { [variable]: value }, universes }),
+        });
+        if (r.error) throw new Error(r.error);
+        renderChronosWhatIf(r);
+        status.textContent = `Counterfactual complete — winner shift: ${r.delta.winner_shift}.`;
+    } catch (e) {
+        status.textContent = 'What-if failed: ' + e.message;
+    } finally { btn.disabled = false; }
+}
+
+function renderChronosWhatIf(r) {
+    const base = r.baseline || {}, cf = r.counterfactual || {}, d = r.delta || {};
+    const row = (tag, s) => `
+        <div style="margin-bottom:8px">
+            <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);margin-bottom:3px">${tag}</div>
+            <div style="display:flex;gap:12px;font-size:11px;font-family:var(--font-mono)">
+                <span>Winner: <b>${s.predicted_winner}</b></span>
+                <span>Attacker wins ${Math.round((s.win_distribution || {}).attacker * 100 || 0)}%</span>
+                <span>Avg attacker casualties: ${Math.round(s.avg_attacker_casualties || 0).toLocaleString()}</span>
+            </div>
+        </div>`;
+    const chg = d.win_prob_change || {};
+    document.getElementById('chronosWhatIfResults').innerHTML = `
+        ${row('HISTORY AS IT HAPPENED', base)}
+        ${row('COUNTERFACTUAL — ' + Object.keys((cf.overrides || {}))[0] + ' = ' + Object.values(cf.overrides || {})[0], cf)}
+        <div style="border-top:1px solid var(--border-color);padding-top:6px;font-size:11px;font-family:var(--font-mono)">
+            Δ winner: <b>${d.winner_shift || '--'}</b>
+            · Δ attacker win prob: ${chg.attacker > 0 ? '+' : ''}${Math.round((chg.attacker || 0) * 100)}pts
+            · Δ attacker casualties: ${d.attacker_casualty_change_pct > 0 ? '+' : ''}${d.attacker_casualty_change_pct}%
+        </div>`;
+}
+
 function initSimsWarRoom() {
     if (!SIMS.loaded) {
         loadSimsBattlefields();
@@ -11513,6 +11758,10 @@ async function loadSimsReal() {
         SIMS.real = r;
         renderRealPanel();
         renderFusionRealLayer();
+    } catch (e) { /* silent */ }
+    // Arsenal Browser must load independently of World Bank ingestion —
+    // a real/ingest failure must never blank the catalog UI.
+    try {
         arsenalEnsureOptions();
         loadArsenalCategories();
     } catch (e) { /* silent */ }
@@ -11630,7 +11879,9 @@ async function loadArsenalCategories() {
         `<div style="flex:0 0 auto;display:flex;align-items:center;padding-left:6px"><span class="ars-cat-count">${(r.total_active ?? 0).toLocaleString()} total</span></div>`;
     } catch (e) {
         const strip = document.getElementById('arsenalCatStrip');
-        if (strip) strip.innerHTML = '<div class="empty-state" style="width:100%">Category glyphs unavailable: ' + simsEsc(e.message) + '</div>';
+        if (strip) strip.innerHTML =
+            '<div class="empty-state" style="width:100%">Category glyphs unavailable: ' + simsEsc(e.message) +
+            ' &nbsp;<button class="btn btn-secondary btn-sm" onclick="loadArsenalCategories()">RETRY</button></div>';
     }
 }
 
@@ -11675,12 +11926,28 @@ async function arsenalSearch(offset) {
     if (q.trim()) params.set('q', q.trim());
     if (country) params.set('country', country);
     if (category) params.set('category', category);
-    const reqUrl = 'sims/ontology/arsenal?' + params.toString();
+    const reqUrl = 'arsenal/items?' + params.toString();
     st.textContent = 'Querying catalog…';
+    let r;
     try {
-        const r = await api(reqUrl);
+        r = await api(reqUrl);
+    } catch (e) {
+        // one silent retry for transient aborts (restart windows, CF blips)
+        if (e.message && e.message.includes('timed out')) {
+            try { r = await api(reqUrl); }
+            catch (e2) {
+                st.innerHTML = 'Catalog query failed: ' + simsEsc(e2.message) +
+                    ' &nbsp;<button class="btn btn-secondary btn-sm" onclick="arsenalSearch(' + _arsenalOffset + ')">RETRY</button>';
+                return;
+            }
+        } else {
+            st.innerHTML = 'Catalog query failed: ' + simsEsc(e.message) +
+                ' &nbsp;<button class="btn btn-secondary btn-sm" onclick="arsenalSearch(' + _arsenalOffset + ')">RETRY</button>';
+            return;
+        }
+    }
+    try {
         if (r.error) throw new Error(r.error);
-        if (!r.available) throw new Error(r.error || 'catalog unavailable');
         if (Array.isArray(r.categories) && r.categories.length &&
             (!SIMS.arsenalCats || !SIMS.arsenalCats.length)) {
             SIMS.arsenalCats = r.categories;
@@ -11705,9 +11972,9 @@ async function arsenalSearch(offset) {
         }
         panel.innerHTML =
             '<div class="table-wrap" style="max-height:420px;overflow:auto"><table>' +
-            '<thead><tr><th>Designation</th><th>Nation</th><th>Manufacturer</th><th>Specs / Description</th><th>Sources</th></tr></thead><tbody>' +
+            '<thead><tr><th>Designation</th><th>Nation</th><th>Manufacturer</th><th>Specs / Description</th></tr></thead><tbody>' +
             r.entries.map(e =>
-                `<tr><td style="color:var(--text);max-width:220px"><div>${arsIconFor(e.category || '')}${simsEsc(e.designation || '')}</div>` +
+                `<tr><td style="color:var(--text);max-width:220px"><div>${arsIconFor(e.category_key || '')}${simsEsc(e.designation || '')}</div>` +
                 (e.alt_names && e.alt_names.length
                     ? `<div style="color:var(--text-dim);font-size:9px">aka ${simsEsc(e.alt_names.slice(0, 3).join(', '))}</div>` : '') +
                 `<div style="font-family:var(--font-mono);font-size:8px;color:var(--accent-purple);margin-top:2px">${simsEsc(arsenalCatLabel(e.category || ''))}${e.fetched_at ? ' · ' + simsEsc(String(e.fetched_at).slice(0, 10)) : ''}</div></td>` +
@@ -11717,15 +11984,6 @@ async function arsenalSearch(offset) {
                 (Object.keys(e.specs_parsed || {}).length
                     ? '<div style="font-family:var(--font-mono);font-size:9px">' + Object.entries(e.specs_parsed).slice(0, 5).map(([k, v]) => `${simsEsc(k.replace(/_/g, ' '))}: <span style="color:var(--text)">${simsEsc(String(v))}</span>`).join('<br>') + '</div>' : '') +
                 (e.description ? `<div style="margin-top:2px">${simsEsc(String(e.description).slice(0, 160))}${String(e.description).length > 160 ? '…' : ''}</div>` : '') +
-                ((e.specs_extra && e.specs_extra.length)
-                    ? `<div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);margin-top:2px">+ ${simsEsc(e.specs_extra.slice(0, 3).join(' · '))}</div>` : '') +
-                '</td>' +
-                `<td style="max-width:140px;font-family:var(--font-mono);font-size:9px">` +
-                ((e.sources || []).length
-                    ? e.sources.slice(0, 2).map(s => s.url
-                        ? `<a href="${simsEsc(s.url)}" target="_blank" rel="noopener" style="color:var(--accent-cyan)">${simsEsc(s.label || s.url)}</a>`
-                        : simsEsc(s.label || '')).join('<br>') + ((e.sources.length > 2) ? `<br>+${e.sources.length - 2} more` : '')
-                    : '--') +
                 '</td></tr>'
             ).join(' ') +
             '</tbody></table></div>' +
@@ -11734,8 +11992,8 @@ async function arsenalSearch(offset) {
             `<button class="btn btn-secondary btn-sm" onclick="arsenalSearch(${_arsenalOffset + limit})"${_arsenalOffset + limit >= r.total_matched_estimate ? ' disabled' : ''}>NEXT →</button>` +
             '</div>';
     } catch (e) {
-        st.textContent = 'Arsenal query failed: ' + e.message +
-            ' — GET /api/v1/' + reqUrl + ' @ ' + location.host;
+        st.innerHTML = 'Arsenal render failed: ' + simsEsc(e.message) +
+            ' &nbsp;<button class="btn btn-secondary btn-sm" onclick="arsenalSearch(' + _arsenalOffset + ')">RETRY</button>';
     }
 }
 
@@ -14642,7 +14900,6 @@ function renderFusionRealLayer() {
         transition: color .15s, background .15s, border-color .15s;
     }
     .tb-tab svg { width: 12px; height: 12px; flex-shrink: 0; opacity: .65; }
-    .tb-tab span.tb-label { overflow: hidden; text-overflow: ellipsis; }
     .tb-tab:hover { color: var(--text); background: rgba(124, 58, 237, .07); }
     .tb-tab.active {
         color: var(--accent-cyan); background: rgba(124, 58, 237, .13);
@@ -14669,6 +14926,14 @@ function renderFusionRealLayer() {
         color: var(--amber); border: 1px solid rgba(245, 158, 11, .35);
         padding: 1px 3px; border-radius: 2px; flex-shrink: 0;
     }
+    /* platform-level mission tab */
+    .tb-count {
+        font-family: var(--font-mono); font-size: 7px; letter-spacing: .05em;
+        color: var(--text-muted); border: 1px solid var(--border-color);
+        padding: 1px 4px; border-radius: 2px; flex-shrink: 0; line-height: 1.4;
+    }
+    .tb-tab.active .tb-count { color: var(--accent-cyan); border-color: rgba(124, 58, 237, .45); }
+    .tb-tab > span { overflow: hidden; text-overflow: ellipsis; }
 
     /* ---- panel chrome hierarchy: no fake tabs inside panels ---- */
     .deck-panel.in-stage .deck-phead {
@@ -14799,7 +15064,6 @@ function renderFusionRealLayer() {
                 '<section class="deck-zone" data-zone="L"></section>' +
                 '<div class="deck-split" data-split="L" title="Drag to resize"></div>' +
                 '<section class="deck-stage">' +
-                    '<div class="deck-tabs"></div>' +
                     '<div class="deck-stage-body"></div>' +
                 '</section>' +
                 '<div class="deck-split" data-split="R" title="Drag to resize"></div>' +
@@ -14915,8 +15179,12 @@ function renderFusionRealLayer() {
         if (!silentFocus) wsFocusSet(wsActiveName(), p.dataset.tool);
         var t = findTool(p.dataset.tool);
         if (t) $('topbarTitle').textContent = t.title;
+        if (t && t.platform) {
+            if (!S.platFocus) S.platFocus = {};
+            S.platFocus[t.platform] = p.dataset.tool;
+        }
         if (p.classList.contains('deck-float')) { placeFloat(p, S.floats[p.dataset.tool]); p.style.zIndex = focusZ; }
-        renderTabs();
+        renderTopbarTabs();
     }
 
     // mount/unmount ----------------------------------------------------------
@@ -14976,7 +15244,7 @@ function renderFusionRealLayer() {
         applyZoneSplit('L'); applyZoneSplit('R');
         unmountTool(t);
         if (!anyPanels()) showRoot(false);
-        applySizes(); persist(); renderTabs(); scheduleMapResize();
+        applySizes(); persist(); renderTopbarTabs(); scheduleMapResize();
     }
 
     function anyPanels() { return !!root.querySelector('.deck-panel'); }
@@ -15038,7 +15306,7 @@ function renderFusionRealLayer() {
         syncPanelChrome(p);
         applyZoneSplit('L'); applyZoneSplit('R');
         placeFloat(p, { x: px - 120, y: py - 15 });
-        applySizes(); persist(); renderTabs(); scheduleMapResize();
+        applySizes(); persist(); renderTopbarTabs(); scheduleMapResize();
     }
 
     function dockPanel(p, zone) {
@@ -15053,7 +15321,7 @@ function renderFusionRealLayer() {
         if (S.tabOrder.indexOf(id) < 0) S.tabOrder.push(id);
         syncPanelChrome(p);
         if (zone === 'L' || zone === 'R') applyZoneSplit(zone);
-        applySizes(); persist(); renderTabs(); scheduleMapResize();
+        applySizes(); persist(); renderTopbarTabs(); scheduleMapResize();
     }
 
     function dropZoneFor(px, py) {
@@ -15106,7 +15374,7 @@ function renderFusionRealLayer() {
                     var dz = dropZoneFor(ev.clientX, ev.clientY);
                     if (dz) {
                         dockPanel(p, dz);
-                        applySizes(); renderTabs(); scheduleMapResize();
+                        applySizes(); renderTopbarTabs(); scheduleMapResize();
                     } else {
                         S.floats[p.dataset.tool] = { x: parseFloat(p.style.left), y: parseFloat(p.style.top), w: parseFloat(p.style.width), h: parseFloat(p.style.height) };
                         persist();
@@ -15233,21 +15501,21 @@ function renderFusionRealLayer() {
         });
     }
 
-    // stage tabs ---------------------------------------------------------------
-    function renderTabs() {
-        var ids = [];
-        stageBody.querySelectorAll('.deck-panel').forEach(function (p) { ids.push(p.dataset.tool); });
-        tabsEl.classList.toggle('has-tabs', ids.length > 0);
-        tabsEl.innerHTML = ids.map(function (id) {
-            var t = findTool(id);
-            return '<div class="deck-tab' + (id === S.focus ? ' active' : '') + '" data-tool="' + esc(id) + '">' +
-                (t ? t.icon : '') + '<span>' + esc(t ? t.title : id) + '</span>' +
-                '<button type="button" class="deck-tab-x" title="Close">&times;</button></div>';
-        }).join('');
-        renderTopbarTabs();
-    }
-
     // ------------------------------------------------------- topbar mission tabs
+    // platform bucketing (sidebar order): topbar = ONE tab per platform, stage strip = that platform's tools
+    function platformGroups() {
+        var order = PLATFORM_ORDER.slice();
+        if (order.indexOf('Controllers') < 0) order.push('Controllers');
+        var map = {};
+        currentTabs().forEach(function (id) {
+            var t = findTool(id);
+            var plat = (t && t.platform) || 'Controllers';
+            if (!map[plat]) { map[plat] = []; if (order.indexOf(plat) < 0) order.push(plat); }
+            map[plat].push(id);
+        });
+        return order.filter(function (p) { return map[p]; })
+                    .map(function (p) { return { platform: p, tools: map[p] }; });
+    }
     function overlayOpen(id) {
         var m = { gaia: ['gaia-panel', 'gaia-hidden'], won: ['won-panel', 'won-hidden'] }[id];
         if (!m) return false;
@@ -15263,19 +15531,71 @@ function renderFusionRealLayer() {
         });
         return out;
     }
+    function activePlatform() {
+        var f = findTool(S.focus);
+        if (f && f.platform) return f.platform;
+        var gs = platformGroups();
+        return gs.length ? gs[0].platform : null;
+    }
+    // stage tool strip: individual tools OF the focused platform
+    function renderStripTabs() {
+        if (!tabsEl) return;
+        var act = activePlatform();
+        var g = null;
+        platformGroups().forEach(function (x) { if (!g && x.platform === act) g = x; });
+        var ids = g ? g.tools : [];
+        tabsEl.classList.toggle('has-tabs', ids.length > 0);
+        var sig = ids.join('|') + '#' + (act || '');
+        if (renderStripTabs._sig === sig) return;
+        renderStripTabs._sig = sig;
+        tabsEl.innerHTML = ids.map(function (id) {
+            var t = findTool(id) || { title: id, icon: '', label: id };
+            var ov = t.win ? '<span class="tb-overlay-tag">WIN</span>' : '';
+            return '<div class="deck-tab' + (id === S.focus ? ' active' : '') + '" data-tool="' + esc(id) + '" title="' + esc(t.title) + '">' +
+                (t.icon || '') + '<span>' + esc(t.label || t.title || id) + '</span>' + ov +
+                '<button type="button" class="deck-tab-x" title="Close">&times;</button></div>';
+        }).join('');
+    }
+    function closeTool(id) {
+        var t = findTool(id);
+        if (t && t.win) {
+            if (id === 'gaia' && window.GAIA) GAIA.close();
+            else if (id === 'won' && window.WONote) WONote.toggle();
+            renderTopbarTabs._sig = null;
+            setTimeout(renderTopbarTabs, 60);
+            return;
+        }
+        close(id);
+    }
+    function jumpToPlatform(plat) {
+        var id = S.platFocus && S.platFocus[plat];
+        var t = id && findTool(id);
+        var p = t && !t.win && panelByTool(id);
+        if (!p) {
+            var g = null;
+            platformGroups().forEach(function (x) { if (!g && x.platform === plat) g = x; });
+            if (!g) return;
+            for (var i = g.tools.length - 1; i >= 0; i--) {
+                var cand = findTool(g.tools[i]);
+                if (cand && !cand.win && panelByTool(g.tools[i])) { id = g.tools[i]; break; }
+            }
+            if (!id) return;
+        }
+        var fp = panelByTool(id);
+        if (fp) { if (fp.classList.contains('deck-collapse')) toggleCollapse(fp); focusPanel(fp); }
+    }
     function renderTopbarTabs() {
         if (!topbarEl || !document.body.contains(topbarEl)) return;
-        var ids = currentTabs();
-        var sig = ids.join('|') + '#' + (S.focus || '');
+        renderStripTabs();
+        var groups = platformGroups();
+        var sig = groups.map(function (g) { return g.platform + ':' + g.tools.join(','); }).join('|') + '#' + (S.focus || '');
         if (renderTopbarTabs._sig === sig) return;
         renderTopbarTabs._sig = sig;
-        var html = ids.map(function (id) {
-            var t = findTool(id) || { title: id, icon: '' };
-            var act = id === S.focus ? ' active' : '';
-            var ov = t.win ? '<span class="tb-overlay-tag">WIN</span>' : '';
-            return '<div class="tb-tab' + act + '" data-tab="' + esc(id) + '" title="' + esc(t.title) + '">' +
-                (t.icon || '') + '<span class="tb-label">' + esc(t.title) + '</span>' + ov +
-                '<button type="button" class="tb-x" data-tbx="' + esc(id) + '" title="Close">&times;</button></div>';
+        var html = groups.map(function (g) {
+            var act = g.tools.indexOf(S.focus) >= 0 ? ' active' : '';
+            return '<div class="tb-tab' + act + '" data-plat="' + esc(g.platform) + '" title="' + esc(g.platform) + '">' +
+                '<span>' + esc(g.platform) + '</span>' +
+                '<span class="tb-count">' + g.tools.length + '</span></div>';
         }).join('');
         html += '<button type="button" class="tb-new" data-new="1" title="New tab \u2014 search tools (Ctrl+K)">+</button>';
         topbarEl.innerHTML = html;
@@ -15286,34 +15606,20 @@ function renderFusionRealLayer() {
             topbarEl._bound = true;
             topbarEl.addEventListener('click', function (e) {
                 if (e.target.closest('[data-new]')) { togglePalette(); return; }
-                var xb = e.target.closest('[data-tbx]');
-                if (xb) {
-                    e.stopPropagation();
-                    var xid = xb.dataset.tbx, xt = findTool(xid);
-                    if (xt && xt.win) {
-                        if (xid === 'gaia' && window.GAIA) GAIA.close();
-                        else if (xid === 'won' && window.WONote) WONote.toggle();
-                        renderTopbarTabs._sig = null;
-                        setTimeout(renderTopbarTabs, 60);
-                        return;
-                    }
-                    close(xid);
-                    return;
-                }
-                var tab = e.target.closest('.tb-tab');
+                var tab = e.target.closest('.tb-tab[data-plat]');
                 if (!tab) return;
-                var id = tab.dataset.tab, t = findTool(id);
-                if (t && t.win) { runWindowTool(t); return; }
-                var p = panelByTool(id);
-                if (p) { if (p.classList.contains('deck-collapse')) toggleCollapse(p); focusPanel(p); }
+                jumpToPlatform(tab.dataset.plat);
             });
             topbarEl.addEventListener('auxclick', function (e) {
                 if (e.button !== 1) return;
-                var tb = e.target.closest('.tb-tab');
-                if (!tb) return;
-                var t2 = findTool(tb.dataset.tab);
-                if (t2 && t2.win) return;
-                close(tb.dataset.tab);
+                var tab = e.target.closest('.tb-tab[data-plat]');
+                if (!tab) return;
+                var plat = tab.dataset.plat, g = null;
+                platformGroups().forEach(function (x) { if (!g && x.platform === plat) g = x; });
+                if (!g) return;
+                g.tools.forEach(closeTool);
+                renderTopbarTabs._sig = null;
+                setTimeout(renderTopbarTabs, 60);
             });
         }
         var solver = $('tbSolver'), graph = $('tbGraph');
@@ -15328,14 +15634,20 @@ function renderFusionRealLayer() {
         setInterval(renderTopbarTabs, 1200);
     }
 
+    // stage strip delegate ------------------------------------------------------
     function tabsDelegate() {
         tabsEl.addEventListener('click', function (e) {
             var tab = e.target.closest('.deck-tab');
             if (!tab) return;
             var id = tab.dataset.tool;
-            if (e.target.closest('.deck-tab-x')) { close(id); return; }
+            if (e.target.closest('.deck-tab-x')) { closeTool(id); return; }
             var p = panelByTool(id);
             if (p) { focusPanel(p); p.scrollIntoView({ block: 'nearest' }); }
+        });
+        tabsEl.addEventListener('auxclick', function (e) {
+            if (e.button !== 1) return;
+            var tab = e.target.closest('.deck-tab');
+            if (tab) closeTool(tab.dataset.tool);
         });
     }
 
@@ -15411,7 +15723,7 @@ function renderFusionRealLayer() {
         }
         if (!f) f = S.zones.S[0] || (S.zones.R[0] || (S.zones.L[0] || null));
         S.focus = f;
-        applySizes(); renderTabs(); persist(); scheduleMapResize();
+        applySizes(); renderTopbarTabs(); persist(); scheduleMapResize();
         var fp = f && panelByTool(f); if (fp) focusPanel(fp);
     }
     function anyOpenPlanned() { return S.zones.L.length + S.zones.R.length + S.zones.B.length + S.zones.S.length > 0; }

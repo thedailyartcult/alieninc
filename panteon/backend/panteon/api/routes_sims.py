@@ -290,6 +290,92 @@ async def sims_kriegspiel_campaign(request: Request,
 
 
 # --------------------------------------------------------------------------
+# Chronos — historical what-if engine (fidelity-gated)
+# --------------------------------------------------------------------------
+
+@router.get("/chronos/battles")
+async def sims_chronos_battles(request: Request,
+                               user: SupabaseUser = Depends(get_current_user)):
+    return await _gateway("GET", "chronos/battles", request)
+
+
+@router.get("/chronos/powers/{year}")
+async def sims_chronos_powers(year: int, request: Request,
+                              user: SupabaseUser = Depends(get_current_user)):
+    """National power (CINC) for any year 1816-2022 — Correlates of War NMC v7."""
+    return await _gateway("GET", f"chronos/powers/{year}", request)
+
+
+@router.post("/chronos/replay")
+async def sims_chronos_replay(request: Request,
+                              user: SupabaseUser = Depends(get_current_user),
+                              db: AsyncSession = Depends(get_db)):
+    """
+    Replay a real historical battle from verified data and check whether the
+    engine reproduces the recorded outcome (fidelity gate).
+    Body: {battle_key: "cdb90-387", universes?: int, seed?: int}
+    """
+    body = await request.json()
+    report = await _gateway("POST", "chronos/replay", request, body)
+    if not report.get("error") and report.get("passed"):
+        battle = report.get("battle") or {}
+        summary_report = {
+            "battlefield": battle.get("name"),
+            "historical": True,
+            "year": battle.get("year"),
+            "era": battle.get("era"),
+            "scenarios_run": report.get("convergence") and body.get("universes", 400),
+            "red_wins": round((report.get("win_distribution") or {}).get("attacker", 0) * 100),
+            "blue_wins": round((report.get("win_distribution") or {}).get("defender", 0) * 100),
+            "stalemates": round((report.get("win_distribution") or {}).get("stalemate", 0) * 100),
+            "avg_duration_hours": (battle.get("duration_hours")),
+            "duration_ms": None,
+            "seed": body.get("seed", 42),
+            "dominant_winner_side": report.get("predicted_winner"),
+        }
+        report["ontology"] = await _emit_ontology(
+            db, summary_report, user, mode="chronos-replay",
+            battlefield=battle.get("name"))
+    return report
+
+
+@router.post("/chronos/what-if")
+async def sims_chronos_what_if(request: Request,
+                               user: SupabaseUser = Depends(get_current_user),
+                               db: AsyncSession = Depends(get_db)):
+    """
+    Counterfactual branch set for a historical battle. Refuses unless the
+    baseline replay reproduces the recorded outcome (fidelity gate).
+    Body: {battle_key, override: {<one variable>}, universes?, seed?}
+    """
+    body = await request.json()
+    result = await _gateway("POST", "chronos/what-if", request, body)
+    if not result.get("error"):
+        base = result.get("baseline") or {}
+        counter = result.get("counterfactual") or {}
+        summary_report = {
+            "battlefield": base.get("name"),
+            "historical": True,
+            "what_if": True,
+            "override": (result.get("counterfactual") or {}).get("overrides"),
+            "year": base.get("year"),
+            "era": base.get("era"),
+            "scenarios_run": counter.get("universes"),
+            "red_wins": round((counter.get("win_distribution") or {}).get("attacker", 0) * 100),
+            "blue_wins": round((counter.get("win_distribution") or {}).get("defender", 0) * 100),
+            "stalemates": round((counter.get("win_distribution") or {}).get("stalemate", 0) * 100),
+            "avg_duration_hours": None,
+            "duration_ms": None,
+            "seed": body.get("seed", 42),
+            "dominant_winner_side": counter.get("predicted_winner"),
+        }
+        result["ontology"] = await _emit_ontology(
+            db, summary_report, user, mode="chronos-what-if",
+            battlefield=base.get("name"))
+    return result
+
+
+# --------------------------------------------------------------------------
 # Catch-all proxy for remaining read endpoints
 # --------------------------------------------------------------------------
 

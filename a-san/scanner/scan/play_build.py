@@ -119,6 +119,11 @@ def _norm(s: str) -> str:
 _TITLE_REJECT = ("airport", "valley", "industries", "company", "corporation",
                  "university", "museum", "disambiguation")
 
+# short ALL-CAPS tokens that are really common English nouns — useless as
+# identity evidence ("AT-4 HEAT" -> "Heat pump", "Sharp Claw" -> "Claw")
+_ACRONYM_STOP = {"heat", "claw", "wolf", "fire", "star", "moon", "king",
+                 "rose", "case", "lamp", "wave"}
+
 
 _STOP_WORDS = {
     "class", "with", "and", "the", "system", "systems", "vehicle", "vehicles",
@@ -132,22 +137,41 @@ _STOP_WORDS = {
 
 
 def _candidate_signals(candidates: list[str]) -> tuple[set[str], set[str], set[str]]:
-    """(normalized codes, significant words >=5 chars, ALL-CAPS acronyms >=4)."""
+    """(normalized codes, significant words >=5 chars, ALL-CAPS acronyms >=4).
+
+    Chunk-based: whitespace/slash-separated chunks keep hyphenated military
+    designators intact ('V-BAT' -> acronym vbat, 'Kh-59' -> code kh59,
+    'FLM 136' -> joined code flm136). Bare numbers never count as codes.
+    """
     codes: set[str] = set()
     words: set[str] = set()
     acronyms: set[str] = set()
     for text in candidates:
-        for m in re.finditer(r"[A-Za-z]{0,5}\d{1,3}[A-Za-z]?\d*", text):
-            c = _norm(m.group())
-            if len(c) >= 3:
-                codes.add(c)
-        for w in re.findall(r"[^\W\d_]+", text, re.UNICODE):
-            wl = _fold(w).lower()
-            if len(wl) >= 5 and wl not in _STOP_WORDS:
-                words.add(wl)
-            letters = re.sub(r"[^A-Za-z]", "", w)
-            if len(letters) >= 4 and letters.isupper():
-                acronyms.add(wl)
+        t = _fold(text)
+        prev_core = ""
+        for chunk in re.split(r"[\s/]+", t):
+            if not chunk:
+                continue
+            core = re.sub(r"[^a-z0-9]", "", chunk.lower())
+            letters = re.sub(r"[^a-z]", "", core)
+            digits = re.sub(r"[^0-9]", "", core)
+            stripped = chunk.strip("-().,")
+            if len(letters) >= 5 and letters not in _STOP_WORDS:
+                words.add(letters)
+            for part in re.split(r"[-]", chunk):
+                pl_ = re.sub(r"[^a-z]", "", part.lower())
+                if len(pl_) >= 5 and pl_ not in _STOP_WORDS:
+                    words.add(pl_)
+            if (len(stripped) >= 4 and stripped.isupper()
+                    and len(letters) >= 4 and letters not in _STOP_WORDS
+                    and letters not in _ACRONYM_STOP):
+                acronyms.add(letters)
+            if digits and letters and len(core) >= 3:
+                codes.add(core)                      # kh59, aim120, flm136 …
+            elif digits and not letters and re.fullmatch(r"[a-z]+", prev_core or "") \
+                    and 2 <= len(prev_core) <= 6:
+                codes.add(prev_core + digits)        # 'Kh' + '59' across a space
+            prev_core = core
     return codes, words, acronyms
 
 
@@ -160,15 +184,40 @@ def _search_acceptable(candidates: list[str], title: str) -> bool:
     tn = _norm(title)
     tl = _fold(title).lower()
     codes, words, acronyms = _candidate_signals(candidates)
-    if any(c in tn or (len(tn) >= 3 and tn in c) for c in codes):
+    if any(c in tn for c in codes):
         return True
-    hits = [w for w in words if w in tl]
+    # whole-word hits only: 'engineer' must not match 'engineering'
+    hits = [w for w in words if re.search(rf"\b{re.escape(w)}\b", tl)]
     if len(hits) >= 2 or any(len(w) >= 6 for w in hits):
         return True
-    # weak word evidence: demand every notable ALL-CAPS acronym to appear
-    if acronyms and all(a in tn for a in acronyms):
-        return True
+    # weak word evidence: demand most notable ALL-CAPS acronyms to appear
+    if acronyms:
+        found = sum(1 for a in acronyms if a in tn)
+        if found >= max(1, (len(acronyms) + 1) // 2):
+            return True
     return False
+
+
+def _title_score(candidates: list[str], title: str) -> int:
+    """Higher = stronger evidence the title IS the requested system.
+    Exact normalized candidate match dominates; then full-candidate
+    containment; then per-signal overlap (codes, distinctive words)."""
+    tn = _norm(title)
+    tl = _fold(title).lower()
+    codes, words, _acronyms = _candidate_signals(candidates)
+    score = 1
+    if any(_norm(c) == tn for c in candidates):
+        return 100
+    if any(c in tn or (len(tn) >= 4 and tn in c) for c in codes):
+        score += 2
+    score += sum(1 for w in words if w in tl)
+    for cand in candidates:
+        cn = _norm(cand)
+        if len(cn) >= 5 and cn in tn:
+            score += 5
+        elif len(tn) >= 5 and tn in cn:
+            score += 5
+    return score
 
 
 def resolve_entry(client: WikiClient, entry: dict) -> tuple[dict | None, str]:
@@ -202,7 +251,7 @@ def resolve_entry(client: WikiClient, entry: dict) -> tuple[dict | None, str]:
                 return rec, "title"
 
     # Pass 2: search fallback on the raw designation — walk the ranked hits,
-    # first one passing the title guard AND carrying a thumbnail wins.
+    # keep those passing the title guard, prefer the strongest title match.
     data = client.query({
         "action": "query",
         "generator": "search",
@@ -215,19 +264,21 @@ def resolve_entry(client: WikiClient, entry: dict) -> tuple[dict | None, str]:
         "iiprop": "extmetadata",
         "iiextmetadatafilter": "Artist|LicenseShortName",
     })
-    fallback_title = None
-    for page in (data.get("query", {}).get("pages", {}) or []):
+    scored: list[tuple[int, int, dict, dict]] = []  # (-score, index, page, thumb)
+    for pos, page in enumerate(data.get("query", {}).get("pages", []) or []):
         if "missing" in page:
             continue
         if not _search_acceptable(candidates, page.get("title", "")):
             continue
-        thumb = _page_thumb(page)
+        thumb = _page_thumb(page) or {}
+        scored.append((-_title_score(candidates, page.get("title", "")),
+                       pos, page, thumb))
+    scored.sort()
+    for _, _, page, thumb in scored:   # best-scoring hit WITH an image wins
         if thumb:
             rec = {"wiki_title": page["title"], **thumb}
             return rec, "search"
-        if fallback_title is None:
-            fallback_title = page.get("title")
-    return None, ("no-image" if fallback_title else "no-wikipedia-image")
+    return (None, "no-image") if scored else (None, "no-wikipedia-image")
 
 
 def build_play_dataset(s: Settings, force_refresh: bool = False) -> dict:

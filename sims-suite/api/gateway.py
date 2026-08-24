@@ -1325,6 +1325,187 @@ async def ks_llm_events(body: dict[str, Any] = None) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Chronos — historical what-if engine (COW NMC country power + CDB90 corpus)
+# ---------------------------------------------------------------------------
+_CHRONOS_DB = _SUITE_ROOT.parent / "panteon" / "backend" / "panteon.db"
+_chronos_available = False
+_load_battle = None
+_search_battles = None
+_country_power = None
+_top_powers = None
+_simulate_historical = None
+_what_if = None
+_fidelity_report = None
+_assert_gate = None
+_get_oob = None
+_load_curated_battle = None
+
+
+def _load_chronos() -> bool:
+    global _chronos_available, _load_battle, _search_battles, _country_power
+    global _top_powers, _simulate_historical, _what_if, _fidelity_report, _assert_gate
+    global _get_oob, _load_curated_battle
+    if _chronos_available:
+        return True
+    if str(_SUITE_ROOT) not in sys.path:
+        sys.path.insert(0, str(_SUITE_ROOT))
+    else:
+        sys.path.remove(str(_SUITE_ROOT))
+        sys.path.insert(0, str(_SUITE_ROOT))
+    try:
+        from engines.chronos.loader import (
+            load_battle as _lb,
+            search_battles as _sb,
+            country_power as _cp,
+            top_powers as _tp,
+            get_oob as _goob,
+            load_curated_battle as _lcb,
+        )
+        from engines.chronos.engine import (
+            simulate_historical as _sh,
+            what_if as _wi,
+        )
+        from engines.chronos.fidelity import (
+            fidelity_report as _fr,
+            assert_gate as _ag,
+        )
+        _load_battle = _lb
+        _search_battles = _sb
+        _country_power = _cp
+        _top_powers = _tp
+        _simulate_historical = _sh
+        _what_if = _wi
+        _fidelity_report = _fr
+        _assert_gate = _ag
+        _get_oob = _goob
+        _load_curated_battle = _lcb
+        _chronos_available = True
+    except Exception as exc:
+        logger.debug("Chronos unavailable: %s", exc)
+    return _chronos_available
+
+
+@app.get("/api/chronos/battles")
+async def chronos_battles(war: str = "WORLD WAR II", limit: int = 60) -> list[dict[str, Any]]:
+    if not _load_chronos():
+        return {"error": "Chronos not available"}
+    rows = await asyncio.to_thread(_search_battles, _CHRONOS_DB, war, min(limit, 200))
+    # Curated flagship battles (not in the corpus) appear at the top.
+    for slug, label in (("curated-neptune-1944", "D-DAY NEPTUNE (NORMANDY 1944)"),):
+        oob = await asyncio.to_thread(lambda s=slug: _get_oob(s, _CHRONOS_DB))
+        if oob:
+            rows.insert(0, {"isqno": slug, "name": label,
+                            "war": "CURATED FLAGSHIP",
+                            "location": "Normandy, France",
+                            "source": "chronos_oob"})
+    return rows
+
+
+@app.get("/api/chronos/powers/{year}")
+async def chronos_powers(year: int, limit: int = 12) -> dict[str, Any]:
+    """Country national power (CINC + components) for a given year."""
+    if not _load_chronos():
+        return {"error": "Chronos not available"}
+    return await asyncio.to_thread(
+        lambda: {
+            "year": year,
+            "top": _top_powers(year, min(limit, 40), _CHRONOS_DB),
+            "source": "Correlates of War NMC v7.0",
+        }
+    )
+
+
+@app.get("/api/chronos/oob/{battle_key}")
+async def chronos_oob(battle_key: str) -> dict[str, Any]:
+    """Orders of battle for a battle (curated flagship entries when present)."""
+    if not _load_chronos():
+        return {"error": "Chronos not available"}
+    return await asyncio.to_thread(
+        lambda: {"battle_key": battle_key,
+                 "entries": _get_oob(battle_key, _CHRONOS_DB)}
+    )
+
+
+@app.post("/api/chronos/replay")
+async def chronos_replay(body: dict[str, Any]) -> dict[str, Any]:
+    """Fidelity-gated historical replay: simulate a real battle with real data.
+
+    Body: { battle_key: "cdb90-387" | "curated-neptune-1944", universes?: int, seed?: int }
+    Returns the fidelity report — counterfactuals require passed=true.
+    """
+    if not _load_chronos():
+        return {"error": "Chronos not available"}
+    battle_key = str(body.get("battle_key", ""))
+    universes = min(int(body.get("universes", 400)), 5000)
+    seed = body.get("seed", 42)
+
+    def _run() -> dict[str, Any]:
+        if battle_key.startswith("curated-"):
+            battle = _load_curated_battle(battle_key, _CHRONOS_DB)
+        else:
+            try:
+                isqno = int(battle_key.split("-", 1)[1])
+            except (IndexError, ValueError):
+                return {"error": "battle_key must look like 'cdb90-<isqno>' or 'curated-<slug>'"}
+            battle = _load_battle(isqno, _CHRONOS_DB)
+        if not battle:
+            return {"error": f"unknown battle {battle_key}"}
+        report = _fidelity_report(battle, universes=universes, seed=seed)
+        report["battle"] = battle.to_dict()
+        oob = _get_oob(battle_key, _CHRONOS_DB)
+        if oob:
+            report["oob"] = oob
+        return report
+
+    return await asyncio.to_thread(_run)
+
+
+@app.post("/api/chronos/what-if")
+async def chronos_what_if(body: dict[str, Any]) -> dict[str, Any]:
+    """Counterfactual branch set — BLOCKED unless the baseline replay passes
+    the fidelity gate for this battle.
+
+    Body: {
+      battle_key: str,
+      override: {"attacker_strength_mult"|"defender_strength_mult"|
+                 "attacker_quality_add"|"defender_quality_add"|"terrain"} ,
+      universes?: int, seed?: int, force?: bool   # force bypasses gate (admin)
+    }
+    """
+    if not _load_chronos():
+        return {"error": "Chronos not available"}
+    battle_key = str(body.get("battle_key", ""))
+    universes = min(int(body.get("universes", 400)), 5000)
+    seed = body.get("seed", 42)
+    override = body.get("override") or {}
+    if not isinstance(override, dict) or len(override) != 1:
+        return {"error": "override must be a dict with exactly one variable"}
+
+    def _run() -> dict[str, Any]:
+        if battle_key.startswith("curated-"):
+            battle = _load_curated_battle(battle_key, _CHRONOS_DB)
+        else:
+            try:
+                isqno = int(battle_key.split("-", 1)[1])
+            except (IndexError, ValueError):
+                return {"error": "battle_key must look like 'cdb90-<isqno>' or 'curated-<slug>'"}
+            battle = _load_battle(isqno, _CHRONOS_DB)
+        if not battle:
+            return {"error": f"unknown battle {battle_key}"}
+        if not body.get("force"):
+            rep = _fidelity_report(battle, universes=min(universes, 800), seed=seed)
+            try:
+                _assert_gate(rep)
+            except PermissionError as exc:
+                return {"error": str(exc), "fidelity": rep}
+        result = _what_if(battle, override, universes=universes, seed=seed)
+        result["gate"] = "passed"
+        return result
+
+    return await asyncio.to_thread(_run)
+
+
+# ---------------------------------------------------------------------------
 # Research / self-learning endpoints (Kriegspiel doctrine evolution)
 # ---------------------------------------------------------------------------
 # These surface what the engine has *learned* from its own simulations:

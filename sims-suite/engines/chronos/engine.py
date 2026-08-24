@@ -32,6 +32,8 @@ FRICTION_DEFENSE_BIAS = 0.10
 BASELINE_ATTRITION = 0.35
 POWER_FEEDBACK = 1.2          # suppressive-fire coupling exponent
 CONTACT_RAMP_TICKS = 2.0      # approach-phase ticks before full firepower
+BREAK_OFF_FRACTION = 0.94     # attacker breaks off once ~6% of power is gone
+BREAK_OFF_MARGIN = 1.02       # and the defense is demonstrably holding
 
 # Terrain defense bonuses (multiplicative on defender power), keyed by
 # canonical CDB90 labels written by chronos_sync.
@@ -67,6 +69,7 @@ def side_combat_power(
     terrain: str,
     weather: str,
     jitter_rng: Optional[random.Random] = None,
+    air_superiority: int = 0,
 ) -> float:
     strength = max(side.strength, 1.0)
     quality = side.quality_multiplier()
@@ -75,7 +78,12 @@ def side_combat_power(
     surprise = 1.0 + 0.05 * (side.surprise or 0.0)
     wx = WEATHER_EFFECT.get((weather or "").split(",")[0].strip().lower(), 1.0)
     initiative = ATTACK_INITIATIVE if side.is_attacker else 1.0
-    power = strength * quality * equipment * posture * surprise * wx * initiative
+    air_shift = 1.0
+    holds_air = (air_superiority > 0) == side.is_attacker and air_superiority != 0
+    if air_superiority:
+        air_shift = (1.0 + 0.22 * era.air_effectiveness) if holds_air \
+            else max(1.0 - 0.15 * era.air_effectiveness, 0.7)
+    power = strength * quality * equipment * posture * surprise * wx * initiative * air_shift
     if jitter_rng is not None:
         # Fog of war: intelligence error on either side's effective strength.
         power *= jitter_rng.uniform(0.82, 1.18)
@@ -106,6 +114,16 @@ def _casualty_exchange(
     # opening phase lands before the defense's firepower matures.
     surprise_ticks = CONTACT_RAMP_TICKS * (1.0 + 0.75 * max(attacker_surprise, 0.0))
     for tick_i in range(ticks):
+        # Break-off FIRST (decision precedes the day's fighting): a failing
+        # attack disengages before annihilation. Corpus ground truth (WWII):
+        # failed attacks cost attackers ~5.7% on average — barely more than
+        # successful ones — because commanders cut their losses once the
+        # defense is clearly holding.
+        if (tick_i >= 1
+                and a_strength < att_power * BREAK_OFF_FRACTION
+                and d_strength > a_strength * BREAK_OFF_MARGIN):
+            a_strength -= (att_power - a_strength) * rng.uniform(0.1, 0.25)
+            break
         # Approach phase: the opening hours see skirmish-level contact while
         # attacks deploy; full firepower develops over roughly a day.
         ramp = min((tick_i + 1) / max(surprise_ticks, 0.5), 1.0)
@@ -146,8 +164,10 @@ def resolve_battle(battle: HistoricalBattle, seed: int,
     attacker = battle.attacker
     defender = battle.defender
 
-    att_power = side_combat_power(attacker, era, battle.terrain, battle.weather, rng)
-    dfd_power = side_combat_power(defender, era, battle.terrain, battle.weather, rng)
+    att_power = side_combat_power(attacker, era, battle.terrain, battle.weather, rng,
+                                  air_superiority=battle.air_superiority)
+    dfd_power = side_combat_power(defender, era, battle.terrain, battle.weather, rng,
+                                  air_superiority=battle.air_superiority)
 
     att_mult = overrides.get("attacker_strength_mult", 1.0)
     dfd_mult = overrides.get("defender_strength_mult", 1.0)

@@ -147,6 +147,9 @@ class HistoricalBattle:
     duration_hours: float = 24.0
     attacker: HistoricalSide = field(default_factory=lambda: HistoricalSide(1))
     defender: HistoricalSide = field(default_factory=lambda: HistoricalSide(0))
+    # CDB90 aeroa: 1 = attacker held theater air superiority (-1 defender,
+    # though the corpus never records -1). Applied as era-weighted power shift.
+    air_superiority: int = 0
     source: str = "CDB90"
 
     @property

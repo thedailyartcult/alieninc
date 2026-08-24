@@ -96,6 +96,7 @@ def load_battle(isqno: int, db_path: Path = DEFAULT_DB) -> Optional[HistoricalBa
         duration_hours=float(b["duration_hours"] or 24.0),
         attacker=attacker,
         defender=defender,
+        air_superiority=int(b["air_superiority"] or 0) if "air_superiority" in b.keys() else 0,
         source=b["source"] or "CDB90",
     )
 

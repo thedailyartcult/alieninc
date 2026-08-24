@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS chronos_battles (
   postype TEXT,
   terrain TEXT,
   weather TEXT,
+  air_superiority INTEGER DEFAULT 0,
   attacker_actors TEXT,
   defender_actors TEXT,
   source TEXT NOT NULL DEFAULT 'CDB90',
@@ -248,6 +249,11 @@ def sync_cdb90(conn: sqlite3.Connection, data_dir: Path) -> tuple:
 
     # Per-battle ordinal quality assessments from battles.csv. Suffix 'a' =
     # attacker assessment, 'aa' = defender assessment (CDB90 convention).
+    aeroa_by_isq = {}
+    for b in battles:
+        v = _num(b.get("aeroa"))
+        aeroa_by_isq[int(b["isqno"])] = int(v) if v is not None else 0
+
     qual_by_isq = {}
     for b in battles:
         att = {
@@ -278,9 +284,9 @@ def sync_cdb90(conn: sqlite3.Connection, data_dir: Path) -> tuple:
         cur.execute(
             """INSERT INTO chronos_battles
                (isqno, name, war, campaign, location, start_date, end_date,
-                duration_hours, postype, terrain, weather, attacker_actors,
-                defender_actors, source, dbpedia)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'CDB90',?)
+                duration_hours, postype, terrain, weather, air_superiority,
+                attacker_actors, defender_actors, source, dbpedia)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,'CDB90',?)
                ON CONFLICT(isqno) DO UPDATE SET
                  name=excluded.name, war=excluded.war, campaign=excluded.campaign,
                  location=excluded.location, start_date=excluded.start_date,
@@ -296,6 +302,7 @@ def sync_cdb90(conn: sqlite3.Connection, data_dir: Path) -> tuple:
                 b.get("postype"),
                 _terrain_label(terr_by_isq.get(isq, [])),
                 _weather_label(wx_by_isq.get(isq, [])),
+                aeroa_by_isq.get(isq, 0),
                 json.dumps(a_actors), json.dumps(d_actors), b.get("dbpedia"),
             ),
         )
@@ -378,10 +385,13 @@ def sync_oob(conn: sqlite3.Connection, data_dir: Path) -> int:
 def _migrate(conn: sqlite3.Connection) -> None:
     """Additive column migrations for pre-existing chronos tables."""
     cur = conn.cursor()
-    cols = {r[1] for r in cur.execute("PRAGMA table_info(chronos_oob)").fetchall()}
-    if "engagement_fraction" not in cols:
+    oob_cols = {r[1] for r in cur.execute("PRAGMA table_info(chronos_oob)").fetchall()}
+    if "engagement_fraction" not in oob_cols:
         cur.execute("ALTER TABLE chronos_oob ADD COLUMN engagement_fraction REAL DEFAULT 1.0")
-        conn.commit()
+    b_cols = {r[1] for r in cur.execute("PRAGMA table_info(chronos_battles)").fetchall()}
+    if "air_superiority" not in b_cols:
+        cur.execute("ALTER TABLE chronos_battles ADD COLUMN air_superiority INTEGER DEFAULT 0")
+    conn.commit()
 
 
 def verify(conn: sqlite3.Connection) -> dict:

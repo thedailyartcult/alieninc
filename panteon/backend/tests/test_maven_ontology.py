@@ -15,10 +15,12 @@ from panteon.maven import (
     DET_TYPE,
     TASK_TYPE,
     create_task,
+    delete_task,
     dispatch_asset,
     ensure_maven_ontology,
     generate_coas,
     prune_detections,
+    recall_asset,
     tick_and_collect,
     validate_detection,
 )
@@ -340,6 +342,70 @@ def mv_get_current_user():
 async def test_api_requires_auth(api_client):
     resp = await api_client.get("/api/v1/maven/state")
     assert resp.status_code == 401
+
+
+# --------------------------- operator control -----------------------------
+@pytest.mark.asyncio
+async def test_recall_asset_stands_down(db_session):
+    task = await create_task(db_session, {
+        "name": "RECALL ME", "aoi_lat": 58.0, "aoi_lng": 20.0}, "op@alieninc.tech")
+    out = await dispatch_asset(db_session, task["task_id"], "uas", None)
+    cs = out["callsign"]
+    res = await recall_asset(db_session, cs, "op@alieninc.tech")
+    assert res["recalled"] is True and res["object_removed"] is True
+    assert cs not in mv._ASSETS
+    with pytest.raises(ValueError):
+        await recall_asset(db_session, "UAS-NOPE", None)
+
+
+@pytest.mark.asyncio
+async def test_delete_task_removes_assets_and_detections(db_session, monkeypatch):
+    task = await create_task(db_session, {
+        "name": "DEL TASK", "aoi_lat": 55.5, "aoi_lng": 19.4}, "op@alieninc.tech")
+    a1 = await dispatch_asset(db_session, task["task_id"], "uas", None)
+    a2 = await dispatch_asset(db_session, task["task_id"], "usv", None)
+
+    # Seed two detections bound to this task + one foreign detection.
+    from panteon.spinal_craker.models import Object as Obj, Link as LinkModel
+    async def mk_det(pk, tid):
+        svc = mv.OntologyService(db_session)
+        dt = await svc.get_object_type_by_name(DET_TYPE)
+        obj, _ = await mv._upsert_war_object(
+            db_session, dt.id, pk,
+            {"task_id": tid, "validated": None, "lat": 1.0, "lng": 2.0})
+        return obj
+    d_mine = await mk_det("mv-det:del-a", task["task_id"])
+    d_mine2 = await mk_det("mv-det:del-b", task["task_id"])
+    other = await create_task(db_session, {
+        "name": "KEEP ME", "aoi_lat": 10.0, "aoi_lng": 10.0}, "op@alieninc.tech")
+    d_other = await mk_det("mv-det:keep", other["task_id"])
+    await db_session.commit()
+
+    res = await delete_task(db_session, task["task_id"], "op@alieninc.tech")
+    assert res["deleted"] is True and res["assets_stood_down"] == 2
+
+    pks = {o.primary_key_value for o in (await db_session.execute(
+        __import__("sqlalchemy").select(Obj))).scalars().all()}
+    assert f"mv-asset:{a1['callsign']}" not in pks
+    assert f"mv-asset:{a2['callsign']}" not in pks
+    assert "mv-det:del-a" not in pks and "mv-det:del-b" not in pks
+    assert "mv-det:keep" in pks
+    assert other["pk"] in pks
+
+    with pytest.raises(ValueError):
+        await delete_task(db_session, str(uuid.uuid4()), None)
+
+
+@pytest.mark.asyncio
+async def test_delete_and_recall_routes_role_gated(api_client):
+    _override_role("viewer")
+    try:
+        r = await api_client.delete("/api/v1/maven/task/" + str(uuid.uuid4()))
+        assert r.status_code == 403
+        c = await api_client.post("/api/v1/maven/asset/UAS-XXXX/recall", json={})
+        assert c.status_code == 403
+    finally:
+        app.dependency_overrides.pop(mv_get_current_user(), None)
 
 
 @pytest.mark.asyncio

@@ -123,3 +123,66 @@ class TestLoader:
         tops = loader.top_powers(1939, 5, DB)
         assert len(tops) == 5
         assert tops[0]["cinc"] >= tops[-1]["cinc"]
+
+
+from engines.chronos.doctrines import (  # noqa: E402
+    resolve_doctrine, attacker_power_mult, defender_power_mult,
+)
+
+
+class TestDoctrines:
+    def test_resolution_transitions(self):
+        assert resolve_doctrine("Germany", 1941).key == "ger-bewegungskrieg"
+        assert resolve_doctrine("Germany", 1944).key == "ger-defence-depth"
+        assert resolve_doctrine("USSR", 1942).key == "su-standing-defence"
+        assert resolve_doctrine("USSR", 1944).key == "su-deep-operations"
+
+    def test_unknown_actor_neutral(self):
+        d = resolve_doctrine("Brazil", 1942)
+        assert d.key == "generic-contemporary"
+        for p in (d.tempo, d.combined_arms, d.flexibility,
+                  d.set_piece, d.logistic_reach, d.defense_doctrine):
+            assert p == 1.0
+
+    def test_aliases(self):
+        assert resolve_doctrine("Soviet Union", 1943).actor == "USSR"
+        assert resolve_doctrine("United States", 1944).actor == "USA"
+        assert resolve_doctrine("Australia", 1944).actor == "Great Britain"
+
+    def test_tempo_open_vs_broken_terrain(self):
+        ger41 = resolve_doctrine("Germany", 1941)
+        m_open = attacker_power_mult(ger41, "flat,desert", 24)
+        m_urban = attacker_power_mult(ger41, "urban,rugged", 24)
+        assert m_open > m_urban > 1.0
+
+    def test_japan_island_defence_growth(self):
+        # 1942: beach-line annihilation doctrine (defensively weak);
+        # 1943+: fortified zones in depth - a large doctrinal jump.
+        j42 = defender_power_mult(resolve_doctrine("Japan", 1942))
+        j44 = defender_power_mult(resolve_doctrine("Japan", 1944))
+        assert j44 > 1.0 > j42
+
+    def test_citations_present(self):
+        for actor, year in (("Germany", 1941), ("USSR", 1944), ("USA", 1943),
+                            ("Great Britain", 1943), ("Japan", 1940),
+                            ("France", 1940), ("Italy", 1941), ("Finland", 1940)):
+            doc = resolve_doctrine(actor, year)
+            assert doc.sources and doc.summary, f"missing citation for {actor} {year}"
+
+    def test_doctrine_swap_override(self):
+        b = _battle()
+        b.attacker.actors = ["Germany"]
+        b.defender.actors = ["USSR"]
+        base = simulate_historical(b, universes=80, seed=7)
+        swap = simulate_historical(b, universes=80, seed=7,
+                                   overrides={"defender_doctrine": "Germany"})
+        # German elastic defence should help the defender vs rigid '42 Soviet method.
+        assert swap["win_distribution"]["defender"] >= \
+            base["win_distribution"]["defender"] - 0.02
+        assert swap["doctrines"]["defender"]["actor"] == "Germany"
+        assert base["doctrines"]["defender"]["actor"] == "USSR"
+
+    def test_no_actors_stays_neutral(self):
+        b = _battle()
+        r = simulate_historical(b, universes=40, seed=5)
+        assert r["doctrines"] == {"attacker": None, "defender": None}

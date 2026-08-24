@@ -284,6 +284,109 @@ class LLMOrchestrator:
             "tokens_output": response.usage.completion_tokens,
         }
 
+    async def stream_llm_with_tools(
+        self,
+        model_id: uuid.UUID,
+        messages: list[dict],
+        system_prompt: Optional[str] = None,
+        tools: Optional[list[dict]] = None,
+    ):
+        """Streaming variant of execute_llm_with_tools (OpenAI-compatible paths).
+
+        Yields ("delta", str) events as content tokens arrive, then a final
+        ("done", result_dict) event shaped exactly like execute_llm_with_tools.
+        Raises ValueError for providers/models that cannot stream so callers
+        can fall back to the buffered path.
+        """
+        model = await self.get_model(model_id)
+        if not model:
+            raise ValueError(f"Model {model_id} not found")
+        provider_type = model.provider.provider_type
+        if provider_type == "openai":
+            async for ev in self._call_openai_with_tools_stream(model, messages, system_prompt, tools):
+                yield ev
+        else:
+            raise ValueError(f"Streaming unsupported for provider type: {provider_type}")
+
+    async def _call_openai_with_tools_stream(
+        self, model: LLMModel, messages: list[dict], system_prompt: Optional[str], tools: Optional[list]
+    ):
+        from openai import AsyncOpenAI
+
+        client = self._openai_client(model.provider)
+
+        api_messages = []
+        if system_prompt:
+            api_messages.append({"role": "system", "content": system_prompt})
+        api_messages.extend(messages)
+
+        kwargs = {"model": model.model_id, "messages": api_messages}
+        if tools:
+            kwargs["tools"] = [{"type": "function", "function": t} for t in tools]
+
+        # Some OpenAI-compatible servers reject stream_options; degrade gracefully.
+        try:
+            stream = await client.chat.completions.create(
+                stream_options={"include_usage": True}, **kwargs
+            )
+        except Exception:
+            stream = await client.chat.completions.create(**kwargs)
+
+        content_parts: list[str] = []
+        tc_acc: dict[int, dict] = {}
+        tokens_in = tokens_out = 0
+
+        try:
+            async for chunk in stream:
+                if getattr(chunk, "usage", None):
+                    tokens_in = chunk.usage.prompt_tokens or 0
+                    tokens_out = chunk.usage.completion_tokens or 0
+                if not getattr(chunk, "choices", None):
+                    continue
+                delta = chunk.choices[0].delta
+                if delta is None:
+                    continue
+                text = getattr(delta, "content", None)
+                if text:
+                    content_parts.append(text)
+                    yield ("delta", text)
+                frags = getattr(delta, "tool_calls", None)
+                if frags:
+                    for frag in frags:
+                        slot = tc_acc.setdefault(frag.index, {"id": "", "name": "", "arguments": ""})
+                        if frag.id:
+                            slot["id"] = frag.id
+                        if frag.function:
+                            if frag.function.name:
+                                slot["name"] += frag.function.name
+                            if frag.function.arguments:
+                                slot["arguments"] += frag.function.arguments
+        finally:
+            close = getattr(stream, "close", None)
+            if close:
+                try:
+                    await close()
+                except Exception:
+                    pass
+
+        tool_calls = [
+            {
+                "id": slot["id"] or f"call_{uuid.uuid4().hex[:8]}",
+                "type": "function",
+                "function": {
+                    "name": slot["name"],
+                    "arguments": slot["arguments"] or "{}",
+                },
+            }
+            for _, slot in sorted(tc_acc.items())
+        ]
+        yield ("done", {
+            "content": "".join(content_parts),
+            "tool_calls": tool_calls,
+            "tokens_input": tokens_in,
+            "tokens_output": tokens_out,
+        })
+
     async def _call_anthropic_with_tools(
         self, model: LLMModel, messages: list[dict], system_prompt: Optional[str], tools: Optional[list]
     ) -> dict:
@@ -588,6 +691,7 @@ class AgentService:
         message: str,
         user_id: Optional[str] = None,
         session_id: Optional[uuid.UUID] = None,
+        auto_execute: bool = False,
     ) -> dict:
         """
         Palantir AIP-style chat with ontology integration.
@@ -673,65 +777,145 @@ class AgentService:
                 except (json.JSONDecodeError, KeyError):
                     args = {}
 
-                # Governance check
-                if tool_name in ("query_objects", "get_object", "get_object_links", "search_objects"):
-                    type_name = args.get("type_name", "")
-                    if type_name:
-                        verdict = governance.check_read(type_name)
-                        if not verdict.allowed:
-                            tool_result = {"error": verdict.reason}
-                            tool_calls_log.append({
-                                "tool": tool_name,
-                                "args": args,
-                                "denied": True,
-                                "reason": verdict.reason,
-                            })
-                            messages.append({
-                                "role": "tool",
-                                "tool_call_id": tc["id"],
-                                "content": json.dumps(tool_result),
-                            })
-                            continue
+                tool_result, log_entry = await self._exec_tool_call(
+                    governance=governance,
+                    executor=tool_executor,
+                    agent=agent,
+                    auto_execute=auto_execute,
+                    tool_name=tool_name,
+                    args=args,
+                )
+                tool_calls_log.append(log_entry)
 
-                elif tool_name == "execute_action":
-                    action_name = args.get("action_name", "")
-                    if action_name:
-                        verdict = governance.check_action(action_name)
-                        if not verdict.allowed:
-                            tool_result = {"error": verdict.reason}
-                            tool_calls_log.append({
-                                "tool": tool_name,
-                                "args": args,
-                                "denied": True,
-                                "reason": verdict.reason,
-                            })
-                            messages.append({
-                                "role": "tool",
-                                "tool_call_id": tc["id"],
-                                "content": json.dumps(tool_result),
-                            })
-                            continue
-
-                # Execute tool
-                tool_result = await tool_executor.execute(tool_name, args)
-                tool_calls_log.append({
-                    "tool": tool_name,
-                    "args": args,
-                    "result_summary": str(tool_result)[:200],
-                })
-
+                # History carries a SLIMMED copy of the result: full payloads
+                # are re-sent to the LLM on every subsequent leg and dominate
+                # prefill on multi-tool chats.
                 messages.append({
                     "role": "tool",
                     "tool_call_id": tc["id"],
-                    "content": json.dumps(tool_result),
+                    "content": json.dumps(self._slim_for_history(tool_result)),
                 })
 
         # ── Layer 4: Persist session ──────────────────────────────────
         session.messages = messages
         await self.db.flush()
 
-        # ── Layer 5: Audit trail ──────────────────────────────────────
-        # Log to lineage system (fire-and-forget)
+        await self._audit_chat(
+            session, agent, user_id, tool_calls_log, total_tokens_in, total_tokens_out
+        )
+
+        return {
+            "session_id": session.id,
+            "response": final_response,
+            "tokens_input": total_tokens_in,
+            "tokens_output": total_tokens_out,
+            "tool_calls": tool_calls_log,
+            "iterations": min(iteration + 1, agent.max_iterations or 10),
+        }
+
+    @staticmethod
+    def _shrink_for_ui(value, depth: int = 0):
+        """Compact copy of a tool result safe to ship to the panel."""
+        if depth > 4:
+            return "…"
+        if isinstance(value, dict):
+            return {k: AgentService._shrink_for_ui(v, depth + 1) for k, v in list(value.items())[:30]}
+        if isinstance(value, (list, tuple)):
+            return [AgentService._shrink_for_ui(v, depth + 1) for v in list(value)[:8]]
+        if isinstance(value, str) and len(value) > 300:
+            return value[:300] + "…"
+        return value
+
+    @staticmethod
+    def _slim_for_history(value, depth: int = 0):
+        """Compact copy of a tool result safe to keep in LLM message history.
+
+        Full tool payloads (e.g. recent_objects rows) are re-uploaded as prompt
+        context on every subsequent leg; at ~6 tok/s decode that prefill cost
+        compounds fast. Bounds: 20 keys / 12 items / 500-char strings / depth 3.
+        """
+        if depth > 3:
+            return "…"
+        if isinstance(value, dict):
+            return {k: AgentService._slim_for_history(v, depth + 1) for k, v in list(value.items())[:20]}
+        if isinstance(value, (list, tuple)):
+            return [AgentService._slim_for_history(v, depth + 1) for v in value[:12]]
+        if isinstance(value, str) and len(value) > 500:
+            return value[:500] + "…"
+        return value
+
+    async def _exec_tool_call(
+        self,
+        *,
+        governance,
+        executor,
+        agent,
+        auto_execute: bool,
+        tool_name: str,
+        args: dict,
+    ) -> tuple[dict, dict]:
+        """Governed execution of one requested tool call.
+
+        Returns (tool_result, ui_log_entry). Shared by chat() and chat_stream().
+        """
+        # ── Governance checks ─────────────────────────────────
+        denial: Optional[str] = None
+
+        if tool_name in ("query_objects", "get_object", "get_object_links",
+                         "search_objects", "find_objects"):
+            type_name = args.get("type_name", "")
+            if type_name and not governance.check_read(type_name).allowed:
+                denial = governance.check_read(type_name).reason
+
+        elif tool_name == "recent_objects":
+            requested = args.get("type_names") or []
+            readable = [t for t in requested if governance.check_read(t).allowed]
+            if requested and not readable:
+                denial = (
+                    f"None of the requested types are readable. "
+                    f"Allowed: {agent.allowed_object_types}"
+                )
+            elif len(readable) != len(requested):
+                # Narrow silently to permitted types instead of failing.
+                args["type_names"] = readable
+                args["_narrowed_from"] = requested
+
+        elif tool_name == "execute_action":
+            action_name = args.get("action_name", "")
+            if action_name and not governance.check_action(action_name).allowed:
+                denial = governance.check_action(action_name).reason
+
+        # recent_objects/get_ontology_graph/find_objects without a
+        # type scope already intersect allowed types executor-side.
+
+        if denial is not None:
+            return {"error": denial}, {
+                "tool": tool_name,
+                "args": args,
+                "denied": True,
+                "reason": denial,
+            }
+
+        # ── Execute (actions propose-by-default) ──────────────
+        if tool_name == "execute_action" and not auto_execute:
+            tool_result = await executor.propose_action(args)
+        else:
+            tool_result = await executor.execute(tool_name, args)
+
+        log_entry = {
+            "tool": tool_name,
+            "args": {k: v for k, v in args.items() if not k.startswith("_")},
+            "result_summary": str(tool_result)[:200],
+            "result": self._shrink_for_ui(tool_result),
+        }
+        if (tool_name == "execute_action" and isinstance(tool_result, dict)
+                and tool_result.get("status") == "proposed"):
+            log_entry["proposed"] = True
+            log_entry["proposal_id"] = tool_result.get("proposal_id")
+        return tool_result, log_entry
+
+    async def _audit_chat(self, session, agent, user_id, tool_calls_log, tokens_in, tokens_out):
+        """Fire-and-forget lineage audit for a finished chat (never raises)."""
         try:
             from panteon.core.lineage_service import LineageService
             lineage = LineageService(self.db)
@@ -749,20 +933,161 @@ class AgentService:
                     "agent_id": str(agent.id),
                     "agent_name": agent.name,
                     "tool_calls": len(tool_calls_log),
-                    "tokens_in": total_tokens_in,
-                    "tokens_out": total_tokens_out,
+                    "tokens_in": tokens_in,
+                    "tokens_out": tokens_out,
                 },
             )
         except Exception:
-            pass  # Audit failures should not break chat
+            pass
 
-        return {
-            "session_id": session.id,
-            "response": final_response,
-            "tokens_input": total_tokens_in,
-            "tokens_output": total_tokens_out,
-            "tool_calls": tool_calls_log,
-            "iterations": min(iteration + 1, agent.max_iterations or 10),
+    async def chat_stream(
+        self,
+        agent_id: uuid.UUID,
+        message: str,
+        user_id: Optional[str] = None,
+        session_id: Optional[uuid.UUID] = None,
+        auto_execute: bool = False,
+    ):
+        """Streaming variant of chat(): an async generator of SSE-ready events.
+
+        Yields dicts:
+          {"type":"delta","text":str}   — assistant content token
+          {"type":"tool","entry":dict}  — executed/denied tool call (UI log entry)
+          {"type":"status","text":str}  — leg transitions
+          {"type":"done","payload":...} — same shape as chat()'s return value
+        Non-streamable providers automatically fall back to buffered legs.
+        """
+        agent = await self.get_agent(agent_id)
+        if not agent:
+            raise ValueError(f"Agent {agent_id} not found")
+
+        if session_id:
+            session = await self._get_session(session_id)
+            if not session:
+                session = await self._create_session(agent_id, user_id)
+        else:
+            session = await self._create_session(agent_id, user_id)
+
+        from panteon.yono.governance import GovernanceLayer
+        governance = GovernanceLayer(self.db, agent)
+
+        ontology_context = await governance.build_context()
+
+        system_prompt = agent.system_prompt
+        if ontology_context:
+            system_prompt = f"{agent.system_prompt}\n\n{ontology_context}"
+
+        from panteon.yono.ontology_tools import get_tool_definitions, OntologyToolExecutor
+        tool_defs = governance.filter_tool_list(get_tool_definitions())
+        tool_executor = OntologyToolExecutor(self.db, agent.id)
+
+        messages = []
+        if session.messages:
+            messages.extend(session.messages)
+        messages.append({"role": "user", "content": message})
+
+        yield {"type": "status", "text": "consulting ontology"}
+
+        total_tokens_in = 0
+        total_tokens_out = 0
+        tool_calls_log = []
+        final_response = ""
+        iteration = 0
+
+        for iteration in range(agent.max_iterations or 10):
+            yield {"type": "status", "text": f"thinking · leg {iteration + 1}"}
+
+            llm_result = None
+            streamed = False
+            try:
+                aiter = self.llm.stream_llm_with_tools(
+                    model_id=agent.model_id,
+                    messages=messages,
+                    system_prompt=system_prompt,
+                    tools=tool_defs if tool_defs else None,
+                ).__aiter__()
+                while True:
+                    try:
+                        kind, chunk = await aiter.__anext__()
+                    except StopAsyncIteration:
+                        break
+                    if kind == "delta":
+                        yield {"type": "delta", "text": chunk}
+                    elif kind == "done":
+                        llm_result = chunk
+                if llm_result is None:
+                    raise RuntimeError("stream produced no result")
+                streamed = True
+            except ValueError:
+                streamed = False
+
+            if not streamed:
+                llm_result = await self.llm.execute_llm_with_tools(
+                    model_id=agent.model_id,
+                    messages=messages,
+                    system_prompt=system_prompt,
+                    tools=tool_defs if tool_defs else None,
+                    created_by=user_id,
+                )
+
+            total_tokens_in += llm_result.get("tokens_input", 0)
+            total_tokens_out += llm_result.get("tokens_output", 0)
+
+            tool_calls = llm_result.get("tool_calls") or []
+            if not tool_calls:
+                final_response = llm_result.get("content", "")
+                messages.append({"role": "assistant", "content": final_response})
+                break
+
+            messages.append({
+                "role": "assistant",
+                "content": llm_result.get("content", ""),
+                "tool_calls": tool_calls,
+            })
+
+            for tc in tool_calls:
+                tool_name = tc["function"]["name"]
+                try:
+                    args = json.loads(tc["function"]["arguments"])
+                except (json.JSONDecodeError, KeyError):
+                    args = {}
+
+                yield {"type": "status", "text": f"running {tool_name}"}
+
+                tool_result, log_entry = await self._exec_tool_call(
+                    governance=governance,
+                    executor=tool_executor,
+                    agent=agent,
+                    auto_execute=auto_execute,
+                    tool_name=tool_name,
+                    args=args,
+                )
+                tool_calls_log.append(log_entry)
+                yield {"type": "tool", "entry": log_entry}
+
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tc["id"],
+                    "content": json.dumps(self._slim_for_history(tool_result)),
+                })
+
+        # ── Persist + audit (parity with chat()) ─────────────────────
+        session.messages = messages
+        await self.db.flush()
+        await self._audit_chat(
+            session, agent, user_id, tool_calls_log, total_tokens_in, total_tokens_out
+        )
+
+        yield {
+            "type": "done",
+            "payload": {
+                "session_id": session.id,
+                "response": final_response,
+                "tokens_input": total_tokens_in,
+                "tokens_output": total_tokens_out,
+                "tool_calls": tool_calls_log,
+                "iterations": min(iteration + 1, agent.max_iterations or 10),
+            },
         }
 
     async def _create_session(self, agent_id: uuid.UUID, user_id: Optional[str]) -> AgentSession:

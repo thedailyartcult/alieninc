@@ -21,6 +21,12 @@ except ImportError:  # pragma: no cover - direct import fallback when suite root
     from sims_core.monte_carlo import monte_carlo_branch, convergence_rate
 
 from .models import ChronosOutcome, EraProfile, HistoricalBattle, HistoricalSide
+from .doctrines import (
+    DoctrineProfile,
+    attacker_power_mult,
+    defender_power_mult,
+    resolve_doctrine,
+)
 
 TICK_HOURS = 6.0
 ROUT_FRACTION = 0.72          # force breaks when fighting strength falls to 72%
@@ -70,6 +76,8 @@ def side_combat_power(
     weather: str,
     jitter_rng: Optional[random.Random] = None,
     air_superiority: int = 0,
+    doctrine: Optional[DoctrineProfile] = None,
+    duration_hours: float = 24.0,
 ) -> float:
     strength = max(side.strength, 1.0)
     quality = side.quality_multiplier()
@@ -83,11 +91,23 @@ def side_combat_power(
     if air_superiority:
         air_shift = (1.0 + 0.22 * era.air_effectiveness) if holds_air \
             else max(1.0 - 0.15 * era.air_effectiveness, 0.7)
-    power = strength * quality * equipment * posture * surprise * wx * initiative * air_shift
+    # Doctrine: the army's practiced method in that year (cited registry).
+    if doctrine is not None and not _GENERIC_DOCTRINE(doctrine):
+        if side.is_attacker:
+            doctrine_shift = attacker_power_mult(doctrine, terrain, duration_hours)
+        else:
+            doctrine_shift = defender_power_mult(doctrine)
+    else:
+        doctrine_shift = 1.0
+    power = strength * quality * equipment * posture * surprise * wx * initiative * air_shift * doctrine_shift
     if jitter_rng is not None:
         # Fog of war: intelligence error on either side's effective strength.
         power *= jitter_rng.uniform(0.82, 1.18)
     return power
+
+
+def _GENERIC_DOCTRINE(doc: DoctrineProfile) -> bool:
+    return doc.key == "generic-contemporary"
 
 
 def _casualty_exchange(
@@ -97,6 +117,8 @@ def _casualty_exchange(
     era: EraProfile,
     rng: random.Random,
     attacker_surprise: float = 0.0,
+    defender_flexibility: float = 1.0,
+    attacker_flexibility: float = 1.0,
 ) -> tuple[float, float]:
     """Ratio-driven mutual exchange calibrated to the CDB90 corpus.
 
@@ -111,8 +133,13 @@ def _casualty_exchange(
     k = EXCHANGE_SCALE * era.attrition_rate * TICK_HOURS / 24.0
     baseline_daily = era.attrition_rate * BASELINE_ATTRITION
     # Surprise: a surprised defender coordinates slowly, so the attack's
-    # opening phase lands before the defense's firepower matures.
-    surprise_ticks = CONTACT_RAMP_TICKS * (1.0 + 0.75 * max(attacker_surprise, 0.0))
+    # opening phase lands before the defense's firepower matures. Doctrinal
+    # flexibility modulates this both ways: an inflexible defender (low
+    # flexibility) is slow to react (longer ramp); a flexible attacker
+    # recovers faster from being caught off guard itself.
+    surprise = max(attacker_surprise, 0.0) / max(attacker_flexibility, 0.5)
+    reaction = 1.0 / max(defender_flexibility, 0.5)
+    surprise_ticks = CONTACT_RAMP_TICKS * (1.0 + 0.75 * surprise) * min(reaction, 1.6)
     for tick_i in range(ticks):
         # Break-off FIRST (decision precedes the day's fighting): a failing
         # attack disengages before annihilation. Corpus ground truth (WWII):
@@ -164,10 +191,24 @@ def resolve_battle(battle: HistoricalBattle, seed: int,
     attacker = battle.attacker
     defender = battle.defender
 
+    # Doctrines: each side's practiced method for this year. What-if may
+    # swap either side's doctrine via {"attacker_doctrine": "Germany"} /
+    # {"defender_doctrine": "USSR"} - a counterfactual lever in its own right.
+    att_doc = resolve_doctrine(
+        overrides.get("attacker_doctrine") or (attacker.actors[0] if attacker.actors else ""),
+        battle.year,
+    )
+    dfd_doc = resolve_doctrine(
+        overrides.get("defender_doctrine") or (defender.actors[0] if defender.actors else ""),
+        battle.year,
+    )
+
     att_power = side_combat_power(attacker, era, battle.terrain, battle.weather, rng,
-                                  air_superiority=battle.air_superiority)
+                                  air_superiority=battle.air_superiority,
+                                  doctrine=att_doc, duration_hours=battle.duration_hours)
     dfd_power = side_combat_power(defender, era, battle.terrain, battle.weather, rng,
-                                  air_superiority=battle.air_superiority)
+                                  air_superiority=battle.air_superiority,
+                                  doctrine=dfd_doc, duration_hours=battle.duration_hours)
 
     att_mult = overrides.get("attacker_strength_mult", 1.0)
     dfd_mult = overrides.get("defender_strength_mult", 1.0)
@@ -190,6 +231,8 @@ def resolve_battle(battle: HistoricalBattle, seed: int,
     att_cas_power, dfd_cas_power = _casualty_exchange(
         att_power, dfd_power, ticks, era, rng,
         attacker_surprise=float(attacker.surprise or 0.0),
+        defender_flexibility=dfd_doc.flexibility,
+        attacker_flexibility=att_doc.flexibility,
     )
 
     att_frac = att_cas_power / max(att_power, 1e-6)
@@ -240,6 +283,7 @@ def simulate_historical(battle: HistoricalBattle, universes: int = 500,
                         overrides: Optional[dict] = None) -> dict:
     """Monte Carlo a historical battle. Returns outcome distribution + fidelity inputs."""
     seed = seed if seed is not None else 42
+    overrides = overrides or {}
 
     def one(branch_seed: int) -> dict:
         outcome = resolve_battle(battle, branch_seed, overrides)
@@ -259,6 +303,20 @@ def simulate_historical(battle: HistoricalBattle, universes: int = 500,
         att_cas += b["attacker_casualties"]
         dfd_cas += b["defender_casualties"]
     n = len(branches)
+
+    # Doctrinal attribution - who fought with which published/practiced method.
+    att_doc = resolve_doctrine(
+        overrides.get("attacker_doctrine") or (battle.attacker.actors[0] if battle.attacker.actors else ""),
+        battle.year,
+    )
+    dfd_doc = resolve_doctrine(
+        overrides.get("defender_doctrine") or (battle.defender.actors[0] if battle.defender.actors else ""),
+        battle.year,
+    )
+    doctrines_out = {
+        "attacker": None if att_doc.key == "generic-contemporary" else att_doc.to_dict(),
+        "defender": None if dfd_doc.key == "generic-contemporary" else dfd_doc.to_dict(),
+    }
     return {
         "battle_key": battle.battle_key,
         "name": battle.name,
@@ -280,12 +338,20 @@ def simulate_historical(battle: HistoricalBattle, universes: int = 500,
             if battle.defender.strength else None
         ),
         "overrides": overrides or {},
+        "doctrines": doctrines_out,
     }
 
 
 def what_if(battle: HistoricalBattle, overrides: dict, universes: int = 500,
             seed: Optional[int] = None) -> dict:
-    """Run a counterfactual branch set and diff it against the baseline replay."""
+    """Run a counterfactual branch set and diff it against the baseline replay.
+
+    Supported override variables:
+      attacker_strength_mult / defender_strength_mult  (float)
+      attacker_quality_add / defender_quality_add       (float)
+      terrain                                           (str)
+      attacker_doctrine / defender_doctrine             (actor name swap)
+    """
     baseline = simulate_historical(battle, universes, seed)
     counterfactual = simulate_historical(battle, universes, seed, overrides=overrides)
     return {

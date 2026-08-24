@@ -1408,12 +1408,24 @@
         }
         .sc-scope-btn {
             font-family: var(--font-mono); font-size: 10px; text-transform: uppercase;
-            padding: 4px 12px; border: 1px solid var(--border-color); border-radius: 3px;
-            background: var(--bg-card); color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+            padding: 5px 12px; border: 1px solid var(--border-color); border-radius: 0;
+            background: rgba(0, 0, 0, 0.6); color: var(--text-muted); cursor: pointer;
+            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
             clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
         }
-        .sc-scope-btn:hover { border-color: var(--accent-neon); color: var(--text); }
-        .sc-scope-btn.active { background: var(--accent-neon); color: #000; border-color: var(--accent-neon); }
+        #fusionScopeBuilder .sc-scope-btn:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); transform: translateY(-1px); }
+        #fusionScopeBuilder .sc-scope-btn.active {
+            background: rgba(34, 211, 232, 0.14); color: #67e8f9; border-color: rgba(34, 211, 232, 0.65);
+            filter: drop-shadow(0 0 8px rgba(34, 211, 232, 0.25));
+        }
+        .scope-wing[open] > .scope-wing-body > * { animation: hive-pop 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+        .scope-wing[open] > .scope-wing-body > *:nth-child(2) { animation-delay: 0.06s; }
+        .scope-wing[open] > .scope-wing-body > *:nth-child(3) { animation-delay: 0.12s; }
+        .scope-wing[open] > .scope-wing-body > *:nth-child(4) { animation-delay: 0.18s; }
+        .scope-wing[open] > .scope-wing-body > *:nth-child(5) { animation-delay: 0.24s; }
+        .scope-wing-body { display: flex; flex-direction: column; gap: 7px; padding: 9px 10px 10px; background: rgba(0, 0, 0, 0.78); border: 1px solid var(--border-color); border-radius: 8px; backdrop-filter: blur(6px); max-width: min(720px, calc(100vw - 40px)); }
+        .scope-wing summary { list-style: none; cursor: pointer; }
+        .scope-wing summary::-webkit-details-marker { display: none; }
         .sc-scope-select {
             font-family: var(--font-mono); font-size: 10px; padding: 4px 8px;
             background: var(--bg-input); color: var(--text); border: 1px solid var(--border-color);
@@ -1440,14 +1452,178 @@
             clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
         }
 
-        /* Split layout: structured honeycomb deck (left) + unified map pane (right) */
-        /* Split layout: blueprint HUD tessellation (left) + unified map pane (right) */
-        .sc-split {
-            display: grid; grid-template-columns: minmax(567px, 620px) minmax(0, 1fr);
-            gap: 12px; margin-bottom: 12px; align-items: stretch;
+        /* Floating Command Deck — REAL beehive tiles (sc-hud-* design language,
+           incl. the connected-grid neighbor reaction) hovering directly on the
+           full-width map. No container box: the deck positions, tiles style. */
+        .sc-deck {
+            position: absolute; top: 10px; left: 10px; z-index: 8;
+            pointer-events: auto;
         }
-        .sc-split.sc-map-wide { grid-template-columns: 1fr; }
-        .sc-split.sc-map-wide .sc-hud-container { display: none; }
+        /* Compact action tiles share the EXACT sc-hud-tile DNA — same band,
+           cuts, hover physics and connected-grid neighbor reaction — so the
+           whole deck reads as one beehive instead of a separate button row. */
+        .sc-hud-tile.sm { width: 118px; height: 64px; }
+        .sc-hud-tile.sm .sc-hud-inner { gap: 2px; }
+        .sc-hud-tile.sm .sc-hud-label { font-size: 8.5px; letter-spacing: 0.12em; color: var(--accent-cyan); }
+        .sc-hud-tile.sm.engaged { background-color: #10b981; transform: scale(0.98); filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.45)); }
+        .sc-hud-tile.sm.engaged .sc-wireframe-box { border-color: #10b981; }
+        .scope-wing { display: none; position: absolute; top: 100%; left: 0; margin-top: 12px; z-index: 30; }
+        .scope-wing.open { display: flex; }
+        /* Authentic KPI-tile anatomy: sc-hud-tile carries size (165x120), cuts,
+           band colors, hover physics; sc-hud-inner carries fonts. Additions below
+           are only the engagement state and the invisible toggle surface. */
+        .sc-deck .sc-hud-tile { pointer-events: auto; }
+        .sc-deck .sc-hud-tile .retro-map-btn {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            background: transparent; border: none; cursor: pointer;
+            font: inherit; color: transparent; padding: 0; letter-spacing: 0;
+        }
+        .sc-deck .sc-hud-tile .retro-map-btn:hover, .sc-deck .sc-hud-tile .retro-map-btn:focus {
+            background: transparent; color: transparent; box-shadow: none;
+        }
+        /* Engaged = neighbor-active language held steady + a soft beacon glow */
+        .sc-deck .sc-hud-tile:has(.retro-map-btn-active) { transform: scale(0.98); filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.45)); }
+        .sc-deck .sc-hud-tile.sc-tile-live:has(.retro-map-btn-active) { background-color: rgba(34, 211, 238, 0.9); }
+        .sc-deck .sc-hud-tile.sc-tile-live:has(.retro-map-btn-active) .sc-hud-value { color: #0891b2; }
+        .sc-deck .sc-hud-tile.sc-tile-indices:has(.retro-map-btn-active) { background-color: rgba(223, 241, 64, 0.85); }
+        /* KPI values keep the light Space Grotesk look even with <b> count nodes */
+        .sc-deck .sc-hud-value b { font-weight: inherit; }
+        .sc-deck-chips { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+        /* ---- Mini hive tiles: traffic sub-filters + deck-head actions ----
+           Same DNA as the KPI tiles (cut corners, band bg, hover physics,
+           staggered entrance); rows stagger horizontally like the original
+           offset-row honeycomb. */
+        .hm-row { display: flex; gap: 8px; }
+        .hm-row-offset { transform: translateX(26px); }
+        .hive-mini {
+            position: relative; width: 96px; height: 56px;
+            background-color: var(--border-color);
+            padding: 1.5px;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer; user-select: none;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+        }
+        .hive-mini:hover { z-index: 10; background-color: rgba(255, 255, 255, 0.35); transform: scale(1.06); filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.5)); }
+        .hm-inner {
+            width: 100%; height: 100%; background-color: var(--bg-card);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+        }
+        .hm-val { font-family: var(--font-tech); font-size: 16px; font-weight: 300; line-height: 1.05; color: var(--text); }
+        .hm-lbl { font-family: var(--font-mono); font-size: 7.5px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.08em; }
+        .hive-mini .retro-map-btn {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            background: transparent; border: none; cursor: pointer;
+            font: inherit; color: transparent; padding: 0; letter-spacing: 0;
+        }
+        .hive-mini .retro-map-btn:hover, .hive-mini .retro-map-btn:focus { background: transparent; color: transparent; box-shadow: none; }
+        /* Engaged minis: cyan live-band held + beacon */
+        .hive-mini:has(.retro-map-btn-active) { background-color: rgba(34, 211, 238, 0.85); filter: drop-shadow(0 0 10px rgba(34, 211, 232, 0.4)); }
+        .hive-mini:has(.retro-map-btn-active) .hm-inner { background-color: rgba(34, 211, 232, 0.14); }
+        .hive-mini:has(.retro-map-btn-active) .hm-val { color: #22d3ee; }
+        .hive-mini:has(.retro-map-btn-active) .hm-lbl { color: #67e8f9; }
+        /* Modifier minis (Motion/FOV): lime family */
+        .hive-mini.hm-mod:has(.retro-map-btn-active) { background-color: rgba(223, 241, 64, 0.8); filter: drop-shadow(0 0 10px rgba(223, 241, 64, 0.35)); }
+        .hive-mini.hm-mod:has(.retro-map-btn-active) .hm-val { color: #DFF140; }
+        .hive-mini.hm-mod:has(.retro-map-btn-active) .hm-lbl { color: #e9ffa3; }
+        /* ON/OFF state text driven purely by engagement */
+        .hive-mini .hm-off { display: inline; }
+        .hive-mini .hm-on { display: none; }
+        .hive-mini:has(.retro-map-btn-active) .hm-off { display: none; }
+        .hive-mini:has(.retro-map-btn-active) .hm-on { display: inline; }
+        /* Disabled action (e.g. MAVEN until ontology feeds load) */
+        .hive-mini:has(.retro-map-btn:disabled) { opacity: 0.45; cursor: not-allowed; }
+        .hive-mini:has(.retro-map-btn:disabled):hover { transform: none; filter: none; background-color: var(--border-color); }
+        /* Entrance cascade — replays whenever the hive unfolds */
+        @keyframes hive-pop { from { opacity: 0; transform: translateY(10px) scale(0.88); } }
+        /* ---- Pentagon launcher + expandable honeycomb hive ----
+           One draggable pentagon floats on the map; clicking it blooms the
+           full connected honeycomb (deck tiles + traffic chips interlocked
+           in offset stacked rows). Tiles drag-swap between comb slots and
+           the arrangement persists locally. Cells are positioned via the
+           --tx/--ty custom props so hover/engaged scales compose cleanly. */
+        .hive-pent {
+            position: absolute; top: 0; left: 0; width: 76px; height: 70px;
+            padding: 1.5px; background: var(--border-color); border: none;
+            cursor: pointer; z-index: 20; touch-action: none; user-select: none;
+            clip-path: polygon(50% 0, 100% 38%, 82% 100%, 18% 100%, 0 38%);
+            transition: background-color 0.2s ease, filter 0.25s ease;
+        }
+        .hive-pent:hover { background: var(--accent-neon); filter: drop-shadow(0 0 14px rgba(223, 241, 64, 0.5)); }
+        .hive-pent-inner {
+            width: 100%; height: 100%; background: var(--bg-card);
+            clip-path: polygon(50% 0, 100% 38%, 82% 100%, 18% 100%, 0 38%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+        }
+        .hive-pent-glyph { font-family: var(--font-tech); font-weight: 300; font-size: 15px; letter-spacing: 0.16em; color: var(--text); }
+        .hive-pent-count { font-family: var(--font-mono); font-size: 8px; font-weight: 400; color: var(--accent-neon); letter-spacing: 0.1em; }
+        .hive-pent-caret { font-family: var(--font-mono); font-size: 7px; color: var(--text-muted); transition: transform 0.3s ease, color 0.2s ease; }
+        .sc-deck.is-expanded .hive-pent-caret { transform: rotate(180deg); color: var(--accent-neon); }
+        /* decoratives are pointer-transparent so a grab lands on the button
+           itself from anywhere — no need to hit a specific child first */
+        .hive-pent-inner, .hive-pent-glyph, .hive-pent-count, .hive-pent-caret { pointer-events: none; }
+        /* YONO quick-launch embedded in the pentagon base */
+        .hive-pent-yono {
+            position: absolute; left: 50%; bottom: 3px; transform: translateX(-50%);
+            font-family: var(--font-mono); font-size: 7px; letter-spacing: 0.14em;
+            color: var(--text-muted); padding: 1px 7px; cursor: pointer;
+            pointer-events: auto; z-index: 2;
+            transition: color 0.15s ease, text-shadow 0.15s ease;
+        }
+        .hive-pent-yono:hover { color: var(--accent-neon); text-shadow: 0 0 6px rgba(223, 241, 64, 0.6); }
+
+        .hive-layer { position: absolute; top: 78px; left: 0; width: 792px; height: 358px; pointer-events: none; }
+        .hive-layer .sc-hud-tile, .hive-layer .hive-mini {
+            position: absolute; top: 0; left: 0; width: 152px; height: 88px; margin: 0;
+            touch-action: none; pointer-events: auto;
+            transform: translate(var(--tx, 0px), var(--ty, 0px));
+            transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease,
+                        background-color 0.2s ease, filter 0.25s ease;
+            transition-delay: var(--hd, 0ms);
+        }
+        /* compact comb-cell typography — same DNA, tighter anatomy */
+        .hive-layer .sc-hud-inner { padding: 7px; gap: 2px; }
+        .hive-layer .sc-hud-value { font-size: 17px; margin-top: 11px; }
+        .hive-layer .sc-hud-label { font-size: 7.5px; }
+        .hive-layer .sc-hud-check { bottom: 5px; font-size: 9px; }
+        .hive-layer .sc-hud-tag { top: 4px; right: 9px; }
+        .hive-layer .sc-wireframe-boxes { top: 5px; left: 9px; }
+        .hive-layer .hm-inner { gap: 1px; }
+        .hive-layer .hm-val { font-size: 17px; }
+        .hive-layer .hm-lbl { font-size: 7.5px; }
+        /* states recompose the slot translate instead of wiping it */
+        .hive-layer .sc-hud-tile:hover, .hive-layer .hive-mini:hover {
+            transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(1.07); z-index: 12;
+        }
+        .hive-layer .sc-hud-tile.neighbor-active, .hive-layer .hive-mini.neighbor-active,
+        .hive-layer .sc-hud-tile:has(.retro-map-btn-active),
+        .hive-layer .hive-mini:has(.retro-map-btn-active) {
+            transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(0.97);
+        }
+        .hive-layer .sc-hud-tile.sm.engaged {
+            transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(0.97);
+        }
+        /* bloom / fold — collapsed cells shrink into the pentagon core */
+        .sc-deck:not(.is-expanded) .hive-layer .sc-hud-tile,
+        .sc-deck:not(.is-expanded) .hive-layer .hive-mini {
+            opacity: 0; pointer-events: none;
+            transform: translate(var(--fx, 0px), var(--fy, 0px)) scale(0.3);
+            transition-delay: 0ms;
+        }
+        /* traffic cells idle until Aircraft is engaged — no holes in the comb */
+        .hive-layer .hive-mini.hive-dim { opacity: 0.28; pointer-events: none; }
+        .sc-deck:not(.is-expanded) .hive-layer .hive-mini.hive-dim { opacity: 0; }
+        /* drag-to-arrange: ghost follows pointer, target slot lights up */
+        body.hive-dragging { user-select: none; -webkit-user-select: none; }
+        body.hive-dragging * { cursor: grabbing !important; }
+        .hive-layer .hive-grab {
+            z-index: 40 !important; transition: none !important;
+            transform: translate(var(--gx, 0px), var(--gy, 0px)) scale(1.1) !important;
+            filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.6));
+        }
+        .hive-layer .hive-drop { background-color: var(--accent-neon) !important; }
+        @media (max-width: 1100px) {
+            .hive-layer { transform: scale(0.8); transform-origin: top left; }
+        }
 
         /* Blueprint HUD container (centra compliance-tab design language) */
         .sc-hud-container {
@@ -1507,14 +1683,6 @@
         .sc-hud-check { position: absolute; bottom: 8px; display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; color: var(--text); }
         .sc-hud-check b { color: #4ca30d; font-weight: 700; }
 
-        @media (max-width: 1100px) {
-            .sc-split { grid-template-columns: 1fr; }
-            .sc-hud-row { flex-wrap: wrap; justify-content: center; }
-            .sc-hud-row.offset-row { transform: none; }
-            .sc-hud-inner { padding: 8px; }
-        }
-
-
         .sc-map-pane {
             border: 1px solid var(--border-color); border-radius: 8px;
             background-color: var(--bg-card); padding: 10px 12px 12px;
@@ -1568,11 +1736,6 @@
         .sc-legend-label { text-transform: uppercase; opacity: 0.7; }
         .sc-legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 3px; }
 
-        .sc-map-hud {
-            position: absolute; top: 10px; left: 10px; z-index: 5;
-            font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);
-            background: rgba(0, 0, 0, 0.6); padding: 4px 8px; border-radius: 4px; pointer-events: none;
-        }
         /* Intel + tactical panels: clipped-corner identity */
         .sc-intel-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -1663,7 +1826,7 @@
 
         /* Track dossier card (selected aircraft) */
         .fusion-track-card {
-            position: absolute; left: 10px; top: 76px; z-index: 6; width: 268px;
+            position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 6; width: 268px;
             max-width: calc(100% - 20px); background: rgba(0, 0, 0, 0.85);
             border: 1px solid rgba(223, 241, 64, 0.45); border-radius: 6px;
             font-family: var(--font-mono); overflow: hidden; backdrop-filter: blur(4px);
@@ -1702,7 +1865,6 @@
             .sc-query-row { flex-direction: column; align-items: stretch; }
             .sc-query-input { min-width: unset; }
             .sc-query-row .btn { width: 100%; }
-            .sc-split { grid-template-columns: 1fr; }
             .sc-intel-grid { grid-template-columns: 1fr; }
             .sc-metrics-grid { grid-template-columns: 1fr; }
             .sc-map-canvas-wrap { height: clamp(280px, 45vh, 380px); }
@@ -2281,184 +2443,161 @@
                       <div class="section">
                           <div class="section-header">
                               <div class="section-title">Spinal Cracker — Unified Intelligence Map</div>
-                              <div style="display:flex;gap:10px;align-items:center">
-                                  <span class="tag tag-green" id="fusionGdeltDot">GDELT</span>
-                                  <span class="tag tag-blue" id="fusionOpenSkyDot">OpenSky</span>
-                                  <span class="tag" id="fusionBqDot" style="font-size:9px">BQ: ?</span>
-                              </div>
                           </div>
-                          <p class="section-subtitle" style="font-size:11px;color:var(--text-muted);margin-bottom:16px">One cohesive map overlaying GDELT threat events and OpenSky live aircraft. Select a region and theme to begin — the map will not load until you scope your investigation.</p>
 
-                          <!-- Investigation Builder: intent-first scoping (WHERE / WHAT / WHEN) -->
-                          <div class="sc-scope-builder" id="fusionScopeBuilder">
-                              <div class="sc-scope-row">
-                                  <span class="sc-scope-step">Where</span>
-                                  <button class="sc-scope-btn" data-scope-region="Worldwide" onclick="scSelectRegion(this)">Worldwide</button>
-                                  <button class="sc-scope-btn" data-scope-region="Baltic" onclick="scSelectRegion(this)">Baltic</button>
-                                  <button class="sc-scope-btn" data-scope-region="Eastern Europe" onclick="scSelectRegion(this)">Eastern Europe</button>
-                                  <button class="sc-scope-btn" data-scope-region="Middle East" onclick="scSelectRegion(this)">Middle East</button>
-                                  <button class="sc-scope-btn" data-scope-region="East Asia" onclick="scSelectRegion(this)">East Asia</button>
-                                  <button class="sc-scope-btn" data-scope-region="Africa" onclick="scSelectRegion(this)">Africa</button>
-                                  <select class="sc-scope-select" id="scCountrySelect" onchange="scSelectCountry(this)">
-                                      <option value="">-- Country --</option>
-                                  </select>
-                                  <select class="sc-scope-select" id="scZoneSelect" onchange="scSelectZone(this)">
-                                      <option value="">-- Zone --</option>
-                                  </select>
-                              </div>
-                              <div class="sc-scope-row">
-                                  <span class="sc-scope-step">What</span>
-                                  <span id="fusionPresetBar" style="display:inline-flex;gap:6px;flex-wrap:wrap"></span>
-                              </div>
-                              <div class="sc-scope-row">
-                                  <span class="sc-scope-step">When</span>
-                                  <button class="sc-scope-btn active" data-scope-window="24h" onclick="scSelectWindow(this)">Last 24h</button>
-                                  <button class="sc-scope-btn" data-scope-window="72h" onclick="scSelectWindow(this)">Last 3 days</button>
-                                  <button class="sc-scope-btn" data-scope-window="7d" onclick="scSelectWindow(this)">Last 7 days</button>
-                              </div>
-                              <div class="sc-scope-row" style="margin-top:2px">
-                                  <span class="sc-scope-step"></span>
-                                  <button class="btn btn-primary btn-sm" onclick="fusionValidate()">Validate</button>
-                                  <button class="btn btn-primary btn-sm" onclick="fusionRunGdelt()">Run GDELT</button>
-                                  <button class="btn btn-primary btn-sm" onclick="fusionRunOpenSky()">Run OpenSky</button>
-                                  <button class="btn btn-secondary btn-sm" onclick="renderFusionMap(true)">Refresh</button>
-                              </div>
-                              <details class="sc-scope-advanced">
-                                  <summary>Advanced — raw GDELT query</summary>
-                                  <div class="sc-query-row" style="margin-top:6px">
-                                      <input id="fusionQuery" type="text" placeholder='GDELT query e.g. (military OR defense OR conflict)' class="sc-query-input">
-                                      <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">Country scope is appended automatically.</span>
-                                  </div>
-                              </details>
-                          </div>
-                          <div id="fusionValidateStatus" style="font-family:var(--font-mono);font-size:10px;margin-bottom:8px;min-height:16px;color:var(--text-muted)"></div>
+                          <!-- Unified Intelligence Map — full width; ONE floating hive -->
+                          <div class="sc-map-pane" id="fusionMapPane">
+                              <div class="sc-map-canvas-wrap">
+                                  <div class="retro-map-canvas" id="fusionMap"></div>
 
-                          <!-- Unified rate meter: both GDELT + OpenSky -->
-                          <div id="fusionRateMeter" class="sc-rate-meter"></div>
-
-                          <!-- Split layout: honeycomb KPI deck (left) + unified map pane (right) -->
-                          <div class="sc-split" id="fusionSplit">
-                          <div class="sc-hud-container">
-                                  <div class="sc-hud-grid">
-
-                                      <!-- Row 1: LIVE band -->
-                                      <div class="sc-hud-row">
-                                          <div class="sc-hud-tile cut-tr-bl sc-tile-live">
+                                  <div class="sc-deck" id="fusionDeck">
+                                          <button type="button" class="hive-pent" id="hivePentBtn" aria-label="Toggle command hive" aria-expanded="false">
+                                              <span class="hive-pent-inner">
+                                                  <span class="hive-pent-glyph">SC</span>
+                                                  <b class="hive-pent-count" id="hivePentCount">0</b>
+                                                  <span class="hive-pent-caret">&#9652;</span>
+                                                  <span class="hive-pent-yono" id="hivePentYono" role="button" title="YONO &#183; Ctrl+Shift+Y">Y</span>
+                                              </span>
+                                          </button>
+                                          <div class="hive-layer" id="hiveLayer">
+                                          <div class="sc-hud-tile cut-tr-bl sc-tile-live" data-tile="threats" data-deck="threats">
+                                              <div class="sc-wireframe-boxes"><span class="sc-wireframe-box"></span><span class="sc-wireframe-box"></span><span class="sc-wireframe-box"></span></div>
+                                              <span class="sc-hud-tag">LIVE-01</span>
                                               <div class="sc-hud-inner">
-                                                  <div class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box"></span></div>
-                                                  <span class="sc-hud-tag">LIVE-01</span>
-                                                  <div class="sc-hud-value" id="fusionKpiAircraft">0</div>
+                                                  <div class="sc-hud-value"><b id="fusionThreatCount">0</b></div>
+                                                  <div class="sc-hud-label">Threats</div>
+                                                  <div class="sc-hud-check"><b>&#10003;</b> GDELT feed</div>
+                                              </div>
+                                              <button type="button" class="retro-map-btn" id="fusionLayerThreats" onclick="fusionToggleLayer('threats')" aria-label="Toggle Threats layer"></button>
+                                          </div>
+                                          <div class="sc-hud-tile cut-tl-br sc-tile-live" data-tile="aircraft" data-deck="aircraft">
+                                              <div class="sc-wireframe-boxes"><span class="sc-wireframe-box"></span><span class="sc-wireframe-box"></span></div>
+                                              <span class="sc-hud-tag">LIVE-02</span>
+                                              <div class="sc-hud-inner">
+                                                  <div class="sc-hud-value"><b id="fusionAircraftCount">0</b></div>
                                                   <div class="sc-hud-label">Aircraft</div>
                                                   <div class="sc-hud-check"><b>&#10003;</b> OpenSky feed</div>
                                               </div>
+                                              <button type="button" class="retro-map-btn" id="fusionLayerAviation" onclick="fusionToggleLayer('aviation')" aria-label="Toggle Aircraft layer"></button>
                                           </div>
-                                          <div class="sc-hud-tile cut-tl-br sc-tile-live">
+                                          <div class="sc-hud-tile cut-tr-bl sc-tile-indices" data-tile="bld3d" data-deck="3d">
+                                              <div class="sc-wireframe-boxes"><span class="sc-wireframe-box"></span><span class="sc-wireframe-box"></span></div>
+                                              <span class="sc-hud-tag">MOD-01</span>
                                               <div class="sc-hud-inner">
-                                                  <div class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></div>
-                                                  <span class="sc-hud-tag">LIVE-02</span>
-                                                  <div class="sc-hud-value" id="fusionKpiMilitary">0</div>
-                                                  <div class="sc-hud-label">Military</div>
-                                                  <div class="sc-hud-check"><b>&#10003;</b> Category jets</div>
+                                                  <div class="sc-hud-value">3D</div>
+                                                  <div class="sc-hud-label">Buildings</div>
+                                                  <div class="sc-hud-check"><b>&#10003;</b> Map mesh</div>
                                               </div>
+                                              <button type="button" class="retro-map-btn" id="fusionLayer3d" onclick="fusionToggle3D()" aria-label="Toggle 3D buildings"></button>
                                           </div>
-                                          <div class="sc-hud-tile cut-tr-bl sc-tile-live">
+                                          <div class="sc-hud-tile cut-tl-br sm " data-tile="scope" title="Scope">
+                                              <span class="sc-hud-tag">ACT-01</span>
                                               <div class="sc-hud-inner">
-                                                  <div class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box"></span></div>
-                                                  <span class="sc-hud-tag">LIVE-03</span>
-                                                  <div class="sc-hud-value" id="fusionKpiJamming">0</div>
-                                                  <div class="sc-hud-label">Jamming</div>
-                                                  <div class="sc-hud-check"><b>&#10003;</b> GPS suspects</div>
+                                                  <div class="sc-hud-label">Scope</div>
                                               </div>
+                                              <button type="button" class="retro-map-btn" id="fusionScopeToggleBtn" onclick="this.classList.toggle('engaged');document.getElementById('fusionScopeBuilder').classList.toggle('open')" aria-label="Scope"></button>
                                           </div>
-                                      </div>
-
-                                      <!-- Row 2: SIGNAL band (offset) -->
-                                      <div class="sc-hud-row offset-row">
-                                          <div class="sc-hud-tile cut-tl-br sc-tile-signal">
+                                          <div class="sc-hud-tile cut-tl-br sm " data-tile="notes" title="Notes">
+                                              <span class="sc-hud-tag">ACT-02</span>
                                               <div class="sc-hud-inner">
-                                                  <div class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></div>
-                                                  <span class="sc-hud-tag">SIG-01</span>
-                                                  <div class="sc-hud-value" id="fusionKpiEvents">0</div>
-                                                  <div class="sc-hud-label">Events</div>
-                                                  <div class="sc-hud-check"><b>&#10003;</b> Fused events</div>
+                                                  <div class="sc-hud-label">Notes</div>
                                               </div>
+                                              <button type="button" class="retro-map-btn" id="wonToggleBtn" onclick="WONote.toggle()" aria-label="Notes"></button>
                                           </div>
-                                          <div class="sc-hud-tile cut-tr-bl sc-tile-signal">
+                                          <div class="sc-hud-tile cut-tl-br sm " data-tile="gaia" title="GAIA">
+                                              <span class="sc-hud-tag">ACT-03</span>
                                               <div class="sc-hud-inner">
-                                                  <div class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></div>
-                                                  <span class="sc-hud-tag">SIG-02</span>
-                                                  <div class="sc-hud-value" id="fusionKpiThreats">0</div>
-                                                  <div class="sc-hud-label">Threats</div>
-                                                  <div class="sc-hud-check"><b>&#10003;</b> Negative tone</div>
+                                                  <div class="sc-hud-label">GAIA</div>
                                               </div>
+                                              <button type="button" class="retro-map-btn" id="gaiaToggleBtn" onclick="window.GAIA&&GAIA.toggle()" aria-label="GAIA"></button>
                                           </div>
-                                          <div class="sc-hud-tile cut-tl-br sc-tile-signal">
+                                          <div class="sc-hud-tile cut-tl-br sm " data-tile="maven" title="◆ MAVEN">
+                                              <span class="sc-hud-tag">ACT-04</span>
                                               <div class="sc-hud-inner">
-                                                  <div class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box"></span></div>
-                                                  <span class="sc-hud-tag">SIG-03</span>
-                                                  <div class="sc-hud-value" id="fusionKpiCountries">0</div>
-                                                  <div class="sc-hud-label">Countries</div>
-                                                  <div class="sc-hud-check"><b>&#10003;</b> Geo-coded</div>
+                                                  <div class="sc-hud-label">◆ MAVEN</div>
                                               </div>
+                                              <button type="button" class="retro-map-btn" id="mavenToggleBtn" onclick="" disabled aria-label="◆ MAVEN"></button>
                                           </div>
-                                      </div>
-
-                                      <!-- Row 3: INDICES band -->
-                                      <div class="sc-hud-row">
-                                          <div class="sc-hud-tile cut-tr-bl sc-tile-indices">
+                                          <div class="sc-hud-tile cut-tl-br sm " data-tile="theater" title="▹ Theater">
+                                              <span class="sc-hud-tag">ACT-05</span>
                                               <div class="sc-hud-inner">
-                                                  <div class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></div>
-                                                  <span class="sc-hud-tag">IDX-01</span>
-                                                  <div class="sc-hud-value" id="fusionKpiTone">--</div>
-                                                  <div class="sc-hud-label">Avg Tone</div>
-                                                  <div class="sc-hud-check"><b>&#10003;</b> Tone mean</div>
+                                                  <div class="sc-hud-label">▹ Theater</div>
                                               </div>
+                                              <button type="button" class="retro-map-btn" id="fusionTheaterBtn" onclick="fusionToggleTheater()" aria-label="▹ Theater"></button>
                                           </div>
-                                          <div class="sc-hud-tile cut-tl-br sc-tile-indices">
-                                              <div class="sc-hud-inner">
-                                                  <div class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></div>
-                                                  <span class="sc-hud-tag">IDX-02</span>
-                                                  <div class="sc-hud-value" id="fusionKpiGoldstein">--</div>
-                                                  <div class="sc-hud-label">Goldstein</div>
-                                                  <div class="sc-hud-check"><b>&#10003;</b> Scale mean</div>
-                                               </div>
-                                           </div>
+                                          <div class="hive-mini" data-tile="cat-commercial" title="Show commercial traffic">
+                                              <div class="hm-inner"><span class="hm-val"><b id="fcatCommercial">0</b></span><span class="hm-lbl">Commercial</span></div>
+                                              <button type="button" class="retro-map-btn" data-fcat="commercial" onclick="fusionToggleCat('commercial')" aria-label="Toggle Commercial"></button>
+                                          </div>
+                                          <div class="hive-mini" data-tile="cat-jet" title="Show jets">
+                                              <div class="hm-inner"><span class="hm-val"><b id="fcatJet">0</b></span><span class="hm-lbl">Jets</span></div>
+                                              <button type="button" class="retro-map-btn" data-fcat="jet" onclick="fusionToggleCat('jet')" aria-label="Toggle Jets"></button>
+                                          </div>
+                                          <div class="hive-mini" data-tile="cat-private" title="Show private aviation">
+                                              <div class="hm-inner"><span class="hm-val"><b id="fcatPrivate">0</b></span><span class="hm-lbl">Private</span></div>
+                                              <button type="button" class="retro-map-btn" data-fcat="private" onclick="fusionToggleCat('private')" aria-label="Toggle Private"></button>
+                                          </div>
+                                          <div class="hive-mini" data-tile="cat-military" title="Show military traffic">
+                                              <div class="hm-inner"><span class="hm-val"><b id="fcatMilitary">0</b></span><span class="hm-lbl">Military</span></div>
+                                              <button type="button" class="retro-map-btn" data-fcat="military" onclick="fusionToggleCat('military')" aria-label="Toggle Military"></button>
+                                          </div>
+                                          <div class="hive-mini hm-mod" data-tile="mod-motion" title="Dead-reckoning glide between feed refreshes">
+                                              <div class="hm-inner"><span class="hm-val"><span class="hm-on">ON</span><span class="hm-off">OFF</span></span><span class="hm-lbl">Motion</span></div>
+                                              <button type="button" class="retro-map-btn retro-map-btn-active" id="fusionMotionBtn" onclick="fusionToggleMotion()" aria-label="Toggle Motion glide"></button>
+                                          </div>
+                                          <div class="hive-mini hm-mod" data-tile="mod-fov" title="Maven-style sensor footprint cones">
+                                              <div class="hm-inner"><span class="hm-val"><span class="hm-on">ON</span><span class="hm-off">OFF</span></span><span class="hm-lbl">FOV</span></div>
+                                              <button type="button" class="retro-map-btn" id="fusionFovBtn" onclick="fusionToggleFov()" aria-label="Toggle FOV cones"></button>
+                                          </div>
+                                          </div>
+                                      <div class="scope-wing" id="fusionScopeBuilder">
+                                                   <div class="scope-wing-body">
+                                                      <div class="sc-scope-row">
+                                                          <span class="sc-scope-step">Where</span>
+                                                          <button class="sc-scope-btn" data-scope-region="Worldwide" onclick="scSelectRegion(this)">Worldwide</button>
+                                                          <button class="sc-scope-btn" data-scope-region="Baltic" onclick="scSelectRegion(this)">Baltic</button>
+                                                          <button class="sc-scope-btn" data-scope-region="Eastern Europe" onclick="scSelectRegion(this)">Eastern Europe</button>
+                                                          <button class="sc-scope-btn" data-scope-region="Middle East" onclick="scSelectRegion(this)">Middle East</button>
+                                                          <button class="sc-scope-btn" data-scope-region="East Asia" onclick="scSelectRegion(this)">East Asia</button>
+                                                          <button class="sc-scope-btn" data-scope-region="Africa" onclick="scSelectRegion(this)">Africa</button>
+                                                          <select class="sc-scope-select" id="scCountrySelect" onchange="scSelectCountry(this)">
+                                                              <option value="">-- Country --</option>
+                                                          </select>
+                                                          <select class="sc-scope-select" id="scZoneSelect" onchange="scSelectZone(this)">
+                                                              <option value="">-- Zone --</option>
+                                                          </select>
+                                                      </div>
+                                                      <div class="sc-scope-row">
+                                                          <span class="sc-scope-step">What</span>
+                                                          <span id="fusionPresetBar" style="display:inline-flex;gap:6px;flex-wrap:wrap"></span>
+                                                      </div>
+                                                      <div class="sc-scope-row">
+                                                          <span class="sc-scope-step">When</span>
+                                                          <button class="sc-scope-btn active" data-scope-window="24h" onclick="scSelectWindow(this)">Last 24h</button>
+                                                          <button class="sc-scope-btn" data-scope-window="72h" onclick="scSelectWindow(this)">Last 3 days</button>
+                                                          <button class="sc-scope-btn" data-scope-window="7d" onclick="scSelectWindow(this)">Last 7 days</button>
+                                                      </div>
+                                                      <div class="sc-scope-row" style="margin-top:2px">
+                                                          <span class="sc-scope-step"></span>
+                                                          <button class="btn btn-primary btn-sm sc-hive-btn" onclick="fusionValidate()">Validate</button>
+                                                          <button class="btn btn-primary btn-sm sc-hive-btn" onclick="fusionRunGdelt()">Run GDELT</button>
+                                                          <button class="btn btn-primary btn-sm sc-hive-btn" onclick="fusionRunOpenSky()">Run OpenSky</button>
+                                                          <button class="btn btn-secondary btn-sm sc-hive-btn" onclick="renderFusionMap(true)">Refresh</button>
+                                                      </div>
+                                                      <details class="sc-scope-advanced">
+                                                          <summary>Advanced — raw GDELT query</summary>
+                                                          <div class="sc-query-row" style="margin-top:6px">
+                                                              <input id="fusionQuery" type="text" placeholder='GDELT query e.g. (military OR defense OR conflict)' class="sc-query-input">
+                                                              <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">Country scope is appended automatically.</span>
+                                                          </div>
+                                                      </details>
+                                                      <div id="fusionValidateStatus" style="font-family:var(--font-mono);font-size:10px;min-height:16px;color:var(--text-muted)"></div>
+                                                      <div id="fusionRateMeter" class="sc-rate-meter" style="margin-bottom:0"></div>
                                        </div>
+                                   </div>
 
-                                    </div>
-                                </div>
 
-<div class="sc-map-pane" id="fusionMapPane">
-                                  <div class="sc-map-pane-top">
-                                      <span class="sc-map-pane-title"><span class="sc-live-dot"></span>Unified map</span>
-                                      <span style="display:flex;gap:6px">
-                                          <button class="retro-map-btn" id="wonToggleBtn" onclick="WONote.toggle()" title="Watch Officer Notepad (Ctrl+Shift+N)">Watch Notes</button>
-                                           <button class="retro-map-btn" id="gaiaToggleBtn" onclick="window.GAIA&amp;&amp;GAIA.toggle()" title="GAIA Geo Controller (Ctrl+Shift+G)">GAIA</button>
-                                           <button class="retro-map-btn" id="fusionFullViewBtn" onclick="fusionToggleFullView()">&#8672; Full view</button>
-                                           <button class="retro-map-btn" id="fusionTheaterBtn" onclick="fusionToggleTheater()" title="Fullscreen common operating picture (Esc exits)">&#11041; Theater</button>
-                                           <button type="button" class="retro-map-btn" id="mavenToggleBtn" disabled title="MAVEN Smart Layer — maneuver tasking">&#9670; MAVEN</button>
-                                      </span>
-                                  </div>
-                                  <div class="sc-layer-bar">
-                                      <span class="sc-layer-label">Layers:</span>
-                                      <button class="retro-map-btn retro-map-btn-active" id="fusionLayerThreats" onclick="fusionToggleLayer('threats')">Threats <b id="fusionThreatCount">0</b></button>
-                                      <button class="retro-map-btn retro-map-btn-active" id="fusionLayerAviation" onclick="fusionToggleLayer('aviation')">Aircraft <b id="fusionAircraftCount">0</b></button>
-                                      <button class="retro-map-btn" id="fusionLayer3d" onclick="fusionToggle3D()">3D</button>
-                                  </div>
-                                  <div class="sc-layer-bar">
-                                      <span class="sc-layer-label">Traffic:</span>
-                                      <button class="retro-map-btn retro-map-btn-active" data-fcat="commercial" onclick="fusionToggleCat('commercial')">Commercial <b id="fcatCommercial">0</b></button>
-                                      <button class="retro-map-btn retro-map-btn-active" data-fcat="jet" onclick="fusionToggleCat('jet')">Jets <b id="fcatJet">0</b></button>
-                                      <button class="retro-map-btn retro-map-btn-active" data-fcat="private" onclick="fusionToggleCat('private')">Private <b id="fcatPrivate">0</b></button>
-                                      <button class="retro-map-btn retro-map-btn-active" data-fcat="military" onclick="fusionToggleCat('military')">Military <b id="fcatMilitary">0</b></button>
-                                      <button class="retro-map-btn retro-map-btn-active" id="fusionMotionBtn" onclick="fusionToggleMotion()" title="Dead-reckoning glide between feed refreshes">Motion</button>
-                                      <button class="retro-map-btn" id="fusionFovBtn" onclick="fusionToggleFov()" title="Maven-style sensor footprint cones">FOV</button>
-                                      <span class="fusion-live-badge fusion-live-stale" id="fusionLiveBadge"><span class="fusion-live-dot"></span><span id="fusionLiveText">LIVE · waiting</span></span>
-                                  </div>
-                                  <div class="sc-map-canvas-wrap">
-                                       <div class="retro-map-canvas" id="fusionMap"></div>
-                                       <div id="fusionMapHud" class="sc-map-hud">Select a region and theme to begin.</div>
-                                       <div id="mavenHudBadge" class="maven-badge maven-hidden">MAVEN 0T · 0A · 0D</div>
+<div id="mavenHudBadge" class="maven-badge maven-hidden">MAVEN 0T · 0A · 0D</div>
                                        <div id="mavenAoiHint" class="maven-aoi-hint maven-hidden">CLICK MAP TO SET AOI CENTER &middot; ESC CANCELS</div>
                                        <div id="mavenDrawer" class="maven-drawer maven-hidden">
                                            <div class="maven-head">
@@ -2477,10 +2616,14 @@
                                                    <div id="mavenTaskList"></div>
                                                </section>
                                                <section data-mpanel="assets" class="maven-hide"><div id="mavenAssetList"></div></section>
-                                               <section data-mpanel="coa" class="maven-hide">
-                                                   <button class="maven-btn" id="mavenCoaBtn">GENERATE COAs</button>
-                                                   <div id="mavenCoaList"></div>
-                                               </section>
+                                                <section data-mpanel="coa" class="maven-hide">
+                                                    <div class="maven-form">
+                                                        <select id="mavenCoaTheater"><option value="Baltic Guardian">BALTIC GUARDIAN</option><option value="Global Commons">GLOBAL COMMONS</option></select>
+                                                        <input type="text" id="mavenCoaScen" value="300" inputmode="numeric" placeholder="SCENARIOS PER POSTURE" maxlength="4">
+                                                    </div>
+                                                    <button class="maven-btn" id="mavenCoaBtn">GENERATE COAs</button>
+                                                    <div id="mavenCoaList"></div>
+                                                </section>
                                                <section data-mpanel="queue" class="maven-hide"><div id="mavenQueueList"></div></section>
                                            </div>
                                            <div id="mavenDetRail"></div>
@@ -2548,9 +2691,10 @@
                                               </div>
                                           </div>
                                       </div>
-                                  </div>
-                                  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><path id="ac-plane-path" d="M12 2 C12.9 2 13.5 3 13.5 4.3 L13.55 10.2 L21.8 14.7 L21.8 16.1 L13.5 13.7 L13.45 17.7 L17.5 20.3 L17.5 21.3 L13.05 20.5 L12.6 22 L11.4 22 L10.95 20.5 L6.5 21.3 L6.5 20.3 L10.55 17.7 L10.5 13.7 L2.2 16.1 L2.2 14.7 L10.45 10.2 L10.5 4.3 C10.5 3 11.1 2 12 2 Z"/></defs></svg>
-                                  <div class="sc-legend">
+                                                                    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><path id="ac-plane-path" d="M12 2 C12.9 2 13.5 3 13.5 4.3 L13.55 10.2 L21.8 14.7 L21.8 16.1 L13.5 13.7 L13.45 17.7 L17.5 20.3 L17.5 21.3 L13.05 20.5 L12.6 22 L11.4 22 L10.95 20.5 L6.5 21.3 L6.5 20.3 L10.55 17.7 L10.5 13.7 L2.2 16.1 L2.2 14.7 L10.45 10.2 L10.5 4.3 C10.5 3 11.1 2 12 2 Z"/></defs></svg>
+                              </div>
+
+<div class="sc-legend">
                                       <span class="sc-legend-label">LEGEND:</span>
                                       <span><span class="sc-legend-dot" style="background:#ef4444;box-shadow:0 0 4px #ef4444"></span> Threat-RED</span>
                                       <span><span class="sc-legend-dot" style="background:#f59e0b;box-shadow:0 0 4px #f59e0b"></span> Threat-AMBER</span>
@@ -2559,60 +2703,219 @@
                                       <span><svg class="sc-legend-plane" viewBox="0 0 24 24" aria-hidden="true"><use href="#ac-plane-path" fill="#22d3ee"/></svg> Jet</span>
                                       <span><svg class="sc-legend-plane" viewBox="0 0 24 24" aria-hidden="true"><use href="#ac-plane-path" fill="#22c544"/></svg> Commercial</span>
                                       <span><svg class="sc-legend-plane" viewBox="0 0 24 24" aria-hidden="true"><use href="#ac-plane-path" fill="#f59e0b"/></svg> Private</span>
-                                  </div>
-                              </div>
+</div>
                           </div>
 
                           <script>
-                          // Spinal Cracker: full-view widening toggle (map pane auto-fits the active region by default)
-                          function fusionToggleFullView() {
-                              var split = document.getElementById('fusionSplit');
-                              var pane = document.getElementById('fusionMapPane');
-                              var btn = document.getElementById('fusionFullViewBtn');
-                              if (!split || !pane) return;
-                              var wide = split.classList.toggle('sc-map-wide');
-                              if (btn) btn.innerHTML = wide ? '⇦ Collapse' : '⇢ Full view';
-                              if (wide) { if (typeof resetMapView === 'function') resetMapView(); }
-                              else { if (typeof fitFusionBounds === 'function') fitFusionBounds(); }
-                              setTimeout(function () {
-                                  if (typeof fusionMap !== 'undefined' && fusionMap) { try { fusionMap.resize(); } catch (e) {} }
-                              }, 380);
-                          }
-                          // MAVEN theater mode — fullscreen COP; Esc exits
-                          function fusionToggleTheater(force) {
-                              var on = typeof force === 'boolean' ? force : !document.body.classList.contains('maven-theater');
-                              document.body.classList.toggle('maven-theater', on);
-                              var btn = document.getElementById('fusionTheaterBtn');
-                              if (btn) btn.innerHTML = on ? '&#8679; Exit theater' : '&#11041; Theater';
-                              setTimeout(function () {
-                                  if (typeof fusionMap !== 'undefined' && fusionMap) { try { fusionMap.resize(); } catch (e) {} }
-                                  if (on && typeof fitFusionBounds === 'function') fitFusionBounds();
-                              }, 380);
-                          }
-                          document.addEventListener('keydown', function (e) {
-                              if (e.key === 'Escape' && document.body.classList.contains('maven-theater')) {
-                                  if (window.MAVEN && window.MAVEN.isAoiMode && window.MAVEN.isAoiMode()) return;
-                                  fusionToggleTheater(false);
-                              }
-                          });
-                          </script>
+                          // Spinal Cracker hive engine: draggable pentagon launcher blooms into a
+                          // connected honeycomb of every deck tile + traffic chip. Tiles drag-swap
+                          // between comb slots (persisted), launcher position persists, aircraft
+                          // chips idle-dim until the Aircraft layer engages. Blueprint-HUD tiles
+                          // outside the hive keep their legacy sibling-reaction behavior.
+                          (function () {
+                              var deck = document.getElementById('fusionDeck');
+                              var layer = document.getElementById('hiveLayer');
+                              var pent = document.getElementById('hivePentBtn');
+                              if (!deck || !layer || !pent) return;
 
-                          <script>
-                          // Spinal Cracker: connected-grid reaction (blueprint HUD design language)
-                          document.addEventListener('DOMContentLoaded', function () {
-                              var tiles = document.querySelectorAll('.sc-hud-tile');
-                              tiles.forEach(function (tile) {
-                                  tile.addEventListener('mouseenter', function () {
-                                      var prev = tile.previousElementSibling;
-                                      var next = tile.nextElementSibling;
-                                      if (prev && prev.classList.contains('sc-hud-tile')) prev.classList.add('neighbor-active');
-                                      if (next && next.classList.contains('sc-hud-tile')) next.classList.add('neighbor-active');
+                              var CW = 152, CH = 88, SX = 160, SY = 96, TOP = 78;
+                              var ROWS = [5, 5, 4];
+                              var DEFAULT_ORDER = ['threats', 'aircraft', 'bld3d', 'scope', 'notes',
+                                                  'gaia', 'maven', 'theater', 'cat-commercial', 'cat-jet',
+                                                  'cat-private', 'cat-military', 'mod-motion', 'mod-fov'];
+                              var CHIP_KEYS = ['cat-commercial', 'cat-jet', 'cat-private', 'cat-military', 'mod-motion', 'mod-fov'];
+                              var KEY = 'scHive.v1';
+
+                              var SLOTS = [];
+                              ROWS.forEach(function (n, r) {
+                                  for (var c = 0; c < n; c++) {
+                                      SLOTS.push({ x: c * SX + (ROWS[0] - n) * SX / 2, y: TOP + r * SY, r: r, c: c });
+                                  }
+                              });
+
+                              function cells() { return Array.prototype.slice.call(layer.querySelectorAll('[data-tile]')); }
+                              function cellMap() { var m = {}; cells().forEach(function (el) { m[el.getAttribute('data-tile')] = el; }); return m; }
+
+                              var state = { x: 12, y: 12, order: DEFAULT_ORDER.slice(), expanded: false };
+                              try {
+                                  var saved = JSON.parse(localStorage.getItem(KEY) || '{}');
+                                  if (typeof saved.x === 'number') state.x = saved.x;
+                                  if (typeof saved.y === 'number') state.y = saved.y;
+                                  if (Array.isArray(saved.order)) {
+                                      var known = cellMap();
+                                      state.order = saved.order.filter(function (k) { return known[k]; });
+                                      DEFAULT_ORDER.forEach(function (k) { if (state.order.indexOf(k) === -1) state.order.push(k); });
+                                      Object.keys(known).forEach(function (k) { if (state.order.indexOf(k) === -1) state.order.push(k); });
+                                  }
+                              } catch (e) {}
+
+                              function save() { try { localStorage.setItem(KEY, JSON.stringify({ x: state.x, y: state.y, order: state.order })); } catch (e) {} }
+
+                              function layout() {
+                                  var m = cellMap();
+                                  state.order.forEach(function (key, i) {
+                                      var el = m[key]; if (!el || !SLOTS[i]) return;
+                                      var s = SLOTS[i];
+                                      el.style.setProperty('--tx', s.x + 'px');
+                                      el.style.setProperty('--ty', s.y + 'px');
+                                      el.style.setProperty('--fx', (38 - (s.x + CW / 2)) + 'px');
+                                      el.style.setProperty('--fy', (35 - (s.y + CH / 2)) + 'px');
+                                      el.style.setProperty('--hd', (i * 22) + 'ms');
+                                      el.classList.remove('cut-tr-bl', 'cut-tl-br');
+                                      el.classList.add(((s.r + s.c) % 2 === 0) ? 'cut-tr-bl' : 'cut-tl-br');
+                                      el._slot = i;
                                   });
-                                  tile.addEventListener('mouseleave', function () {
-                                      tiles.forEach(function (t) { t.classList.remove('neighbor-active'); });
+                                  if (state.expanded) {
+                                      deck.style.width = (SLOTS[4].x + CW) + 'px';
+                                      deck.style.height = (TOP + (ROWS.length - 1) * SY + CH) + 'px';
+                                  } else {
+                                      deck.style.width = ''; deck.style.height = '';
+                                  }
+                              }
+
+                              function clampPos() {
+                                  var wrap = deck.parentElement;
+                                  if (!wrap) return;
+                                  var w = deck.offsetWidth || 76, h = deck.offsetHeight || 70;
+                                  state.x = Math.min(Math.max(state.x, 8), Math.max(8, wrap.clientWidth - w - 8));
+                                  state.y = Math.min(Math.max(state.y, 8), Math.max(8, wrap.clientHeight - h - 8));
+                                  deck.style.left = state.x + 'px';
+                                  deck.style.top = state.y + 'px';
+                              }
+
+                              function suppressClick() {
+                                  var kill = function (e) { e.stopPropagation(); e.preventDefault(); window.removeEventListener('click', kill, true); };
+                                  window.addEventListener('click', kill, true);
+                                  setTimeout(function () { window.removeEventListener('click', kill, true); }, 400);
+                              }
+
+                              function draggable(el, onMove, onClick) {
+                                  el.addEventListener('pointerdown', function (ev) {
+                                      if (ev.button !== 0) return;
+                                      var sx = ev.clientX, sy = ev.clientY, ox = state.x, oy = state.y, moved = false;
+                                      function mv(e) {
+                                          if (!moved && Math.hypot(e.clientX - sx, e.clientY - sy) < 7) return;
+                                          if (!moved) { moved = true; document.body.classList.add('hive-dragging'); }
+                                          onMove(e.clientX - sx, e.clientY - sy, ox, oy);
+                                      }
+                                      function up() {
+                                          window.removeEventListener('pointermove', mv, true);
+                                          window.removeEventListener('pointerup', up, true);
+                                          window.removeEventListener('pointercancel', up, true);
+                                          document.body.classList.remove('hive-dragging');
+                                          if (moved) suppressClick(); else if (onClick) onClick();
+                                      }
+                                      window.addEventListener('pointermove', mv, true);
+                                      window.addEventListener('pointerup', up, true);
+                                      window.addEventListener('pointercancel', up, true);
+                                  });
+                              }
+
+                              function setExpanded(v) {
+                                  state.expanded = v;
+                                  deck.classList.toggle('is-expanded', v);
+                                  pent.setAttribute('aria-expanded', v ? 'true' : 'false');
+                                  layout(); clampPos();
+                              }
+
+                              pent.title = 'COMMAND HIVE \u2014 drag to move \u00b7 click to unfold';
+                              draggable(pent,
+                                  function (dx, dy, ox, oy) { state.x = ox + dx; state.y = oy + dy; clampPos(); },
+                                  function () { setExpanded(!state.expanded); });
+
+                              // YONO quick-launch inside the pentagon base — isolated from
+                              // the hive toggle; Ctrl+Shift+Y keeps working independently
+                              var py = document.getElementById('hivePentYono');
+                              if (py) {
+                                  py.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+                                  py.addEventListener('click', function (e) {
+                                      e.stopPropagation();
+                                      if (window.YONO && YONO.toggle) YONO.toggle();
+                                  });
+                              }
+
+                              cells().forEach(function (el) {
+                                  el.title = (el.title ? el.title + ' \u00b7 ' : '') + 'drag to rearrange';
+                                  draggable(el, function (dx, dy) {
+                                      if (!el.classList.contains('hive-grab')) el.classList.add('hive-grab');
+                                      var s = SLOTS[el._slot];
+                                      el.style.setProperty('--gx', (s.x + dx) + 'px');
+                                      el.style.setProperty('--gy', (s.y + dy) + 'px');
+                                      var nx = s.x + dx + CW / 2, ny = s.y + dy + CH / 2;
+                                      var best = -1, bd = 1e9;
+                                      SLOTS.forEach(function (sl, i) {
+                                          var d = Math.hypot(sl.x + CW / 2 - nx, sl.y + CH / 2 - ny);
+                                          if (d < bd) { bd = d; best = i; }
+                                      });
+                                      cells().forEach(function (c) { c.classList.remove('hive-drop'); });
+                                      el._drop = (best !== -1 && best !== el._slot && bd < 120) ? best : -1;
+                                      if (el._drop >= 0) {
+                                          var host = cellMap()[state.order[el._drop]];
+                                          if (host) host.classList.add('hive-drop');
+                                      }
+                                  }, null);
+                                  el.addEventListener('pointerup', function () {
+                                      requestAnimationFrame(function () {
+                                          if (el._drop != null && el._drop >= 0 && el._slot != null) {
+                                              var tmp = state.order[el._slot];
+                                              state.order[el._slot] = state.order[el._drop];
+                                              state.order[el._drop] = tmp;
+                                              save();
+                                          }
+                                          el._drop = -1;
+                                          el.classList.remove('hive-grab');
+                                          cells().forEach(function (c) { c.classList.remove('hive-drop'); });
+                                          layout();
+                                      });
                                   });
                               });
-                          });
+
+                              // connected-comb reaction: neighbors light up in slot space
+                              layer.addEventListener('mouseover', function (ev) {
+                                  var el = ev.target.closest ? ev.target.closest('[data-tile]') : null;
+                                  if (!el || el._slot == null) return;
+                                  var s = SLOTS[el._slot];
+                                  cells().forEach(function (c) {
+                                      var cs = SLOTS[c._slot];
+                                      c.classList.toggle('neighbor-active', c !== el && Math.abs(cs.r - s.r) <= 1 && Math.abs(cs.c - s.c) <= 1);
+                                  });
+                              });
+                              layer.addEventListener('mouseout', function (ev) {
+                                  if (ev.target.closest && ev.target.closest('[data-tile]'))
+                                      cells().forEach(function (c) { c.classList.remove('neighbor-active'); });
+                              });
+
+                              // legacy blueprint tiles outside the hive keep sibling reaction
+                              Array.prototype.forEach.call(document.querySelectorAll('.sc-hud-tile'), function (t) {
+                                  if (t.closest('#hiveLayer')) return;
+                                  t.addEventListener('mouseenter', function () {
+                                      var p = t.previousElementSibling, n = t.nextElementSibling;
+                                      if (p && p.classList.contains('sc-hud-tile')) p.classList.add('neighbor-active');
+                                      if (n && n.classList.contains('sc-hud-tile')) n.classList.add('neighbor-active');
+                                  });
+                                  t.addEventListener('mouseleave', function () {
+                                      Array.prototype.forEach.call(document.querySelectorAll('.sc-hud-tile.neighbor-active'), function (x) { x.classList.remove('neighbor-active'); });
+                                  });
+                              });
+
+                              // traffic chips idle until Aircraft engages
+                              var avi = document.getElementById('fusionLayerAviation');
+                              function syncChips() {
+                                  var on = avi && avi.classList.contains('retro-map-btn-active');
+                                  var m = cellMap();
+                                  CHIP_KEYS.forEach(function (k) { if (m[k]) m[k].classList.toggle('hive-dim', !on); });
+                              }
+                              if (avi && window.MutationObserver) new MutationObserver(syncChips).observe(avi, { attributes: true, attributeFilter: ['class'] });
+
+                              // pentagon mirrors live threat count
+                              var tc = document.getElementById('fusionThreatCount'), pc = document.getElementById('hivePentCount');
+                              if (tc && pc && window.MutationObserver) new MutationObserver(function () { pc.textContent = tc.textContent; }).observe(tc, { childList: true, characterData: true, subtree: true });
+
+                              document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && state.expanded) setExpanded(false); });
+                              window.addEventListener('resize', clampPos);
+
+                              layout(); clampPos(); syncChips();
+                          })();
                           </script>
 
                           <!-- Intelligence panels: collapsible accordions (map-first layout) -->
@@ -4395,6 +4698,56 @@ async function api(path, opts = {}) {
     } finally {
         clearTimeout(timer);
     }
+}
+
+// SSE streaming companion to api(): POSTs and invokes onEvent(evt) for every
+// server-sent JSON event; resolves with the final {"type":"done"} payload.
+// Auth errors throw so callers can fall back to api()'s self-healing path.
+window.apiStream = async function(path, opts = {}, onEvent) {
+    const url = API_BASE.replace(/\/+$/, '') + '/' + String(path).replace(/^\/+/, '');
+    const headers = { 'Content-Type': 'application/json' };
+    if (authToken) headers['Authorization'] = 'Bearer ' + authToken;
+    const controller = new AbortController();
+    const timeoutMs = opts.timeout || 300000;
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let res;
+    try {
+        res = await fetch(url, { method: 'POST', headers, body: opts.body, signal: controller.signal });
+    } catch (e) {
+        clearTimeout(timer);
+        if (e.name === 'AbortError') throw new Error('Request timed out after ' + (timeoutMs / 1000) + 's');
+        throw e;
+    }
+    if (!res.ok || !res.body) { clearTimeout(timer); throw new Error('HTTP ' + res.status); }
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '', payload = null;
+    try {
+        for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += dec.decode(value, { stream: true });
+            let idx;
+            while ((idx = buf.indexOf('\n\n')) >= 0) {
+                const frame = buf.slice(0, idx); buf = buf.slice(idx + 2);
+                const line = frame.split('\n').find(l => l.startsWith('data: '));
+                if (!line) continue;
+                const evt = JSON.parse(line.slice(6));
+                if (evt.type === 'error') throw new Error(evt.message || 'stream error');
+                if (evt.type === 'done') payload = evt.payload;
+                else if (onEvent) onEvent(evt);
+            }
+        }
+    } catch (e) {
+        clearTimeout(timer);
+        if (e.name === 'AbortError') throw new Error('Request timed out after ' + (timeoutMs / 1000) + 's');
+        throw e;
+    } finally {
+        clearTimeout(timer);
+        try { reader.releaseLock(); } catch (_) {}
+    }
+    if (!payload) throw new Error('stream ended without result');
+    return payload;
 }
 
 function toast(msg, type = 'success') {
@@ -6607,7 +6960,9 @@ let fusionThreatMarkers = [];
 let fusionAviationMarkers = [];
 let fusionThreatEvents = [];
 let fusionFlights = [];
-let fusionLayers = { threats: true, aviation: true, '3d': true };
+// Fresh-map policy: every GAIA layer starts OFF; the operator toggles what
+// appears. No layer may default on and no state is restored across reloads.
+let fusionLayers = { threats: false, aviation: false, '3d': false };
 let fusion3dAdded = false;
 // Cross-block consumers (GAIA integrations, MAVEN) read these via window.*;
 // top-level `let` bindings are NOT window properties, so mirror them here.
@@ -7383,22 +7738,6 @@ let fusionLastRefreshAt = 0;
 let fusionFeedMeta = null;
 let fusionAutoRunAt = 0;
 
-function updateFusionLiveBadge() {
-    const badge = document.getElementById('fusionLiveBadge');
-    const txt = document.getElementById('fusionLiveText');
-    if (!badge || !txt) return;
-    const nowSec = Date.now() / 1000;
-    const meta = fusionFeedMeta;
-    const ageS = meta && meta.last_success_ts ? Math.max(0, Math.round(nowSec - meta.last_success_ts)) : null;
-    const nextS = fusionNextRefreshAt ? Math.max(0, Math.ceil((fusionNextRefreshAt - Date.now()) / 1000)) : null;
-    const stale = ageS == null || ageS > 120;
-    badge.classList.toggle('fusion-live-stale', stale);
-    const src = meta && meta.last_source ? String(meta.last_source).replace('opensky-', '').toUpperCase() : null;
-    txt.textContent = (stale ? 'CATCHING UP' : 'LIVE') +
-        (ageS != null ? ' · updated ' + (ageS < 60 ? ageS + 's' : Math.round(ageS / 60) + 'm') + ' ago' : '') +
-        (nextS != null ? ' · next ' + nextS + 's' : '') +
-        (src ? ' · ' + src : '');
-}
 
 async function fusionRefreshFlights() {
     if (!scScopeComplete()) return;
@@ -7441,7 +7780,6 @@ async function fusionRefreshFlights() {
         fusionAutoRunAt = nowMs;
         api('/opensky/pipeline/run', { method: 'POST', body: JSON.stringify({ fetch_military: true }) }).catch(() => {});
     }
-    updateFusionLiveBadge();
 }
 
 function _fusionRunPending() {
@@ -7457,7 +7795,7 @@ function startFusionLiveLoop() {
         fusionRefreshFlights();
     }, FUSION_LIVE_INTERVAL_MS);
     fusionCountdownTimer = setInterval(() => {
-        if (!document.hidden) updateFusionLiveBadge();
+        if (!document.hidden) { }
     }, 1000);
     _fusionLastMotionMs = Date.now();
     fusionMotionTimer = setInterval(fusionMotionTick, 150);
@@ -7540,27 +7878,15 @@ async function resetFusionOpenSkyCooldown() {
 
 function updateFusionKpis() {
     const m = computeIntelMetrics(fusionThreatEvents);
-    document.getElementById('fusionKpiEvents').textContent = m.total;
-    document.getElementById('fusionKpiThreats').textContent = m.negative;
     document.getElementById('fusionThreatCount').textContent = fusionThreatMarkers.length;
     let military = 0;
     const cats = { commercial: 0, private: 0, jet: 0, military: 0 };
     fusionFlights.forEach(f => { const c = (f.properties || {}).category || '?'; if (cats[c] != null) cats[c]++; if (c === 'military') military++; });
-    document.getElementById('fusionKpiAircraft').textContent = fusionFlights.length;
-    document.getElementById('fusionKpiMilitary').textContent = military;
     const intelCountT = document.getElementById('intelCountThreats'); if (intelCountT) intelCountT.textContent = m.total;
     const intelCountA = document.getElementById('intelCountAircraft'); if (intelCountA) intelCountA.textContent = military;
     document.getElementById('fusionAircraftCount').textContent = fusionAviationMarkers.length;
-    const countries = new Set(fusionThreatEvents.map(e => { const g = parseActionGeo(e); return g ? g.country : null; }).filter(Boolean));
-    document.getElementById('fusionKpiCountries').textContent = countries.size;
     // BigQuery-enhanced metrics: avg tone + Goldstein scale
-    const tones = fusionThreatEvents.map(e => e.avg_tone).filter(t => t && t !== 0);
-    const avgTone = tones.length ? (tones.reduce((a, b) => a + b, 0) / tones.length).toFixed(1) : '--';
-    document.getElementById('fusionKpiTone').textContent = avgTone;
     // Goldstein from payload (BigQuery stores it); fallback to tone-derived estimate
-    const goldsteins = fusionThreatEvents.map(e => (e.payload && e.payload.GoldsteinScale) || null).filter(Boolean);
-    const avgGold = goldsteins.length ? (goldsteins.reduce((a, b) => a + b, 0) / goldsteins.length).toFixed(1) : '--';
-    document.getElementById('fusionKpiGoldstein').textContent = avgGold;
     // Tactical metrics
     document.getElementById('fusionMetricSystemic').textContent = m.systemic || '--';
     document.getElementById('fusionMetricPropagation').textContent = m.propagation || '--';
@@ -11446,11 +11772,10 @@ function registerSimsGaiaLayers() {
         };
         window.renderFusionMap.__simsWrapped = true;
     }
-    // Default both layers on so the war is visible immediately.
-    fusionLayers.simsWar = true;
-    fusionLayers.simsOnt = true;
-    fusionLayers.simsReal = false; // opt-in: dense real-world layer
-    renderFusionSimWarLayer();
+    // Fresh-map policy: SIMS layers start OFF like every other GAIA layer.
+    fusionLayers.simsWar = false;
+    fusionLayers.simsOnt = false;
+    fusionLayers.simsReal = false;
     // Theaters may not be fetched yet when arriving via Spinal Cracker first.
     if (!SIMS.battlefields.length) {
         loadSimsBattlefields().then(() => {
@@ -12736,19 +13061,17 @@ function renderFusionRealLayer() {
 
     // ------------------------------------------------------------------- state
     var DEFAULT_STATE = {
-        threats:   { on: true,  opacity: 1 },
-        aviation:  { on: true,  opacity: 1 },
+        threats:   { on: false, opacity: 1 },
+        aviation:  { on: false, opacity: 1 },
         drones:    { on: false, opacity: 1 },
         satellite: { on: false, opacity: 1 },
         weather:   { on: false, opacity: 1 },
         actorheat: { on: false }
     };
     function loadState() {
+        // Fresh map every session: persisted layer toggles are intentionally
+        // NOT restored — GAIA layers appear only when manually engaged.
         var st = {};
-        try {
-            var v = JSON.parse(localStorage.getItem(LS_STATE));
-            if (v && typeof v === 'object') st = v;
-        } catch (e) {}
         Object.keys(DEFAULT_STATE).forEach(function (k) {
             st[k] = st[k] && typeof st[k] === 'object' ? st[k] : {};
             st[k].on = typeof st[k].on === 'boolean' ? st[k].on : DEFAULT_STATE[k].on;
@@ -17273,6 +17596,7 @@ function renderFusionRealLayer() {
 }
 .maven-det-actions button.yes { color: #80e000; border-color: rgba(128,224,0,.5); }
 .maven-det-actions button.no { color: #ff8080; border-color: rgba(255,128,128,.5); }
+.maven-det-actions button.mut { color: var(--text-muted); border-color: var(--border-color); }
 .maven-asset-glyph svg, .maven-det-glyph svg { filter: drop-shadow(0 0 3px rgba(0,0,0,.9)); }
 .maven-badge {
     position: absolute; left: 10px; bottom: 34px; z-index: 25;
@@ -17312,7 +17636,8 @@ function renderFusionRealLayer() {
         markers: [],           // asset DOM markers
         detMarkers: {},        // pk -> marker (diffed)
         aoiShownFor: '',       // task pk whose AOI ring is drawn
-        fitDone: {}            // callsign -> map auto-framed once
+        wiredMap: null,        // map instance the AOI click handler is bound to
+        popup: null            // single maplibregl.Popup for inspections
     };
 
     /* ---------------------------------------------------------- svg ---- */
@@ -17427,19 +17752,9 @@ function renderFusionRealLayer() {
     function drawMarkers() {
         var m = getMap();
         if (!m) return;
-        // Assets: reuse DOM nodes in place (diff updater keeps it snappy)
-        S.state.assets.forEach(function (a, i) {
-            if (!S.fitDone[a.callsign] && a.lat != null) {
-                S.fitDone[a.callsign] = true;
-                var t = null;
-                S.state.tasks.forEach(function (x) { if (x.pk === a.task_pk) t = x; });
-                try {
-                    var b = [[Math.min(a.lng, t ? t.aoi_lng : a.lng), Math.min(a.lat, t ? t.aoi_lat : a.lat)],
-                             [Math.max(a.lng, t ? t.aoi_lng : a.lng), Math.max(a.lat, t ? t.aoi_lat : a.lat)]];
-                    m.fitBounds(b, { padding: 120, maxZoom: 8, duration: 1600 });
-                } catch (e) {}
-            }
-        });
+        // Assets: reuse DOM nodes in place (diff updater keeps it snappy).
+        // NB: no silent auto-fitBounds — the operator frames the map via the
+        // FLY buttons; surprise viewport yanks made placement feel impossible.
         while (S.markers.length < S.state.assets.length) {
             var idx = S.markers.length, a0 = S.state.assets[idx];
             var el = svgFrame(a0.asset_class);
@@ -17463,7 +17778,7 @@ function renderFusionRealLayer() {
             if (!mk) {
                 var el = svgFrame(kind);
                 var dm = new maplibregl.Marker({ element: el }).setLngLat([d.lng, d.lat]).addTo(m);
-                dm.getElement().addEventListener('click', function () { renderDetRail(true); });
+                dm.getElement().addEventListener('click', function () { detPopup(d); });
                 S.detMarkers[d.pk] = dm;
             } else {
                 mk.setLngLat([d.lng, d.lat]);
@@ -17473,6 +17788,43 @@ function renderFusionRealLayer() {
             if (!seen[pk]) { S.detMarkers[pk].remove(); delete S.detMarkers[pk]; }
         });
     }
+    function closePopup() {
+        if (S.popup) { try { S.popup.remove(); } catch (e) {} S.popup = null; }
+    }
+    function detPopup(d) {
+        var m = getMap(); if (!m) return;
+        closePopup();
+        var pending = (d.validated === null || typeof d.validated === 'undefined');
+        var html = '<div style="font-family:var(--font-mono,monospace);font-size:11px;color:#fff;min-width:180px">' +
+            '<b style="color:#DFF140">' + esc(d.label || 'contact') + '</b><br>' +
+            '<span style="opacity:.65">' + esc(d.det_class || '') + ' \u00b7 conf ' +
+            Math.round((d.confidence || 0) * 100) + '%<br>' +
+            esc(d.track_source || '') + ':' + esc(d.track_id || '') + '<br>' +
+            (d.asset_callsign ? esc(d.asset_callsign) + ' \u00b7 ' : '') +
+            Number(d.lat).toFixed(2) + 'N ' + Number(d.lng).toFixed(2) + 'E</span>';
+        if (pending) {
+            html += '<div style="display:flex;gap:6px;margin-top:6px">' +
+                '<button id="mvPopOk" style="flex:1;cursor:pointer;background:none;border:1px solid rgba(128,224,0,.5);color:#80e000;font-family:inherit;font-size:9px;padding:4px 0;letter-spacing:.08em">CONFIRM</button>' +
+                '<button id="mvPopNo" style="flex:1;cursor:pointer;background:none;border:1px solid rgba(255,128,128,.5);color:#ff8080;font-family:inherit;font-size:9px;padding:4px 0;letter-spacing:.08em">REJECT</button></div>';
+        } else {
+            html += '<div style="margin-top:4px;opacity:.7;letter-spacing:.1em">' + (d.validated ? '\u2713 VALIDATED' : '\u2715 REJECTED') + '</div>';
+        }
+        html += '</div>';
+        S.popup = new maplibregl.Popup({ closeButton: true, offset: 14 })
+            .setLngLat([d.lng, d.lat]).setHTML(html).addTo(m);
+        var ok = document.getElementById('mvPopOk'), no = document.getElementById('mvPopNo');
+        async function verdict(v, btn) {
+            if (btn) btn.disabled = true;
+            try {
+                await api('/maven/detection/' + d.id + '/validate',
+                    { method: 'POST', body: JSON.stringify({ verdict: v }) });
+            } catch (e) { mErr(e); }
+            closePopup();
+            refresh();
+        }
+        if (ok) ok.onclick = function () { verdict(true, ok); };
+        if (no) no.onclick = function () { verdict(false, no); };
+    }
 
     /* ----------------------------------------------------- data plane ---- */
     async function refresh() {
@@ -17480,6 +17832,10 @@ function renderFusionRealLayer() {
         S.busy = true;
         try {
             await api('/maven/tick', { method: 'POST' }).catch(function () {});
+            // Insurance: if the map instance was ever swapped, re-bind the
+            // AOI click handler so placement never silently dies.
+            var m = getMap();
+            if (m && S.wiredMap !== m) { S.wiredMap = m; wireMapClicks(m); }
             S.state = await api('/maven/state');
             drawGeo();
             drawMarkers();
@@ -17497,6 +17853,7 @@ function renderFusionRealLayer() {
     function stopPolling() {
         clearInterval(S.timer);
         S.timer = null;
+        closePopup();
         clearMarkers();
         setData('maven-aoi', []);
         setData('maven-fov', []);
@@ -17509,6 +17866,24 @@ function renderFusionRealLayer() {
     function esc(s) {
         return String(s == null ? '' : s).replace(/[&<>"']/g,
             function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+    }
+    function mErr(e) {
+        // Surface backend rejections (403 role, validation, network) — silent
+        // console.warn made tasking look broken when the API refused.
+        var msg = (e && (e.message || e.detail)) || 'request failed';
+        try { if (typeof toast === 'function') toast('MAVEN: ' + msg, 'error'); } catch (_) {}
+        console.warn('maven:', e);
+    }
+    function flyTo(lat, lng, zoom, km) {
+        var m = getMap(); if (!m || lat == null) return;
+        try {
+            var z = zoom != null ? zoom : 6;
+            if (km) {   // frame the whole AOI ring
+                var dLat = km / 111.32;
+                z = Math.round(9.2 - Math.log2(Math.max(1, dLat)));
+            }
+            m.flyTo({ center: [lng, lat], zoom: Math.max(2, Math.min(12, z)), duration: 1400 });
+        } catch (e) {}
     }
     function renderBadge() {
         var b = $('mavenHudBadge');
@@ -17533,17 +17908,37 @@ function renderFusionRealLayer() {
                 (dispatched ? '<span class="maven-chip ok">ACTIVE</span>' : '') +
                 '<br><span class="mv-sub">' + Number(t.aoi_lat).toFixed(2) + 'N ' + Number(t.aoi_lng).toFixed(2) + 'E \u00b7 r=' + esc(t.aoi_radius_km) + 'km' +
                 ' \u00b7 ' + esc(t.assets || 0) + 'A/' + esc(t.detections || 0) + 'D</span>';
+            html += '<div class="maven-det-actions">';
             if (!dispatched) {
-                html += '<div class="maven-det-actions">' +
-                    '<button class="yes" data-dispatch="' + esc(t.id) + '" data-cls="uas">\u25B3 DISPATCH UAS</button>' +
-                    '<button class="yes" data-dispatch="' + esc(t.id) + '" data-cls="usv">\u25CB DISPATCH USV</button></div>';
+                html += '<button class="yes" data-dispatch="' + esc(t.id) + '" data-cls="uas">\u25B3 DISPATCH UAS</button>' +
+                    '<button class="yes" data-dispatch="' + esc(t.id) + '" data-cls="usv">\u25CB DISPATCH USV</button>';
             }
+            html += '<button class="mut" data-tfly="' + esc(t.id) + '">\u2316 FLY</button>' +
+                '<button class="no" data-delt="' + esc(t.id) + '">\u2715 DEL</button></div>';
             html += '</div>';
         });
         host.innerHTML = html;
         host.querySelectorAll('[data-dispatch]').forEach(function (btn) {
             btn.onclick = function () {
                 dispatch(btn.getAttribute('data-dispatch'), btn.getAttribute('data-cls'));
+            };
+        });
+        host.querySelectorAll('[data-tfly]').forEach(function (btn) {
+            btn.onclick = function () {
+                var t = S.state.tasks.filter(function (x) { return x.id === btn.getAttribute('data-tfly'); })[0];
+                if (t) { flyTo(Number(t.aoi_lat), Number(t.aoi_lng), null, Number(t.aoi_radius_km) || 25); }
+            };
+        });
+        host.querySelectorAll('[data-delt]').forEach(function (btn) {
+            btn.onclick = async function () {
+                var id = btn.getAttribute('data-delt');
+                if (!window.confirm('Delete this task with its assets and detections?')) return;
+                btn.disabled = true;
+                try {
+                    await api('/maven/task/' + id, { method: 'DELETE' });
+                    try { toast('MAVEN task deleted', 'success'); } catch (_) {}
+                } catch (e) { mErr(e); }
+                refresh();
             };
         });
         var mkBtn = $('mavenMakeTask');
@@ -17602,30 +17997,50 @@ function renderFusionRealLayer() {
                 theater: theater
             })});
             await dispatch(t.task_id, S.assetClass);
+            try { toast('MAVEN task created \u00b7 ' + theater, 'success'); } catch (_) {}
             S.pending = null;
             exitAoiMode();
             refresh();
-        } catch (e) { console.warn('maven task failed', e); }
+        } catch (e) { mErr(e); }
     }
     async function dispatch(taskId, cls) {
         try {
             await api('/maven/task/' + taskId + '/dispatch', { method: 'POST',
                 body: JSON.stringify({ asset_class: cls }) });
             refresh();
-        } catch (e) { console.warn('dispatch failed', e); }
+        } catch (e) { mErr(e); }
     }
     function renderAssets() {
         var host = $('mavenAssetList');
         if (!host) return;
         if (!S.state.assets.length) { host.innerHTML = '<div class="maven-empty">NO ASSETS AIRBORNE</div>'; return; }
-        host.innerHTML = S.state.assets.map(function (a) {
+        host.innerHTML = S.state.assets.map(function (a, i) {
             var glyph = a.asset_class === 'uas' ? '\u25B3' : '\u25CB';
             var sim = a.speedup && a.speedup !== 1 ? ' \u00b7 SIM\u00d7' + Math.round(a.speedup) : '';
             return '<div class="maven-row"><b>' + glyph + ' ' + esc(a.callsign) + '</b>' +
                 '<span class="maven-chip ' + (a.state === 'on-station' ? 'ok' : 'medium') + '">' + esc(a.state.toUpperCase()) + '</span>' +
                 '<br><span class="mv-sub">from ' + esc(a.origin) + sim + ' \u00b7 ' + a.lat.toFixed(2) + 'N ' + a.lng.toFixed(2) + 'E \u00b7 ' +
-                Math.round(a.heading_deg) + '\u00B0' + (a.eta_remaining_s ? ' \u00b7 ETA ' + Math.ceil(a.eta_remaining_s / 60) + 'm' : '') + '</span></div>';
+                Math.round(a.heading_deg) + '\u00B0' + (a.eta_remaining_s ? ' \u00b7 ETA ' + Math.ceil(a.eta_remaining_s / 60) + 'm' : '') + '</span>' +
+                '<div class="maven-det-actions"><button class="mut" data-afly="' + i + '">\u2316 FLY</button>' +
+                '<button class="no" data-recall="' + esc(a.callsign) + '">\u25A0 RTB</button></div></div>';
         }).join('');
+        host.querySelectorAll('[data-afly]').forEach(function (btn) {
+            btn.onclick = function () {
+                var a = S.state.assets[parseInt(btn.getAttribute('data-afly'), 10)];
+                if (a) flyTo(Number(a.lat), Number(a.lng), 7);
+            };
+        });
+        host.querySelectorAll('[data-recall]').forEach(function (btn) {
+            btn.onclick = async function () {
+                btn.disabled = true;
+                try {
+                    await api('/maven/asset/' + encodeURIComponent(btn.getAttribute('data-recall')) + '/recall',
+                        { method: 'POST', body: '{}' });
+                    try { toast('MAVEN asset stood down', 'success'); } catch (_) {}
+                } catch (e) { mErr(e); }
+                refresh();
+            };
+        });
     }
     function renderCoas() {
         var host = $('mavenCoaList');
@@ -17702,7 +18117,7 @@ function renderFusionRealLayer() {
                     await api('/maven/detection/' + b.getAttribute('data-val') + '/validate', {
                         method: 'POST', body: JSON.stringify({ verdict: b.getAttribute('data-v') === 'true' }) });
                     refresh();
-                } catch (e) {}
+                } catch (e) { mErr(e); }
             };
         });
     }
@@ -17747,29 +18162,51 @@ function renderFusionRealLayer() {
             if (!S.aoiMode) { enterAoiMode(); }
             else { exitAoiMode(); S.pending = null; renderTasks(); }
         };
+        // COA controls: theater select grows with the region scope presets.
+        var sel = $('mavenCoaTheater');
+        if (sel && typeof SC_REGION_BBOXES !== 'undefined') {
+            var have = {};
+            Array.prototype.forEach.call(sel.options, function (o) { have[o.value] = 1; });
+            Object.keys(SC_REGION_BBOXES).forEach(function (k) {
+                var v = (k === 'Baltic') ? 'Baltic Guardian' : (k + ' Theater');
+                if (have[v]) return;
+                have[v] = 1;
+                var o = document.createElement('option');
+                o.value = v; o.textContent = k.toUpperCase() + ' THEATER';
+                sel.appendChild(o);
+            });
+        }
         $('mavenCoaBtn').onclick = async function () {
             var btn = $('mavenCoaBtn');
+            var theater = ($('mavenCoaTheater') || {}).value || 'Baltic Guardian';
+            var scen = parseInt(($('mavenCoaScen') || {}).value, 10);
+            if (!isFinite(scen)) scen = 300;
+            scen = Math.max(50, Math.min(1000, scen));
             btn.disabled = true;
             btn.textContent = 'RUNNING CAMPAIGN SIMS\u2026';
             try {
                 await api('/maven/coa/generate', { method: 'POST',
-                    body: JSON.stringify({ theater: 'Baltic Guardian', scenarios: 300, seed: 42 }) });
+                    body: JSON.stringify({ theater: theater, scenarios: scen, seed: 42 }) });
+                try { toast('COAs generated \u00b7 ' + theater + ' \u00b7 ' + scen + ' scenarios', 'success'); } catch (_) {}
                 refresh();
-            } catch (e) { console.warn('coa failed', e); }
+            } catch (e) { mErr(e); }
             btn.disabled = false;
             btn.textContent = 'GENERATE COAs';
         };
         var m = getMap();
-        if (m) {
-            m.on('click', function (e) {
-                if (!S.aoiMode) return;
-                S.pending = { lat: e.lngLat.lat, lng: e.lngLat.lng };
-                selectTab('tasks');
-                renderTasks();
-            });
-        }
+        if (m) { S.wiredMap = m; wireMapClicks(m); }
         document.addEventListener('keydown', function (ev) {
             if (ev.key === 'Escape' && S.aoiMode) { exitAoiMode(); S.pending = null; renderTasks(); }
+        });
+    }
+    function wireMapClicks(m) {
+        // AOI placement: bound per map instance so a swap/re-init never
+        // silently strands the handler on a dead object.
+        m.on('click', function (e) {
+            if (!S.aoiMode) return;
+            S.pending = { lat: e.lngLat.lat, lng: e.lngLat.lng };
+            selectTab('tasks');
+            renderTasks();
         });
     }
     function boot(tries) {
@@ -17798,6 +18235,358 @@ function renderFusionRealLayer() {
 })();
 </script>
 
+<style id="yono-styles">
+/* ═══ YONO · Spinal Cracker floating AIP panel — Panteon design language ═══ */
+#yono-panel{position:fixed;right:20px;top:76px;width:380px;height:72vh;min-height:420px;
+  z-index:950;display:flex;flex-direction:column;background:var(--bg-dark,#000);
+  border:1px solid var(--border-light,rgba(255,255,255,.15));border-radius:0;
+  box-shadow:0 16px 48px rgba(0,0,0,.55);overflow:hidden;
+  transition:transform .28s cubic-bezier(.4,0,.2,1),opacity .28s;}
+#yono-panel.yono-hidden{transform:translateX(calc(100% + 48px));opacity:0;pointer-events:none;}
+#yono-panel.yono-min{height:44px!important;min-height:44px;}
+#yono-panel.yono-min .yono-body,#yono-panel.yono-min .yono-chips,#yono-panel.yono-min .yono-inputrow{display:none;}
+.yono-header{display:flex;align-items:center;gap:9px;padding:12px 14px;cursor:grab;user-select:none;
+  background:var(--bg-dark,#000);border-bottom:1px solid var(--border-light,rgba(255,255,255,.15));}
+.yono-header:active{cursor:grabbing;}
+.yono-dot{width:7px;height:7px;border-radius:50%;background:var(--accent-neon,#DFF140);
+  box-shadow:0 0 8px rgba(223,241,64,.8);flex:none;}
+.yono-title{font-family:var(--font-tech,"Space Grotesk",monospace);font-weight:300;font-size:1.02rem;
+  letter-spacing:.32em;color:var(--text-light,#fff);}
+.yono-model{font-family:var(--font-mono,"JetBrains Mono",monospace);font-size:.56rem;padding:3px 8px;
+  border-radius:2px;color:var(--accent-neon,#DFF140);background:none;
+  border:1px solid rgba(223,241,64,.4);text-transform:uppercase;letter-spacing:.08em;
+  max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.yono-status{font-family:var(--font-mono,"JetBrains Mono",monospace);font-size:.56rem;
+  color:var(--text-muted,#71717a);margin-left:6px;text-transform:uppercase;letter-spacing:.06em;}
+.yono-hbtn{background:none;border:none;color:rgba(255,255,255,.45);font-size:15px;cursor:pointer;
+  padding:0 5px;line-height:1;}
+.yono-hbtn:hover{color:var(--text-light,#fff);}
+.yono-spacer{flex:1;}
+.yono-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:11px;scrollbar-width:thin;}
+.yono-msg{max-width:92%;padding:9px 12px;border-radius:2px;font-size:.82rem;line-height:1.6;
+  word-wrap:break-word;white-space:pre-wrap;}
+.yono-msg-user{align-self:flex-end;background:var(--accent-neon,#DFF140);border:1px solid var(--accent-neon,#DFF140);
+  color:var(--text-dark,#000);}
+.yono-msg-user code{background:rgba(0,0,0,.12);}
+.yono-msg-bot{align-self:flex-start;background:rgba(255,255,255,.03);
+  border:1px solid var(--border-light,rgba(255,255,255,.15));color:rgba(255,255,255,.88);}
+.yono-msg-bot.yono-live{border-color:rgba(223,241,64,.35);}
+.yono-msg-bot.yono-live::after{content:'▌';color:var(--accent-neon,#DFF140);margin-left:1px;
+  animation:yono-blink .9s steps(2) infinite;}
+.yono-livetools{align-self:flex-start;display:flex;flex-wrap:wrap;gap:5px;width:94%;}
+.yono-msg-err{align-self:flex-start;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.35);color:#fca5a5;}
+.yono-msg code{background:rgba(223,241,64,.12);padding:1px 4px;border-radius:2px;
+  font-family:var(--font-mono,"JetBrains Mono",monospace);font-size:.74rem;color:#e6f59a;}
+.yono-msg b{color:var(--accent-neon,#DFF140);font-weight:600;}
+.yono-msg-user b{color:#000;font-weight:700;}
+.yono-msg-user code{color:#000;}
+.yono-typing{align-self:flex-start;font-family:var(--font-mono,"JetBrains Mono",monospace);
+  color:var(--text-muted,#71717a);font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;}
+.yono-typing::after{content:'';display:inline-block;width:22px;height:9px;margin-left:6px;vertical-align:-1px;
+  background:repeating-linear-gradient(90deg,var(--accent-neon,#DFF140) 0 2px,transparent 2px 6px);
+  animation:yono-blink 1s steps(4) infinite;}
+@keyframes yono-blink{to{opacity:.25;}}
+.yono-tools{align-self:flex-start;width:94%;border:1px solid rgba(255,255,255,.1);border-radius:2px;background:rgba(0,0,0,.4);}
+.yono-tools summary{cursor:pointer;padding:6px 10px;font-family:var(--font-mono,"JetBrains Mono",monospace);
+  font-size:.58rem;letter-spacing:.12em;color:var(--text-muted,#71717a);
+  list-style:none;text-transform:uppercase;}
+.yono-tools summary::before{content:'▸ ';color:var(--accent-neon,#DFF140);}
+.yono-tools[open] summary::before{content:'▾ ';}
+.yono-toolchips{display:flex;flex-wrap:wrap;gap:5px;padding:2px 10px 9px;}
+.yono-chip{font-family:var(--font-mono,"JetBrains Mono",monospace);font-size:.56rem;padding:2px 7px;
+  border-radius:2px;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.65);letter-spacing:.04em;}
+.yono-chip.denied{border-color:rgba(239,68,68,.5);color:#f87171;}
+.yono-chip.proposed{border-color:rgba(223,241,64,.55);color:var(--accent-neon,#DFF140);}
+.yono-chip.map{border-color:rgba(255,255,255,.3);color:#fff;}
+.yono-card{align-self:flex-start;width:94%;border:1px solid rgba(255,255,255,.12);border-radius:2px;
+  padding:8px 11px;background:rgba(255,255,255,.02);font-size:.74rem;color:rgba(255,255,255,.85);}
+.yono-card .yc-type{font-family:var(--font-mono,"JetBrains Mono",monospace);font-size:.54rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--text-muted,#71717a);}
+.yono-card .yc-pk{font-weight:600;color:var(--text-light,#fff);margin:3px 0;font-size:.78rem;}
+.yono-card .yc-props{color:var(--text-muted,#71717a);}
+.yono-card.yono-hit{border-color:var(--accent-neon,#DFF140);box-shadow:0 0 10px rgba(223,241,64,.25);}
+.yono-proposal{align-self:flex-start;width:94%;border:1px solid rgba(223,241,64,.45);border-radius:2px;
+  padding:9px 11px;background:rgba(223,241,64,.05);font-size:.75rem;color:rgba(255,255,255,.88);}
+.yono-proposal .yp-head{font-family:var(--font-mono,"JetBrains Mono",monospace);font-size:.56rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent-neon,#DFF140);margin-bottom:4px;}
+.yono-proposal .yp-actions{display:flex;gap:7px;margin-top:8px;}
+.yono-proposal button{font-family:var(--font-mono,"JetBrains Mono",monospace);font-size:.62rem;padding:4px 14px;
+  border-radius:2px;cursor:pointer;border:1px solid;text-transform:uppercase;letter-spacing:.08em;}
+.yono-approve{background:var(--accent-neon,#DFF140);color:var(--text-dark,#000);
+  border-color:var(--accent-neon,#DFF140);font-weight:700;}
+.yono-reject{background:none;color:rgba(255,255,255,.6);border-color:rgba(255,255,255,.25);}
+.yono-reject:hover{border-color:#f87171;color:#f87171;}
+.yono-yp-status{font-family:var(--font-mono,"JetBrains Mono",monospace);font-size:.62rem;margin-top:6px;
+  color:var(--text-muted,#71717a);text-transform:uppercase;letter-spacing:.06em;}
+.yono-chips{display:flex;gap:6px;flex-wrap:wrap;padding:0 14px 9px;}
+.yono-schip{font-family:var(--font-mono,"JetBrains Mono",monospace);font-size:.58rem;padding:4px 10px;
+  border-radius:2px;cursor:pointer;text-transform:uppercase;letter-spacing:.07em;
+  border:1px solid rgba(255,255,255,.15);color:var(--text-muted,#71717a);background:none;}
+.yono-schip:hover{border-color:var(--accent-neon,#DFF140);color:var(--accent-neon,#DFF140);}
+.yono-inputrow{display:flex;gap:8px;padding:10px 14px 13px;border-top:1px solid var(--border-light,rgba(255,255,255,.15));
+  background:var(--bg-dark,#000);}
+.yono-inputrow textarea{flex:1;resize:none;background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.15);border-radius:2px;color:var(--text-light,#fff);
+  font:inherit;font-size:.8rem;padding:8px 10px;max-height:90px;outline:none;}
+.yono-inputrow textarea::placeholder{color:var(--text-muted,#71717a);}
+.yono-inputrow textarea:focus{border-color:rgba(223,241,64,.6);}
+.yono-inputrow button{flex:none;width:38px;border-radius:2px;border:none;background:var(--accent-neon,#DFF140);
+  color:var(--text-dark,#000);font-weight:800;cursor:pointer;font-size:.85rem;}
+.yono-inputrow button:disabled{opacity:.4;cursor:default;}
+</style>
+<div id="yono-panel" class="yono-hidden">
+  <div class="yono-header" id="yonoHeader">
+    <span class="yono-dot"></span><span class="yono-title">YONO</span>
+    <span class="yono-model" id="yonoModelBadge">connecting…</span>
+    <span class="yono-status" id="yonoStatus"></span>
+    <span class="yono-spacer"></span>
+    <button class="yono-hbtn" id="yonoMinBtn" title="Minimize">—</button>
+    <button class="yono-hbtn" id="yonoCloseBtn" title="Close">×</button>
+  </div>
+  <div class="yono-body" id="yonoBody"></div>
+  <div class="yono-chips" id="yonoChips"></div>
+  <div class="yono-inputrow">
+    <textarea id="yonoInput" rows="1" placeholder="Ask the ontology…  (Enter to send)"></textarea>
+    <button id="yonoSendBtn">➤</button>
+  </div>
+</div>
+<script>
+(function(){
+"use strict";
+const PANEL=document.getElementById('yono-panel');
+if(!PANEL||PANEL.dataset.booted)return;PANEL.dataset.booted='1';
+const body=document.getElementById('yonoBody'),input=document.getElementById('yonoInput'),
+      sendBtn=document.getElementById('yonoSendBtn'),chipsEl=document.getElementById('yonoChips'),
+      badge=document.getElementById('yonoModelBadge'),statusEl=document.getElementById('yonoStatus');
+const LS_SESSION='yono_sc_session';
+let sessionId=null,busy=false,modelName='';
+
+function apiCall(path,opts){if(typeof window.api==='function')return window.api(path,opts||{});return Promise.reject(new Error('admin api() unavailable'));}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function mdLite(t){let h=esc(t);h=h.replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/`([^`]+)`/g,'<code>$1</code>');
+  return h.split('\n').map(l=>l.startsWith('- ')?'• '+l.slice(2):l).join('\n');}
+function bubble(cls,text){const d=document.createElement('div');d.className='yono-msg '+cls;d.textContent=text===undefined?'':text;body.appendChild(d);body.scrollTop=body.scrollHeight;return d;}
+function botHtml(html){const d=document.createElement('div');d.className='yono-msg yono-msg-bot';d.innerHTML=html;body.appendChild(d);body.scrollTop=body.scrollHeight;return d;}
+
+const PROP_KEYS=['classification','confidence','dominant_winner','timestamp','datetime','date','time',
+  'lat','lon','latitude','longitude','location','action_geo','sourcecountry','country','source',
+  'title','name','battlefield','scenarios_run','seed','theater','status'];
+function propLine(props){
+  if(!props)return '';
+  const seen=[],p=props&&typeof props==='object'?props:{};
+  for(const k of PROP_KEYS){if(k in p&&p[k]!==null&&p[k]!=='')seen.push(k+': '+(typeof p[k]==='object'?JSON.stringify(p[k]):String(p[k])));}
+  for(const k in p){if(seen.length>=6)break;if(!PROP_KEYS.includes(k)&&p[k]!==null&&typeof p[k]!=='object')seen.push(k+': '+String(p[k]));}
+  return seen.join(' · ');
+}
+function objectCards(entries,highlight){
+  const out=[];const seenIds={};
+  for(const e of entries){const r=e.result;if(!r||typeof r!=='object')continue;
+    const lists=[r.objects,r.matches].filter(Array.isArray);
+    for(const list of lists)for(const o of list){
+      if(!o||!o.id||seenIds[o.id])continue;seenIds[o.id]=1;
+      const hit=highlight&&highlight.some(pk=>String(o.primary_key).toLowerCase().includes(String(pk).toLowerCase()));
+      out.push({html:'<div class="yono-card'+(hit?' yono-hit':'')+'"><div class="yc-type">'+esc(o.type||'object')+'</div>'
+        +'<div class="yc-pk">'+esc(o.primary_key||o.id)+'</div>'
+        +(propLine(o.properties)?'<div class="yc-props">'+esc(propLine(o.properties))+'</div>':'')
+        +(o.updated_at?'<div class="yc-props" style="font-size:.62rem;opacity:.7">updated '+esc(o.updated_at)+'</div>':'')
+        +'</div>',pk:o.primary_key});
+    }
+  }
+  return out;
+}
+function collectDirectives(entries){
+  const dirs=[];
+  for(const e of entries){const r=e.result;if(r&&r.directive)dirs.push(r.directive);}
+  return dirs;
+}
+function applyDirective(d){
+  const map=window.fusionMap;if(!map)return false;
+  try{
+    if(d.op==='fly_to'){map.flyTo({center:d.center,zoom:d.zoom,duration:1200});return true;}
+    if(d.op==='fit_bounds'){map.fitBounds(d.bounds,{padding:60,maxZoom:9});return true;}
+    if(d.op==='toggle_layer'){
+      if(d.layer==='sims-ontology'){if(window.GAIA&&typeof window.GAIA.setLayer==='function'){window.GAIA.setLayer('sims-ontology',d.visible!==false);return true;}return false;}
+      if(typeof window.fusionToggleLayer==='function'){window.fusionToggleLayer(d.layer);return true;}
+      return false;}
+    if(d.op==='highlight'){
+      const evts=(window.fusionThreatEvents||[]).concat(window.fusionFlights||[]);
+      for(const pk of (d.primary_keys||[])){
+        const needle=String(pk).toLowerCase();
+        const ev=evts.find(v=>{const hay=((v&&(v.title||v.name||v.callsign||v.id))||'')+'';return hay.toLowerCase().includes(needle);});
+        const c=ev&&(ev.coordinates||ev.coords);
+        if(Array.isArray(c)&&c.length>=2&&isFinite(c[0])&&isFinite(c[1])){
+          const lnglat=(Math.abs(c[0])<=90&&Math.abs(c[1])<=180)?[c[1],c[0]]:c;
+          map.flyTo({center:lnglat,zoom:Math.max(map.getZoom(),7),duration:1200});
+          return true;}
+      }
+      return false;}
+  }catch(err){}
+  return false;
+}
+
+function renderAssistant(resp){
+  if(resp.session_id){sessionId=resp.session_id;try{localStorage.setItem(LS_SESSION,String(resp.session_id));}catch(e){}}
+  if(resp.response&&resp.response.trim())botHtml(mdLite(resp.response));
+  const tc=resp.tool_calls||[];
+  if(!tc.length)return;
+  const wrap=document.createElement('details');wrap.className='yono-tools';
+  const denied=tc.filter(t=>t.denied).length,proposed=tc.filter(t=>t.proposed).length;
+  wrap.innerHTML='<summary>'+tc.length+' tool call'+(tc.length>1?'s':'')
+    +(denied?' · '+denied+' denied':'')+(proposed?' · '+proposed+' proposed':'')+'</summary>';
+  const chipsRow=document.createElement('div');chipsRow.className='yono-toolchips';
+  for(const t of tc){const c=document.createElement('span');
+    c.className='yono-chip'+(t.denied?' denied':t.proposed?' proposed':'');
+    c.textContent=t.tool+(t.denied?' ✕':t.proposed?' ⏳':'');chipsRow.appendChild(c);}
+  wrap.appendChild(chipsRow);body.appendChild(wrap);
+  let highlight=null;
+  for(const t of tc){if(!t.denied&&t.args&&Array.isArray(t.args.primary_keys))highlight=t.args.primary_keys;}
+  const dirs=collectDirectives(tc);
+  for(const d of dirs){applyDirective(d);const c=document.createElement('span');c.className='yono-chip map';c.textContent='map: '+d.op;chipsRow.appendChild(c);}
+  for(const card of objectCards(tc,highlight))body.insertAdjacentHTML('beforeend',card.html);
+  for(const t of tc){if(t.proposed&&t.proposal_id)renderProposal(t);}
+  body.scrollTop=body.scrollHeight;
+}
+function renderProposal(entry){
+  const a=(entry.result&&entry.result.missing_required_parameters)||[];
+  const args=(entry.args&&entry.args.parameters)||{};
+  const d=document.createElement('div');d.className='yono-proposal';
+  d.innerHTML='<div class="yp-head">Action proposal · '+esc(entry.args.action_name||'')+'</div>'
+    +'<div>'+esc(Object.keys(args).map(k=>k+': '+args[k]).join(' · ')||'(no parameters)')+'</div>'
+    +(a.length?'<div style="color:#fca5a5;font-size:.68rem;margin-top:3px">missing: '+esc(a.join(', '))+'</div>':'')
+    +'<div class="yp-actions"><button class="yono-approve">Confirm</button><button class="yono-reject">Reject</button></div>';
+  const st=document.createElement('div');st.className='yono-yp-status';d.appendChild(st);
+  const pid=entry.proposal_id;
+  d.querySelector('.yono-approve').onclick=async function(){
+    this.disabled=true;d.querySelector('.yono-reject').disabled=true;
+    st.textContent='executing…';
+    try{const r=await apiCall('/yono/proposals/'+pid+'/confirm',{method:'POST',timeout:300000});
+      st.textContent=r.status==='succeeded'?'executed':'status: '+r.status+(r.error?(' · '+r.error):'');
+      if(r.status==='succeeded'&&window.renderFusionMap)setTimeout(function(){try{window.renderFusionMap();}catch(e){}},400);
+    }catch(e){this.disabled=false;st.textContent='failed: '+e.message;}
+  };
+  d.querySelector('.yono-reject').onclick=async function(){
+    this.disabled=true;d.querySelector('.yono-approve').disabled=true;
+    try{await apiCall('/yono/proposals/'+pid+'/reject',{method:'POST'});st.textContent='rejected';}
+    catch(e){st.textContent='reject failed: '+e.message;}
+  };
+  body.appendChild(d);body.scrollTop=body.scrollHeight;
+}
+
+async function send(text){
+  text=(text||'').trim();if(!text||busy)return;busy=true;sendBtn.disabled=true;
+  bubble('yono-msg-user',text);
+  const typing=document.createElement('div');typing.className='yono-typing';
+  const t0=Date.now();typing.textContent='consulting ontology · 0s';body.appendChild(typing);body.scrollTop=body.scrollHeight;
+  let tickOn=true;const tick=setInterval(function(){if(tickOn)typing.textContent='consulting ontology · '+Math.round((Date.now()-t0)/1000)+'s';},1000);
+  const haltTick=function(){tickOn=false;clearInterval(tick);if(typing.parentNode)typing.remove();};
+  let live=null,liveTools=null;
+  const onEvt=function(evt){
+    if(evt.type==='delta'){
+      haltTick();
+      if(!live){live=document.createElement('div');live.className='yono-msg yono-msg-bot yono-live';body.appendChild(live);}
+      live.textContent+=evt.text;body.scrollTop=body.scrollHeight;
+    }else if(evt.type==='tool'){
+      if(!live){live=document.createElement('div');live.className='yono-msg yono-msg-bot';body.appendChild(live);}
+      if(!liveTools){liveTools=document.createElement('div');liveTools.className='yono-livetools';body.appendChild(liveTools);}
+      const c=document.createElement('span');c.className='yono-chip'+(evt.entry.denied?' denied':evt.entry.proposed?' proposed':'');
+      c.textContent=evt.entry.tool+(evt.entry.denied?' ✕':evt.entry.proposed?' ⏳':'');liveTools.appendChild(c);body.scrollTop=body.scrollHeight;
+    }else if(evt.type==='status'&&tickOn){typing.textContent=evt.text+' · '+Math.round((Date.now()-t0)/1000)+'s';}
+  };
+  let ok=false,streamErr=null;
+  try{
+    if(typeof window.apiStream==='function'){
+      const payload={message:text};if(sessionId)payload.session_id=sessionId;
+      const resp=await window.apiStream('/yono/panel/chat/stream',{body:JSON.stringify(payload),timeout:300000},onEvt);
+      haltTick();if(live)live.remove();if(liveTools)liveTools.remove();
+      renderAssistant(resp);ok=true;
+    }
+  }catch(e){streamErr=e;}
+  if(!ok){
+    haltTick();
+    try{
+      const payload={message:text};if(sessionId)payload.session_id=sessionId;
+      const resp=await apiCall('/yono/panel/chat',{method:'POST',body:JSON.stringify(payload),timeout:300000});
+      if(live)live.remove();if(liveTools)liveTools.remove();
+      renderAssistant(resp);
+    }catch(e){
+      if(live)live.remove();if(liveTools)liveTools.remove();
+      bubble('yono-msg-err','YONO unavailable: '+((streamErr&&streamErr.message)||e.message));
+    }
+  }
+  busy=false;sendBtn.disabled=false;input.focus();
+}
+
+['Latest activity','Ontology overview','Show theaters and forces','Find hypersonic mentions','Run a battle simulation']
+.forEach(q=>{const c=document.createElement('span');c.className='yono-schip';c.textContent=q;
+  c.onclick=function(){input.value=q;send(q);};chipsEl.appendChild(c);});
+
+sendBtn.onclick=function(){send(input.value);input.value='';};
+input.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send(input.value);input.value='';}});
+document.addEventListener('keydown',function(e){
+  if((e.ctrlKey||e.metaKey)&&e.shiftKey&&String.fromCharCode(e.which).toUpperCase()==='Y'){e.preventDefault();toggle();}
+});
+document.getElementById('yonoCloseBtn').onclick=close;
+document.getElementById('yonoMinBtn').onclick=minimize;
+
+let fx=0,fy=0,dragging=false,sx=0,sy=0,sr=0,st=0;
+document.getElementById('yonoHeader').addEventListener('pointerdown',function(e){
+  if(e.target.closest('.yono-hbtn'))return;dragging=true;sx=e.clientX;sy=e.clientY;
+  const r=PANEL.getBoundingClientRect();sr=window.innerWidth-r.right;st=r.top;
+  document.getElementById('yonoHeader').setPointerCapture(e.pointerId);
+});
+document.getElementById('yonoHeader').addEventListener('pointermove',function(e){
+  if(!dragging)return;
+  const nr=Math.max(8,Math.min(window.innerWidth-120,sr-(e.clientX-sx)));
+  const nt=Math.max(8,Math.min(window.innerHeight-60,st+(e.clientY-sy)));
+  PANEL.style.right=nr+'px';PANEL.style.top=nt+'px';
+});
+document.getElementById('yonoHeader').addEventListener('pointerup',function(){dragging=false;});
+
+function open(){PANEL.classList.remove('yono-hidden','yono-min');setTimeout(function(){input.focus();},300);
+  if(!sessionId)boot();}
+function close(){PANEL.classList.add('yono-hidden');}
+function minimize(){PANEL.classList.add('yono-min');}
+function toggle(){PANEL.classList.contains('yono-hidden')?open():close();}
+
+async function replayHistory(){
+  if(!sessionId)return false;
+  try{
+    const h=await apiCall('/yono/panel/history?session_id='+encodeURIComponent(sessionId));
+    for(const m of h.messages){
+      if(m.role==='user')bubble('yono-msg-user',m.content);
+      else botHtml(mdLite(m.content));
+    }
+    return h.messages.length>0;
+  }catch(e){
+    try{localStorage.removeItem(LS_SESSION);}catch(_){}
+    sessionId=null;return false;
+  }
+}
+
+async function boot(){
+  try{
+    const s=await apiCall('/yono/panel/status');
+    modelName=(s.model&&(s.model.display_name||s.model.model_id))||'no model';
+    badge.textContent=modelName;
+    statusEl.textContent=s.open_proposals?('· '+s.open_proposals+' open proposal'+(s.open_proposals>1?'s':'')):'';
+    if(!sessionId){try{sessionId=localStorage.getItem(LS_SESSION)||null;}catch(e){}}
+    if(sessionId){
+      const had=await replayHistory();
+      if(had)return;
+    }
+    botHtml('<b>'+esc(s.agent?s.agent.display_name:'YONO')+'</b> online — grounded in the Spinal Cracker ontology'
+      +'('+((s.agent&&s.agent.allowed_object_types)||[]).length+' readable types)'
+      +'. Ask about objects, links, latest activity, or propose governed actions.');
+  }catch(e){badge.textContent='offline';badge.style.background='rgba(255,255,255,.2)';
+    bubble('yono-msg-err','Cannot reach YONO service: '+e.message);}
+}
+try{sessionId=localStorage.getItem(LS_SESSION);}catch(e){}
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',boot);}else{boot();}
+window.YONO={open:open,close:close,toggle:toggle,minimize:minimize,
+  get isOpen(){return !PANEL.classList.contains('yono-hidden');},
+  get sessionId(){return sessionId;}};
+})();
+</script>
 </body>
 
 </html>

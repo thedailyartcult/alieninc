@@ -20,12 +20,18 @@ duplicate imagery would make ambiguous game answers. Entries with no image are
 reported as unresolved and excluded. A manual blocklist
 (data/play-blocklist.json, list of designations) survives regeneration.
 
+With expand_to=N the pool is topped up beyond the curated picklist: extra
+catalog entries are drawn round-robin across category files in data/
+(deterministic seeded shuffle within each category), resolved through the same
+cache/guards, and tagged origin="expanded" in play.json.
+
 Output: <site-root>/data/play.json — consumed by play.html at the site root.
 """
 
 from __future__ import annotations
 
 import json
+import random
 import re
 import time
 import urllib.parse
@@ -281,7 +287,34 @@ def resolve_entry(client: WikiClient, entry: dict) -> tuple[dict | None, str]:
     return (None, "no-image") if scored else (None, "no-wikipedia-image")
 
 
-def build_play_dataset(s: Settings, force_refresh: bool = False) -> dict:
+def _expansion_pools(site_data: Path, blocked: set[str],
+                     used: set[str]) -> dict[str, list[dict]]:
+    """Eligible extra entries per category key for pool expansion.
+
+    Reads every data/<category_key>.json catalog file (read-only), drops
+    blocked / already-attempted designations, then seeded-shuffles each pool
+    so expansion order is deterministic across reruns."""
+    cats = json.loads(
+        (site_data / "categories.json").read_text(encoding="utf-8"))["categories"]
+    rng = random.Random(20260824)
+    pools: dict[str, list[dict]] = {}
+    for c in cats:
+        f = site_data / f"{c['key']}.json"
+        if not f.exists():
+            continue
+        data = json.loads(f.read_text(encoding="utf-8"))
+        cand = [e for e in data.get("entries", [])
+                if e.get("designation", "").strip()
+                and e["designation"].strip() not in blocked
+                and e["designation"].strip() not in used]
+        rng.shuffle(cand)
+        if cand:
+            pools[c["key"]] = cand
+    return pools
+
+
+def build_play_dataset(s: Settings, force_refresh: bool = False,
+                       expand_to: int = 0) -> dict:
     site_data = s.root.parent / "data"
     picklist_path = site_data / "picklist.json"
     out_path = site_data / "play.json"
@@ -303,13 +336,18 @@ def build_play_dataset(s: Settings, force_refresh: bool = False) -> dict:
     unresolved: list[dict] = []
     duplicates_dropped: list[str] = []
     seen_titles: set[str] = set()
+    attempted: set[str] = set()
     cache_dirty = False
 
-    for i, e in enumerate(entries):
+    def resolve_and_append(e: dict, origin: str) -> str:
+        """Shared resolution path for curated and expanded entries.
+        Returns one of: added, unresolved, duplicate, blocked."""
+        nonlocal cache_dirty
         desig = e.get("designation", "").strip()
         cat = e.get("category", "")
         if not desig or desig in blocked:
-            continue
+            return "blocked"
+        attempted.add(desig)
         try:
             key = category_key(cat)
         except KeyError:
@@ -325,10 +363,10 @@ def build_play_dataset(s: Settings, force_refresh: bool = False) -> dict:
 
         if rec is None:
             unresolved.append({"designation": desig, "reason": status})
-            continue
+            return "unresolved"
         if rec["wiki_title"] in seen_titles:
             duplicates_dropped.append(f"{desig} == {rec['wiki_title']}")
-            continue
+            return "duplicate"
         seen_titles.add(rec["wiki_title"])
         items.append({
             "id": _slug(desig, len(items)),
@@ -345,16 +383,40 @@ def build_play_dataset(s: Settings, force_refresh: bool = False) -> dict:
             "image_h": rec.get("height"),
             "credit_artist": rec.get("artist", ""),
             "credit_license": rec.get("license", ""),
+            "origin": origin,
         })
+        return "added"
+
+    for e in entries:
+        resolve_and_append(e, "curated")
+
+    curated_count = len(items)
+    expanded_count = 0
+    if expand_to > curated_count:
+        pools = _expansion_pools(site_data, blocked, attempted)
+        keys = sorted(pools)
+        while len(items) < expand_to and pools:
+            for k in list(keys):
+                if len(items) >= expand_to:
+                    break
+                lst = pools.get(k)
+                if not lst:
+                    pools.pop(k, None)
+                    continue
+                resolve_and_append(lst.pop(0), "expanded")
+                expanded_count = len(items) - curated_count
 
     if cache_dirty:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         cache_path.write_text(json.dumps(cache, ensure_ascii=False), encoding="utf-8")
 
     dataset = {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "source": "curated flagship picklist -> en.wikipedia lead images",
+        "source": ("curated flagship picklist -> en.wikipedia lead images"
+                   if not expanded_count else
+                   "curated flagship picklist + catalog expansion -> "
+                   "en.wikipedia lead images"),
         "count": len(items),
         "items": items,
     }
@@ -368,6 +430,8 @@ def build_play_dataset(s: Settings, force_refresh: bool = False) -> dict:
         "picklist_entries": len(entries),
         "blocked": sorted(blocked & {e.get("designation", "") for e in entries}),
         "resolved": len(items),
+        "curated": curated_count,
+        "expanded": expanded_count,
         "by_category": by_cat,
         "unresolved": unresolved,
         "duplicates_dropped": duplicates_dropped,

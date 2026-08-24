@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 from contextlib import asynccontextmanager
@@ -46,6 +47,19 @@ PANTEON_SITE = Path(os.path.dirname(__file__)).parent.parent
 async def lifespan(app: FastAPI):
     await init_db()
     start_autopull()
+    # Idempotent bootstrap of the Spinal Cracker YONO panel agent.
+    # (on_event handlers are ignored because this app passes an explicit
+    # lifespan — seeding must live here.)
+    try:
+        from panteon.core.database import async_session
+        from panteon.yono.sc_agent_seed import ensure_sc_yono_agent
+
+        async with async_session() as db:
+            await ensure_sc_yono_agent(db)
+            await db.commit()
+    except Exception as exc:  # noqa: BLE001 — boot must never depend on seeding
+        logging.getLogger("panteon.yono.sc_seed").warning(
+            "YONO panel agent seed skipped: %s", exc)
     yield
     await stop_autopull()
 

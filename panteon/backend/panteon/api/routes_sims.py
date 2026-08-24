@@ -228,7 +228,7 @@ async def sims_ontology_flashpoint(request: Request,
         "seed": body.get("seed", 42),
     }
     report = await _gateway("POST", "kriegspiel/run", request, payload)
-    if not report.get("error"):
+    if not report.get("error") and body.get("emit_ontology", True):
         report["ontology"] = await _emit_ontology(
             db, report, user, mode="flashpoint",
             source_event=body.get("source_event"),
@@ -251,7 +251,8 @@ async def sims_kriegspiel_run(request: Request,
         "seed": body.get("seed", 42),
     }
     report = await _gateway("POST", "kriegspiel/run", request, payload)
-    if not report.get("error"):
+    # SIMS-local sandbox runs may opt out of ontology writeback entirely.
+    if not report.get("error") and body.get("emit_ontology", True):
         report["ontology"] = await _emit_ontology(db, report, user, mode="battle",
                                                   battlefield=payload["battlefield"])
     return report
@@ -285,7 +286,8 @@ async def sims_kriegspiel_campaign(request: Request,
         }
         campaign["ontology"] = await _emit_ontology(
             db, report, user, mode="campaign",
-            battlefield=report.get("battlefield"))
+            battlefield=report.get("battlefield")) if body.get("emit_ontology", True) \
+        else {"skipped": "emit_ontology=false (SIMS sandbox)"}
     return campaign
 
 
@@ -335,7 +337,8 @@ async def sims_chronos_replay(request: Request,
         }
         report["ontology"] = await _emit_ontology(
             db, summary_report, user, mode="chronos-replay",
-            battlefield=battle.get("name"))
+            battlefield=battle.get("name")) if body.get("emit_ontology", True) \
+        else {"skipped": "emit_ontology=false (SIMS sandbox)"}
     return report
 
 
@@ -371,7 +374,8 @@ async def sims_chronos_what_if(request: Request,
         }
         result["ontology"] = await _emit_ontology(
             db, summary_report, user, mode="chronos-what-if",
-            battlefield=base.get("name"))
+            battlefield=base.get("name")) if body.get("emit_ontology", True) \
+        else {"skipped": "emit_ontology=false (SIMS sandbox)"}
     return result
 
 

@@ -19,6 +19,7 @@ from typing import Optional
 
 from .engine import simulate_historical
 from .models import HistoricalBattle
+from .doctrines import resolve_doctrine
 
 DEFAULT_WINNER_FIDELITY = 0.60
 DEFAULT_CASUALTY_TOLERANCE = 0.55   # +/- 55% relative band on casualty fraction
@@ -72,6 +73,15 @@ def fidelity_report(battle: HistoricalBattle, universes: int = 500,
         "year": battle.year,
         "actual_winner": actual_winner,
         "predicted_winner": sim["predicted_winner"],
+        # Doctrinal attribution: each side's practiced method for this year.
+        "doctrines": {
+            "attacker": (lambda d: None if d.key == "generic-contemporary" else d.to_dict())(
+                resolve_doctrine(battle.attacker.actors[0] if battle.attacker.actors else "",
+                                 battle.year)),
+            "defender": (lambda d: None if d.key == "generic-contemporary" else d.to_dict())(
+                resolve_doctrine(battle.defender.actors[0] if battle.defender.actors else "",
+                                 battle.year)),
+        },
         "win_distribution": sim["win_distribution"],
         "convergence": sim["convergence"],
         "simulated_attacker_casualty_fraction": round(att_sim_frac, 4) if att_sim_frac else None,

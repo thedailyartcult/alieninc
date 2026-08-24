@@ -778,7 +778,8 @@ def cmd_build_web(args, s: Settings):
 def cmd_build_play(args, s: Settings):
     """Resolve one verified Wikipedia lead image per curated flagship entry
     and write the identification-game dataset (data/play.json)."""
-    report = build_play_dataset(s, force_refresh=args.requery)
+    report = build_play_dataset(s, force_refresh=args.requery,
+                                expand_to=args.expand)
     print(json.dumps(report, indent=2))
 
 
@@ -831,6 +832,9 @@ def main(argv=None):
                              "lead image for every curated flagship picklist entry")
     bp.add_argument("--requery", action="store_true",
                     help="ignore the resolution cache and re-query Wikipedia")
+    bp.add_argument("--expand", type=int, default=0, metavar="N",
+                    help="top the pool up to N total items with extra catalog "
+                         "entries resolved through the same Wikipedia pipeline")
     _add_common(bp)
     fp = sub.add_parser("patent-feed", help="enqueue patent pub-numbers as google-patents URLs")
     fp.add_argument("--query", default="guided missile defense", help="search text for the API feed")

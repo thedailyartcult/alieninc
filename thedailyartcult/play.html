@@ -253,17 +253,17 @@ header p{
 #choices{display:flex;flex-direction:column;gap:7px;flex:1;justify-content:center;padding:0 18px;}
 .choice-btn{
   position:relative;width:100%;
-  padding:14px 14px 14px 42px;
+  padding:15px 14px 15px 48px;
   border:1px solid var(--border);background:transparent;
   font-family:'Montserrat',sans-serif;font-weight:300;
-  font-size:.52rem;letter-spacing:.18em;text-transform:uppercase;
+  font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;
   cursor:pointer;text-align:left;color:var(--cream-mid);
   transition:border-color .2s,background .2s,color .2s,transform .15s;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .choice-btn .btn-num{
   position:absolute;left:14px;top:50%;transform:translateY(-50%);
-  font-size:.36rem;letter-spacing:.08em;color:var(--gold-dim);
+  font-size:.46rem;letter-spacing:.08em;color:var(--gold-dim);
 }
 .choice-btn:hover:not(:disabled){
   border-color:var(--gold);background:var(--gold-glow);
@@ -347,9 +347,9 @@ header p{
 #collectionSwitcher{
   flex-shrink:0;margin:18px 18px 0;
   padding-top:16px;border-top:1px solid var(--border-mid);
-  padding-bottom:18px;display:none;
+  padding-bottom:18px;display:block;
 }
-#collectionSwitcher.konami-unlocked{display:block;animation:konamiReveal .6s cubic-bezier(.22,1,.36,1);}
+#collectionSwitcher.konami-unlocked{animation:konamiReveal .6s cubic-bezier(.22,1,.36,1);}
 @keyframes konamiReveal{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 #collectionSwitcher p{
   font-size:.36rem;letter-spacing:.34em;text-transform:uppercase;
@@ -357,12 +357,12 @@ header p{
 }
 #collectionBtns{
   display:flex;flex-wrap:wrap;gap:5px;justify-content:center;
-  max-height:130px;overflow-y:auto;padding:2px;
+  max-height:160px;overflow-y:auto;padding:2px;
 }
 .col-chip{
   font-family:'Montserrat',sans-serif;font-weight:300;
-  font-size:.34rem;letter-spacing:.14em;text-transform:uppercase;
-  padding:4px 9px;border:1px solid var(--border);
+  font-size:.44rem;letter-spacing:.12em;text-transform:uppercase;
+  padding:5px 10px;border:1px solid var(--border);
   background:transparent;color:var(--cream-dim);cursor:pointer;transition:all .2s;
 }
 .col-chip:hover{border-color:var(--gold-dim);color:var(--ink);}
@@ -1191,7 +1191,8 @@ let konamiProgress = 0;
 let konamiUnlocked = false;
 
 document.addEventListener('keydown', e => {
-  if (e.key === KONAMI[konamiProgress]) {
+  const pressed = typeof e.key === 'string' ? e.key.toLowerCase() : e.key;
+  if (pressed === KONAMI[konamiProgress].toLowerCase()) {
     konamiProgress++;
     if (konamiProgress === KONAMI.length) {
       konamiProgress = 0;
@@ -1203,7 +1204,7 @@ document.addEventListener('keydown', e => {
       }
     }
   } else {
-    konamiProgress = (e.key === KONAMI[0]) ? 1 : 0;
+    konamiProgress = (pressed === KONAMI[0].toLowerCase()) ? 1 : 0;
   }
 });
 
@@ -1283,7 +1284,7 @@ document.addEventListener('keydown',e=>{if(e.key==='F12'||(e.ctrlKey&&e.shiftKey
 /* ══════════════════════════════════════════════
    PAINTER DATABASE
 ══════════════════════════════════════════════ */
-const PAINTERS_MASTER=[
+const PAINTERS_FALLBACK=[
   {id:"monet",name:"Claude Monet",category:"Paintings_by_Claude_Monet",tags:["full","popular","french","impressionist"],nationality:"French",born:1840,died:1926},
   {id:"vangogh",name:"Vincent van Gogh",category:"Paintings_by_Vincent_van_Gogh",tags:["full","popular","dutch","post-impressionist"],nationality:"Dutch",born:1853,died:1890},
   {id:"picasso",name:"Pablo Picasso",category:"Paintings_by_Pablo_Picasso",tags:["full","popular","spanish","modern"],nationality:"Spanish",born:1881,died:1973},
@@ -1328,7 +1329,35 @@ const PAINTERS_MASTER=[
   {id:"michelangelo",name:"Michelangelo",category:"Paintings_by_Michelangelo",tags:["full","popular","italian","renaissance"],nationality:"Italian",born:1475,died:1564}
 ];
 
-const ALLOWED_COLLECTIONS=["full","popular","american","austrian","baroque","british","dutch","expressionist","french","german","impressionist","italian","portrait","post-impressionist","realist","renaissance","romantic","spanish"];
+let PAINTERS_MASTER=PAINTERS_FALLBACK;
+
+async function loadPainters(){
+  try{
+    const res=await fetch('assets/data/painters.json');
+    if(!res.ok)return;
+    const data=await res.json();
+    if(!Array.isArray(data.painters))return;
+    const clean=data.painters.filter(p=>p&&p.id&&p.name&&p.category&&Number.isFinite(p.born)&&Number.isFinite(p.died));
+    if(clean.length>PAINTERS_FALLBACK.length){
+      clean.forEach(p=>{if(!Array.isArray(p.tags)||!p.tags.includes('full'))p.tags=['full',...(p.tags||[])];});
+      PAINTERS_MASTER=clean;
+    }
+  }catch(e){
+    console.warn('painters.json unavailable, using embedded fallback roster:',e);
+  }
+}
+
+const CORE_COLLECTIONS=["full","popular","american","austrian","baroque","british","dutch","expressionist","french","german","impressionist","italian","portrait","post-impressionist","realist","renaissance","romantic","spanish"];
+let COLLECTIONS=[...CORE_COLLECTIONS];
+
+function rebuildCollections(){
+  const counts={};
+  PAINTERS_MASTER.forEach(p=>{(p.tags||[]).forEach(t=>{counts[t]=(counts[t]||0)+1;});});
+  counts.full=PAINTERS_MASTER.length;
+  COLLECTIONS=['full'];
+  if(counts.popular)COLLECTIONS.push('popular');
+  Object.keys(counts).filter(t=>t!=='full'&&t!=='popular').sort().forEach(t=>COLLECTIONS.push(t));
+}
 
 /* ══════════════════════════════════════════════
    DAILY THEME
@@ -1340,7 +1369,7 @@ async function fetchDailyTheme(){
   try{
     const today=new Date().toISOString().slice(0,10);
     const themes=await sbSelect('daily_themes',`theme_date=eq.${today}&select=theme_tag`);
-    if(themes&&themes.length>0&&ALLOWED_COLLECTIONS.includes(themes[0].theme_tag)){
+    if(themes&&themes.length>0&&COLLECTIONS.includes(themes[0].theme_tag)){
       currentDailyTheme=themes[0].theme_tag;
       isDailyThemeActive=true;
       revealDailyTheme(currentDailyTheme);
@@ -1381,28 +1410,29 @@ let streak=0;
 let answered=false;
 let isLoading=false;
 let recentPainters=[];
-const MAX_RECENT_PAINTERS=15;
+let maxRecentPainters=15;
+function updateRecencyWindow(){maxRecentPainters=Math.max(15,Math.min(250,Math.round(activePainters.length*0.15)));}
 let paintingsCache=new Map();
 let perPainterArtHistory=new Map();
 const MAX_ART_HISTORY=8;
 let currentPaintingUrl='';
 let currentPaintingTitle='';
 
-async function fetchPaintingsForPainter(painter){if(paintingsCache.has(painter.id))return paintingsCache.get(painter.id);const url=`https://commons.wikimedia.org/w/api.php?action=query&generator=categorymembers&gcmtitle=Category:${encodeURIComponent(painter.category)}&gcmtype=file&gcmlimit=45&prop=imageinfo&iiprop=url|dimensions&iiurlwidth=800&format=json&origin=*`;try{const res=await fetch(url);const data=await res.json();if(!data.query?.pages)return[];const paintings=[];for(const page of Object.values(data.query.pages)){if(page.imageinfo?.[0]?.thumburl){const info=page.imageinfo[0];if(info.width>220&&info.height>160)paintings.push({title:page.title.replace(/^File:/,'').replace(/\.(jpg|jpeg|png)$/i,'').replace(/_/g,' ').substring(0,80),url:info.thumburl});}}for(let i=paintings.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[paintings[i],paintings[j]]=[paintings[j],paintings[i]];}paintingsCache.set(painter.id,paintings);return paintings;}catch(e){return[];}}
+async function fetchPaintingsForPainter(painter){if(paintingsCache.has(painter.id))return paintingsCache.get(painter.id);let paintings=null;try{const res=await fetch('assets/painters/'+painter.id+'/manifest.json');if(res.ok){const m=await res.json();if(Array.isArray(m.paintings)&&m.paintings.length){paintings=m.paintings.map(p=>({title:p.title,url:p.url}));}}}catch(e){}if(!paintings){const url=`https://commons.wikimedia.org/w/api.php?action=query&generator=categorymembers&gcmtitle=Category:${encodeURIComponent(painter.category)}&gcmtype=file&gcmlimit=45&prop=imageinfo&iiprop=url|dimensions&iiurlwidth=800&format=json&origin=*`;try{const res=await fetch(url);const data=await res.json();if(!data.query?.pages)return[];paintings=[];for(const page of Object.values(data.query.pages)){if(page.imageinfo?.[0]?.thumburl){const info=page.imageinfo[0];if(info.width>220&&info.height>160)paintings.push({title:page.title.replace(/^File:/,'').replace(/\.(jpg|jpeg|png)$/i,'').replace(/_/g,' ').substring(0,80),url:info.thumburl});}}}catch(e){return[];}}for(let i=paintings.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[paintings[i],paintings[j]]=[paintings[j],paintings[i]];}paintingsCache.set(painter.id,paintings);return paintings;}
 function getFreshPainting(painter,paintings){if(!paintings.length)return null;const history=perPainterArtHistory.get(painter.id)||[];const unseen=paintings.filter(p=>!history.includes(p.url));let chosen;if(unseen.length===0){perPainterArtHistory.set(painter.id,[]);chosen=paintings[Math.floor(Math.random()*paintings.length)];}else{chosen=unseen[Math.floor(Math.random()*unseen.length)];}let newHist=[...history,chosen.url];if(newHist.length>MAX_ART_HISTORY)newHist=newHist.slice(-MAX_ART_HISTORY);perPainterArtHistory.set(painter.id,newHist);return chosen;}
 function getFreshPainter(availablePainters){const eligible=availablePainters.filter(p=>!recentPainters.includes(p.id));if(eligible.length===0){recentPainters=[];return availablePainters[Math.floor(Math.random()*availablePainters.length)];}return eligible[Math.floor(Math.random()*eligible.length)];}
-function getFreshWrongChoices(correctPainter,allPainters,count=3){const recentSet=new Set(recentPainters);recentSet.add(correctPainter.id);let candidates=allPainters.filter(p=>!recentSet.has(p.id)&&p.id!==correctPainter.id);if(candidates.length<count)candidates=allPainters.filter(p=>p.id!==correctPainter.id);for(let i=candidates.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[candidates[i],candidates[j]]=[candidates[j],candidates[i]];}return candidates.slice(0,count);}
+function getFreshWrongChoices(correctPainter,allPainters,count=3){const recentSet=new Set(recentPainters);recentSet.add(correctPainter.id);const notRecent=allPainters.filter(p=>!recentSet.has(p.id)&&p.id!==correctPainter.id);const sameEra=notRecent.filter(p=>Math.abs((p.born||0)-(correctPainter.born||0))<=60);let candidates=sameEra.length>=count?sameEra:notRecent;if(candidates.length<count)candidates=allPainters.filter(p=>p.id!==correctPainter.id);for(let i=candidates.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[candidates[i],candidates[j]]=[candidates[j],candidates[i]];}return candidates.slice(0,count);}
 function buildStreakDots(){const el=document.getElementById('streakDots');el.innerHTML='';for(let i=0;i<10;i++){const d=document.createElement('div');d.className='dot';d.id='dot-'+i;el.appendChild(d);}}
 function updateDots(){for(let i=0;i<10;i++){const dot=document.getElementById('dot-'+i);if(dot)dot.className='dot'+(i<streak?' filled':'');}}
 async function loadPainting(painter){const canvas=document.getElementById('paintingCanvas');const ctx=canvas.getContext('2d');canvas.width=700;canvas.height=400;ctx.clearRect(0,0,700,400);const loader=document.getElementById('paintLoader');if(loader){loader.classList.add('visible');}const paintings=await fetchPaintingsForPainter(painter);if(!paintings.length){if(loader)loader.classList.remove('visible');return false;}const painting=getFreshPainting(painter,paintings);if(!painting){if(loader)loader.classList.remove('visible');return false;}currentPaintingUrl=painting.url;currentPaintingTitle=painting.title;return new Promise((resolve)=>{const img=new Image();img.onload=()=>{const col=document.getElementById('paintingCol');const availW=col?col.clientWidth-20:window.innerWidth-340;const availH=col?col.clientHeight-30:window.innerHeight-90;let scale=Math.min(availW/img.width,availH/img.height,1);canvas.width=Math.max(180,Math.round(img.width*scale));canvas.height=Math.max(140,Math.round(img.height*scale));canvas.style.width=canvas.width+'px';canvas.style.height=canvas.height+'px';ctx.drawImage(img,0,0,canvas.width,canvas.height);if(loader)loader.classList.remove('visible');resolve(true);};img.onerror=()=>{if(loader)loader.classList.remove('visible');resolve(false);};img.src=painting.url;});}
-async function nextRound(){if(answered||isLoading)return;if(!activePainters.length)return;isLoading=true;currentPainter=getFreshPainter(activePainters);const success=await loadPainting(currentPainter);if(!success){isLoading=false;answered=false;setTimeout(()=>nextRound(),400);return;}recentPainters.push(currentPainter.id);if(recentPainters.length>MAX_RECENT_PAINTERS)recentPainters.shift();const wrongs=getFreshWrongChoices(currentPainter,activePainters,3);let options=[...wrongs,currentPainter];for(let i=options.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[options[i],options[j]]=[options[j],options[i]];}const choicesDiv=document.getElementById('choices');choicesDiv.innerHTML='';options.forEach((p,idx)=>{const btn=document.createElement('button');btn.className='choice-btn';btn.dataset.painterId=p.id;btn.innerHTML=`<span class="btn-num">${idx+1}</span>${p.name}`;btn.onclick=()=>answer(btn,p);choicesDiv.appendChild(btn);});isLoading=false;answered=false;}
+async function nextRound(){if(answered||isLoading)return;if(!activePainters.length)return;isLoading=true;currentPainter=getFreshPainter(activePainters);const success=await loadPainting(currentPainter);if(!success){isLoading=false;answered=false;setTimeout(()=>nextRound(),400);return;}recentPainters.push(currentPainter.id);if(recentPainters.length>maxRecentPainters)recentPainters.shift();const wrongs=getFreshWrongChoices(currentPainter,activePainters,3);let options=[...wrongs,currentPainter];for(let i=options.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[options[i],options[j]]=[options[j],options[i]];}const choicesDiv=document.getElementById('choices');choicesDiv.innerHTML='';options.forEach((p,idx)=>{const btn=document.createElement('button');btn.className='choice-btn';btn.dataset.painterId=p.id;btn.innerHTML=`<span class="btn-num">${idx+1}</span>${p.name}`;btn.onclick=()=>answer(btn,p);choicesDiv.appendChild(btn);});isLoading=false;answered=false;}
 function answer(btn,painter){if(answered)return;answered=true;const allBtns=document.querySelectorAll('.choice-btn');allBtns.forEach(b=>b.disabled=true);const correct=(painter.id===currentPainter.id);if(correct){btn.classList.add('correct');streak++;updateDots();setTimeout(()=>showPopup(true),500);}else{btn.classList.add('wrong');allBtns.forEach(b=>{if(b.dataset.painterId===currentPainter.id)b.classList.add('correct');});streak=0;updateDots();recentPainters=[];setTimeout(()=>showPopup(false),500);}}
 function generateShareId(painterId){const ts=Date.now().toString(36).toUpperCase();const rand=Math.random().toString(36).substring(2,6).toUpperCase();return`DAC-${painterId.substring(0,3).toUpperCase()}-${ts}-${rand}`;}
 function shareStreak(){const msg='I just identified 10 painters in a row on The Daily Art Cult 🎨\nCan you beat my streak?\nthedailyartcult.lol';if(navigator.share){navigator.share({title:'The Daily Art Cult — 10-Streak!',text:msg}).catch(()=>{});}else{navigator.clipboard.writeText(msg).then(()=>{const btn=document.getElementById('streakShareBtn');const orig=btn.textContent;btn.textContent='✦ Copied!';setTimeout(()=>{btn.textContent=orig;},2500);});}}
 function showPopup(won){const emoji=document.getElementById('popupEmoji');const title=document.getElementById('popupTitle');const info=document.getElementById('popupInfo');const overlay=document.getElementById('overlay');document.getElementById('certificate').style.display='none';document.getElementById('streakShareBtn').style.display='none';document.getElementById('popupBtn').style.display='';document.getElementById('popupEnterHint').style.display='';document.getElementById('streakProgressFill').style.width='0%';if(won){emoji.textContent='✦';title.textContent=streak===10?'Perfect Streak ✦':streak>1?streak+' in a Row':'Share Earned';info.innerHTML='Added to your collection. Visit My Collection to sell.';const shareId=generateShareId(currentPainter.id);const shareData={shareId,painterId:currentPainter.id,painterName:currentPainter.name,paintingTitle:currentPaintingTitle,nationality:currentPainter.nationality,born:currentPainter.born,died:currentPainter.died,streak,status:'held'};myShares.push(shareData);sbInsert('shares',{painter_id:shareData.painterId,painter_name:shareData.painterName,painting_title:shareData.paintingTitle,share_id:shareData.shareId,status:'held'});document.getElementById('certPainter').textContent=currentPainter.name;document.getElementById('certMeta').innerHTML=`${currentPainter.nationality} · ${currentPainter.born}–${currentPainter.died}<br>${streak} correct identifications · 1 share earned`;document.getElementById('certIdVal').textContent=shareId;document.getElementById('certificate').style.display='block';if(streak===10)document.getElementById('streakShareBtn').style.display='block';overlay.classList.remove('loss-overlay');overlay.classList.add('show');document.getElementById('popup').className='win';}else{emoji.textContent='';const line1=[currentPainter.nationality?currentPainter.nationality+' Painter':'',(currentPainter.born&&currentPainter.died)?currentPainter.born+' – '+currentPainter.died:''].filter(Boolean).join('  ·  ');info.innerHTML=line1;document.getElementById('captionPainter').textContent=currentPainter.name;document.getElementById('captionTitle').textContent=currentPaintingTitle||'Artwork';const img=document.getElementById('popupPaintingImg');img.classList.remove('loaded');img.classList.remove('error-load');if(currentPaintingUrl){img.onload=()=>img.classList.add('loaded');img.onerror=()=>{img.classList.add('error-load');img.classList.add('loaded');};img.src=currentPaintingUrl;}else{img.classList.add('error-load');img.classList.add('loaded');img.alt='Image temporarily unavailable';}overlay.classList.add('loss-overlay');overlay.classList.add('show');document.getElementById('popup').className='loss';}}
 function closePopup(){document.getElementById('overlay').classList.remove('show');document.getElementById('overlay').classList.remove('win-overlay');document.getElementById('overlay').classList.remove('loss-overlay');answered=false;nextRound();}
-function pickChip(btn){document.querySelectorAll('.col-chip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');streak=0;updateDots();recentPainters=[];perPainterArtHistory.clear();const key=btn.dataset.col;if(key==='full')activePainters=PAINTERS_MASTER;else activePainters=PAINTERS_MASTER.filter(p=>p.tags.includes(key));if(activePainters.length<2){document.getElementById('choices').innerHTML='<p style="padding:20px;color:var(--gold-dim);text-align:center;font-size:.44rem;letter-spacing:.2em;">Not enough painters.<br>Try "Full" collection.</p>';return;}nextRound();}
-function buildCollectionButtons(){const collections=ALLOWED_COLLECTIONS;const container=document.getElementById('collectionBtns');container.innerHTML='';collections.forEach(col=>{const btn=document.createElement('button');btn.className='col-chip';if(isDailyThemeActive&&col===currentDailyTheme)btn.classList.add('active');else if(col==='popular'&&!isDailyThemeActive)btn.classList.add('active');btn.textContent=col.split('-').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');btn.dataset.col=col;btn.onclick=()=>pickChip(btn);container.appendChild(btn);});}
+function pickChip(btn){document.querySelectorAll('.col-chip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');streak=0;updateDots();recentPainters=[];perPainterArtHistory.clear();const key=btn.dataset.col;if(key==='full')activePainters=PAINTERS_MASTER;else activePainters=PAINTERS_MASTER.filter(p=>p.tags.includes(key));if(activePainters.length<2){document.getElementById('choices').innerHTML='<p style="padding:20px;color:var(--gold-dim);text-align:center;font-size:.44rem;letter-spacing:.2em;">Not enough painters.<br>Try "Full" collection.</p>';return;}updateRecencyWindow();nextRound();}
+function buildCollectionButtons(){const counts={};PAINTERS_MASTER.forEach(p=>{(p.tags||[]).forEach(t=>{counts[t]=(counts[t]||0)+1;});});counts.full=PAINTERS_MASTER.length;const container=document.getElementById('collectionBtns');container.innerHTML='';const ordered=['full'];if(counts.popular)ordered.push('popular');Object.keys(counts).filter(t=>t!=='full'&&t!=='popular').sort().forEach(t=>ordered.push(t));ordered.forEach(col=>{const btn=document.createElement('button');btn.className='col-chip';if(isDailyThemeActive&&col===currentDailyTheme)btn.classList.add('active');else if(col==='popular'&&!isDailyThemeActive)btn.classList.add('active');btn.textContent=col.split('-').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ')+' ('+(counts[col]||0)+')';btn.dataset.col=col;btn.onclick=()=>pickChip(btn);container.appendChild(btn);});}
 
 /* ══════════════════════════════════════════════
    INVEST IN ART WAITLIST MODAL
@@ -1534,14 +1564,17 @@ async function submitInvest() {
 async function init(){
   updateDmIcon();
   buildStreakDots();
+  await loadPainters();
+  rebuildCollections();
   await fetchDailyTheme();
   buildCollectionButtons();
-  if(isDailyThemeActive&&ALLOWED_COLLECTIONS.includes(currentDailyTheme)){
+  if(isDailyThemeActive&&COLLECTIONS.includes(currentDailyTheme)){
     activePainters=PAINTERS_MASTER.filter(p=>p.tags.includes(currentDailyTheme));
   }else{
     activePainters=PAINTERS_MASTER.filter(p=>p.tags.includes('popular'));
   }
   if(activePainters.length<2)activePainters=PAINTERS_MASTER;
+  updateRecencyWindow();
   nextRound();
 }
 

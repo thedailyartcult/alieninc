@@ -160,6 +160,33 @@
   font-weight:700;
 }
 
+/* ── mode toggle ─────────────────────────────── */
+.mode-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.mode-label{
+  font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--color-text-muted);
+}
+.mode-toggle{
+  display:inline-flex;border:1px solid var(--color-border);
+  border-radius:6px;overflow:hidden;
+}
+.mode-btn{
+  font-family:inherit;font-size:12px;font-weight:400;color:var(--color-text-main);
+  background:var(--color-white);border:none;padding:6px 18px;cursor:pointer;
+  transition:background .15s ease,color .15s ease;
+}
+.mode-btn+.mode-btn{border-left:1px solid var(--color-border);}
+.mode-btn:hover:not(.active){background:var(--color-bg-light);}
+.mode-btn.active{background:#fce8e6;color:var(--color-brand-red);font-weight:700;}
+
+/* ── round timer (drill mode) ────────────────── */
+.timer-track{
+  height:4px;border-radius:2px;background:var(--color-border);
+  overflow:hidden;margin-bottom:14px;display:none;
+}
+.timer-track.visible{display:block;}
+.timer-fill{height:100%;width:100%;background:var(--color-brand-red);}
+
 /* ── footer row ───────────────────────────────── */
 .play-footer{
   margin-top:18px;display:flex;justify-content:space-between;align-items:center;
@@ -286,6 +313,7 @@
   <h1 style="font-size:24px;font-weight:700;margin-bottom:4px;">Identification Drill</h1>
   <p style="font-size:13.5px;color:var(--color-text-muted);margin-bottom:22px;">
     One photograph. Four designations. Only one is real.
+    Drill mode: cropped imagery, no category hint, 15-second clock.
   </p>
 
   <div class="play-layout">
@@ -302,6 +330,14 @@
 
     <div class="panel">
       <div class="streak-dots" id="streakDots"></div>
+      <div class="mode-row">
+        <span class="mode-label">Mode</span>
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="modeCasual" onclick="setMode('casual')">Casual</button>
+          <button class="mode-btn" id="modeDrill" onclick="setMode('drill')">Drill</button>
+        </div>
+      </div>
+      <div class="timer-track" id="timerTrack"><div class="timer-fill" id="timerFill"></div></div>
       <div class="prompt-eyebrow">Current Query</div>
       <p class="prompt">Identify this system.</p>
 
@@ -331,7 +367,7 @@
       <div class="result-mark" id="resultMark"></div>
       <div class="result-title" id="resultTitle"></div>
       <div class="result-sub" id="resultSub"></div>
-      <img class="reveal-img" id="revealImg" alt="">
+      <img class="reveal-img" id="revealImg" alt="" crossorigin="anonymous">
       <div class="reveal-name" id="revealName"></div>
       <div class="reveal-alt" id="revealAlt"></div>
       <div class="reveal-meta" id="revealMeta"></div>
@@ -385,12 +421,16 @@ let streak = 0;
 let answered = false;
 let loading = false;
 let keySelected = -1;
+let mode = 'casual';
+const DRILL_MS = 15000;
+let timerRAF = null;
 
 /* ── state persistence ───────────────────────── */
 function loadStats(){
-  try{ return JSON.parse(localStorage.getItem('asan-play')) ||
-    {best:0, played:0, by_cat:{}}; }
-  catch(e){ return {best:0, played:0, by_cat:{}}; }
+  try{
+    return Object.assign({best:0,played:0,by_cat:{},mode:'casual'},
+      JSON.parse(localStorage.getItem('asan-play'))||{});
+  }catch(e){ return {best:0,played:0,by_cat:{},mode:'casual'}; }
 }
 function saveStats(s){ localStorage.setItem('asan-play', JSON.stringify(s)); }
 
@@ -403,6 +443,24 @@ function shuffle(arr){
   return arr;
 }
 const normName = s => (s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+
+/* ── mode handling ───────────────────────────── */
+function applyModeUI(){
+  document.getElementById('modeCasual').classList.toggle('active',mode==='casual');
+  document.getElementById('modeDrill').classList.toggle('active',mode==='drill');
+  document.getElementById('timerTrack').classList.toggle('visible',mode==='drill');
+  document.getElementById('imageMeta').style.display=mode==='drill'?'none':'flex';
+}
+function setMode(m){
+  const nm=(m==='drill')?'drill':'casual';
+  if(nm===mode)return;
+  mode=nm;
+  const s=loadStats();s.mode=mode;saveStats(s);
+  applyModeUI();
+  stopTimer();
+  if(answered||loading)return;
+  nextRound();
+}
 
 /* ── streak dots ─────────────────────────────── */
 function buildDots(){
@@ -484,20 +542,22 @@ function buildOptions(correct){
     }
     return false;
   };
-  const sameCat=[],sameCountry=[],rest=[];
+  const sameCatCountry=[],sameCat=[],rest=[];
   for(const p of activePool){
     if(p.id===correct.id||isAmbiguous(p))continue;
-    if(p.category_key===correct.category_key)sameCat.push(p);
-    else if(p.country&&correct.country&&
-            p.country.split(',')[0].trim()===correct.country.split(',')[0].trim())
-      sameCountry.push(p);
+    const sameC=p.category_key===correct.category_key;
+    const sameN=p.country&&correct.country&&
+      p.country.split(',')[0].trim()===correct.country.split(',')[0].trim();
+    if(sameC&&sameN)sameCatCountry.push(p);
+    else if(sameC)sameCat.push(p);
     else rest.push(p);
   }
-  shuffle(sameCat);shuffle(sameCountry);shuffle(rest);
-  const picks=sameCat.splice(0,3);
-  while(picks.length<3&&sameCountry.length)picks.push(sameCountry.pop());
-  while(picks.length<3&&rest.length)picks.push(rest.pop());
-  while(picks.length<3&&sameCat.length)picks.push(sameCat.pop());
+  shuffle(sameCatCountry);shuffle(sameCat);shuffle(rest);
+  const picks=[];
+  const take=(arr,n)=>{while(picks.length<n&&arr.length)picks.push(arr.pop());};
+  take(sameCatCountry,3);
+  take(sameCat,3);
+  take(rest,3);
   return shuffle([correct,...picks]);
 }
 function renderChoices(options){
@@ -525,11 +585,20 @@ function loadImage(item){
       const col=document.getElementById('imageCard');
       const availW=(col?col.clientWidth-2:800);
       const availH=Math.max(280,window.innerHeight*0.6);
-      const scale=Math.min(availW/img.width,availH/img.height,1);
+      let sx=0,sy=0,sw=img.width,sh=img.height;
+      if(mode==='drill'&&img.width>80&&img.height>80){
+        const zoom=0.55+Math.random()*0.15;
+        sw=Math.round(img.width*zoom);
+        sh=Math.round(img.height*zoom);
+        sx=Math.round(Math.random()*(img.width-sw));
+        sy=Math.round(Math.random()*(img.height-sh));
+      }
+      const scale=Math.min(availW/sw,availH/sh,1);
       const canvas=document.getElementById('imageCanvas');
-      canvas.width=Math.round(img.width*scale);
-      canvas.height=Math.round(img.height*scale);
-      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      canvas.width=Math.round(sw*scale);
+      canvas.height=Math.round(sh*scale);
+      canvas.getContext('2d').drawImage(
+        img,sx,sy,sw,sh,0,0,canvas.width,canvas.height);
       document.getElementById('metaCategory').textContent=item.category;
       loader.classList.remove('visible');
       resolve(true);
@@ -551,12 +620,51 @@ async function nextRound(){
   }
   renderChoices(buildOptions(current));
   loading=false;
+  startTimer();
+}
+
+/* ── drill round timer ───────────────────────── */
+function startTimer(){
+  stopTimer();
+  if(mode!=='drill')return;
+  const deadline=performance.now()+DRILL_MS;
+  const fill=document.getElementById('timerFill');
+  const tick=()=>{
+    const remain=deadline-performance.now();
+    if(remain<=0){
+      fill.style.width='0%';timerRAF=null;
+      timeoutMiss();
+      return;
+    }
+    fill.style.width=(remain/DRILL_MS*100)+'%';
+    fill.style.background=remain<4000?'var(--color-link-hover)':'var(--color-brand-red)';
+    timerRAF=requestAnimationFrame(tick);
+  };
+  fill.style.width='100%';
+  timerRAF=requestAnimationFrame(tick);
+}
+function stopTimer(){
+  if(timerRAF){cancelAnimationFrame(timerRAF);timerRAF=null;}
+}
+function timeoutMiss(){
+  if(answered||loading)return;
+  answered=true;stopTimer();
+  const buttons=[...document.querySelectorAll('.choice-btn')];
+  buttons.forEach(b=>{b.disabled=true;
+    if(b.dataset.itemId===current.id)b.classList.add('reveal');});
+  const stats=loadStats();stats.played++;
+  const ck=current.category_key;
+  stats.by_cat[ck]=stats.by_cat[ck]||{c:0,w:0};
+  stats.by_cat[ck].w++;
+  streak=0;
+  saveStats(stats);updateDots();
+  setTimeout(()=>showResult(false),550);
 }
 
 /* ── answering ───────────────────────────────── */
 function answer(btn,picked){
   if(answered)return;
-  answered=true;
+  answered=true;stopTimer();
   const buttons=[...document.querySelectorAll('.choice-btn')];
   buttons.forEach(b=>b.disabled=true);
   const correct=picked.id===current.id;
@@ -591,6 +699,9 @@ function showResult(won){
     'The correct system is shown below.';
   ov.classList.toggle('loss',!won);
   const img=document.getElementById('revealImg');
+  img.onload=()=>{img.style.visibility='visible';};
+  img.onerror=()=>{img.style.visibility='visible';};
+  img.style.visibility='hidden';
   img.src=current.image_url;img.alt=current.designation;
   document.getElementById('revealName').textContent=current.designation;
   document.getElementById('revealAlt').textContent=
@@ -665,6 +776,7 @@ function closeDrawer(){
 }
 function resetStats(){
   localStorage.removeItem('asan-play');
+  mode='casual';applyModeUI();
   streak=0;updateDots();openDrawer();
 }
 
@@ -720,6 +832,8 @@ async function init(){
   buildChips();
   activePool=ITEMS.slice();
   bag=[];
+  mode=(loadStats().mode==='drill')?'drill':'casual';
+  applyModeUI();
   document.getElementById('poolNote').textContent=ITEMS.length+' systems in pool';
   nextRound();
 }

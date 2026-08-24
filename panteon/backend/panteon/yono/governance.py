@@ -167,6 +167,17 @@ class GovernanceLayer:
                     filtered.append(tool)
                 continue
 
+            # Panel read tools — same read-permission gate
+            if name in ("recent_objects", "find_objects", "get_ontology_graph"):
+                if self.agent.allowed_object_types:
+                    filtered.append(tool)
+                continue
+
+            # Map/app-state tools — UI-state only, expose no ontology data
+            if name in ("set_map_view", "highlight_objects", "toggle_layer"):
+                filtered.append(tool)
+                continue
+
             # List types — always allowed (discovery)
             if name in ("list_object_types",):
                 filtered.append(tool)

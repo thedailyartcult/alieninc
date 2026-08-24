@@ -112,6 +112,18 @@ class AgentChatRequest(BaseModel):
     session_id: Optional[UUID] = None
 
 
+class PanelChatRequest(BaseModel):
+    """Spinal Cracker YONO floating-panel chat.
+
+    Resolves the seeded 'spinal-cracker-yono' agent; no agent_id needed.
+    auto_execute=False (default) records actions as proposals awaiting
+    operator confirmation.
+    """
+    message: str = Field(..., min_length=1)
+    session_id: Optional[UUID] = None
+    auto_execute: bool = False
+
+
 class AgentChatResponse(BaseModel):
     session_id: UUID
     response: str

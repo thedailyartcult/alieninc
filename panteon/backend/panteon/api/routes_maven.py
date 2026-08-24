@@ -19,10 +19,12 @@ from panteon.core.database import get_db
 from panteon.maven import (
     ASSET_CLASSES,
     create_task,
+    delete_task,
     dispatch_asset,
     generate_coas,
     maven_state,
     prune_detections,
+    recall_asset,
     tick_and_collect,
     validate_detection,
 )
@@ -78,6 +80,30 @@ async def post_dispatch(task_id: str, request: Request,
         return await dispatch_asset(db, task_id,
                                     asset_class=str(body.get("asset_class") or "uas"),
                                     executed_by=user.email)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.delete("/task/{task_id}")
+async def delete_task_route(task_id: str,
+                            user: SupabaseUser = Depends(get_current_user),
+                            db: AsyncSession = Depends(get_db)):
+    """Delete a task with its live assets, detections and links."""
+    _require_editor(user)
+    try:
+        return await delete_task(db, task_id, user.email)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/asset/{callsign}/recall")
+async def recall_asset_route(callsign: str,
+                             user: SupabaseUser = Depends(get_current_user),
+                             db: AsyncSession = Depends(get_db)):
+    """Stand down one asset (removes it from the board and the ontology)."""
+    _require_editor(user)
+    try:
+        return await recall_asset(db, callsign, user.email)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

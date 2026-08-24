@@ -140,6 +140,121 @@ ONTOLOGY_TOOLS = [
             "required": []
         }
     },
+    {
+        "name": "recent_objects",
+        "description": "Get the most recently updated objects across object types, newest first. This is the preferred tool for 'latest/latest activity/what changed' questions.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "type_names": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Optional restriction to specific object type names (e.g. ['kriegspiel_assessment','maven_task']). Omit to cover all readable types.",
+                    "default": []
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Maximum objects to return (default 10, max 50)",
+                    "default": 10
+                }
+            },
+            "required": []
+        }
+    },
+    {
+        "name": "find_objects",
+        "description": "Keyword search across object primary keys and properties when exact property filters do not apply (semantic-style fallback). Returns matches ranked by recency.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Keyword or phrase to look for (e.g. 'Taiwan Strait', 'S-400')"
+                },
+                "type_name": {
+                    "type": "string",
+                    "description": "Optional single object type name to restrict the search"
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Maximum results (default 15, max 50)",
+                    "default": 15
+                }
+            },
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "get_ontology_graph",
+        "description": "Get ontology overview: object counts per type and link counts per link type. Use for 'what do we have / how much data' questions.",
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        }
+    },
+    {
+        "name": "set_map_view",
+        "description": "Move the common operating picture (fusion map). Provide EITHER center+zoom OR bounds. Use whenever the operator asks to focus/show/fly somewhere geospatially.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "center": {
+                    "type": "array",
+                    "items": {"type": "number"},
+                    "description": "[longitude, latitude]"
+                },
+                "zoom": {
+                    "type": "number",
+                    "description": "Map zoom level 1-18 (use >=7 for city-level focus)"
+                },
+                "bounds": {
+                    "type": "array",
+                    "items": {"type": "array", "items": {"type": "number"}},
+                    "description": "[[south, west], [north, east]]"
+                }
+            },
+            "required": []
+        }
+    },
+    {
+        "name": "highlight_objects",
+        "description": "Highlight specific ontology objects on the fusion map by their primary key values (e.g. theater or force names). Combine with set_map_view for focus.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "primary_keys": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Primary key values of the objects to highlight (max 50)"
+                },
+                "type_name": {
+                    "type": "string",
+                    "description": "Optional object type name to scope highlighting"
+                }
+            },
+            "required": ["primary_keys"]
+        }
+    },
+    {
+        "name": "toggle_layer",
+        "description": "Show/hide a map layer on the common operating picture: threats, aviation, sims-ontology, or 3d buildings.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "layer": {
+                    "type": "string",
+                    "enum": ["threats", "aviation", "sims-ontology", "3d"],
+                    "description": "The layer to toggle"
+                },
+                "visible": {
+                    "type": "boolean",
+                    "description": "true=show, false=hide; omit to flip current state"
+                }
+            },
+            "required": ["layer"]
+        }
+    },
 ]
 
 
@@ -388,6 +503,209 @@ class OntologyToolExecutor:
                 }
                 for a in actions
             ]
+        }
+
+    # ── Panel tools (recent / keyword / graph / map directives) ─────────
+
+    async def _readable_types(self, requested: Optional[list[str]] = None) -> list[str]:
+        """Intersect requested type names with the agent's allowed reads."""
+        from sqlalchemy import select
+        from panteon.yono.models import Agent
+
+        row = await self.db.execute(
+            select(Agent.allowed_object_types).where(Agent.id == self.agent_id)
+        )
+        allowed = row.scalar() or []
+        if not requested:
+            return list(allowed)
+        return [t for t in requested if t in allowed]
+
+    async def _tool_recent_objects(self, args: dict) -> dict:
+        """Most recently updated objects across readable types, newest first."""
+        from sqlalchemy import select
+        from panteon.spinal_craker.models import Object, ObjectType
+
+        limit = min(int(args.get("limit", 10)), 50)
+        type_names = await self._readable_types(args.get("type_names") or [])
+        if not type_names:
+            return {"error": "No readable object types for this agent", "objects": []}
+
+        rows = await self.db.execute(
+            select(Object, ObjectType.name)
+            .join(ObjectType, Object.object_type_id == ObjectType.id)
+            .where(ObjectType.name.in_(type_names))
+            .order_by(Object.updated_at.desc(), Object.created_at.desc())
+            .limit(limit)
+        )
+        objects = []
+        for obj, tname in rows.all():
+            objects.append({
+                "id": str(obj.id),
+                "type": tname,
+                "primary_key": obj.primary_key_value,
+                "properties": obj.properties,
+                "updated_at": obj.updated_at.isoformat() if obj.updated_at else None,
+            })
+        return {"count": len(objects), "ordered_by": "updated_at desc", "objects": objects}
+
+    async def _tool_find_objects(self, args: dict) -> dict:
+        """Keyword search over primary keys + properties (semantic fallback)."""
+        from sqlalchemy import select, or_, cast, String
+        from panteon.spinal_craker.models import Object, ObjectType
+
+        query = str(args.get("query", "")).strip()
+        if not query:
+            return {"error": "query is required"}
+        limit = min(int(args.get("limit", 15)), 50)
+        type_name = args.get("type_name")
+        requested = [type_name] if type_name else None
+        type_names = await self._readable_types(requested)
+        if not type_names:
+            return {"error": f"Type '{type_name}' not readable for this agent" if type_name
+                    else "No readable object types for this agent", "matches": []}
+
+        like = f"%{query}%"
+        stmt = (
+            select(Object, ObjectType.name)
+            .join(ObjectType, Object.object_type_id == ObjectType.id)
+            .where(ObjectType.name.in_(type_names))
+            .where(or_(
+                cast(Object.primary_key_value, String).ilike(like),
+                cast(Object.properties, String).ilike(like),
+            ))
+            .order_by(Object.updated_at.desc())
+            .limit(limit)
+        )
+        rows = await self.db.execute(stmt)
+        matches = [
+            {
+                "id": str(obj.id),
+                "type": tname,
+                "primary_key": obj.primary_key_value,
+                "properties": obj.properties,
+            }
+            for obj, tname in rows.all()
+        ]
+        return {"query": query, "count": len(matches), "matches": matches}
+
+    async def _tool_get_ontology_graph(self, args: dict) -> dict:
+        """Overview counts: objects per type, links per link type."""
+        from sqlalchemy import select, func
+        from panteon.spinal_craker.models import (
+            Object, ObjectType, Link, LinkType,
+        )
+
+        obj_rows = await self.db.execute(
+            select(ObjectType.name, func.count(Object.id))
+            .outerjoin(Object, Object.object_type_id == ObjectType.id)
+            .group_by(ObjectType.name)
+        )
+        link_rows = await self.db.execute(
+            select(LinkType.name, func.count(Link.id))
+            .outerjoin(Link, Link.link_type_id == LinkType.id)
+            .group_by(LinkType.name)
+        )
+        by_type = {name: count for name, count in obj_rows.all()}
+        links_by_type = {name: count for name, count in link_rows.all()}
+        return {
+            "object_counts_by_type": by_type,
+            "link_counts_by_type": links_by_type,
+            "total_objects": sum(by_type.values()),
+            "total_links": sum(links_by_type.values()),
+        }
+
+    async def _tool_set_map_view(self, args: dict) -> dict:
+        """Validate and echo a map-view directive for the panel to apply."""
+        center = args.get("center")
+        zoom = args.get("zoom")
+        bounds = args.get("bounds")
+        if bounds:
+            try:
+                (s, w), (n, e) = bounds
+                if not (-90 <= s < n <= 90 and -180 <= w < e <= 180):
+                    raise ValueError
+            except (TypeError, ValueError):
+                return {"error": "bounds must be [[south, west], [north, east]]"}
+            directive = {"op": "fit_bounds", "bounds": [[s, w], [n, e]]}
+        elif center is not None and zoom is not None:
+            try:
+                lng, lat = float(center[0]), float(center[1])
+                z = max(1.0, min(float(zoom), 18.0))
+            except (TypeError, ValueError, IndexError):
+                return {"error": "center must be [lng, lat] with numeric zoom"}
+            if not (-180 <= lng <= 180 and -85 <= lat <= 85):
+                return {"error": "center out of range"}
+            directive = {"op": "fly_to", "center": [lng, lat], "zoom": z}
+        else:
+            return {"error": "provide center+zoom or bounds"}
+        return {"directive": directive}
+
+    async def _tool_highlight_objects(self, args: dict) -> dict:
+        """Echo a highlight directive for the panel to apply."""
+        pks = args.get("primary_keys") or []
+        pks = [str(p) for p in pks][:50]
+        if not pks:
+            return {"error": "primary_keys must be a non-empty list"}
+        directive = {
+            "op": "highlight",
+            "primary_keys": pks,
+            "type_name": args.get("type_name"),
+        }
+        return {"directive": directive}
+
+    async def _tool_toggle_layer(self, args: dict) -> dict:
+        """Echo a layer-visibility directive for the panel to apply."""
+        layer = args.get("layer")
+        if layer not in ("threats", "aviation", "sims-ontology", "3d"):
+            return {"error": "layer must be one of threats|aviation|sims-ontology|3d"}
+        directive = {"op": "toggle_layer", "layer": layer}
+        if isinstance(args.get("visible"), bool):
+            directive["visible"] = args["visible"]
+        return {"directive": directive}
+
+    # ── Governed actions: propose vs execute ────────────────────────────
+
+    async def propose_action(self, args: dict) -> dict:
+        """Record an action as a PROPOSAL awaiting human confirmation.
+
+        Mirrors OntologyService.execute_action's ledger write but marks the
+        row 'proposed' so nothing runs until /yono/proposals/{id}/confirm.
+        """
+        from panteon.spinal_craker.models import ActionExecution
+
+        action_name = args["action_name"]
+        object_id = args.get("object_id")
+        parameters = args.get("parameters", {})
+
+        action_type = await self._resolve_action(action_name)
+        if not action_type:
+            return {"error": f"Action type '{action_name}' not found"}
+        if not action_type.is_enabled:
+            return {"error": f"Action type '{action_name}' is disabled"}
+
+        execution = ActionExecution(
+            action_type_id=action_type.id,
+            object_id=uuid.UUID(object_id) if object_id else None,
+            parameters={
+                "arguments": parameters,
+                "action_name": action_name,
+            },
+            executed_by=f"yono-proposal:{self.agent_id}",
+            status="proposed",
+        )
+        self.db.add(execution)
+        await self.db.flush()
+        schema = action_type.parameters_schema or {}
+        missing = [k for k in schema.get("required", []) if k not in parameters]
+        return {
+            "proposal_id": str(execution.id),
+            "action_name": action_name,
+            "status": "proposed",
+            "missing_required_parameters": missing,
+            "note": (
+                "Awaiting operator confirmation in the YONO panel. Do NOT "
+                "state this action has executed until status becomes succeeded."
+            ),
         }
 
 

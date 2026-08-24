@@ -27,7 +27,7 @@ import uuid
 from datetime import datetime, timezone
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from panteon.spinal_craker.models import ActionType, Link, LinkType, Object
@@ -673,6 +673,79 @@ async def generate_coas(db: AsyncSession, body: dict, user_email: str | None) ->
     for i, c in enumerate(coas, 1):
         c["rank"] = i
     return {"coas": coas, "theater": theater_name, "scenarios_per_coa": scenarios}
+
+
+async def recall_asset(db: AsyncSession, callsign: str,
+                       user_email: str | None) -> dict:
+    """Stand down one simulated asset: drop it from the live board, delete its
+    ontology object + assignment links, and decrement the parent task counter."""
+    await ensure_maven_ontology(db)
+    cs = str(callsign or "").strip()
+    asset = _ASSETS.get(cs)
+    obj = (await db.execute(select(Object).where(
+        Object.primary_key_value == f"mv-asset:{cs}"))).scalar_one_or_none()
+    if asset is None and obj is None:
+        raise ValueError(f"unknown asset callsign: {cs}")
+    _ASSETS.pop(cs, None)
+    if obj is not None:
+        await db.execute(Link.__table__.delete().where(
+            (Link.source_object_id == str(obj.id))
+            | (Link.target_object_id == str(obj.id))))
+        await db.delete(obj)
+    if asset is not None:
+        task_obj = (await db.execute(select(Object).where(
+            Object.primary_key_value == asset["task_pk"]))).scalar_one_or_none()
+        if task_obj is not None:
+            tp = task_obj.properties or {}
+            tp["assets"] = max(0, int(tp.get("assets") or 0) - 1)
+            if int(tp.get("assets") or 0) == 0:
+                tp["status"] = "pending"
+            task_obj.properties = tp
+    await db.commit()
+    return {"callsign": cs, "recalled": True,
+            "object_removed": obj is not None}
+
+
+async def delete_task(db: AsyncSession, task_id: str,
+                      user_email: str | None) -> dict:
+    """Delete a maneuver task with everything it owns: live assets, their
+    ontology objects, detections generated under it, and all link rows.
+    Action executions remain as the permanent audit trail."""
+    await ensure_maven_ontology(db)
+    svc = OntologyService(db)
+    try:
+        task = await svc.get_object(uuid.UUID(str(task_id)))
+    except ValueError as exc:
+        raise ValueError("invalid task id") from exc
+    if task is None or not str(task.primary_key_value).startswith("mv-task:"):
+        raise ValueError("unknown task id")
+    tpk = task.primary_key_value
+    tid = str(task.id)
+
+    cs_list = [cs for cs, a in list(_ASSETS.items()) if a.get("task_pk") == tpk]
+    for cs in cs_list:
+        _ASSETS.pop(cs, None)
+
+    doomed = [task]
+    for type_name in (ASSET_TYPE, DET_TYPE):
+        t = await svc.get_object_type_by_name(type_name)
+        if t is None:
+            continue
+        rows = (await db.execute(select(Object).where(
+            Object.object_type_id == str(t.id)))).scalars().all()
+        for o in rows:
+            p = o.properties or {}
+            if p.get("task_id") == tid:
+                doomed.append(o)
+
+    ids = [str(o.id) for o in doomed]
+    await db.execute(Link.__table__.delete().where(
+        or_(Link.source_object_id.in_(ids), Link.target_object_id.in_(ids))))
+    for o in doomed:
+        await db.delete(o)
+    await db.commit()
+    return {"deleted": True, "task_pk": tpk, "objects_removed": len(ids),
+            "assets_stood_down": len(cs_list)}
 
 
 async def prune_detections(db: AsyncSession, ttl_days: int = 14) -> dict:

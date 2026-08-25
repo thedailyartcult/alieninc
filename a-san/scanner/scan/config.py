@@ -187,4 +187,7 @@ class Settings:
                 "war-sanctions.gur.gov.ua", "en.defence-ua.com",
                 "defence-ua.com", "baykartech.com", "army-guide.com",
                 "www.globalsecurity.org", "www.hisutton.com",
-                "www.seaforces.org"}
+                "www.seaforces.org", "www.navweaps.com",
+                "www.rheinmetall.com", "www.gdls.com",
+                "oshkoshdefense.com", "www.naval-encyclopedia.com",
+                "www.qinetiq.com"}

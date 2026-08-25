@@ -100,6 +100,7 @@
       margin: 0 auto;
       padding: 0 1.5rem;
       box-sizing: border-box;
+      position: relative;
     }
 
     .header__logo { display: flex; align-items: center; height: 100%; }
@@ -237,7 +238,7 @@
     .nav__sims {
       position: absolute;
       top: 50%;
-      right: 0;
+      right: 1.5rem;
       transform: translateY(-50%);
       display: none;
       align-items: center;
@@ -297,7 +298,7 @@
         visibility: visible !important;
       }
 
-      .is-sims-nav .nav:hover .nav__sims {
+      .is-sims-nav .nav:hover ~ .nav__sims {
         display: none;
       }
     }
@@ -305,7 +306,7 @@
     .nav__thinking {
       position: absolute;
       top: 50%;
-      right: 0;
+      right: 1.5rem;
       transform: translateY(-50%);
       display: none;
       align-items: center;
@@ -419,19 +420,23 @@
     html[data-nav-set="5"] .nav__list--set1 { display: none; }
     html[data-nav-set="5"] .nav__list--set5 { display: flex; }
 
-    /* JS-driven loading & reveal states (no-JS and reduced-motion skip to the default nav) */
+    /* JS-driven loading & reveal states (no-JS and reduced-motion skip to the default nav).
+       Hidden-until-revealed applies at ≥621px only — on phones the lists live in the
+       drawer and must be visible the moment it opens, even mid-intro. */
     .js-nav:not(.reduced-motion) .nav__thinking {
       display: flex;
     }
 
-    .js-nav:not(.reduced-motion) .nav__list {
-      visibility: hidden;
-    }
+    @media (min-width: 621px) {
+      .js-nav:not(.reduced-motion) .nav__list {
+        visibility: hidden;
+      }
 
-    .js-nav:not(.reduced-motion) .nav__list-item {
-      opacity: 0;
-      transform: translateY(8px);
-      transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+      .js-nav:not(.reduced-motion) .nav__list-item {
+        opacity: 0;
+        transform: translateY(8px);
+        transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+      }
     }
 
     .js-nav:not(.reduced-motion).is-nav-revealed .nav__list--set1,
@@ -1290,7 +1295,7 @@
       .metric-grid,
       .flow-grid,
       .sitemap-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
       }
     }
 
@@ -2506,6 +2511,256 @@
     opacity: 0;
     transform: translateY(-4px);
   }
+
+  /* ═══ MOBILE COMPREHENSIVE FIXES (audit 2026-08-25, headless Chromium @390px) ═══
+     1. Hero overlay text clipped the 16:9 box on phones → taller box + smaller type.
+     2. Map search bar dead-centered over the FOCUS SECTOR hive (its display:none
+        rule was dead code — .retro-map-search re-set display:block later in source).
+     3. Filter preset toolbar was 739px wide in a 390px viewport → wrap + touch size.
+     4. Terminal / hint banner / radar minimap collided at the map's bottom edge. */
+  @media screen and (max-width: 900px) {
+    .nav__list-item-link {
+      display: inline-block;
+      padding: 8px 2px;
+    }
+  }
+
+  @media screen and (max-width: 768px) {
+    /* Map HUD: search on top, hive below it — no overlap */
+    .retro-map-hud-center {
+      top: 8px;
+      left: 12px;
+      right: 12px;
+      transform: none;
+      width: auto;
+      z-index: 30;
+    }
+    .retro-map-hud-left {
+      top: 76px;
+      left: 12px;
+      width: calc(100% - 24px);
+    }
+    /* Preset toolbar: wrap above the terminal instead of clipping off-screen */
+    .retro-map-toolbar {
+      bottom: 122px;
+      left: 12px;
+      transform: none;
+      width: calc(100% - 24px);
+      max-width: none;
+      flex-wrap: wrap;
+      justify-content: center;
+      row-gap: 6px;
+    }
+    .retro-map-btn {
+      padding: 8px 12px;
+      font-size: 0.85rem;
+    }
+    .retro-map-terminal {
+      left: 12px;
+      width: calc(100% - 24px);
+      height: 110px;
+    }
+    .retro-map-terminal .xterm {
+      height: 110px;
+      max-height: 110px;
+    }
+    .retro-map-inspector {
+      bottom: 275px;
+      max-height: 40%;
+    }
+    /* Desktop-gesture hint (SCROLL: ZOOM / SHIFT+DRAG: TILT) is meaningless on touch */
+    .retro-map-hint-banner,
+    .retro-map-radar-frame {
+      display: none;
+    }
+  }
+
+  @media screen and (max-width: 620px) {
+    /* Hero: 16:9 box (~200px) couldn't hold ~400px of overlay content */
+    .video-container {
+      aspect-ratio: 4 / 5;
+    }
+    .video-overlay {
+      padding: 1.5rem;
+    }
+    .video-overlay__title {
+      font-size: clamp(1.5rem, 7.5vw, 2rem);
+    }
+    .video-overlay__description {
+      font-size: 0.95rem;
+    }
+    /* Compact hive tiles keep the toolbar clear of the deck on short screens */
+    .retro-map-hive-tile {
+      width: 128px;
+      height: 100px;
+    }
+    .retro-map-hive-check {
+      font-size: 0.65rem;
+      letter-spacing: 0;
+    }
+    /* "INFRASTRUCTURE" at the 2.4rem floor is wider than a 320-360px viewport */
+    .operating-system__title {
+      font-size: clamp(2rem, 8vw, 2.4rem);
+    }
+    /* Phones: the decorative xterm boot log costs 110px of a ~500px map and no
+       keyboard exists to type in it — hide it and dock the toolbar to the bottom. */
+    .retro-map-terminal {
+      display: none;
+    }
+    .retro-map-toolbar {
+      bottom: 12px;
+    }
+  }
+
+  /* ═══ MOBILE NAV DRAWER (≤620px) ═══
+     One 64px bar: logo · thinking phrase · ☰. The existing .nav repositions
+     into a slide-down drawer (no markup duplication). Gated on html.nav-ready
+     (set by the toggle script) so no-JS keeps the old stacked-bar fallback.
+     Design tokens: white panel, --hg-color-secondary top border (same accent
+     as .video-container / cookie banner), nav__dropdown-menu shadow language. */
+  .nav-toggle { display: none; }
+
+  @media screen and (max-width: 620px) {
+    :root { --header-height: 64px; }
+
+    html.js-nav.nav-ready .header {
+      height: var(--header-height);
+    }
+
+    html.js-nav.nav-ready .header__inner {
+      flex-direction: row;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    /* Thinking phrase stays in the bar, truncated to the middle space */
+    html.js-nav.nav-ready .nav__thinking {
+      position: static;
+      transform: none;
+      flex: 1 1 auto;
+      min-width: 0;
+      max-width: 100%;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    html.js-nav.nav-ready .nav__thinking-line {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ☰ button — 44px touch target, bars morph to an X */
+    html.js-nav.nav-ready .nav-toggle {
+      display: inline-flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      width: 44px;
+      height: 44px;
+      padding: 10px;
+      flex: 0 0 auto;
+      background: transparent;
+      border: 0;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    html.js-nav.nav-ready .nav-toggle:hover {
+      background: var(--hg-color-muted);
+    }
+
+    html.js-nav.nav-ready .nav-toggle:focus-visible {
+      outline: 2px solid var(--hg-color-secondary);
+      outline-offset: 2px;
+    }
+
+    .nav-toggle span {
+      display: block;
+      width: 100%;
+      height: 2px;
+      border-radius: 1px;
+      background: var(--ppl-color-text-default);
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    html.nav-open .nav-toggle span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    html.nav-open .nav-toggle span:nth-child(2) { opacity: 0; }
+    html.nav-open .nav-toggle span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* The nav becomes the drawer */
+    html.js-nav.nav-ready .nav {
+      position: fixed;
+      top: var(--header-height);
+      left: 0;
+      right: 0;
+      z-index: 99;
+      background: var(--ppl-color-bg-default);
+      border-bottom: 4px solid var(--hg-color-secondary);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      padding: 0.25rem 1.5rem 1rem;
+      max-height: calc(100vh - var(--header-height));
+      max-height: calc(100dvh - var(--header-height));
+      overflow-y: auto;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-8px);
+      transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+    }
+
+    html.js-nav.nav-ready.nav-open .nav {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    /* Stacked links — same 1.125rem/700 type as the desktop bar */
+    html.js-nav.nav-ready .nav__list {
+      flex-direction: column;
+      flex-wrap: nowrap;
+      gap: 0;
+      justify-content: flex-start;
+    }
+
+    html.js-nav.nav-ready .nav__list-item-link {
+      display: block;
+      padding: 0.9rem 0;
+      font-size: 1.125rem;
+    }
+
+    html.js-nav.nav-ready .nav__list-item:not(:last-child) .nav__list-item-link {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    /* Dashboard sub-links always visible on touch (no hover available) */
+    html.js-nav.nav-ready .nav__dropdown-menu {
+      position: static;
+      transform: none;
+      opacity: 1;
+      visibility: visible;
+      min-width: 0;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      padding: 0 0 0.35rem 1rem;
+    }
+
+    html.js-nav.nav-ready .nav__dropdown-item {
+      padding: 0.6rem 0;
+    }
+
+    html.js-nav.nav-ready .nav__dropdown-item:last-child {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    /* Scroll lock while the drawer is open */
+    html.nav-open {
+      overflow: hidden;
+    }
+  }
   </style>
   <script>
     (function () {
@@ -2582,16 +2837,14 @@
             <span class="brand-logo__text">Inc</span>
           </a>
         </div>
-        <nav class="nav" aria-label="Primary">
-          <div class="nav__thinking" aria-hidden="true">
-            <span class="nav__thinking-pulse"><i></i><i></i><i></i></span>
-            <span class="nav__thinking-line" id="nav-thinking-line"></span>
-          </div>
-          <!-- Live simulations reminder — random pop-up while scrolling; renders exactly like the phrases nav -->
-          <div class="nav__sims" id="navSims" aria-hidden="true">
-            <span class="nav__sims-pulse"><i></i><i></i><i></i></span>
-            <span class="nav__thinking-line" id="navSimsLine"></span>
-          </div>
+        <!-- Thinking/sims lines live in the bar, NOT inside .nav — the mobile
+             drawer claims .nav itself, and .nav:hover ~ .nav__sims keeps the
+             desktop sims-mode swap working with the new sibling order. -->
+        <div class="nav__thinking" aria-hidden="true">
+          <span class="nav__thinking-pulse"><i></i><i></i><i></i></span>
+          <span class="nav__thinking-line" id="nav-thinking-line"></span>
+        </div>
+        <nav class="nav" id="site-nav" aria-label="Primary">
           <!-- Set 1: corporate navigation -->
           <ul class="nav__list nav__list--set1">
             <li class="nav__list-item"><a href="founder.html" class="nav__list-item-link">Founder</a></li>
@@ -2641,6 +2894,14 @@
             <li class="nav__list-item"><a href="why/" class="nav__list-item-link">Actualization</a></li>
           </ul>
         </nav>
+        <!-- Live simulations reminder — random pop-up while scrolling; renders exactly like the phrases nav -->
+        <div class="nav__sims" id="navSims" aria-hidden="true">
+          <span class="nav__sims-pulse"><i></i><i></i><i></i></span>
+          <span class="nav__thinking-line" id="navSimsLine"></span>
+        </div>
+        <button type="button" id="navToggle" class="nav-toggle" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </header>
 
@@ -4655,6 +4916,49 @@
         setTimeout(reveal, 300);
       });
     }, 180);
+  })();
+  </script>
+
+  <!-- Mobile nav drawer — ☰ toggles the slide-down panel (≤620px, see CSS block) -->
+  <script>
+  (function () {
+    var html = document.documentElement;
+    var toggle = document.getElementById('navToggle');
+    var drawer = document.getElementById('site-nav');
+    if (!toggle || !drawer) return;
+    html.classList.add('nav-ready');
+
+    var mq = window.matchMedia('(max-width: 620px)');
+
+    function isOpen() { return html.classList.contains('nav-open'); }
+
+    function setOpen(open) {
+      html.classList.toggle('nav-open', open);
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    }
+
+    toggle.addEventListener('click', function () { setOpen(!isOpen()); });
+
+    // Tapping any link closes the drawer (anchors scroll in-page, others navigate)
+    drawer.addEventListener('click', function (e) {
+      if (e.target.closest('a')) setOpen(false);
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && isOpen()) { setOpen(false); toggle.focus(); }
+    });
+
+    // Click/tap outside the drawer or toggle closes it
+    document.addEventListener('click', function (e) {
+      if (!isOpen() || !mq.matches) return;
+      if (toggle.contains(e.target) || drawer.contains(e.target)) return;
+      setOpen(false);
+    });
+
+    function onMq(e) { if (!e.matches) setOpen(false); }
+    if (mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq.addListener) mq.addListener(onMq);
   })();
   </script>
 

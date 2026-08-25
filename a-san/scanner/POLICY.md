@@ -118,6 +118,46 @@ Rejected in round 2:
   agents. Same class as militarnyi/navyrecognition: do not scrape, no WAF
   bypass.
 
+### Round-4 additions and rejections (2026-08-25)
+
+| Source | Compliant path | Status |
+|---|---|---|
+| www.navweaps.com | robots.txt fully allow-all (`User-agent:* Allow: /`, no crawl-delay). SCOPE: only the `WM*` naval-missile sections (`WMUS/WMRUS/WMBR_Main.php` indexes → `WMxx_<name>.php` detail pages with `<h1>` designation + `<h2>Description</h2>` prose + `<table class="prettytable">` th/td spec pairs). WN* guns and WT* torpedoes deliberately skipped — no matching catalog category. © Tony DiGiulian → fact-extraction-with-attribution; SLCM vs Rocket-and-missile-weapons split by launch-platform + cruise-marker heuristics at parse time. Wired in `parsers_navweaps.parse_navweaps` / `parse_navweaps_missile_links`. CLI: `discover-round4`. | **Active** |
+| www.rheinmetall.com | robots: allow-all except job-ad paths + `utm_source=Sailthru` params; sitemap `/sitemap.site_1.xml`. Curated EN product URLs under `/en/products/uncrewed-systems-and-autonomous-navigation-technology/` (Mission Master A-UGV family, AXUS, Komodo → UGVs; LUNA → UAVs). Pages are Tailwind prose without spec tables — description + variant H2 alt-names only. © Rheinmetall AG → fact-extraction-with-attribution. Wired in `parsers_rheinmetall.parse_rheinmetall`. CLI: `discover-round4`. | **Active** |
+| www.gdls.com | robots: allow-all, **Crawl-delay: 10** (enforced via `HOST_CRAWL_DELAY`). Yoast WP sitemaps. Curated product slugs: `/trx-fov/`, `/mutt/` (→ UGVs), `/stryker/`, `/lav/`, `/abrams/`, `/xm30/` (→ Armored). Prose pages; variant H2s become alt_names. © General Dynamics → fact-extraction-with-attribution. Wired in `parsers_gdls.parse_gdls`. CLI: `discover-round4`. | **Active** |
+| oshkoshdefense.com | robots: allow-all, **Crawl-delay: 10** (enforced via `HOST_CRAWL_DELAY`). Yoast page-sitemap enumerates the `/vehicles/<class>/<slug>/` tree (JLTV, L-ATV, FMTV A2, MTVR, HEMTT, HET, LVSR, PLS, Wheeled Tanker, trailers, ARFF → Automotive; RCV → UGVs; MRAP + Integrated Weapons System → Armored). High-quality meta descriptions. © Oshkosh Defense → fact-extraction-with-attribution. Wired in `parsers_oshkosh.parse_oshkosh` + `categorize_oshkosh_url`. CLI: `discover-round4`. | **Active** |
+
+Rejected in round 4:
+
+- **registry.deploy.report** — Vercel Security Checkpoint JS challenge on all
+  content (same WAF class as militarnyi/navyrecognition/helis.com). Do not
+  scrape.
+- **AUVSI USRD (Uncrewed Systems and Robotics Database)** — paid membership
+  database (2,300+ platforms); license-only like Janes, never crawled.
+- Deferred: amgeneral.com (empty robots but suspected JS-rendered; needs a
+  render check before investing), tatratrucks.com (allow-all but no military
+  product tree found in its sitemap), uasvision.com (allows post pages but
+  blocks /wp-content/, i.e. images unavailable; news aggregator spec density).
+
+### Round-5 additions and rejections (2026-08-25)
+
+| Source | Compliant path | Status |
+|---|---|---|
+| www.naval-encyclopedia.com | robots: `User-agent:* Allow:/` with Cloudflare Content-Signals `search=yes, ai-train=no, use=reference` (same compliant class as war-sanctions.gur.gov.ua / globalsecurity.org; AI-training bots blocked, our UA fine). Flat sitemap.xml (~3,000 URLs); only era/country/<slug>.php articles enqueued: ww1, ww2, cold-war, industrial-era, modern sections (~1,270 unique after dedupe). Battles/civilian/naval-aviation/tech/pre-industrial paths skipped by `is_naval_encyclopedia_ship_url`. Pages carry an H1 designation + one specifications table (td-pair rows) + prose. Country parsed from URL segment (45-slug map). © naval encyclopedia → fact-extraction-with-attribution. Wired in `parsers_navalencyclopedia.parse_naval_encyclopedia`. CLI: `discover-round5`. | **Active** |
+| www.qinetiq.com | robots: allow-all except one hashed page + *.pdf; Crawl-delay: 1 (below our 1.5s default). Curated robotic-product pages under /en/what-we-do/research-and-development/autonomous-systems/robotics/robotic-products/: TALON, C-TALON, Dragon Runner, MAARS, SPUR → UGVs. Controllers/kits/maintenance/disinfecting variants and SeaScout UUV (no matching category) excluded. <title> is SEO-generic — designation from H1 (®/™ stripped); meta description used. © QinetiQ → fact-extraction-with-attribution. Wired in `parsers_qinetiq.parse_qinetiq`. CLI: `discover-round5`. | **Active** |
+
+Rejected in round 5:
+
+- **tanks-encyclopedia.com** — robots.txt allows all bots with content-signals
+  `use=reference`, but every content path (sitemap index included) serves a
+  Cloudflare "Just a moment…" JS challenge to non-browser agents. Same WAF
+  class as militarnyi/navyrecognition/helis.com/tanks-encyclopedia. Do not
+  scrape.
+- **elbitsystems.com** — robots open with explicit AI-bot allowances, but the
+  sitemap contains only news/blog/corporate pages; the product catalog is
+  client-side rendered (node/* pages are investor conferences). Deferred
+  pending an API/render discovery pass.
+
 ## 4. Operator-whitelisted deep scan (rare, documented)
 
 If a site operator gives us written permission to exceed robots.txt, the correct

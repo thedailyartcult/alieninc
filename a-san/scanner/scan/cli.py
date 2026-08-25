@@ -41,6 +41,11 @@ from .parsers_fas import FAS_INDEX_URLS, parse_fas_listing
 from .parsers_wikipedia import WIKIPEDIA_LIST_URLS, parse_wikipedia_list
 from .parsers_warsanctions import parse_warsanctions_uav_listing
 from .parsers_armyguide import parse_armyguide_listing
+from .parsers_navweaps import parse_navweaps_missile_links
+from .parsers_rheinmetall import RHEINMETALL_PRODUCT_URLS
+from .parsers_gdls import GDLS_PRODUCT_URLS
+from .parsers_qinetiq import QINETIQ_PRODUCT_URLS
+from .parsers_navalencyclopedia import is_naval_encyclopedia_ship_url
 from .picklist import CurationRules, curate, write_outputs
 from .patent_feed import feed_patents, feed_from_file
 from .play_build import build_play_dataset
@@ -392,6 +397,126 @@ def cmd_discover_seaforces(args, s: Settings):
         "enqueued_by_source": {"www.seaforces.org": n},
         "status": eng.status(),
         "next": "python -m scan crawl",
+    }, indent=2))
+    eng.close()
+
+
+def cmd_discover_round4(args, s: Settings):
+    """Enumerate the four round-4 sources (added 2026-08-25):
+    www.navweaps.com (WM* naval-missile index pages only — guns/torpedoes
+    skipped, no matching category), www.rheinmetall.com and www.gdls.com
+    (curated product URLs), oshkoshdefense.com (/vehicles/ tree from its
+    page-sitemap). robots.txt-gated, polite, cached. Run once, then crawl."""
+    eng = Engine(s)
+    eng.seed_from_catalog()
+    summary: dict[str, int] = {}
+
+    # --- navweaps.com: WM*_Main.php missile indexes -> WMxx_<name>.php ---
+    # Some indexes (notably Russia/USSR) print whole data tables inline; those
+    # rows are parsed + admitted here at discovery time. Detail pages are
+    # enqueued for the crawl.
+    from .parsers_navweaps import parse_navweaps_main_listing
+    n_nw = 0
+    res = eng._fetcher("www.navweaps.com").fetch(
+        "https://www.navweaps.com/Weapons/index_weapons.php",
+        store=eng.store, use_cache=True)
+    if res.status == 200 and res.html:
+        main_pages = sorted(set(re.findall(
+            r'href="(WM[A-Z]{2,4}_Main\.php)"', res.html)))[:args.nw_max_mains]
+        for mp in main_pages:
+            murl = f"https://www.navweaps.com/Weapons/{mp}"
+            res2 = eng._fetcher("www.navweaps.com").fetch(
+                murl, store=eng.store, use_cache=True)
+            if res2.status != 200 or not res2.html:
+                continue
+            for entry in parse_navweaps_main_listing(murl, res2.html):
+                if eng._admit(entry, murl) != "rejected":
+                    n_nw += 1
+            for durl in parse_navweaps_missile_links(res2.html):
+                n_nw += eng.store.enqueue(durl, "www.navweaps.com",
+                                          kind="product")
+    summary["www.navweaps.com"] = n_nw
+
+    # --- rheinmetall.com: curated uncrewed-systems product URLs ---
+    n_rm = 0
+    for url, cat in RHEINMETALL_PRODUCT_URLS:
+        n_rm += eng.store.enqueue(url, "www.rheinmetall.com",
+                                  category=cat, kind="product")
+    summary["www.rheinmetall.com"] = n_rm
+
+    # --- gdls.com: curated product URLs (TRX/MUTT -> UGVs, rest armored) ---
+    n_gd = 0
+    for url, cat in GDLS_PRODUCT_URLS:
+        n_gd += eng.store.enqueue(url, "www.gdls.com", category=cat,
+                                  kind="product")
+    summary["www.gdls.com"] = n_gd
+
+    # --- oshkoshdefense.com: /vehicles/ pages from page-sitemap.xml ---
+    n_os = 0
+    from .parsers_oshkosh import categorize_oshkosh_url
+    res = eng._fetcher("oshkoshdefense.com").fetch(
+        "https://oshkoshdefense.com/page-sitemap.xml",
+        store=eng.store, use_cache=True)
+    if res.status == 200 and res.html:
+        for m in re.finditer(r"<loc>(https?://oshkoshdefense\.com[^<]+)</loc>",
+                             res.html):
+            u = m.group(1)
+            cat = categorize_oshkosh_url(u)
+            if cat:
+                n_os += eng.store.enqueue(u, "oshkoshdefense.com",
+                                          category=cat, kind="product")
+    summary["oshkoshdefense.com"] = n_os
+
+    print(json.dumps({
+        "enqueued_by_source": summary,
+        "total_enqueued": sum(summary.values()),
+        "status": eng.status(),
+        "next": ("python -m scan crawl --domains www.navweaps.com "
+                 "(navweaps self-classifies at parse time; rheinmetall/gdls/"
+                 "oshkosh are pre-categorized)"),
+    }, indent=2))
+    eng.close()
+
+
+def cmd_discover_round5(args, s: Settings):
+    """Enumerate the round-5 sources (added 2026-08-25):
+    www.naval-encyclopedia.com (warship articles from its flat sitemap,
+    ww1/ww2/cold-war/industrial-era/modern sections only) and www.qinetiq.com
+    (curated robotic-product URLs -> UGVs). tanks-encyclopedia.com was
+    rejected this round (Cloudflare WAF despite open robots). Run once,
+    then crawl."""
+    eng = Engine(s)
+    eng.seed_from_catalog()
+    summary: dict[str, int] = {}
+
+    # --- naval-encyclopedia.com: flat sitemap -> era/country/<slug>.php ---
+    n_ne = 0
+    res = eng._fetcher("www.naval-encyclopedia.com").fetch(
+        "https://www.naval-encyclopedia.com/sitemap.xml",
+        store=eng.store, use_cache=True)
+    if res.status == 200 and res.html:
+        for m in re.finditer(r"<loc>([^<]+)</loc>", res.html):
+            u = m.group(1).strip().replace("http://", "https://")
+            if is_naval_encyclopedia_ship_url(u):
+                cat = "Naval vessels"
+                n_ne += eng.store.enqueue(u, "www.naval-encyclopedia.com",
+                                          category=cat, kind="product")
+    summary["www.naval-encyclopedia.com"] = n_ne
+
+    # --- qinetiq.com: curated robotic-product URLs (UGVs) ---
+    n_qq = 0
+    for url, cat in QINETIQ_PRODUCT_URLS:
+        n_qq += eng.store.enqueue(url, "www.qinetiq.com", category=cat,
+                                  kind="product")
+    summary["www.qinetiq.com"] = n_qq
+
+    print(json.dumps({
+        "enqueued_by_source": summary,
+        "total_enqueued": sum(summary.values()),
+        "status": eng.status(),
+        "next": ("python -m scan crawl --domains www.naval-encyclopedia.com "
+                 "(~2000 pages at 1.5s delay; both sources pre-categorized "
+                 "and resumable)"),
     }, indent=2))
     eng.close()
 
@@ -881,6 +1006,20 @@ def main(argv=None):
                          help="enumerate seaforces.org wpnsys/usnships/marint "
                               "sections from its flat sitemap.txt and enqueue them")
     _add_common(sfp)
+    r4p = sub.add_parser("discover-round4",
+                         help="enumerate the round-4 sources (navweaps.com WM* "
+                              "missile pages, rheinmetall.com + gdls.com product "
+                              "pages, oshkoshdefense.com /vehicles/ sitemap) and "
+                              "enqueue their detail URLs")
+    r4p.add_argument("--nw-max-mains", type=int, default=10,
+                     help="max navweaps WM*_Main.php index pages to walk")
+    _add_common(r4p)
+    r5p = sub.add_parser("discover-round5",
+                         help="enumerate the round-5 sources (naval-"
+                              "encyclopedia.com warship articles from its "
+                              "sitemap + qinetiq.com robotic products) and "
+                              "enqueue them")
+    _add_common(r5p)
     rcp = sub.add_parser("recategorize",
                          help="quality pass: fill Uncategorized entries, repair "
                               "weaponsystems.net platform misclassification, "
@@ -935,6 +1074,10 @@ def main(argv=None):
         cmd_discover_more(args, s)
     elif args.cmd == "discover-seaforces":
         cmd_discover_seaforces(args, s)
+    elif args.cmd == "discover-round4":
+        cmd_discover_round4(args, s)
+    elif args.cmd == "discover-round5":
+        cmd_discover_round5(args, s)
     elif args.cmd == "recategorize":
         cmd_recategorize(args, s)
     elif args.cmd == "dedupe-keys":

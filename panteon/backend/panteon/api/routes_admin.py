@@ -1,14 +1,13 @@
 from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, desc
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
 
 from panteon.core.database import get_db
-from panteon.core.auth import SupabaseUser, get_current_user, require_role
+from panteon.core.auth import SupabaseUser, require_role
 from panteon.core.apikeys import APIKey, generate_api_key, hash_api_key
-from panteon.core.audit import AuditLog
 
 router = APIRouter(prefix="/admin", tags=["Platform Admin"])
 
@@ -33,17 +32,6 @@ class APIKeyResponse(BaseModel):
 
 class APIKeyCreatedResponse(APIKeyResponse):
     raw_key: str
-
-
-class AuditLogResponse(BaseModel):
-    id: str
-    timestamp: str
-    user_email: Optional[str]
-    method: str
-    path: str
-    status_code: int
-    client_ip: Optional[str]
-    duration_ms: Optional[int]
 
 
 @router.post("/api-keys", response_model=APIKeyCreatedResponse)
@@ -114,33 +102,3 @@ async def revoke_api_key(
     key_record.is_active = False
     await db.flush()
     return {"revoked": True}
-
-
-@router.get("/audit", response_model=list[AuditLogResponse])
-async def get_audit_logs(
-    limit: int = Query(default=100, le=500),
-    user_email: Optional[str] = None,
-    path_prefix: Optional[str] = None,
-    status_code: Optional[int] = None,
-    current_user: SupabaseUser = Depends(require_role("admin")),
-    db: AsyncSession = Depends(get_db),
-):
-    query = select(AuditLog).order_by(desc(AuditLog.timestamp))
-    if user_email:
-        query = query.where(AuditLog.user_email == user_email)
-    if path_prefix:
-        query = query.where(AuditLog.path.startswith(path_prefix))
-    if status_code:
-        query = query.where(AuditLog.status_code == status_code)
-    query = query.limit(limit)
-
-    result = await db.execute(query)
-    return [
-        AuditLogResponse(
-            id=str(log.id), timestamp=log.timestamp.isoformat(),
-            user_email=log.user_email, method=log.method, path=log.path,
-            status_code=log.status_code, client_ip=log.client_ip,
-            duration_ms=log.duration_ms,
-        )
-        for log in result.scalars().all()
-    ]

@@ -80,6 +80,8 @@ class HttpFetcher:
     HOST_CRAWL_DELAY: dict[str, float] = {
         "missilethreat.csis.org": 10.0,   # robots.txt: Crawl-delay: 10
         "modernfirearms.net": 20.0,       # robots.txt: Crawl-delay: 20
+        "www.gdls.com": 10.0,             # robots.txt: Crawl-delay: 10
+        "oshkoshdefense.com": 10.0,       # robots.txt: Crawl-delay: 10
         # No robots Crawl-delay listed, but this is a Ukrainian government
         # intelligence portal run during an active war — stay extra polite.
         "war-sanctions.gur.gov.ua": 3.0,

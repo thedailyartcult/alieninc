@@ -228,6 +228,11 @@ DEFAULT_THEATER = "Baltic Guardian"
 DET_COOLDOWN_S = 240.0
 DET_MAX_PER_TICK = 10          # closest qualifying tracks per asset per tick
 LAST_DET_TTL_S = 3600.0        # cooldown keys older than this are pruned
+PLACES_TTL_S = 600.0           # ecosystem reference cache lifetime
+ECOSYSTEM_PUBLIC_URL = os.environ.get(
+    "ECOSYSTEM_PUBLIC_URL", "http://127.0.0.1:8080/api/ecosystem/public")
+PHOTO_MAX_BYTES = 8_000_000
+_PLACES_CACHE: dict = {"ts": 0.0, "data": None}
 
 # In-memory mission engine state (positions re-derived lazily from elapsed
 # wall-clock so restarts need no persistence beyond sc_object stamps).
@@ -1016,6 +1021,118 @@ def _is_uuid(s: str) -> bool:
         return False
 
 
+async def get_places() -> dict:
+    """Reference layer: group network nodes + BGC company directory from the
+    ecosystem source of truth (non-financial fields only), cached 10 min."""
+    now = time.time()
+    if _PLACES_CACHE["data"] and now - _PLACES_CACHE["ts"] < PLACES_TTL_S:
+        return _PLACES_CACHE["data"]
+    async with httpx.AsyncClient(timeout=10) as client:
+        r = await client.get(ECOSYSTEM_PUBLIC_URL)
+        r.raise_for_status()
+        eco = r.json()
+    nm = eco.get("networkMap") or {}
+    nodes = []
+    for n in nm.get("nodes") or []:
+        try:
+            lat, lng = float(n.get("lat")), float(n.get("lng"))
+        except (TypeError, ValueError):
+            continue
+        stack = [str(t.get("name")) for t in (n.get("techStack") or [])
+                 if isinstance(t, dict) and t.get("name")]
+        nodes.append({"name": str(n.get("name") or n.get("city") or "NODE"),
+                      "city": str(n.get("city") or ""),
+                      "sector": str(n.get("sector") or ""),
+                      "lat": lat, "lng": lng, "techStack": stack[:12]})
+    comps = []
+    core = ((eco.get("bgcDirectory") or {}).get("metadata") or {}).get("core") or {}
+    for c in (eco.get("bgcDirectory") or {}).get("companies") or []:
+        try:
+            lat, lng = float(c.get("lat")), float(c.get("lng"))
+        except (TypeError, ValueError):
+            continue
+        comps.append({
+            "name": str(c.get("name") or "?"),
+            "address": str(c.get("address") or ""),
+            "district": str(c.get("district") or ""),
+            "industry": str(c.get("industry") or ""),
+            "lat": lat, "lng": lng,
+            "techStack": [str(t) for t in (c.get("techStack") or [])][:12],
+            "lastVerified": str(c.get("lastVerified") or ""),
+        })
+    data = {"nodes": nodes, "companies": comps, "fetched_at": _now_iso()}
+    _PLACES_CACHE["ts"] = now
+    _PLACES_CACHE["data"] = data
+    return data
+
+
+def _photo_dir() -> str:
+    d = os.path.join(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))), "uploads", "maven")
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+async def attach_photo(db: AsyncSession, object_id: str, data_b64: str,
+                       caption: str, kind: str, user_email: str) -> dict:
+    import base64
+    svc = OntologyService(db)
+    obj = None
+    if _is_uuid(object_id):
+        obj = await svc.get_object(uuid.UUID(str(object_id)))
+    if obj is None or not str(obj.primary_key_value).startswith("mv-obj:"):
+        raise ValueError("unknown object id")
+    try:
+        raw = base64.b64decode(str(data_b64), validate=False)
+    except (ValueError, TypeError) as exc:
+        raise ValueError("invalid image payload") from exc
+    if not raw or len(raw) > PHOTO_MAX_BYTES:
+        raise ValueError("image missing or too large (max 8MB)")
+    ext = ".png" if raw[:4] == b"\x89PNG" else (
+        ".jpg" if raw[:3] == b"\xff\xd8\xff" else None)
+    if ext is None:
+        raise ValueError("only JPEG/PNG images accepted")
+    fname = uuid.uuid4().hex + ext
+    with open(os.path.join(_photo_dir(), fname), "wb") as fh:
+        fh.write(raw)
+    p = obj.properties or {}
+    atts = p.get("attachments") or []
+    att = {"id": uuid.uuid4().hex[:10], "file": fname,
+           "caption": str(caption or "").strip()[:120], "kind": kind or "upload",
+           "by": user_email or "operator", "at": _now_iso()}
+    atts.append(att)
+    p["attachments"] = atts[-24:]
+    obj.properties = p
+    await db.commit()
+    return {"attachment": att}
+
+
+async def delete_photo(db: AsyncSession, object_id: str, att_id: str) -> dict:
+    svc = OntologyService(db)
+    obj = None
+    if _is_uuid(object_id):
+        obj = await svc.get_object(uuid.UUID(str(object_id)))
+    if obj is None or not str(obj.primary_key_value).startswith("mv-obj:"):
+        raise ValueError("unknown object id")
+    p = obj.properties or {}
+    keep, removed = [], None
+    for a in p.get("attachments") or []:
+        if a.get("id") == str(att_id):
+            removed = a
+        else:
+            keep.append(a)
+    if removed is None:
+        raise ValueError("unknown attachment id")
+    try:
+        os.remove(os.path.join(_photo_dir(), removed["file"]))
+    except OSError:
+        pass
+    p["attachments"] = keep
+    obj.properties = p
+    await db.commit()
+    return {"deleted": True, "attachment_id": str(att_id)}
+
+
 async def maven_command(db: AsyncSession, body: dict, user_email: str) -> dict:
     """Natural-language command bridge for YONO/chat automation.
     Intents: status | task on <object> | coa for <contact> |
@@ -1096,6 +1213,25 @@ async def maven_command(db: AsyncSession, body: dict, user_email: str) -> dict:
             directive = {"op": "fly_to",
                          "center": [float(dp.get("lng") or 0), float(dp.get("lat") or 0)],
                          "zoom": 11}
+    elif low.startswith("fly to") or low.startswith("fly "):
+        want = re.sub(r"^fly\s+(to\s+)?", "", low).strip()
+        places = await get_places()
+        pool = [(p, "company") for p in places["companies"]] + \
+               [(n, "node") for n in places["nodes"]]
+        best, best_len = None, 0
+        for p, kind in pool:
+            nm = p["name"].lower()
+            if want and want in nm and len(nm) > best_len:
+                best, best_len = (p, kind), len(nm)
+        if best is None:
+            reply = f"No company or node matching '{want}'."
+        else:
+            p, kind = best
+            stack = ", ".join(p["techStack"][:6])
+            reply = (f"{p['name'].upper()} ({kind})\n{p.get('address') or p.get('sector', '')}\n"
+                     + (f"Stack: {stack}" if stack else ""))
+            directive = {"op": "fly_to",
+                         "center": [p["lng"], p["lat"]], "zoom": 16.5}
     elif low.startswith("task"):
         m = re.match(r"task(?:\s+(?:on|at))?\s+(.+)$", low)
         want = (m.group(1) or "").strip().lower() if m else ""

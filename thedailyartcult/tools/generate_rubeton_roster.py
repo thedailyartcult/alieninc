@@ -29,6 +29,24 @@ BASIC_SET_IDS = {1, 4, 7, 9, 14, 15, 17, 19, 21, 22, 24, 26, 27, 28, 29, 30,
                  54, 55, 57, 58, 61, 62, 63, 69, 72, 73, 75, 77, 79, 80, 82,
                  83, 94, 95, 112, 118}
 
+# Authentic collection menu from art.rubeton.app (engine.js changeSet cases).
+# These become the Filter Painters chips on playart.html.
+RUBETON_SETS = {
+    "basic": BASIC_SET_IDS,
+    "impressionism": {2, 3, 9, 16, 17, 21, 30, 36, 49, 53, 57, 60, 61, 69,
+                      77, 84, 94, 96},
+    "renaissance": {24, 35, 39, 41, 42, 45, 50, 55, 87, 89, 90, 91, 92, 95,
+                    98, 100, 101, 104, 106, 108, 110, 111, 112, 114},
+    "realism": {5, 8, 18, 25, 37, 47, 48, 58, 85, 113, 116, 117},
+    "russian": {3, 4, 5, 6, 8, 10, 11, 12, 13, 16, 19, 20, 23, 25, 26, 27,
+                37, 38, 44, 47, 48, 76, 81, 84, 85, 86, 103, 105, 107, 109,
+                113, 115},
+    "french": {2, 9, 17, 30, 36, 40, 49, 53, 57, 58, 61, 64, 65, 69, 70, 73,
+               75, 77, 93, 94, 96, 97},
+}
+SET_TAG_ORDER = ["basic", "impressionism", "renaissance", "realism",
+                 "russian", "french"]
+
 COUNTRY_TAGS = {
     "italian": "italian", "russian": "russian", "french": "french",
     "british": "british", "dutch": "dutch", "german": "german",
@@ -100,17 +118,22 @@ def main():
             continue
         rid = p["id"]
         tags = ["full"]
-        if rid in BASIC_SET_IDS:
-            tags.append("popular")
+        for set_tag in SET_TAG_ORDER:
+            if rid in RUBETON_SETS[set_tag]:
+                tags.append(set_tag)
+        if "basic" not in tags:
+            # keep a popularity alias so shared tooling still works
+            pass
         for genre in p.get("genre", []):
             tag = GENRE_TAGS.get(genre.strip().lower())
-            if tag and tag not in tags:
+            # never let derived tags blur the authentic set membership
+            if tag and tag not in tags and tag not in RUBETON_SETS:
                 tags.append(tag)
         nationality = ""
         for nat in p.get("nationality", []):
             nationality = nationality or nat.strip()
             tag = COUNTRY_TAGS.get(nat.strip().lower())
-            if tag and tag not in tags:
+            if tag and tag not in tags and tag not in RUBETON_SETS:
                 tags.append(tag)
         count = int(p.get("paintings", 0))
         if count < 5:
@@ -131,19 +154,20 @@ def main():
             "source": "art.rubeton.app (Art Challenge)",
         })
 
-    records.sort(key=lambda r: (-("popular" in r["tags"]), r["name"]))
+    records.sort(key=lambda r: (-("basic" in r["tags"]), r["name"]))
     payload = {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "source": "art.rubeton.app js/load2.js painter database; "
                   "images hotlinked from art.rubeton.app/pics/paintings/",
         "count": len(records),
+        "sets": {k: sorted(v) for k, v in RUBETON_SETS.items()},
         "painters": records,
     }
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
     with open(OUT_PATH, "w", encoding="utf-8") as fh:
         json.dump(payload, fh, ensure_ascii=False, separators=(",", ":"))
 
-    popular = sum(1 for r in records if "popular" in r["tags"])
+    popular = sum(1 for r in records if "basic" in r["tags"])
     total_imgs = sum(r["img_count"] for r in records)
     tag_hist = {}
     for r in records:
@@ -153,7 +177,9 @@ def main():
     size_kb = os.path.getsize(OUT_PATH) // 1024
     print(f"[3/3] wrote {OUT_PATH}")
     print(f"      {len(records)} painters ({size_kb} KB), "
-          f"{popular} popular, {total_imgs} hotlinked paintings total")
+          f"{popular} in basic set, {total_imgs} hotlinked paintings total")
+    print(f"      set sizes: "
+          f"{ {k: len(v & {r['rid'] for r in records}) for k, v in RUBETON_SETS.items()} }")
     print(f"      tags: {sorted(tag_hist.items(), key=lambda kv: -kv[1])[:16]}")
 
 

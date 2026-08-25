@@ -2442,16 +2442,27 @@
                   <!-- Spinal Cracker Fusion Dashboard — one map, both GDELT + OpenSky -->
                   <div class="page" id="page-sc-fusion">
                       <div class="section">
-                          <div class="section-header">
-                              <div class="section-title">Spinal Cracker — Unified Intelligence Map</div>
-                          </div>
 
-                          <!-- Unified Intelligence Map — full width; ONE floating hive -->
+                          <!-- Unified Intelligence Map — docked left nav + map -->
                           <div class="sc-map-pane" id="fusionMapPane">
-                              <div class="sc-map-canvas-wrap">
-                                  <div class="retro-map-canvas" id="fusionMap"></div>
 
-                                  <div class="sc-deck" id="fusionDeck">
+<div class="maven-left-col" id="mavenLeftCol">
+  <div class="maven-col-head">
+    <span class="maven-col-mark">SC</span>
+    <span class="maven-col-title">MAVEN SMART SYSTEM</span>
+    <button type="button" id="mavenColToggle" title="Collapse sidebar">&#9662;</button>
+  </div>
+  <div class="maven-scope-cluster">
+    <div class="msc-row">
+      <label>WHERE</label>
+      <select id="mvScopeRegion"></select>
+    </div>
+    <div class="msc-row">
+      <label>COUNTRY</label>
+      <select id="mvScopeCountry"></select>
+    </div>
+  </div>
+<div class="sc-deck sc-deck-docked" id="fusionDeck">
                                           <button type="button" class="hive-pent" id="hivePentBtn" aria-label="Toggle command hive" aria-expanded="false">
                                               <span class="hive-pent-inner">
                                                   <span class="hive-pent-glyph">SC</span>
@@ -2597,65 +2608,82 @@
                                         </div>
                                     </div>
                                </div><!-- /#fusionDeck — badge/hint/drawer/mil-panel are wrap siblings, NOT deck children -->
+<div id="mavenDrawer" class="maven-drawer">
+                                                                          <div class="maven-head">
+                                                                              <span class="maven-title">MAVEN SMART LAYER</span>
+                                                                              <span class="maven-live" id="mavenLiveTag">sc_ontology native</span>
+                                                                              <span id="mavenOvlBtn" class="maven-ovl-toggle" title="Toggle all map overlays (markers, rings, towers)">OVERLAYS ON</span>
+                                                                          </div>
+                                                                          <div class="maven-tabs">
+                                                                              <button data-mtab="tasks" class="active">TASKS</button>
+                                                                              <button data-mtab="assets">ASSETS</button>
+                                                                              <button data-mtab="coa">COA</button>
+                                                <button data-mtab="cameo">CAMEO</button>
+                                                                              <button data-mtab="objects">OBJECTS</button>
+                                                                              <button data-mtab="places">PLACES</button>
+                                                                          </div>
+                                                                         <div class="maven-body">
+                                                                             <section data-mpanel="tasks">
+                                                                                 <button class="maven-btn" id="mavenNewTaskBtn">&#128205; PICK TARGET ON MAP</button>
+                                                                                 <div id="mavenTaskList"></div>
+                                                                             </section>
+                                                                              <section data-mpanel="assets" class="maven-hide"><div id="mavenAssetList"></div></section>
+                                                                               <section data-mpanel="coa" class="maven-hide">
+                                                                                   <div class="maven-empty" style="margin-bottom:4px">CONFIRMED CONTACTS &#8594; GENERATE COA</div>
+                                                                                   <div id="mavenCoaTargets"></div>
+                                                                                   <div id="mavenCoaList"></div>
+                                                                               </section>
+                                                                               <section data-mpanel="cameo" class="maven-hide">
+                                                     <div id="mavenCameoDetail"></div>
+                                                     <div id="mavenCameoList"></div>
+                                                 </section>
+                                                <section data-mpanel="objects" class="maven-hide">
+                                                                                  <button class="maven-btn" id="mavenRegObjBtn">+ REGISTER OBJECT</button>
+                                                                                  <div id="mavenObjForm"></div>
+                                                                                  <div id="mavenObjList"></div>
+                                                                              </section>
+                                                <section data-mpanel="places" class="maven-hide">
+                                                    <button class="maven-btn" id="mavenPinsBtn">MAP PINS: OFF</button>
+                                                    <input type="text" id="mavenPlaceSearch" placeholder="SEARCH NAME / INDUSTRY / STACK" maxlength="60">
+                                                    <div id="mavenPlaceInfo"></div>
+                                                    <div id="mavenPlacesList"></div>
+                                                </section>
+                                                                         </div>
+                                                                         <div id="mavenDetRail"></div>
+                                                                     </div>
+</div>
+                                                                     
+                                                                    <div id="fusionScopeEmpty" class="sc-scope-empty">Select a WHERE and WHAT to scope your investigation.<br>The map, KPIs, and tables will populate after a scoped run.</div>
+                                                                    <div id="fusionMilPanel" class="sc-mil-panel sc-mil-hidden">
+                                                                        <button type="button" class="sc-mil-head" onclick="fusionMilToggle()" aria-expanded="true">
+                                                                            <span class="sc-mil-title">MIL Contacts</span>
+                                                                            <b class="sc-intel-count" id="fusionMilCount">0</b>
+                                                                            <span class="sc-intel-chevron" style="margin-left:auto" id="fusionMilChevron">&#9662;</span>
+                                                                        </button>
+                                                                        <div class="sc-mil-body" id="fusionMilBody"></div>
+                                                                    </div>
+                                                                    <div id="fusionTrackCard" class="fusion-track-card fusion-track-hidden">
+                                                                        <div class="ftc-head">
+                                                                            <span class="ftc-title" id="ftcCallsign">&mdash;</span>
+                                                                            <span class="ftc-cat" id="ftcCat"></span>
+                                                                            <button type="button" class="retro-map-btn ftc-close" onclick="deselectFusionAircraft()" title="Deselect">&#10005;</button>
+                                                                        </div>
+                                                                        <div class="ftc-grid" id="ftcGrid"></div>
+                                                                        <div class="ftc-route" id="ftcRoute">Resolving route&hellip;</div>
+                                                                        <div class="ftc-actions">
+                                                                            <button type="button" class="retro-map-btn" id="ftcFollowBtn" onclick="fusionToggleFollow()">Follow: off</button>
+                                                                            <button type="button" class="retro-map-btn" onclick="fusionFlyToSelected()">Center</button>
+                                                                        </div>
+                                                                    </div>
+                              <div class="sc-map-canvas-wrap">
+                                  <div class="retro-map-canvas" id="fusionMap"></div>
+
+                                  
 
 
 <div id="mavenHudBadge" class="maven-badge maven-hidden">MAVEN 0T · 0A · 0D</div>
                                         <div id="mavenAoiHint" class="maven-aoi-hint maven-hidden">CLICK A BUILDING OR MAP POINT TO SET TARGET &middot; ESC CANCELS</div>
-                                        <div id="mvProbeChip"></div>
-                                       <div id="mavenDrawer" class="maven-drawer maven-hidden">
-                                            <div class="maven-head">
-                                                <span class="maven-title">MAVEN SMART LAYER</span>
-                                                <span class="maven-live" id="mavenLiveTag">sc_ontology native</span>
-                                                <span id="mavenOvlBtn" class="maven-ovl-toggle" title="Toggle all map overlays (markers, rings, towers)">OVERLAYS ON</span>
-                                            </div>
-                                            <div class="maven-tabs">
-                                                <button data-mtab="tasks" class="active">TASKS</button>
-                                                <button data-mtab="assets">ASSETS</button>
-                                                <button data-mtab="coa">COA</button>
-                                                <button data-mtab="objects">OBJECTS</button>
-                                            </div>
-                                           <div class="maven-body">
-                                               <section data-mpanel="tasks">
-                                                   <button class="maven-btn" id="mavenNewTaskBtn">&#128205; PICK TARGET ON MAP</button>
-                                                   <div id="mavenTaskList"></div>
-                                               </section>
-                                                <section data-mpanel="assets" class="maven-hide"><div id="mavenAssetList"></div></section>
-                                                 <section data-mpanel="coa" class="maven-hide">
-                                                     <div class="maven-empty" style="margin-bottom:4px">CONFIRMED CONTACTS &#8594; GENERATE COA</div>
-                                                     <div id="mavenCoaTargets"></div>
-                                                     <div id="mavenCoaList"></div>
-                                                 </section>
-                                                <section data-mpanel="objects" class="maven-hide">
-                                                    <button class="maven-btn" id="mavenRegObjBtn">+ REGISTER OBJECT</button>
-                                                    <div id="mavenObjForm"></div>
-                                                    <div id="mavenObjList"></div>
-                                                </section>
-                                           </div>
-                                           <div id="mavenDetRail"></div>
-                                       </div>
-                                      <div id="fusionScopeEmpty" class="sc-scope-empty">Select a WHERE and WHAT to scope your investigation.<br>The map, KPIs, and tables will populate after a scoped run.</div>
-                                      <div id="fusionMilPanel" class="sc-mil-panel sc-mil-hidden">
-                                          <button type="button" class="sc-mil-head" onclick="fusionMilToggle()" aria-expanded="true">
-                                              <span class="sc-mil-title">MIL Contacts</span>
-                                              <b class="sc-intel-count" id="fusionMilCount">0</b>
-                                              <span class="sc-intel-chevron" style="margin-left:auto" id="fusionMilChevron">&#9662;</span>
-                                          </button>
-                                          <div class="sc-mil-body" id="fusionMilBody"></div>
-                                      </div>
-                                      <div id="fusionTrackCard" class="fusion-track-card fusion-track-hidden">
-                                          <div class="ftc-head">
-                                              <span class="ftc-title" id="ftcCallsign">&mdash;</span>
-                                              <span class="ftc-cat" id="ftcCat"></span>
-                                              <button type="button" class="retro-map-btn ftc-close" onclick="deselectFusionAircraft()" title="Deselect">&#10005;</button>
-                                          </div>
-                                          <div class="ftc-grid" id="ftcGrid"></div>
-                                          <div class="ftc-route" id="ftcRoute">Resolving route&hellip;</div>
-                                          <div class="ftc-actions">
-                                              <button type="button" class="retro-map-btn" id="ftcFollowBtn" onclick="fusionToggleFollow()">Follow: off</button>
-                                              <button type="button" class="retro-map-btn" onclick="fusionFlyToSelected()">Center</button>
-                                          </div>
-                                      </div>
-                                      <div id="gaiaTimeBar" class="gtb-hidden" role="group" aria-label="Satellite imagery control">
+<div id="gaiaTimeBar" class="gtb-hidden" role="group" aria-label="Satellite imagery control">
                                           <div class="gtb-pill-row">
                                               <span class="gtb-pill-tag" id="gtbPillTag">SAT</span>
                                               <input type="range" class="gtb-mini-slider" id="gtbOpacityMini" min="20" max="100" step="5" value="100" aria-label="Imagery opacity">
@@ -2922,80 +2950,11 @@
                           })();
                           </script>
 
-                          <!-- Intelligence panels: collapsible accordions (map-first layout) -->
-                          <div class="sc-intel-grid">
-                              <div class="card sc-intel-card" id="intelCardThreats">
-                                  <button type="button" class="card-header sc-intel-toggle" onclick="scIntelToggle(this)" aria-expanded="false" aria-controls="fusionThreatTable">
-                                      <span style="display:flex;align-items:center;gap:6px"><span class="sc-intel-index">01</span><span class="card-title">Recent Threat Events</span><b class="sc-intel-count" id="intelCountThreats">0</b></span>
-                                      <span style="display:flex;align-items:center;gap:6px"><span class="tag tag-red">GDELT</span><span class="sc-intel-chevron">&#9662;</span></span>
-                                  </button>
-                                  <div class="sc-intel-body"><div id="fusionThreatTable" class="sc-data-list"></div></div>
-                              </div>
-                              <div class="card sc-intel-card" id="intelCardAircraft">
-                                  <button type="button" class="card-header sc-intel-toggle" onclick="scIntelToggle(this)" aria-expanded="false" aria-controls="fusionAircraftTable">
-                                      <span style="display:flex;align-items:center;gap:6px"><span class="sc-intel-index">02</span><span class="card-title">Military Aircraft</span><b class="sc-intel-count" id="intelCountAircraft">0</b></span>
-                                      <span style="display:flex;align-items:center;gap:6px"><span class="tag tag-blue">OpenSky</span><span class="sc-intel-chevron">&#9662;</span></span>
-                                  </button>
-                                  <div class="sc-intel-body"><div id="fusionAircraftTable" class="sc-data-list"></div></div>
-                              </div>
-                              <div class="card sc-intel-card" id="intelCardActors">
-                                  <button type="button" class="card-header sc-intel-toggle" onclick="scIntelToggle(this)" aria-expanded="false" aria-controls="fusionActorTable">
-                                      <span style="display:flex;align-items:center;gap:6px"><span class="sc-intel-index">03</span><span class="card-title">Actor Network</span><b class="sc-intel-count" id="intelCountActors">0</b></span>
-                                      <span style="display:flex;align-items:center;gap:6px"><span class="tag tag-green">CAMEO</span><span class="sc-intel-chevron">&#9662;</span></span>
-                                  </button>
-                                  <div class="sc-intel-body"><div id="fusionActorTable" class="sc-data-list"></div></div>
-                              </div>
-                          </div>
-
-                          <script>
-                          // Spinal Cracker: intel accordions (collapsed by default, state persisted, map reflows)
-                          (function () {
-                              var KEY = 'sc_intel_open_v1';
-                              function readState() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
-                              window.scIntelToggle = function (btn) {
-                                  var card = btn.closest('.sc-intel-card');
-                                  if (!card) return;
-                                  var open = card.classList.toggle('open');
-                                  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-                                  var s = readState(); s[card.id] = open;
-                                  try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
-                                  setTimeout(function () {
-                                      if (typeof fusionMap !== 'undefined' && fusionMap) { try { fusionMap.resize(); } catch (e) {} }
-                                  }, 300);
-                              };
-                              document.addEventListener('DOMContentLoaded', function () {
-                                  var s = readState();
-                                  ['intelCardThreats', 'intelCardAircraft', 'intelCardActors'].forEach(function (id) {
-                                      if (!s[id]) return;
-                                      var card = document.getElementById(id);
-                                      if (!card || !card.classList.contains('sc-intel-card')) return;
-                                      card.classList.add('open');
-                                      var t = card.querySelector('.sc-intel-toggle');
-                                      if (t) t.setAttribute('aria-expanded', 'true');
-                                  });
-                              });
-                          })();
-                          </script>
-
-                          <!-- Tactical metrics -->
-                          <div class="sc-metrics-grid">
-                              <div class="card">
-                                  <div class="card-header"><span style="display:flex;align-items:center;gap:6px"><span class="sc-intel-index">04</span><span class="card-title">Systemic Importance</span></span></div>
-                                  <div class="sc-metric-value" id="fusionMetricSystemic">--</div>
-                              </div>
-                              <div class="card">
-                                  <div class="card-header"><span style="display:flex;align-items:center;gap:6px"><span class="sc-intel-index">05</span><span class="card-title">Propagation Potential</span></span></div>
-                                  <div class="sc-metric-value" id="fusionMetricPropagation">--</div>
-                              </div>
-                              <div class="card">
-                                  <div class="card-header"><span style="display:flex;align-items:center;gap:6px"><span class="sc-intel-index">06</span><span class="card-title">Event Momentum</span></span></div>
-                                  <div class="sc-metric-value" id="fusionMetricMomentum">--</div>
-                              </div>
-                          </div>
-                      </div>
+                          
+</div>
                   </div>
 
-                  <div class="page" id="page-sc-gdelt">
+<div class="page" id="page-sc-gdelt">
                       <div class="section">
                           <div class="section-header">
                               <span class="section-title">GDELT Intelligence Engine</span>
@@ -4534,7 +4493,7 @@ const CMB_BASE_URL = '/cmb/';
 
 const PAGES = {
     'overview': 'Overview',
-    'sc-fusion': 'Spinal Cracker',
+    'sc-fusion': 'Spinal Cracker — Unified Intelligence Map',
     'sc-gdelt': 'GDELT Intelligence Engine',
     'sc-aviation': 'Aviation Domain',
     'sc-types': 'Object Types',
@@ -6961,7 +6920,7 @@ function initFusionMap() {
         bearing: -10,
         maxPitch: 85,
         attributionControl: { compact: true },
-        canvasContextAttributes: { antialias: true },
+        canvasContextAttributes: { antialias: true, preserveDrawingBuffer: true },
     });
     window.fusionMap = fusionMap;
     fusionMap.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-left');
@@ -6970,8 +6929,6 @@ function initFusionMap() {
         function probeOnce(msg) {
             if (msg === lastMsg) return;
             lastMsg = msg;
-            var chip = document.getElementById('mvProbeChip');
-            if (chip) { chip.style.display = 'block'; chip.textContent = msg; }
             console.error('[MV PROBE]', msg);
         }
         var tq = fusionMap._renderTaskQueue;
@@ -7911,14 +7868,14 @@ function updateFusionKpis() {
     // BigQuery-enhanced metrics: avg tone + Goldstein scale
     // Goldstein from payload (BigQuery stores it); fallback to tone-derived estimate
     // Tactical metrics
-    document.getElementById('fusionMetricSystemic').textContent = m.systemic || '--';
-    document.getElementById('fusionMetricPropagation').textContent = m.propagation || '--';
+    (document.getElementById('fusionMetricSystemic')||{}).textContent = m.systemic || '--';
+    (document.getElementById('fusionMetricPropagation')||{}).textContent = m.propagation || '--';
     // Event momentum: avg NumMentions (from BigQuery) or fallback to event count
     const mentions = fusionThreatEvents.map(e => (e.payload && e.payload.NumMentions) || null).filter(Boolean);
     const momentum = mentions.length ? (mentions.reduce((a, b) => a + b, 0) / mentions.length).toFixed(0) : m.total;
-    document.getElementById('fusionMetricMomentum').textContent = momentum;
+    (document.getElementById('fusionMetricMomentum')||{}).textContent = momentum;
     // Recent threat events table (with real tone + actors)
-    document.getElementById('fusionThreatTable').innerHTML = fusionThreatEvents.slice(0, 20).map(ev => {
+    (document.getElementById('fusionThreatTable')||{}).innerHTML = fusionThreatEvents.slice(0, 20).map(ev => {
         const g = parseActionGeo(ev); const tone = threatLevelForEvent(ev);
         const c = tone === 'red' ? 'var(--red)' : tone === 'amber' ? 'var(--amber)' : 'var(--green)';
         const toneStr = ev.avg_tone ? ev.avg_tone.toFixed(1) : '--';
@@ -7929,7 +7886,7 @@ function updateFusionKpis() {
             '</div>';
     }).join('') || '<div class="empty-state">No threat events - run the GDELT pipeline</div>';
     // Military aircraft table
-    document.getElementById('fusionAircraftTable').innerHTML = fusionFlights
+    (document.getElementById('fusionAircraftTable')||{}).innerHTML = fusionFlights
         .filter(f => (f.properties || {}).category === 'military').slice(0, 20).map(f => {
             const p = f.properties || {};
             return '<div style="margin-bottom:3px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
@@ -7946,7 +7903,7 @@ function updateFusionKpis() {
     actors.forEach(a => { actorCounts[a.actor1] = (actorCounts[a.actor1] || 0) + 1; });
     const topActors = Object.entries(actorCounts).sort((a, b) => b[1] - a[1]).slice(0, 20);
     const intelCountAc = document.getElementById('intelCountActors'); if (intelCountAc) intelCountAc.textContent = topActors.length;
-    document.getElementById('fusionActorTable').innerHTML = topActors.map(([name, count]) =>
+    (document.getElementById('fusionActorTable')||{}).innerHTML = topActors.map(([name, count]) =>
         '<div style="margin-bottom:3px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
         '<span style="color:var(--accent-neon)">' + escapeHtml(name) + '</span>' +
         ' <span style="color:var(--text-muted)">(' + count + ' events)</span></div>'
@@ -8156,16 +8113,25 @@ function initScopeBuilder() {
 
 let fusionDataLoaded = false;
 
-async function preloadFusionData() {
-    if (fusionDataLoaded) return;
+async function preloadFusionData(force) {
+    if (fusionDataLoaded && !force) return;
     fusionDataLoaded = true;
+    try {
+        await doPreloadFusionData();
+    } finally {
+        fusionDataLoaded = false;
+    }
+}
+window.__forceFusionReload = function () { return preloadFusionData(true); };
+async function doPreloadFusionData() {
     const hud = document.getElementById('fusionMapHud');
     if (hud) hud.textContent = 'Loading GDELT + OpenSky data…';
     // Fetch both sources in parallel.
     let events = [], flights = [];
     try {
+        const cc2 = (typeof scCountryFips === 'function' && SCScope.country) ? ('&country=' + encodeURIComponent(SCScope.country)) : '';
         const [evData, flData] = await Promise.all([
-            api('/gkg/events?limit=250').catch(() => ({ events: [] })),
+            api('/gkg/events?limit=250' + cc2).catch(() => ({ events: [] })),
             api('/opensky/flights?limit=2000').catch(() => ({ flights: [] })),
         ]);
         events = gkgEventsFrom(evData && evData.events);
@@ -8332,7 +8298,8 @@ async function renderThreatMap(auto) {
 
     let data;
     try {
-        data = await api('/gkg/events?limit=250');
+        var cc = (typeof scCountryFips === 'function' && SCScope.country) ? ('&country=' + encodeURIComponent(SCScope.country)) : '';
+        data = await api('/gkg/events?limit=250' + cc);
     } catch (e) {
         data = { events: [] };
     }
@@ -17634,14 +17601,112 @@ function renderFusionRealLayer() {
 .maven-ovl-toggle.ovl-off { color: #ff8080; border-color: rgba(255,128,128,.5); }
 .maven-drawer { transition: transform .22s ease, opacity .22s ease; }
 .maven-drawer.maven-slide { transform: translateX(calc(100% + 26px)); opacity: 0; pointer-events: none; }
-#mvProbeChip {
-    display: none; position: fixed; left: 10px; top: 64px; z-index: 4000;
-    max-width: 460px; pointer-events: none;
-    background: rgba(0,0,0,.92); border: 1px solid rgba(255,90,90,.6);
-    color: #ffb8b8; font-family: "JetBrains Mono", monospace; font-size: 9px;
-    line-height: 1.5; padding: 5px 8px; border-radius: 4px; white-space: pre-wrap;
+#fusionMapPane { flex-direction: row !important; align-items: stretch; gap: 10px; }
+#fusionMapPane > .sc-map-canvas-wrap { flex: 1 1 auto; min-width: 0; height: auto !important; min-height: 560px; }
+.maven-left-col {
+    width: 372px; flex: 0 0 372px; min-width: 0; order: -1;
+    display: flex; flex-direction: column;
+    max-height: calc(100vh - 120px);
+    background: var(--bg-card); border: 1px solid var(--border-color);
+    border-radius: 8px; overflow: hidden;
+    transition: width .22s ease, flex-basis .22s ease;
+}
+#mavenPlacesList, #mavenObjList { max-height: 44vh; overflow-y: auto; scrollbar-width: thin; }
+#mavenPlaceSearch { margin-bottom: 4px; }
+.maven-left-col.collapsed { width: 56px; flex-basis: 56px; }
+.maven-left-col.collapsed .maven-col-title,
+.maven-left-col.collapsed .maven-col-mark,
+.maven-left-col.collapsed #mavenDrawer { display: none; }
+.maven-left-col.collapsed .maven-col-head {
+    padding: 8px 5px;
+}
+.maven-left-col.collapsed #mavenColToggle {
+    color: var(--accent-neon); border-color: rgba(223,241,64,.6);
+    font-size: 15px; width: 100%; text-align: center;
+}
+.maven-left-col.collapsed .sc-deck-docked {
+    padding: 4px 3px; border-bottom: none; background: transparent;
+}
+.maven-left-col.collapsed .hive-layer { flex-direction: column !important; gap: 4px; }
+.maven-left-col.collapsed .sc-hud-tile { flex: 0 0 auto; height: 40px; overflow: hidden; }
+.maven-left-col.collapsed .sc-hud-inner,
+.maven-left-col.collapsed .sc-wireframe-boxes { display: none; }
+.maven-col-head {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+    border-bottom: 1px solid var(--border-color); flex: none;
+}
+.maven-col-mark {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+    color: var(--bg-dark); background: var(--accent-neon);
+    border-radius: 3px; padding: 2px 6px; letter-spacing: .05em;
+}
+.maven-col-title {
+    flex: 1; font-family: var(--font-tech); font-weight: 300;
+    font-size: 11px; letter-spacing: .18em; color: var(--text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#mavenColToggle {
+    background: none; border: 1px solid var(--border-color); border-radius: 3px;
+    color: var(--text-muted); cursor: pointer; font-size: 12px;
+    padding: 3px 8px; flex: none; min-height: 26px;
+}
+#mavenColToggle:hover { color: var(--accent-neon); border-color: rgba(223,241,64,.5); }
+.maven-left-col .sc-deck.sc-deck-docked {
+    position: static !important; inset: auto !important;
+    width: 100% !important; height: auto !important;
+    left: auto !important; top: auto !important;
+    pointer-events: auto; padding: 8px; border-bottom: 1px solid var(--border-color);
+    flex: none; overflow: visible;
+}
+.maven-left-col .hive-layer {
+    position: static !important; width: 100% !important; height: auto !important;
+    display: flex !important; flex-wrap: wrap; gap: 6px; pointer-events: auto;
+}
+.maven-left-col .sc-hud-tile {
+    position: relative !important; inset: auto !important;
+    transform: none !important; margin: 0; flex: 1 1 calc(50% - 6px);
+}
+.maven-left-col .hive-pent { display: none !important; }
+.maven-scope-cluster {
+    padding: 8px 10px; border-bottom: 1px solid var(--border-color);
+    display: flex; flex-direction: column; gap: 5px; flex: none;
+}
+.maven-scope-cluster .msc-row { display: flex; align-items: center; gap: 7px; }
+.maven-scope-cluster label {
+    font-family: var(--font-mono); font-size: 8px; letter-spacing: .12em;
+    color: var(--text-muted); width: 58px; flex: none;
+}
+.maven-scope-cluster select {
+    flex: 1; min-width: 0; background: rgba(255,255,255,.04);
+    border: 1px solid var(--border-color); border-radius: 3px;
+    color: var(--text-primary); font-family: var(--font-mono); font-size: 9px;
+    padding: 4px 6px;
+}
+.maven-left-col.collapsed .maven-scope-cluster { display: none; }
+.maven-left-col #mavenDrawer {
+    position: static; inset: auto; width: 100%; flex: 1 1 auto;
+    min-height: 0; border: none; border-radius: 0; z-index: auto;
+}
+.maven-tabs { display: flex; gap: 2px; padding: 6px 6px 0; flex-wrap: wrap; }
+.maven-tabs button {
+    border: 1px solid var(--border-color); border-bottom: none;
+    border-radius: 6px 6px 0 0; background: rgba(255,255,255,.03);
+    color: var(--text-muted); padding: 5px 9px 6px; cursor: pointer;
+}
+.maven-tabs button.active {
+    color: var(--accent-neon); border-color: rgba(223,241,64,.45);
+    background: rgba(223,241,64,.07);
 }
 .maven-asset-glyph { pointer-events: none; }
+.mv-thumb { width: 44px; height: 44px; object-fit: cover; border: 1px solid var(--border-color); border-radius: 3px; cursor: pointer; }
+.mv-thumbs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+#mvLightbox { display: none; position: fixed; inset: 0; z-index: 3000; background: rgba(0,0,0,.9);
+    align-items: center; justify-content: center; flex-direction: column; gap: 8px; cursor: zoom-out; }
+#mvLightbox img { max-width: 88vw; max-height: 78vh; border: 1px solid var(--border-color); border-radius: 4px; }
+#mvLightbox .cap { color: var(--text-muted); font-family: var(--font-mono); font-size: 10px; }
+.maven-place-row b { cursor: pointer; }
+.maven-cameo-row { cursor: pointer; }
+.maven-cameo-row:hover { border-color: rgba(223,241,64,.4); }
 .maven-asset-glyph svg, .maven-det-glyph svg { filter: drop-shadow(0 0 3px rgba(0,0,0,.9)); }
 .maven-badge {
     position: absolute; left: 10px; bottom: 34px; z-index: 25;
@@ -17690,11 +17755,12 @@ function renderFusionRealLayer() {
     })();
 
     var S = {
-        open: false, booted: false, busy: false, timer: null,
+        open: true, booted: false, busy: false, timer: null,
         state: { assets: [], tasks: [], detections: [], coas: [], objects: [], target_coas: [] },
         aoiMode: false, aoiRadius: 25, pending: null,
         objMode: false, pendingObj: null, _hovId: null,
         overlays: true,
+        places: null, placeSearch: '', placeInfo: null, placesOnMap: false,
         assetClass: 'uas',
         markers: [],           // asset DOM markers
         detMarkers: {},        // pk -> marker (diffed)
@@ -17752,15 +17818,12 @@ function renderFusionRealLayer() {
             setData('maven-fov', []);
             setData('maven-obj-ghost', []);
             setData('maven-objs', []);
-            drawGeo.__last = null; drawObjs.__last = null; drawMarkers.__last = null;
+            setData('maven-places', []);
+            drawGeo.__last = null; drawObjs.__last = null; drawMarkers.__last = null; drawPlaces.__last = null;
         } else { refresh(); }
     }
     function wireProbe() {
-        var chip = $('mvProbeChip');
         function probe(msg) {
-            if (!chip) return;
-            chip.textContent = msg;
-            chip.style.display = 'block';
             console.warn('[MV PROBE]', msg);
         }
         window.addEventListener('error', function (e) {
@@ -17945,6 +18008,17 @@ function renderFusionRealLayer() {
                          'fill-extrusion-base': 0,
                          'fill-extrusion-opacity': 0.42 } });
         }
+        if (!m.getSource('maven-places')) {
+            m.addSource('maven-places', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+            m.addLayer({ id: 'maven-places-dot', type: 'circle', source: 'maven-places',
+                paint: {
+                    'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 3, 16, 6],
+                    'circle-color': ['case', ['==', ['get', 'grp'], 'bgc'], '#fbbf24', '#22d3ee'],
+                    'circle-stroke-color': 'rgba(255,255,255,.85)',
+                    'circle-stroke-width': 1,
+                    'circle-opacity': 0.9
+                } });
+        }
     }
     function setData(src, feats) {
         try { getMap().getSource(src).setData({ type: 'FeatureCollection', features: feats }); } catch (e) {}
@@ -18126,6 +18200,7 @@ function renderFusionRealLayer() {
                     drawGeo();
                     drawObjs();
                     drawMarkers();
+                    drawPlaces();
                 }
             }
             renderBadge();
@@ -18148,8 +18223,10 @@ function renderFusionRealLayer() {
         setData('maven-fov', []);
         setData('maven-obj-ghost', []);
         setData('maven-objs', []);
+        setData('maven-places', []);
         drawGeo.__last = null;
         drawObjs.__last = null;
+        drawPlaces.__last = null;
         S._hovId = null;
         S.fitDone = {};
         var b = $('mavenHudBadge');
@@ -18192,7 +18269,7 @@ function renderFusionRealLayer() {
         b.textContent = 'MAVEN ' + S.state.tasks.length + 'T \u00b7 ' + S.state.assets.length + 'A \u00b7 ' + nVal + 'D';
         b.classList.toggle('maven-hidden', !S.open);
     }
-    function renderLists() { renderTasks(); renderAssets(); renderTargetCoas(); renderObjects(); }
+    function renderLists() { renderTasks(); renderAssets(); renderTargetCoas(); renderCameo(); renderObjects(); }
 
     function renderTasks() {
         var host = $('mavenTaskList');
@@ -18497,12 +18574,19 @@ function renderFusionRealLayer() {
         var listHtml = objs.length ? '' :
             '<div class="maven-empty">NO OBJECTS<br>+ REGISTER OBJECT: hover a building, click it, name it</div>';
         objs.forEach(function (o, i) {
-            listHtml += '<div class="maven-row"><b>' + esc(o.name || 'unnamed') + '</b>' +
+            var atts = o.attachments || [];
+            html += '<div class="maven-row"><b>' + esc(o.name || 'unnamed') + '</b>' +
                 '<br><span class="mv-sub">' + Number(o.lat).toFixed(4) + 'N ' + Number(o.lng).toFixed(4) + 'E' +
                 (o.height_m ? ' \u00b7 h\u2248' + Math.round(o.height_m) + 'm' : '') +
                 ' \u00b7 ' + esc(o.registered_by || '') + '</span>' +
+                (atts.length ? '<div class="mv-thumbs">' + atts.map(function (a) {
+                    return '<img class="mv-thumb" src="api/maven/photo/' + encodeURIComponent(a.file) +
+                        '" data-lb="' + encodeURIComponent(a.file) + '" data-cap="' + esc(a.caption || a.kind) + '" alt="">';
+                }).join('') + '</div>' : '') +
                 '<div class="maven-det-actions">' +
                 '<button class="mut" data-ofly="' + i + '">\u2316 FLY</button>' +
+                '<button class="mut" data-osnap="' + esc(o.id) + '">\uD83D\uDCF8 SNAP</button>' +
+                '<label class="mut mv-up" data-oup="' + esc(o.id) + '">\u2B06 PHOTO<input type="file" accept="image/*" hidden></label>' +
                 '<button class="mut" data-oren="' + esc(o.id) + '">RENAME</button>' +
                 '<button class="no" data-odel="' + esc(o.id) + '">\u2715 DEL</button></div></div>';
         });
@@ -18516,6 +18600,49 @@ function renderFusionRealLayer() {
                     m.flyTo({ center: [Number(o.lng), Number(o.lat)], zoom: 16.5,
                         pitch: 60, bearing: -10, duration: 1800 });
                 } catch (e) {}
+            };
+        });
+        host.querySelectorAll('[data-osnap]').forEach(function (btn) {
+            btn.onclick = function () {
+                var oid = btn.getAttribute('data-osnap');
+                var m = getMap();
+                if (!m) return;
+                btn.disabled = true;
+                try { m.triggerRepaint(); } catch (e) {}
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(function () {
+                        var url;
+                        try { url = m.getCanvas().toDataURL('image/jpeg', 0.85); }
+                        catch (e) { btn.disabled = false; mErr(e); return; }
+                        downscaleImage(url, function (small) {
+                            uploadPhoto(oid, small, 'map snapshot', 'snapshot')
+                                .then(function () { toast('SNAPSHOT attached', 'success'); refresh(); })
+                                .catch(function (e2) { mErr(e2); btn.disabled = false; });
+                        });
+                    });
+                });
+            };
+        });
+        host.querySelectorAll('[data-oup]').forEach(function (lab) {
+            lab.querySelector('input').onchange = function () {
+                var f = this.files && this.files[0];
+                if (!f) return;
+                var oid = lab.getAttribute('data-oup');
+                var rd = new FileReader();
+                rd.onload = function () {
+                    downscaleImage(rd.result, function (small) {
+                        uploadPhoto(oid, small, f.name.replace(/\.[a-z]+$/i, ''), 'upload')
+                            .then(function () { toast('PHOTO attached', 'success'); refresh(); })
+                            .catch(function (e2) { mErr(e2); });
+                    });
+                };
+                rd.readAsDataURL(f);
+            };
+        });
+        host.querySelectorAll('[data-lb]').forEach(function (img) {
+            img.onclick = function () {
+                openLightbox('api/maven/photo/' + img.getAttribute('data-lb'),
+                    img.getAttribute('data-cap'));
             };
         });
         host.querySelectorAll('[data-oren]').forEach(function (btn) {
@@ -18560,6 +18687,184 @@ function renderFusionRealLayer() {
             refresh();
         } catch (e) { mErr(e); }
     }
+    function drawPlaces() {
+        ensureLayers();
+        if (!S.places || !S.placesOnMap) { setData('maven-places', []); drawPlaces.__last = null; return; }
+        var feats = [];
+        function add(p, grp) {
+            if (!isFinite(p.lat) || !isFinite(p.lng)) return;
+            feats.push({ type: 'Feature', properties: { name: p.name || '', grp: grp },
+                geometry: { type: 'Point', coordinates: [p.lng, p.lat] } });
+        }
+        S.places.nodes.forEach(function (p) { add(p, 'node'); });
+        S.places.companies.forEach(function (p) { add(p, 'bgc'); });
+        var sig = feats.length;
+        if (sig === drawPlaces.__last) return;
+        drawPlaces.__last = sig;
+        setData('maven-places', feats);
+    }
+    function placeMatches(p, q) {
+        if (!q) return true;
+        return (p.name + ' ' + (p.industry || '') + ' ' + (p.sector || '') + ' ' +
+            (p.techStack || []).join(' ')).toLowerCase().indexOf(q) !== -1;
+    }
+    function renderPlaces() {
+        var info = $('mavenPlaceInfo');
+        var host = $('mavenPlacesList');
+        if (!host) return;
+        if (info && S.placeInfo) {
+            var p = S.placeInfo;
+            var ihtml = '<div class="maven-row"><b>' + esc(p.name) + '</b>' +
+                '<br><span class="mv-sub">' + esc(p.address || p.sector || '') +
+                (p.industry ? ' \u00b7 ' + esc(p.industry) : '') + '</span>' +
+                ((p.techStack && p.techStack.length)
+                    ? '<div class="mv-thumbs">' + p.techStack.map(function (t) {
+                        return '<span class="yono-chip">' + esc(t) + '</span>';
+                    }).join('') + '</div>' : '') +
+                '<div class="maven-det-actions"><button class="yes" id="mavenPromoteBtn">PROMOTE \u2192 OBJECT</button></div></div>';
+            setHtml(info, ihtml);
+            $('mavenPromoteBtn').onclick = async function () {
+                this.disabled = true;
+                try {
+                    await promotePlaceToObjects(S.placeInfo);
+                    toast('PROMOTED to OBJECT', 'success');
+                } catch (e) { mErr(e); }
+                renderPlaces();
+            };
+        } else if (info) setHtml(info, '');
+        if (!S.places) { setHtml(host, '<div class="maven-empty">LOADING PLACES\u2026</div>'); return; }
+        var q = (S.placeSearch || '').toLowerCase();
+        var nodes = S.places.nodes.filter(function (p) { return placeMatches(p, q); });
+        var comps = S.places.companies.filter(function (p) { return placeMatches(p, q); });
+        var html = '';
+        function row(p, grp, icon) {
+            html += '<div class="maven-row maven-place-row" data-place-grp="' + grp + '">' +
+                '<b data-pname="' + esc(p.name) + '" data-plat="' + p.lat + '" data-plng="' + p.lng + '">' + icon + ' ' + esc(p.name) + '</b>' +
+                '<br><span class="mv-sub">' + esc(p.industry || p.sector || p.city || '') +
+                ((p.techStack && p.techStack.length) ? ' \u00b7 ' + esc(p.techStack.slice(0, 3).join(', ')) : '') + '</span>' +
+                '<div class="maven-det-actions">' +
+                '<button class="mut" data-pfly="' + p.lat + ',' + p.lng + '">FLY</button>' +
+                '<button class="mut" data-pinf="' + grp + ':' + esc(p.name) + '">INFO</button></div></div>';
+        }
+        if (nodes.length) html += '<div class="mv-sub" style="opacity:.6;margin:2px 0">\u25c9 GROUP NETWORK</div>';
+        nodes.forEach(function (p) { row(p, 'node', '\u25C9'); });
+        if (comps.length) html += '<div class="mv-sub" style="opacity:.6;margin:4px 0 2px">\u25CF BGC DIRECTORY</div>';
+        comps.forEach(function (p) { row(p, 'bgc', '\u25CF'); });
+        if (!nodes.length && !comps.length) html = '<div class="maven-empty">NO MATCHES</div>';
+        setHtml(host, html);
+        host.querySelectorAll('[data-pfly]').forEach(function (btn) {
+            btn.onclick = function () {
+                var parts = btn.getAttribute('data-pfly').split(',');
+                flyTo(parseFloat(parts[0]), parseFloat(parts[1]), 7);
+            };
+        });
+        host.querySelectorAll('[data-pinf]').forEach(function (btn) {
+            btn.onclick = function () {
+                var parts = btn.getAttribute('data-pinf').split(':');
+                var grp = parts[0], nm = parts.slice(1).join(':');
+                var pool = grp === 'bgc' ? S.places.companies : S.places.nodes;
+                S.placeInfo = pool.filter(function (p) { return p.name === nm; })[0] || null;
+                renderPlaces();
+            };
+        });
+        host.querySelectorAll('[data-pname]').forEach(function (el) {
+            el.onclick = function () {
+                flyTo(parseFloat(el.getAttribute('data-plat')), parseFloat(el.getAttribute('data-plng')), 7);
+            };
+        });
+    }
+    async function promotePlaceToObjects(p) {
+        var m = getMap();
+        var footprint = null, bheight = null, lat = p.lat, lng = p.lng;
+        if (m) {
+            try {
+                var pt = m.project([p.lng, p.lat]);
+                var fs = m.queryRenderedFeatures([pt.x, pt.y], { layers: ['3d-buildings'] });
+                if (fs && fs.length) {
+                    footprint = fs[0].geometry || null;
+                    bheight = Number(fs[0].properties && (fs[0].properties.height || fs[0].properties.render_height)) || null;
+                    var c = geomCentroid(footprint);
+                    if (c) { lat = c.lat; lng = c.lng; }
+                }
+            } catch (e) {}
+        }
+        await api('/maven/object', { method: 'POST', body: JSON.stringify({
+            name: p.name, lat: lat, lng: lng, height_m: bheight,
+            footprint: footprint ? footprint.coordinates : null
+        })});
+        refresh();
+    }
+    async function uploadPhoto(objectId, dataUrlOrB64, caption, kind) {
+        var b64 = String(dataUrlOrB64).split(',')[1] || '';
+        await api('/maven/object/' + objectId + '/photo', { method: 'POST',
+            body: JSON.stringify({ data_b64: b64, caption: caption || '', kind: kind || 'upload' }) });
+    }
+    function downscaleImage(dataUrl, cb) {
+        var img = new Image();
+        img.onload = function () {
+            var maxW = 1600, scale = Math.min(1, maxW / img.width);
+            var cv = document.createElement('canvas');
+            cv.width = Math.round(img.width * scale);
+            cv.height = Math.round(img.height * scale);
+            cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+            cb(cv.toDataURL('image/jpeg', 0.85));
+        };
+        img.onerror = function () { mErr(new Error('unreadable image')); };
+        img.src = dataUrl;
+    }
+    function openLightbox(src, caption) {
+        var lb = document.getElementById('mvLightbox');
+        if (!lb) {
+            lb = document.createElement('div');
+            lb.id = 'mvLightbox';
+            lb.innerHTML = '<img alt=""><div class="cap"></div>';
+            document.body.appendChild(lb);
+            lb.onclick = function () { lb.style.display = 'none'; };
+        }
+        lb.querySelector('img').src = src;
+        lb.querySelector('.cap').textContent = caption || '';
+        lb.style.display = 'flex';
+    }
+    function renderCameo() {
+        var host = $('mavenCameoList');
+        var det = $('mavenCameoDetail');
+        if (!host) return;
+        var evs = (window.fusionThreatEvents || []);
+        var html = '<div class="mv-sub" style="opacity:.6;margin:2px 0">' +
+            evs.length + ' CAMEO EVENTS IN SCOPE \u00b7 click for article</div>';
+        evs.slice(0, 40).forEach(function (ev, i) {
+            var g = parseActionGeo(ev) || {};
+            var tone = threatLevelForEvent(ev);
+            var c = tone === 'red' ? '#ff8080' : tone === 'amber' ? '#fbbf24' : '#80e000';
+            html += '<div class="maven-row maven-cameo-row" data-ci="' + i + '">' +
+                '<b>[' + esc(g.country || '—') + '] ' + esc(ev.event_type || 'EVENT') + '</b>' +
+                '<span style="color:' + c + '"> ●</span>' +
+                '<br><span class="mv-sub">' + esc(String(ev.title || '').slice(0, 90)) + '</span>' +
+                '<br><span class="mv-sub" style="opacity:.7">' + esc(ev.seendate || '') +
+                ' \u00b7 ' + esc(ev.domain || '') + '</span></div>';
+        });
+        if (!evs.length) html = '<div class="maven-empty">NO CAMEO EVENTS IN SCOPE<br>Run GDELT for the selected WHERE/COUNTRY</div>';
+        setHtml(host, html);
+        host.querySelectorAll('[data-ci]').forEach(function (rowEl) {
+            rowEl.onclick = function () {
+                var ev = evs[parseInt(rowEl.getAttribute('data-ci'), 10)];
+                if (!ev || !det) return;
+                var g = parseActionGeo(ev) || {};
+                var mentions = ev.payload && ev.payload.NumMentions;
+                var dhtml = '<div class="maven-row"><b>ARTICLE DETAIL</b>' +
+                    '<br><span class="mv-sub">' + esc(ev.title || '') + '</span>' +
+                    '<br><span class="mv-sub">[' + esc(g.country || '—') + '] ' +
+                    esc(ev.event_type || '') + ' · ' + esc(ev.sourcecountry || '') +
+                    (mentions ? ' · mentions: ' + esc(mentions) : '') + '</span>' +
+                    '<br><span class="mv-sub">' + esc(ev.seendate || '') + ' · ' + esc(ev.domain || '') + '</span>' +
+                    (ev.url ? '<div class="maven-det-actions"><a class="yes" href="' + esc(ev.url) +
+                        '" target="_blank" rel="noopener" style="text-decoration:none;padding:3px 8px">OPEN ARTICLE ↗</a></div>' : '') +
+                    '</div>';
+                setHtml(det, dhtml);
+                det.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            };
+        });
+    }
     function renderDetRail(force) {
         var rail = $('mavenDetRail');
         if (!rail) return;
@@ -18603,8 +18908,7 @@ function renderFusionRealLayer() {
         if (h) h.classList.add('maven-hidden');
     }
     function drawerSlide(out) {
-        var d = $('mavenDrawer');
-        if (d && S.open) d.classList.toggle('maven-slide', !!out);
+        /* docked-left layout: panel never covers the map — no sliding needed */
     }
     function enterAoiMode() {
         S.aoiMode = true;
@@ -18671,12 +18975,21 @@ function renderFusionRealLayer() {
 
     /* ----------------------------------------------------------- boot ---- */
     function toggleDrawer() {
-        S.open = !S.open;
-        $('mavenDrawer').classList.toggle('maven-hidden', !S.open);
+        var col = $('mavenLeftCol');
+        if (col) {
+            col.classList.toggle('collapsed');
+            var collapsed = col.classList.contains('collapsed');
+            var t = $('mavenColToggle');
+            if (t) {
+                t.textContent = collapsed ? '\u00BB' : '\u00AB';
+                t.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+            }
+            setTimeout(function () {
+                var m = getMap();
+                if (m) { try { m.resize(); } catch (e) {} }
+            }, 260);
+        }
         $('mavenToggleBtn').classList.toggle('retro-map-btn-active', S.open);
-        var wrap = document.querySelector('.sc-map-canvas-wrap');
-        if (wrap) wrap.classList.toggle('maven-open', S.open);
-        if (S.open) { startPolling(); } else { stopPolling(); }
     }
     function wireOnce() {
         if (S.booted) return;
@@ -18699,6 +19012,81 @@ function renderFusionRealLayer() {
         wireProbe();
         var ovlBtn = $('mavenOvlBtn');
         if (ovlBtn) ovlBtn.onclick = function () { setOverlays(!S.overlays); };
+        var col = $('mavenLeftCol');
+        if (col) {
+            col.addEventListener('dblclick', function (e) {
+                if (e.target.closest('button, input, select, label, a')) return;
+                if (col.classList.contains('collapsed')) toggleDrawer();
+            });
+        }
+        document.addEventListener('click', function (e) {
+            if (e.target && e.target.id === 'mavenColToggle') { toggleDrawer(); return; }
+            if (e.target && e.target.closest && e.target.closest('#mavenColToggle')) toggleDrawer();
+        });
+        function mvScopeFly() {
+        var m = getMap();
+        if (!m || typeof scBbox !== 'function') return;
+        var b = scBbox();
+        if (!b) return;
+        try {
+            m.fitBounds([[b.lomin, b.lamin], [b.lomax, b.lamax]],
+                { padding: 40, duration: 1400, maxZoom: 12 });
+        } catch (e) {}
+    }
+        var ps = $('mavenPlaceSearch');
+        if (ps) {
+            var pt2 = null;
+            ps.addEventListener('input', function () {
+                S.placeSearch = ps.value;
+                clearTimeout(pt2);
+                pt2 = setTimeout(renderPlaces, 180);
+            });
+        }
+        var pinsBtn = $('mavenPinsBtn');
+        if (pinsBtn) pinsBtn.onclick = function () {
+            S.placesOnMap = !S.placesOnMap;
+            pinsBtn.textContent = 'MAP PINS: ' + (S.placesOnMap ? 'ON' : 'OFF');
+            drawPlaces();
+        };
+        var sr = $('mvScopeRegion'), sc = $('mvScopeCountry');
+        if (sr && sc && typeof SC_REGION_BBOXES !== 'undefined') {
+            var ro = '<option value="Worldwide">WORLDWIDE</option>';
+            Object.keys(SC_REGION_BBOXES).forEach(function (k) {
+                ro += '<option value="' + k + '">' + k.toUpperCase() + '</option>';
+            });
+            sr.innerHTML = ro;
+            var co = '<option value="">ALL COUNTRIES</option>';
+            Object.keys(COUNTRY_FIPS).forEach(function (k) {
+                co += '<option value="' + k + '">' + k.toUpperCase() + '</option>';
+            });
+            sc.innerHTML = co;
+            sr.value = SCScope.region;
+            sc.value = SCScope.country || '';
+            sr.onchange = function () {
+                SCScope.region = sr.value;
+                SCScope.country = '';
+                SCScope.zone = '';
+                sc.value = '';
+                var legacy = document.getElementById('scCountrySelect');
+                if (legacy) legacy.value = '';
+                try { scUpdateEmptyState(); } catch (e) {}
+                mvScopeFly();
+                if (window.__forceFusionReload) window.__forceFusionReload();
+                if (typeof window.renderThreatMap === 'function') { try { window.renderThreatMap(true); } catch (e) {} }
+                toast('SCOPE: ' + sr.value + ' — feeds reloading', 'success');
+            };
+            sc.onchange = function () {
+                SCScope.country = sc.value || '';
+                if (SCScope.country) SCScope.zone = '';
+                var legacy = document.getElementById('scCountrySelect');
+                if (legacy) legacy.value = SCScope.country;
+                try { scUpdateEmptyState(); } catch (e) {}
+                mvScopeFly();
+                if (window.__forceFusionReload) window.__forceFusionReload();
+                if (typeof window.renderThreatMap === 'function') { try { window.renderThreatMap(true); } catch (e) {} }
+                toast('SCOPE: ' + (SCScope.country || sr.value) + ' — feeds reloading', 'success');
+            };
+        }
         document.addEventListener('keydown', function (ev) {
             if (ev.key !== 'Escape') return;
             if (S.objMode) { exitObjMode(); S.pendingObj = null; renderObjects(); }
@@ -18726,7 +19114,22 @@ function renderFusionRealLayer() {
                 if (ob) ob.scrollTop = 0;
                 return;
             }
-            if (!S.aoiMode) return;
+            if (!S.aoiMode) {
+                var pf = null;
+                try { pf = m.queryRenderedFeatures(e.point, { layers: ['maven-places-dot'] }); } catch (err) {}
+                if (pf && pf.length && S.places) {
+                    var pr = pf[0].properties || {};
+                    var pool = pr.grp === 'bgc' ? S.places.companies : S.places.nodes;
+                    var hit = pool.filter(function (p2) { return p2.name === pr.name; })[0];
+                    if (hit) {
+                        S.placeInfo = hit;
+                        selectTab('places');
+                        renderPlaces();
+                        return;
+                    }
+                }
+                return;
+            }
             var bld = pickBuildingAt(m, e.point);
             var lat = (bld && bld.lat != null) ? bld.lat : e.lngLat.lat;
             var lng = (bld && bld.lng != null) ? bld.lng : e.lngLat.lng;
@@ -18786,6 +19189,11 @@ function renderFusionRealLayer() {
             if (fm) {
                 clearInterval(waitMap);
                 wireOnce();
+                api('/maven/places').then(function (pl) {
+                    S.places = pl;
+                    drawPlaces();
+                    renderPlaces();
+                }).catch(function () {});
                 window.MAVEN = {
                     toggle: toggleDrawer, refresh: refresh,
                     isAoiMode: function () { return S.aoiMode; },

@@ -38,6 +38,13 @@ from .parsers_armyguide import parse_armyguide_product
 from .parsers_globalsecurity import parse_globalsecurity
 from .parsers_hisutton import parse_hisutton_article
 from .parsers_seaforces import parse_seaforces
+from .parsers_navweaps import parse_navweaps, is_navweaps_missile_detail
+from .parsers_rheinmetall import parse_rheinmetall
+from .parsers_gdls import parse_gdls
+from .parsers_oshkosh import parse_oshkosh
+from .parsers_navalencyclopedia import parse_naval_encyclopedia, \
+    is_naval_encyclopedia_ship_url
+from .parsers_qinetiq import parse_qinetiq
 from .sitemap import product_urls_from_sitemap, article_urls_from_sitemap, sitemap_urls_to_parse
 from .store import ScanStore
 from .sanity import looks_like_news_headline
@@ -62,6 +69,12 @@ ARMYGUIDE_HOST = "army-guide.com"
 GLOBALSECURITY_HOST = "www.globalsecurity.org"
 HISUTTON_HOST = "www.hisutton.com"
 SEAFORCES_HOST = "www.seaforces.org"
+NAVWEAPS_HOST = "www.navweaps.com"
+RHEINMETALL_HOST = "www.rheinmetall.com"
+GDLS_HOST = "www.gdls.com"
+OSHKOSH_HOST = "oshkoshdefense.com"
+NAVALENCYCLOPEDIA_HOST = "www.naval-encyclopedia.com"
+QINETIQ_HOST = "www.qinetiq.com"
 
 
 def load_catalog_entries(path: Path) -> list[dict]:
@@ -379,6 +392,66 @@ class Engine:
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
                     return
+            elif host == NAVWEAPS_HOST and is_navweaps_missile_detail(url):
+                disp = row["category"] or "Uncategorized"
+                e = parse_navweaps(url, fetched.html, disp)
+                if e:
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
+            elif host == RHEINMETALL_HOST and "/en/products/" in url:
+                disp = row["category"] or "UGVs"
+                e = parse_rheinmetall(url, fetched.html, disp)
+                if e:
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
+            elif host == GDLS_HOST:
+                disp = row["category"] or "Uncategorized"
+                e = parse_gdls(url, fetched.html, disp)
+                if e:
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
+            elif host == OSHKOSH_HOST and "/vehicles/" in url:
+                disp = row["category"] or "Automotive vehicles"
+                e = parse_oshkosh(url, fetched.html, disp)
+                if e:
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
+            elif host == NAVALENCYCLOPEDIA_HOST and is_naval_encyclopedia_ship_url(url):
+                disp = row["category"] or "Naval vessels"
+                e = parse_naval_encyclopedia(url, fetched.html, disp)
+                if e:
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
+            elif host == QINETIQ_HOST and "/robotic-products/" in url:
+                disp = row["category"] or "UGVs"
+                e = parse_qinetiq(url, fetched.html, disp)
+                if e:
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
             # unknown host/kind or parser returned None: still mark fetched so the
             # page isn't re-fetched on every run (no data extracted).
             self.store.mark(url, "done", status=200)
@@ -428,6 +501,12 @@ class Engine:
                     "https://www.globalsecurity.org",
                     "https://www.hisutton.com",
                     "https://www.seaforces.org",
+                    "https://www.navweaps.com",
+                    "https://www.rheinmetall.com",
+                    "https://www.gdls.com",
+                    "https://oshkoshdefense.com",
+                    "https://www.naval-encyclopedia.com",
+                    "https://www.qinetiq.com",
                 ],
                 "note": ("Compiled by the A-SAN deep scanner. robots.txt and site ToS are "
                          "respected; every entry carries the exact source URL it was fetched "

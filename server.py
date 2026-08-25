@@ -270,6 +270,69 @@ def _log_login_attempt(email, ok, remote_ip, user_agent):
         sys.stderr.write('[LOGIN-AUDIT] append failed: %s\n' % e)
 
 
+# Access-audit viewer: read-only window into who logged into the secure
+# portal and who used which panteon tool, when, from where.
+PANTEON_DB_PATH = os.environ.get(
+    'PANTEON_DB_PATH',
+    os.path.join(ROOT, 'panteon', 'backend', 'panteon.db'))
+
+
+def _read_login_audit_tail(limit=200):
+    """Return the most recent portal login records (newest first)."""
+    records = []
+    try:
+        with open(LOGIN_AUDIT_PATH, 'rb') as f:
+            f.seek(0, os.SEEK_END)
+            size = f.tell()
+            f.seek(max(0, size - 262144))
+            lines = f.read().decode('utf-8', errors='replace').splitlines()
+            if size > 262144 and lines:
+                lines = lines[1:]
+        for ln in reversed(lines):
+            if len(records) >= limit:
+                break
+            ln = ln.strip()
+            if not ln:
+                continue
+            try:
+                records.append(json.loads(ln))
+            except Exception:
+                continue
+    except FileNotFoundError:
+        pass
+    except Exception as e:
+        sys.stderr.write('[AUDIT-VIEW] login tail failed: %s\n' % e)
+    return records
+
+
+def _read_panteon_tool_access(limit=300, email=None):
+    """Read-only snapshot of recent panteon API/tool access events."""
+    import sqlite3
+    rows = []
+    if not os.path.exists(PANTEON_DB_PATH):
+        return rows
+    try:
+        conn = sqlite3.connect('file:%s?mode=ro' % PANTEON_DB_PATH,
+                               uri=True, timeout=3)
+        try:
+            q = ('SELECT timestamp, user_email, method, path, status_code, '
+                 'client_ip, duration_ms FROM audit_logs')
+            params = []
+            if email:
+                q += ' WHERE user_email LIKE ?'
+                params.append('%' + email + '%')
+            q += ' ORDER BY timestamp DESC LIMIT ?'
+            params.append(int(limit))
+            cols = ('timestamp', 'user_email', 'method', 'path',
+                    'status_code', 'client_ip', 'duration_ms')
+            rows = [dict(zip(cols, r)) for r in conn.execute(q, params)]
+        finally:
+            conn.close()
+    except Exception as e:
+        sys.stderr.write('[AUDIT-VIEW] panteon read failed: %s\n' % e)
+    return rows
+
+
 def _append_selfservice_notification(record):
     """Append a submission notification to the JSONL audit feed (best-effort)."""
     try:
@@ -1447,6 +1510,28 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                 self._send_json({"error": "authentication required"}, 401)
                 return
             self._serve_admin_state()
+        elif self.path == '/api/audit/access' or self.path.startswith('/api/audit/access?'):
+            if self._get_subdomain() not in (None, 'secure'):
+                self.send_error(404)
+                return
+            auth = self._has_valid_secure_session() or self._has_valid_main_session()
+            if not auth:
+                self._send_json({"error": "authentication required"}, 401)
+                return
+            self._serve_audit_access_api()
+            return
+        elif self.path == '/audit' or self.path.startswith('/audit?') or self.path == '/audit/':
+            if self._get_subdomain() not in (None, 'secure'):
+                self.send_error(404)
+                return
+            auth = self._has_valid_secure_session() or self._has_valid_main_session()
+            if not auth:
+                self.send_response(302)
+                self.send_header('Location', '/?next=%2Faudit')
+                self.end_headers()
+                return
+            self._serve_audit_page()
+            return
         elif self.path == '/api/admin/audit' or self.path.startswith('/api/admin/audit?'):
             if self._get_subdomain() is not None:
                 self.send_error(404)
@@ -2088,6 +2173,33 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         except Exception as e:
             self._send_json({"error": str(e)}, 500)
 
+    def _serve_audit_access_api(self):
+        from urllib.parse import urlparse, parse_qs
+        try:
+            parsed = urlparse(self.path)
+            params = parse_qs(parsed.query)
+            limit = min(max(int(params.get('limit', ['300'])[0] or 300), 1), 1000)
+            email = (params.get('email', [''])[0] or '').strip()
+            self._send_json({
+                'portal_logins': _read_login_audit_tail(limit=min(limit, 500)),
+                'tool_access': _read_panteon_tool_access(limit=limit, email=email or None),
+                'panteon_db_present': os.path.exists(PANTEON_DB_PATH),
+            })
+        except Exception as e:
+            self._send_json({'error': str(e)}, 500)
+
+    def _serve_audit_page(self):
+        body = AUDIT_PAGE_HTML.encode('utf-8')
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html; charset=utf-8')
+        self.send_header('Content-Length', str(len(body)))
+        self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+        self.end_headers()
+        try:
+            self.wfile.write(body)
+        except BrokenPipeError:
+            pass
+
     def _serve_console_page(self):
         sub = self._get_subdomain()
         if sub == 'panteon':
@@ -2380,6 +2492,240 @@ class ReusableTCPServer(socketserver.ThreadingTCPServer):
     daemon_threads = True
 
 
+AUDIT_PAGE_HTML = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Access Audit | Alien Inc</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ultra&family=Alfa+Slab+One&family=Inter:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Sans+Condensed:wght@700;800&family=Orbitron:wght@900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/logo.png">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f9fafb; color: #101828; }
+        .brand-logo { display: flex; align-items: center; gap: 0.12rem; text-decoration: none; }
+        .brand-logo__text { font-family: "Ultra", "Alfa Slab One", "Clarendon", "Egyptian 714", "Rockwell Extra Bold", serif; font-size: clamp(24px, 5vw, 29px); font-weight: 500; letter-spacing: 0.02em; color: #131920; line-height: 1; }
+        .brand-logo__dot { height: 0.56em; width: 0.56em; position: relative; top: calc(0.30 * clamp(24px, 5vw, 29px)); display: block; }
+        .secure-logo-text { font-family: 'Orbitron', sans-serif; font-weight: 900; }
+        .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+        .tab-btn.active { color: #101828; font-weight: 600; border-bottom-color: #1e2124; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <header class="bg-white border-b border-[#eaecf0] sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="/" class="brand-logo" aria-label="visit the Alien Inc Homepage">
+                    <span class="brand-logo__text">Alien</span>
+                    <img src="/logo.png" alt="•" class="brand-logo__dot">
+                    <span class="brand-logo__text">Inc</span>
+                </a>
+                <span class="text-gray-200 text-lg">/</span>
+                <a href="/" class="flex items-center gap-2" aria-label="Secure — home">
+                    <svg viewBox="0 0 300 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SECURE" style="height:28px;width:auto;">
+                        <defs><style>.secure-logo-text{font-family:'Orbitron',sans-serif;font-weight:900;}</style></defs>
+                        <text x="0" y="44" class="secure-logo-text" fill="#131920" letter-spacing="1" font-size="40">SECUR<tspan fill="#00FFFF">E</tspan></text>
+                    </svg>
+                </a>
+                <span class="text-gray-200 text-lg">|</span>
+                <h1 class="text-sm font-medium text-[#475467]">Access Audit Console</h1>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="load()" class="border border-[#d0d5dd] hover:bg-gray-50 text-[#344054] text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    Refresh
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-8 w-full flex-grow">
+
+        <div class="bg-white border-t-4 border-[#1e2124] border-x border-b border-[#d0d5dd] rounded-lg p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 shadow-sm">
+            <div>
+                <h2 class="text-lg font-semibold text-[#101828]">Access Audit</h2>
+                <p class="text-sm text-gray-500 mt-1">Who logged into the secure portal and who used which panteon tool &mdash; when, from where, with what outcome.</p>
+            </div>
+            <label class="flex items-center gap-2 text-sm text-gray-500 whitespace-nowrap self-start md:self-center">
+                <input type="checkbox" id="f-auto" class="rounded border-[#d0d5dd] text-[#1e2124] focus:ring-[#b2ddff]">
+                Auto-refresh every 30s
+            </label>
+        </div>
+
+        <div class="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white border border-[#d0d5dd] rounded-lg p-5 shadow-sm">
+                <div class="text-xs font-medium text-gray-500 tracking-wide uppercase mb-1">Portal logins shown</div>
+                <div class="text-2xl font-semibold text-[#101828]" id="c-portal">&mdash;</div>
+            </div>
+            <div class="bg-white border border-[#d0d5dd] rounded-lg p-5 shadow-sm">
+                <div class="text-xs font-medium text-gray-500 tracking-wide uppercase mb-1">Tool events shown</div>
+                <div class="text-2xl font-semibold text-[#101828]" id="c-tool">&mdash;</div>
+            </div>
+            <div class="bg-white border border-[#d0d5dd] rounded-lg p-5 shadow-sm">
+                <div class="text-xs font-medium text-gray-500 tracking-wide uppercase mb-1">Distinct users (tools)</div>
+                <div class="text-2xl font-semibold text-[#101828]" id="c-users">&mdash;</div>
+            </div>
+        </div>
+
+        <div class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="relative md:col-span-1">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </span>
+                <input id="f-email" type="search" autocomplete="off"
+                       class="w-full bg-white border border-[#d0d5dd] rounded-lg pl-10 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124] placeholder-gray-400"
+                       placeholder="Filter by email&hellip;">
+            </div>
+            <select id="f-limit" class="bg-white border border-[#d0d5dd] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#b2ddff] focus:border-[#1e2124]">
+                <option value="100">100 rows</option>
+                <option value="300" selected>300 rows</option>
+                <option value="1000">1000 rows</option>
+            </select>
+        </div>
+
+        <div class="bg-white border border-[#d0d5dd] rounded-lg shadow-sm mb-8 overflow-hidden">
+            <div class="flex border-b border-[#eaecf0] px-2" role="tablist">
+                <button class="tab-btn active px-4 py-3 text-sm font-semibold text-[#101828] border-b-2 border-[#1e2124] transition" data-tab="panel-tool" data-default="1" role="tab">Tool Access</button>
+                <button class="tab-btn px-4 py-3 text-sm font-medium text-gray-500 hover:text-[#101828] border-b-2 border-transparent transition" data-tab="panel-portal" role="tab">Portal Logins</button>
+                <span class="ml-auto self-center pr-3 text-xs text-gray-400 hidden sm:block" id="status"></span>
+            </div>
+            <div class="p-6">
+
+                <div id="panel-tool" class="tab-panel">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-left text-xs font-medium text-gray-500 tracking-wide uppercase">
+                                    <th class="py-2 pr-4">Time (UTC)</th><th class="py-2 pr-4">User</th><th class="py-2 pr-4">Method</th><th class="py-2 pr-4">Path</th><th class="py-2 pr-4">Status</th><th class="py-2 pr-4">IP</th><th class="py-2">Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody id="t-tool" class="divide-y divide-[#eaecf0]"><tr><td colspan="7" class="py-6 text-center text-gray-400 italic">loading&hellip;</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="panel-portal" class="tab-panel hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-left text-xs font-medium text-gray-500 tracking-wide uppercase">
+                                    <th class="py-2 pr-4">Time (UTC)</th><th class="py-2 pr-4">Email</th><th class="py-2 pr-4">Result</th><th class="py-2 pr-4">IP</th><th class="py-2">User Agent</th>
+                                </tr>
+                            </thead>
+                            <tbody id="t-portal" class="divide-y divide-[#eaecf0]"><tr><td colspan="5" class="py-6 text-center text-gray-400 italic">loading&hellip;</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-white border-t border-[#eaecf0] py-8 text-center">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex items-center justify-center gap-2 mb-2">
+                <a href="/" class="brand-logo" aria-label="visit the Alien Inc Homepage">
+                    <span class="brand-logo__text" style="font-size:18px;">Alien</span>
+                    <img src="/logo.png" alt="•" class="brand-logo__dot" style="height:0.35em;width:0.35em;top:calc(0.30*18px);">
+                    <span class="brand-logo__text" style="font-size:18px;">Inc</span>
+                </a>
+                <span class="text-gray-200">/</span>
+                <svg viewBox="0 0 300 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SECURE" style="height:18px;width:auto;">
+                    <defs><style>.secure-logo-text{font-family:'Orbitron',sans-serif;font-weight:900;}</style></defs>
+                    <text x="0" y="44" class="secure-logo-text" fill="#131920" letter-spacing="1" font-size="40">SECUR<tspan fill="#00FFFF">E</tspan></text>
+                </svg>
+            </div>
+            <p class="text-xs text-gray-400">Access Audit &middot; compliance console &middot; secure.alieninc.tech</p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Tab switching (centra pattern) ---
+    document.addEventListener('DOMContentLoaded', function() {
+      var tabButtons = document.querySelectorAll('.tab-btn');
+      var tabPanels = document.querySelectorAll('.tab-panel');
+      tabButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var target = btn.getAttribute('data-tab');
+          tabButtons.forEach(function(b) {
+            b.classList.remove('font-semibold', 'text-[#101828]', 'border-[#1e2124]');
+            b.classList.add('font-medium', 'text-gray-500', 'border-transparent');
+          });
+          btn.classList.remove('font-medium', 'text-gray-500', 'border-transparent');
+          btn.classList.add('font-semibold', 'text-[#101828]', 'border-[#1e2124]');
+          tabPanels.forEach(function(p) {
+            if (p.id === target) p.classList.remove('hidden');
+            else p.classList.add('hidden');
+          });
+        });
+      });
+      document.getElementById('f-auto').addEventListener('change', function(e) {
+        if (window._auditTimer) { clearInterval(window._auditTimer); window._auditTimer = null; }
+        if (e.target.checked) window._auditTimer = setInterval(load, 30000);
+      });
+      document.getElementById('f-email').addEventListener('input', function() {
+        clearTimeout(window._dt); window._dt = setTimeout(load, 400);
+      });
+      document.getElementById('f-limit').addEventListener('change', load);
+      load();
+    });
+
+    function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+    function fmtTs(ts){if(!ts)return'—';return esc(String(ts).replace('T',' ').replace('Z','').split('.')[0])}
+    function pill(ok,label){var cls=ok?'bg-[#ecfdf3] text-[#067647] border-[#abefc6]':'bg-[#fef3f2] text-[#b42318] border-[#fecdc9]';return '<span class="inline-flex items-center px-2 py-0.5 rounded-full border text-xs font-medium '+cls+'">'+esc(label)+'</span>'}
+
+    async function load(){
+      const st=document.getElementById('status');st.textContent='loading…';
+      try{
+        const q=new URLSearchParams({limit:document.getElementById('f-limit').value});
+        const em=document.getElementById('f-email').value.trim();
+        if(em)q.set('email',em);
+        const r=await fetch('/api/audit/access?'+q,{credentials:'same-origin'});
+        if(r.status===401){location.href='/?next=%2Faudit';return}
+        const d=await r.json();
+        if(d.error)throw new Error(d.error);
+        document.getElementById('c-portal').textContent=d.portal_logins.length;
+        document.getElementById('c-tool').textContent=d.tool_access.length;
+        document.getElementById('c-users').textContent=new Set(d.tool_access.map(x=>x.user_email).filter(Boolean)).size;
+        const tp=document.getElementById('t-portal');
+        tp.innerHTML=d.portal_logins.length?d.portal_logins.map(function(p){
+          return '<tr class="hover:bg-gray-50">'+
+            '<td class="py-2.5 pr-4 mono text-xs">'+fmtTs(p.ts)+'</td>'+
+            '<td class="py-2.5 pr-4">'+esc(p.email)+'</td>'+
+            '<td class="py-2.5 pr-4">'+pill(p.result==='success',p.result)+'</td>'+
+            '<td class="py-2.5 pr-4 mono text-xs">'+esc(p.ip)+'</td>'+
+            '<td class="py-2.5 text-xs text-gray-400 max-w-[220px] truncate" title="'+esc(p.user_agent)+'">'+esc(p.user_agent)+'</td></tr>';
+        }).join(''):'<tr><td colspan="5" class="py-6 text-center text-gray-400 italic">No portal logins recorded yet.</td></tr>';
+        const tt=document.getElementById('t-tool');
+        tt.innerHTML=d.tool_access.length?d.tool_access.map(function(t){
+          const sc=t.status_code||0;
+          let s;
+          if(sc>=500)s=pill(false,sc);
+          else if(sc>=400)s='<span class="inline-flex items-center px-2 py-0.5 rounded-full border bg-[#fffaeb] text-[#b54708] border-[#fedf89] text-xs font-medium">'+sc+'</span>';
+          else if(sc)s=pill(true,sc);
+          else s='<span class="text-gray-400">—</span>';
+          return '<tr class="hover:bg-gray-50">'+
+            '<td class="py-2.5 pr-4 mono text-xs">'+fmtTs(t.timestamp)+'</td>'+
+            '<td class="py-2.5 pr-4">'+(t.user_email?esc(t.user_email):'<span class="text-xs text-gray-400 italic">anonymous</span>')+'</td>'+
+            '<td class="py-2.5 pr-4"><span class="mono text-xs border border-[#eaecf0] rounded px-1.5 py-0.5">'+esc(t.method)+'</span></td>'+
+            '<td class="py-2.5 pr-4 mono text-xs max-w-[340px] truncate" title="'+esc(t.path)+'">'+esc(t.path)+'</td>'+
+            '<td class="py-2.5 pr-4">'+s+'</td>'+
+            '<td class="py-2.5 pr-4 mono text-xs">'+esc(t.client_ip)+'</td>'+
+            '<td class="py-2.5 text-xs text-gray-500">'+(t.duration_ms!=null?t.duration_ms+'ms':'—')+'</td></tr>';
+        }).join(''):'<tr><td colspan="7" class="py-6 text-center text-gray-400 italic">No tool access recorded yet — events appear once panteon handles requests.</td></tr>';
+        st.textContent='';
+      }catch(e){st.textContent='error: '+e.message}
+    }
+    </script>
+
+</body>
+</html>
+'''
 CONSOLE_HTML = '''<!DOCTYPE html>
 <html lang="en">
 <head>

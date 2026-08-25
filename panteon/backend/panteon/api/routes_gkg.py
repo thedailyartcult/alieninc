@@ -681,10 +681,23 @@ async def pipeline_scheduler():
 
 
 @router.get("/events")
-async def list_events(limit: int = 100):
-    """List stored GKG events from OSv2."""
+async def list_events(limit: int = 100, country: str = ""):
+    """List stored GKG events from OSv2. Optional `country` filters by
+    ActionGeo/source country name (case-insensitive)."""
     osv2, _, _ = _build_pipeline()
     events = [n for n in osv2.get_all_objects() if n.get("type") == "gkg_event"]
+    want = (country or "").strip().lower()
+    if want:
+        def _match(n):
+            src = str(n.get("sourcecountry") or "").lower()
+            try:
+                ag = n.get("action_geo")
+                agd = json.loads(ag) if isinstance(ag, str) else (ag or {})
+            except Exception:
+                agd = {}
+            geo_country = str(agd.get("country") or "").lower()
+            return want == src or want == geo_country
+        events = [n for n in events if _match(n)]
     return JSONResponse(content={"events": events[-limit:], "count": len(events)}, status_code=200)
 
 

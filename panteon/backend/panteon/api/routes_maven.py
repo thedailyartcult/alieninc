@@ -30,7 +30,11 @@ from panteon.maven import (
     rename_object,
     auto_task,
     maven_command,
+    attach_photo,
+    delete_photo,
+    get_places,
     tick_and_collect,
+    _photo_dir,
     execute_target_coa,
     generate_target_coa,
     validate_detection,
@@ -177,6 +181,57 @@ async def post_maven_command(request: Request,
         return await maven_command(db, body, user.email)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/places")
+async def get_places_route(user: SupabaseUser = Depends(get_current_user),
+                           db: AsyncSession = Depends(get_db)):
+    """Reference layer: group network nodes + BGC company directory."""
+    try:
+        return await get_places()
+    except Exception as exc:
+        raise HTTPException(status_code=502,
+                            detail=f"ecosystem source unavailable: {exc}") from exc
+
+
+@router.post("/object/{object_id}/photo")
+async def post_object_photo(object_id: str, request: Request,
+                            user: SupabaseUser = Depends(get_current_user),
+                            db: AsyncSession = Depends(get_db)):
+    _require_editor(user)
+    body = await _body(request)
+    try:
+        return await attach_photo(db, object_id, str(body.get("data_b64") or ""),
+                                  str(body.get("caption") or ""),
+                                  str(body.get("kind") or "upload"), user.email)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.delete("/object/{object_id}/photo/{att_id}")
+async def delete_object_photo(object_id: str, att_id: str,
+                              user: SupabaseUser = Depends(get_current_user),
+                              db: AsyncSession = Depends(get_db)):
+    _require_editor(user)
+    try:
+        return await delete_photo(db, object_id, att_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/photo/{fname}")
+async def get_maven_photo(fname: str):
+    """Public read: filenames are unguessable hex UUIDs."""
+    import os
+    from fastapi.responses import FileResponse
+    safe = os.path.basename(str(fname))
+    if not (safe.endswith(".jpg") or safe.endswith(".png")):
+        raise HTTPException(status_code=400, detail="invalid file")
+    path = os.path.join(_photo_dir(), safe)
+    if not os.path.isfile(path):
+        raise HTTPException(status_code=404, detail="not found")
+    media = "image/png" if safe.endswith(".png") else "image/jpeg"
+    return FileResponse(path, media_type=media)
 
 
 @router.post("/auto")

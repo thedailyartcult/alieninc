@@ -45,6 +45,7 @@ from .parsers_navweaps import parse_navweaps_missile_links
 from .parsers_rheinmetall import RHEINMETALL_PRODUCT_URLS
 from .parsers_gdls import GDLS_PRODUCT_URLS
 from .parsers_qinetiq import QINETIQ_PRODUCT_URLS
+from .parsers_amgeneral import AMGENERAL_VEHICLE_PATHS
 from .parsers_navalencyclopedia import is_naval_encyclopedia_ship_url
 from .picklist import CurationRules, curate, write_outputs
 from .patent_feed import feed_patents, feed_from_file
@@ -334,6 +335,8 @@ def cmd_discover_more(args, s: Settings):
         base = norm.rsplit("/", 1)[0]
         for m in link_re.finditer(res.html):
             href = m.group(1).split("#")[0]
+            if ".." in href or href.startswith(("mailto:", "javascript:")):
+                continue
             if href.startswith(("http://", "https://")):
                 if "globalsecurity.org" not in href or "/military/systems/" not in href:
                     continue
@@ -343,8 +346,9 @@ def cmd_discover_more(args, s: Settings):
                 child = f"https://www.globalsecurity.org{href}"
                 path = href
             else:
-                path = f"{base}/{href}"
-                child = f"https://www.globalsecurity.org{path}"
+                # base is already an absolute URL; never re-prefix the host.
+                child = f"{base}/{href}"
+                path = "/" + child.split("globalsecurity.org/", 1)[1]
             is_hub = path.endswith("/index.html") or \
                 any(path.endswith(f"/{hub}.htm") for hub in GS_HUB_PAGES)
             if is_hub:
@@ -517,6 +521,55 @@ def cmd_discover_round5(args, s: Settings):
         "next": ("python -m scan crawl --domains www.naval-encyclopedia.com "
                  "(~2000 pages at 1.5s delay; both sources pre-categorized "
                  "and resumable)"),
+    }, indent=2))
+    eng.close()
+
+
+def cmd_discover_round6(args, s: Settings):
+    """Enumerate the round-6 sources (added 2026-08-25):
+    elbitsystems.com (/land product tree from its sitemap.xml; the old
+    'JS-rendered' verdict is obsolete — pages are server-rendered Drupal)
+    and amgeneral.com (curated vehicle URLs from page-sitemap.xml).
+    Both are © all-rights-reserved: fact-extraction with attribution.
+    Run once, then crawl."""
+    from .parsers_elbit import elbit_category_for
+    eng = Engine(s)
+    eng.seed_from_catalog()
+    summary: dict[str, int] = {}
+
+    # --- elbitsystems.com: sitemap -> /land/ leaf products ---
+    n_el = 0
+    res = eng._fetcher("elbitsystems.com").fetch(
+        "https://www.elbitsystems.com/sitemap.xml",
+        store=eng.store, use_cache=True)
+    if res.status == 200 and res.html:
+        for m in re.finditer(r"<loc>([^<]+)</loc>", res.html):
+            u = m.group(1).strip().rstrip("/")
+            if "/land/" not in u or u.count("/") < 4:
+                continue
+            cat = elbit_category_for(u)
+            if not cat:
+                continue
+            n_el += eng.store.enqueue(u, "elbitsystems.com",
+                                      category=cat, kind="product")
+    summary["elbitsystems.com"] = n_el
+
+    # --- amgeneral.com: curated vehicle URLs (Automotive vehicles) ---
+    n_am = 0
+    for path in AMGENERAL_VEHICLE_PATHS:
+        n_am += eng.store.enqueue(
+            f"https://www.amgeneral.com{path}", "www.amgeneral.com",
+            category="Automotive vehicles", kind="product")
+    summary["www.amgeneral.com"] = n_am
+
+    print(json.dumps({
+        "enqueued_by_source": summary,
+        "total_enqueued": sum(summary.values()),
+        "status": eng.status(),
+        "next": ("python -m scan crawl --domains elbitsystems.com "
+                 "(~100 product pages at default delay) then crawl "
+                 "--domains www.amgeneral.com (~14 pages); both "
+                 "pre-categorized and resumable"),
     }, indent=2))
     eng.close()
 
@@ -1020,6 +1073,12 @@ def main(argv=None):
                               "sitemap + qinetiq.com robotic products) and "
                               "enqueue them")
     _add_common(r5p)
+    r6p = sub.add_parser("discover-round6",
+                         help="enumerate the round-6 sources (elbit-"
+                              "systems.com /land product tree from its "
+                              "sitemap + amgeneral.com vehicle pages) and "
+                              "enqueue them")
+    _add_common(r6p)
     rcp = sub.add_parser("recategorize",
                          help="quality pass: fill Uncategorized entries, repair "
                               "weaponsystems.net platform misclassification, "
@@ -1078,6 +1137,8 @@ def main(argv=None):
         cmd_discover_round4(args, s)
     elif args.cmd == "discover-round5":
         cmd_discover_round5(args, s)
+    elif args.cmd == "discover-round6":
+        cmd_discover_round6(args, s)
     elif args.cmd == "recategorize":
         cmd_recategorize(args, s)
     elif args.cmd == "dedupe-keys":

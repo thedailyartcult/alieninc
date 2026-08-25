@@ -45,6 +45,8 @@ from .parsers_oshkosh import parse_oshkosh
 from .parsers_navalencyclopedia import parse_naval_encyclopedia, \
     is_naval_encyclopedia_ship_url
 from .parsers_qinetiq import parse_qinetiq
+from .parsers_elbit import parse_elbit
+from .parsers_amgeneral import parse_amgeneral, AMGENERAL_VEHICLE_PATHS
 from .sitemap import product_urls_from_sitemap, article_urls_from_sitemap, sitemap_urls_to_parse
 from .store import ScanStore
 from .sanity import looks_like_news_headline
@@ -75,6 +77,8 @@ GDLS_HOST = "www.gdls.com"
 OSHKOSH_HOST = "oshkoshdefense.com"
 NAVALENCYCLOPEDIA_HOST = "www.naval-encyclopedia.com"
 QINETIQ_HOST = "www.qinetiq.com"
+ELBIT_HOST = "elbitsystems.com"
+AMGENERAL_HOST = "www.amgeneral.com"
 
 
 def load_catalog_entries(path: Path) -> list[dict]:
@@ -452,6 +456,26 @@ class Engine:
                     self.store.mark(url, "done", status=200)
                     log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
                     return
+            elif host == ELBIT_HOST and "/land/" in url:
+                e = parse_elbit(url, fetched.html,
+                                row["category"] or "")
+                if e:
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
+            elif host == AMGENERAL_HOST:
+                e = parse_amgeneral(url, fetched.html,
+                                    row["category"] or "Automotive vehicles")
+                if e:
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
             # unknown host/kind or parser returned None: still mark fetched so the
             # page isn't re-fetched on every run (no data extracted).
             self.store.mark(url, "done", status=200)
@@ -507,6 +531,8 @@ class Engine:
                     "https://oshkoshdefense.com",
                     "https://www.naval-encyclopedia.com",
                     "https://www.qinetiq.com",
+                    "https://elbitsystems.com",
+                    "https://www.amgeneral.com",
                 ],
                 "note": ("Compiled by the A-SAN deep scanner. robots.txt and site ToS are "
                          "respected; every entry carries the exact source URL it was fetched "

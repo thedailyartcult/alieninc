@@ -273,6 +273,9 @@
         .nav-section { margin-bottom: 16px; }
 
         .nav-section-title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             padding: 4px 16px;
             font-size: 9px;
             font-weight: 700;
@@ -280,6 +283,27 @@
             text-transform: uppercase;
             color: var(--text-muted);
             opacity: 0.6;
+            cursor: pointer;
+            user-select: none;
+            transition: color .18s cubic-bezier(0.16, 1, 0.3, 1), opacity .18s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .nav-section-title::after {
+            content: '\25BE';
+            margin-left: auto;
+            font-size: 8px;
+            transition: transform .18s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .nav-section.collapsed .nav-section-title::after { transform: rotate(-90deg); }
+        .nav-section-title:hover, .nav-section-title:focus-visible { color: var(--text); opacity: 1; outline: none; }
+
+        .sidebar:not(.rail-mode) .nav-section.collapsed .nav-item { display: none; }
+        .sidebar.rail-mode .nav-section-title::after { display: none; }
+        .sidebar.sc-nav-ready:not(.rail-mode) .nav-section:not(.collapsed) .nav-item {
+            animation: navSectionReveal .18s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes navSectionReveal {
+            from { opacity: 0; transform: translateX(-4px); }
+            to { opacity: 1; transform: none; }
         }
 
         .nav-item {
@@ -2013,6 +2037,10 @@
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2a10.5 10.5 0 0 1 0 12M8 2a10.5 10.5 0 0 0 0 12"/></svg>
                         <span class="nav-label">GAIA</span>
                     </div>
+                    <div class="nav-item" id="wonNavItem" title="Watch Notes — AI situation notes">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10v12H3z"/><path d="M5.5 5h5M5.5 8h5M5.5 11h3"/></svg>
+                        <span class="nav-label">Watch Notes</span>
+                    </div>
                 </div>
                 <div class="nav-section">
                     <div class="nav-section-title">SIMS</div>
@@ -2446,18 +2474,22 @@
                           <!-- Unified Intelligence Map — docked left nav + map -->
                           <div class="sc-map-pane" id="fusionMapPane">
 
-<div class="maven-left-col" id="mavenLeftCol">
+<div class="maven-left-col" id="mavenLeftCol" data-mfeat="maven">
   <div class="maven-col-head">
     <span class="maven-col-mark">SC</span>
     <span class="maven-col-title">MAVEN SMART SYSTEM</span>
     <button type="button" id="mavenColToggle" title="Collapse sidebar">&#9662;</button>
   </div>
+  <div class="maven-featbar" role="tablist" aria-label="Spinal Cracker side-panel features">
+    <button type="button" class="mfeat-btn active" data-mfeat="maven" title="Maven Smart Layer — tasks, assets, COA, objects, places">MAVEN</button>
+    <button type="button" class="mfeat-btn" data-mfeat="gaia" title="GAIA Geo Controller">GEO</button>
+    <button type="button" class="mfeat-btn" data-mfeat="notes" title="Watch Notes">NOTES</button>
+    <span id="mavenOvlBtn" class="maven-ovl-toggle" title="Toggle all map overlays (markers, rings, towers)">OVERLAYS ON</span>
+  </div>
   <div class="maven-scope-cluster">
-    <div class="msc-row">
+    <div class="msc-row msc-duo">
       <label>WHERE</label>
       <select id="mvScopeRegion"></select>
-    </div>
-    <div class="msc-row">
       <label>COUNTRY</label>
       <select id="mvScopeCountry"></select>
     </div>
@@ -2609,18 +2641,12 @@
                                     </div>
                                </div><!-- /#fusionDeck — badge/hint/drawer/mil-panel are wrap siblings, NOT deck children -->
 <div id="mavenDrawer" class="maven-drawer">
-                                                                          <div class="maven-head">
-                                                                              <span class="maven-title">MAVEN SMART LAYER</span>
-                                                                              <span class="maven-live" id="mavenLiveTag">sc_ontology native</span>
-                                                                              <span id="mavenOvlBtn" class="maven-ovl-toggle" title="Toggle all map overlays (markers, rings, towers)">OVERLAYS ON</span>
-                                                                          </div>
-                                                                          <div class="maven-tabs">
+                                                                           <div class="maven-tabs">
                                                                               <button data-mtab="tasks" class="active">TASKS</button>
                                                                               <button data-mtab="assets">ASSETS</button>
                                                                               <button data-mtab="coa">COA</button>
-                                                <button data-mtab="cameo">CAMEO</button>
-                                                                              <button data-mtab="objects">OBJECTS</button>
-                                                                              <button data-mtab="places">PLACES</button>
+                                                 <button data-mtab="cameo">CAMEO</button>
+                                                                              <button data-mtab="objects">OBJECTS</button><button data-mtab="places">PLACES</button>
                                                                           </div>
                                                                          <div class="maven-body">
                                                                              <section data-mpanel="tasks">
@@ -2649,7 +2675,102 @@
                                                     <div id="mavenPlacesList"></div>
                                                 </section>
                                                                          </div>
-                                                                         <div id="mavenDetRail"></div>
+                                 
+<section data-mpanel="notes" class="maven-hide">
+<div id="won-panel" class="won-hidden" style="" role="complementary" aria-label="Watch Officer Notepad">
+    <div class="won-header" id="wonHeader">
+        <span class="won-pulse" aria-hidden="true"></span>
+        <span class="won-title">WATCH NOTES&ensp;&middot;&ensp;OFFICER</span>
+        <span class="won-header-btns">
+            <button type="button" class="won-scan-btn" id="wonScanBtn" title="Analyze current live state and add 3&ndash;5 notes">SCAN NOW</button>
+            <button type="button" class="won-hbtn" id="wonExportMdBtn" title="Export as Markdown">MD</button>
+            <button type="button" class="won-hbtn" id="wonExportJsonBtn" title="Export as JSON">JSON</button>
+            <button type="button" class="won-hbtn won-danger" id="wonClearBtn" title="Clear all unpinned notes">CLR</button>
+            <button type="button" class="won-hbtn" id="wonMinBtn" title="Minimize">&ndash;</button>
+            <button type="button" class="won-hbtn won-danger" id="wonCloseBtn" title="Close">&times;</button>
+        </span>
+    </div>
+    <div class="won-body" id="wonBody">
+        <div class="won-empty" id="wonEmpty">
+            <div class="sc-wireframe-boxes won-empty-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box"></span></div>
+            <div class="won-empty-text">No notes yet &mdash; hover a threat and click&nbsp;+&nbsp;Note, or hit Scan&nbsp;Now</div>
+        </div>
+        <div class="won-list" id="wonList"></div>
+    </div>
+    <div class="won-footer">
+        <span id="wonStatus">Standing by.</span>
+        <span id="wonCount"></span>
+    </div>
+    <div class="won-resize-handle" id="wonResizeHandle" title="Drag to resize"></div>
+</div>
+</section>
+<section data-mpanel="gaia" class="maven-hide">
+<div id="gaia-panel" class="gaia-hidden" role="complementary" aria-label="GAIA Geo Controller">
+    <div class="gaia-header" id="gaiaHeader">
+        <span class="gaia-pulse" aria-hidden="true"></span>
+        <span class="gaia-title">GAIA&ensp;&middot;&ensp;GEO CONTROLLER</span>
+        <span class="gaia-mode-chip" id="gaiaModeChip" data-mode="standby">STANDBY</span>
+        <span class="gaia-header-btns">
+            <button type="button" class="gaia-hbtn" id="gaiaMinBtn" title="Minimize">&ndash;</button>
+            <button type="button" class="gaia-hbtn gaia-danger" id="gaiaCloseBtn" title="Close">&times;</button>
+        </span>
+    </div>
+    <div class="gaia-body" id="gaiaBody">
+        <div class="gaia-section-tag"><span class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span></span>01 &middot; Layers</div>
+        <div class="gaia-layer-list" id="gaiaLayerList"></div>
+        <div class="gaia-section-tag"><span class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></span>02 &middot; Geo-Search</div>
+        <div class="gaia-search-wrap">
+            <input type="text" id="gaiaSearchInput" placeholder='e.g. "friendly assets within 10km of the scope center"' spellcheck="false" autocomplete="off">
+            <button type="button" class="gaia-go-btn" id="gaiaGoBtn" title="Parse and preview matches">GO</button>
+        </div>
+        <div class="gaia-chips" id="gaiaChips"></div>
+        <div class="gaia-results" id="gaiaResults">
+            <div class="gaia-results-head" id="gaiaResultsHead">Type a query or pick a quick filter.</div>
+            <div class="gaia-r-samples" id="gaiaSamples"></div>
+        </div>
+        <div class="gaia-actions">
+            <button type="button" class="gaia-act-btn gaia-apply" id="gaiaApplyBtn" title="Highlight matching objects on the map">Apply to Map</button>
+            <button type="button" class="gaia-act-btn" id="gaiaFocusBtn" title="Frame all matching objects">Focus</button>
+            <button type="button" class="gaia-act-btn gaia-clear" id="gaiaClearBtn" title="Remove map filters">Clear Filters</button>
+        </div>
+        <div class="gaia-section-tag"><span class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></span>03 &middot; Object Input</div>
+        <div class="gaia-obj-form">
+            <select id="gaiaObjType" title="Object type to place">
+                <option value="friendly">FRIENDLY ASSET</option>
+                <option value="hostile">HOSTILE ASSET</option>
+                <option value="neutral">NEUTRAL SITE</option>
+                <option value="cvtrack">CV TRACK</option>
+            </select>
+            <input type="text" id="gaiaObjLabel" placeholder="label (optional)" maxlength="48" spellcheck="false" autocomplete="off">
+        </div>
+        <div class="gaia-actions">
+            <button type="button" class="gaia-act-btn gaia-apply" id="gaiaPlaceBtn" title="Arm placement, then click the map">Place on Map</button>
+            <button type="button" class="gaia-act-btn gaia-clear" id="gaiaObjClearBtn" title="Remove every placed object">Clear All</button>
+        </div>
+        <div class="gaia-section-tag"><span class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></span>04 &middot; Temporal Analysis</div>
+        <div class="gaia-cd-chips" id="gaiaCdChips">
+            <button type="button" class="gaia-cd-chip is-on" data-cls="structural" title="Toggle structural-change outlines">Structural</button>
+            <button type="button" class="gaia-cd-chip is-on" data-cls="cleared" title="Toggle cleared-terrain heat zones">Cleared</button>
+            <button type="button" class="gaia-cd-chip is-on" data-cls="movement" title="Toggle movement ghost footprints">Movement</button>
+        </div>
+        <div class="gaia-cd-oprow">
+            <label for="gaiaCdOpacity">Overlay</label>
+            <input type="range" class="gaia-slider" id="gaiaCdOpacity" min="20" max="100" step="5" value="60">
+        </div>
+        <div class="gaia-actions">
+            <button type="button" class="gaia-act-btn gaia-clear" id="gaiaCdClearBtn" title="Remove all change-detection overlays">Clear Overlays</button>
+        </div>
+        <div class="gaia-cd-status" id="gaiaCdStatus">Enable Satellite Imagery, scrub the timeline bar, use &#916; for change detection.</div>
+        <div class="gaia-hint">Search: within N km &middot; last N min/h/d/w &middot; around / near &lt;place&gt; or the scope center &middot; red / amber / green &middot; military / jet / private / commercial air &middot; friendly / hostile assets &middot; computer-vision detections &middot; drones &middot; keywords. Objects: right-click a placed pin to remove it.</div>
+    </div>
+    <div class="gaia-footer">
+        <span id="gaiaStatus">Standing by.</span>
+        <span id="gaiaMeta"></span>
+    </div>
+    <div class="gaia-resize-handle" id="gaiaResizeHandle" title="Drag to resize"></div>
+</div>
+</section>
+                                        <div id="mavenDetRail"></div>
                                                                      </div>
 </div>
                                                                      
@@ -4754,6 +4875,11 @@ function navigate(page) {
     if (isMimiOnly()) page = 'statham-smm';
     else if (page === 'statham-smm' && !canAccessMimi()) page = 'overview';
     document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
+    if (typeof window.revealNavSection === 'function') window.revealNavSection(page);
+    if (window.DECK && typeof DECK.refreshTabs === 'function') {
+        if (typeof DECK.noteClassicPage === 'function') DECK.noteClassicPage(page);
+        DECK.refreshTabs();
+    }
     document.querySelectorAll('.page').forEach(p => {
         p.classList.remove('active');
         p.style.opacity = '0';
@@ -9045,6 +9171,76 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
+    // Single-open platform accordion — nav-section-title = platform, nav-items = features.
+    // Exactly one section open at a time; navigation force-reveals the active platform's
+    // section via window.revealNavSection(). Rail mode ignores folding entirely (CSS-scoped).
+    (function () {
+        const LS_NAVSEC = 'sc_nav_sections_v1';
+        const sections = Array.from(document.querySelectorAll('.sidebar-nav .nav-section'));
+        if (!sections.length) return;
+
+        function titleOf(sec) {
+            const t = sec.querySelector('.nav-section-title');
+            return t ? t.textContent.trim() : '';
+        }
+        function openSec(sec, persist) {
+            sections.forEach(s => {
+                const on = s === sec;
+                s.classList.toggle('collapsed', !on);
+                const t = s.querySelector('.nav-section-title');
+                if (t) t.setAttribute('aria-expanded', on ? 'true' : 'false');
+            });
+            if (persist !== false) {
+                try { localStorage.setItem(LS_NAVSEC, JSON.stringify(titleOf(sec))); } catch (e) {}
+            }
+        }
+        function foldSec(sec) {
+            sec.classList.add('collapsed');
+            const t = sec.querySelector('.nav-section-title');
+            if (t) t.setAttribute('aria-expanded', 'false');
+            try { localStorage.setItem(LS_NAVSEC, JSON.stringify('')); } catch (e) {}
+        }
+        function sectionForItem(item) {
+            let n = item;
+            while (n && !n.classList.contains('nav-section')) n = n.parentElement;
+            return n && sections.indexOf(n) >= 0 ? n : null;
+        }
+        // Auto-reveal: open the section owning a page/tool id when it is currently folded
+        window.revealNavSection = function (id) {
+            if (!id) return;
+            const item = document.querySelector('.nav-item[data-page="' + id + '"]') ||
+                         (id === 'gaia' ? document.getElementById('gaiaNavItem') : null) ||
+                         (id === 'won' ? document.getElementById('wonNavItem') : null);
+            const sec = item ? sectionForItem(item) : null;
+            if (sec && sec.classList.contains('collapsed')) openSec(sec, false);
+        };
+
+        sections.forEach(sec => {
+            const t = sec.querySelector('.nav-section-title');
+            if (!t) return;
+            t.setAttribute('role', 'button');
+            t.setAttribute('tabindex', '0');
+            t.setAttribute('aria-expanded', sec.classList.contains('collapsed') ? 'false' : 'true');
+            const toggle = () => { sec.classList.contains('collapsed') ? openSec(sec, true) : foldSec(sec); };
+            t.addEventListener('click', toggle);
+            t.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+            });
+        });
+
+        // Boot: reveal the active page's platform; fall back to persisted choice, else first section
+        let stored = '';
+        try { stored = JSON.parse(localStorage.getItem(LS_NAVSEC)) || ''; } catch (e) {}
+        const activeItem = document.querySelector('.sidebar-nav .nav-item.active');
+        let target = activeItem ? sectionForItem(activeItem) : null;
+        if (!target && stored) target = sections.find(s => titleOf(s) === stored) || null;
+        openSec(target || sections[0], false);
+        requestAnimationFrame(() => {
+            const sb = document.querySelector('.sidebar');
+            if (sb) sb.classList.add('sc-nav-ready');
+        });
+    })();
+
     // Hash change handler
     window.addEventListener('hashchange', () => {
         const hash = window.location.hash.slice(1);
@@ -9948,11 +10144,18 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
         overflow: hidden;
         transition: transform .38s cubic-bezier(.2,.85,.3,1), opacity .3s ease, height .25s ease;
     }
-    #won-panel.won-hidden {
-        transform: translateX(calc(100% + 48px));
-        opacity: 0;
-        pointer-events: none;
+    .maven-left-col #won-panel {
+        position: static !important; inset: auto !important;
+        width: 100% !important; height: auto !important;
+        min-width: 0 !important; max-width: none !important;
+        min-height: 420px; z-index: auto;
+        box-shadow: none !important; border: none !important; border-radius: 0 !important;
+        transform: none !important; opacity: 1 !important;
+        transition: none !important;
     }
+    .maven-left-col #won-panel.won-hidden { display: none !important; }
+    .maven-left-col #won-panel.won-min { min-height: 52px; }
+    section[data-mpanel="notes"] { padding: 0; border-top: 1px solid var(--border-color); }
     #won-panel.won-min { height: auto !important; }
     #won-panel.won-min .won-body,
     #won-panel.won-min .won-footer,
@@ -10316,32 +10519,7 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
     }
 </style>
 
-<div id="won-panel" class="won-hidden" role="complementary" aria-label="Watch Officer Notepad">
-    <div class="won-header" id="wonHeader">
-        <span class="won-pulse" aria-hidden="true"></span>
-        <span class="won-title">WATCH NOTES&ensp;&middot;&ensp;OFFICER</span>
-        <span class="won-header-btns">
-            <button type="button" class="won-scan-btn" id="wonScanBtn" title="Analyze current live state and add 3&ndash;5 notes">SCAN NOW</button>
-            <button type="button" class="won-hbtn" id="wonExportMdBtn" title="Export as Markdown">MD</button>
-            <button type="button" class="won-hbtn" id="wonExportJsonBtn" title="Export as JSON">JSON</button>
-            <button type="button" class="won-hbtn won-danger" id="wonClearBtn" title="Clear all unpinned notes">CLR</button>
-            <button type="button" class="won-hbtn" id="wonMinBtn" title="Minimize">&ndash;</button>
-            <button type="button" class="won-hbtn won-danger" id="wonCloseBtn" title="Close">&times;</button>
-        </span>
-    </div>
-    <div class="won-body" id="wonBody">
-        <div class="won-empty" id="wonEmpty">
-            <div class="sc-wireframe-boxes won-empty-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box"></span></div>
-            <div class="won-empty-text">No notes yet &mdash; hover a threat and click&nbsp;+&nbsp;Note, or hit Scan&nbsp;Now</div>
-        </div>
-        <div class="won-list" id="wonList"></div>
-    </div>
-    <div class="won-footer">
-        <span id="wonStatus">Standing by.</span>
-        <span id="wonCount"></span>
-    </div>
-    <div class="won-resize-handle" id="wonResizeHandle" title="Drag to resize"></div>
-</div>
+
 
 <script>
 (function () {
@@ -11141,9 +11319,7 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
 
         var storedOpen;
         try { storedOpen = localStorage.getItem(LS_OPEN); } catch (e) {}
-        setOpen(storedOpen === '1', false); // opt-in: stay closed unless the operator left it open
-        // (defaulting open parked a z-index-1900 fixed panel over the right map
-        //  edge — exactly where the MAVEN drawer lives — making it unclickable.)
+        setOpen(storedOpen !== '0', false); // docked in MAVEN col: visible by default
 
         // public API
         window.WONote = {
@@ -12382,8 +12558,7 @@ function renderFusionRealLayer() {
         min-width: 320px;
         max-width: min(92vw, 560px);
         min-height: 260px;
-        display: flex;
-        flex-direction: column;
+        display: flex;        flex-direction: column;
         background: var(--bg-panel);
         border: 1px solid var(--border-color);
         border-radius: 8px;
@@ -12402,6 +12577,65 @@ function renderFusionRealLayer() {
     #gaia-panel.gaia-min .gaia-body,
     #gaia-panel.gaia-min .gaia-footer,
     #gaia-panel.gaia-min .gaia-resize-handle { display: none; }
+
+    /* ---- embedded mode: GAIA lives in the MAVEN left column (GEO tab) ---- */
+    .maven-left-col #gaia-panel {
+        position: static !important; inset: auto !important;
+        width: 100% !important; height: auto !important;
+        min-width: 0 !important; max-width: none !important;
+        min-height: 420px; z-index: auto;
+        box-shadow: none !important; border: none !important; border-radius: 0 !important;
+        transform: none !important; opacity: 1 !important;
+        pointer-events: auto !important;
+        transition: none !important;
+    }
+    .maven-left-col #gaia-panel .gaia-resize-handle { display: none !important; }
+    .maven-left-col #gaia-panel .gaia-header { cursor: default; touch-action: auto; }
+    section[data-mpanel="gaia"] { padding: 0; border-top: 1px solid var(--border-color); }
+
+    /* ---- side-panel FEATURE switcher: one feature fills the column at a time.
+       data-mfeat on #mavenLeftCol selects which feature owns the panel body. ---- */
+    .maven-featbar {
+        display: flex; gap: 2px; padding: 6px 6px 0;
+        border-bottom: 1px solid var(--border-color); flex: none;
+    }
+    .mfeat-btn {
+        flex: 1; padding: 5px 4px 6px; cursor: pointer;
+        background: rgba(255,255,255,.03); border: 1px solid var(--border-color); border-bottom: none;
+        border-radius: 6px 6px 0 0;
+        color: var(--text-muted); font-family: var(--font-mono);
+        font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
+    }
+    .mfeat-btn:hover { color: var(--text-primary); }
+    .mfeat-btn.active {
+        color: var(--accent-neon); border-color: rgba(223,241,64,.45);
+        background: rgba(223,241,64,.07);
+    }
+    /* feature = GEO: hide every maven-layer block, show only the GAIA controller */
+    #mavenLeftCol[data-mfeat="gaia"] :is(.maven-scope-cluster, .sc-deck.sc-deck-docked, .maven-head, .maven-tabs, .maven-body, #mavenDetRail) { display: none !important; }
+    #mavenLeftCol[data-mfeat="gaia"] section[data-mpanel="gaia"] { display: block !important; }
+    /* controller sections live OUTSIDE .maven-body so the legacy
+       ".maven-body section.maven-hide" rule can never hide them — tie each one
+       strictly to its own feature instead */
+    #mavenLeftCol:not([data-mfeat="notes"]) section[data-mpanel="notes"],
+    #mavenLeftCol:not([data-mfeat="gaia"]) section[data-mpanel="gaia"] { display: none !important; }
+    #mavenLeftCol[data-mfeat="gaia"] section[data-mpanel="notes"],
+    #mavenLeftCol[data-mfeat="gaia"] section[data-mpanel="tasks"],
+    #mavenLeftCol[data-mfeat="gaia"] section[data-mpanel="assets"],
+    #mavenLeftCol[data-mfeat="gaia"] section[data-mpanel="coa"],
+    #mavenLeftCol[data-mfeat="gaia"] section[data-mpanel="cameo"],
+    #mavenLeftCol[data-mfeat="gaia"] section[data-mpanel="objects"],
+    #mavenLeftCol[data-mfeat="gaia"] section[data-mpanel="places"] { display: none !important; }
+    /* feature = NOTES: hide every maven-layer block, show only the notepad */
+    #mavenLeftCol[data-mfeat="notes"] :is(.maven-scope-cluster, .sc-deck.sc-deck-docked, .maven-head, .maven-tabs, .maven-body, #mavenDetRail) { display: none !important; }
+    #mavenLeftCol[data-mfeat="notes"] section[data-mpanel="notes"] { display: block !important; }
+    #mavenLeftCol[data-mfeat="notes"] section[data-mpanel="gaia"],
+    #mavenLeftCol[data-mfeat="notes"] section[data-mpanel="tasks"],
+    #mavenLeftCol[data-mfeat="notes"] section[data-mpanel="assets"],
+    #mavenLeftCol[data-mfeat="notes"] section[data-mpanel="coa"],
+    #mavenLeftCol[data-mfeat="notes"] section[data-mpanel="cameo"],
+    #mavenLeftCol[data-mfeat="notes"] section[data-mpanel="objects"],
+    #mavenLeftCol[data-mfeat="notes"] section[data-mpanel="places"] { display: none !important; }
 
     /* ---- header (sc-map-pane-top grammar) ---- */
     .gaia-header {
@@ -12935,71 +13169,6 @@ function renderFusionRealLayer() {
         #gtbProv { display: none; }
     }
 </style>
-
-<div id="gaia-panel" class="gaia-hidden" role="complementary" aria-label="GAIA Geo Controller">
-    <div class="gaia-header" id="gaiaHeader">
-        <span class="gaia-pulse" aria-hidden="true"></span>
-        <span class="gaia-title">GAIA&ensp;&middot;&ensp;GEO CONTROLLER</span>
-        <span class="gaia-mode-chip" id="gaiaModeChip" data-mode="standby">STANDBY</span>
-        <span class="gaia-header-btns">
-            <button type="button" class="gaia-hbtn" id="gaiaMinBtn" title="Minimize">&ndash;</button>
-            <button type="button" class="gaia-hbtn gaia-danger" id="gaiaCloseBtn" title="Close">&times;</button>
-        </span>
-    </div>
-    <div class="gaia-body" id="gaiaBody">
-        <div class="gaia-section-tag"><span class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span></span>01 &middot; Layers</div>
-        <div class="gaia-layer-list" id="gaiaLayerList"></div>
-        <div class="gaia-section-tag"><span class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></span>02 &middot; Geo-Search</div>
-        <div class="gaia-search-wrap">
-            <input type="text" id="gaiaSearchInput" placeholder='e.g. "friendly assets within 10km of the scope center"' spellcheck="false" autocomplete="off">
-            <button type="button" class="gaia-go-btn" id="gaiaGoBtn" title="Parse and preview matches">GO</button>
-        </div>
-        <div class="gaia-chips" id="gaiaChips"></div>
-        <div class="gaia-results" id="gaiaResults">
-            <div class="gaia-results-head" id="gaiaResultsHead">Type a query or pick a quick filter.</div>
-            <div class="gaia-r-samples" id="gaiaSamples"></div>
-        </div>
-        <div class="gaia-actions">
-            <button type="button" class="gaia-act-btn gaia-apply" id="gaiaApplyBtn" title="Highlight matching objects on the map">Apply to Map</button>
-            <button type="button" class="gaia-act-btn" id="gaiaFocusBtn" title="Frame all matching objects">Focus</button>
-            <button type="button" class="gaia-act-btn gaia-clear" id="gaiaClearBtn" title="Remove map filters">Clear Filters</button>
-        </div>
-        <div class="gaia-section-tag"><span class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></span>03 &middot; Object Input</div>
-        <div class="gaia-obj-form">
-            <select id="gaiaObjType" title="Object type to place">
-                <option value="friendly">FRIENDLY ASSET</option>
-                <option value="hostile">HOSTILE ASSET</option>
-                <option value="neutral">NEUTRAL SITE</option>
-                <option value="cvtrack">CV TRACK</option>
-            </select>
-            <input type="text" id="gaiaObjLabel" placeholder="label (optional)" maxlength="48" spellcheck="false" autocomplete="off">
-        </div>
-        <div class="gaia-actions">
-            <button type="button" class="gaia-act-btn gaia-apply" id="gaiaPlaceBtn" title="Arm placement, then click the map">Place on Map</button>
-            <button type="button" class="gaia-act-btn gaia-clear" id="gaiaObjClearBtn" title="Remove every placed object">Clear All</button>
-        </div>
-        <div class="gaia-section-tag"><span class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></span>04 &middot; Temporal Analysis</div>
-        <div class="gaia-cd-chips" id="gaiaCdChips">
-            <button type="button" class="gaia-cd-chip is-on" data-cls="structural" title="Toggle structural-change outlines">Structural</button>
-            <button type="button" class="gaia-cd-chip is-on" data-cls="cleared" title="Toggle cleared-terrain heat zones">Cleared</button>
-            <button type="button" class="gaia-cd-chip is-on" data-cls="movement" title="Toggle movement ghost footprints">Movement</button>
-        </div>
-        <div class="gaia-cd-oprow">
-            <label for="gaiaCdOpacity">Overlay</label>
-            <input type="range" class="gaia-slider" id="gaiaCdOpacity" min="20" max="100" step="5" value="60">
-        </div>
-        <div class="gaia-actions">
-            <button type="button" class="gaia-act-btn gaia-clear" id="gaiaCdClearBtn" title="Remove all change-detection overlays">Clear Overlays</button>
-        </div>
-        <div class="gaia-cd-status" id="gaiaCdStatus">Enable Satellite Imagery, scrub the timeline bar, use &#916; for change detection.</div>
-        <div class="gaia-hint">Search: within N km &middot; last N min/h/d/w &middot; around / near &lt;place&gt; or the scope center &middot; red / amber / green &middot; military / jet / private / commercial air &middot; friendly / hostile assets &middot; computer-vision detections &middot; drones &middot; keywords. Objects: right-click a placed pin to remove it.</div>
-    </div>
-    <div class="gaia-footer">
-        <span id="gaiaStatus">Standing by.</span>
-        <span id="gaiaMeta"></span>
-    </div>
-    <div class="gaia-resize-handle" id="gaiaResizeHandle" title="Drag to resize"></div>
-</div>
 
 <script>
 (function () {
@@ -14729,6 +14898,11 @@ function renderFusionRealLayer() {
     function setOpen(v, persist) {
         isOpen = !!v;
         panel.classList.toggle('gaia-hidden', !isOpen);
+        // Embedded mode: opening selects the GEO feature in the MAVEN column; closing
+        // falls back to the MAVEN layer so the column never shows an empty body.
+        if (typeof window.__mavenSetFeature === 'function') {
+            try { window.__mavenSetFeature(isOpen ? 'gaia' : 'maven'); } catch (e) {}
+        }
         if (persist !== false) { try { localStorage.setItem(LS_OPEN, isOpen ? '1' : '0'); } catch (e) {} }
         syncToggleBtns();
         if (isOpen) { refreshStatuses(); }
@@ -14741,7 +14915,13 @@ function renderFusionRealLayer() {
         if (!minimized) applyGeometry(); else panel.style.height = 'auto';
         try { localStorage.setItem(LS_MIN, minimized ? '1' : '0'); } catch (e) {}
     }
-    function toggle() { setOpen(!isOpen); }
+    function toggle() {
+        // Feature-aware: if GEO isn't the active side-panel feature, treat as
+        // "open" (which switches to it); otherwise flip the controller closed.
+        var col = document.getElementById('mavenLeftCol');
+        var onFeat = col && col.getAttribute('data-mfeat') === 'gaia';
+        setOpen(!(isOpen && onFeat));
+    }
     function statusMsg(msg) { if (statusEl) statusEl.textContent = msg; }
     function syncToggleBtns() {
         var navItem = $('gaiaNavItem');
@@ -14820,10 +15000,14 @@ function renderFusionRealLayer() {
     }
 
     // Sidebar "GAIA" is a panel trigger, not a page — intercept the click in the
-    // capture phase so the app's navigate() handler never sees it.
+    // capture phase so the app's navigate() handler never sees it, then land on
+    // the fusion page (left column hosts the GEO tab; map stays popup-free).
     document.addEventListener('click', function (e) {
         var t = e.target.closest ? e.target.closest('#gaiaNavItem') : null;
-        if (t) { e.preventDefault(); e.stopPropagation(); toggle(); }
+        if (!t) return;
+        e.preventDefault(); e.stopPropagation();
+        try { if (typeof window.navigate === 'function') window.navigate('sc-fusion'); } catch (err) {}
+        setOpen(true);
     }, true);
 
     // Ctrl+Shift+G toggles the controller (Alt+Shift+G alias for browsers that
@@ -15198,12 +15382,11 @@ function renderFusionRealLayer() {
 
     /* ---- Topbar mission tabs (Maven-style) ---- */
     .topbar-tabs {
-        flex: 1; min-width: 0; height: 100%; margin: 0 10px;
-        display: none; align-items: flex-end; gap: 2px;
+        flex: 1; min-width: 0; height: 100%; margin: 0 10px 0 4px;
+        display: flex; align-items: flex-end; gap: 2px;
         overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
     }
     .topbar-tabs::-webkit-scrollbar { display: none; }
-    .topbar.has-deck .topbar-tabs { display: flex; }
     .topbar.has-deck .topbar-title-divider,
     .topbar.has-deck #topbarTitle { display: none; }
     .tb-tab {
@@ -15227,7 +15410,10 @@ function renderFusionRealLayer() {
         width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;
         border-radius: 3px; color: var(--text-muted); font-size: 11px; line-height: 1;
         font-family: var(--font-mono); flex-shrink: 0; margin-right: -3px;
+        opacity: 0; transition: opacity .12s;
     }
+    .tb-tab:hover .tb-x, .tb-tab.active .tb-x { opacity: .75; }
+    .tb-tab.active:hover .tb-x { opacity: 1; }
     .tb-x:hover { color: var(--red); background: rgba(239, 68, 68, .15); }
     .tb-new {
         width: 24px; height: 24px; flex-shrink: 0; margin: 0 4px 5px;
@@ -15342,6 +15528,8 @@ function renderFusionRealLayer() {
                     TOOLS[pg].platform = plat;
                 } else if (item.id === 'gaiaNavItem') {
                     TOOLS.gaia = { id: 'gaia', title: 'GAIA Geo Controller', label: label || 'GAIA', icon: icon, el: null, win: 'gaia', platform: plat };
+                } else if (item.id === 'wonNavItem') {
+                    TOOLS.won = { id: 'won', title: 'Watch Notes', label: label || 'Watch Notes', icon: icon, el: null, win: 'won', platform: plat };
                 }
             });
         });
@@ -15366,7 +15554,12 @@ function renderFusionRealLayer() {
     var focusZ = 10;
     var silentFocus = false;   // suppress per-focus persistence while (re)building a layout
 
-    function persist() { store(LS_LAYOUT, { v: 1, sizes: S.sizes, zones: S.zones, floats: S.floats, mode: S.mode, collapsed: S.collapsed, tabOrder: S.tabOrder, zsplits: S.zsplits }); }
+    // Chrome-style platform tabs: per-platform state that must survive
+    // applyLayout()'s freshState() reset. One platform visible at a time.
+    var PLAT = { stash: {}, focus: {}, stack: [] };
+    var switching = false;     // true while a platform switch tears down panels
+
+    function persist() { store(LS_LAYOUT, { v: 1, sizes: S.sizes, zones: S.zones, floats: S.floats, mode: S.mode, collapsed: S.collapsed, tabOrder: S.tabOrder, zsplits: S.zsplits, plat: PLAT }); }
 
     // ------------------------------------------------------------------- dom
     function ensureDom() {
@@ -15495,8 +15688,7 @@ function renderFusionRealLayer() {
         var t = findTool(p.dataset.tool);
         if (t) $('topbarTitle').textContent = t.title;
         if (t && t.platform) {
-            if (!S.platFocus) S.platFocus = {};
-            S.platFocus[t.platform] = p.dataset.tool;
+            PLAT.focus[t.platform] = p.dataset.tool;
         }
         if (p.classList.contains('deck-float')) { placeFloat(p, S.floats[p.dataset.tool]); p.style.zIndex = focusZ; }
         renderTopbarTabs();
@@ -15510,7 +15702,7 @@ function renderFusionRealLayer() {
         } catch (e) { t.parent.appendChild(t.el); }
         t.el.classList.remove('deck-live');
         var hash = (window.location.hash || '').slice(1);
-        if (hash === t.id && typeof window.navigate === 'function') navigate(t.id);
+        if (hash === t.id && !switching && typeof window.navigate === 'function') navigate(t.id);
     }
 
     function removeFromState(id) {
@@ -15529,6 +15721,14 @@ function renderFusionRealLayer() {
         opts = opts || {};
         var t = findTool(id);
         if (!t) return false;
+        if (typeof window.revealNavSection === 'function') window.revealNavSection(id);
+        // Platform exclusivity: opening a tool from another platform switches
+        // the whole stage to that platform (Chrome-tab semantics).
+        if (!t.win && rootVisible()) {
+            var tp = t.platform || 'Controllers';
+            var ap = activePlatform();
+            if (ap && tp !== ap) switchPlatform(tp);
+        }
         if (t.win) { runWindowTool(t); return true; }
         if (!t.el) return false;
         var existing = panelByTool(id);
@@ -15592,8 +15792,19 @@ function renderFusionRealLayer() {
     }
 
     function runWindowTool(t) {
-        if (t.win === 'gaia' && window.GAIA) { GAIA.open(); return; }
-        if (t.win === 'won' && window.WONote) { WONote.toggle(); return; }
+        // GAIA / Watch Notes are embedded controllers of the fusion page's left
+        // column — launching them lands on Spinal Cracker and opens their tab.
+        if (t.win === 'gaia' && window.GAIA) {
+            try { if (typeof window.navigate === 'function') window.navigate('sc-fusion'); } catch (e) {}
+            GAIA.open();
+            return;
+        }
+        if (t.win === 'won' && window.WONote) {
+            try { if (typeof window.navigate === 'function') window.navigate('sc-fusion'); } catch (e) {}
+            WONote.open();
+            try { if (typeof window.__mavenSetFeature === 'function') window.__mavenSetFeature('notes'); } catch (e) {}
+            return;
+        }
     }
 
     // interactions ------------------------------------------------------------
@@ -15818,16 +16029,37 @@ function renderFusionRealLayer() {
 
     // ------------------------------------------------------- topbar mission tabs
     // platform bucketing (sidebar order): topbar = ONE tab per platform, stage strip = that platform's tools
+    // Classic (non-deck) context: navigate() mirrors the page into location.hash,
+    // so the hash identifies the live feature even when no deck panel exists.
+    function classicPage() {
+        if (rootVisible()) return null;
+        var h = (window.location.hash || '').slice(1);
+        return (h && findTool(h)) ? h : null;
+    }
     function platformGroups() {
         var order = PLATFORM_ORDER.slice();
         if (order.indexOf('Controllers') < 0) order.push('Controllers');
         var map = {};
-        currentTabs().forEach(function (id) {
+        function add(id) {
             var t = findTool(id);
             var plat = (t && t.platform) || 'Controllers';
             if (!map[plat]) { map[plat] = []; if (order.indexOf(plat) < 0) order.push(plat); }
-            map[plat].push(id);
-        });
+            if (map[plat].indexOf(id) < 0) map[plat].push(id);
+        }
+        currentTabs().forEach(add);
+        // Classic mode: keep one stacked tab per VISITED platform, pointing at
+        // its last-visited feature (mirrors deck-mode platform grouping).
+        var cp = classicPage();
+        if (cp) {
+            add(cp);
+            var cpPlat = (findTool(cp) || {}).platform;
+            PLAT.stack.forEach(function (p) {
+                if (p === cpPlat) return;
+                var rid = PLAT.focus[p];
+                var rt = rid && findTool(rid);
+                if (rt && rt.el && rt.id !== 'gaia' && rt.id !== 'won') add(rt.id);
+            });
+        }
         return order.filter(function (p) { return map[p]; })
                     .map(function (p) { return { platform: p, tools: map[p] }; });
     }
@@ -15847,6 +16079,11 @@ function renderFusionRealLayer() {
         return out;
     }
     function activePlatform() {
+        var cp = classicPage();
+        if (cp) {
+            var ct = findTool(cp);
+            if (ct && ct.platform) return ct.platform;
+        }
         var f = findTool(S.focus);
         if (f && f.platform) return f.platform;
         var gs = platformGroups();
@@ -15882,35 +16119,112 @@ function renderFusionRealLayer() {
         }
         close(id);
     }
-    function jumpToPlatform(plat) {
-        var id = S.platFocus && S.platFocus[plat];
-        var t = id && findTool(id);
-        var p = t && !t.win && panelByTool(id);
-        if (!p) {
-            var g = null;
-            platformGroups().forEach(function (x) { if (!g && x.platform === plat) g = x; });
-            if (!g) return;
-            for (var i = g.tools.length - 1; i >= 0; i--) {
-                var cand = findTool(g.tools[i]);
-                if (cand && !cand.win && panelByTool(g.tools[i])) { id = g.tools[i]; break; }
-            }
-            if (!id) return;
+    // Chrome-style platform switching: snapshot the outgoing platform's panel
+    // arrangement, then restore (or start fresh) the incoming one. Only ONE
+    // platform's panels are ever on stage.
+    function snapshotPlat(plat) {
+        var zones = { L: [], R: [], B: [], S: [] };
+        var n = 0;
+        ['L', 'R', 'B', 'S'].forEach(function (z) {
+            S.zones[z].forEach(function (id) {
+                var t = findTool(id);
+                if (!t || t.win || !panelByTool(id)) return;
+                if ((t.platform || 'Controllers') !== plat) return;
+                zones[z].push(id);
+                n++;
+            });
+        });
+        if (!n) return null;
+        return {
+            zones: zones,
+            floats: JSON.parse(JSON.stringify(S.floats || {})),
+            collapsed: Object.assign({}, S.collapsed),
+            tabOrder: [].concat(S.tabOrder),
+            focus: S.focus
+        };
+    }
+    function teardownStage() {
+        Object.keys(TOOLS).forEach(function (id) {
+            var p = panelByTool(id);
+            if (p) { p.remove(); removeFromState(id); unmountTool(TOOLS[id]); }
+        });
+        S.zones = { L: [], R: [], B: [], S: [] };
+        S.tabOrder = []; S.focus = null;
+    }
+    function switchPlatform(plat) {
+        if (!rootVisible()) return;
+        var cur = activePlatform();
+        if (!cur || cur === plat) return;
+        var snap = snapshotPlat(cur);
+        if (snap) PLAT.stash[cur] = snap; else delete PLAT.stash[cur];
+        var rest = PLAT.stash[plat];
+        if (rest && ['L', 'R', 'B', 'S'].some(function (z) { return (rest.zones[z] || []).length; })) {
+            applyLayout({ sizes: S.sizes, zsplits: S.zsplits, zones: rest.zones, floats: rest.floats || {}, collapsed: rest.collapsed || {}, tabOrder: rest.tabOrder || [], focus: rest.focus });
+        } else {
+            switching = true;
+            try { teardownStage(); } finally { switching = false; }
+            showRoot(true);
+            applySizes(); persist(); renderTopbarTabs(); scheduleMapResize();
+            // first visit this session: open the platform's remembered feature
+            var rid = PLAT.focus[plat];
+            var rt = rid && findTool(rid);
+            if (rt && !rt.win && rt.el) open(rid, { zone: 'S' });
         }
-        var fp = panelByTool(id);
-        if (fp) { if (fp.classList.contains('deck-collapse')) toggleCollapse(fp); focusPanel(fp); }
+    }
+    function closePlatformTab(plat) {
+        delete PLAT.stash[plat];
+        PLAT.stack = PLAT.stack.filter(function (p) { return p !== plat; });
+        if (!rootVisible()) return;
+        switching = true;
+        try {
+            currentTabs().forEach(function (id) {
+                var t = findTool(id);
+                if (t && !t.win && (t.platform || 'Controllers') === plat && panelByTool(id)) {
+                    panelByTool(id).remove(); removeFromState(id); unmountTool(t);
+                }
+            });
+        } finally { switching = false; }
+        if (!anyOpenPlanned()) exitDeck();
+        else { applySizes(); persist(); renderTopbarTabs(); scheduleMapResize(); }
+    }
+    function jumpToPlatform(plat) {
+        // Classic mode: switch to that platform's last-visited (or first) page feature
+        if (!rootVisible()) {
+            var g0 = null;
+            platformGroups().forEach(function (x) { if (!g0 && x.platform === plat) g0 = x; });
+            if (!g0) return;
+            var target = null;
+            var remembered = PLAT.focus[plat];
+            var rt0 = remembered && findTool(remembered);
+            if (rt0 && rt0.el && rt0.id !== 'gaia' && rt0.id !== 'won' && rt0.platform === plat) target = remembered;
+            for (var j = 0; j < g0.tools.length && !target; j++) {
+                var c2 = findTool(g0.tools[j]);
+                if (c2 && c2.el && c2.id !== 'gaia' && c2.id !== 'won') target = c2.id;
+            }
+            if (!target) return;
+            if (target === classicPage()) return;
+            navigate(target);
+            return;
+        }
+        switchPlatform(plat);
+        var rid = PLAT.focus[plat];
+        var rt = rid && findTool(rid);
+        if (rt && !rt.win && rt.el && !panelByTool(rid)) open(rid, { zone: 'S' });
     }
     function renderTopbarTabs() {
         if (!topbarEl || !document.body.contains(topbarEl)) return;
         renderStripTabs();
         var groups = platformGroups();
-        var sig = groups.map(function (g) { return g.platform + ':' + g.tools.join(','); }).join('|') + '#' + (S.focus || '');
+        var act = activePlatform();
+        var sig = groups.map(function (g) { return g.platform + ':' + g.tools.join(','); }).join('|') + '#' + (act || '');
         if (renderTopbarTabs._sig === sig) return;
         renderTopbarTabs._sig = sig;
         var html = groups.map(function (g) {
-            var act = g.tools.indexOf(S.focus) >= 0 ? ' active' : '';
-            return '<div class="tb-tab' + act + '" data-plat="' + esc(g.platform) + '" title="' + esc(g.platform) + '">' +
+            var on = g.platform === act ? ' active' : '';
+            return '<div class="tb-tab' + on + '" data-plat="' + esc(g.platform) + '" title="' + esc(g.platform) + '">' +
                 '<span>' + esc(g.platform) + '</span>' +
-                '<span class="tb-count">' + g.tools.length + '</span></div>';
+                '<span class="tb-count">' + g.tools.length + '</span>' +
+                '<span class="tb-x" data-platx="' + esc(g.platform) + '" title="Close ' + esc(g.platform) + ' tab">&times;</span></div>';
         }).join('');
         html += '<button type="button" class="tb-new" data-new="1" title="New tab \u2014 search tools (Ctrl+K)">+</button>';
         topbarEl.innerHTML = html;
@@ -15921,6 +16235,8 @@ function renderFusionRealLayer() {
             topbarEl._bound = true;
             topbarEl.addEventListener('click', function (e) {
                 if (e.target.closest('[data-new]')) { togglePalette(); return; }
+                var x = e.target.closest('.tb-x[data-platx]');
+                if (x) { closePlatformTab(x.getAttribute('data-platx')); return; }
                 var tab = e.target.closest('.tb-tab[data-plat]');
                 if (!tab) return;
                 jumpToPlatform(tab.dataset.plat);
@@ -15929,12 +16245,7 @@ function renderFusionRealLayer() {
                 if (e.button !== 1) return;
                 var tab = e.target.closest('.tb-tab[data-plat]');
                 if (!tab) return;
-                var plat = tab.dataset.plat, g = null;
-                platformGroups().forEach(function (x) { if (!g && x.platform === plat) g = x; });
-                if (!g) return;
-                g.tools.forEach(closeTool);
-                renderTopbarTabs._sig = null;
-                setTimeout(renderTopbarTabs, 60);
+                closePlatformTab(tab.dataset.plat);
             });
         }
         var solver = $('tbSolver'), graph = $('tbGraph');
@@ -16177,7 +16488,7 @@ function renderFusionRealLayer() {
         (st.hidden || []).forEach(function (id) { railHidden[id] = true; });
         applyRailPins();
         document.querySelectorAll('.nav-item').forEach(function (item) {
-            var id = item.dataset.page || (item.id === 'gaiaNavItem' ? 'gaia' : null);
+            var id = item.dataset.page || (item.id === 'gaiaNavItem' ? 'gaia' : item.id === 'wonNavItem' ? 'won' : null);
             if (!id) return;
             var lbl = labelOf(item) || (TOOLS[id] && TOOLS[id].title) || id;
             item.title = lbl + ' \u00b7 click: open tab \u00b7 Shift+click: full page \u00b7 right-click: pin/unpin';
@@ -16208,7 +16519,7 @@ function renderFusionRealLayer() {
     }
     function applyRailPins() {
         document.querySelectorAll('.nav-item').forEach(function (item) {
-            var id = item.dataset.page || (item.id === 'gaiaNavItem' ? 'gaia' : null);
+            var id = item.dataset.page || (item.id === 'gaiaNavItem' ? 'gaia' : item.id === 'wonNavItem' ? 'won' : null);
             item.classList.toggle('rail-hidden', !!railHidden[id]);
         });
         updateRailChip();
@@ -16350,7 +16661,7 @@ function renderFusionRealLayer() {
     function isMobile() { return window.innerWidth <= 1024; }
 
     function openFromNav(item) {
-        var id = item.dataset.page || (item.id === 'gaiaNavItem' ? 'gaia' : null);
+        var id = item.dataset.page || (item.id === 'gaiaNavItem' ? 'gaia' : item.id === 'wonNavItem' ? 'won' : null);
         if (!id) { var pgFallback = item.dataset.page; if (pgFallback) navigate(pgFallback); return; }
         var t = findTool(id);
         if (!t) { if (item.dataset.page) navigate(item.dataset.page); return; }
@@ -16364,6 +16675,14 @@ function renderFusionRealLayer() {
         exitDeck: exitDeck,
         toggleRail: toggleRail,
         togglePalette: togglePalette,
+        refreshTabs: function () { renderTopbarTabs._sig = null; renderTopbarTabs(); },
+        noteClassicPage: function (id) {
+            var t = findTool(id);
+            if (t && t.platform) {
+                PLAT.focus[t.platform] = id;
+                if (PLAT.stack.indexOf(t.platform) < 0) PLAT.stack.push(t.platform);
+            }
+        },
         isMobile: isMobile,
         tools: function () { return Object.keys(TOOLS).map(function (k) { return { id: k, title: TOOLS[k].title, win: !!TOOLS[k].win }; }); },
         layout: function () { return JSON.parse(JSON.stringify(S.zones)); }
@@ -16399,6 +16718,13 @@ function renderFusionRealLayer() {
             (saved.zones.L || []).concat(saved.zones.R || []).concat(saved.zones.B || []).concat(saved.zones.S || []).length) {
             if (Array.isArray(saved.tabOrder)) S.tabOrder = saved.tabOrder.filter(function (id) { return findTool(id); });
             applyLayout(saved);
+        }
+        if (saved && saved.plat) {
+            PLAT.stash = saved.plat.stash || {};
+            PLAT.focus = saved.plat.focus || {};
+            PLAT.stack = Array.isArray(saved.plat.stack) ? saved.plat.stack.filter(function (p) {
+                return typeof p === 'string';
+            }) : [];
         }
     }
 
@@ -17591,7 +17917,7 @@ function renderFusionRealLayer() {
     border-top: 1px solid var(--border-color); scrollbar-width: thin;
 }
 .sc-map-canvas-wrap .maplibregl-ctrl-bottom-right { transition: transform .18s ease; }
-.maplibregl-canvas-container .maplibregl-marker { pointer-events: none !important; }
+.maplibregl-canvas-container .maplibregl-marker:has(> .maven-asset-glyph) { pointer-events: none; }
 .maven-ovl-toggle {
     cursor: pointer; margin-left: auto; flex: none;
     font-size: 8px; letter-spacing: .08em; user-select: none;
@@ -17606,12 +17932,33 @@ function renderFusionRealLayer() {
 .maven-left-col {
     width: 372px; flex: 0 0 372px; min-width: 0; order: -1;
     display: flex; flex-direction: column;
-    max-height: calc(100vh - 120px);
+    height: calc(100vh - 130px);
     background: var(--bg-card); border: 1px solid var(--border-color);
-    border-radius: 8px; overflow: hidden;
+    border-radius: 8px;
+    overflow-x: hidden; overflow-y: auto; scrollbar-width: thin;
     transition: width .22s ease, flex-basis .22s ease;
 }
-#mavenPlacesList, #mavenObjList { max-height: 44vh; overflow-y: auto; scrollbar-width: thin; }
+.maven-left-col .maven-col-head,
+.maven-left-col .maven-featbar {
+    position: sticky; top: 0; z-index: 6;
+    background: var(--bg-card);
+}
+.maven-left-col .maven-featbar { top: 41px; }
+.maven-left-col.collapsed .maven-featbar { display: none; }
+.maven-tabs { display: flex; gap: 3px; padding: 7px 7px 0; flex-wrap: wrap; }
+/* docked drawer: neutralize the legacy floating geometry (absolute/top/right/bottom/width)
+   so the drawer flows inside the column and .maven-body can flex to fill it */
+.maven-left-col #mavenDrawer {
+    position: static !important;
+    inset: auto !important;
+    top: auto !important; right: auto !important; bottom: auto !important;
+    width: 100% !important;
+    display: flex; flex-direction: column;
+    flex: 1 1 auto; min-height: 300px;
+}
+#mavenDrawer { min-height: 300px; }
+.maven-left-col #mavenDrawer .maven-body { flex: 1 1 0; min-height: 0; }
+#mavenPlacesList, #mavenObjList, #mavenCameoList { max-height: 42vh; overflow-y: auto; scrollbar-width: thin; }
 #mavenPlaceSearch { margin-bottom: 4px; }
 .maven-left-col.collapsed { width: 56px; flex-basis: 56px; }
 .maven-left-col.collapsed .maven-col-title,
@@ -17655,16 +18002,22 @@ function renderFusionRealLayer() {
     position: static !important; inset: auto !important;
     width: 100% !important; height: auto !important;
     left: auto !important; top: auto !important;
-    pointer-events: auto; padding: 8px; border-bottom: 1px solid var(--border-color);
-    flex: none; overflow: visible;
+    pointer-events: auto; padding: 6px; border-bottom: 1px solid var(--border-color);
+    flex: none; max-height: 224px; overflow-y: auto; scrollbar-width: thin;
+    overflow-x: hidden;
 }
 .maven-left-col .hive-layer {
     position: static !important; width: 100% !important; height: auto !important;
-    display: flex !important; flex-wrap: wrap; gap: 6px; pointer-events: auto;
+    display: flex !important; flex-wrap: wrap; gap: 5px; pointer-events: auto;
 }
 .maven-left-col .sc-hud-tile {
     position: relative !important; inset: auto !important;
-    transform: none !important; margin: 0; flex: 1 1 calc(50% - 6px);
+    transform: none !important; margin: 0; flex: 1 1 calc(50% - 5px);
+    min-height: 0 !important;
+}
+.maven-left-col .sc-hud-tile .sc-hud-tag { display: none; }
+.maven-left-col .sc-hud-tile .sc-hud-label {
+    font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .maven-left-col .hive-pent { display: none !important; }
 .maven-scope-cluster {
@@ -17672,6 +18025,9 @@ function renderFusionRealLayer() {
     display: flex; flex-direction: column; gap: 5px; flex: none;
 }
 .maven-scope-cluster .msc-row { display: flex; align-items: center; gap: 7px; }
+.maven-scope-cluster .msc-row.msc-duo { gap: 5px; }
+.maven-scope-cluster .msc-duo label { width: auto; flex: none; }
+.maven-scope-cluster .msc-duo select { min-width: 0; }
 .maven-scope-cluster label {
     font-family: var(--font-mono); font-size: 8px; letter-spacing: .12em;
     color: var(--text-muted); width: 58px; flex: none;
@@ -17688,6 +18044,12 @@ function renderFusionRealLayer() {
     min-height: 0; border: none; border-radius: 0; z-index: auto;
 }
 .maven-tabs { display: flex; gap: 2px; padding: 6px 6px 0; flex-wrap: wrap; }
+.maven-tabs button {
+    border: 1px solid var(--border-color); border-bottom: none;
+    border-radius: 6px 6px 0 0; background: rgba(255,255,255,.03);
+    color: var(--text-muted); padding: 7px 10px 8px; cursor: pointer;
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em;
+}
 .maven-tabs button {
     border: 1px solid var(--border-color); border-bottom: none;
     border-radius: 6px 6px 0 0; background: rgba(255,255,255,.03);
@@ -18841,10 +19203,22 @@ function renderFusionRealLayer() {
                 '<span style="color:' + c + '"> ●</span>' +
                 '<br><span class="mv-sub">' + esc(String(ev.title || '').slice(0, 90)) + '</span>' +
                 '<br><span class="mv-sub" style="opacity:.7">' + esc(ev.seendate || '') +
-                ' \u00b7 ' + esc(ev.domain || '') + '</span></div>';
+                ' \u00b7 ' + esc(ev.domain || '') + '</span>' +
+                '<div class="maven-det-actions">' +
+                '<button class="mut" data-cnote="' + i + '">\uD83E\uDD16 + AI NOTE</button></div></div>';
         });
         if (!evs.length) html = '<div class="maven-empty">NO CAMEO EVENTS IN SCOPE<br>Run GDELT for the selected WHERE/COUNTRY</div>';
         setHtml(host, html);
+        host.querySelectorAll('[data-cnote]').forEach(function (btn) {
+            btn.onclick = function () {
+                btn.disabled = true;
+                if (window.WONote && window.WONote.fromThreat) {
+                    window.WONote.fromThreat(parseInt(btn.getAttribute('data-cnote'), 10));
+                    if (window.__mavenSelectTab) window.__mavenSelectTab('notes'); else selectTab('notes');
+                    toast('AI NOTE captured → NOTES tab', 'success');
+                } else { btn.disabled = false; }
+            };
+        });
         host.querySelectorAll('[data-ci]').forEach(function (rowEl) {
             rowEl.onclick = function () {
                 var ev = evs[parseInt(rowEl.getAttribute('data-ci'), 10)];
@@ -18858,9 +19232,19 @@ function renderFusionRealLayer() {
                     (mentions ? ' · mentions: ' + esc(mentions) : '') + '</span>' +
                     '<br><span class="mv-sub">' + esc(ev.seendate || '') + ' · ' + esc(ev.domain || '') + '</span>' +
                     (ev.url ? '<div class="maven-det-actions"><a class="yes" href="' + esc(ev.url) +
-                        '" target="_blank" rel="noopener" style="text-decoration:none;padding:3px 8px">OPEN ARTICLE ↗</a></div>' : '') +
+                        '" target="_blank" rel="noopener" style="text-decoration:none;padding:3px 8px">OPEN ARTICLE ↗</a>' +
+                        '<button class="mut" data-dnote="1">🤖 + AI NOTE</button></div>' : '') +
                     '</div>';
                 setHtml(det, dhtml);
+                var dn = det.querySelector('[data-dnote]');
+                if (dn) dn.onclick = function () {
+                    var idx = evs.indexOf(ev);
+                    if (idx >= 0 && window.WONote && window.WONote.fromThreat) {
+                        window.WONote.fromThreat(idx);
+                        if (window.__mavenSelectTab) window.__mavenSelectTab('notes'); else selectTab('notes');
+                        toast('AI NOTE captured → NOTES tab', 'success');
+                    }
+                };
                 det.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
             };
         });
@@ -18972,6 +19356,36 @@ function renderFusionRealLayer() {
             sec.classList.toggle('maven-hide', sec.getAttribute('data-mpanel') !== name);
         });
     }
+    // Side-panel feature switcher — one feature owns the column at a time.
+    // 'gaia'/'notes' are full-feature views; anything else is a MAVEN sub-tab.
+    function setFeature(name) {
+        var f = (name === 'gaia' || name === 'notes') ? name : 'maven';
+        var col = $('mavenLeftCol');
+        if (col) col.setAttribute('data-mfeat', f);
+        document.querySelectorAll('.mfeat-btn').forEach(function (b) {
+            b.classList.toggle('active', b.getAttribute('data-mfeat') === f);
+        });
+        return f;
+    }
+    window.__mavenSetFeature = setFeature;
+    window.__mavenSelectTab = function (name) {
+        if (name === 'gaia' || name === 'notes') { setFeature(name); return; }
+        setFeature('maven');
+        selectTab(name);
+    };
+    document.querySelectorAll('.mfeat-btn').forEach(function (b) {
+        b.addEventListener('click', function () {
+            var target = b.getAttribute('data-mfeat');
+            var prev = ($('mavenLeftCol') || {}).getAttribute ? $('mavenLeftCol').getAttribute('data-mfeat') : 'maven';
+            if (target === prev) return;
+            // keep controller open/close state in sync with feature visibility
+            if (target === 'gaia' && window.GAIA) window.GAIA.open();
+            else if (prev === 'gaia' && window.GAIA && target !== 'gaia') window.GAIA.close();
+            else if (target === 'notes' && window.WONote) window.WONote.open();
+            else if (prev === 'notes' && window.WONote && target !== 'notes') window.WONote.close();
+            else setFeature(target);
+        });
+    });
 
     /* ----------------------------------------------------------- boot ---- */
     function toggleDrawer() {
@@ -19189,6 +19603,14 @@ function renderFusionRealLayer() {
             if (fm) {
                 clearInterval(waitMap);
                 wireOnce();
+                if (window.WONote && window.WONote.toggle) {
+                    var _wonToggle = window.WONote.toggle;
+                    window.WONote.toggle = function () {
+                        _wonToggle.apply(this, arguments);
+                        var p = document.getElementById('won-panel');
+                        if (p && !p.classList.contains('won-hidden')) if (window.__mavenSelectTab) window.__mavenSelectTab('notes'); else selectTab('notes');
+                    };
+                }
                 api('/maven/places').then(function (pl) {
                     S.places = pl;
                     drawPlaces();

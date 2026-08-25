@@ -190,4 +190,5 @@ class Settings:
                 "www.seaforces.org", "www.navweaps.com",
                 "www.rheinmetall.com", "www.gdls.com",
                 "oshkoshdefense.com", "www.naval-encyclopedia.com",
-                "www.qinetiq.com"}
+                "www.qinetiq.com", "elbitsystems.com",
+                "www.amgeneral.com"}

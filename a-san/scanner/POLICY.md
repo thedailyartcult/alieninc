@@ -144,7 +144,9 @@ Rejected in round 4:
 | Source | Compliant path | Status |
 |---|---|---|
 | www.naval-encyclopedia.com | robots: `User-agent:* Allow:/` with Cloudflare Content-Signals `search=yes, ai-train=no, use=reference` (same compliant class as war-sanctions.gur.gov.ua / globalsecurity.org; AI-training bots blocked, our UA fine). Flat sitemap.xml (~3,000 URLs); only era/country/<slug>.php articles enqueued: ww1, ww2, cold-war, industrial-era, modern sections (~1,270 unique after dedupe). Battles/civilian/naval-aviation/tech/pre-industrial paths skipped by `is_naval_encyclopedia_ship_url`. Pages carry an H1 designation + one specifications table (td-pair rows) + prose. Country parsed from URL segment (45-slug map). © naval encyclopedia → fact-extraction-with-attribution. Wired in `parsers_navalencyclopedia.parse_naval_encyclopedia`. CLI: `discover-round5`. | **Active** |
-| www.qinetiq.com | robots: allow-all except one hashed page + *.pdf; Crawl-delay: 1 (below our 1.5s default). Curated robotic-product pages under /en/what-we-do/research-and-development/autonomous-systems/robotics/robotic-products/: TALON, C-TALON, Dragon Runner, MAARS, SPUR → UGVs. Controllers/kits/maintenance/disinfecting variants and SeaScout UUV (no matching category) excluded. <title> is SEO-generic — designation from H1 (®/™ stripped); meta description used. © QinetiQ → fact-extraction-with-attribution. Wired in `parsers_qinetiq.parse_qinetiq`. CLI: `discover-round5`. | **Active** |
+ | www.qinetiq.com | robots: allow-all except one hashed page + *.pdf; Crawl-delay: 1 (below our 1.5s default). Curated robotic-product pages under /en/what-we-do/research-and-development/autonomous-systems/robotics/robotic-products/: TALON, C-TALON, Dragon Runner, MAARS, SPUR → UGVs. Controllers/kits/maintenance/disinfecting variants and SeaScout UUV (no matching category) excluded. <title> is SEO-generic — designation from H1 (®/™ stripped); meta description used. © QinetiQ → fact-extraction-with-attribution. Wired in `parsers_qinetiq.parse_qinetiq`. CLI: `discover-round5`. | **Active** |
+| elbitsystems.com | robots: standard Drupal boilerplate Disallows only (/admin/, /user/, /core/...); `/land/` fully allowed; no Crawl-delay. Round 5's "JS-rendered catalog" verdict was **obsolete** — verified live 2026-08-25 that /land product pages are server-rendered Drupal with static spec fields (`field--name-field-teaser` divs, "- Key: value<br/>" lists) and og:title designations. Sitemap.xml → /land/ leaves (3+ path segments), category routed from URL path: combat-vehicle-systems & bridges → Armored vehicles; weapons-systems-and-munitions & ammunition → Rocket and missile weapons; land-ew-sigint & land-c4isr → EW assets; infantry/ammunition → Rocket and missile weapons, rest of infantry → Small arms; training-systems skipped. ~131 leaf products. © Elbit Systems → fact-extraction-with-attribution. Wired in `parsers_elbit.parse_elbit`. CLI: `discover-round6`. | **Active** |
+| www.amgeneral.com | robots.txt present but EMPTY (200, zero bytes) → allow-all by convention; no Crawl-delay. WordPress (X theme), fully server-rendered. page-sitemap.xml → curated vehicle paths (`AMGENERAL_VEHICLE_PATHS`): HUMVEE 2-CT/4-CT family (ambulance, Hawkeye MHS, Fastback, Armored Fastback TOW, Saber, SEC M), JLTV A2, MIMIC V, Chassis, 155mm Mobile Artillery Concept, Humvee 40, Ironclad → Automotive vehicles. Specs in `beachwood-wide`-labelled sections (GVW/PAYLOAD/MOBILITY/POWERTRAIN/ELECTRICAL/OPTIONS); designation from og:title/<title>. © AM General → fact-extraction-with-attribution. Wired in `parsers_amgeneral.parse_amgeneral`. CLI: `discover-round6`. | **Active** |
 
 Rejected in round 5:
 
@@ -153,10 +155,12 @@ Rejected in round 5:
   Cloudflare "Just a moment…" JS challenge to non-browser agents. Same WAF
   class as militarnyi/navyrecognition/helis.com/tanks-encyclopedia. Do not
   scrape.
-- **elbitsystems.com** — robots open with explicit AI-bot allowances, but the
-  sitemap contains only news/blog/corporate pages; the product catalog is
-  client-side rendered (node/* pages are investor conferences). Deferred
-  pending an API/render discovery pass.
+
+Superseded in round 6:
+
+- **elbitsystems.com** — rejected in round 5 as "JS-rendered catalog";
+  re-probed 2026-08-25 and found the /land tree fully server-rendered.
+  Promoted to Active (see table above).
 
 ## 4. Operator-whitelisted deep scan (rare, documented)
 

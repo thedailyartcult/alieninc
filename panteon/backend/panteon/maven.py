@@ -22,6 +22,7 @@ Actions: maven_dispatch_asset / maven_generate_coa / maven_validate_detection
 """
 import math
 import os
+import re
 import time
 import uuid
 from datetime import datetime, timezone
@@ -46,10 +47,13 @@ TASK_TYPE = "maven_task"
 ASSET_TYPE = "maven_asset"
 DET_TYPE = "maven_detection"
 COA_TYPE = "maven_coa"
+OBJ_TYPE = "maven_object"
+COA2_TYPE = "maven_target_coa"
 
 LT_TASKED_IN = "mv_tasked_in"    # task -> theater
 LT_ASSIGNED = "mv_assigned"      # asset -> task
 LT_DETECTED = "mv_detected"      # detection -> task
+LT_COA_TARGET = "mv_coa_target"  # target COA -> detection
 
 AT_DISPATCH = "maven_dispatch_asset"
 AT_GEN_COA = "maven_generate_coa"
@@ -96,6 +100,32 @@ _MAVEN_OBJECT_TYPES = {
             "validated_by": "string", "validated_at": "string",
         },
     },
+    OBJ_TYPE: {
+        "display_name": "Registered Object",
+        "description": "Palantir-style named map object: an operator-registered "
+                       "building or point with footprint for persistent "
+                       "identification and hover highlight.",
+        "icon": "landmark",
+        "properties_schema": {
+            "name": "string", "lat": "number", "lng": "number",
+            "height_m": "number", "footprint": "array",
+            "registered_by": "string", "created_at": "string",
+        },
+    },
+    COA2_TYPE: {
+        "display_name": "Target COA",
+        "description": "Course of Action generated for ONE validated detection: "
+                       "packaged options pairing the target with available assets, "
+                       "with automated check-offs and one-click execution.",
+        "icon": "git-branch",
+        "properties_schema": {
+            "detection_id": "string", "label": "string", "det_class": "string",
+            "confidence": "number", "lat": "number", "lng": "number",
+            "task_id": "string", "options": "array", "status": "string",
+            "executed_option": "string", "executed_by": "string",
+            "executed_at": "string", "created_by": "string", "created_at": "string",
+        },
+    },
     COA_TYPE: {
         "display_name": "Course of Action",
         "description": "COA scored by RUNNING the kriegspiel engine — winner "
@@ -121,6 +151,8 @@ _MAVEN_LINK_TYPES = [
      "ISR asset dispatched on this maneuver task."),
     (LT_DETECTED, "Detected Under", DET_TYPE, TASK_TYPE,
      "Detection produced under this maneuver task."),
+    (LT_COA_TARGET, "COA Target", COA2_TYPE, DET_TYPE,
+     "Course of Action generated against this detection."),
 ]
 
 _MAVEN_ACTION_TYPES = [
@@ -194,6 +226,8 @@ except (TypeError, ValueError):
     SIM_SPEEDUP = 60.0
 DEFAULT_THEATER = "Baltic Guardian"
 DET_COOLDOWN_S = 240.0
+DET_MAX_PER_TICK = 10          # closest qualifying tracks per asset per tick
+LAST_DET_TTL_S = 3600.0        # cooldown keys older than this are pruned
 
 # In-memory mission engine state (positions re-derived lazily from elapsed
 # wall-clock so restarts need no persistence beyond sc_object stamps).
@@ -293,7 +327,7 @@ async def create_task(db: AsyncSession, body: dict, user_email: str) -> dict:
         lng = float(body["aoi_lng"])
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("aoi_lat and aoi_lng are required numbers") from exc
-    radius_km = max(1.0, min(float(body.get("aoi_radius_km") or 25.0), 300.0))
+    radius_km = max(0.2, min(float(body.get("aoi_radius_km") or 25.0), 300.0))
     priority = body.get("priority") if body.get("priority") in (
         "low", "medium", "high") else "medium"
     classes = [str(c)[:40] for c in (body.get("detection_classes") or ["military-air"])][:6]
@@ -497,7 +531,10 @@ async def tick_and_collect(db: AsyncSession) -> dict:
         LinkType.name.in_([LT_DETECTED])))).scalars().all()}
 
     now = time.time()
-    tracks = _live_tracks()
+    for key, ts in list(_LAST_DET.items()):
+        if now - ts > LAST_DET_TTL_S:
+            _LAST_DET.pop(key, None)
+    tracks = None
     new_dets, synced = [], 0
     for asset in list(_ASSETS.values()):
         pos = asset_position(asset, now)
@@ -513,11 +550,21 @@ async def tick_and_collect(db: AsyncSession) -> dict:
             continue
         cls = ASSET_CLASSES[asset["asset_class"]]
         aoi = asset["aoi"]
+        if tracks is None:
+            tracks = _live_tracks()
+        cands = []
+        pre_deg = (cls["detect_radius_km"] + aoi["radius_km"] + 10.0) / 111.0
         for tr in tracks:
-            d_asset = _haversine_km(pos["lat"], pos["lng"], tr["lat"], tr["lng"])
-            d_aoi = _haversine_km(aoi["lat"], aoi["lng"], tr["lat"], tr["lng"])
-            if d_asset > cls["detect_radius_km"] or d_aoi > aoi["radius_km"] + 10.0:
+            if abs(tr["lat"] - pos["lat"]) > pre_deg or abs(tr["lng"] - pos["lng"]) > pre_deg:
                 continue
+            d_asset = _haversine_km(pos["lat"], pos["lng"], tr["lat"], tr["lng"])
+            if d_asset > cls["detect_radius_km"]:
+                continue
+            if _haversine_km(aoi["lat"], aoi["lng"], tr["lat"], tr["lng"]) > aoi["radius_km"] + 10.0:
+                continue
+            cands.append((d_asset, tr))
+        cands.sort(key=lambda pair: pair[0])
+        for d_asset, tr in cands[:DET_MAX_PER_TICK]:
             key = f"{asset['task_pk']}:{tr['track_id']}"
             if now - _LAST_DET.get(key, 0.0) < DET_COOLDOWN_S:
                 continue
@@ -549,6 +596,7 @@ async def tick_and_collect(db: AsyncSession) -> dict:
                     task_obj.properties = tp
     await db.commit()
     return {"synced_assets": synced, "new_detections": len(new_dets),
+            "tracks_scanned": len(tracks) if tracks else 0,
             "detections": [{"id": str(d.id), "pk": d.primary_key_value,
                             **{k: v for k, v in (d.properties or {}).items()}}
                            for d in new_dets],
@@ -748,6 +796,384 @@ async def delete_task(db: AsyncSession, task_id: str,
             "assets_stood_down": len(cs_list)}
 
 
+async def create_object(db: AsyncSession, body: dict, user_email: str) -> dict:
+    """Register a named map object (e.g. a BGC building footprint)."""
+    await ensure_maven_ontology(db)
+    svc = OntologyService(db)
+    try:
+        lat = float(body["lat"])
+        lng = float(body["lng"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("lat and lng are required numbers") from exc
+    name = str(body.get("name") or "").strip()[:80]
+    if not name:
+        raise ValueError("name is required")
+    height = body.get("height_m")
+    try:
+        height = round(float(height), 1) if height is not None else None
+    except (TypeError, ValueError):
+        height = None
+    fp = body.get("footprint")
+    if not isinstance(fp, list) or not fp or len(fp) > 4000:
+        fp = None
+    t = await svc.get_object_type_by_name(OBJ_TYPE)
+    if t is None:
+        raise ValueError("maven_object type missing")
+    pk = f"mv-obj:{uuid.uuid4().hex[:10]}"
+    obj, _ = await _upsert_war_object(db, t.id, pk, {
+        "name": name, "lat": round(lat, 6), "lng": round(lng, 6),
+        "height_m": height, "footprint": fp,
+        "registered_by": user_email or "operator", "created_at": _now_iso(),
+    })
+    await db.commit()
+    return {"object_id": str(obj.id), "pk": pk}
+
+
+async def rename_object(db: AsyncSession, object_id: str, new_name: str) -> dict:
+    await ensure_maven_ontology(db)
+    svc = OntologyService(db)
+    try:
+        obj = await svc.get_object(uuid.UUID(str(object_id)))
+    except ValueError as exc:
+        raise ValueError("invalid object id") from exc
+    if obj is None or not str(obj.primary_key_value).startswith("mv-obj:"):
+        raise ValueError("unknown object id")
+    clean = str(new_name or "").strip()[:80]
+    if not clean:
+        raise ValueError("name is required")
+    p = obj.properties or {}
+    p["name"] = clean
+    obj.properties = p
+    await db.commit()
+    return {"object_id": str(obj.id), "name": clean}
+
+
+async def delete_object(db: AsyncSession, object_id: str) -> dict:
+    await ensure_maven_ontology(db)
+    svc = OntologyService(db)
+    try:
+        obj = await svc.get_object(uuid.UUID(str(object_id)))
+    except ValueError as exc:
+        raise ValueError("invalid object id") from exc
+    if obj is None or not str(obj.primary_key_value).startswith("mv-obj:"):
+        raise ValueError("unknown object id")
+    oid = str(obj.id)
+    await db.execute(Link.__table__.delete().where(
+        or_(Link.source_object_id == oid, Link.target_object_id == oid)))
+    await db.delete(obj)
+    await db.commit()
+    return {"deleted": True, "object_id": oid}
+
+
+def _coa_options(det_props: dict, task_props: dict | None) -> list[dict]:
+    """Package SHADOW / INTERCEPT / MONITOR options for one detection using
+    live asset state. Deterministic, auditable check-offs per option."""
+    lat = float(det_props.get("lat") or 0.0)
+    lng = float(det_props.get("lng") or 0.0)
+    conf = min(1.0, max(0.0, float(det_props.get("confidence") or 0.6)))
+    det_asset = str(det_props.get("asset_callsign") or "")
+    assets = [a for a in _ASSETS.values()]
+    on_station = [a for a in assets if a.get("state") == "on-station"]
+    shadow = next((a for a in on_station if a["callsign"] == det_asset),
+                  on_station[0] if on_station else None)
+    options = []
+
+    checks, score = [], 20.0
+    if shadow is not None:
+        d = _haversine_km(shadow["lat"], shadow["lng"], lat, lng)
+        within = d <= float(shadow["detect_radius_km"])
+        checks.append({"name": "asset on station", "ok": True,
+                       "detail": shadow["callsign"]})
+        checks.append({"name": "sensor reach", "ok": within,
+                       "detail": f"{d:.1f} km vs {float(shadow['detect_radius_km']):.0f} km"})
+        score = 50 + 30 * conf + (15 if within else -10)
+    else:
+        checks.append({"name": "asset on station", "ok": False,
+                       "detail": "none airborne"})
+    summary = (f"{shadow['callsign']} holds station and keeps collection "
+               "on the contact." if shadow is not None
+               else "No on-station asset to hold collection.")
+    options.append({"key": "shadow", "title": "SHADOW / HOLD", "summary": summary,
+                    "feasible": shadow is not None,
+                    "score": round(min(99.0, max(5.0, score)), 1),
+                    "checks": checks, "execute": {"kind": "none"}})
+
+    intercept_class = "usv" if str(det_props.get("det_class")) in (
+        "surface-contact", "vessel") else "uas"
+    others = [a for a in assets if not shadow or a["callsign"] != shadow["callsign"]]
+    nearest = min(others, key=lambda a: _haversine_km(a["lat"], a["lng"], lat, lng)) \
+        if others else None
+    checks = [{"name": "task linked", "ok": bool(task_props),
+               "detail": str(task_props.get("name")) if task_props else "detection has no parent task"}]
+    eta_min = None
+    if task_props:
+        r = float(task_props.get("aoi_radius_km") or 25.0)
+        spd_kts = float(ASSET_CLASSES[intercept_class]["speed_kts"])
+        eta_min = round((r + 30.0) / (spd_kts * 1.852) * 60.0 / SIM_SPEEDUP)
+        checks.append({"name": "interceptor class", "ok": True,
+                       "detail": intercept_class.upper()})
+        checks.append({"name": "transit ETA", "ok": eta_min <= 30,
+                       "detail": f"\u2248{eta_min} min from launch rail"})
+    feasible = bool(task_props)
+    options.append({"key": "intercept", "title": "INTERCEPT",
+                    "summary": f"Launch an additional {intercept_class.upper()} "
+                               "on the parent task to close on the contact.",
+                    "feasible": feasible,
+                    "score": round(min(95.0, 40 + 25 * conf + (-15 if not feasible else 0)), 1),
+                    "checks": checks,
+                    "execute": {"kind": "dispatch", "asset_class": intercept_class}})
+
+    options.append({"key": "monitor", "title": "MONITOR",
+                    "summary": "No kinetic action; flag the contact for the watchlist.",
+                    "feasible": True, "score": round(25 + 10 * (1 - conf), 1),
+                    "checks": [{"name": "rules check", "ok": True, "detail": "passive collection only"}],
+                    "execute": {"kind": "watch"}})
+    options.sort(key=lambda o: o["score"], reverse=True)
+    return options
+
+
+async def generate_target_coa(db: AsyncSession, body: dict, user_email: str) -> dict:
+    """Phase-2 COA generation for ONE validated detection (Maven-style):
+    package target+asset options with automated check-offs."""
+    await ensure_maven_ontology(db)
+    svc = OntologyService(db)
+    try:
+        det = await svc.get_object(uuid.UUID(str(body.get("detection_id"))))
+    except ValueError as exc:
+        raise ValueError("invalid detection id") from exc
+    if det is None or not str(det.primary_key_value).startswith("mv-det:"):
+        raise ValueError("unknown detection id")
+    dp = det.properties or {}
+    if dp.get("validated") is not True:
+        raise ValueError("detection must be CONFIRMED before COA generation")
+
+    task_id = str(dp.get("task_id") or "")
+    task_props = None
+    if task_id:
+        t = await svc.get_object(uuid.UUID(task_id)) if _is_uuid(task_id) else None
+        if t is not None:
+            task_props = t.properties or {}
+
+    options = _coa_options(dp, task_props)
+    pk = f"mv-tcoa:{uuid.uuid4().hex[:10]}"
+    tt = await svc.get_object_type_by_name(COA2_TYPE)
+    coa, was_new = await _upsert_war_object(db, tt.id, pk, {
+        "detection_id": str(det.id), "label": dp.get("label"),
+        "det_class": dp.get("det_class"), "confidence": dp.get("confidence"),
+        "lat": dp.get("lat"), "lng": dp.get("lng"), "task_id": task_id,
+        "options": options, "status": "proposed",
+        "created_by": user_email or "operator", "created_at": _now_iso(),
+    })
+    lt = (await db.execute(select(LinkType).where(
+        LinkType.name == LT_COA_TARGET))).scalar_one_or_none()
+    if lt is not None:
+        await _ensure_link(db, lt.id, coa.id, det.id, {"det_class": dp.get("det_class")})
+    await db.commit()
+    return {"coa_id": str(coa.id), "pk": pk, "options": options}
+
+
+async def auto_task(db: AsyncSession, body: dict, user_email: str) -> dict:
+    """One-shot mission: resolve target (object_id OR lat/lng) → create task
+    → dispatch asset. Built for YONO/chat automation."""
+    await ensure_maven_ontology(db)
+    svc = OntologyService(db)
+    lat = lng = None
+    name = str(body.get("name") or "").strip()[:80]
+    oid = body.get("object_id")
+    if oid:
+        obj = await svc.get_object(uuid.UUID(str(oid))) if _is_uuid(oid) else None
+        if obj is None or not str(obj.primary_key_value).startswith("mv-obj:"):
+            raise ValueError("unknown object id")
+        op = obj.properties or {}
+        lat, lng = float(op.get("lat")), float(op.get("lng"))
+        if not name:
+            name = f"AUTO {op.get('name') or 'OBJECT'}"
+    if lat is None:
+        try:
+            lat = float(body["lat"])
+            lng = float(body["lng"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError("object_id or lat+lng required") from exc
+    task = await create_task(db, {
+        "aoi_lat": lat, "aoi_lng": lng,
+        "aoi_radius_km": body.get("radius_km") or 1.0,
+        "priority": body.get("priority") or "high",
+        "name": name or f"AUTO-{uuid.uuid4().hex[:5].upper()}",
+    }, user_email)
+    dis = await dispatch_asset(db, task["task_id"],
+                               body.get("asset_class") or "uas", user_email)
+    return {"task": task, "dispatched": {
+        "callsign": dis.get("callsign"),
+        "asset_class": body.get("asset_class") or "uas",
+        "origin": dis.get("origin")} if isinstance(dis, dict) else None}
+
+
+def _is_uuid(s: str) -> bool:
+    try:
+        uuid.UUID(str(s))
+        return True
+    except (ValueError, TypeError, AttributeError):
+        return False
+
+
+async def maven_command(db: AsyncSession, body: dict, user_email: str) -> dict:
+    """Natural-language command bridge for YONO/chat automation.
+    Intents: status | task on <object> | coa for <contact> |
+    execute intercept|shadow|monitor [for <contact>] | help"""
+    await ensure_maven_ontology(db)
+    svc = OntologyService(db)
+    text = str(body.get("text") or "").strip()
+    low = text.lower()
+    directive = None
+
+    async def objs_of(tname):
+        t = await svc.get_object_type_by_name(tname)
+        if t is None:
+            return []
+        return (await db.execute(
+            select(Object).where(Object.object_type_id == str(t.id))
+        )).scalars().all()
+
+    def _created(o):
+        return (o.properties or {}).get("created_at") or ""
+
+    if not low or low.startswith("help"):
+        reply = ("MAVEN COMMANDS\n"
+                 "- task on <object name> — launch a mission at a registered object\n"
+                 "- coa for <contact> — generate courses of action for a CONFIRMED contact\n"
+                 "- execute intercept|shadow|monitor [for <contact>] — run the chosen COA\n"
+                 "- status — fleet and mission summary")
+    elif "status" in low:
+        tasks = await objs_of(TASK_TYPE)
+        dets = await objs_of(DET_TYPE)
+        pend = [d for d in dets if (d.properties or {}).get("validated") is None]
+        reply = (f"STATUS — tasks: {len(tasks)} · assets airborne: {len(_ASSETS)} · "
+                 f"detections: {len(dets)} ({len(pend)} pending validation)")
+    elif low.startswith("execute"):
+        m = re.match(r"execute\s+(intercept|shadow|monitor)(?:\s+for\s+(.+))?", low)
+        opt = m.group(1) if m else ""
+        want = (m.group(2) or "").strip() if m else ""
+        tcoas = sorted(await objs_of(COA2_TYPE), key=_created, reverse=True)
+        if want:
+            tcoas = [c for c in tcoas
+                     if want in str((c.properties or {}).get("label", "")).lower()]
+        coa = next((c for c in tcoas
+                    if (c.properties or {}).get("status") != "executed"), None)
+        if coa is None:
+            reply = "No executable COA found. Generate one first: coa for <contact>."
+        else:
+            res = await execute_target_coa(db, str(coa.id), opt, user_email)
+            cp = coa.properties or {}
+            reply = f"EXECUTED {opt.upper()} on {cp.get('label')} ✓"
+            if isinstance(res, dict) and res.get("callsign"):
+                reply += f"\nAsset {res['callsign']} launched."
+            directive = {"op": "fly_to",
+                         "center": [float(cp.get("lng") or 0), float(cp.get("lat") or 0)],
+                         "zoom": 11}
+    elif low.startswith("coa"):
+        m = re.match(r"coa\s+(?:for\s+)?(.*)", low)
+        want = (m.group(1) or "").strip().lower() if m else ""
+        dets = [d for d in await objs_of(DET_TYPE)
+                if (d.properties or {}).get("validated") is True]
+        if want:
+            dets = [d for d in dets
+                    if want in str((d.properties or {}).get("label", "")).lower()]
+        if not dets:
+            reply = ("No CONFIRMED contact matches. Validate a detection first "
+                     "(TASKS tab), then retry.")
+        else:
+            latest = max(dets, key=_created)
+            dp = latest.properties or {}
+            res = await generate_target_coa(db,
+                                            {"detection_id": str(latest.id)},
+                                            user_email)
+            lines = [f"COA GENERATED for {dp.get('label')}:"]
+            for o in res["options"]:
+                lines.append(f"- {o['title']} · score {o['score']} · "
+                             + ("feasible" if o["feasible"] else "INFEASIBLE"))
+            lines.append("Say: execute intercept  (or shadow / monitor)")
+            reply = "\n".join(lines)
+            directive = {"op": "fly_to",
+                         "center": [float(dp.get("lng") or 0), float(dp.get("lat") or 0)],
+                         "zoom": 11}
+    elif low.startswith("task"):
+        m = re.match(r"task(?:\s+(?:on|at))?\s+(.+)$", low)
+        want = (m.group(1) or "").strip().lower() if m else ""
+        best = None
+        for o in await objs_of(OBJ_TYPE):
+            nm = str((o.properties or {}).get("name", "")).lower()
+            if want and want in nm and (best is None or len(nm) < len(
+                    str((best.properties or {}).get("name", "")))):
+                best = o
+        if best is None:
+            reply = (f"No registered object named '{want}'. Register it in the "
+                     "OBJECTS tab first.")
+        else:
+            op = best.properties or {}
+            res = await auto_task(db, {"object_id": str(best.id),
+                                       "priority": "high"}, user_email)
+            dis = res.get("dispatched") or {}
+            reply = (f"MISSION LAUNCHED → {op.get('name')}\n"
+                     f"Task {res['task'].get('pk')} · asset "
+                     f"{dis.get('callsign')} inbound from {dis.get('origin')}.")
+            directive = {"op": "fly_to",
+                         "center": [float(op.get("lng") or 0), float(op.get("lat") or 0)],
+                         "zoom": 15}
+    else:
+        reply = "Unknown command. Type: maven help"
+
+    return {"reply": reply, "directive": directive}
+
+
+async def execute_target_coa(db: AsyncSession, coa_id: str, option_key: str,
+                             user_email: str) -> dict:
+    """Phase-3 execution: run the packaged option's action and stamp the COA."""
+    await ensure_maven_ontology(db)
+    svc = OntologyService(db)
+    try:
+        coa = await svc.get_object(uuid.UUID(str(coa_id)))
+    except ValueError as exc:
+        raise ValueError("invalid coa id") from exc
+    if coa is None or not str(coa.primary_key_value).startswith("mv-tcoa:"):
+        raise ValueError("unknown coa id")
+    cp = coa.properties or {}
+    if cp.get("status") == "executed":
+        raise ValueError("COA already executed")
+    opt = next((o for o in (cp.get("options") or [])
+                if o.get("key") == str(option_key)), None)
+    if opt is None:
+        raise ValueError("unknown option key")
+    if not opt.get("feasible"):
+        raise ValueError(f"option {option_key} is not feasible")
+
+    kind = (opt.get("execute") or {}).get("kind")
+    result_extra = {}
+    if kind == "dispatch":
+        tid = cp.get("task_id")
+        if not tid or not _is_uuid(tid):
+            raise ValueError("COA has no parent task to dispatch against")
+        res = await dispatch_asset(db, tid,
+                                   (opt["execute"].get("asset_class") or "uas"),
+                                   user_email)
+        result_extra = {"dispatched": res.get("callsign")}
+    elif kind == "watch":
+        det = await svc.get_object(uuid.UUID(str(cp.get("detection_id")))) \
+            if _is_uuid(cp.get("detection_id")) else None
+        if det is not None:
+            dprops = det.properties or {}
+            dprops["watch"] = True
+            det.properties = dprops
+        result_extra = {"watch": True}
+
+    cp["status"] = "executed"
+    cp["executed_option"] = str(option_key)
+    cp["executed_by"] = user_email or "operator"
+    cp["executed_at"] = _now_iso()
+    coa.properties = cp
+    await db.commit()
+    return {"coa_id": str(coa.id), "executed": str(option_key), **result_extra}
+
+
 async def prune_detections(db: AsyncSession, ttl_days: int = 14) -> dict:
     """Delete ephemeral maven_detection objects older than TTL. Tasks/assets/
     COAs/action executions are NEVER pruned (permanent audit trail)."""
@@ -810,7 +1236,7 @@ async def maven_state(db: AsyncSession) -> dict:
         return list(rows)
 
     type_ids = {}
-    for name in (TASK_TYPE, DET_TYPE, COA_TYPE):
+    for name in (TASK_TYPE, DET_TYPE, COA_TYPE, OBJ_TYPE, COA2_TYPE):
         t = await svc.get_object_type_by_name(name)
         if t is not None:
             type_ids[name] = t
@@ -821,5 +1247,10 @@ async def maven_state(db: AsyncSession) -> dict:
              **(o.properties or {})} for o in await _objs(DET_TYPE, 80)]
     coas = [{"id": str(o.id), "pk": o.primary_key_value,
              **(o.properties or {})} for o in await _objs(COA_TYPE, 20)]
+    objs_out = [{"id": str(o.id), "pk": o.primary_key_value,
+                 **(o.properties or {})} for o in await _objs(OBJ_TYPE, 200)]
+    tcoas = [{"id": str(o.id), "pk": o.primary_key_value,
+              **(o.properties or {})} for o in await _objs(COA2_TYPE, 50)]
     return {"assets": assets_out, "tasks": tasks, "detections": dets,
-            "coas": coas, "server_time": _now_iso()}
+            "coas": coas, "objects": objs_out, "target_coas": tcoas,
+            "server_time": _now_iso()}

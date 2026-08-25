@@ -18,14 +18,21 @@ from panteon.core.auth import SupabaseUser, get_current_user, verify_supabase_to
 from panteon.core.database import get_db
 from panteon.maven import (
     ASSET_CLASSES,
+    create_object,
     create_task,
+    delete_object,
     delete_task,
     dispatch_asset,
     generate_coas,
     maven_state,
     prune_detections,
     recall_asset,
+    rename_object,
+    auto_task,
+    maven_command,
     tick_and_collect,
+    execute_target_coa,
+    generate_target_coa,
     validate_detection,
 )
 
@@ -123,6 +130,101 @@ async def post_validate(detection_id: str, request: Request,
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@router.post("/object")
+async def post_object(request: Request,
+                      user: SupabaseUser = Depends(get_current_user),
+                      db: AsyncSession = Depends(get_db)):
+    """Register a named map object (building footprint or point)."""
+    _require_editor(user)
+    body = await _body(request)
+    try:
+        return await create_object(db, body, user.email)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/object/{object_id}/rename")
+async def post_object_rename(object_id: str, request: Request,
+                             user: SupabaseUser = Depends(get_current_user),
+                             db: AsyncSession = Depends(get_db)):
+    _require_editor(user)
+    body = await _body(request)
+    try:
+        return await rename_object(db, object_id, str(body.get("name") or ""))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.delete("/object/{object_id}")
+async def delete_object_route(object_id: str,
+                              user: SupabaseUser = Depends(get_current_user),
+                              db: AsyncSession = Depends(get_db)):
+    _require_editor(user)
+    try:
+        return await delete_object(db, object_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/command")
+async def post_maven_command(request: Request,
+                             user: SupabaseUser = Depends(get_current_user),
+                             db: AsyncSession = Depends(get_db)):
+    """Natural-language MAVEN bridge for YONO/chat: {\"text\": \"task on <object>\"}."""
+    _require_editor(user)
+    body = await _body(request)
+    try:
+        return await maven_command(db, body, user.email)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/auto")
+async def post_auto_task(request: Request,
+                         user: SupabaseUser = Depends(get_current_user),
+                         db: AsyncSession = Depends(get_db)):
+    """One-shot automated mission for YONO/chat automation.
+
+    Body: {"object_id": "<mv-obj uuid>"} OR {"lat": .., "lng": ..},
+    optional name, priority (low|medium|high), radius_km, asset_class (uas|usv).
+    Creates the task AND dispatches an asset in one call.
+    YONO example: curl -X POST .../api/v1/maven/auto -H 'auth' -d '{"object_id":"..."}'
+    """
+    _require_editor(user)
+    body = await _body(request)
+    try:
+        return await auto_task(db, body, user.email)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/coa/target/generate")
+async def post_coa_target_generate(request: Request,
+                                   user: SupabaseUser = Depends(get_current_user),
+                                   db: AsyncSession = Depends(get_db)):
+    """Phase-2: generate packaged COAs for one CONFIRMED detection."""
+    _require_editor(user)
+    body = await _body(request)
+    try:
+        return await generate_target_coa(db, body, user.email)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/coa/target/{coa_id}/execute")
+async def post_coa_target_execute(coa_id: str, request: Request,
+                                  user: SupabaseUser = Depends(get_current_user),
+                                  db: AsyncSession = Depends(get_db)):
+    """Phase-3: execute the selected option and stamp the audit trail."""
+    _require_editor(user)
+    body = await _body(request)
+    try:
+        return await execute_target_coa(db, coa_id, str(body.get("option") or ""),
+                                        user.email)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
 @router.post("/coa/generate")
 async def post_coa_generate(request: Request,
                             user: SupabaseUser = Depends(get_current_user),
@@ -139,10 +241,19 @@ async def post_coa_generate(request: Request,
 async def post_tick(user: SupabaseUser = Depends(get_current_user),
                     db: AsyncSession = Depends(get_db)):
     """Advance assets + collect detections against REAL feed tracks."""
+    import time as _t, logging
+    _log = logging.getLogger("panteon.maven")
+    t0 = _t.monotonic()
     try:
-        return await tick_and_collect(db)
+        out = await tick_and_collect(db)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    dt_ms = round((_t.monotonic() - t0) * 1000, 1)
+    _log.info("tick duration_ms=%s assets=%s tracks_scanned=%s new_dets=%s",
+              dt_ms, out.get("synced_assets"), out.get("tracks_scanned"),
+              out.get("new_detections"))
+    out["tick_ms"] = dt_ms
+    return out
 
 
 @router.post("/prune")

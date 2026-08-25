@@ -1736,6 +1736,7 @@
         .sc-legend {
             display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
             font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-bottom: 8px;
+            pointer-events: none; user-select: none; position: relative; z-index: 0;
         }
         .sc-legend-label { text-transform: uppercase; opacity: 0.7; }
         .sc-legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 3px; }
@@ -2225,10 +2226,6 @@
                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14V2M2 14h12"/><path d="M4 10l3-3 2 2 4-5"/></svg>
                         <span class="nav-label">Observability</span>
                     </div>
-                    <div class="nav-item" data-page="audit-logs">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="2" width="10" height="12" rx="1"/><path d="M5 5h6M5 8h6M5 11h4"/></svg>
-                        <span class="nav-label">Audit Logs</span>
-                    </div>
                 </div>
             </nav>
             <div class="sidebar-footer">
@@ -2603,33 +2600,36 @@
 
 
 <div id="mavenHudBadge" class="maven-badge maven-hidden">MAVEN 0T · 0A · 0D</div>
-                                       <div id="mavenAoiHint" class="maven-aoi-hint maven-hidden">CLICK MAP TO SET AOI CENTER &middot; ESC CANCELS</div>
+                                        <div id="mavenAoiHint" class="maven-aoi-hint maven-hidden">CLICK A BUILDING OR MAP POINT TO SET TARGET &middot; ESC CANCELS</div>
+                                        <div id="mvProbeChip"></div>
                                        <div id="mavenDrawer" class="maven-drawer maven-hidden">
-                                           <div class="maven-head">
-                                               <span class="maven-title">MAVEN SMART LAYER</span>
-                                               <span class="maven-live" id="mavenLiveTag">sc_ontology native</span>
-                                           </div>
-                                           <div class="maven-tabs">
-                                               <button data-mtab="tasks" class="active">TASKS</button>
-                                               <button data-mtab="assets">ASSETS</button>
-                                               <button data-mtab="coa">COA</button>
-                                               <button data-mtab="queue">QUEUE</button>
-                                           </div>
+                                            <div class="maven-head">
+                                                <span class="maven-title">MAVEN SMART LAYER</span>
+                                                <span class="maven-live" id="mavenLiveTag">sc_ontology native</span>
+                                                <span id="mavenOvlBtn" class="maven-ovl-toggle" title="Toggle all map overlays (markers, rings, towers)">OVERLAYS ON</span>
+                                            </div>
+                                            <div class="maven-tabs">
+                                                <button data-mtab="tasks" class="active">TASKS</button>
+                                                <button data-mtab="assets">ASSETS</button>
+                                                <button data-mtab="coa">COA</button>
+                                                <button data-mtab="objects">OBJECTS</button>
+                                            </div>
                                            <div class="maven-body">
                                                <section data-mpanel="tasks">
-                                                   <button class="maven-btn" id="mavenNewTaskBtn">+ NEW TASK (CLICK MAP)</button>
+                                                   <button class="maven-btn" id="mavenNewTaskBtn">&#128205; PICK TARGET ON MAP</button>
                                                    <div id="mavenTaskList"></div>
                                                </section>
-                                               <section data-mpanel="assets" class="maven-hide"><div id="mavenAssetList"></div></section>
-                                                <section data-mpanel="coa" class="maven-hide">
-                                                    <div class="maven-form">
-                                                        <select id="mavenCoaTheater"><option value="Baltic Guardian">BALTIC GUARDIAN</option><option value="Global Commons">GLOBAL COMMONS</option></select>
-                                                        <input type="text" id="mavenCoaScen" value="300" inputmode="numeric" placeholder="SCENARIOS PER POSTURE" maxlength="4">
-                                                    </div>
-                                                    <button class="maven-btn" id="mavenCoaBtn">GENERATE COAs</button>
-                                                    <div id="mavenCoaList"></div>
+                                                <section data-mpanel="assets" class="maven-hide"><div id="mavenAssetList"></div></section>
+                                                 <section data-mpanel="coa" class="maven-hide">
+                                                     <div class="maven-empty" style="margin-bottom:4px">CONFIRMED CONTACTS &#8594; GENERATE COA</div>
+                                                     <div id="mavenCoaTargets"></div>
+                                                     <div id="mavenCoaList"></div>
+                                                 </section>
+                                                <section data-mpanel="objects" class="maven-hide">
+                                                    <button class="maven-btn" id="mavenRegObjBtn">+ REGISTER OBJECT</button>
+                                                    <div id="mavenObjForm"></div>
+                                                    <div id="mavenObjList"></div>
                                                 </section>
-                                               <section data-mpanel="queue" class="maven-hide"><div id="mavenQueueList"></div></section>
                                            </div>
                                            <div id="mavenDetRail"></div>
                                        </div>
@@ -2698,16 +2698,6 @@
                                       </div>
                                                                     <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><path id="ac-plane-path" d="M12 2 C12.9 2 13.5 3 13.5 4.3 L13.55 10.2 L21.8 14.7 L21.8 16.1 L13.5 13.7 L13.45 17.7 L17.5 20.3 L17.5 21.3 L13.05 20.5 L12.6 22 L11.4 22 L10.95 20.5 L6.5 21.3 L6.5 20.3 L10.55 17.7 L10.5 13.7 L2.2 16.1 L2.2 14.7 L10.45 10.2 L10.5 4.3 C10.5 3 11.1 2 12 2 Z"/></defs></svg>
 
-<div class="sc-legend">
-                                      <span class="sc-legend-label">LEGEND:</span>
-                                      <span><span class="sc-legend-dot" style="background:#ef4444;box-shadow:0 0 4px #ef4444"></span> Threat-RED</span>
-                                      <span><span class="sc-legend-dot" style="background:#f59e0b;box-shadow:0 0 4px #f59e0b"></span> Threat-AMBER</span>
-                                      <span><span class="sc-legend-dot" style="background:#22c544;box-shadow:0 0 4px #22c544"></span> Threat-GREEN</span>
-                                      <span><svg class="sc-legend-plane" viewBox="0 0 24 24" aria-hidden="true"><use href="#ac-plane-path" fill="#ef4444"/></svg> Military</span>
-                                      <span><svg class="sc-legend-plane" viewBox="0 0 24 24" aria-hidden="true"><use href="#ac-plane-path" fill="#22d3ee"/></svg> Jet</span>
-                                      <span><svg class="sc-legend-plane" viewBox="0 0 24 24" aria-hidden="true"><use href="#ac-plane-path" fill="#22c544"/></svg> Commercial</span>
-                                      <span><svg class="sc-legend-plane" viewBox="0 0 24 24" aria-hidden="true"><use href="#ac-plane-path" fill="#f59e0b"/></svg> Private</span>
-</div>
                           </div>
 
                           <script>
@@ -4338,18 +4328,6 @@
                     </div>
                 </div>
 
-                <div class="page" id="page-audit-logs">
-                    <div class="card">
-                        <div class="card-header">
-                            <span class="card-title">Audit Log</span>
-                            <button class="btn btn-sm" onclick="loadAuditLogs()">Refresh</button>
-                        </div>
-                        <div class="table-wrap">
-                            <table><thead><tr><th>Time</th><th>Method</th><th>Path</th><th>Status</th><th>User</th><th>Duration</th><th>Client</th></tr></thead>
-                            <tbody id="auditLogsBody"><tr><td colspan="7"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
-                        </div>
-                    </div>
-                </div>
 
                 <div class="page" id="page-cmb-dashboard">
                     <div style="display:flex;flex-direction:column;height:calc(100vh - 68px)">
@@ -4576,7 +4554,6 @@ const PAGES = {
     'lineage-graph': 'Lineage Graph',
     'lineage-events': 'Lineage Events',
     'observability': 'Observability',
-    'audit-logs': 'Audit Logs',
     'workspaces': 'Workspaces',
     'cross-lineage': 'Cross-Company Flow',
     'group-overview': 'Group Overview',
@@ -4863,7 +4840,6 @@ function loadPageData(page) {
         case 'lineage-graph': loadLineageGraph(); break;
         case 'lineage-events': loadLineageEvents(); break;
         case 'observability': loadObservability(); break;
-        case 'audit-logs': loadAuditLogs(); break;
         case 'workspaces': loadWorkspaces(); break;
         case 'cross-lineage': loadCrossLineage(); break;
         case 'group-overview': loadGroupOverview(); break;
@@ -5801,15 +5777,6 @@ function renderErrorChart(history) {
     svg += '<text x="' + (W - 80) + '" y="16" fill="var(--amber)" font-size="10">4xx</text>';
     svg += '<text x="' + (W - 40) + '" y="16" fill="var(--red)" font-size="10">5xx</text></svg>';
     el.innerHTML = svg;
-}
-
-async function loadAuditLogs() {
-    try {
-        const data = await api('/admin/audit');
-        const body = document.getElementById('auditLogsBody');
-        if (!data || !data.length) { body.innerHTML = '<tr><td colspan="7"><div class="empty-state">No audit logs</div></td></tr>'; return; }
-        body.innerHTML = data.map(l => '<tr><td style="white-space:nowrap">' + fmtDate(l.timestamp) + '</td><td><span class="tag" style="min-width:48px;text-align:center">' + l.method + '</span></td><td class="mono" style="font-size:10px;max-width:300px;overflow:hidden;text-overflow:ellipsis">' + l.path + '</td><td><span class="tag ' + (l.status_code >= 500 ? 'tag-red' : l.status_code >= 400 ? 'tag-amber' : 'tag-green') + '">' + l.status_code + '</span></td><td style="font-size:11px">' + (l.user_email || 'anonymous') + '</td><td style="font-variant-numeric:tabular-nums">' + (l.duration_ms != null ? l.duration_ms + 'ms' : '--') + '</td><td style="font-size:10px;color:var(--text-dim)">' + (l.client_ip || '--') + '</td></tr>').join('');
-    } catch (e) { document.getElementById('auditLogsBody').innerHTML = '<tr><td colspan="7"><div class="empty-state">Error: ' + e.message + '</div></td></tr>'; }
 }
 
 let workspacesData = [];
@@ -6976,7 +6943,7 @@ let fusionThreatEvents = [];
 let fusionFlights = [];
 // Fresh-map policy: every GAIA layer starts OFF; the operator toggles what
 // appears. No layer may default on and no state is restored across reloads.
-let fusionLayers = { threats: false, aviation: false, '3d': false };
+let fusionLayers = { threats: false, aviation: false, '3d': true };
 let fusion3dAdded = false;
 // Cross-block consumers (GAIA integrations, MAVEN) read these via window.*;
 // top-level `let` bindings are NOT window properties, so mirror them here.
@@ -6988,8 +6955,8 @@ function initFusionMap() {
     fusionMap = new maplibregl.Map({
         container: 'fusionMap',
         style: 'https://tiles.openfreemap.org/styles/dark',
-        center: [20, 20],
-        zoom: 1.5,
+        center: [121.0188, 14.5547],
+        zoom: 15.8,
         pitch: 55,
         bearing: -10,
         maxPitch: 85,
@@ -6997,7 +6964,49 @@ function initFusionMap() {
         canvasContextAttributes: { antialias: true },
     });
     window.fusionMap = fusionMap;
-    fusionMap.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+    fusionMap.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-left');
+    (function guardRenderLoop() {
+        var lastMsg = '';
+        function probeOnce(msg) {
+            if (msg === lastMsg) return;
+            lastMsg = msg;
+            var chip = document.getElementById('mvProbeChip');
+            if (chip) { chip.style.display = 'block'; chip.textContent = msg; }
+            console.error('[MV PROBE]', msg);
+        }
+        var tq = fusionMap._renderTaskQueue;
+        if (tq && !tq.__mvPatched) {
+            tq.__mvPatched = true;
+            var origRun = tq.run;
+            tq.run = function (t) {
+                if (this._currentlyRunning) {
+                    this._currentlyRunning = false;
+                    this._cleared = false;
+                    probeOnce('TASK QUEUE WAS WEDGED (maplibre #6093) \u2014 auto-healed, painting resumed');
+                }
+                try {
+                    return origRun.call(this, t);
+                } catch (err) {
+                    this._currentlyRunning = false;
+                    this._cleared = false;
+                    probeOnce('RENDER TASK THREW:\n' + (err && err.message || err) +
+                        '\n' + String((err && err.stack) || '').split('\n').slice(1, 5).join('\n'));
+                    return;
+                }
+            };
+        }
+        var origRender = fusionMap._render;
+        fusionMap._render = function () {
+            try {
+                return origRender.apply(this, arguments);
+            } catch (err) {
+                try { this._renderTaskQueue._currentlyRunning = false; this._renderTaskQueue._cleared = false; } catch (e2) {}
+                probeOnce('RENDER FRAME THREW:\n' + (err && err.message || err) +
+                    '\n' + String((err && err.stack) || '').split('\n').slice(1, 5).join('\n'));
+                return null;
+            }
+        };
+    })();
     fusionMap.on('style.load', () => {
         if (!fusionMap || fusionMap.getLayer('3d-buildings')) return;
         fusionMap.addLayer({
@@ -15994,7 +16003,7 @@ function renderFusionRealLayer() {
     var SEED_WS = {
         'Watchfloor': { sizes: { l: 0, r: 24, b: 26 }, zones: { L: [], R: ['sc-gdelt'], B: ['observability'], S: ['sc-fusion'] }, floats: {}, mode: {}, collapsed: {} },
         'Targeting':  { sizes: { l: 20, r: 24, b: 0 }, zones: { L: ['sc-types'], R: ['sc-objects'], B: [], S: ['sc-fusion'] }, floats: {}, mode: {}, collapsed: {} },
-        'Ops':        { sizes: { l: 0, r: 22, b: 24 }, zones: { L: [], R: ['statham-fleet'], B: ['audit-logs'], S: ['overview'] }, floats: {}, mode: {}, collapsed: {} }
+        'Ops':        { sizes: { l: 0, r: 22, b: 24 }, zones: { L: [], R: ['statham-fleet'], B: [], S: ['overview'] }, floats: {}, mode: {}, collapsed: {} }
     };
 
     function wsAll() {
@@ -17540,10 +17549,11 @@ function renderFusionRealLayer() {
 .maven-drawer {
     position: absolute; top: 58px; right: 10px; bottom: 34px; width: 330px;
     display: flex; flex-direction: column;
-    background: color-mix(in srgb, var(--bg-card) 92%, transparent);
+    background: color-mix(in srgb, var(--bg-card) 96%, transparent);
     border: 1px solid var(--border-color); border-radius: 6px;
     font-family: var(--font-mono); font-size: 10px; color: var(--text-primary);
-    backdrop-filter: blur(6px); z-index: 50;
+    z-index: 50;
+    overflow: hidden;
 }
 .maven-hidden { display: none !important; }
 .maven-body section.maven-hide { display: none; }
@@ -17597,13 +17607,9 @@ function renderFusionRealLayer() {
     color: var(--text-muted); font-family: var(--font-mono); font-size: 9px;
 }
 .maven-radius button.active { color: var(--accent-neon); border-color: rgba(223,241,64,.5); }
-.maven-coa-bars { margin-top: 5px; }
-.maven-bar { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
-.maven-bar span { width: 52px; color: var(--text-muted); }
-.maven-bar i { flex: 1; height: 4px; background: rgba(255,255,255,.08); border-radius: 2px; position: relative; overflow: hidden; }
-.maven-bar i::after { content: ''; position: absolute; inset: 0 auto 0 0; width: var(--w, 0%);
-    background: var(--accent-neon); border-radius: 2px; }
 .maven-rank { float: right; color: var(--accent-neon); border: 1px solid rgba(223,241,64,.5); border-radius: 3px; padding: 0 5px; }
+.mv-step { display: flex; flex-direction: column; gap: 3px; margin: 4px 0; align-items: flex-start; }
+.mv-step .maven-rank { float: none; margin-right: 6px; }
 .maven-det-actions { display: flex; gap: 6px; margin-top: 4px; }
 .maven-det-actions button {
     flex: 1; cursor: pointer; padding: 3px 0; border-radius: 3px;
@@ -17613,6 +17619,29 @@ function renderFusionRealLayer() {
 .maven-det-actions button.yes { color: #80e000; border-color: rgba(128,224,0,.5); }
 .maven-det-actions button.no { color: #ff8080; border-color: rgba(255,128,128,.5); }
 .maven-det-actions button.mut { color: var(--text-muted); border-color: var(--border-color); }
+#mavenDetRail {
+    flex: 0 0 auto; max-height: 38%; overflow-y: auto;
+    border-top: 1px solid var(--border-color); scrollbar-width: thin;
+}
+.sc-map-canvas-wrap .maplibregl-ctrl-bottom-right { transition: transform .18s ease; }
+.maplibregl-canvas-container .maplibregl-marker { pointer-events: none !important; }
+.maven-ovl-toggle {
+    cursor: pointer; margin-left: auto; flex: none;
+    font-size: 8px; letter-spacing: .08em; user-select: none;
+    border: 1px solid var(--border-color); border-radius: 3px;
+    padding: 2px 6px; color: #80e000;
+}
+.maven-ovl-toggle.ovl-off { color: #ff8080; border-color: rgba(255,128,128,.5); }
+.maven-drawer { transition: transform .22s ease, opacity .22s ease; }
+.maven-drawer.maven-slide { transform: translateX(calc(100% + 26px)); opacity: 0; pointer-events: none; }
+#mvProbeChip {
+    display: none; position: fixed; left: 10px; top: 64px; z-index: 4000;
+    max-width: 460px; pointer-events: none;
+    background: rgba(0,0,0,.92); border: 1px solid rgba(255,90,90,.6);
+    color: #ffb8b8; font-family: "JetBrains Mono", monospace; font-size: 9px;
+    line-height: 1.5; padding: 5px 8px; border-radius: 4px; white-space: pre-wrap;
+}
+.maven-asset-glyph { pointer-events: none; }
 .maven-asset-glyph svg, .maven-det-glyph svg { filter: drop-shadow(0 0 3px rgba(0,0,0,.9)); }
 .maven-badge {
     position: absolute; left: 10px; bottom: 34px; z-index: 25;
@@ -17644,10 +17673,28 @@ function renderFusionRealLayer() {
     var $ = function (id) { return document.getElementById(id); };
     var CYAN = '#80E0FF', YEL = '#FFEC00', GRAY = '#8a8f98';
 
+    (function armorMarkers() {
+        if (!window.maplibregl || !maplibregl.Marker || maplibregl.Marker.prototype.__mvSafe) return;
+        var P = maplibregl.Marker.prototype;
+        P.__mvSafe = true;
+        var origUpdate = P._update;
+        P._update = function () {
+            try {
+                if (!this._lngLat || !isFinite(this._lngLat.lng) || !isFinite(this._lngLat.lat)) return this;
+                return origUpdate.apply(this, arguments);
+            } catch (err) {
+                console.warn('[MV PROBE] marker update skipped:', err && err.message);
+                return this;
+            }
+        };
+    })();
+
     var S = {
         open: false, booted: false, busy: false, timer: null,
-        state: { assets: [], tasks: [], detections: [], coas: [] },
+        state: { assets: [], tasks: [], detections: [], coas: [], objects: [], target_coas: [] },
         aoiMode: false, aoiRadius: 25, pending: null,
+        objMode: false, pendingObj: null, _hovId: null,
+        overlays: true,
         assetClass: 'uas',
         markers: [],           // asset DOM markers
         detMarkers: {},        // pk -> marker (diffed)
@@ -17687,8 +17734,94 @@ function renderFusionRealLayer() {
         var wrap = document.createElement('div');
         wrap.className = kind.indexOf('det') === 0 ? 'maven-det-glyph' : 'maven-asset-glyph';
         wrap.innerHTML = s;
-        wrap.style.cssText = 'cursor:pointer;display:flex;';
+        wrap.style.cssText = 'display:flex;' +
+            (kind.indexOf('det') === 0 ? 'cursor:pointer;' : 'pointer-events:none;');
         return wrap;
+    }
+
+    function setOverlays(on) {
+        S.overlays = !!on;
+        var b = $('mavenOvlBtn');
+        if (b) {
+            b.textContent = 'OVERLAYS ' + (S.overlays ? 'ON' : 'OFF');
+            b.classList.toggle('ovl-off', !S.overlays);
+        }
+        if (!S.overlays) {
+            clearMarkers();
+            setData('maven-aoi', []);
+            setData('maven-fov', []);
+            setData('maven-obj-ghost', []);
+            setData('maven-objs', []);
+            drawGeo.__last = null; drawObjs.__last = null; drawMarkers.__last = null;
+        } else { refresh(); }
+    }
+    function wireProbe() {
+        var chip = $('mvProbeChip');
+        function probe(msg) {
+            if (!chip) return;
+            chip.textContent = msg;
+            chip.style.display = 'block';
+            console.warn('[MV PROBE]', msg);
+        }
+        window.addEventListener('error', function (e) {
+            probe('JS ERROR: ' + e.message);
+        });
+        try {
+            var fm = window.fusionMap;
+            if (fm && fm.on && !window.__mvErrBound) {
+                window.__mvErrBound = true;
+                fm.on('error', function (e) {
+                    probe('MAPLIBRE ERROR: ' + ((e && e.error && e.error.message) || JSON.stringify(e && e.error || '').slice(0, 200)));
+                });
+            }
+        } catch (err) {}
+        var down = null;
+        document.addEventListener('mousedown', function (e) {
+            down = { x: e.clientX, y: e.clientY, t: Date.now(), done: false, cam: null };
+            try {
+                var mm = window.fusionMap;
+                if (mm && mm.getCenter) down.cam = { c: mm.getCenter(), z: mm.getZoom() };
+            } catch (err) {}
+        }, true);
+        document.addEventListener('mousemove', function (e) {
+            if (!down || down.done) return;
+            if (Math.hypot(e.clientX - down.x, e.clientY - down.y) < 14) return;
+            if (Date.now() - down.t < 450) return;
+            down.done = true;
+            setTimeout(function () {
+                var moved = true;
+                try {
+                    var mm = window.fusionMap;
+                    if (mm && down.cam) {
+                        var c = mm.getCenter();
+                        moved = Math.abs(c.lng - down.cam.c.lng) > 1e-6 ||
+                                Math.abs(c.lat - down.cam.c.lat) > 1e-6 ||
+                                Math.abs(mm.getZoom() - down.cam.z) > 0.02;
+                    }
+                } catch (err) {}
+                if (!moved && !S.overlays) { probe('DRAG IGNORED WITH OVERLAYS OFF — thief is NOT a maven overlay'); return; }
+                if (!moved) {
+                    var el = document.elementFromPoint(down.x, down.y);
+                    var chain = [], n = el;
+                    while (n && chain.length < 7) {
+                        chain.push(n.tagName + (n.id ? '#' + n.id : '') +
+                            (n.className && typeof n.className === 'string'
+                                ? '.' + n.className.trim().split(/\s+/).join('.') : ''));
+                        n = n.parentElement;
+                    }
+                    var geo = '';
+                    if (el && el.getBoundingClientRect) {
+                        var r = el.getBoundingClientRect();
+                        geo = '\nTHIEF RECT: x=' + Math.round(r.left) + ' y=' + Math.round(r.top) +
+                            ' w=' + Math.round(r.width) + ' h=' + Math.round(r.height);
+                    }
+                    geo += '\nVIEWPORT: ' + window.innerWidth + 'x' + window.innerHeight;
+                    probe('DRAG STOLEN BY:\n' + chain.join('\n  < ') + geo +
+                        '\n[render loop alive — DOM element ate the gesture]');
+                    console.warn('[MV PROBE] elementFromPoint:', el);
+                }
+            }, 550);
+        }, true);
     }
 
     /* ------------------------------------------------------ geometry ---- */
@@ -17711,6 +17844,58 @@ function renderFusionRealLayer() {
         }
         return pts;
     }
+    function geomCentroid(geom) {
+        var sx = 0, sy = 0, n = 0;
+        function walk(c) {
+            if (!Array.isArray(c) || !c.length) return;
+            if (typeof c[0] === 'number') { sx += c[0]; sy += c[1]; n++; return; }
+            for (var i = 0; i < c.length; i++) walk(c[i]);
+        }
+        try { walk(geom && geom.coordinates); } catch (e) { return null; }
+        return n ? { lng: sx / n, lat: sy / n } : null;
+    }
+    function pickBuildingAt(m, point) {
+        try {
+            var fs = m.queryRenderedFeatures(point, { layers: ['3d-buildings'] });
+            if (!fs || !fs.length) return null;
+            var f = fs[0], pr = f.properties || {};
+            var c = geomCentroid(f.geometry);
+            return {
+                name: String(pr.name || pr['name:latin'] || pr['name:en'] || '').trim(),
+                height: Number(pr.height || pr.render_height) || null,
+                lat: c ? c.lat : null, lng: c ? c.lng : null,
+                footprint: f.geometry || null
+            };
+        } catch (e) { return null; }
+    }
+    function geomFinite(c) {
+        function walk(x) {
+            if (Array.isArray(x)) {
+                for (var i = 0; i < x.length; i++) if (!walk(x[i])) return false;
+                return true;
+            }
+            return typeof x !== 'number' || isFinite(x);
+        }
+        try { return walk(c); } catch (e) { return false; }
+    }
+    function fpGeom(fp) {
+        if (!fp || !fp.length) return null;
+        try {
+            if (!geomFinite(fp)) return null;
+            return Array.isArray(fp[0][0][0])
+                ? { type: 'MultiPolygon', coordinates: fp }
+                : { type: 'Polygon', coordinates: fp };
+        } catch (e) { return null; }
+    }
+    function setGhost(geom, heightM) {
+        ensureLayers();
+        var feats = [];
+        var g = fpGeom(geom && geom.coordinates ? geom.coordinates : geom);
+        if (g && Number(heightM) !== 0) {
+            feats.push({ type: 'Feature', properties: { h: Number(heightM) || 20 }, geometry: g });
+        }
+        setData('maven-obj-ghost', feats);
+    }
 
     /* --------------------------------------------------------- layers ---- */
     // NB: admin.html declares `let fusionMap` (global lexical binding, NOT a
@@ -17723,7 +17908,7 @@ function renderFusionRealLayer() {
     }
     function ensureLayers() {
         var m = getMap();
-        if (!m || m.getSource('maven-aoi')) return;
+        if (!m || m.getSource('maven-objs')) return;
         m.addSource('maven-aoi', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
         m.addLayer({ id: 'maven-aoi-fill', type: 'fill', source: 'maven-aoi',
             paint: { 'fill-color': '#DFF140', 'fill-opacity': 0.05 } });
@@ -17734,6 +17919,32 @@ function renderFusionRealLayer() {
             paint: { 'fill-color': CYAN, 'fill-opacity': 0.07 } });
         m.addLayer({ id: 'maven-fov-line', type: 'line', source: 'maven-fov',
             paint: { 'line-color': CYAN, 'line-width': 1, 'line-opacity': 0.55 } });
+        if (!m.getSource('maven-obj-ghost')) {
+            m.addSource('maven-obj-ghost', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+            m.addLayer({ id: 'maven-obj-ghost-fill', type: 'fill', source: 'maven-obj-ghost',
+                paint: { 'fill-color': '#DFF140', 'fill-opacity': 0.28 } });
+            m.addLayer({ id: 'maven-obj-ghost-line', type: 'line', source: 'maven-obj-ghost',
+                paint: { 'line-color': '#DFF140', 'line-width': 2, 'line-opacity': 0.9 } });
+            m.addLayer({ id: 'maven-obj-ghost-vol', type: 'fill-extrusion', source: 'maven-obj-ghost',
+                paint: { 'fill-extrusion-color': '#DFF140',
+                         'fill-extrusion-height': ['coalesce', ['get', 'h'], 20],
+                         'fill-extrusion-base': 0,
+                         'fill-extrusion-opacity': 0.34 } });
+        }
+        if (!m.getSource('maven-objs')) {
+            m.addSource('maven-objs', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+            m.addLayer({ id: 'maven-objs-fill', type: 'fill', source: 'maven-objs',
+                paint: { 'fill-color': '#DFF140',
+                         'fill-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 0.5, 0.2] } });
+            m.addLayer({ id: 'maven-objs-line', type: 'line', source: 'maven-objs',
+                paint: { 'line-color': '#DFF140',
+                         'line-width': ['case', ['boolean', ['feature-state', 'hover'], false], 3.2, 1.6] } });
+            m.addLayer({ id: 'maven-objs-vol', type: 'fill-extrusion', source: 'maven-objs',
+                paint: { 'fill-extrusion-color': ['case', ['boolean', ['feature-state', 'hover'], false], '#F6FF8A', '#DFF140'],
+                         'fill-extrusion-height': ['coalesce', ['get', 'h'], 15],
+                         'fill-extrusion-base': 0,
+                         'fill-extrusion-opacity': 0.42 } });
+        }
     }
     function setData(src, feats) {
         try { getMap().getSource(src).setData({ type: 'FeatureCollection', features: feats }); } catch (e) {}
@@ -17741,19 +17952,40 @@ function renderFusionRealLayer() {
 
     function drawGeo() {
         ensureLayers();
-        var feats = [], fov = [];
+        var feats = [];
         S.state.tasks.forEach(function (t) {
             if (t.aoi_lat == null) return;
+            if (!isFinite(Number(t.aoi_lat)) || !isFinite(Number(t.aoi_lng))) return;
             feats.push({ type: 'Feature', properties: { name: t.name },
                 geometry: { type: 'Polygon', coordinates: [circlePoly(t.aoi_lat, t.aoi_lng, t.aoi_radius_km || 25)] } });
         });
+        var aoiSig = feats.map(function (f) { return f.properties.name; }).join('|');
+        if (aoiSig !== drawGeo.__last) {
+            drawGeo.__last = aoiSig;
+            setData('maven-aoi', feats);
+        }
+        if ((drawGeo.__fovN = (drawGeo.__fovN || 0) + 1) % 3) return;
+        var fov = [];
         S.state.assets.forEach(function (a) {
-            if (a.state === 'transit' && a.heading_deg != null)
+            if (a.state === 'transit' && a.heading_deg != null &&
+                isFinite(a.lat) && isFinite(a.lng) && a.detect_radius_km)
                 fov.push({ type: 'Feature', properties: {},
                     geometry: { type: 'Polygon', coordinates: [fovPoly(a.lat, a.lng, a.heading_deg, a.detect_radius_km)] } });
         });
-        setData('maven-aoi', feats);
         setData('maven-fov', fov);
+    }
+    function drawObjs() {
+        ensureLayers();
+        var feats = [];
+        S.state.objects.forEach(function (o, i) {
+            var g = fpGeom(o.footprint);
+            if (!g) return;
+            feats.push({ type: 'Feature', id: i, properties: { name: o.name || '', h: Number(o.height_m) || 15 }, geometry: g });
+        });
+        var sig = feats.map(function (f) { return f.id + '~' + f.properties.name; }).join('|');
+        if (sig === drawObjs.__last) return;
+        drawObjs.__last = sig;
+        setData('maven-objs', feats);
     }
 
     /* -------------------------------------------------------- markers ---- */
@@ -17765,9 +17997,27 @@ function renderFusionRealLayer() {
         });
         S.detMarkers = {};
     }
+    function chosenSig() {
+        var sig = [], n = 0;
+        function push(d, st) { if (n < 30) { sig.push(d.pk + ':' + st); n++; } }
+        S.state.detections.forEach(function (d) {
+            var st = d.validated === true ? 'y' : (d.validated === false ? 'n' : 'p');
+            if (st === 'p') push(d, st);
+        });
+        for (var i = 0; i < S.state.detections.length; i++) {
+            var d = S.state.detections[i];
+            push(d, d.validated === true ? 'y' : (d.validated === false ? 'n' : 'p'));
+        }
+        return sig.join(',');
+    }
     function drawMarkers() {
         var m = getMap();
         if (!m) return;
+        var msig = S.state.assets.map(function (a) {
+            return a.callsign + a.state + (Number(a.lat) || 0).toFixed(2) + (Number(a.lng) || 0).toFixed(2);
+        }).join('|') + '#' + chosenSig();
+        if (msig === drawMarkers.__last) return;
+        drawMarkers.__last = msig;
         // Assets: reuse DOM nodes in place (diff updater keeps it snappy).
         // NB: no silent auto-fitBounds — the operator frames the map via the
         // FLY buttons; surprise viewport yanks made placement feel impossible.
@@ -17775,19 +18025,34 @@ function renderFusionRealLayer() {
             var idx = S.markers.length, a0 = S.state.assets[idx];
             var el = svgFrame(a0.asset_class);
             el.title = a0.callsign;
-            var mk = new maplibregl.Marker({ element: el }).addTo(m);
+            var mk = new maplibregl.Marker({ element: el })
+                .setLngLat([isFinite(a0.lng) ? a0.lng : 0, isFinite(a0.lat) ? a0.lat : 0])
+                .addTo(m);
             S.markers.push(mk);
         }
         while (S.markers.length > S.state.assets.length) { S.markers.pop().remove(); }
         S.state.assets.forEach(function (a, i) {
             var mk = S.markers[i];
+            if (!isFinite(a.lat) || !isFinite(a.lng)) return;
             mk.setLngLat([a.lng, a.lat]);
             mk.getElement().title = a.callsign + ' · ' + a.state +
                 (a.eta_remaining_s ? ' · ETA ' + Math.round(a.eta_remaining_s / 60) + 'min' : '');
         });
-        // Detections: diff by pk
-        var seen = {};
+        // Detections: diff by pk. Marker cap: every unvalidated detection
+        // plus newest validated ones, max 30 DOM nodes — the full list stays
+        // in the drawer; a dense AOI must not carpet the map with markers.
+        var MAX_DET_MARKERS = 30, chosen = [], picked = {};
+        function pickDet(d) {
+            if (picked[d.pk] || chosen.length >= MAX_DET_MARKERS) return;
+            picked[d.pk] = 1; chosen.push(d);
+        }
         S.state.detections.forEach(function (d) {
+            if (d.validated === null || typeof d.validated === 'undefined') pickDet(d);
+        });
+        for (var di = 0; di < S.state.detections.length; di++) pickDet(S.state.detections[di]);
+        var seen = {};
+        chosen.forEach(function (d) {
+            if (!isFinite(d.lat) || !isFinite(d.lng)) return;
             seen[d.pk] = true;
             var kind = d.validated === true ? 'det-ok' : (d.validated === false ? 'det-no' : 'det');
             var mk = S.detMarkers[d.pk];
@@ -17853,8 +18118,16 @@ function renderFusionRealLayer() {
             var m = getMap();
             if (m && S.wiredMap !== m) { S.wiredMap = m; wireMapClicks(m); }
             S.state = await api('/maven/state');
-            drawGeo();
-            drawMarkers();
+            if (!S.state.objects) S.state.objects = [];
+            var moving = false;
+            try { var mm = getMap(); moving = !!(mm && mm.isMoving && mm.isMoving()); } catch (e) {}
+            if (!moving) {
+                if (S.overlays) {
+                    drawGeo();
+                    drawObjs();
+                    drawMarkers();
+                }
+            }
             renderBadge();
             renderLists();
             renderDetRail();
@@ -17873,6 +18146,11 @@ function renderFusionRealLayer() {
         clearMarkers();
         setData('maven-aoi', []);
         setData('maven-fov', []);
+        setData('maven-obj-ghost', []);
+        setData('maven-objs', []);
+        drawGeo.__last = null;
+        drawObjs.__last = null;
+        S._hovId = null;
         S.fitDone = {};
         var b = $('mavenHudBadge');
         if (b) b.classList.add('maven-hidden');
@@ -17882,6 +18160,12 @@ function renderFusionRealLayer() {
     function esc(s) {
         return String(s == null ? '' : s).replace(/[&<>"']/g,
             function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+    }
+    function setHtml(host, html) {
+        if (!host) return;
+        if (host.__mvLast === html) return;
+        host.__mvLast = html;
+        host.innerHTML = html;
     }
     function mErr(e) {
         // Surface backend rejections (403 role, validation, network) — silent
@@ -17908,11 +18192,17 @@ function renderFusionRealLayer() {
         b.textContent = 'MAVEN ' + S.state.tasks.length + 'T \u00b7 ' + S.state.assets.length + 'A \u00b7 ' + nVal + 'D';
         b.classList.toggle('maven-hidden', !S.open);
     }
-    function renderLists() { renderTasks(); renderAssets(); renderCoas(); renderQueue(); }
+    function renderLists() { renderTasks(); renderAssets(); renderTargetCoas(); renderObjects(); }
 
     function renderTasks() {
         var host = $('mavenTaskList');
         if (!host) return;
+        var nameIn = $('mavenTaskName');
+        var keepName = nameIn ? nameIn.value : '';
+        var keepFocus = document.activeElement === nameIn;
+        var keepCaret = (keepFocus && nameIn.selectionStart != null) ? nameIn.selectionStart : null;
+        var priIn = $('mavenTaskPri');
+        var keepPri = priIn ? priIn.value : '';
         var html = '';
         if (S.pending) html += taskForm();
         if (!S.state.tasks.length && !S.pending)
@@ -17933,12 +18223,46 @@ function renderFusionRealLayer() {
                 '<button class="no" data-delt="' + esc(t.id) + '">\u2715 DEL</button></div>';
             html += '</div>';
         });
-        host.innerHTML = html;
+        setHtml(host, html);
+        if (keepName || keepFocus) {
+            var inp = $('mavenTaskName');
+            if (inp) {
+                if (keepName) inp.value = keepName;
+                if (keepFocus && inp.setSelectionRange) {
+                    inp.focus();
+                    try { inp.setSelectionRange(keepCaret, keepCaret); } catch (e) {}
+                }
+            }
+        }
+        if (keepPri) {
+            var ps = $('mavenTaskPri');
+            if (ps) ps.value = keepPri;
+        }
+        if (!S.pending) {
+            var last = null;
+            try { last = JSON.parse(localStorage.getItem('mvLastMission') || 'null'); } catch (e) {}
+            if (last && last.lat != null) {
+                html += '<div class="maven-row"><b>LAST MISSION</b>' +
+                    '<br><span class="mv-sub">' + esc(last.name || '') + ' @ ' +
+                    Number(last.lat).toFixed(3) + 'N ' + Number(last.lng).toFixed(3) + 'E \u00b7 r=' + esc(last.radius) + 'km</span>' +
+                    '<div class="maven-det-actions"><button class="yes" id="mavenRerunBtn">RE-RUN</button></div></div>';
+            }
+        }
         host.querySelectorAll('[data-dispatch]').forEach(function (btn) {
             btn.onclick = function () {
                 dispatch(btn.getAttribute('data-dispatch'), btn.getAttribute('data-cls'));
             };
         });
+        var rer = $('mavenRerunBtn');
+        if (rer) rer.onclick = async function () {
+            var last = null;
+            try { last = JSON.parse(localStorage.getItem('mvLastMission') || 'null'); } catch (e) {}
+            if (!last || last.lat == null) return;
+            S.pending = { lat: Number(last.lat), lng: Number(last.lng), bname: last.bname || '', bheight: null };
+            S.aoiRadius = Number(last.radius) || 1;
+            renderTasks();
+            await submitPending();
+        };
         host.querySelectorAll('[data-tfly]').forEach(function (btn) {
             btn.onclick = function () {
                 var t = S.state.tasks.filter(function (x) { return x.id === btn.getAttribute('data-tfly'); })[0];
@@ -17961,7 +18285,7 @@ function renderFusionRealLayer() {
         if (mkBtn) mkBtn.onclick = submitPending;
         host.querySelectorAll('[data-rad]').forEach(function (b) {
             b.onclick = function () {
-                S.aoiRadius = parseInt(b.getAttribute('data-rad'), 10);
+                S.aoiRadius = parseFloat(b.getAttribute('data-rad')) || S.aoiRadius;
                 host.querySelectorAll('[data-rad]').forEach(function (x) { x.classList.remove('active'); });
                 b.classList.add('active');
             };
@@ -17976,17 +18300,27 @@ function renderFusionRealLayer() {
     }
     function taskForm() {
         var p = S.pending || {};
-        return '<div class="maven-form maven-row"><b>NEW TASK @ ' + Number(p.lat || 0).toFixed(3) + 'N ' + Number(p.lng || 0).toFixed(3) + 'E</b>' +
-            '<input type="text" id="mavenTaskName" placeholder="TASK NAME" maxlength="60">' +
-            '<select id="mavenTaskPri"><option value="low">PRIORITY LOW</option>' +
-            '<option value="medium" selected>PRIORITY MEDIUM</option><option value="high">PRIORITY HIGH</option></select>' +
-            '<div class="maven-radius">' + [10, 25, 50].map(function (r) {
-                return '<button data-rad="' + r + '"' + (r === S.aoiRadius ? ' class="active"' : '') + '>' + r + ' km</button>';
-            }).join('') + '</div>' +
-            '<div class="maven-radios">' +
-            '<label data-ac="uas"' + (S.assetClass === 'uas' ? ' class="sel"' : '') +'>\u25B3 UAS</label>' +
-            '<label data-ac="usv"' + (S.assetClass === 'usv' ? ' class="sel"' : '') +'>\u25CB USV</label></div>' +
-            '<button class="maven-btn" id="mavenMakeTask">\u2713 CREATE + DISPATCH</button></div>';
+        var locked = !!S.pending;
+        var coords = Number(p.lat || 0).toFixed(4) + 'N ' + Number(p.lng || 0).toFixed(4) + 'E';
+        var where = locked ? (p.bname ? esc(p.bname).toUpperCase() : coords) : '&#8212;';
+        var radii = [0.5, 1, 2, 10, 25, 50].map(function (r) {
+            var lbl = r < 1 ? Math.round(r * 1000) + ' m' : r + ' km';
+            return '<button data-rad="' + r + '"' + (r === S.aoiRadius ? ' class="active"' : '') + '>' + lbl + '</button>';
+        }).join('');
+        return '<div class="maven-form maven-row">' +
+            '<b>TASK LAUNCHER</b>' +
+            '<div class="mv-step"><span class="maven-rank">1</span><span>TARGET <b>' + where + '</b></span>' +
+            (locked && p.bname ? '<br><span class="mv-sub">building \u00b7 ' + coords + '</span>'
+                : (locked ? '<br><span class="mv-sub">map point ' + coords + '</span>' : '')) +
+            '</div>' +
+            '<div class="mv-step"><span class="maven-rank">2</span>' +
+            '<input type="text" id="mavenTaskName" placeholder="MISSION NAME (optional)" maxlength="60">' +
+            '<select id="mavenTaskPri"><option value="low">LOW</option><option value="medium" selected>MEDIUM</option><option value="high">HIGH</option></select>' +
+            '<div class="maven-radius">' + radii + '</div></div>' +
+            '<div class="mv-step"><span class="maven-rank">3</span>' +
+            '<button id="mavenMakeTask" class="maven-btn"' + (locked ? '' : ' disabled') + '>CREATE + DISPATCH</button></div>' +
+            (!locked ? '<span class="mv-sub">press PICK TARGET ON MAP above, then click a building</span>' : '') +
+            '</div>';
     }
     async function submitPending() {
         if (!S.pending) return;
@@ -18003,8 +18337,11 @@ function renderFusionRealLayer() {
             });
         } catch (e) {}
         var theater = region === 'Baltic' ? 'Baltic Guardian' : (region === 'Global' ? 'Global Commons' : region + ' Theater');
-        if (!name) name = (region.replace(/[^A-Za-z]/g, '').slice(0, 6).toUpperCase() || 'TASK') +
-            '-' + Date.now().toString(36).toUpperCase().slice(-5);
+        if (!name) {
+            var slug = String(S.pending.bname || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 8).toUpperCase();
+            name = (slug || region.replace(/[^A-Za-z]/g, '').slice(0, 6).toUpperCase() || 'TASK') +
+                '-' + Date.now().toString(36).toUpperCase().slice(-5);
+        }
         try {
             var t = await api('/maven/task', { method: 'POST', body: JSON.stringify({
                 name: name,
@@ -18014,6 +18351,12 @@ function renderFusionRealLayer() {
             })});
             await dispatch(t.task_id, S.assetClass);
             try { toast('MAVEN task created \u00b7 ' + theater, 'success'); } catch (_) {}
+            try {
+                localStorage.setItem('mvLastMission', JSON.stringify({
+                    name: name, lat: S.pending.lat, lng: S.pending.lng,
+                    bname: S.pending.bname || '', radius: S.aoiRadius, pri: pri
+                }));
+            } catch (e) {}
             S.pending = null;
             exitAoiMode();
             refresh();
@@ -18029,7 +18372,7 @@ function renderFusionRealLayer() {
     function renderAssets() {
         var host = $('mavenAssetList');
         if (!host) return;
-        if (!S.state.assets.length) { host.innerHTML = '<div class="maven-empty">NO ASSETS AIRBORNE</div>'; return; }
+        if (!S.state.assets.length) { setHtml(host, '<div class="maven-empty">NO ASSETS AIRBORNE</div>'); return; }
         host.innerHTML = S.state.assets.map(function (a, i) {
             var glyph = a.asset_class === 'uas' ? '\u25B3' : '\u25CB';
             var sim = a.speedup && a.speedup !== 1 ? ' \u00b7 SIM\u00d7' + Math.round(a.speedup) : '';
@@ -18058,54 +18401,164 @@ function renderFusionRealLayer() {
             };
         });
     }
-    function renderCoas() {
+    function renderTargetCoas() {
+        var tgtHost = $('mavenCoaTargets');
         var host = $('mavenCoaList');
-        if (!host) return;
-        if (!S.state.coas.length) { host.innerHTML = '<div class="maven-empty">NO COAs<br>GENERATE runs 3 real campaign sims</div>'; return; }
-        var sorted = S.state.coas.slice().sort(function (a, b) { return (a.overall || 0) - (b.overall || 0); });
-        host.innerHTML = sorted.map(function (c, i) {
-            var rank = sorted.length - i;
-            return '<div class="maven-row"><span class="maven-rank">#' + rank + '</span><b>' + esc(c.title) + '</b>' +
-                '<br><span class="mv-sub">' + esc(c.summary) + '</span>' +
-                '<div class="maven-coa-bars">' +
-                bar('RISK', c.risk_score) + bar('LOG', c.logistics_score) + bar('TIME', c.time_score) + '</div>' +
-                '<span class="mv-sub">RED ' + esc(c.red_win_pct) + '% \u00b7 BLUE ' + esc(c.blue_win_pct) + '% \u00b7 STALE ' + esc(c.stalemate_pct) + '%' +
-                ' \u00b7 ' + esc(c.scenarios_run) + ' runs \u00b7 sim ' + esc(c.sim_ref) + '</span></div>';
-        }).join('');
-    }
-    function bar(label, v) {
-        v = Math.max(0, Math.min(100, Number(v) || 0));
-        return '<div class="maven-bar"><span>' + label + '</span><i style="--w:' + v + '%"></i><span>' + Math.round(v) + '</span></div>';
-    }
-    function renderQueue() {
-        var host = $('mavenQueueList');
-        if (!host) return;
-        var flights = (typeof fusionFlights !== 'undefined' && Array.isArray(fusionFlights)) ? fusionFlights : [];
-        var rows = flights.map(function (f) {
-            var p = f.properties || f;
-            var mil = (p.category === 'military') ? 50 : 0;
-            var spd = Number(p.speed_knots || 0), alt = Number(p.alt || 0);
-            var score = mil + (spd >= 430 ? 30 : 0) + (alt >= 8500 ? 20 : 0) + Math.min(19, spd / 100);
-            return { p: p, score: score };
-        }).filter(function (r) { return r.score >= 30 && r.p.lat != null; })
-          .sort(function (a, b) { return b.score - a.score; }).slice(0, 8);
-        if (!rows.length) { host.innerHTML = '<div class="maven-empty">NO HIGH-INTEREST TRACKS IN SCOPE</div>'; return; }
-        host.innerHTML = rows.map(function (r, i) {
-            return '<div class="maven-row"><b>#' + (i + 1) + ' ' + esc(r.p.callsign || r.p.icao24 || '?') + '</b>' +
-                '<span class="maven-chip ' + (r.p.category === 'military' ? 'high' : 'low') + '">' + esc(String(r.p.category || '').toUpperCase()) + '</span>' +
-                '<br><span class="mv-sub">' + Math.round(Number(r.p.speed_knots) || 0) + ' kt \u00b7 ' +
-                (r.p.lat != null ? Number(r.p.lat).toFixed(2) + 'N ' + Number(r.p.lng).toFixed(2) + 'E' : '') + '</span>' +
-                '<div class="maven-det-actions"><button class="yes" data-qtask="' + i + '">+ TASK THIS TRACK</button></div></div>';
-        }).join('');
-        host.querySelectorAll('[data-qtask]').forEach(function (btn) {
-            btn.onclick = function () {
-                var r = rows[parseInt(btn.getAttribute('data-qtask'), 10)];
-                enterAoiMode();
-                S.pending = { lat: r.p.lat, lng: r.p.lng };
-                selectTab('tasks');
-                renderTasks();
+        if (!host && !tgtHost) return;
+        var tcoas = S.state.target_coas || [];
+        if (tgtHost) {
+            var has = {};
+            tcoas.forEach(function (c) { has[c.detection_id] = 1; });
+            var tgts = (S.state.detections || []).filter(function (d) {
+                return d.validated === true && !has[d.id];
+            }).slice(0, 6);
+            var thtml = tgts.length ? '' :
+                '<div class="maven-empty">NO UNHANDLED CONFIRMED CONTACTS</div>';
+            tgts.forEach(function (d) {
+                thtml += '<div class="maven-row"><b>' + esc(d.label || '?') + '</b>' +
+                    '<span class="maven-chip ' + esc(d.det_class === 'military-air' ? 'high' : 'low') + '">' + esc(d.det_class) + '</span>' +
+                    '<span class="maven-chip ok">CONFIRMED</span>' +
+                    '<div class="maven-det-actions"><button class="yes" data-tcoagen="' + esc(d.id) + '">GENERATE COA</button></div></div>';
+            });
+            setHtml(tgtHost, thtml);
+            tgtHost.querySelectorAll('[data-tcoagen]').forEach(function (btn) {
+                btn.onclick = async function () {
+                    btn.disabled = true;
+                    btn.textContent = 'ANALYZING\u2026';
+                    try {
+                        await api('/maven/coa/target/generate', { method: 'POST',
+                            body: JSON.stringify({ detection_id: btn.getAttribute('data-tcoagen') }) });
+                        try { toast('COA generated', 'success'); } catch (_) {}
+                    } catch (e) { mErr(e); }
+                    refresh();
+                };
+            });
+        }
+        var html = tcoas.length ? '' : '';
+        tcoas.forEach(function (c) {
+            var opts = (c.options || []).slice().sort(function (a, b) { return b.score - a.score; });
+            html += '<div class="maven-row"><b>COA \u00b7 ' + esc(c.label || '?') + '</b>' +
+                '<span class="maven-chip ' + esc(c.det_class === 'military-air' ? 'high' : 'low') + '">' + esc(c.det_class || '') + '</span>' +
+                (c.status === 'executed' ? '<span class="maven-chip ok">EXECUTED: ' + esc((c.executed_option || '').toUpperCase()) + '</span>' : '<span class="maven-chip medium">PROPOSED</span>') + '</div>';
+            opts.forEach(function (o) {
+                html += '<div style="margin:4px 0 8px;padding:5px 7px;border:1px solid var(--border-color);border-radius:4px">' +
+                    '<b>' + esc(o.title) + '</b> <span style="opacity:.7">\u00b7 score ' + esc(o.score) + '</span>' +
+                    (o.feasible ? '' : ' <span class="mv-sub">\u00b7 INFEASIBLE</span>') +
+                    '<br><span class="mv-sub">' + esc(o.summary) + '</span>' +
+                    (o.checks || []).map(function (ck) {
+                        return '<div style="font-size:9px;opacity:.85">' + (ck.ok ? '\u2713' : '\u2717') + ' ' +
+                            esc(ck.name) + ' \u2014 <span style="opacity:.75">' + esc(ck.detail) + '</span></div>';
+                    }).join('') +
+                    ((c.status !== 'executed' && o.feasible)
+                        ? '<div class="maven-det-actions"><button class="yes" data-coaex="' + esc(c.id) + '" data-opt="' + esc(o.key) + '">EXECUTE</button></div>'
+                        : '') +
+                    '</div>';
+            });
+        });
+        setHtml(host, html);
+        host.querySelectorAll('[data-coaex]').forEach(function (btn) {
+            btn.onclick = async function () {
+                btn.disabled = true;
+                try {
+                    await api('/maven/coa/target/' + btn.getAttribute('data-coaex') + '/execute', { method: 'POST',
+                        body: JSON.stringify({ option: btn.getAttribute('data-opt') }) });
+                    try { toast('COA executed', 'success'); } catch (_) {}
+                } catch (e) { mErr(e); }
+                refresh();
             };
         });
+    }
+    function renderObjects() {
+        var form = $('mavenObjForm');
+        var host = $('mavenObjList');
+        if (!host) return;
+        if (form) {
+            if (S.pendingObj) {
+                var p = S.pendingObj;
+                var pc = Number(p.lat || 0).toFixed(5) + 'N ' + Number(p.lng || 0).toFixed(5) + 'E';
+                var fhtml = '<div class="maven-form maven-row"><b>REGISTER OBJECT</b>' +
+                    '<input type="text" id="mavenObjName" placeholder="OBJECT NAME" maxlength="60" value="' + esc(p.name || '') + '">' +
+                    '<span class="mv-sub">' + pc + (p.height ? ' \u00b7 h\u2248' + Math.round(p.height) + 'm' : '') +
+                    (p.footprint ? ' \u00b7 footprint locked' : ' \u00b7 point object') + '</span>' +
+                    '<button class="maven-btn" id="mavenObjSave">\u2713 REGISTER OBJECT</button>' +
+                    '<button class="maven-btn" id="mavenObjCancel">\u2715 DISCARD</button></div>';
+                if (form.__mvLast !== fhtml) {
+                    form.__mvLast = fhtml;
+                    form.innerHTML = fhtml;
+                    $('mavenObjSave').onclick = submitObject;
+                    $('mavenObjCancel').onclick = function () { S.pendingObj = null; renderObjects(); };
+                }
+            } else if (form.__mvLast !== '') {
+                form.__mvLast = '';
+                form.innerHTML = '';
+            }
+        }
+        var objs = S.state.objects || [];
+        var listHtml = objs.length ? '' :
+            '<div class="maven-empty">NO OBJECTS<br>+ REGISTER OBJECT: hover a building, click it, name it</div>';
+        objs.forEach(function (o, i) {
+            listHtml += '<div class="maven-row"><b>' + esc(o.name || 'unnamed') + '</b>' +
+                '<br><span class="mv-sub">' + Number(o.lat).toFixed(4) + 'N ' + Number(o.lng).toFixed(4) + 'E' +
+                (o.height_m ? ' \u00b7 h\u2248' + Math.round(o.height_m) + 'm' : '') +
+                ' \u00b7 ' + esc(o.registered_by || '') + '</span>' +
+                '<div class="maven-det-actions">' +
+                '<button class="mut" data-ofly="' + i + '">\u2316 FLY</button>' +
+                '<button class="mut" data-oren="' + esc(o.id) + '">RENAME</button>' +
+                '<button class="no" data-odel="' + esc(o.id) + '">\u2715 DEL</button></div></div>';
+        });
+        setHtml(host, listHtml);
+        host.querySelectorAll('[data-ofly]').forEach(function (btn) {
+            btn.onclick = function () {
+                var o = (S.state.objects || [])[parseInt(btn.getAttribute('data-ofly'), 10)];
+                var m = getMap();
+                if (!o || !m) return;
+                try {
+                    m.flyTo({ center: [Number(o.lng), Number(o.lat)], zoom: 16.5,
+                        pitch: 60, bearing: -10, duration: 1800 });
+                } catch (e) {}
+            };
+        });
+        host.querySelectorAll('[data-oren]').forEach(function (btn) {
+            btn.onclick = async function () {
+                var nid = window.prompt('New object name:');
+                if (!nid || !nid.trim()) return;
+                btn.disabled = true;
+                try {
+                    await api('/maven/object/' + btn.getAttribute('data-oren') + '/rename',
+                        { method: 'POST', body: JSON.stringify({ name: nid.trim() }) });
+                    try { toast('MAVEN object renamed', 'success'); } catch (_) {}
+                } catch (e) { mErr(e); }
+                refresh();
+            };
+        });
+        host.querySelectorAll('[data-odel]').forEach(function (btn) {
+            btn.onclick = async function () {
+                if (!window.confirm('Delete this object?')) return;
+                btn.disabled = true;
+                try {
+                    await api('/maven/object/' + btn.getAttribute('data-odel'), { method: 'DELETE' });
+                    try { toast('MAVEN object deleted', 'success'); } catch (_) {}
+                } catch (e) { mErr(e); }
+                refresh();
+            };
+        });
+    }
+    async function submitObject() {
+        if (!S.pendingObj) return;
+        var inp = $('mavenObjName');
+        var name = ((inp && inp.value) || '').trim();
+        if (!name) name = ((S.pendingObj.name || 'OBJ').replace(/[^A-Za-z0-9 ]/g, '').trim().split(' ')[0] || 'OBJ') +
+            '-' + Date.now().toString(36).toUpperCase().slice(-4);
+        var p = S.pendingObj;
+        try {
+            await api('/maven/object', { method: 'POST', body: JSON.stringify({
+                name: name, lat: p.lat, lng: p.lng, height_m: p.height,
+                footprint: (p.footprint && p.footprint.coordinates) ? p.footprint.coordinates : null
+            })});
+            try { toast('MAVEN object registered', 'success'); } catch (_) {}
+            S.pendingObj = null;
+            refresh();
+        } catch (e) { mErr(e); }
     }
     function renderDetRail(force) {
         var rail = $('mavenDetRail');
@@ -18113,10 +18566,10 @@ function renderFusionRealLayer() {
         var pending = S.state.detections.filter(function (d) { return d.validated === null || typeof d.validated === 'undefined'; })
             .slice(0, 6);
         if (force && !pending.length) {
-            rail.innerHTML = '';
+            setHtml(rail, '');
             return;
         }
-        rail.innerHTML = pending.length
+        setHtml(rail, pending.length
             ? '<div style="padding:6px 8px;border-top:1px solid var(--border-color)"><b>VALIDATE DETECTIONS</b></div>' +
               pending.map(function (d) {
                   return '<div class="maven-row" style="margin:6px 8px"><b>' + esc(d.label) + '</b> ' +
@@ -18126,7 +18579,7 @@ function renderFusionRealLayer() {
                       '<button class="yes" data-val="' + esc(d.id) + '" data-v="true">CONFIRM</button>' +
                       '<button class="no" data-val="' + esc(d.id) + '" data-v="false">REJECT</button></div></div>';
               }).join('')
-            : '';
+            : '');
         rail.querySelectorAll('[data-val]').forEach(function (b) {
             b.onclick = async function () {
                 try {
@@ -18139,17 +18592,73 @@ function renderFusionRealLayer() {
     }
 
     /* -------------------------------------------------- aoi interaction ---- */
+    var HINT_AOI = 'CLICK A BUILDING OR MAP POINT TO SET TARGET \u00b7 ESC CANCELS';
+    var HINT_OBJ = 'HOVER A BUILDING \u00b7 CLICK TO REGISTER IT \u00b7 ESC CANCELS';
+    function setHint(text) {
+        var h = $('mavenAoiHint');
+        if (h) { h.textContent = text; h.classList.remove('maven-hidden'); }
+    }
+    function hideHint() {
+        var h = $('mavenAoiHint');
+        if (h) h.classList.add('maven-hidden');
+    }
+    function drawerSlide(out) {
+        var d = $('mavenDrawer');
+        if (d && S.open) d.classList.toggle('maven-slide', !!out);
+    }
     function enterAoiMode() {
         S.aoiMode = true;
+        exitObjMode(true);
+        drawerSlide(true);
         var wrap = document.querySelector('.sc-map-canvas-wrap');
         if (wrap) wrap.classList.add('maven-crosshair');
-        $('mavenAoiHint').classList.remove('maven-hidden');
+        var m = getMap();
+        if (m) {
+            try { m.doubleClickZoom.disable(); } catch (e) {}
+            try { m.dragPan.enable(); } catch (e) {}
+        }
+        setHint(HINT_AOI);
     }
     function exitAoiMode() {
         S.aoiMode = false;
         var wrap = document.querySelector('.sc-map-canvas-wrap');
         if (wrap) wrap.classList.remove('maven-crosshair');
-        $('mavenAoiHint').classList.add('maven-hidden');
+        var m = getMap();
+        if (m) {
+            try { m.doubleClickZoom.enable(); } catch (e) {}
+            try { m.dragPan.enable(); } catch (e) {}
+        }
+        hideHint();
+        drawerSlide(false);
+    }
+    function enterObjMode() {
+        S.objMode = true;
+        exitAoiMode(true);
+        drawerSlide(true);
+        var wrap = document.querySelector('.sc-map-canvas-wrap');
+        if (wrap) wrap.classList.add('maven-crosshair');
+        var m = getMap();
+        if (m) {
+            try { m.doubleClickZoom.disable(); } catch (e) {}
+            try { m.dragPan.enable(); } catch (e) {}
+        }
+        setHint(HINT_OBJ);
+        var b = $('mavenRegObjBtn');
+        if (b) b.textContent = 'CANCEL REGISTRATION';
+    }
+    function exitObjMode(keepOther) {
+        S.objMode = false;
+        setGhost(null);
+        if (!keepOther) hideHint();
+        var wrap = document.querySelector('.sc-map-canvas-wrap');
+        if (wrap && !S.aoiMode) wrap.classList.remove('maven-crosshair');
+        var m = getMap();
+        if (m && !S.aoiMode) {
+            try { m.doubleClickZoom.enable(); } catch (e) {}
+        }
+        var b = $('mavenRegObjBtn');
+        if (b) b.textContent = '+ REGISTER OBJECT';
+        drawerSlide(false);
     }
     function selectTab(name) {
         document.querySelectorAll('.maven-tabs button').forEach(function (b) {
@@ -18165,6 +18674,8 @@ function renderFusionRealLayer() {
         S.open = !S.open;
         $('mavenDrawer').classList.toggle('maven-hidden', !S.open);
         $('mavenToggleBtn').classList.toggle('retro-map-btn-active', S.open);
+        var wrap = document.querySelector('.sc-map-canvas-wrap');
+        if (wrap) wrap.classList.toggle('maven-open', S.open);
         if (S.open) { startPolling(); } else { stopPolling(); }
     }
     function wireOnce() {
@@ -18178,51 +18689,90 @@ function renderFusionRealLayer() {
             if (!S.aoiMode) { enterAoiMode(); }
             else { exitAoiMode(); S.pending = null; renderTasks(); }
         };
-        // COA controls: theater select grows with the region scope presets.
-        var sel = $('mavenCoaTheater');
-        if (sel && typeof SC_REGION_BBOXES !== 'undefined') {
-            var have = {};
-            Array.prototype.forEach.call(sel.options, function (o) { have[o.value] = 1; });
-            Object.keys(SC_REGION_BBOXES).forEach(function (k) {
-                var v = (k === 'Baltic') ? 'Baltic Guardian' : (k + ' Theater');
-                if (have[v]) return;
-                have[v] = 1;
-                var o = document.createElement('option');
-                o.value = v; o.textContent = k.toUpperCase() + ' THEATER';
-                sel.appendChild(o);
-            });
-        }
-        $('mavenCoaBtn').onclick = async function () {
-            var btn = $('mavenCoaBtn');
-            var theater = ($('mavenCoaTheater') || {}).value || 'Baltic Guardian';
-            var scen = parseInt(($('mavenCoaScen') || {}).value, 10);
-            if (!isFinite(scen)) scen = 300;
-            scen = Math.max(50, Math.min(1000, scen));
-            btn.disabled = true;
-            btn.textContent = 'RUNNING CAMPAIGN SIMS\u2026';
-            try {
-                await api('/maven/coa/generate', { method: 'POST',
-                    body: JSON.stringify({ theater: theater, scenarios: scen, seed: 42 }) });
-                try { toast('COAs generated \u00b7 ' + theater + ' \u00b7 ' + scen + ' scenarios', 'success'); } catch (_) {}
-                refresh();
-            } catch (e) { mErr(e); }
-            btn.disabled = false;
-            btn.textContent = 'GENERATE COAs';
+        var regBtn = $('mavenRegObjBtn');
+        if (regBtn) regBtn.onclick = function () {
+            if (S.objMode) { exitObjMode(); S.pendingObj = null; renderObjects(); }
+            else { enterObjMode(); }
         };
         var m = getMap();
         if (m) { S.wiredMap = m; wireMapClicks(m); }
+        wireProbe();
+        var ovlBtn = $('mavenOvlBtn');
+        if (ovlBtn) ovlBtn.onclick = function () { setOverlays(!S.overlays); };
         document.addEventListener('keydown', function (ev) {
-            if (ev.key === 'Escape' && S.aoiMode) { exitAoiMode(); S.pending = null; renderTasks(); }
+            if (ev.key !== 'Escape') return;
+            if (S.objMode) { exitObjMode(); S.pendingObj = null; renderObjects(); }
+            else if (S.aoiMode) { exitAoiMode(); S.pending = null; renderTasks(); }
         });
     }
     function wireMapClicks(m) {
         // AOI placement: bound per map instance so a swap/re-init never
         // silently strands the handler on a dead object.
         m.on('click', function (e) {
+            if (S.objMode) {
+                var b = pickBuildingAt(m, e.point);
+                S.pendingObj = {
+                    lat: b && b.lat != null ? b.lat : e.lngLat.lat,
+                    lng: b && b.lng != null ? b.lng : e.lngLat.lng,
+                    name: b ? b.name : '',
+                    height: b ? b.height : null,
+                    footprint: b ? b.footprint : null
+                };
+                setGhost(null);
+                exitObjMode();
+                selectTab('objects');
+                renderObjects();
+                var ob = document.querySelector('.maven-body');
+                if (ob) ob.scrollTop = 0;
+                return;
+            }
             if (!S.aoiMode) return;
-            S.pending = { lat: e.lngLat.lat, lng: e.lngLat.lng };
+            var bld = pickBuildingAt(m, e.point);
+            var lat = (bld && bld.lat != null) ? bld.lat : e.lngLat.lat;
+            var lng = (bld && bld.lng != null) ? bld.lng : e.lngLat.lng;
+            if (bld && bld.name) S.aoiRadius = 1;
+            S.pending = {
+                lat: lat, lng: lng,
+                bname: (bld && bld.name) || '',
+                bheight: bld ? bld.height : null
+            };
+            exitAoiMode();
             selectTab('tasks');
             renderTasks();
+            var body = document.querySelector('.maven-body');
+            if (body) body.scrollTop = 0;
+        });
+        var lastMM = 0;
+        m.on('mousemove', function (ev) {
+            if (!S.open) return;
+            var now = Date.now();
+            if (now - lastMM < 70) return;
+            lastMM = now;
+            if (S.objMode) {
+                var hb = pickBuildingAt(m, ev.point);
+                setGhost(hb ? hb.footprint : null, hb ? hb.height : null);
+                return;
+            }
+            var fs = null;
+            try { fs = m.queryRenderedFeatures(ev.point, { layers: ['maven-objs-fill'] }); } catch (err) {}
+            var nid = (fs && fs.length) ? fs[0].id : null;
+            if (nid !== S._hovId) {
+                if (S._hovId != null) {
+                    try { m.setFeatureState({ source: 'maven-objs', id: S._hovId }, { hover: false }); } catch (e) {}
+                }
+                S._hovId = nid;
+                if (nid != null) {
+                    try { m.setFeatureState({ source: 'maven-objs', id: nid }, { hover: true }); } catch (e) {}
+                }
+                try { m.getCanvas().style.cursor = nid != null ? 'pointer' : ''; } catch (e) {}
+            }
+        });
+        m.on('mouseout', function () {
+            setGhost(null);
+            if (S._hovId != null) {
+                try { m.setFeatureState({ source: 'maven-objs', id: S._hovId }, { hover: false }); } catch (e) {}
+                S._hovId = null;
+            }
         });
     }
     function boot(tries) {
@@ -18248,6 +18798,8 @@ function renderFusionRealLayer() {
     if (document.readyState === 'loading')
         document.addEventListener('DOMContentLoaded', function () { setTimeout(boot, 400); });
     else setTimeout(boot, 400);
+    window.__mavenRefresh = function () { try { refresh(); } catch (e) {} };
+    window.__mavenOpen = function () { if (!S.open) toggleDrawer(); };
 })();
 </script>
 
@@ -18491,6 +19043,22 @@ function renderProposal(entry){
 async function send(text){
   text=(text||'').trim();if(!text||busy)return;busy=true;sendBtn.disabled=true;
   bubble('yono-msg-user',text);
+  if(/^(maven[:\s]|\/maven\b)/i.test(text)){
+    const cmd=text.replace(/^\/?maven[:\s]*/i,'');
+    const t2=document.createElement('div');t2.className='yono-typing';t2.textContent='maven executing…';
+    body.appendChild(t2);body.scrollTop=body.scrollHeight;
+    try{
+      const r=await apiCall('/maven/command',{method:'POST',body:JSON.stringify({text:cmd}),timeout:30000});
+      t2.remove();
+      botHtml('<b style="color:#DFF140">MAVEN ▸</b>\n'+mdLite(r.reply||'done'));
+      if(r.directive&&applyDirective(r.directive)){
+        const c=document.createElement('span');c.className='yono-chip map';c.textContent='map: '+r.directive.op;
+        body.appendChild(c);
+      }
+      if(typeof window.__mavenRefresh==='function')window.__mavenRefresh();
+    }catch(e){t2.remove();botHtml('❌ MAVEN: '+esc(e.message));}
+    busy=false;sendBtn.disabled=false;input.focus();return;
+  }
   const typing=document.createElement('div');typing.className='yono-typing';
   const t0=Date.now();typing.textContent='consulting ontology · 0s';body.appendChild(typing);body.scrollTop=body.scrollHeight;
   let tickOn=true;const tick=setInterval(function(){if(tickOn)typing.textContent='consulting ontology · '+Math.round((Date.now()-t0)/1000)+'s';},1000);

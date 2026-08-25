@@ -134,6 +134,10 @@ SELECT ?item ?itemLabel ?birth ?death ?sitelinks ?p373 WHERE {
   FILTER(?birth >= "%(birth_min)d-01-01T00:00:00Z"^^xsd:dateTime)
   ?item wikibase:sitelinks ?sitelinks .
   FILTER(?sitelinks >= %(min_sitelinks)d)
+  OPTIONAL {
+    ?item rdfs:label ?itemLabel .
+    FILTER(LANG(?itemLabel) = "en")
+  }
   OPTIONAL { ?item wdt:P373 ?p373 . }
 }
 """
@@ -145,19 +149,33 @@ SELECT ?sub WHERE { ?sub wdt:P279 wd:%s . }
 SPARQL_CHUNK = 10
 
 
-def http_json(url, params=None, retries=3, timeout=60, backoff=2.0):
-    if params:
-        url = url + "?" + urllib.parse.urlencode(params)
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
+def http_json(url, params=None, retries=3, timeout=60, backoff=2.0,
+              bust_cache=False):
+    if params is None:
+        params = {}
+    if bust_cache:
+        params = dict(params)
+    req_url_base = url
     last_err = None
     for attempt in range(retries):
         try:
+            q = dict(params)
+            if bust_cache:
+                q["cachebust"] = str(time.time_ns())
+            full = req_url_base
+            if q:
+                full = req_url_base + "?" + urllib.parse.urlencode(q)
+            req = urllib.request.Request(full,
+                                         headers={"User-Agent": UA})
+            raw = b""
             with urllib.request.urlopen(req, timeout=timeout) as resp:
-                return json.loads(resp.read().decode("utf-8"))
-        except Exception as exc:  # noqa: BLE001 - retry any transport error
+                raw = resp.read()
+            return json.loads(raw.decode("utf-8"))
+        except Exception as exc:  # noqa: BLE001 - retry transport+parse errors
             last_err = exc
             time.sleep(backoff * (attempt + 1))
-    raise RuntimeError(f"HTTP failed after {retries} tries: {url}: {last_err}")
+    raise RuntimeError(f"HTTP failed after {retries} tries: "
+                       f"{req_url_base}: {last_err}")
 
 
 def get_occupation_qids():
@@ -195,7 +213,8 @@ def run_sparql():
         try:
             data = http_json(SPARQL_ENDPOINT,
                              {"query": query, "format": "json"},
-                             retries=5, timeout=180, backoff=30)
+                             retries=7, timeout=180, backoff=20,
+                             bust_cache=True)
             rows.extend(data.get("results", {}).get("bindings", []))
         except RuntimeError as exc:
             print(f"      WARN chunk {start // SPARQL_CHUNK} failed: "
@@ -224,6 +243,7 @@ def build_candidates(rows):
         qid = row["item"]["value"].rsplit("/", 1)[-1]
         painters.setdefault(qid, {
             "qid": qid,
+            "label_hint": row.get("itemLabel", {}).get("value"),
             "born": year_of(row["birth"]["value"]),
             "died": year_of(row["death"]["value"]),
             "sitelinks": int(row["sitelinks"]["value"]),
@@ -239,7 +259,7 @@ def build_candidates(rows):
             data = http_json(
                 "https://www.wikidata.org/w/api.php",
                 {"action": "wbgetentities", "ids": "|".join(batch),
-                 "props": "labels|claims", "languages": "en",
+                 "props": "labels|aliases|claims", "languages": "en",
                  "format": "json"}, timeout=90)
         except RuntimeError as exc:
             print(f"      WARN label batch lost: {exc.__class__.__name__}")
@@ -248,7 +268,14 @@ def build_candidates(rows):
             if qid not in painters:
                 continue
             entry = painters[qid]
-            entry["name"] = entity.get("labels", {}).get("en", {}).get("value")
+            name = entity.get("labels", {}).get("en", {}).get("value")
+            if not name:
+                aliases = [a["value"] for a in
+                           entity.get("aliases", {}).get("en", [])]
+                if aliases:
+                    # prefer the longest alias: real names beat initials
+                    name = max(aliases, key=len)
+            entry["name"] = name or entry.pop("label_hint", None)
             entry["country_qids"] = []
             entry["movement_qids"] = []
             claims = entity.get("claims", {})

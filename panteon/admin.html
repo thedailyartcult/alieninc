@@ -1457,8 +1457,12 @@
            full-width map. No container box: the deck positions, tiles style. */
         .sc-deck {
             position: absolute; top: 10px; left: 10px; z-index: 8;
-            pointer-events: auto;
+            /* click-THROUGH container: the expanded deck box spans a large map
+               area — only the pentagon and the tiles themselves take pointers,
+               so AOI placement and map drags pass through empty comb space. */
+            pointer-events: none;
         }
+        .sc-deck > .hive-pent, .sc-deck > .scope-wing { pointer-events: auto; }
         /* Compact action tiles share the EXACT sc-hud-tile DNA — same band,
            cuts, hover physics and connected-grid neighbor reaction — so the
            whole deck reads as one beehive instead of a separate button row. */
@@ -2593,8 +2597,9 @@
                                                       </details>
                                                       <div id="fusionValidateStatus" style="font-family:var(--font-mono);font-size:10px;min-height:16px;color:var(--text-muted)"></div>
                                                       <div id="fusionRateMeter" class="sc-rate-meter" style="margin-bottom:0"></div>
-                                       </div>
-                                   </div>
+                                        </div>
+                                    </div>
+                               </div><!-- /#fusionDeck — badge/hint/drawer/mil-panel are wrap siblings, NOT deck children -->
 
 
 <div id="mavenHudBadge" class="maven-badge maven-hidden">MAVEN 0T · 0A · 0D</div>
@@ -2692,7 +2697,6 @@
                                           </div>
                                       </div>
                                                                     <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><path id="ac-plane-path" d="M12 2 C12.9 2 13.5 3 13.5 4.3 L13.55 10.2 L21.8 14.7 L21.8 16.1 L13.5 13.7 L13.45 17.7 L17.5 20.3 L17.5 21.3 L13.05 20.5 L12.6 22 L11.4 22 L10.95 20.5 L6.5 21.3 L6.5 20.3 L10.55 17.7 L10.5 13.7 L2.2 16.1 L2.2 14.7 L10.45 10.2 L10.5 4.3 C10.5 3 11.1 2 12 2 Z"/></defs></svg>
-                              </div>
 
 <div class="sc-legend">
                                       <span class="sc-legend-label">LEGEND:</span>
@@ -2896,6 +2900,16 @@
                                   t.addEventListener('mouseleave', function () {
                                       Array.prototype.forEach.call(document.querySelectorAll('.sc-hud-tile.neighbor-active'), function (x) { x.classList.remove('neighbor-active'); });
                                   });
+                              });
+
+                              // panel-opening tools fold the hive back to the
+                              // pentagon as soon as their surface is up — the
+                              // operator never chases a bloomed comb twice
+                              var PANEL_TILES = { maven:1, scope:1, notes:1, gaia:1, theater:1 };
+                              layer.addEventListener('click', function (ev) {
+                                  var el = ev.target && ev.target.closest ? ev.target.closest('[data-tile]') : null;
+                                  if (!el || !PANEL_TILES[el.getAttribute('data-tile')]) return;
+                                  setTimeout(function () { if (state.expanded) setExpanded(false); }, 140);
                               });
 
                               // traffic chips idle until Aircraft engages
@@ -11151,7 +11165,9 @@ document.addEventListener('DOMContentLoaded', () => initCMBReveal());
 
         var storedOpen;
         try { storedOpen = localStorage.getItem(LS_OPEN); } catch (e) {}
-        setOpen(storedOpen !== '0', false); // default open until user closes it
+        setOpen(storedOpen === '1', false); // opt-in: stay closed unless the operator left it open
+        // (defaulting open parked a z-index-1900 fixed panel over the right map
+        //  edge — exactly where the MAVEN drawer lives — making it unclickable.)
 
         // public API
         window.WONote = {
@@ -17527,7 +17543,7 @@ function renderFusionRealLayer() {
     background: color-mix(in srgb, var(--bg-card) 92%, transparent);
     border: 1px solid var(--border-color); border-radius: 6px;
     font-family: var(--font-mono); font-size: 10px; color: var(--text-primary);
-    backdrop-filter: blur(6px); z-index: 30;
+    backdrop-filter: blur(6px); z-index: 50;
 }
 .maven-hidden { display: none !important; }
 .maven-body section.maven-hide { display: none; }

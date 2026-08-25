@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Daily Art Cult — Art Challenge Edition</title>
+<meta name="description" content="Can you identify the painter? The Art Challenge Edition of The Daily Art Cult — the classic master painters collection. Guess 10 in a row.">
+<meta name="keywords" content="guess the painter, art quiz game, identify paintings, art history quiz, art challenge">
+<meta name="author" content="The Daily Art Cult">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="/playart">
+<link rel="icon" type="image/png" href="favicon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The Daily Art Cult">
+<meta property="og:title" content="The Daily Art Cult — Art Challenge Edition">
+<meta property="og:description" content="118 classic masters, thousands of paintings. One artwork. Four painters. Streaks.">
+<meta property="og:url" content="/playart">
+<meta property="og:image" content="/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://art.rubeton.app">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --gold:       #b8913a;
+  --gold-bright:#d4a84e;
+  --gold-dim:   #9a7830;
+  --gold-glow:  rgba(184,145,58,0.1);
+  --correct:    #2a5c3f;
+  --wrong:      #7a1f1f;
+  --bg:         #fafaf7;
+  --bg-mid:     #f4f1eb;
+  --bg-soft:    #eeeae0;
+  --panel:      #ffffff;
+  --panel-mid:  #f9f7f3;
+  --ink:        #111009;
+  --ink-mid:    #2a2720;
+  --cream:      #1a1814;
+  --cream-mid:  #3a3628;
+  --cream-dim:  #7a7060;
+  --border:     rgba(160,130,80,0.18);
+  --border-mid: rgba(160,130,80,0.10);
+  --paint-bg:   #f0ece2;
+  --shadow:     rgba(0,0,0,0.12);
+  --shadow-deep:rgba(0,0,0,0.22);
+  --grain-op:   0.035;
+  --vignette:   rgba(200,190,170,0.08);
+  --crosshatch: rgba(160,130,80,0.04);
+}
+
+[data-theme="dark"] {
+  --bg:         #090806;
+  --bg-mid:     #141210;
+  --bg-soft:    #1e1b16;
+  --panel:      #100f0c;
+  --panel-mid:  #161410;
+  --ink:        #f2ede4;
+  --ink-mid:    #d8d0c0;
+  --cream:      #f2ede4;
+  --cream-mid:  #d8d0c0;
+  --cream-dim:  #8a8070;
+  --border:     rgba(196,160,82,0.16);
+  --border-mid: rgba(196,160,82,0.08);
+  --paint-bg:   #100f0c;
+  --shadow:     rgba(0,0,0,0.5);
+  --shadow-deep:rgba(0,0,0,0.85);
+  --grain-op:   0.032;
+  --vignette:   rgba(6,5,3,0.7);
+  --crosshatch: rgba(196,160,82,0.025);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+html,body{
+  height:100%;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Montserrat',sans-serif;
+  font-weight:300;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+  transition:background .4s ease, color .4s ease;
+}
+
+body::after{
+  content:'';
+  position:fixed;inset:0;z-index:9999;pointer-events:none;
+  opacity:var(--grain-op);
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size:200px 200px;
+}
+
+#pageShell{display:flex;flex-direction:column;height:100vh;}
+
+header{
+  flex-shrink:0;
+  padding:13px 20px 11px;
+  text-align:center;
+  background:var(--panel);
+  position:relative;
+  z-index:10;
+  border-bottom:1px solid var(--border);
+  transition:background .4s ease, border-color .4s ease;
+}
+header::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent 0%,var(--gold-dim) 20%,var(--gold) 50%,var(--gold-dim) 80%,transparent 100%);
+  opacity:.6;
+}
+
+#btnDarkMode{
+  position:fixed;bottom:22px;right:22px;z-index:400;
+  background:var(--panel);border:1px solid var(--border);
+  color:var(--cream-dim);
+  width:32px;height:32px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  transition:border-color .2s,color .2s,background .2s;
+  font-size:.85rem;line-height:1;
+  box-shadow:0 2px 12px var(--shadow);
+}
+#btnDarkMode:hover{border-color:var(--gold);color:var(--gold);}
+@media(max-width:640px){#btnDarkMode{bottom:16px;right:16px;}}
+
+#siteTitle{
+  display:inline-flex;align-items:baseline;
+  gap:.3em;
+  font-family:'Cormorant Garamond',serif;font-weight:300;
+  font-size:clamp(1rem, 4.5vw, 1.7rem);
+  letter-spacing:clamp(.14em, 1.5vw, .44em);
+  text-transform:uppercase;
+  color:var(--ink);cursor:default;user-select:none;
+  transition:color .4s ease;
+}
+#titleSwitcher{position:relative;display:inline-block;cursor:pointer;}
+#wordArt,#wordThought{display:block;transition:opacity .32s ease,transform .32s ease;letter-spacing:inherit;}
+#wordThought{
+  position:absolute;top:0;left:0;white-space:nowrap;
+  opacity:0;transform:translateY(7px);
+  color:var(--gold);pointer-events:none;
+}
+#titleSwitcher::after{
+  content:'';position:absolute;bottom:-3px;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  transform:scaleX(0);transform-origin:left;transition:transform .28s ease;
+}
+#titleSwitcher:hover::after{transform:scaleX(1);}
+#titleSwitcher::before{content:'';position:absolute;bottom:-10px;left:-24px;right:-24px;height:14px;}
+
+#titleDropdown{
+  position:absolute;top:calc(100% + 10px);left:50%;
+  transform:translateX(-50%) translateY(-8px);
+  background:var(--panel-mid);border:1px solid var(--border);
+  min-width:250px;opacity:0;pointer-events:none;
+  transition:opacity .24s ease,transform .24s ease;
+  z-index:200;box-shadow:0 24px 64px var(--shadow-deep);
+}
+#titleDropdown.open{opacity:1;pointer-events:all;transform:translateX(-50%) translateY(0);}
+.title-option{
+  display:block;width:100%;padding:16px 22px;
+  font-family:'Montserrat',sans-serif;font-weight:300;
+  font-size:.46rem;letter-spacing:.3em;text-transform:uppercase;
+  text-align:left;background:none;border:none;cursor:pointer;
+  color:var(--cream-dim);transition:background .15s,color .15s;text-decoration:none;
+}
+.title-option:hover{background:var(--gold-glow);color:var(--ink);}
+.title-option.active-option{color:var(--gold-dim);cursor:default;}
+.title-option .opt-label{display:block;font-size:.36rem;letter-spacing:.18em;color:var(--gold-dim);margin-top:4px;}
+.title-option+.title-option{border-top:1px solid var(--border-mid);}
+
+header p{
+  font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;
+  font-size:.64rem;letter-spacing:.14em;color:var(--gold-dim);margin-top:3px;
+  transition:color .4s ease;
+}
+
+#gameArea{flex:1;display:flex;min-height:0;}
+
+#paintingCol{
+  flex:1 1 62%;position:relative;
+  background:var(--paint-bg);
+  border-right:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;min-width:0;
+  transition:background .4s ease, border-color .4s ease;
+}
+#paintingCol::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at center,transparent 50%,var(--vignette) 100%);
+  pointer-events:none;z-index:3;
+  transition:background .4s ease;
+}
+#paintingCol::before{
+  content:'';position:absolute;inset:0;
+  background-image:
+    linear-gradient(var(--crosshatch) 1px,transparent 1px),
+    linear-gradient(90deg,var(--crosshatch) 1px,transparent 1px);
+  background-size:52px 52px;pointer-events:none;z-index:1;
+}
+#paintingWrap{
+  position:relative;line-height:0;
+  max-width:100%;max-height:100%;z-index:2;
+  filter:drop-shadow(0 8px 48px var(--shadow-deep));
+  transition:filter .5s ease;
+}
+#paintingWrap:hover{
+  filter:drop-shadow(0 14px 64px var(--shadow-deep));
+}
+#paintingCanvas{
+  display:block;max-width:100%;max-height:calc(100vh - 72px);
+  width:auto;height:auto;user-select:none;pointer-events:none;
+  animation:fadeCanvas .9s cubic-bezier(.22,1,.36,1);
+}
+@keyframes fadeCanvas{
+  from{opacity:0;transform:scale(.96) translateY(10px);}
+  to{opacity:1;transform:scale(1) translateY(0);}
+}
+
+#choicesCol{
+  flex:0 0 308px;display:flex;flex-direction:column;
+  background:var(--panel);overflow-y:auto;
+  scrollbar-width:thin;scrollbar-color:var(--gold-dim) transparent;
+  transition:background .4s ease;
+}
+
+#panelPlay{display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto;}
+
+#streakDots{
+  display:flex;justify-content:center;align-items:center;gap:9px;
+  padding:22px 18px 18px;
+  border-bottom:1px solid var(--border-mid);flex-shrink:0;
+}
+.dot{
+  width:5px;height:5px;border-radius:50%;
+  border:1px solid var(--gold-dim);background:transparent;
+  transition:all .38s cubic-bezier(.34,1.56,.64,1);
+}
+.dot.filled{
+  background:var(--gold);border-color:var(--gold-bright);
+  box-shadow:0 0 8px rgba(184,145,58,.55);transform:scale(1.25);
+}
+
+#choicesPrompt{
+  font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;
+  font-size:.78rem;letter-spacing:.1em;
+  color:var(--gold-dim);text-align:center;
+  padding:16px 18px 12px;flex-shrink:0;
+}
+
+#choices{display:flex;flex-direction:column;gap:7px;flex:1;justify-content:center;padding:0 18px;}
+.choice-btn{
+  position:relative;width:100%;
+  padding:15px 14px 15px 48px;
+  border:1px solid var(--border);background:transparent;
+  font-family:'Montserrat',sans-serif;font-weight:300;
+  font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;
+  cursor:pointer;text-align:left;color:var(--cream-mid);
+  transition:border-color .2s,background .2s,color .2s,transform .15s;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.choice-btn .btn-num{
+  position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  font-size:.46rem;letter-spacing:.08em;color:var(--gold-dim);
+}
+.choice-btn:hover:not(:disabled){
+  border-color:var(--gold);background:var(--gold-glow);
+  color:var(--ink);transform:translateX(3px);
+}
+.choice-btn.key-flash{background:var(--gold-glow);border-color:var(--gold);}
+.choice-btn.correct{border-color:var(--correct);background:rgba(42,92,63,.1);color:#2a5c3f;}
+[data-theme="dark"] .choice-btn.correct{color:#90ddb5;}
+.choice-btn.correct .btn-num{color:var(--correct);}
+.choice-btn.wrong{border-color:var(--wrong);background:rgba(122,31,31,.1);color:#7a1f1f;}
+[data-theme="dark"] .choice-btn.wrong{color:#d49090;}
+.choice-btn:disabled{cursor:default;transform:translateX(0);}
+
+#keyHint{
+  flex-shrink:0;text-align:center;margin:12px 18px 0;
+  font-size:.34rem;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--gold-dim);opacity:.65;padding-bottom:4px;
+}
+#keyHint span{
+  display:inline-block;border:1px solid var(--border);
+  padding:2px 6px;margin:0 1px;font-size:.32rem;color:var(--cream-dim);
+}
+
+#dailyThemeDisplay{
+  flex-shrink:0;
+  padding:20px 18px 0;
+  text-align:center;
+  display:none;
+}
+#dailyThemeDisplay.visible{display:block;}
+#dailyThemeDisplay::before{
+  content:'';display:block;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold-dim),transparent);
+  margin-bottom:18px;opacity:.5;
+}
+#themeEyebrow{
+  font-family:'Montserrat',sans-serif;font-weight:300;
+  font-size:.32rem;letter-spacing:.44em;text-transform:uppercase;
+  color:var(--gold-dim);opacity:0;animation:none;
+}
+#themeEyebrow.animate{animation:eyebrowFade 1s .2s ease forwards;}
+@keyframes eyebrowFade{
+  from{opacity:0;letter-spacing:.6em;}
+  to{opacity:1;letter-spacing:.44em;}
+}
+#themeWord{
+  font-family:'Cormorant Garamond',serif;font-weight:300;font-style:italic;
+  font-size:2.1rem;letter-spacing:.08em;
+  color:transparent;
+  background:linear-gradient(135deg,var(--gold-dim) 0%,var(--gold-bright) 45%,var(--gold) 70%,var(--gold-dim) 100%);
+  -webkit-background-clip:text;background-clip:text;
+  display:block;line-height:1.15;
+  opacity:0;animation:none;position:relative;
+}
+#themeWord.animate{animation:wordReveal 1.4s .55s cubic-bezier(.22,1,.36,1) forwards;}
+@keyframes wordReveal{
+  from{opacity:0;transform:translateY(14px) skewY(.8deg);filter:blur(6px);}
+  to{opacity:1;transform:translateY(0) skewY(0deg);filter:blur(0);}
+}
+#themeWord.animate::after{
+  content:attr(data-text);
+  position:absolute;inset:0;
+  background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%);
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;
+  animation:shimmer 2.4s 1.2s ease forwards;opacity:0;
+}
+@keyframes shimmer{
+  0%{opacity:0;background-position:-200% center;}
+  20%{opacity:1;}
+  100%{opacity:0;background-position:300% center;}
+}
+#themeRule{
+  display:block;height:1px;margin:10px auto 0;width:0;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  animation:none;
+}
+#themeRule.animate{animation:ruleExpand 1s 1.1s ease forwards;}
+@keyframes ruleExpand{from{width:0;opacity:0;}to{width:80%;opacity:.5;}}
+
+#collectionSwitcher{
+  flex-shrink:0;margin:18px 18px 0;
+  padding-top:16px;border-top:1px solid var(--border-mid);
+  padding-bottom:18px;display:block;
+}
+#collectionSwitcher.konami-unlocked{animation:konamiReveal .6s cubic-bezier(.22,1,.36,1);}
+@keyframes konamiReveal{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+#collectionSwitcher p{
+  font-size:.36rem;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--gold-dim);text-align:center;margin-bottom:10px;
+}
+#collectionBtns{
+  display:flex;flex-wrap:wrap;gap:5px;justify-content:center;
+  max-height:160px;overflow-y:auto;padding:2px;
+}
+.col-chip{
+  font-family:'Montserrat',sans-serif;font-weight:300;
+  font-size:.44rem;letter-spacing:.12em;text-transform:uppercase;
+  padding:5px 10px;border:1px solid var(--border);
+  background:transparent;color:var(--cream-dim);cursor:pointer;transition:all .2s;
+}
+.col-chip:hover{border-color:var(--gold-dim);color:var(--ink);}
+.col-chip.active{border-color:var(--gold);background:var(--gold-glow);color:var(--gold);}
+
+#collectionDrawer{
+  position:fixed;top:0;right:0;bottom:0;
+  width:340px;max-width:92vw;
+  background:var(--panel);
+  border-left:1px solid var(--border);
+  z-index:500;
+  display:flex;flex-direction:column;
+  transform:translateX(100%);
+  transition:transform .38s cubic-bezier(.22,1,.36,1), background .4s ease;
+  box-shadow:-24px 0 80px var(--shadow-deep);
+}
+#collectionDrawer.open{transform:translateX(0);}
+
+#drawerBackdrop{
+  position:fixed;inset:0;z-index:499;
+  background:rgba(0,0,0,0);
+  pointer-events:none;
+  transition:background .38s ease;
+}
+#drawerBackdrop.open{background:rgba(0,0,0,.35);pointer-events:all;}
+
+#drawerHeader{
+  flex-shrink:0;
+  padding:18px 20px 16px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--panel);
+  transition:background .4s ease;
+}
+#drawerTitle{
+  font-family:'Cormorant Garamond',serif;font-weight:300;
+  font-size:1.2rem;letter-spacing:.1em;color:var(--ink);
+}
+#drawerClose{
+  background:none;border:1px solid var(--border);
+  color:var(--cream-dim);width:30px;height:30px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:.8rem;transition:border-color .2s,color .2s;
+}
+#drawerClose:hover{border-color:var(--gold);color:var(--gold);}
+
+#drawerBody{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--gold-dim) transparent;}
+
+#mySharesEmpty{
+  padding:48px 24px;text-align:center;
+  font-family:'Cormorant Garamond',serif;font-style:italic;
+  font-size:1.05rem;font-weight:300;letter-spacing:.06em;color:var(--gold-dim);
+  line-height:2;
+}
+#mySharesList{display:flex;flex-direction:column;}
+.share-card{
+  border-bottom:1px solid var(--border-mid);padding:16px 20px;
+  cursor:pointer;transition:background .18s;
+}
+.share-card:hover{background:var(--gold-glow);}
+.share-card-painter{
+  font-family:'Cormorant Garamond',serif;font-weight:300;
+  font-size:1.15rem;letter-spacing:.07em;color:var(--ink);
+  transition:color .4s ease;
+}
+.share-card-meta{font-size:.32rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-dim);margin-top:4px;}
+.share-card-id{font-size:.3rem;letter-spacing:.14em;color:var(--cream-dim);margin-top:4px;opacity:.7;}
+.share-card-status{
+  display:inline-block;font-size:.28rem;letter-spacing:.18em;
+  text-transform:uppercase;padding:2px 8px;margin-top:6px;
+}
+.share-card-status.held{background:rgba(42,92,63,.12);color:var(--correct);border:1px solid rgba(42,92,63,.25);}
+[data-theme="dark"] .share-card-status.held{background:rgba(58,122,85,.15);color:#90ddb5;border:1px solid rgba(58,122,85,.3);}
+.share-card-status.sold{background:transparent;color:var(--cream-dim);border:1px solid var(--border);}
+
+#sellOverlay{
+  display:none;position:fixed;inset:0;z-index:600;
+  align-items:center;justify-content:center;padding:24px;
+  background:rgba(5,4,3,.9);backdrop-filter:blur(10px);
+}
+#sellOverlay.show{display:flex;animation:overlayIn .26s ease;}
+#sellBox{
+  background:var(--panel-mid);width:100%;max-width:440px;
+  overflow:hidden;box-shadow:0 48px 120px rgba(0,0,0,.85),0 0 0 1px var(--border);
+}
+#sellAccent{height:1px;background:linear-gradient(90deg,transparent,var(--gold),var(--gold-bright),var(--gold),transparent);}
+#sellBody{padding:30px 28px 32px;}
+#sellTitle{
+  font-family:'Cormorant Garamond',serif;font-weight:300;
+  font-size:1.5rem;letter-spacing:.1em;color:var(--ink);margin-bottom:4px;
+}
+#sellSubtitle{font-size:.36rem;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-dim);margin-bottom:24px;}
+#slotList{display:flex;flex-direction:column;gap:6px;margin-bottom:20px;}
+.slot-btn{
+  width:100%;padding:13px 16px;border:1px solid var(--border);background:transparent;
+  font-family:'Montserrat',sans-serif;font-weight:300;
+  font-size:.44rem;letter-spacing:.18em;text-transform:uppercase;
+  text-align:left;cursor:pointer;color:var(--cream-mid);
+  transition:border-color .18s,background .18s;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.slot-btn:hover:not(.taken){border-color:var(--gold);background:var(--gold-glow);}
+.slot-btn.taken{color:var(--cream-dim);cursor:default;opacity:.45;}
+.slot-btn.selected{border-color:var(--gold);background:var(--gold-glow);color:var(--gold-bright);}
+.slot-tag{font-size:.28rem;letter-spacing:.14em;padding:2px 7px;}
+.slot-tag.available{background:rgba(42,92,63,.12);color:var(--correct);border:1px solid rgba(42,92,63,.25);}
+[data-theme="dark"] .slot-tag.available{background:rgba(58,122,85,.15);color:#90ddb5;border:1px solid rgba(58,122,85,.3);}
+.slot-tag.taken{background:transparent;color:var(--cream-dim);border:1px solid var(--border);}
+.slot-btn.selected .slot-tag{background:rgba(184,145,58,.2);color:var(--gold-bright);border-color:var(--gold-dim);}
+#sellEmailWrap{margin-bottom:18px;}
+#sellEmailLabel{display:block;font-size:.34rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold-dim);margin-bottom:7px;}
+#sellEmail{
+  width:100%;padding:12px 16px;border:1px solid var(--border);
+  background:var(--bg-mid);font-family:'Montserrat',sans-serif;
+  font-weight:300;font-size:.54rem;color:var(--ink);outline:none;
+  transition:border-color .2s;
+}
+#sellEmail::placeholder{color:var(--cream-dim);}
+#sellEmail:focus{border-color:var(--gold);}
+#sellSubmitBtn{
+  width:100%;padding:14px;border:none;background:var(--gold);
+  font-family:'Montserrat',sans-serif;font-weight:300;
+  font-size:.46rem;letter-spacing:.32em;text-transform:uppercase;
+  color:#fff;cursor:pointer;transition:background .2s;margin-bottom:10px;
+}
+[data-theme="light"] #sellSubmitBtn{color:var(--bg);}
+#sellSubmitBtn:hover{background:var(--gold-bright);}
+#sellSubmitBtn:disabled{opacity:.35;cursor:default;}
+#sellCancel{
+  display:block;width:100%;text-align:center;
+  font-size:.34rem;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--cream-dim);background:none;border:none;cursor:pointer;padding:8px;
+  transition:color .18s;
+}
+#sellCancel:hover{color:var(--cream-mid);}
+#sellSuccess{display:none;padding:14px 0 6px;text-align:center;}
+#sellSuccessMsg{font-size:.42rem;letter-spacing:.16em;color:var(--cream-dim);line-height:2.4;text-transform:uppercase;margin-bottom:20px;}
+#sellDoneBtn{
+  padding:11px 32px;border:1px solid var(--border);background:transparent;
+  font-family:'Montserrat',sans-serif;font-weight:300;
+  font-size:.42rem;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--cream-mid);cursor:pointer;transition:border-color .2s,color .2s;
+}
+#sellDoneBtn:hover{border-color:var(--gold);color:var(--gold-bright);}
+
+/* ── INVEST WAITLIST MODAL ── */
+#investOverlay{
+  display:none;position:fixed;inset:0;z-index:600;
+  align-items:center;justify-content:center;padding:20px;
+  background:rgba(5,4,3,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+#investOverlay.show{display:flex;animation:investOverlayIn .32s cubic-bezier(.22,1,.36,1);}
+@keyframes investOverlayIn{from{opacity:0;}to{opacity:1;}}
+#investBox{
+  background:var(--panel-mid);width:100%;max-width:460px;overflow:hidden;
+  box-shadow:0 56px 140px rgba(0,0,0,.9),0 0 0 1px var(--border);
+  position:relative;
+  max-height:90vh;overflow-y:auto;
+  scrollbar-width:none;
+}
+#investBox::-webkit-scrollbar{display:none;}
+#investAccent{height:1px;background:linear-gradient(90deg,transparent,var(--gold),var(--gold-bright),var(--gold),transparent);}
+#investCloseBtn{
+  position:absolute;top:12px;right:12px;z-index:10;
+  background:none;border:1px solid var(--border);
+  color:var(--cream-dim);width:28px;height:28px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:.8rem;transition:border-color .2s,color .2s;
+}
+#investCloseBtn:hover{border-color:var(--gold);color:var(--gold);}
+#investBody{padding:32px 30px 34px;text-align:center;}
+
+/* Step transitions */
+.invest-step{
+  animation:investStepIn .38s cubic-bezier(.22,1,.36,1);
+}
+@keyframes investStepIn{
+  from{opacity:0;transform:translateY(14px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+/* Step eyebrow */
+.invest-eyebrow{
+  font-size:.3rem;letter-spacing:.48em;text-transform:uppercase;
+  color:var(--gold-dim);margin-bottom:14px;display:block;
+}
+
+.investTitle{
+  font-family:'Cormorant Garamond',serif;font-weight:300;
+  font-size:1.5rem;letter-spacing:.07em;color:var(--ink);
+  line-height:1.25;margin-bottom:8px;
+}
+.investSubtitle{
+  font-size:.36rem;letter-spacing:.2em;color:var(--cream-dim);
+  margin-bottom:26px;line-height:1.9;
+}
+
+/* Combined Step 1+2: salutation + name */
+#salutationOptions{
+  display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:20px;
+}
+.salutation-option{
+  padding:11px 10px;border:1px solid var(--border);background:transparent;
+  font-family:'Montserrat',sans-serif;font-weight:300;
+  font-size:.42rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--cream-mid);cursor:pointer;transition:border-color .22s,background .22s,color .22s;
+  text-align:center;
+}
+.salutation-option:hover{border-color:var(--gold);background:var(--gold-glow);}
+.salutation-option.selected{
+  border-color:var(--gold);background:var(--gold-glow);color:var(--gold-bright);
+  box-shadow:inset 0 0 0 1px rgba(184,145,58,.25);
+}
+
+/* Name field block */
+#investNameBlock{
+  transition:opacity .28s ease,transform .28s ease;
+  opacity:0;transform:translateY(8px);pointer-events:none;
+}
+#investNameBlock.visible{opacity:1;transform:translateY(0);pointer-events:all;}
+#investNameLabel{
+  display:block;font-size:.3rem;letter-spacing:.38em;
+  text-transform:uppercase;color:var(--gold-dim);margin-bottom:8px;text-align:left;
+}
+#investName{
+  width:100%;padding:12px 16px;border:1px solid var(--border);
+  background:var(--bg-mid);font-family:'Cormorant Garamond',serif;
+  font-style:italic;font-weight:300;font-size:.88rem;color:var(--ink);
+  outline:none;margin-bottom:14px;letter-spacing:.04em;
+  transition:border-color .2s;
+}
+#investName::placeholder{color:var(--cream-dim);font-style:italic;}
+#investName:focus{border-color:var(--gold);}
+#investNameNext{
+  width:100%;padding:13px;border:none;background:var(--gold);
+  font-family:'Montserrat',sans-serif;font-weight:300;
+  font-size:.42rem;letter-spacing:.32em;text-transform:uppercase;
+  color:#fff;cursor:pointer;transition:background .2s,opacity .2s;
+}
+#investNameNext:hover{background:var(--gold-bright);}
+
+/* Step 3: email + preview */
+.investGreeting{
+  font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;
+  font-size:1.35rem;letter-spacing:.06em;color:var(--gold);
+  margin-bottom:6px;line-height:1.3;
+}
+.investMessage{
+  font-size:.38rem;letter-spacing:.14em;color:var(--cream-dim);
+  line-height:2.1;margin-bottom:22px;text-align:center;
+}
+
+/* Email preview card */
+#investEmailPreview{
+  border:1px solid var(--border);margin-bottom:20px;
+  background:var(--bg-mid);overflow:hidden;
+  text-align:left;
+}
+.preview-header{
+  background:var(--panel);padding:10px 14px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.preview-sender-dot{
+  width:22px;height:22px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold-dim),var(--gold-bright));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Cormorant Garamond',serif;font-size:.55rem;
+  color:var(--bg);flex-shrink:0;
+}
+.preview-sender-info{flex:1;min-width:0;}
+.preview-sender-name{
+  font-size:.32rem;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--ink);font-weight:300;
+}
+.preview-date{
+  font-size:.28rem;letter-spacing:.14em;color:var(--cream-dim);
+  float:right;
+}
+.preview-subject{
+  font-family:'Cormorant Garamond',serif;font-weight:300;
+  font-size:.82rem;letter-spacing:.05em;color:var(--ink);
+  padding:10px 14px 6px;line-height:1.3;
+}
+.preview-snippet{
+  font-size:.34rem;letter-spacing:.1em;color:var(--cream-dim);
+  padding:0 14px 10px;line-height:1.8;
+}
+.preview-image-strip{
+  height:56px;
+  background:linear-gradient(110deg,var(--bg-soft) 0%,var(--gold-glow) 50%,var(--bg-soft) 100%);
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  gap:4px;overflow:hidden;
+}
+.preview-image-swatch{
+  height:38px;width:52px;border:1px solid var(--border);
+  background:var(--panel);flex-shrink:0;
+  position:relative;overflow:hidden;
+}
+.preview-image-swatch::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,var(--crosshatch) 25%,transparent 25%,transparent 50%,var(--crosshatch) 50%,var(--crosshatch) 75%,transparent 75%);
+  background-size:8px 8px;opacity:.5;
+}
+.preview-image-swatch:nth-child(2){background:linear-gradient(160deg,#1a1614 0%,#2e2820 100%);}
+.preview-image-swatch:nth-child(3){background:linear-gradient(160deg,#1e1c18 0%,#3a3020 100%);}
+.preview-sub-label{
+  font-size:.26rem;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--gold-dim);padding:0 14px 8px;
+}
+
+/* second preview card (teaser) */
+#investEmailPreview2{
+  border:1px solid var(--border-mid);margin-bottom:20px;
+  background:var(--bg);overflow:hidden;text-align:left;
+  opacity:.55;
+}
+
+#investEmailWrap{margin-bottom:16px;}
+#investEmailWrap label{
+  display:block;font-size:.3rem;letter-spacing:.38em;
+  text-transform:uppercase;color:var(--gold-dim);margin-bottom:8px;text-align:left;
+}
+#investEmail{
+  width:100%;padding:12px 16px;border:1px solid var(--border);
+  background:var(--bg-mid);font-family:'Montserrat',sans-serif;
+  font-weight:300;font-size:.54rem;color:var(--ink);outline:none;
+  transition:border-color .2s;
+}
+#investEmail::placeholder{color:var(--cream-dim);}
+#investEmail:focus{border-color:var(--gold);}
+#investSubmitBtn{
+  width:100%;padding:14px;border:none;background:var(--gold);
+  font-family:'Montserrat',sans-serif;font-weight:300;
+  font-size:.44rem;letter-spacing:.32em;text-transform:uppercase;
+  color:#fff;cursor:pointer;transition:background .2s;margin-top:4px;
+}
+#investSubmitBtn:hover{background:var(--gold-bright);}
+#investSubmitBtn:disabled{opacity:.35;cursor:default;}
+
+#investSuccess{margin-top:20px;animation:investStepIn .4s cubic-bezier(.22,1,.36,1);}
+#investSuccess p{
+  font-family:'Cormorant Garamond',serif;font-style:italic;
+  font-size:1.15rem;color:var(--gold);letter-spacing:.06em;margin-bottom:20px;line-height:1.5;
+}
+#investSuccess button{
+  padding:10px 28px;border:1px solid var(--border);background:transparent;
+  font-family:'Montserrat',sans-serif;font-weight:300;
+  font-size:.38rem;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--cream-mid);cursor:pointer;transition:border-color .2s,color .2s;
+}
+#investSuccess button:hover{border-color:var(--gold);color:var(--gold-bright);}
+#investBack{
+  background:none;border:none;color:var(--cream-dim);
+  font-size:.34rem;letter-spacing:.22em;text-transform:uppercase;
+  cursor:pointer;margin-top:14px;display:block;width:100%;text-align:center;
+  transition:color .18s;
+}
+#investBack:hover{color:var(--cream-mid);}
+
+/* divider rule */
+.invest-rule{
+  height:1px;margin:22px 0;
+  background:linear-gradient(90deg,transparent,var(--border),transparent);
+}
+
+#overlay{
+  display:none;position:fixed;inset:0;z-index:100;
+  align-items:center;justify-content:center;padding:24px;
+  background:rgba(5,4,2,.8);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+}
+#overlay.show{display:flex;animation:overlayIn .28s ease;}
+@keyframes overlayIn{from{opacity:0;}to{opacity:1;}}
+#overlay.show.loss-overlay{background:rgba(5,4,2,.55);backdrop-filter:blur(2px);align-items:flex-end;padding-bottom:36px;}
+@keyframes wrongShake{0%,100%{transform:translateX(0);}20%{transform:translateX(-8px);}40%{transform:translateX(8px);}60%{transform:translateX(-5px);}80%{transform:translateX(4px);}}
+.choice-btn.wrong{animation:wrongShake .45s ease;}
+
+#popup{
+  background:var(--panel-mid);width:100%;max-width:420px;
+  text-align:center;overflow:hidden;
+  box-shadow:0 48px 120px var(--shadow-deep),0 0 0 1px var(--border);
+}
+#popup.win{animation:popupSlideUp .4s cubic-bezier(.34,1.3,.64,1);}
+@keyframes popupSlideUp{from{opacity:0;transform:translateY(32px) scale(.94);}to{opacity:1;transform:translateY(0) scale(1);}}
+#popup.loss{max-width:480px;animation:popupReveal .44s cubic-bezier(.22,1,.36,1);}
+@keyframes popupReveal{from{opacity:0;transform:scale(.88);}to{opacity:1;transform:scale(1);}}
+#popupPaintingReveal{display:none;position:relative;width:100%;height:240px;overflow:hidden;background:var(--bg);}
+#popup.loss #popupPaintingReveal{display:block;}
+#popupPaintingImg{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .7s ease .25s;filter:saturate(.85);}
+#popupPaintingImg.loaded{opacity:1;}
+#popupPaintingImg.error-load{object-fit:contain;background:var(--bg-soft);}
+#popupPaintingReveal::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 35%,rgba(8,6,3,.72) 100%);pointer-events:none;}
+#popupPaintingCaption{display:none;position:absolute;bottom:16px;left:22px;right:22px;text-align:left;z-index:2;}
+#popup.loss #popupPaintingCaption{display:block;}
+#popupPaintingCaption .caption-painter{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:1.5rem;letter-spacing:.08em;color:#fff;line-height:1.1;text-shadow:0 2px 16px rgba(0,0,0,.85);}
+#popupPaintingCaption .caption-title{font-size:.38rem;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-top:4px;text-shadow:0 1px 8px rgba(0,0,0,.7);}
+#popupAccent{height:1px;background:linear-gradient(90deg,transparent,var(--gold),var(--gold-bright),var(--gold),transparent);}
+#popup.loss #popupAccent{display:none;}
+#streakProgressBar{height:1px;background:var(--gold-glow);overflow:hidden;}
+#streakProgressFill{height:100%;background:var(--gold);width:0%;transition:width 1s ease;}
+#popupBody{padding:28px 26px 30px;}
+#popupEmoji{font-size:1.4rem;margin-bottom:10px;display:block;color:var(--gold);}
+#popupTitle{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:1.65rem;letter-spacing:.1em;color:var(--ink);margin-bottom:8px;}
+#popup.loss #popupTitle{display:none;}
+#popupInfo{font-size:.42rem;letter-spacing:.16em;color:var(--cream-dim);line-height:2.3;margin-bottom:22px;text-transform:uppercase;}
+#popup.loss #popupInfo{font-size:.4rem;}
+
+#certificate{
+  display:none;padding:22px 22px 10px;text-align:left;
+  border:1px solid var(--border);margin:0 22px 20px;
+  background:var(--gold-glow);position:relative;
+}
+#certificate::before{content:'';position:absolute;top:5px;left:5px;right:5px;bottom:5px;border:1px solid var(--border-mid);pointer-events:none;}
+#certLabel{font-size:.32rem;letter-spacing:.42em;text-transform:uppercase;color:var(--gold-dim);margin-bottom:12px;display:block;}
+#certPainter{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:1.55rem;letter-spacing:.06em;color:var(--ink);line-height:1.1;margin-bottom:8px;}
+#certMeta{font-size:.34rem;letter-spacing:.24em;text-transform:uppercase;color:var(--gold-dim);margin-bottom:16px;line-height:2;}
+#certId{font-size:.32rem;letter-spacing:.2em;color:var(--cream-dim);border-top:1px solid var(--border-mid);padding-top:12px;margin-top:4px;}
+#certId strong{color:var(--gold);font-weight:400;}
+
+#streakShareBtn{
+  width:100%;padding:14px;border:none;background:var(--gold);
+  font-family:'Montserrat',sans-serif;font-weight:300;
+  font-size:.44rem;letter-spacing:.32em;text-transform:uppercase;
+  color:var(--bg);cursor:pointer;transition:background .2s;margin-bottom:10px;display:none;
+}
+#streakShareBtn:hover{background:var(--gold-bright);}
+#popupBtn{
+  padding:12px 36px;border:1px solid var(--border);background:transparent;
+  font-family:'Montserrat',sans-serif;font-weight:300;
+  font-size:.48rem;letter-spacing:.34em;text-transform:uppercase;
+  cursor:pointer;color:var(--cream-mid);
+  transition:border-color .22s,color .22s,background .22s;
+}
+#popupBtn:hover{border-color:var(--gold);color:var(--gold-bright);background:var(--gold-glow);}
+#popupEnterHint{margin-top:12px;font-size:.32rem;letter-spacing:.24em;text-transform:uppercase;color:var(--gold-dim);opacity:.65;}
+
+#konamiToast{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--panel-mid);border:1px solid var(--gold);
+  color:var(--gold-bright);
+  font-family:'Cormorant Garamond',serif;font-style:italic;
+  font-size:1rem;letter-spacing:.08em;
+  padding:12px 28px;
+  box-shadow:0 8px 40px var(--shadow-deep),0 0 20px rgba(184,145,58,.15);
+  z-index:10000;opacity:0;pointer-events:none;
+  transition:opacity .4s ease,transform .4s ease;
+}
+#konamiToast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+#collectionLink{
+  flex-shrink:0;
+  padding:14px 18px 20px;
+  border-top:1px solid var(--border-mid);
+  margin-top:12px;
+}
+#collectionLink button{
+  width:100%;background:none;border:1px solid var(--border);
+  padding:10px 14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Montserrat',sans-serif;font-weight:300;
+  font-size:.38rem;letter-spacing:.32em;text-transform:uppercase;
+  color:var(--cream-dim);transition:border-color .2s,color .2s,background .2s;
+}
+#collectionLink button:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-glow);}
+
+@media(max-width:640px){
+  html,body{overflow:auto;}
+  #pageShell{height:auto;}
+  #gameArea{flex-direction:column;}
+  #paintingCol{flex:none;height:56vw;min-height:200px;border-right:none;border-bottom:1px solid var(--border);}
+  #paintingCanvas{max-height:56vw;}
+  #choicesCol{flex:none;width:100%;}
+  #collectionDrawer{width:100%;max-width:100%;}
+}
+
+header{animation:sectionIn .8s cubic-bezier(.22,1,.36,1) both;}
+#paintingCol{animation:sectionIn .8s .08s cubic-bezier(.22,1,.36,1) both;}
+#choicesCol{animation:sectionIn .8s .16s cubic-bezier(.22,1,.36,1) both;}
+@keyframes sectionIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+#preloader {
+  position:fixed;inset:0;z-index:99999;
+  background:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity 1s ease;
+}
+#preloader.hide {opacity:0; pointer-events:none;}
+
+/* Logo fades + draws in, then a gentle gold glow pulses */
+#preloader-logo {
+  animation: pl-fadein 0.9s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes pl-fadein {
+  from { opacity:0; transform:scale(.94); }
+  to   { opacity:1; transform:scale(1); }
+}
+#preloader-logo .pl-stroke {
+  stroke-dasharray: 1600;
+  stroke-dashoffset: 1600;
+  animation: pl-draw 1.8s 0.3s cubic-bezier(.22,1,.36,1) forwards,
+             pl-glow 2.4s 2.4s ease-in-out infinite;
+}
+#preloader-logo .pl-inner {
+  stroke-dasharray: 120;
+  stroke-dashoffset: 120;
+  animation: pl-draw 0.7s 1.4s cubic-bezier(.22,1,.36,1) forwards;
+}
+/* Small spark dots celebrate around the logo after it draws */
+#preloader-logo .pl-spark {
+  opacity:0;
+  animation: pl-spark 0.5s ease forwards;
+}
+#preloader-logo .pl-s1{animation-delay:2s;}
+#preloader-logo .pl-s2{animation-delay:2.1s;}
+#preloader-logo .pl-s3{animation-delay:2.2s;}
+#preloader-logo .pl-s4{animation-delay:2.05s;}
+#preloader-logo .pl-s5{animation-delay:2.15s;}
+#preloader-logo .pl-s6{animation-delay:2.25s;}
+/* Anniversary tag fades up after logo draws */
+#preloader-logo .pl-anniv {
+  opacity:0;
+  animation: pl-up 0.8s 2s cubic-bezier(.22,1,.36,1) forwards;
+}
+@keyframes pl-draw  { to{stroke-dashoffset:0;} }
+@keyframes pl-glow  { 0%,100%{filter:drop-shadow(0 0 3px rgba(212,168,78,.3));} 50%{filter:drop-shadow(0 0 10px rgba(212,168,78,.7));} }
+@keyframes pl-spark { 0%{opacity:0;transform:scale(0);} 60%{opacity:1;transform:scale(1.4);} 100%{opacity:.65;transform:scale(1);} }
+@keyframes pl-up    { from{opacity:0;transform:translateY(7px);} to{opacity:1;transform:translateY(0);} }
+
+/* Paint loader between rounds */
+#paintLoader {
+  position:absolute;inset:0;z-index:5;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  pointer-events:none;opacity:0;
+  transition:opacity .35s ease;
+}
+#paintLoader.visible { opacity:1; }
+#paintLoader .pll-stroke {
+  stroke-dasharray: 1600;
+  stroke-dashoffset: 1600;
+  animation: pl-draw 1.4s 0s cubic-bezier(.22,1,.36,1) forwards,
+             pl-glow 2.4s 1.8s ease-in-out infinite;
+}
+#paintLoader .pll-inner {
+  stroke-dasharray: 120;
+  stroke-dashoffset: 120;
+  animation: pl-draw 0.6s 1.1s cubic-bezier(.22,1,.36,1) forwards;
+}
+#paintLoader .pll-label {
+  opacity:0;
+  font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;
+  font-size:.72rem;letter-spacing:.12em;color:#b8913a;
+  animation: pl-up 0.6s 1.5s ease forwards;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="preloader">
+  <svg id="preloader-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="300" height="300" style="display:block;overflow:visible;">
+    <!-- Original shadow path, unchanged -->
+    <path d="M148,384 L142,238 L182,240 L226,308 L256,138 L286,308 L330,240 L370,238 L364,384 L320,384 L314,284 L278,314 L278,384 L234,384 L234,314 L198,284 L192,384 Z" fill="#000000" />
+    <!-- Original gold stroke — now draws itself in -->
+    <path class="pl-stroke" d="M138,392 L132,232 L176,234 L222,312 L256,130 L290,312 L336,234 L380,232 L374,392 L324,392 L318,290 L280,320 L280,392 L232,392 L232,320 L194,290 L188,392 Z" fill="none" stroke="#ffc736" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
+    <!-- Original inner diamond — draws in after -->
+    <path class="pl-inner" d="M256,180 L272,206 L256,232 L240,206 Z" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <!-- Tiny celebration sparks that pop after the draw (6 small diamonds) -->
+    <polygon class="pl-spark pl-s1" points="256,100 259,107 256,114 253,107" fill="#ffc736" opacity="0"/>
+    <polygon class="pl-spark pl-s2" points="380,200 386,204 380,208 374,204" fill="#ffc736" opacity="0"/>
+    <polygon class="pl-spark pl-s3" points="132,200 138,204 132,208 126,204" fill="#ffc736" opacity="0"/>
+    <polygon class="pl-spark pl-s4" points="200,115 204,121 200,127 196,121" fill="#d4a84e" opacity="0"/>
+    <polygon class="pl-spark pl-s5" points="312,115 316,121 312,127 308,121" fill="#d4a84e" opacity="0"/>
+    <polygon class="pl-spark pl-s6" points="256,415 259,421 256,427 253,421" fill="#ffc736" opacity="0"/>
+    <!-- Subtle "Since 2016" tag beneath logo -->
+    <text class="pl-anniv" x="256" y="468" text-anchor="middle"
+      font-family="Montserrat,sans-serif" font-weight="300"
+      font-size="9" letter-spacing="5" fill="#b8913a" fill-opacity=".7">SINCE 2016</text>
+  </svg>
+</div>
+
+<div id="pageShell">
+  <header>
+    <h1 id="siteTitle">
+      <span>The Daily</span>
+      <span id="titleSwitcher" tabindex="0">
+        <span id="wordArt">Art</span>
+        <span id="wordThought">Thought</span>
+        <div id="titleDropdown" role="menu">
+          <button class="title-option active-option" onclick="stayOnArt()">Art<span class="opt-label">You are here · Paintings</span></button>
+          <a class="title-option" href="quotes">Thought<span class="opt-label">Philosophy · Daily Quotes</span></a>
+        </div>
+      </span>
+      <span>Cult</span>
+    </h1>
+    <p>Where art becomes ritual.</p>
+  </header>
+
+  <div id="gameArea">
+    <div id="paintingCol">
+      <div id="paintLoader">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="120" height="120" style="display:block;">
+          <path d="M148,384 L142,238 L182,240 L226,308 L256,138 L286,308 L330,240 L370,238 L364,384 L320,384 L314,284 L278,314 L278,384 L234,384 L234,314 L198,284 L192,384 Z" fill="#000000" fill-opacity=".4"/>
+          <path class="pll-stroke" d="M138,392 L132,232 L176,234 L222,312 L256,130 L290,312 L336,234 L380,232 L374,392 L324,392 L318,290 L280,320 L280,392 L232,392 L232,320 L194,290 L188,392 Z" fill="none" stroke="#ffc736" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" stroke-opacity=".75"/>
+          <path class="pll-inner" d="M256,180 L272,206 L256,232 L240,206 Z" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-opacity=".6"/>
+        </svg>
+        <span class="pll-label">Loading masterpiece…</span>
+      </div>
+      <div id="paintingWrap">
+        <canvas id="paintingCanvas"></canvas>
+        <div id="paintingShield" oncontextmenu="return false" ondragstart="return false"></div>
+      </div>
+    </div>
+
+    <div id="choicesCol">
+      <div id="panelPlay">
+        <div id="streakDots"></div>
+        <p id="choicesPrompt">Who painted this?</p>
+        <div id="choices"></div>
+        <div id="keyHint">
+          <span>1</span><span>2</span><span>3</span><span>4</span>
+          &nbsp;to select &nbsp;·&nbsp; <span>Enter</span> to confirm
+        </div>
+
+        <div id="dailyThemeDisplay">
+          <span id="themeEyebrow">Today's Theme</span>
+          <span id="themeWord" data-text=""></span>
+          <span id="themeRule"></span>
+        </div>
+
+        <div id="collectionSwitcher">
+          <p>Filter Painters</p>
+          <div id="collectionBtns"></div>
+        </div>
+
+        <!-- INVEST IN ART BUTTON (replaces old "My Collection") -->
+        <div id="collectionLink">
+          <a href="play.html" style="text-decoration:none;"><button type="button">← Original Collection (1600 painters)</button></a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<button id="btnDarkMode" onclick="toggleDarkMode()" title="Toggle dark mode">
+  <em class="dm-icon" id="dmIcon">◑</em>
+</button>
+
+<div id="drawerBackdrop" onclick="closeCollectionDrawer()"></div>
+<div id="collectionDrawer">
+  <div id="drawerHeader">
+    <div id="drawerTitle">My Collection</div>
+    <button id="drawerClose" onclick="closeCollectionDrawer()">✕</button>
+  </div>
+  <div id="drawerBody">
+    <div id="mySharesEmpty">
+      <div style="font-size:1.8rem;color:var(--gold-dim);margin-bottom:14px;">✦</div>
+      Guess correctly to earn<br>your first share.
+    </div>
+    <div id="mySharesList"></div>
+  </div>
+</div>
+
+<!-- Konami Toast -->
+<div id="konamiToast">✦ &nbsp; Secret unlocked — Filter revealed &nbsp; ✦</div>
+
+<!-- Game Overlay -->
+<div id="overlay">
+  <div id="popup">
+    <div id="popupPaintingReveal">
+      <img id="popupPaintingImg" src="" alt="">
+      <div id="popupPaintingCaption">
+        <div class="caption-painter" id="captionPainter"></div>
+        <div class="caption-title" id="captionTitle"></div>
+      </div>
+    </div>
+    <div id="popupAccent"></div>
+    <div id="streakProgressBar"><div id="streakProgressFill"></div></div>
+    <div id="popupBody">
+      <span id="popupEmoji"></span>
+      <div id="popupTitle"></div>
+      <div id="popupInfo"></div>
+      <div id="certificate">
+        <span id="certLabel">Certificate of Ownership</span>
+        <div id="certPainter"></div>
+        <div id="certMeta"></div>
+        <div id="certId">Share ID: <strong id="certIdVal"></strong></div>
+      </div>
+      <button id="streakShareBtn" onclick="shareStreak()">✦ Share My Streak →</button>
+      <button id="popupBtn" onclick="closePopup()">Continue</button>
+      <div id="popupEnterHint">Press <span style="border:1px solid var(--border);padding:2px 6px;font-size:.3rem;">Enter</span> to continue</div>
+    </div>
+  </div>
+</div>
+
+<!-- Sell Overlay -->
+<div id="sellOverlay">
+  <div id="sellBox">
+    <div id="sellAccent"></div>
+    <div id="sellBody">
+      <div id="sellTitle">Sell Your Share</div>
+      <div id="sellSubtitle">Choose a shareholder seat</div>
+      <div id="sellSuccess" style="display:none">
+        <div id="sellSuccessMsg">Your slot is reserved.<br>Check your inbox — we'll be in touch.</div>
+        <button id="sellDoneBtn" onclick="closeSell()">Done</button>
+      </div>
+      <div id="sellForm">
+        <div id="slotList"></div>
+        <div id="sellEmailWrap">
+          <label id="sellEmailLabel" for="sellEmail">Your email — we'll confirm your slot</label>
+          <input id="sellEmail" type="email" placeholder="your@email.com">
+        </div>
+        <button id="sellSubmitBtn" onclick="submitSell()">Claim This Seat →</button>
+        <button id="sellCancel" onclick="closeSell()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Waitlist Overlay -->
+<div id="investOverlay">
+  <div id="investBox">
+    <button id="investCloseBtn" onclick="closeInvest()">✕</button>
+    <div id="investAccent"></div>
+    <div id="investBody">
+
+      <!-- STEP 1: Image preview + email -->
+      <div id="investStep1" class="invest-step">
+        <span class="invest-eyebrow">Founding Membership</span>
+        <div class="investTitle">Join the Waitlist</div>
+        <div class="investSubtitle">A glimpse of what lands in your inbox as a founding member.</div>
+
+        <div id="investEmailPreview" style="margin-bottom:20px;border:1px solid var(--border);overflow:hidden;line-height:0;">
+          <img src="email-preview.png" alt="Sample newsletter preview" style="width:100%;height:auto;display:block;opacity:.92;">
+        </div>
+
+        <div id="investEmailWrap">
+          <label for="investEmail">Your email address</label>
+          <input type="email" id="investEmail" placeholder="your@email.com" autocomplete="email">
+        </div>
+        <button id="investNameNext" onclick="nextInvestStep2()">Continue →</button>
+      </div>
+
+      <!-- STEP 2: Honorifics + name, then submit -->
+      <div id="investStep3" style="display:none;">
+        <span class="invest-eyebrow">One last thing</span>
+        <div class="investTitle">How shall we address you?</div>
+        <div class="investSubtitle">Your welcome email will be addressed to you personally.</div>
+
+        <div id="salutationOptions">
+          <button class="salutation-option" data-salutation="Madame">Madame</button>
+          <button class="salutation-option" data-salutation="Monsieur">Monsieur</button>
+          <button class="salutation-option" data-salutation="Mx">Mx</button>
+          <button class="salutation-option" data-salutation="Dr">Dr</button>
+        </div>
+
+        <div id="investNameBlock">
+          <label id="investNameLabel" for="investName">Your name</label>
+          <input type="text" id="investName" placeholder="Enter your name…" maxlength="100" autocomplete="given-name">
+        </div>
+
+        <div id="investGreetingText" class="investGreeting" style="display:none;"></div>
+        <div class="investMessage" id="investMessageText" style="display:none;"></div>
+        <div id="investEmailPreview2" style="display:none;"></div>
+
+        <button id="investSubmitBtn" onclick="submitInvest()">Secure My Place →</button>
+        <div id="investSuccess" style="display:none;">
+          <p>✦ &nbsp;You're on the list.<br>Welcome to the inner circle.</p>
+          <button onclick="closeInvest()">Close</button>
+        </div>
+        <button id="investBack" onclick="prevInvestStep()">← Back</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+
+(function(){
+  const saved = localStorage.getItem('dac-theme');
+  if(saved === 'dark') document.documentElement.setAttribute('data-theme','dark');
+})();
+
+function toggleDarkMode(){
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  localStorage.setItem('dac-theme', isDark ? 'light' : 'dark');
+  updateDmIcon();
+}
+
+function updateDmIcon(){
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.getElementById('dmIcon').textContent = isDark ? '○' : '◑';
+}
+
+/* ══════════════════════════════════════════════
+   COLLECTION DRAWER
+══════════════════════════════════════════════ */
+function openCollectionDrawer(){
+  renderCollection();
+  document.getElementById('collectionDrawer').classList.add('open');
+  document.getElementById('drawerBackdrop').classList.add('open');
+}
+function closeCollectionDrawer(){
+  document.getElementById('collectionDrawer').classList.remove('open');
+  document.getElementById('drawerBackdrop').classList.remove('open');
+}
+
+/* ══════════════════════════════════════════════
+   SUPABASE
+══════════════════════════════════════════════ */
+const SUPABASE_URL = 'https://frwjaixxlgthkgjtafhz.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyd2phaXh4bGd0aGtnanRhZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDUzNDQsImV4cCI6MjA5NDYyMTM0NH0.j2DKz__QMml4WplMYNmsQpTUw0qu-kZG7Md3qBEEdEc';
+async function sbInsert(table,data){if(true)return null; // Art Challenge Edition: local-only, no writes
+const res=await fetch(`${SUPABASE_URL}/rest/v1/${table}`,{method:'POST',headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(data)});return res.ok?await res.json():null;}
+async function sbSelect(table,filter=''){const res=await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}`,{headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`}});return res.ok?await res.json():[];}
+
+/* ══════════════════════════════════════════════
+   KONAMI CODE
+══════════════════════════════════════════════ */
+const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','A'];
+let konamiProgress = 0;
+let konamiUnlocked = false;
+
+document.addEventListener('keydown', e => {
+  const pressed = typeof e.key === 'string' ? e.key.toLowerCase() : e.key;
+  if (pressed === KONAMI[konamiProgress].toLowerCase()) {
+    konamiProgress++;
+    if (konamiProgress === KONAMI.length) {
+      konamiProgress = 0;
+      if (!konamiUnlocked) {
+        konamiUnlocked = true;
+        const cs = document.getElementById('collectionSwitcher');
+        cs.classList.add('konami-unlocked');
+        showKonamiToast();
+      }
+    }
+  } else {
+    konamiProgress = (pressed === KONAMI[0].toLowerCase()) ? 1 : 0;
+  }
+});
+
+function showKonamiToast(){
+  const t = document.getElementById('konamiToast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3200);
+}
+
+/* ══════════════════════════════════════════════
+   SHAREHOLDER SLOTS
+══════════════════════════════════════════════ */
+const SHAREHOLDER_SLOTS = ['The Medici Seat',"The Sotheby's Chair",'The Louvre Reserve','The Rockefeller Vault','The Tate Throne','The Guggenheim Post','The Rothschild Seat'];
+let myShares=[]; let takenSlots=new Set(); let activeSellShare=null; let selectedSlot=null;
+
+function renderCollection(){
+  const empty=document.getElementById('mySharesEmpty');
+  const list=document.getElementById('mySharesList');
+  list.innerHTML='';
+  if(!myShares.length){empty.style.display='block';return;}
+  empty.style.display='none';
+  myShares.forEach(s=>{
+    const card=document.createElement('div');
+    card.className='share-card';
+    const statusHtml=s.status==='sold'
+      ?'<span class="share-card-status sold">Sold</span>'
+      :'<span class="share-card-status held">Held — tap to sell</span>';
+    card.innerHTML=`<div class="share-card-painter">${s.painterName}</div><div class="share-card-meta">${s.nationality} · ${s.born}–${s.died} · ${s.streak} streak</div><div class="share-card-id">${s.shareId}</div>${statusHtml}`;
+    if(s.status!=='sold')card.onclick=()=>openSell(s);
+    list.appendChild(card);
+  });
+}
+
+async function openSell(share){
+  activeSellShare=share;selectedSlot=null;
+  document.getElementById('sellSuccess').style.display='none';
+  document.getElementById('sellForm').style.display='block';
+  document.getElementById('sellEmail').value='';
+  document.getElementById('sellSubtitle').textContent=`Selling: ${share.painterName} · ${share.shareId}`;
+  document.getElementById('sellSubmitBtn').disabled=true;
+  const claims=await sbSelect('slot_claims','');
+  takenSlots=new Set(claims.map(c=>c.slot_name));
+  const slotList=document.getElementById('slotList');
+  slotList.innerHTML='';
+  SHAREHOLDER_SLOTS.forEach(slot=>{
+    const taken=takenSlots.has(slot);
+    const btn=document.createElement('button');
+    btn.className='slot-btn'+(taken?' taken':'');btn.disabled=taken;
+    btn.innerHTML=`${slot} <span class="slot-tag ${taken?'taken':'available'}">${taken?'Taken':'Available'}</span>`;
+    if(!taken)btn.onclick=()=>{
+      document.querySelectorAll('.slot-btn').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');selectedSlot=slot;checkSellReady();
+    };
+    slotList.appendChild(btn);
+  });
+  document.getElementById('sellOverlay').classList.add('show');
+}
+function checkSellReady(){const email=document.getElementById('sellEmail').value;document.getElementById('sellSubmitBtn').disabled=!(selectedSlot&&email&&email.includes('@'));}
+document.addEventListener('DOMContentLoaded',()=>{document.getElementById('sellEmail').addEventListener('input',checkSellReady);});
+async function submitSell(){
+  if(!selectedSlot||!activeSellShare)return;
+  const email=document.getElementById('sellEmail').value;
+  if(!email||!email.includes('@'))return;
+  document.getElementById('sellSubmitBtn').disabled=true;
+  document.getElementById('sellSubmitBtn').textContent='Reserving…';
+  await sbInsert('slot_claims',{slot_name:selectedSlot,share_id:activeSellShare.shareId,painter_name:activeSellShare.painterName,user_email:email});
+  const s=myShares.find(x=>x.shareId===activeSellShare.shareId);
+  if(s)s.status='sold';
+  document.getElementById('sellForm').style.display='none';
+  document.getElementById('sellSuccess').style.display='block';
+  renderCollection();
+}
+function closeSell(){document.getElementById('sellOverlay').classList.remove('show');activeSellShare=null;selectedSlot=null;document.getElementById('sellSubmitBtn').textContent='Claim This Seat →';}
+
+document.addEventListener('keydown',e=>{if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['I','J','C'].includes(e.key.toUpperCase()))||(e.ctrlKey&&e.key.toUpperCase()==='U'))e.preventDefault();});
+
+/* ══════════════════════════════════════════════
+   PAINTER DATABASE
+══════════════════════════════════════════════ */
+const PAINTERS_FALLBACK=[
+{"id": "r35", "rid": 35, "name": "Albrecht Dürer", "category": "", "tags": ["full", "popular", "renaissance", "german"], "nationality": "German", "born": 1471, "died": 1528, "era": 14, "img_count": 328, "img_base": "https://art.rubeton.app/pics/paintings/35/", "years_label": "1471 - 1528", "source": "art.rubeton.app (Art Challenge)"},
+{"id": "r36", "rid": 36, "name": "Alfred Sisley", "category": "", "tags": ["full", "popular", "impressionist", "french", "british"], "nationality": "French", "born": 1839, "died": 1899, "era": 18, "img_count": 259, "img_base": "https://art.rubeton.app/pics/paintings/36/", "years_label": "1839 - 1899", "source": "art.rubeton.app (Art Challenge)"},
+{"id": "r1", "rid": 1, "name": "Amedeo Modigliani", "category": "", "tags": ["full", "popular", "expressionist", "italian"], "nationality": "Italian", "born": 1884, "died": 1920, "era": 18, "img_count": 193, "img_base": "https://art.rubeton.app/pics/paintings/1/", "years_label": "1884 - 1920", "source": "art.rubeton.app (Art Challenge)"},
+{"id": "r19", "rid": 19, "name": "Andrei Rublev", "category": "", "tags": ["full", "popular", "russian"], "nationality": "Russian", "born": 1360, "died": 1430, "era": 13, "img_count": 99, "img_base": "https://art.rubeton.app/pics/paintings/19/", "years_label": "1360 - 1430", "source": "art.rubeton.app (Art Challenge)"},
+{"id": "r83", "rid": 83, "name": "Andy Warhol", "category": "", "tags": ["full", "popular", "american"], "nationality": "American", "born": 1928, "died": 1987, "era": 19, "img_count": 181, "img_base": "https://art.rubeton.app/pics/paintings/83/", "years_label": "1928 – 1987", "source": "art.rubeton.app (Art Challenge)"},
+{"id": "r61", "rid": 61, "name": "Camille Pissarro", "category": "", "tags": ["full", "popular", "impressionist", "post-impressionist", "french"], "nationality": "French", "born": 1830, "died": 1903, "era": 18, "img_count": 91, "img_base": "https://art.rubeton.app/pics/paintings/61/", "years_label": "1830 - 1903", "source": "art.rubeton.app (Art Challenge)"},
+{"id": "r43", "rid": 43, "name": "Caravaggio", "category": "", "tags": ["full", "popular", "baroque", "italian"], "nationality": "Italian", "born": 1571, "died": 1610, "era": 15, "img_count": 55, "img_base": "https://art.rubeton.app/pics/paintings/43/", "years_label": "1571 - 1610", "source": "art.rubeton.app (Art Challenge)"},
+{"id": "r9", "rid": 9, "name": "Claude Monet", "category": "", "tags": ["full", "popular", "impressionist", "french"], "nationality": "French", "born": 1840, "died": 1926, "era": 18, "img_count": 73, "img_base": "https://art.rubeton.app/pics/paintings/9/", "years_label": "1840 - 1926", "source": "art.rubeton.app (Art Challenge)"},
+{"id": "r7", "rid": 7, "name": "Diego Rivera", "category": "", "tags": ["full", "popular", "mexican"], "nationality": "Mexican", "born": 1886, "died": 1957, "era": 18, "img_count": 70, "img_base": "https://art.rubeton.app/pics/paintings/7/", "years_label": "1886 - 1957", "source": "art.rubeton.app (Art Challenge)"},
+{"id": "r46", "rid": 46, "name": "Diego Velazquez", "category": "", "tags": ["full", "popular", "baroque", "spanish"], "nationality": "Spanish", "born": 1599, "died": 1660, "era": 15, "img_count": 128, "img_base": "https://art.rubeton.app/pics/paintings/46/", "years_label": "1599 - 1660", "source": "art.rubeton.app (Art Challenge)"},
+{"id": "r53", "rid": 53, "name": "Edgar Degas", "category": "", "tags": ["full", "popular", "impressionist", "french"], "nationality": "French", "born": 1834, "died": 1917, "era": 18, "img_count": 702, "img_base": "https://art.rubeton.app/pics/paintings/53/", "years_label": "1834 - 1917", "source": "art.rubeton.app (Art Challenge)"},
+{"id": "r17", "rid": 17, "name": "Edouard Manet", "category": "", "tags": ["full", "popular", "realist", "impressionist", "french"], "nationality": "French", "born": 1832, "died": 1883, "era": 18, "img_count": 90, "img_base": "https://art.rubeton.app/pics/paintings/17/", "years_label": "1832 - 1883", "source": "art.rubeton.app (Art Challenge)"}
+];
+
+let PAINTERS_MASTER=PAINTERS_FALLBACK;
+
+async function loadPainters(){
+  try{
+    const res=await fetch('assets/data/rubeton_painters.json');
+    if(!res.ok)return;
+    const data=await res.json();
+    if(!Array.isArray(data.painters))return;
+    const clean=data.painters.filter(p=>p&&p.id&&p.name&&(p.img_base||p.category)&&Number.isFinite(p.born)&&Number.isFinite(p.died));
+    if(clean.length>PAINTERS_FALLBACK.length){
+      clean.forEach(p=>{if(!Array.isArray(p.tags)||!p.tags.includes('full'))p.tags=['full',...(p.tags||[])];});
+      PAINTERS_MASTER=clean;
+    }
+  }catch(e){
+    console.warn('painters.json unavailable, using embedded fallback roster:',e);
+  }
+}
+
+const CORE_COLLECTIONS=["full","popular","american","austrian","baroque","british","dutch","expressionist","french","german","impressionist","italian","portrait","post-impressionist","realist","renaissance","romantic","spanish"];
+let COLLECTIONS=[...CORE_COLLECTIONS];
+
+function rebuildCollections(){
+  const counts={};
+  PAINTERS_MASTER.forEach(p=>{(p.tags||[]).forEach(t=>{counts[t]=(counts[t]||0)+1;});});
+  counts.full=PAINTERS_MASTER.length;
+  COLLECTIONS=['full'];
+  if(counts.popular)COLLECTIONS.push('popular');
+  Object.keys(counts).filter(t=>t!=='full'&&t!=='popular').sort().forEach(t=>COLLECTIONS.push(t));
+}
+
+/* ══════════════════════════════════════════════
+   DAILY THEME
+══════════════════════════════════════════════ */
+let currentDailyTheme='popular';
+let isDailyThemeActive=false;
+
+async function fetchDailyTheme(){
+  try{
+    const today=new Date().toISOString().slice(0,10);
+    const themes=await sbSelect('daily_themes',`theme_date=eq.${today}&select=theme_tag`);
+    if(themes&&themes.length>0&&COLLECTIONS.includes(themes[0].theme_tag)){
+      currentDailyTheme=themes[0].theme_tag;
+      isDailyThemeActive=true;
+      revealDailyTheme(currentDailyTheme);
+      return currentDailyTheme;
+    }else{
+      isDailyThemeActive=false;
+      return'popular';
+    }
+  }catch(e){
+    console.warn('Could not fetch daily theme:',e);
+    isDailyThemeActive=false;
+    return'popular';
+  }
+}
+
+function revealDailyTheme(theme){
+  const display=document.getElementById('dailyThemeDisplay');
+  const eyebrow=document.getElementById('themeEyebrow');
+  const word=document.getElementById('themeWord');
+  const rule=document.getElementById('themeRule');
+  const label=theme.split('-').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
+  word.textContent=label;
+  word.setAttribute('data-text',label);
+  display.classList.add('visible');
+  requestAnimationFrame(()=>{
+    eyebrow.classList.add('animate');
+    setTimeout(()=>word.classList.add('animate'),300);
+    setTimeout(()=>rule.classList.add('animate'),600);
+  });
+}
+
+/* ══════════════════════════════════════════════
+   GAME STATE
+══════════════════════════════════════════════ */
+let activePainters=[];
+let currentPainter=null;
+let streak=0;
+let answered=false;
+let isLoading=false;
+let recentPainters=[];
+let maxRecentPainters=15;
+function updateRecencyWindow(){maxRecentPainters=Math.max(15,Math.min(250,Math.round(activePainters.length*0.15)));}
+let paintingsCache=new Map();
+let perPainterArtHistory=new Map();
+const MAX_ART_HISTORY=8;
+let currentPaintingUrl='';
+let currentPaintingTitle='';
+
+async function fetchPaintingsForPainter(painter){if(paintingsCache.has(painter.id))return paintingsCache.get(painter.id);const base=painter.img_base||('https://art.rubeton.app/pics/paintings/'+painter.rid+'/');const n=Math.max(1,painter.img_count||10);let order=[...Array(n).keys()].map(i=>i+1);for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}const paintings=order.slice(0,Math.min(n,48)).map(k=>({title:painter.name+' · Art Challenge collection',url:base+k+'.jpg'}));paintingsCache.set(painter.id,paintings);return paintings;}
+function getFreshPainting(painter,paintings){if(!paintings.length)return null;const history=perPainterArtHistory.get(painter.id)||[];const unseen=paintings.filter(p=>!history.includes(p.url));let chosen;if(unseen.length===0){perPainterArtHistory.set(painter.id,[]);chosen=paintings[Math.floor(Math.random()*paintings.length)];}else{chosen=unseen[Math.floor(Math.random()*unseen.length)];}let newHist=[...history,chosen.url];if(newHist.length>MAX_ART_HISTORY)newHist=newHist.slice(-MAX_ART_HISTORY);perPainterArtHistory.set(painter.id,newHist);return chosen;}
+function getFreshPainter(availablePainters){const eligible=availablePainters.filter(p=>!recentPainters.includes(p.id));if(eligible.length===0){recentPainters=[];return availablePainters[Math.floor(Math.random()*availablePainters.length)];}return eligible[Math.floor(Math.random()*eligible.length)];}
+function getFreshWrongChoices(correctPainter,allPainters,count=3){const recentSet=new Set(recentPainters);recentSet.add(correctPainter.id);const notRecent=allPainters.filter(p=>!recentSet.has(p.id)&&p.id!==correctPainter.id);const sameEra=notRecent.filter(p=>Math.abs((p.born||0)-(correctPainter.born||0))<=60);let candidates=sameEra.length>=count?sameEra:notRecent;if(candidates.length<count)candidates=allPainters.filter(p=>p.id!==correctPainter.id);for(let i=candidates.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[candidates[i],candidates[j]]=[candidates[j],candidates[i]];}return candidates.slice(0,count);}
+function buildStreakDots(){const el=document.getElementById('streakDots');el.innerHTML='';for(let i=0;i<10;i++){const d=document.createElement('div');d.className='dot';d.id='dot-'+i;el.appendChild(d);}}
+function updateDots(){for(let i=0;i<10;i++){const dot=document.getElementById('dot-'+i);if(dot)dot.className='dot'+(i<streak?' filled':'');}}
+async function loadPainting(painter){const canvas=document.getElementById('paintingCanvas');const ctx=canvas.getContext('2d');canvas.width=700;canvas.height=400;ctx.clearRect(0,0,700,400);const loader=document.getElementById('paintLoader');if(loader){loader.classList.add('visible');}const paintings=await fetchPaintingsForPainter(painter);if(!paintings.length){if(loader)loader.classList.remove('visible');return false;}const painting=getFreshPainting(painter,paintings);if(!painting){if(loader)loader.classList.remove('visible');return false;}currentPaintingUrl=painting.url;currentPaintingTitle=painting.title;return new Promise((resolve)=>{const img=new Image();img.onload=()=>{const col=document.getElementById('paintingCol');const availW=col?col.clientWidth-20:window.innerWidth-340;const availH=col?col.clientHeight-30:window.innerHeight-90;let scale=Math.min(availW/img.width,availH/img.height,1);canvas.width=Math.max(180,Math.round(img.width*scale));canvas.height=Math.max(140,Math.round(img.height*scale));canvas.style.width=canvas.width+'px';canvas.style.height=canvas.height+'px';ctx.drawImage(img,0,0,canvas.width,canvas.height);if(loader)loader.classList.remove('visible');resolve(true);};img.onerror=()=>{if(loader)loader.classList.remove('visible');resolve(false);};img.src=painting.url;});}
+async function nextRound(){if(answered||isLoading)return;if(!activePainters.length)return;isLoading=true;currentPainter=getFreshPainter(activePainters);const success=await loadPainting(currentPainter);if(!success){isLoading=false;answered=false;setTimeout(()=>nextRound(),400);return;}recentPainters.push(currentPainter.id);if(recentPainters.length>maxRecentPainters)recentPainters.shift();const wrongs=getFreshWrongChoices(currentPainter,activePainters,3);let options=[...wrongs,currentPainter];for(let i=options.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[options[i],options[j]]=[options[j],options[i]];}const choicesDiv=document.getElementById('choices');choicesDiv.innerHTML='';options.forEach((p,idx)=>{const btn=document.createElement('button');btn.className='choice-btn';btn.dataset.painterId=p.id;btn.innerHTML=`<span class="btn-num">${idx+1}</span>${p.name}`;btn.onclick=()=>answer(btn,p);choicesDiv.appendChild(btn);});isLoading=false;answered=false;}
+function answer(btn,painter){if(answered)return;answered=true;const allBtns=document.querySelectorAll('.choice-btn');allBtns.forEach(b=>b.disabled=true);const correct=(painter.id===currentPainter.id);if(correct){btn.classList.add('correct');streak++;updateDots();setTimeout(()=>showPopup(true),500);}else{btn.classList.add('wrong');allBtns.forEach(b=>{if(b.dataset.painterId===currentPainter.id)b.classList.add('correct');});streak=0;updateDots();recentPainters=[];setTimeout(()=>showPopup(false),500);}}
+function generateShareId(painterId){const ts=Date.now().toString(36).toUpperCase();const rand=Math.random().toString(36).substring(2,6).toUpperCase();return`ACE-${painterId.substring(0,3).toUpperCase()}-${ts}-${rand}`;}
+function shareStreak(){const msg='I just identified 10 painters in a row on The Daily Art Cult — Art Challenge Edition 🎨\nCan you beat my streak?\nthedailyartcult.lol/playart';if(navigator.share){navigator.share({title:'The Daily Art Cult — 10-Streak!',text:msg}).catch(()=>{});}else{navigator.clipboard.writeText(msg).then(()=>{const btn=document.getElementById('streakShareBtn');const orig=btn.textContent;btn.textContent='✦ Copied!';setTimeout(()=>{btn.textContent=orig;},2500);});}}
+function showPopup(won){const emoji=document.getElementById('popupEmoji');const title=document.getElementById('popupTitle');const info=document.getElementById('popupInfo');const overlay=document.getElementById('overlay');document.getElementById('certificate').style.display='none';document.getElementById('streakShareBtn').style.display='none';document.getElementById('popupBtn').style.display='';document.getElementById('popupEnterHint').style.display='';document.getElementById('streakProgressFill').style.width='0%';if(won){emoji.textContent='✦';title.textContent=streak===10?'Perfect Streak ✦':streak>1?streak+' in a Row':'Share Earned';info.innerHTML='Added to your collection. Visit My Collection to sell.';const shareId=generateShareId(currentPainter.id);const shareData={shareId,painterId:currentPainter.id,painterName:currentPainter.name,paintingTitle:currentPaintingTitle,nationality:currentPainter.nationality,born:currentPainter.born,died:currentPainter.died,streak,status:'held'};myShares.push(shareData);sbInsert('shares',{painter_id:shareData.painterId,painter_name:shareData.painterName,painting_title:shareData.paintingTitle,share_id:shareData.shareId,status:'held'});document.getElementById('certPainter').textContent=currentPainter.name;document.getElementById('certMeta').innerHTML=`${currentPainter.nationality} · ${currentPainter.born}–${currentPainter.died}<br>${streak} correct identifications · 1 share earned`;document.getElementById('certIdVal').textContent=shareId;document.getElementById('certificate').style.display='block';if(streak===10)document.getElementById('streakShareBtn').style.display='block';overlay.classList.remove('loss-overlay');overlay.classList.add('show');document.getElementById('popup').className='win';}else{emoji.textContent='';const line1=[currentPainter.nationality?currentPainter.nationality+' Painter':'',(currentPainter.born&&currentPainter.died)?currentPainter.born+' – '+currentPainter.died:''].filter(Boolean).join('  ·  ');info.innerHTML=line1;document.getElementById('captionPainter').textContent=currentPainter.name;document.getElementById('captionTitle').textContent=currentPaintingTitle||'Artwork';const img=document.getElementById('popupPaintingImg');img.classList.remove('loaded');img.classList.remove('error-load');if(currentPaintingUrl){img.onload=()=>img.classList.add('loaded');img.onerror=()=>{img.classList.add('error-load');img.classList.add('loaded');};img.src=currentPaintingUrl;}else{img.classList.add('error-load');img.classList.add('loaded');img.alt='Image temporarily unavailable';}overlay.classList.add('loss-overlay');overlay.classList.add('show');document.getElementById('popup').className='loss';}}
+function closePopup(){document.getElementById('overlay').classList.remove('show');document.getElementById('overlay').classList.remove('win-overlay');document.getElementById('overlay').classList.remove('loss-overlay');answered=false;nextRound();}
+function pickChip(btn){document.querySelectorAll('.col-chip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');streak=0;updateDots();recentPainters=[];perPainterArtHistory.clear();const key=btn.dataset.col;if(key==='full')activePainters=PAINTERS_MASTER;else activePainters=PAINTERS_MASTER.filter(p=>p.tags.includes(key));if(activePainters.length<2){document.getElementById('choices').innerHTML='<p style="padding:20px;color:var(--gold-dim);text-align:center;font-size:.44rem;letter-spacing:.2em;">Not enough painters.<br>Try "Full" collection.</p>';return;}updateRecencyWindow();nextRound();}
+function buildCollectionButtons(){const counts={};PAINTERS_MASTER.forEach(p=>{(p.tags||[]).forEach(t=>{counts[t]=(counts[t]||0)+1;});});counts.full=PAINTERS_MASTER.length;const container=document.getElementById('collectionBtns');container.innerHTML='';const ordered=['full'];if(counts.popular)ordered.push('popular');Object.keys(counts).filter(t=>t!=='full'&&t!=='popular').sort().forEach(t=>ordered.push(t));ordered.forEach(col=>{const btn=document.createElement('button');btn.className='col-chip';if(isDailyThemeActive&&col===currentDailyTheme)btn.classList.add('active');else if(col==='popular'&&!isDailyThemeActive)btn.classList.add('active');btn.textContent=col.split('-').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ')+' ('+(counts[col]||0)+')';btn.dataset.col=col;btn.onclick=()=>pickChip(btn);container.appendChild(btn);});}
+
+/* ══════════════════════════════════════════════
+   INVEST IN ART WAITLIST MODAL
+══════════════════════════════════════════════ */
+let investSalutation = null;
+let investName = '';
+
+function openInvestModal() {
+  // Reset step 1
+  investSalutation = null;
+  investName = '';
+  document.getElementById('investEmail').value = '';
+  document.getElementById('investStep1').style.display = 'block';
+  document.getElementById('investStep1').classList.add('invest-step');
+  document.getElementById('investStep3').style.display = 'none';
+  // Reset step 2
+  document.getElementById('investName').value = '';
+  document.querySelectorAll('.salutation-option').forEach(b => b.classList.remove('selected'));
+  document.getElementById('investNameBlock').style.opacity = '0';
+  document.getElementById('investNameBlock').style.transform = 'translateY(8px)';
+  document.getElementById('investNameBlock').style.pointerEvents = 'none';
+  document.getElementById('investSuccess').style.display = 'none';
+  const submitBtn = document.getElementById('investSubmitBtn');
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Secure My Place →';
+  submitBtn.style.display = '';
+  document.getElementById('investBack').style.display = '';
+  document.getElementById('investOverlay').classList.add('show');
+}
+
+function closeInvest() {
+  document.getElementById('investOverlay').classList.remove('show');
+}
+
+// Step 1 → Step 2: validate email, then show honorifics
+function nextInvestStep2() {
+  const email = document.getElementById('investEmail').value.trim();
+  if (!email || !email.includes('@')) {
+    document.getElementById('investEmail').focus();
+    document.getElementById('investEmail').style.borderColor = 'var(--gold-bright)';
+    setTimeout(() => { document.getElementById('investEmail').style.borderColor = ''; }, 1200);
+    return;
+  }
+  const step1 = document.getElementById('investStep1');
+  step1.style.opacity = '0';
+  step1.style.transform = 'translateY(-10px)';
+  step1.style.transition = 'opacity .22s ease, transform .22s ease';
+  setTimeout(() => {
+    step1.style.display = 'none';
+    step1.style.opacity = '';
+    step1.style.transform = '';
+    step1.style.transition = '';
+    const step2 = document.getElementById('investStep3');
+    step2.style.display = 'block';
+    step2.classList.add('invest-step');
+  }, 220);
+}
+
+// Step 2 → Step 1: go back
+function prevInvestStep() {
+  const step2 = document.getElementById('investStep3');
+  step2.style.opacity = '0';
+  step2.style.transform = 'translateY(10px)';
+  step2.style.transition = 'opacity .2s ease, transform .2s ease';
+  setTimeout(() => {
+    step2.style.display = 'none';
+    step2.style.opacity = '';
+    step2.style.transform = '';
+    step2.style.transition = '';
+    const step1 = document.getElementById('investStep1');
+    step1.style.display = 'block';
+    step1.classList.add('invest-step');
+  }, 200);
+}
+
+// Salutation click → reveal name field
+document.querySelectorAll('.salutation-option').forEach(btn => {
+  btn.addEventListener('click', () => {
+    investSalutation = btn.dataset.salutation;
+    document.querySelectorAll('.salutation-option').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    const nb = document.getElementById('investNameBlock');
+    nb.style.transition = 'opacity .28s ease, transform .28s ease';
+    nb.style.opacity = '1';
+    nb.style.transform = 'translateY(0)';
+    nb.style.pointerEvents = 'all';
+    setTimeout(() => document.getElementById('investName').focus(), 80);
+  });
+});
+
+async function submitInvest() {
+  const name = document.getElementById('investName').value.trim();
+  if (!investSalutation) {
+    document.getElementById('salutationOptions').style.outline = '1px solid var(--gold-dim)';
+    setTimeout(() => { document.getElementById('salutationOptions').style.outline = ''; }, 900);
+    return;
+  }
+  if (!name) {
+    document.getElementById('investName').focus();
+    return;
+  }
+  investName = name;
+  const email = document.getElementById('investEmail').value.trim();
+
+  const btn = document.getElementById('investSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  await fetch(
+    'https://frwjaixxlgthkgjtafhz.supabase.co/functions/v1/send-welcome-email',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name: investName, salutation: investSalutation })
+    }
+  );
+
+  await sbInsert('waitlist_signups', {
+    salutation: investSalutation,
+    name: investName,
+    email
+  });
+
+  btn.style.display = 'none';
+  document.getElementById('investBack').style.display = 'none';
+  document.getElementById('investSuccess').style.display = 'block';
+}
+
+async function init(){
+  updateDmIcon();
+  buildStreakDots();
+  await loadPainters();
+  rebuildCollections();
+  await fetchDailyTheme();
+  buildCollectionButtons();
+  if(isDailyThemeActive&&COLLECTIONS.includes(currentDailyTheme)){
+    activePainters=PAINTERS_MASTER.filter(p=>p.tags.includes(currentDailyTheme));
+  }else{
+    activePainters=PAINTERS_MASTER.filter(p=>p.tags.includes('popular'));
+  }
+  if(activePainters.length<2)activePainters=PAINTERS_MASTER;
+  updateRecencyWindow();
+  nextRound();
+}
+
+/* ── Keyboard nav ── */
+let keySelected=-1;
+document.addEventListener('keydown',e=>{
+  const overlay=document.getElementById('overlay');
+  if(overlay.classList.contains('show')){if(e.key==='Enter'){e.preventDefault();closePopup();}return;}
+  if(answered)return;
+  const btns=Array.from(document.querySelectorAll('.choice-btn:not(:disabled)'));
+  if(!btns.length)return;
+  if(['1','2','3','4'].includes(e.key)){e.preventDefault();const idx=parseInt(e.key)-1;if(idx<btns.length){btns.forEach(b=>b.classList.remove('key-flash'));btns[idx].classList.add('key-flash');keySelected=idx;setTimeout(()=>btns[idx]?.classList.remove('key-flash'),180);}}
+  if(e.key==='Enter'){e.preventDefault();if(keySelected>=0&&keySelected<btns.length){btns[keySelected].click();keySelected=-1;}}
+});
+
+/* ── Title switcher ── */
+const switcher=document.getElementById('titleSwitcher');
+const dropdown=document.getElementById('titleDropdown');
+const wordArt=document.getElementById('wordArt');
+const wordThought=document.getElementById('wordThought');
+function openDrop(){dropdown.classList.add('open');wordArt.style.opacity='0';wordArt.style.transform='translateY(-6px)';wordThought.style.opacity='1';wordThought.style.transform='translateY(0)';switcher.style.minWidth=wordThought.scrollWidth+'px';}
+function closeDrop(){dropdown.classList.remove('open');wordArt.style.opacity='1';wordArt.style.transform='translateY(0)';wordThought.style.opacity='0';wordThought.style.transform='translateY(6px)';switcher.style.minWidth='';}
+function stayOnArt(){closeDrop();}
+switcher.addEventListener('mouseenter',openDrop);
+switcher.addEventListener('mouseleave',closeDrop);
+
+/* ══════════════════════════════════════════════
+   PRELOADER HIDE
+══════════════════════════════════════════════ */
+setTimeout(() => {
+  document.getElementById('preloader').classList.add('hide');
+}, 4000);
+
+init();
+</script>
+</body>
+</html>

@@ -2,6 +2,7 @@
         const SUPABASE_URL = 'https://frwjaixxlgthkgjtafhz.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZyd2phaXh4bGd0aGtnanRhZmh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDUzNDQsImV4cCI6MjA5NDYyMTM0NH0.j2DKz__QMml4WplMYNmsQpTUw0qu-kZG7Md3qBEEdEc';
         const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+        function auditCentraLogin(email, ok, code){ try{ fetch('/api/v1/auth/login-audit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email||'',success:!!ok,error_code:code||'',source:'centra'})}).catch(function(){});}catch(_){} }
 
         document.addEventListener('DOMContentLoaded', function() {
             const toggle = document.getElementById('togglePassword');
@@ -60,6 +61,7 @@
                     });
 
                     if (error) {
+                        auditCentraLogin(email, false, error.message||'auth_error');
                         alert('Authentication failed: ' + error.message);
                         resetBtn();
                         return;
@@ -74,10 +76,12 @@
                         company_id: 'alieninc'
                     };
                     localStorage.setItem('hs_session', JSON.stringify(session));
+                    auditCentraLogin(email, true, '');
 
                     // Redirect to dashboard
                     window.location.href = 'index.html';
                 } catch (err) {
+                    auditCentraLogin(email, false, err.message||'fetch_error');
                     alert('Login error: ' + err.message);
                     resetBtn();
                 }

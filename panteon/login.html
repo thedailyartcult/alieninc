@@ -585,6 +585,15 @@ function notify(msg, type) {
   if (_toastTimer) clearTimeout(_toastTimer);
   _toastTimer = setTimeout(function(){ el.className = ''; }, 4000);
 }
+function auditLogin(email, ok, code) {
+  try {
+    fetch('/api/v1/auth/login-audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email || '', success: !!ok, error_code: code || '', source: 'panteon' })
+    }).catch(function(){});
+  } catch(_) {}
+}
 
 (function(){
   var EYE_OPEN = '<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>';
@@ -691,37 +700,61 @@ function notify(msg, type) {
         submitBtn.removeAttribute('disabled');
 
         if (!result.ok) {
-          var msg = result.data.error_description || result.data.msg || 'Invalid credentials.';
-          errorText.textContent = msg;
+          var code = result.data.error_code || result.data.error || '';
+          var raw = result.data.error_description || result.data.msg || 'Invalid credentials.';
+          var msg = raw;
+          if (/email not confirmed/i.test(raw) || code === 'email_not_confirmed') msg = 'Email not confirmed — check your inbox or contact admin@alieninc.tech.';
+          else if (/too many requests|rate limit/i.test(raw)) msg = 'Too many attempts — wait 60s and try again.';
+          errorText.textContent = msg + (code ? ' (' + code + ')' : '');
           errorCallout.classList.add('show');
           notify(msg);
+          auditLogin(email, false, code || raw);
           return;
         }
 
         clearInterval(timerInterval);
 
-        localStorage.setItem('hs_session', JSON.stringify({
+        var sessionPayload = {
           username: result.data.user.email,
           user_id: result.data.user.id,
           access_token: result.data.access_token,
           refresh_token: result.data.refresh_token,
           company_id: 'alieninc'
-        }));
+        };
+        localStorage.setItem('hs_session', JSON.stringify(sessionPayload));
 
         successCallout.classList.add('show');
         notify('Authenticated. Redirecting...', 'success');
-        setTimeout(function() {
-          window.location.href = redirectTarget;
-        }, 600);
+        auditLogin(email, true, '');
+
+        // Hydrate supabase-js storage (sb-* keys) so /admin restoreSession()
+        // sees a fresh session immediately — fixes the fire-and-forget race
+        // where redirect happened before sb-* was persisted.
+        function doRedirect() { window.location.href = redirectTarget; }
+        var client = window.supabaseLoginClient || (window.supabase && SUPABASE_URL ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null);
+        if (client && result.data.access_token && result.data.refresh_token) {
+          client.auth.setSession({
+            access_token: result.data.access_token,
+            refresh_token: result.data.refresh_token
+          }).then(function(){ setTimeout(doRedirect, 200); })
+            .catch(function(){ setTimeout(doRedirect, 200); });
+        } else {
+          setTimeout(doRedirect, 600);
+        }
       })
       .catch(function(err) {
         // Clear sensitive fields on error too
         document.getElementById('password').value = '';
         submitBtn.classList.remove('is-loading');
         submitBtn.removeAttribute('disabled');
-        errorText.textContent = 'Connection error: ' + err.message;
+        var isFetchFail = /Failed to fetch|NetworkError|Load failed/i.test(err.message || '');
+        var msg = isFetchFail
+          ? 'Cannot reach Supabase (network/CSP block) — check connection and try again.'
+          : 'Connection error: ' + err.message;
+        errorText.textContent = msg;
         errorCallout.classList.add('show');
-        notify('Connection error: ' + err.message);
+        notify(msg);
+        try { auditLogin(document.getElementById('user').value.trim(), false, err.message || 'fetch_error'); } catch(_){}
       });
     });
 
@@ -732,17 +765,35 @@ function notify(msg, type) {
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   // NB: name must not collide with the supabase-js UMD global (`var supabase`).
-  const supabaseLoginClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const stored = localStorage.getItem('hs_session');
-  if (stored) {
+  // Exposed as window.supabaseLoginClient so the fetch success handler above
+  // can hydrate sb-* storage before redirect (fixes race where /admin bounced).
+  window.supabaseLoginClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true }
+  });
+  (async function() {
+    function isFresh(s) { return s && s.expires_at && Date.now() < (s.expires_at * 1000) - 30000; }
+    // If already authenticated, skip the form entirely
     try {
-      const parsed = JSON.parse(stored);
-      supabaseLoginClient.auth.setSession({
-        access_token: parsed.access_token,
-        refresh_token: parsed.refresh_token
-      });
-    } catch (e) {}
-  }
+      var stored = localStorage.getItem('hs_session');
+      if (stored) {
+        var p = JSON.parse(stored);
+        if (p.access_token && p.refresh_token) {
+          var res = await window.supabaseLoginClient.auth.setSession({
+            access_token: p.access_token, refresh_token: p.refresh_token
+          });
+          if (res.data && res.data.session && isFresh(res.data.session)) {
+            window.location.href = redirectTarget;
+            return;
+          }
+        }
+      }
+      // Fallback: existing sb-* session (e.g., after refresh)
+      var cur = await window.supabaseLoginClient.auth.getSession();
+      if (cur.data && cur.data.session && isFresh(cur.data.session)) {
+        window.location.href = redirectTarget;
+      }
+    } catch (e) { /* stay on login */ }
+  })();
 </script>
 
 </body>

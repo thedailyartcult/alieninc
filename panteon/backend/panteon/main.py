@@ -150,6 +150,20 @@ async def root():
     }
 
 
+@app.get("/login.html")
+@app.get("/login")
+@app.get("/login/")
+async def login_page():
+    login_file = PANTEON_SITE / "login.html"
+    if login_file.exists():
+        # Authoritative: login must be served by FastAPI, not legacy :8080.
+        # Decouples auth from marketing server restarts (recurring login break).
+        return FileResponse(login_file, headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+        })
+    return {"detail": "Login not found"}
+
+
 @app.get("/admin")
 @app.get("/admin/")
 async def admin():

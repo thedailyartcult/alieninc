@@ -44,6 +44,8 @@ from action_writeback_service import (
     GDELTWritebackPipeline,
 )
 
+from feed_budget import feed_budget
+
 logger = logging.getLogger("spinal_cracker.api")
 
 # Create FastAPI app
@@ -217,6 +219,21 @@ async def ontology_snapshot() -> Dict[str, Any]:
     """Return a snapshot of the current ontology graph state."""
     snapshot = writeback_pipeline.get_ontology_snapshot()
     return JSONResponse(content=snapshot, status_code=200)
+
+
+@app.get("/api/v1/feed-budget")
+async def feed_budget_endpoint() -> Dict[str, Any]:
+    """Return budget status for all registered feeds."""
+    feeds = [
+        {"name": "opensky", "max_per_day": 10},
+        {"name": "gdelt", "max_per_day": 20},
+        {"name": "firms", "max_per_day": 50},
+        {"name": "vessels", "max_per_day": 10},
+    ]
+    result = {}
+    for f in feeds:
+        result[f["name"]] = feed_budget.status(f["name"], f["max_per_day"])
+    return result
 
 
 @app.get("/health")

@@ -183,6 +183,12 @@ class GovernanceLayer:
                 filtered.append(tool)
                 continue
 
+            # MAVEN mission tools — tasking is action-level authority
+            if name.startswith("maven_"):
+                if self.agent.allowed_actions:
+                    filtered.append(tool)
+                continue
+
             # Action tools — check if agent has action permissions
             if name in ("execute_action", "list_action_types"):
                 if self.agent.allowed_actions:

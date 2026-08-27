@@ -587,6 +587,13 @@ class GKGConnector:
 
     async def pull(self) -> List[GKGEvent]:
         """Pull GDELT DOC 2.0 article data and return parsed GKGEvents."""
+        # Budget check: enforce daily quota
+        from feed_budget import feed_budget
+        budget = feed_budget.check_and_consume("gdelt", 20)
+        if not budget["ok"]:
+            logger.warning("GDELT daily quota exceeded: %s", budget)
+            return []
+
         raw_data = await self._request_with_retry(max_retries=2, block=True)
 
         events_raw = raw_data.get("articles", []) or []

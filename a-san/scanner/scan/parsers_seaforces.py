@@ -26,6 +26,18 @@ _CAPABILITY_KWS = (" can ", " equipped ", " fitted ", " armed with ", " powered 
                    " carries ", " range of ", " speed of ", " in service",
                    " commissioned", " displacement")
 
+# Keys we accept from packed table cells — excludes hull-number chronology
+# lists ('USS Essex: (1942-69)') that otherwise win on volume.
+_SPEC_KEYS = {
+    "displacement", "length", "beam", "draft", "draught", "height", "speed",
+    "range", "complement", "propulsion", "machinery", "armament", "aircraft",
+    "sensors", "radar", "sonar", "ew", "countermeasures", "builders",
+    "builder", "class", "endurance", "capacity", "troops", "payload",
+    "crew", "boilers", "turbines", "shafts", "power plant", "fuel",
+    "aviation", "boats", "missiles", "guns", "torpedoes", "decoys", "aegis",
+    "type", "namesake", "laid down", "launched", "commissioned",
+}
+
 
 def _designation_from_url(url: str) -> str:
     slug = urllib.parse.unquote(url.rstrip("/").rsplit("/", 1)[-1])
@@ -87,6 +99,53 @@ def _extract_specs(body: str) -> list[str]:
     return specs
 
 
+def _table_cell_specs(body: str) -> list[str]:
+    """Second shape: spec blocks packed in ONE <td> as repeated
+    '<strong>Key:</strong> value' segments separated by <br/> (Essex-class
+    style). Scans every table cell; needs >=3 clean pairs to trust."""
+    best: list[str] = []
+    for cell in re.findall(r"<td[^>]*>(.*?)</td>", body, re.S | re.I):
+        keys = re.findall(r"<(?:strong|b)[^>]*>\s*([A-Za-z][A-Za-z0-9 /()\-]{2,38}?)\s*:?\s*(?:<br\s*/?>)?\s*</(?:strong|b)>",
+                          cell, re.S | re.I)
+        if len(keys) < 3:
+            continue
+        # Split the cell on each bold key marker, pairing marker->following text
+        parts = re.split(r"<(?:strong|b)[^>]*>", cell)[1:]
+        found: list[str] = []
+        for part in parts:
+            head, sep, tail = part.partition("</strong>")
+            if not sep:
+                head, sep, tail = part.partition("</b>")
+                if not sep:
+                    continue
+            label_raw = re.sub(r"\s+", " ", re.sub(r"<br\s*/?>", " ", head, flags=re.I)).strip()
+            mm = re.match(r"([A-Za-z][A-Za-z0-9 /()\-]{2,40}?):?\s*$", label_raw)
+            if not mm:
+                continue
+            label = mm.group(1).strip()
+            if "|" in label or not tail:
+                continue
+            ll = label.lower()
+            if not any(ll.startswith(k) or k in ll for k in _SPEC_KEYS):
+                continue
+            if ll.startswith(("home", "specification", "characteristic")):
+                continue
+            # value = text after </strong> up to the next bold block start
+            stop = re.search(r"<(?:strong|b)[^>]*>", tail)
+            vseg = tail[:stop.start()] if stop else tail
+            v = re.sub(r"<br\s*/?>", " ", vseg, flags=re.I)
+            v = re.sub(r"<[^>]+>", " ", v)
+            v = re.sub(r"\s+", " ", html_lib.unescape(v)).strip(" /&;")
+            if label and v and len(v) > 1 and len(v) <= 250 \
+                    and v.lower() not in ("&nbsp;", "nbsp"):
+                found.append(f"{label}: {v}")
+        if len(found) > len(best):
+            best = found
+        if len(best) >= 15:
+            break
+    return best
+
+
 def parse_seaforces(url: str, html: str) -> CatalogEntry | None:
     """Parse a seaforces.org weapon-system / ship-class page."""
     if not html:
@@ -119,12 +178,12 @@ def parse_seaforces(url: str, html: str) -> CatalogEntry | None:
         description = next((p for p in paragraphs), "")[:600]
 
     specs = _extract_specs(body)
-    for p in paragraphs:
-        if description and p[:80] == description[:80]:
-            continue
-        pl = p.lower()
-        if any(v in pl for v in _CAPABILITY_KWS) and len(specs) < 10:
-            specs.append(p[:320])
+    cell_specs = _table_cell_specs(body)
+    if len(cell_specs) > len(specs):
+        specs = cell_specs
+    elif specs:
+        seen = {s.split(":", 1)[0].lower() for s in specs}
+        specs.extend(s for s in cell_specs if s.split(":", 1)[0].lower() not in seen)
 
     if not description and not specs:
         return None  # index/hub or org-only page — no equipment data.

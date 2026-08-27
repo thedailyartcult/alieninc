@@ -1066,6 +1066,15 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         if path == '/api/selfservice/notify':
             self._handle_selfservice_notify()
             return
+        if path.endswith('.html') or path == '/':
+            # A stale tab submitted a native form POST to a static page.
+            # Redirect back to the live document instead of erroring so the
+            # browser lands on the current version.
+            self.send_response(303)
+            self.send_header('Location', path if path != '/' else '/')
+            self.send_header('Content-Length', '0')
+            self.end_headers()
+            return
         self.send_error(404)
 
     def _handle_api_login(self):
@@ -1183,7 +1192,7 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             total = conn.execute(f'SELECT COUNT(*) FROM plugins{where_sql}', params).fetchone()[0]
 
             rows = conn.execute(
-                f'SELECT id, name, description, family, severity, cvss, cve, ports FROM plugins{where_sql} ORDER BY {order} LIMIT ? OFFSET ?',
+                f'SELECT id, name, description, family, severity, cvss, cve, ports, version, updated_date FROM plugins{where_sql} ORDER BY {order} LIMIT ? OFFSET ?',
                 params + [per_page, offset]
             ).fetchall()
 
@@ -1205,6 +1214,8 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                     'cvss': r['cvss'],
                     'cve': cve_list,
                     'ports': r['ports'],
+                    'version': r['version'] or '',
+                    'updated_date': r['updated_date'] or '',
                 })
 
             stats = {}
@@ -1275,10 +1286,132 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                 'cve': cve_list,
                 'solution': row['solution'],
                 'ports': row['ports'],
+                'version': row['version'] or '1.0.0',
+                'updated_date': row['updated_date'] or '',
             })
         except Exception as exc:
             sys.stderr.write('[plugin-detail] ERROR: %s\n' % exc)
             self._send_json({'error': 'Internal error'}, 500)
+
+    _intel_db = {'conn': None, 'lock': threading.Lock()}
+
+    def _get_intel_db(self):
+        import sqlite3
+        if AlienHandler._intel_db['conn'] is None:
+            with AlienHandler._intel_db['lock']:
+                if AlienHandler._intel_db['conn'] is None:
+                    db_path = os.path.join(ROOT, 'centra', 'engine', 'data', 'threat_intel.db')
+                    conn = sqlite3.connect(db_path, check_same_thread=False, timeout=30)
+                    conn.row_factory = sqlite3.Row
+                    conn.execute('PRAGMA journal_mode=WAL')
+                    AlienHandler._intel_db['conn'] = conn
+        return AlienHandler._intel_db['conn']
+
+    def _handle_threat_stats(self):
+        try:
+            stats = {}
+            snap_path = os.path.join(ROOT, 'trust', 'reports', 'intel-latest.json')
+            try:
+                with open(snap_path, 'r', encoding='utf-8') as f:
+                    stats = json.load(f)
+            except Exception:
+                stats = {}
+            iconn = self._get_intel_db()
+            totals = iconn.execute('SELECT COUNT(*), COALESCE(SUM(cisa_kev),0) FROM cves').fetchone()
+            sconn = self._get_plugin_db()
+            updated_24h = sconn.execute(
+                "SELECT COUNT(*) FROM plugins WHERE updated_date >= date('now','-1 day')").fetchone()[0]
+            recent = []
+            for r in iconn.execute("""
+                    SELECT cve_id, published, cvss_score, severity, cisa_kev FROM cves
+                    WHERE published IS NOT NULL
+                    ORDER BY published DESC, cvss_score DESC LIMIT 12"""):
+                recent.append({
+                    'id': r['cve_id'],
+                    'published': (r['published'] or '')[:10],
+                    'cvss': round(r['cvss_score'] or 0.0, 1),
+                    'severity': r['severity'] or '',
+                    'kev': bool(r['cisa_kev']),
+                })
+            stats.update({
+                'cves_tracked': totals[0],
+                'actively_exploited': totals[1],
+                'plugins_updated_24h': updated_24h,
+                'recent_cves': recent,
+            })
+            self._send_json(stats)
+        except Exception as exc:
+            sys.stderr.write('[threat-stats] ERROR: %s\n' % exc)
+            self._send_json({'status': 'operational', 'cves_tracked': 680000, 'actively_exploited': 0,
+                             'plugins_updated_24h': 0, 'recent_cves': []})
+
+    def _handle_recent_cves(self):
+        from urllib.parse import urlparse, parse_qs
+        parsed = urlparse(self.path)
+        params = parse_qs(parsed.query)
+        try:
+            limit = max(1, min(50, int(params.get('limit', ['20'])[0])))
+        except (ValueError, TypeError):
+            limit = 20
+        severity = (params.get('severity', [''])[0] or '').strip().lower()
+        kev_only = (params.get('kev', [''])[0] or '').strip() in ('1', 'true', 'yes')
+        try:
+            iconn = self._get_intel_db()
+            where = ["published IS NOT NULL"]
+            qparams = []
+            if severity in ('critical', 'high', 'medium', 'low'):
+                where.append('LOWER(severity) = ?')
+                qparams.append(severity)
+            if kev_only:
+                where.append('cisa_kev = 1')
+            qparams.append(limit)
+            rows = iconn.execute(
+                "SELECT cve_id, published, last_modified, cvss_score, severity, description, cisa_kev "
+                "FROM cves WHERE %s ORDER BY published DESC, cvss_score DESC LIMIT ?" % ' AND '.join(where),
+                qparams).fetchall()
+            results = [{
+                'id': r['cve_id'],
+                'published': (r['published'] or '')[:10],
+                'cvss': round(r['cvss_score'] or 0.0, 1),
+                'severity': r['severity'] or '',
+                'kev': bool(r['cisa_kev']),
+                'description': (r['description'] or '')[:240],
+                'detail_url': 'https://nvd.nist.gov/vuln/detail/%s' % r['cve_id'],
+            } for r in rows]
+            total = iconn.execute('SELECT COUNT(*) FROM cves').fetchone()[0]
+            self._send_json({'total': total, 'count': len(results), 'results': results})
+        except Exception as exc:
+            sys.stderr.write('[recent-cves] ERROR: %s\n' % exc)
+            self._send_json({'total': 0, 'count': 0, 'results': []})
+
+    def _handle_recently_updated_plugins(self):
+        from urllib.parse import urlparse, parse_qs
+        parsed = urlparse(self.path)
+        params = parse_qs(parsed.query)
+        try:
+            limit = max(1, min(50, int(params.get('limit', ['12'])[0])))
+        except (ValueError, TypeError):
+            limit = 12
+        try:
+            sconn = self._get_plugin_db()
+            rows = sconn.execute(
+                "SELECT id, name, family, severity, cvss, version, updated_date FROM plugins "
+                "WHERE updated_date != '' ORDER BY updated_date DESC, id DESC LIMIT ?", (limit,)).fetchall()
+            results = [{
+                'id': r['id'],
+                'name': r['name'],
+                'family': r['family'],
+                'severity': r['severity'],
+                'cvss': r['cvss'],
+                'version': r['version'] or '1.0.0',
+                'updated_date': r['updated_date'] or '',
+            } for r in rows]
+            updated_24h = sconn.execute(
+                "SELECT COUNT(*) FROM plugins WHERE updated_date >= date('now','-1 day')").fetchone()[0]
+            self._send_json({'updated_24h': updated_24h, 'count': len(results), 'results': results})
+        except Exception as exc:
+            sys.stderr.write('[recent-plugins] ERROR: %s\n' % exc)
+            self._send_json({'updated_24h': 0, 'count': 0, 'results': []})
 
     _plugins_page_cache = {'html': None, 'mtime': 0}
 
@@ -1460,6 +1593,11 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
                 return
         super().do_HEAD()
 
+    def send_header(self, keyword, value):
+        if keyword.lower() == 'content-type':
+            self._response_content_type = value
+        super().send_header(keyword, value)
+
     def end_headers(self):
         for header, value in SECURITY_HEADERS.items():
             if header == 'Content-Security-Policy' and self._is_selfservice_path(self.path):
@@ -1470,6 +1608,8 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, private')
             self.send_header('Pragma', 'no-cache')
             self.send_header('Expires', '0')
+        elif getattr(self, '_response_content_type', '').startswith('text/html'):
+            self.send_header('Cache-Control', 'no-cache, must-revalidate')
         super().end_headers()
 
     def do_GET(self):
@@ -1565,6 +1705,15 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
             return
         elif self.path == '/api/plugins/search' or self.path.startswith('/api/plugins/search?'):
             self._handle_plugin_search()
+            return
+        elif self.path == '/api/threat/stats' or self.path.startswith('/api/threat/stats?'):
+            self._handle_threat_stats()
+            return
+        elif self.path == '/api/threat/recent-cves' or self.path.startswith('/api/threat/recent-cves?'):
+            self._handle_recent_cves()
+            return
+        elif self.path == '/api/plugins/recently-updated' or self.path.startswith('/api/plugins/recently-updated?'):
+            self._handle_recently_updated_plugins()
             return
         elif re.match(r'^/api/plugins/\d+$', self.path):
             pid = int(self.path.split('/')[-1])

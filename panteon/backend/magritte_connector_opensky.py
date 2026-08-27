@@ -725,6 +725,15 @@ class OpenSkyConnector:
         if self._cached_data and (now - self._last_fetch_time) < self.config.cache_ttl_ms:
             return self._cached_data
 
+        # Budget check: enforce daily quota
+        from feed_budget import feed_budget
+        budget = feed_budget.check_and_consume("opensky", 10)
+        if not budget["ok"]:
+            return {"error": "daily_quota_exceeded", "budget": budget,
+                    "commercial_flights": 0, "military_flights": 0,
+                    "total": 0, "source": "opensky", "timestamp": time.time()}
+
+
         # Determine if OpenSky is due for a fetch
         skip_open_sky = (
             self.config.force_skip_open_sky or

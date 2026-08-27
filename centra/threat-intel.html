@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Centra live threat intelligence feed — CVEs published to NVD, actively exploited vulnerabilities from the CISA KEV catalog, and continuous detection signature updates across the 275,000-plugin grid.">
+    <meta name="security" content="monitored; CSP; HSTS-preload; X-Frame-Options-DENY; X-Content-Type-Options-nosniff; Referrer-Policy-strict">
+    <title>Live Threat Intelligence | Centra | Alien Inc</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ultra&family=Inter:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Sans+Condensed:wght@700;800&family=Orbitron:wght@900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/logo.png">
+    <style>
+        :root { --aliendot: #ffd400; }
+        body { font-family: 'Inter', sans-serif; background-color: #f9fafb; color: #101828; }
+        .brand-logo { display: flex; align-items: center; gap: 0.12rem; text-decoration: none; }
+        .brand-logo__text { font-family: "Ultra", "Alfa Slab One", serif; font-size: clamp(24px, 5vw, 29px); font-weight: 500; letter-spacing: 0.02em; color: #131920; line-height: 1; }
+        .brand-logo__dot { height: 0.56em; width: 0.56em; position: relative; top: calc(0.30 * clamp(24px, 5vw, 29px)); display: block; }
+        .centra-logo-text { font-family: 'Orbitron', sans-serif; font-weight: 900; }
+        .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .threat-pulse { width: 7px; height: 7px; background: #f04438; border-radius: 50%; display: inline-block; animation: threatPulse 1.6s ease-in-out infinite; flex-shrink: 0; }
+        @keyframes threatPulse { 0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(240,68,56,.55); } 50% { opacity: .65; box-shadow: 0 0 0 5px rgba(240,68,56,0); } }
+        .trow { display: grid; grid-template-columns: 150px 70px 90px 120px minmax(200px,1fr) 110px; gap: 12px; align-items: center; padding: 11px 20px; border-bottom: 1px solid #f2f4f7; }
+        @media (max-width: 768px) { .trow { grid-template-columns: 130px 60px minmax(120px,1fr); } .trow .tc-cvss, .trow .tc-desc, .trow .tc-upd { display: none; } }
+        .trow:hover { background: #f8fafc; }
+        .sev-badge { font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 2px 8px; border-radius: 9999px; display: inline-block; }
+        .sev-critical { background: #fee4e2; color: #b42318; }
+        .sev-high { background: #fef0c7; color: #b54708; }
+        .sev-medium { background: #fffaeb; color: #b54708; }
+        .sev-low { background: #ecfdf3; color: #067647; }
+        .kev-badge { font-size: 10px; font-weight: 700; letter-spacing: .04em; padding: 2px 7px; border-radius: 4px; background: #b42318; color: #fff; white-space: nowrap; }
+        .stat-card { transition: all .12s ease; }
+        .stat-card:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <header class="bg-white border-b border-[#eaecf0] sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="/" class="brand-logo" aria-label="visit the Alien Inc Homepage"><span class="brand-logo__text">Alien</span><img src="/logo.png" alt="&bull;" class="brand-logo__dot"><span class="brand-logo__text">Inc</span></a>
+                <span class="text-gray-200 text-lg">/</span>
+                <svg viewBox="0 0 360 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CENTRA" style="height:28px;width:auto;">
+                    <g transform="translate(8, 6) scale(0.104)">
+                        <path d="m 33.676246,364.82 c 0.53628,-7.2677 1.7767,-14.482 5.0286,-21.276 9.4786,-19.803 33.963,-29.34 53.026,-19.284 15.333004,8.0885 22.563004,29.331 13.578004,45.149 -6.873004,12.099 -23.072004,18.235 -35.622004,10.228 -4.4328,-2.828 -7.6343,-7.2793 -8.9938,-12.286 -1.3595,-5.0063 -0.68452,-10.798 2.9392,-15.401 2.2364,-2.8407 5.4473,-4.7654 9.1114,-5.408 3.664,-0.64263 8.1708,0.40388 10.875,3.9972 1.7829,2.3692 1.91,4.5449 1.4108,7.1127 -0.24961,1.2839 -0.78116,2.8399 -2.3513,3.9972 -1.5702,1.1573 -4.2926,1.9424 -5.5844,0.58783 -1.1069,-1.1607 0.67477,-3.153 0.73029,-4.7559 0.0388,-0.83158 0.0772,-1.7317 -0.26004,-2.4745 -0.89679,-1.1463 -1.8493,-1.342 -3.4682,-1.0581 -1.6548,0.29023 -3.6474,1.4542 -4.5851,2.6452 l 0,0.0588 c -2.0224,2.5986 -2.3717,5.5943 -1.5284,8.6999 0.81645,3.0066 2.8568,5.919 5.4668,7.7006 l 0.29391,0.23513 c 8.5452,5.4516 18.484,0.70317 23.392,-7.9366 6.716204,-11.823 1.5113,-26.282 -10.285,-32.505 -15.078,-7.9537 -35.744,1.451 -40.36,17.085 -4.566,15.464 -2.8715,30.938 -0.27385,37.511 l -10.609,0.073 c -2.5579,-12.089 -1.9287,-15.035 -1.9287,-22.696 z" fill="#131920"/>
+                        <path d="m 495.40625,157 a 70.231,70.231 0 0 1 14.44,42.81 70.235,70.235 0 0 1 -140.47,0 70.231,70.231 0 0 1 14.28,-42.81 l 111.75,0 z" fill="#00FFFF"/>
+                    </g>
+                    <text x="84" y="44" class="centra-logo-text" fill="#131920" letter-spacing="1">CENTR<tspan fill="#00FFFF">A</tspan></text>
+                </svg>
+                <span class="text-gray-200 text-lg">|</span>
+                <h1 class="text-sm font-medium text-[#475467]">Live Threat Intelligence</h1>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-[#475467]">
+                <span class="flex items-center gap-1.5"><span class="threat-pulse"></span><span id="feedStatus">Feed live</span></span>
+                <a href="/plugins.html" class="border border-[#d0d5dd] hover:bg-gray-50 text-[#344054] text-xs font-semibold px-3 py-2 rounded-lg transition ml-2">Plugin Library</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-8 w-full flex-grow">
+
+        <div class="bg-white border-t-4 border-[#1e2124] border-x border-b border-[#d0d5dd] rounded-lg p-6 mb-6 shadow-sm">
+            <h2 class="text-lg font-semibold text-[#101828]">Threat Intelligence Feed</h2>
+            <p class="text-sm text-gray-500 mt-1">CVEs published to NIST NVD and the CISA Known Exploited Vulnerabilities catalog, correlated against the Centra detection grid in real time.</p>
+            <p class="text-xs text-gray-400 mt-2 mono" id="syncLine"></p>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5">
+            <div class="stat-card bg-white border border-[#d0d5dd] rounded-lg p-3 text-center">
+                <div class="text-xl font-bold text-[#101828] mono" id="stTracked">&mdash;</div>
+                <div class="text-[11px] text-[#475467] mt-0.5">CVEs tracked</div>
+            </div>
+            <div class="stat-card bg-white border border-[#d0d5dd] rounded-lg p-3 text-center">
+                <div class="text-xl font-bold text-red-700 mono" id="stKev">&mdash;</div>
+                <div class="text-[11px] text-[#475467] mt-0.5">Actively exploited (KEV)</div>
+            </div>
+            <div class="stat-card bg-white border border-[#d0d5dd] rounded-lg p-3 text-center">
+                <div class="text-xl font-bold text-[#101828] mono" id="stUpdated">&mdash;</div>
+                <div class="text-[11px] text-[#475467] mt-0.5">Signatures updated / 24h</div>
+            </div>
+            <div class="stat-card bg-white border border-[#d0d5dd] rounded-lg p-3 text-center">
+                <div class="text-xl font-bold text-[#101828] mono" id="stGrid">275,000</div>
+                <div class="text-[11px] text-[#475467] mt-0.5">Detection signatures</div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-[#d0d5dd] rounded-lg shadow-sm overflow-hidden">
+            <div class="p-3 border-b border-[#eaecf0] flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
+                <div class="flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-[#475467]">
+                    <span class="threat-pulse"></span> Recent CVEs
+                </div>
+                <div class="flex gap-2">
+                    <select id="sevFilter" class="border border-[#d0d5dd] rounded-lg px-3 py-2 text-sm bg-white text-[#344054] focus:outline-none focus:ring-2 focus:ring-[#b2ddff]">
+                        <option value="">All severities</option>
+                        <option value="critical">Critical</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                    <label class="flex items-center gap-1.5 border border-[#d0d5dd] rounded-lg px-3 py-2 text-sm bg-white text-[#344054] cursor-pointer select-none">
+                        <input type="checkbox" id="kevOnly" class="accent-red-600"> KEV only
+                    </label>
+                    <button id="refreshBtn" class="border border-[#d0d5dd] hover:bg-gray-50 rounded-lg px-3 py-2 text-sm text-[#344054] transition">Refresh</button>
+                </div>
+            </div>
+            <div class="px-4 py-2 border-b border-[#f2f4f7] text-xs text-[#475467]" id="resultInfo">Loading feed&hellip;</div>
+            <div id="rows"></div>
+            <div id="endNote" class="hidden p-4 text-center text-xs text-[#98a2b3]">End of current feed window &mdash; auto-refreshes every 60s</div>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-[#eaecf0] py-8 text-center">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex items-center justify-center gap-2 mb-2">
+                <a href="/" class="brand-logo"><span class="brand-logo__text" style="font-size:18px;">Alien</span><img src="/logo.png" alt="&bull;" class="brand-logo__dot" style="height:0.35em;width:0.35em;top:calc(0.30*18px);"><span class="brand-logo__text" style="font-size:18px;">Inc</span></a>
+                <span class="text-gray-200">/</span>
+                <span class="text-sm font-semibold text-[#101828]">Centra Threat Intelligence</span>
+            </div>
+            <span class="text-xs text-gray-400">Secured by Centra</span>
+            <span class="text-xs text-gray-300 mx-2">&middot;</span>
+            <span class="text-xs text-gray-400">Vulnerability Scanning &amp; Compliance Monitoring</span>
+            <div class="mt-2 text-[10px] text-gray-300">A subsidiary of Alien Inc &reg;</div>
+        </div>
+    </footer>
+
+    <script>
+    (function() {
+        var sevColors = { critical: '#b42318', high: '#dc6803', medium: '#dc6803', low: '#067647' };
+
+        function $(id) { return document.getElementById(id); }
+
+        function fmtInt(n) {
+            return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
+        }
+
+        function relTime(iso) {
+            if (!iso) return '';
+            var then = new Date(iso).getTime();
+            if (isNaN(then)) return '';
+            var s = Math.max(0, Math.floor((Date.now() - then) / 1000));
+            if (s < 90) return 'just now';
+            if (s < 5400) return Math.round(s / 60) + ' min ago';
+            if (s < 129600) return Math.round(s / 3600) + 'h ago';
+            return Math.round(s / 86400) + 'd ago';
+        }
+
+        function loadStats() {
+            fetch('/api/threat/stats')
+                .then(function(r) { return r.ok ? r.json() : null; })
+                .then(function(s) {
+                    if (!s) return;
+                    $('stTracked').textContent = s.cves_tracked ? fmtInt(s.cves_tracked) : '\u2014';
+                    $('stKev').textContent = s.actively_exploited !== undefined ? fmtInt(s.actively_exploited) : '\u2014';
+                    $('stUpdated').textContent = s.plugins_updated_24h !== undefined ? fmtInt(s.plugins_updated_24h) : '\u2014';
+                    var parts = [];
+                    if (s.sources && s.sources.nvd && s.sources.nvd.last_sync) parts.push('NVD sync ' + relTime(s.sources.nvd.last_sync));
+                    if (s.sources && s.sources.kev && s.sources.kev.last_sync) parts.push('CISA KEV sync ' + relTime(s.sources.kev.last_sync));
+                    parts.push('correlation continuous');
+                    $('syncLine').textContent = parts.join(' \u00b7 ');
+                })
+                .catch(function() {});
+        }
+
+        function loadFeed() {
+            var params = new URLSearchParams({ limit: '50' });
+            var sev = $('sevFilter').value;
+            var kev = $('kevOnly').checked;
+            if (sev) params.set('severity', sev);
+            if (kev) params.set('kev', '1');
+            $('resultInfo').textContent = 'Loading feed\u2026';
+            fetch('/api/threat/recent-cves?' + params)
+                .then(function(r) { return r.ok ? r.json() : null; })
+                .then(function(data) {
+                    if (!data) throw new Error('feed unavailable');
+                    var rows = data.results || [];
+                    $('resultInfo').textContent = rows.length
+                        ? 'Showing ' + rows.length + ' most recent' + (kev ? ' known-exploited' : '') + (sev ? ' ' + sev : '') + ' CVEs of ' + fmtInt(data.total) + ' tracked'
+                        : 'No CVEs match the current filter';
+                    var html = '';
+                    for (var i = 0; i < rows.length; i++) {
+                        var c = rows[i];
+                        var sevClass = 'sev-' + ((c.severity || 'low').toLowerCase());
+                        html += '<div class="trow">'
+                            + '<a href="' + esc(c.detail_url || '#') + '" target="_blank" rel="noopener" class="mono text-sm font-semibold text-[#101828] hover:underline">' + esc(c.id) + '</a>'
+                            + '<span class="mono tc-cvss" style="color:' + (sevColors[(c.severity || '').toLowerCase()] || '#475467') + ';font-weight:700">' + (c.cvss != null ? Number(c.cvss).toFixed(1) : '-') + '</span>'
+                            + '<span class="tc-upd"><span class="sev-badge ' + sevClass + '">' + esc((c.severity || 'n/a').toUpperCase()) + '</span></span>'
+                            + '<span>' + (c.kev ? '<span class="kev-badge">ACTIVELY EXPLOITED</span>' : '<span class="text-xs text-[#98a2b3]">NVD tracked</span>') + '</span>'
+                            + '<span class="text-xs text-[#475467] tc-desc">' + esc(c.description || '') + '</span>'
+                            + '<span class="text-xs text-[#98a2b3] mono">' + esc(c.published || '') + '</span>'
+                            + '</div>';
+                    }
+                    $('rows').innerHTML = html;
+                    $('endNote').classList.toggle('hidden', rows.length === 0);
+                    $('feedStatus').textContent = 'Feed live \u00b7 ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                })
+                .catch(function() {
+                    $('resultInfo').textContent = 'Feed temporarily unavailable \u2014 retrying automatically';
+                    $('feedStatus').textContent = 'Reconnecting\u2026';
+                });
+        }
+
+        function bind() {
+            $('sevFilter').addEventListener('change', loadFeed);
+            $('kevOnly').addEventListener('change', loadFeed);
+            $('refreshBtn').addEventListener('click', function() { loadStats(); loadFeed(); });
+        }
+
+        bind();
+        loadStats();
+        loadFeed();
+        setInterval(loadStats, 60000);
+        setInterval(loadFeed, 60000);
+    })();
+    </script>
+</body>
+</html>

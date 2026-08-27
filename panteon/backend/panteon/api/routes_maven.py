@@ -38,6 +38,7 @@ from panteon.maven import (
     execute_target_coa,
     generate_target_coa,
     validate_detection,
+    redraft_coa_intelligence,
 )
 
 router = APIRouter(prefix="/maven", tags=["MAVEN Smart Layer"])
@@ -278,6 +279,19 @@ async def post_coa_target_execute(coa_id: str, request: Request,
                                         user.email)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/coa/target/{coa_id}/redraft")
+async def post_coa_redraft(coa_id: str,
+                           user: SupabaseUser = Depends(get_current_user),
+                           db: AsyncSession = Depends(get_db)):
+    """Re-run Qwen intelligence drafting on an existing target COA."""
+    _require_editor(user)
+    try:
+        intel = await redraft_coa_intelligence(db, coa_id, user.email)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"coa_id": coa_id, "intel": intel}
 
 
 @router.post("/coa/generate")

@@ -54,6 +54,23 @@ def _prefer_specs(specs: list[tuple[str, str]]) -> list[str]:
     return out
 
 
+def _trim_spec(spec: str, max_len: int = 170) -> str:
+    """Cap a 'Key: value' spec at max_len on a word/sentence boundary.
+    Army Recognition table values are descriptive sentences; keep the first
+    fact-bearing clause and drop the rest of the essay."""
+    if len(spec) <= max_len:
+        return spec
+    head = spec[:max_len]
+    # prefer cutting at a sentence end inside the window
+    for sep in (". ", "; "):
+        i = head.rfind(sep)
+        if i > 40:
+            return head[:i + 1].rstrip()
+    # else cut on last complete word
+    i = head.rfind(" ")
+    return (head[:i] if i > 40 else head).rstrip(" ,;:")
+
+
 def parse_armyrecognition(url: str, html: str, category_display: str) -> CatalogEntry | None:
     d = parse_html(html)
     title = d["title"]
@@ -61,7 +78,7 @@ def parse_armyrecognition(url: str, html: str, category_display: str) -> Catalog
         return None
     title = title.split(" | ")[0].strip()
     designation = title
-    specs = _prefer_specs(d["specs"])
+    specs = [_trim_spec(s) for s in _prefer_specs(d["specs"])]
 
     # country / manufacturer from the spec labels when present
     country, manufacturer = "", ""

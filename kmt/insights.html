@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Insights from KMT Consulting Group: applied AI, post-merger integration, market entry strategy, and operating model improvement. Research from the KMT Cortex platform.">
+    <title>Insights | KMT Consulting Group</title>
+    <style>
+        :root {
+            --kmt-green-deep: #0C2B15;
+            --kmt-green-text: #144622;
+            --lime-accent: #96F878;
+            --lime-accent-hover: #71DC68;
+            --neutral-bg: #F5F3EF;
+            --neutral-border: #DFD7CD;
+            --text-dark: #212427;
+            --white: #ffffff;
+            --gray-300: #D4D4D4;
+            --gray-500: #696969;
+            --gray-600: #555555;
+            --gray-700: #323232;
+            --font-serif: 'Georgia', serif;
+            --font-sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            --page-padding: 6%;
+            --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            --transition-snappy: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-sans); color: var(--text-dark); background-color: var(--white); line-height: 1.4; overflow-x: hidden; }
+        h1, h2, h3, h4 { font-family: var(--font-serif); font-weight: 400; }
+        a { color: inherit; text-decoration: none; }
+
+        .floating-nav { position: fixed; top: 20px; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 0 var(--page-padding); z-index: 1000; pointer-events: none; }
+        .nav-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 15px; padding: 10px 24px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); pointer-events: auto; transition: var(--transition-snappy); }
+        .menu-btn { background: none; border: none; cursor: pointer; display: flex; flex-direction: column; gap: 5px; padding: 5px 0; }
+        .menu-btn span { display: block; width: 22px; height: 2px; background-color: var(--text-dark); transition: var(--transition-smooth); }
+        .menu-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+        .menu-btn.open span:nth-child(2) { opacity: 0; }
+        .menu-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+        .logo-text { font-weight: 800; font-size: 18px; color: var(--kmt-green-text); letter-spacing: -0.5px; }
+        .login-link { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid var(--text-dark); padding-bottom: 2px; }
+
+        .nav-drawer { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background-color: var(--white); z-index: 999; transform: translateY(-100%); transition: var(--transition-smooth); display: flex; flex-direction: column; justify-content: center; padding: 120px var(--page-padding) 40px; overflow-y: auto; }
+        .nav-drawer.open { transform: translateY(0); }
+        .drawer-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 30px; margin-bottom: 40px; }
+        .drawer-col h4 { font-size: 13px; text-transform: uppercase; font-weight: 700; margin-bottom: 15px; color: var(--gray-500); letter-spacing: 1px; }
+        .drawer-col ul { list-style: none; }
+        .drawer-col ul li { margin-bottom: 12px; }
+        .drawer-col ul li a { font-size: 18px; color: var(--text-dark); font-weight: 300; transition: var(--transition-smooth); }
+        .drawer-col ul li a:hover { color: var(--kmt-green-text); padding-left: 5px; }
+
+        .hero { position: relative; min-height: 60vh; background: radial-gradient(circle at 80% 20%, #71dc68 0%, #96f878 25%, #2fd1b2 50%, #baf896 80%, #ffffff 100%); display: flex; align-items: center; padding: 160px var(--page-padding) 70px; }
+        .hero-content { max-width: 850px; }
+        .eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--kmt-green-text); margin-bottom: 30px; }
+        .hero h1 { font-size: clamp(38px, 6.2vw, 96px); line-height: 1.05; color: var(--kmt-green-text); margin-bottom: 35px; letter-spacing: -1px; }
+        .hero-subtitle { font-size: clamp(16px, 1.8vw, 24px); color: var(--kmt-green-text); opacity: 0.9; margin-bottom: 45px; font-weight: 300; }
+
+        .btn { display: inline-flex; align-items: center; gap: 10px; background-color: var(--lime-accent); color: var(--text-dark); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; padding: 14px 34px; border-radius: 15px; border: none; cursor: pointer; transition: var(--transition-smooth); }
+        .btn:hover { background-color: var(--lime-accent-hover); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(113, 220, 104, 0.3); }
+        .btn-secondary { background-color: transparent; border: 2px solid var(--text-dark); }
+        .btn-secondary:hover { background-color: var(--text-dark); color: var(--white); box-shadow: none; }
+
+        .article-section { padding: 90px var(--page-padding); border-bottom: 1px solid var(--neutral-border); }
+        .article-section.alt { background-color: var(--neutral-bg); }
+        .article-card { max-width: 820px; }
+        .card-category { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--gray-600); margin-bottom: 15px; }
+        .article-card h2 { font-size: clamp(26px, 3vw, 42px); color: var(--kmt-green-text); margin-bottom: 20px; line-height: 1.15; }
+        .standfirst { font-family: var(--font-serif); font-size: clamp(17px, 1.8vw, 22px); line-height: 1.45; color: var(--gray-700); margin-bottom: 25px; }
+        .article-card p.body { font-size: 15px; font-weight: 300; color: var(--gray-600); margin-bottom: 18px; max-width: 720px; }
+        .cortex-panel { background: var(--kmt-green-deep); color: var(--white); border-radius: 24px; padding: 50px; max-width: 1100px; }
+        .cortex-panel h2 { color: var(--white); font-size: clamp(28px, 3vw, 44px); margin-bottom: 20px; }
+        .cortex-panel p { font-weight: 300; opacity: 0.85; max-width: 760px; margin-bottom: 14px; }
+
+        footer { background-color: #EBEAE6; padding: 80px var(--page-padding) 40px; border-top: 1px solid var(--neutral-border); }
+        .footer-top { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 60px; margin-bottom: 80px; }
+        .footer-top h2 { font-size: 38px; line-height: 1.15; color: var(--kmt-green-text); max-width: 420px; }
+        .footer-links-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .footer-links-grid a { font-size: 16px; color: var(--text-dark); font-weight: 300; transition: var(--transition-smooth); }
+        .footer-links-grid a:hover { color: var(--kmt-green-text); text-decoration: underline; }
+        .footer-col-contact h4 { font-size: 20px; margin-bottom: 15px; color: var(--text-dark); }
+        .footer-col-contact p { font-size: 14px; font-weight: 300; color: var(--gray-600); margin-bottom: 25px; max-width: 320px; }
+        .footer-bottom { border-top: 1px solid rgba(0, 0, 0, 0.1); padding-top: 40px; display: flex; flex-direction: column; gap: 25px; }
+        .footer-bottom-links { display: flex; flex-wrap: wrap; gap: 24px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dark); }
+        .footer-bottom-links a { border-bottom: 1.5px solid var(--text-dark); padding-bottom: 2px; }
+        .copyright-text { font-size: 11px; font-weight: 400; color: var(--gray-600); }
+
+        @media (max-width: 991px) { .footer-top { grid-template-columns: 1fr; gap: 40px; } }
+    </style>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+</head>
+<body>
+    <div class="floating-nav" id="site-header">
+        <div class="nav-card">
+            <button class="menu-btn" id="drawer-toggle" aria-label="Toggle Navigation">
+                <span></span><span></span><span></span>
+            </button>
+            <a href="index.html"><span class="logo-text">KMT</span></a>
+        </div>
+        <div class="nav-card">
+            <a href="dashboard/" class="login-link">Log In</a>
+        </div>
+    </div>
+
+    <nav class="nav-drawer" id="site-drawer">
+        <div class="drawer-links">
+            <div class="drawer-col">
+                <h4>Services</h4>
+                <ul>
+                    <li><a href="services.html#strategy">Strategy &amp; Market Entry</a></li>
+                    <li><a href="services.html#ai">Applied AI Workflow Transformation</a></li>
+                    <li><a href="services.html#ops">Operating Model Improvement</a></li>
+                    <li><a href="services.html#pmi">Post-Merger Integration</a></li>
+                </ul>
+            </div>
+            <div class="drawer-col">
+                <h4>Insights</h4>
+                <ul>
+                    <li><a href="insights.html">Executive Perspectives</a></li>
+                    <li><a href="#cortex">KMT Cortex Research</a></li>
+                    <li><a href="index.html#impact-stories">Case Studies</a></li>
+                    <li><a href="#publications">Featured Publications</a></li>
+                </ul>
+            </div>
+            <div class="drawer-col">
+                <h4>Ecosystem</h4>
+                <ul>
+                    <li><a href="https://alieninc.tech">Alien Inc Group</a></li>
+                    <li><a href="https://panteon.alieninc.tech">Panteon</a></li>
+                    <li><a href="https://centra.alieninc.tech">Centra</a></li>
+                    <li><a href="https://immanuel.alieninc.tech">Immanuel</a></li>
+                </ul>
+            </div>
+            <div class="drawer-col">
+                <h4>Connect</h4>
+                <ul>
+                    <li><a href="contact.html#careers">Careers</a></li>
+                    <li><a href="contact.html">Contact Us</a></li>
+                    <li><a href="contact.html#demo">Request Demo</a></li>
+                </ul>
+            </div>
+        </div>
+        <div>
+            <a href="contact.html" class="btn btn-secondary">Contact KMT Advisors</a>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="eyebrow">Insights · Executive Perspectives</div>
+            <h1>From Insights<br>to Action</h1>
+            <p class="hero-subtitle">Field notes from engagements—what we did, what it cost, and what we would do differently.</p>
+        </div>
+    </section>
+
+    <!-- ARTICLE 1 -->
+    <section class="article-section" id="pilot-to-pnl">
+        <div class="article-card">
+            <div class="card-category">Applied AI</div>
+            <h2>From Pilot to P&amp;L: Making Applied AI Stick</h2>
+            <p class="standfirst">Most AI programs stall after the pilot. The ones that don't share an operating cadence—and a support model most firms skip.</p>
+            <p class="body">The pattern is familiar. A promising proof of concept earns applause in a steering committee, then quietly dies between the demo and the day-to-day. The technology rarely fails; the operating model around it does. Nobody owns the workflow after go-live, the exception cases pile up, and within two quarters the pilot is a case study nobody cites.</p>
+            <p class="body">In our engagements, the difference between a stalled pilot and a P&amp;L line is unglamorous: instrument the real process before automating it, put a named owner on every handoff the agent touches, and contract for a support retainer that keeps the team on site until adoption is measured—not assumed. In one mid-market manufacturer, that discipline removed 31% of manual back-office effort inside two quarters. No frontier model required.</p>
+        </div>
+    </section>
+
+    <!-- ARTICLE 2 -->
+    <section class="article-section alt" id="first-100-days">
+        <div class="article-card">
+            <div class="card-category">Post-Merger Integration</div>
+            <h2>The First 100 Days: Integration Built on Evidence</h2>
+            <p class="standfirst">Synergy targets fail in the gap between signing and operating. A roadmap closes that gap day by day.</p>
+            <p class="body">Deals are approved on synergy slides and destroyed by integration reality. The failure usually isn't ambition—it's accounting. "Cost synergies" without owners, dates, and weekly tracking are hopes, not targets.</p>
+            <p class="body">Our 100-day standard is deliberately narrow: a synergy register where every line has one accountable name, an AI-supported tracker that reconciles claims against actuals each week, and culture decisions made in the first fortnight—while the people the deal was actually about are still deciding whether to stay. Integrations run this way finish their synergy capture early; more importantly, they keep the customers and the key people they paid for.</p>
+        </div>
+    </section>
+
+    <!-- ARTICLE 3 -->
+    <section class="article-section" id="market-entry-evidence">
+        <div class="article-card">
+            <div class="card-category">Strategy &amp; Market Entry</div>
+            <h2>Market Entry Is an Evidence Problem</h2>
+            <p class="standfirst">Investment-grade research beats instinct. How we screen markets before our clients commit capital.</p>
+            <p class="body">Every board has a market-entry story it tells itself. The evidence usually says something quieter: the addressable market is smaller than the deck claims, the price points are lower, or the competitor you dismissed is winning on service, not scale.</p>
+            <p class="body">We run fixed-fee screens built bottom-up—named competitors, auditable demand data, real price points—and we deliver the answer the evidence supports, including "don't enter." For a European industrial group weighing three markets last year, the screen ranked them clearly: one to enter now, one to enter through partnership, and one to leave alone. The discipline of the no is worth as much as the yes.</p>
+        </div>
+    </section>
+
+    <!-- ARTICLE 4 -->
+    <section class="article-section alt" id="efficiency-requirements">
+        <div class="article-card">
+            <div class="card-category">Operating Model</div>
+            <h2>What 20–30% Efficiency Actually Requires</h2>
+            <p class="standfirst">Process data, honest benchmarking, and the discipline to redesign roles—not just tools.</p>
+            <p class="body">Efficiency programs promise 20–30% because the waste is real. What the promise omits is that capturing it means changing what specific people do on Monday morning. Tools can be procured; accountability has to be designed.</p>
+            <p class="body">We baseline core processes with measured cycle times and rework loops, benchmark against operators who actually publish numbers, then rebuild spans, layers, and roles so accountability lands somewhere specific. A recent professional-services program delivered a 22% efficiency gain—not the top of the range, but real, banked, and still compounding because the operating rhythm survived the engagement team's departure.</p>
+        </div>
+    </section>
+
+    <!-- CORTEX -->
+    <section class="article-section" id="cortex">
+        <div class="cortex-panel">
+            <div class="card-category" style="color:#96F878;">Research Platform</div>
+            <h2>KMT Cortex</h2>
+            <p>Cortex is KMT's research engine: the internal platform that turns engagement data, methodology libraries, and knowledge artifacts into decision-ready analysis for client teams.</p>
+            <p>It is why our market screens arrive with named competitors instead of triangles, and why our benchmarks improve with every engagement we complete.</p>
+            <p style="margin-top:24px;"><a href="index.html#insights-section" class="btn">Back to Perspectives</a></p>
+        </div>
+    </section>
+
+    <!-- PUBLICATIONS -->
+    <section class="article-section alt" id="publications" style="border-bottom:none;">
+        <div class="section-header" style="max-width:820px;">
+            <div class="eyebrow">Featured Publications</div>
+            <p style="font-size:16px;color:var(--gray-600);font-weight:300;">Selected research briefs from the Cortex platform are released publicly through the Alien Inc research network. Publication inquiries are handled through our contact desk.</p>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-top">
+            <h2>Unlocking the Potential of Those Who Advance the World</h2>
+            <div class="footer-links-grid">
+                <a href="contact.html#careers">Careers</a><a href="index.html#newsletter">Subscribe</a><a href="contact.html#alumni">Alumni</a><a href="services.html#about">About</a><a href="contact.html#offices">Offices</a>
+            </div>
+            <div class="footer-col-contact">
+                <h4>How can we assist you?</h4>
+                <p>We value the opportunity to connect with you. Please submit your inquiries and feedback, and our team will get in touch.</p>
+                <a href="contact.html" class="btn btn-secondary">Contact Us</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="footer-bottom-links"><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Use</a><a href="sitemap.xml">Sitemap</a><a href="/trust/">Responsible Disclosure</a><a href="cookies.html">Cookie Preferences</a></div>
+            <div class="copyright-text" data-ecosystem-company="kmt">&copy; 2026 KMT Consulting Group</div>
+        </div>
+    </footer>
+
+    <script>
+        const header = document.getElementById('site-header');
+        const toggle = document.getElementById('drawer-toggle');
+        const drawer = document.getElementById('site-drawer');
+        toggle.addEventListener('click', () => {
+            toggle.classList.toggle('open');
+            drawer.classList.toggle('open');
+            header.querySelector('.nav-card').style.background = drawer.classList.contains('open') ? '#ffffff' : 'rgba(255, 255, 255, 0.9)';
+        });
+    </script>
+
+    <script src="../data/ecosystem-data.js?v=20260731"></script>
+    <script src="../data/ecosystem-render.js"></script>
+    <script>
+        EcosystemData.init().then(function(data) {
+            if (typeof EcosystemRender !== 'undefined' && EcosystemRender.bindAll) {
+                EcosystemRender.bindAll(data);
+            }
+        });
+    </script>
+</body>
+</html>

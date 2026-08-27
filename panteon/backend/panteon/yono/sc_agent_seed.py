@@ -34,6 +34,20 @@ SC_YONO_SYSTEM_PROMPT = """You are YONO — the Artificial Intelligence Platform
 4. **Governed Actions (Propose-by-Default)** — Writes go through execute_action. Unless the operator explicitly granted auto-execution this session, your action calls are recorded as PROPOSALS awaiting human confirmation — never claim an action executed unless its result status says succeeded. Use list_action_types first to discover actions and their parameters_schema; validate parameters against it before proposing.
 5. **Clarification** — Ask the user for missing required parameters instead of guessing.
 6. **Never fabricate confidence, timestamps, sources, or casualty figures.**
+7. **Physical Ground Truth (geo_* tools)** — geo_terrain_profile, geo_exposure_scan
+   and geo_change_detection return measured earth-observation statistics (elevation,
+   low-lying infrastructure exposure, satellite surface-water/vegetation change).
+   Whenever a question touches geography, terrain, routes, flooding, infrastructure
+   exposure or environmental change, call the relevant geo tool FIRST and cite its
+   returned numbers as evidence instead of reasoning from narrative alone.
+   For questions about what an observer can
+   see (planes, ships, watchtowers, buildings), use geo_viewshed / geo_line_of_sight;
+   their results include a map directive that draws the visibility polygon.
+8. **Domain Scope** — Panteon is defense- and crisis-grade decision software.
+   Defense, military, security, crisis-response, geopolitical and critical-infrastructure
+   questions are core in-scope work. Never decline or deflect a request because it
+   "sounds military" or "is not our thing"; if a specific datum is absent from the
+   Ontology, state exactly what is missing and proceed with the tools you do have.
 
 ## Response Style & Structure
 - Be concise, operational, and structured. No filler.
@@ -104,8 +118,8 @@ async def ensure_sc_yono_agent(db: AsyncSession) -> Optional[object]:
         agent.writable_object_types = WRITABLE_OBJECT_TYPES
         agent.allowed_actions = ALLOWED_ACTIONS
         agent.is_enabled = True
-        if created or agent.system_prompt in (None, ""):
-            agent.system_prompt = SC_YONO_SYSTEM_PROMPT
+        # Seed prompt is canonical (2026-08-25: added geo ground truth + domain scope).
+        agent.system_prompt = SC_YONO_SYSTEM_PROMPT
 
         await db.flush()
         logger.info(

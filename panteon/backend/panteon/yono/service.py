@@ -327,10 +327,33 @@ class LLMOrchestrator:
         # Some OpenAI-compatible servers reject stream_options; degrade gracefully.
         try:
             stream = await client.chat.completions.create(
-                stream_options={"include_usage": True}, **kwargs
+                stream=True, stream_options={"include_usage": True}, **kwargs
             )
         except Exception:
-            stream = await client.chat.completions.create(**kwargs)
+            stream = await client.chat.completions.create(stream=True, **kwargs)
+
+        # Defensive: some OpenAI-compatible servers ignore stream=True and return
+        # a completed ChatCompletion. Convert it instead of crashing on async-for.
+        if not hasattr(stream, "__aiter__"):
+            choice = stream.choices[0] if getattr(stream, "choices", None) else None
+            msg = getattr(choice, "message", None)
+            usage = getattr(stream, "usage", None)
+            content = getattr(msg, "content", "") or ""
+            if content:
+                yield ("delta", content)
+            result = {
+                "content": content,
+                "tokens_input": int(getattr(usage, "prompt_tokens", 0) or 0),
+                "tokens_output": int(getattr(usage, "completion_tokens", 0) or 0),
+                "tool_calls": [
+                    {"id": tc.id or f"call_{uuid.uuid4().hex[:8]}", "type": "function",
+                     "function": {"name": tc.function.name,
+                                  "arguments": tc.function.arguments or "{}"}}
+                    for tc in (getattr(msg, "tool_calls", None) or [])
+                ],
+            }
+            yield ("done", result)
+            return
 
         content_parts: list[str] = []
         tc_acc: dict[int, dict] = {}

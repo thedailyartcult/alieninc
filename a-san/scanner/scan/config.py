@@ -3,6 +3,63 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 
+# Recognised nation names (lowercase) — used to validate country fields
+# everywhere (parsers, backfill, cleanup). Includes historical states that
+# sources legitimately use ('soviet union', 'yugoslavia') and common aliases.
+COUNTRIES = frozenset({
+    "united states", "usa", "us", "united kingdom", "uk", "russia",
+    "soviet union", "ussr", "china", "france", "germany", "italy", "spain",
+    "sweden", "israel", "india", "japan", "south korea", "republic of korea",
+    "north korea", "turkey", "türkiye", "ukraine", "poland",
+    "czech republic", "czechoslovakia", "slovakia", "austria",
+    "switzerland", "netherlands", "belgium", "norway", "denmark", "finland",
+    "greece", "portugal", "romania", "bulgaria", "hungary", "serbia",
+    "croatia", "bosnia and herzegovina", "montenegro", "north macedonia",
+    "brazil", "argentina", "chile", "canada", "mexico", "australia",
+    "new zealand", "south africa", "egypt", "iran", "iraq", "saudi arabia",
+    "united arab emirates", "uae", "qatar", "kuwait", "oman", "jordan",
+    "pakistan", "bangladesh", "indonesia", "malaysia", "singapore",
+    "thailand", "vietnam", "taiwan", "philippines", "myanmar", "belarus",
+    "kazakhstan", "uzbekistan", "azerbaijan", "armenia", "georgia",
+    "algeria", "morocco", "tunisia", "libya", "nigeria", "ethiopia",
+    "kenya", "south sudan", "sudan", "colombia", "peru", "venezuela",
+    "ecuador", "bolivia", "uruguay", "paraguay", "ireland", "lithuania",
+    "latvia", "estonia", "slovenia", "yugoslavia", "prussia",
+})
+
+# Adjective / alias -> canonical nation name.
+COUNTRY_FIXUPS = {
+    "american": "United States",
+    "us": "United States", "usa": "United States",
+    "u.s.": "United States", "u.s.a.": "United States",
+    "british": "United Kingdom", "uk": "United Kingdom",
+    "english": "United Kingdom",
+    "russian": "Russia", "ussr": "Soviet Union",
+    "soviet": "Soviet Union",
+    "german": "Germany", "french": "France", "italian": "Italy",
+    "spanish": "Spain", "swedish": "Sweden", "israeli": "Israel",
+    "indian": "India", "japanese": "Japan", "chinese": "China",
+    "ukrainian": "Ukraine", "polish": "Poland", "dutch": "Netherlands",
+    "south korean": "South Korea", "korean": "South Korea",
+    "republic korea": "South Korea", "republic of korea": "South Korea",
+    "north korean": "North Korea", "australian": "Australia",
+    "iranian": "Iran", "iraqi": "Iraq", "turkish": "Turkey",
+    "pakistani": "Pakistan", "brazilian": "Brazil", "egyptian": "Egypt",
+    "canadian": "Canada", "czech": "Czech Republic",
+    "yugoslav": "Yugoslavia", "swiss": "Switzerland",
+    "austrian": "Austria", "belgian": "Belgium", "greek": "Greece",
+    "norwegian": "Norway", "danish": "Denmark", "finnish": "Finland",
+    "portuguese": "Portugal", "romanian": "Romania", "hungarian": "Hungary",
+    "serbian": "Serbia", "croatian": "Croatia", "thai": "Thailand",
+    "vietnamese": "Vietnam", "indonesian": "Indonesia",
+    "singapore": "Singapore", "taiwanese": "Taiwan",
+    "japan maritime self defense force": "Japan",
+    "jmsdf": "Japan", "plan navy": "China", "china navy plan": "China",
+    "royal navy": "United Kingdom", "royal australian navy": "Australia",
+    "russia/ussr": "Russia", "west germany": "Germany",
+    "united arab emirates": "UAE", "türkiye": "Turkey",
+}
+
 # Canonical 10 categories — must match the catalog exactly.
 CANONICAL_CATEGORIES = [
     "Aircraft",

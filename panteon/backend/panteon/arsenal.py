@@ -9,6 +9,7 @@ always reflect the latest file without re-parsing on every request.
 """
 import json
 import os
+import re
 import threading
 import time
 
@@ -92,15 +93,28 @@ def _parse_spec_value(text: str):
     return (k, v) if k and v else None
 
 
+def split_countries(raw: str) -> list[str]:
+    """'United States, UK and Israel' -> ['United States', 'United Kingdom',
+    'Israel']. Operator lists are stored comma-separated in the catalog;
+    per-nation indexing needs them split before normalization."""
+    if not raw:
+        return []
+    parts = re.split(r",| and | / ", str(raw))
+    return [p.strip() for p in parts if p.strip()]
+
+
 def _index_entries(entries_by_cat: dict) -> dict:
-    """Build normalized country index over all entries."""
+    """Build normalized country index over all entries. Multi-nation values
+    ('United States, Israel') index under EACH nation so per-country counts
+    and filters see them."""
     idx = {}
     for cat, entries in entries_by_cat.items():
         for i, e in enumerate(entries):
-            c = normalize_country(e.get("country"))
-            if not c:
-                continue
-            idx.setdefault(c.lower(), {}).setdefault(cat, []).append(i)
+            for part in split_countries(e.get("country")):
+                c = normalize_country(part)
+                if not c:
+                    continue
+                idx.setdefault(c.lower(), {}).setdefault(cat, []).append(i)
     return idx
 
 

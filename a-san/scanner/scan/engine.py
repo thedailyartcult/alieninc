@@ -47,6 +47,11 @@ from .parsers_navalencyclopedia import parse_naval_encyclopedia, \
 from .parsers_qinetiq import parse_qinetiq
 from .parsers_elbit import parse_elbit
 from .parsers_amgeneral import parse_amgeneral, AMGENERAL_VEHICLE_PATHS
+from .parsers_globalmilitary import parse_globalmilitary, GM_HOST, is_gm_detail
+from .parsers_tanksencyclopedia import parse_tanks_encyclopedia, is_te_article_url
+from .parsers_helis import parse_helis_model, is_helis_model_url
+
+HELIS_HOST = "www.helis.com"
 from .sitemap import product_urls_from_sitemap, article_urls_from_sitemap, sitemap_urls_to_parse
 from .store import ScanStore
 from .sanity import looks_like_news_headline
@@ -469,6 +474,36 @@ class Engine:
             elif host == AMGENERAL_HOST:
                 e = parse_amgeneral(url, fetched.html,
                                     row["category"] or "Automotive vehicles")
+                if e:
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
+            elif host == GM_HOST and is_gm_detail(url):
+                disp = row["category"] or "Uncategorized"
+                e = parse_globalmilitary(url, fetched.html, disp)
+                if e:
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
+            elif host == "tanks-encyclopedia.com" and is_te_article_url(url):
+                disp = row["category"] or "Armored vehicles and equipment"
+                e = parse_tanks_encyclopedia(url, fetched.html, disp)
+                if e:
+                    op = self._admit(e, url)
+                    if op != "rejected":
+                        self.store.link_parsed(url, e)
+                    self.store.mark(url, "done", status=200)
+                    log.info("[%s] %s -> %s (%s)", e.category, e.designation[:50], op, len(e.specs))
+                    return
+            elif host == HELIS_HOST and is_helis_model_url(url):
+                disp = row["category"] or "Aircraft"
+                e = parse_helis_model(url, fetched.html, disp)
                 if e:
                     op = self._admit(e, url)
                     if op != "rejected":

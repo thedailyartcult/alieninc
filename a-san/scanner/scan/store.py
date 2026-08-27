@@ -143,10 +143,13 @@ class ScanStore:
         return r["html"] if r else None
 
     # ---------- parsed entries ----------
-    def upsert_entry(self, e: CatalogEntry, source_url: str) -> str:
+    def upsert_entry(self, e: CatalogEntry, source_url: str,
+                     prefer_specs: bool = False) -> str:
         """Returns 'inserted' or 'merged'. Dedupes by fingerprint OR normalized
         designation, so re-scans merge into the existing entry instead of
-        creating duplicates."""
+        creating duplicates. prefer_specs=True (offline re-enrichment only)
+        lets a freshly-parsed spec list replace the stored one even when the
+        stored list is longer — used to purge legacy prose-junk 'specs'."""
         fp = e.fingerprint()
         dk = e.designation_key()
         with self._lock:
@@ -182,8 +185,19 @@ class ScanStore:
                     old.setdefault("sources", []).append(s.to_dict())
                     src_urls.add(s.url)
             old["fetched_at"] = e.fetched_at or old.get("fetched_at", "")
-            if len(e.specs) > len(old.get("specs", [])):
+            if len(e.specs) > len(old.get("specs", [])) or \
+                    (prefer_specs and e.specs):
                 old["specs"] = e.specs
+            # Fill-in-the-blanks merge: an empty field on the stored entry
+            # inherits from the incoming parse (never overwrites a value).
+            if not (old.get("country") or "").strip() and (e.country or "").strip():
+                old["country"] = e.country
+            if not (old.get("manufacturer") or "").strip() and (e.manufacturer or "").strip():
+                old["manufacturer"] = e.manufacturer
+            if e.alt_names:
+                names = {a.lower() for a in old.get("alt_names", [])}
+                old.setdefault("alt_names", [])
+                old["alt_names"].extend(a for a in e.alt_names if a.lower() not in names)
             # Category: never downgrade a specific category to a vaguer
             # one on merge (e.g. a news parser passing 'Uncategorized'
             # must not clobber 'Armored vehicles and equipment').
@@ -211,7 +225,8 @@ class ScanStore:
                     if s_x["url"] not in urls:
                         keep.setdefault("sources", []).append(s_x)
                         urls.add(s_x["url"])
-                if len(other.get("specs", [])) > len(keep.get("specs", [])):
+                if len(other.get("specs", [])) > len(keep.get("specs", [])) or \
+                        (prefer_specs and other.get("specs")):
                     keep["specs"] = other["specs"]
                 kc = (keep.get("category") or "").strip()
                 oc = (other.get("category") or "").strip()

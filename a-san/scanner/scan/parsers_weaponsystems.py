@@ -107,6 +107,18 @@ def parse_weaponsystem(url: str, html: str, category_display: str = "") -> dict 
     else:
         description = f"Public technical profile of {title} from Weaponsystems.net."
     
+    # Merge keyless continuation values into their parent spec — multi-value
+    # rows render as an empty CellLeft followed by another value cell, so the
+    # fragment ('883 mm with rocket pack installed') belongs to the previous
+    # label ('Length: 686 mm launcher only').
+    merged: list[str] = []
+    for s in specs:
+        if ":" not in s and merged and len(s) <= 120:
+            merged[-1] = f"{merged[-1]} / {s}"
+        else:
+            merged.append(s)
+    specs = merged
+
     # Determine category from content if not provided or if it's Uncategorized
     if not category_display or category_display == "Uncategorized":
         category_display = _classify_weaponsystem(title, description, specs)

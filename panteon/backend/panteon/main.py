@@ -27,6 +27,8 @@ from panteon.api.routes_lineage import router as lineage_router
 from panteon.api.routes_monitoring import router as monitoring_router
 from panteon.api.routes_workspaces import router as workspaces_router
 from panteon.api.routes_group import router as group_router
+from panteon.api.routes_feed_budget import router as feed_budget_router
+from panteon.api.routes_vessels import router as vessels_router
 from panteon.api.routes_crackerbox import router as crackerbox_router
 from panteon.api.routes_contour import router as contour_router
 from panteon.api.routes_aip import router as aip_router
@@ -128,6 +130,8 @@ app.include_router(smm_router, prefix="/api/v1")
 app.include_router(sims_router, prefix="/api/v1")
 app.include_router(maven_router, prefix="/api/v1")
 app.include_router(arsenal_store_router, prefix="/api/v1")
+app.include_router(feed_budget_router, prefix="/api/v1")
+app.include_router(vessels_router, prefix="/api/v1")
 
 
 @app.get("/")

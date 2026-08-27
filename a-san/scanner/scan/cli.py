@@ -19,12 +19,14 @@ Examples:
 from __future__ import annotations
 
 import argparse
+import html as html_lib
 import json
 import logging
 import os
 import re
 import sys
 import urllib.parse
+from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -896,6 +898,586 @@ def cmd_re_enrich_military(args, s: Settings):
     eng.close()
 
 
+def cmd_reenrich_all(args, s: Settings):
+    """Offline enrichment pass: re-parse cached detail HTML with the improved
+    parsers and merge richer specs into existing entries. NO network — reads
+    only raw_html already in the store.
+
+    Sources whose legacy parsers stuffed prose paragraphs into 'specs'
+    (globalsecurity, hisutton, seaforces) get spec replacement vetted per
+    entry: junk prose is purged, real table specs are never downgraded."""
+    import json as _json
+
+    eng = Engine(s)
+
+    def parse_gs(u, h):
+        from .parsers_globalsecurity import parse_globalsecurity
+        return parse_globalsecurity(u, h)
+
+    def parse_hs(u, h):
+        from .parsers_hisutton import parse_hisutton_article
+        return parse_hisutton_article(u, h)
+
+    def parse_sf(u, h):
+        from .parsers_seaforces import parse_seaforces
+        return parse_seaforces(u, h)
+
+    def parse_mf(u, h):
+        from .parsers_modernfirearms import parse_modernfirearms
+        return parse_modernfirearms(u, h)
+
+    def parse_f(u, h):
+        from .parsers_fas import parse_fas
+        return parse_fas(u, h)
+
+    def parse_wiki(u, h):
+        from .parsers_wikipedia import parse_wikipedia_infobox
+        return parse_wikipedia_infobox(u, h)
+
+    # (url LIKE pattern, parser, detail-only filter or None, prefer_specs)
+    DISPATCH = [
+        ("https://modernfirearms.net/en/%", parse_mf, None, False),
+        ("https://man.fas.org/dod-101/sys/%", parse_f, None, False),
+        ("https://www.globalsecurity.org/military/%", parse_gs, None, True),
+        ("https://www.hisutton.com/%", parse_hs, None, True),
+        ("https://www.seaforces.org/%", parse_sf, None, True),
+        ("https://en.wikipedia.org/wiki/%", parse_wiki, None, False),
+    ]
+    LISTING = re.compile(
+        r"/(category|tag|index|intro|Covert_Shores_Articles|List_|Portal:|"
+        r"Category:|page/\d)" , re.I)
+    MF_SEED_SLUGS = {u.rstrip("/").rsplit("/", 1)[-1]
+                     for u in MODERNFIREARMS_SEED_URLS.values()}
+    FAS_HUBS = {"index.htm", "intro.htm", "direct.htm", "refs.htm"}
+
+    ops = {}
+    per_source = {}
+    rows = eng.store._conn.execute(
+        "SELECT url, html FROM raw_html WHERE "
+        + " OR ".join("url LIKE ?" for pat, _, _, _ in DISPATCH)
+        + " ORDER BY url",
+        [pat for pat, _, _, _ in DISPATCH]).fetchall()
+    for row in rows:
+        url, html = row["url"], row["html"]
+        if not html or len(html) < 8000:
+            continue
+        hit = next(((p, fn, filt, pref) for p, fn, filt, pref in DISPATCH
+                    if url.startswith(p.replace("%", ""))), None)
+        if not hit:
+            continue
+        pat, fn, filt, prefer = hit
+        path_last = url.rstrip("/").rsplit("/", 1)[-1].lower()
+        segs = [x for x in url.replace("https://", "").split("/") if x]
+        # detail-page guards
+        if "modernfirearms.net" in url and (path_last in MF_SEED_SLUGS or len(segs) < 5):
+            continue
+        if "fas.org" in url and (not path_last.endswith(".htm")
+                                 or path_last in FAS_HUBS or len(segs) < 5):
+            continue
+        if "wikipedia.org" in url and ("#" in url or ":" in url.rsplit("/", 1)[-1]):
+            continue
+        if LISTING.search(url):
+            continue
+        try:
+            e = fn(url, html)
+        except Exception as ex:
+            logging.warning("reenrich parse failed %s: %s", url, ex)
+            continue
+        if e is None:
+            continue
+        src_key = pat.split("//")[1].split("/")[0].replace("www.", "")
+        stat = per_source.setdefault(src_key, {"parsed": 0, "with_specs": 0})
+        stat["parsed"] += 1
+        if e.specs:
+            stat["with_specs"] += 1
+
+        force = prefer
+        if prefer and e.specs:
+            old = eng.store._conn.execute(
+                "SELECT data FROM entries WHERE fingerprint=? OR designation_key=?",
+                (e.fingerprint(), e.designation_key())).fetchone()
+            if old:
+                od = _json.loads(old["data"])
+                ospecs = od.get("specs", [])
+                if ospecs:
+                    avg_len = sum(len(x) for x in ospecs) / len(ospecs)
+                    prose_junk = avg_len > 90
+                    force = prose_junk or len(e.specs) >= len(ospecs)
+                else:
+                    force = True
+        op = eng.store.upsert_entry(e, url, prefer_specs=force)
+        ops[op] = ops.get(op, 0) + 1
+
+    print(_json.dumps({
+        "cached_pages_scanned": len(rows),
+        "results": ops,
+        "per_source": {k: v for k, v in sorted(per_source.items())},
+        "next": "python -m scan export && python -m scan build-web && arsenal_sync",
+    }, indent=2))
+    eng.close()
+
+
+def cmd_clean_specs(args, s: Settings):
+    """Catalog hygiene sweep over every entry (offline):
+      1. keyless continuation fragments merge into the previous spec (' / ')
+      2. verbose prose values trimmed at a sentence boundary (~170 chars)
+      3. nav/boilerplate specs (HOME:, links, ©) dropped
+      4. placeholder fallback descriptions replaced with '' when the entry
+         has real specs (better empty than fake text)
+    Deterministic and idempotent."""
+    import json as _json
+
+    eng = Engine(s)
+    rows = eng.store._conn.execute(
+        "SELECT fingerprint, designation, data FROM entries").fetchall()
+    changed = {"fragment_merged": 0, "trimmed": 0, "dropped_nav": 0,
+               "desc_fixed": 0}
+    PLACEHOLDER_RES = [
+        re.compile(r"^Modern Firearms encyclopedia entry:", re.I),
+        re.compile(r"^FAS equipment profile:", re.I),
+        re.compile(r" — Seaforces profile\.$"),
+        re.compile(r"^Public technical profile of .+ from Weaponsystems\.net\.$", re.I),
+        re.compile(r"^Army Recognition product page", re.I),
+    ]
+    NAV_RE = re.compile(r"\b(HOME|http://|https://|www\.|©|all rights reserved)\b",
+                        re.I)
+    updates = []
+    for fp, desig, data in rows:
+        d = _json.loads(data)
+        specs = d.get("specs", [])
+        out = []
+        n_frag = n_trim = n_drop = 0
+        for sp in specs:
+            if NAV_RE.search(sp[:40]):
+                n_drop += 1
+                continue
+            if ":" not in sp:
+                if out and len(sp) <= 120 and len(out[-1]) + len(sp) < 240:
+                    out[-1] = f"{out[-1]} / {sp}"
+                    n_frag += 1
+                    continue
+                # keyless leftovers: drop sentence-like prose outright; keep
+                # terse value-like fragments ('4 x 5-inch guns') under 60 chars
+                words = sp.split()
+                stopish = sum(1 for w in words
+                              if w.lower().strip(",.[]()") in (
+                                  "the", "a", "an", "and", "of", "to", "in",
+                                  "is", "was", "are", "for", "with", "that",
+                                  "it", "has", "have", "on", "by", "from", "as"))
+                if len(words) >= 8 and stopish >= 3:
+                    n_drop += 1
+                elif len(sp) <= 60 and stopish < 3:
+                    out.append(sp)
+                else:
+                    n_drop += 1
+                continue
+            if len(sp) > 170:
+                head = sp[:170]
+                cut = -1
+                for sep in (". ", "; "):
+                    i = head.rfind(sep)
+                    if i > 60:
+                        cut = i + 1
+                        break
+                sp2 = (head[:cut].rstrip() if cut > 0
+                       else head[:head.rfind(" ")].rstrip(" ,;:") if head.rfind(" ") > 60
+                       else head.rstrip(" ,;:"))
+                if sp2 != sp:
+                    n_trim += 1
+                sp = sp2
+            out.append(sp)
+        desc = d.get("description", "")
+        if desc and any(pr.search(desc) for pr in PLACEHOLDER_RES) \
+                and not desc.startswith(desig):
+            d["description"] = ""
+            changed["desc_fixed"] += 1
+        if (n_frag or n_trim or n_drop) or (len(out) != len(specs)) \
+                or d["description"] != desc:
+            d["specs"] = out
+            changed["fragment_merged"] += n_frag
+            changed["trimmed"] += n_trim
+            changed["dropped_nav"] += n_drop
+            updates.append((fp, d))
+    for fp, d in updates:
+        eng.store._conn.execute(
+            "UPDATE entries SET data=? WHERE fingerprint=?",
+            (_json.dumps(d, ensure_ascii=False), fp))
+    eng.store._conn.commit()
+    print(_json.dumps({"entries_scanned": len(rows), "entries_updated": len(updates),
+                       "changes": changed}, indent=2))
+    eng.close()
+
+
+def _known_country_set() -> set[str]:
+    return {
+        "united states", "united kingdom", "russia", "soviet union", "china",
+        "france", "germany", "italy", "spain", "sweden", "israel", "india",
+        "japan", "south korea", "north korea", "turkey", "türkiye", "ukraine",
+        "poland", "czech republic", "slovakia", "austria", "switzerland",
+        "netherlands", "belgium", "norway", "denmark", "finland", "greece",
+        "portugal", "romania", "bulgaria", "hungary", "serbia", "croatia",
+        "brazil", "argentina", "chile", "canada", "mexico", "australia",
+        "new zealand", "south africa", "egypt", "iran", "iraq", "saudi arabia",
+        "uae", "qatar", "pakistan", "bangladesh", "indonesia", "malaysia",
+        "singapore", "thailand", "vietnam", "taiwan", "philippines", "myanmar",
+        "belarus", "kazakhstan", "algeria", "morocco", "nigeria", "ethiopia",
+        "kenya", "colombia", "peru", "venezuela", "ecuador", "ireland",
+        "lithuania", "latvia", "estonia", "slovenia", "yugoslavia",
+    }
+
+
+def cmd_backfill_country(args, s: Settings):
+    """Fill missing country fields in five escalating tiers (offline):
+
+      T1 own-specs      'Origin:'/'Country of origin:'/'Country users:' already
+                        in the entry's spec list
+      T2 html-mining    cached Wikipedia infoboxes (Origin / Used by / Users)
+      T3 cross-source   strict designation token match against entries that
+                        have a country (>=2 shared tokens, >=70% overlap,
+                        unique agreeing country)
+      T4 fas-heuristic  man.fas.org/dod-101 documents US DoD systems; assign
+                        'United States' unless foreign evidence present
+      T5 prose-hisutton exactly one known country named in the first 500 chars
+
+    Every fill records provenance in data['country_source']. Idempotent:
+    entries that already have a country are never touched."""
+    import json as _json
+
+    eng = Engine(s)
+    KNOWN = _known_country_set()
+    from .config import COUNTRIES as CANON_SET, COUNTRY_FIXUPS
+    rows = eng.store._conn.execute(
+        "SELECT fingerprint, designation, data FROM entries").fetchall()
+    entries = {}
+    for r in rows:
+        entries[r["fingerprint"]] = (r["designation"], _json.loads(r["data"]))
+
+    def save(fp, d, source):
+        d["country_source"] = source
+        eng.store._conn.execute(
+            "UPDATE entries SET data=? WHERE fingerprint=?",
+            (_json.dumps(d, ensure_ascii=False), fp))
+
+    stats = {"T0_normalized": 0, "T0_cleared": 0,
+             "T1_spec": 0, "T2_infobox": 0, "T3_cross": 0, "T4_fas": 0,
+             "T5_prose": 0}
+    conflicts_t3 = 0
+
+    # ---- T0: normalize / clear existing country values ----
+    def canon_part(p):
+        p2 = re.sub(r"\(.*?\)", "", p).strip(" .;:")
+        low = p2.lower().rstrip(".")
+        if low in COUNTRY_FIXUPS:
+            return COUNTRY_FIXUPS[low]
+        if low in CANON_SET:
+            return {"usa": "United States", "us": "United States",
+                    "uk": "United Kingdom", "ussr": "Soviet Union",
+                    "türkiye": "Turkey"}.get(low, p2.title())
+        return None
+
+    for fp, (desig, d) in list(entries.items()):
+        c = (d.get("country") or "").strip()
+        if not c:
+            continue
+        parts = [p.strip() for p in re.split(r",| and ", c) if p.strip()]
+        canon = []
+        bad = False
+        for p in parts:
+            cp = canon_part(p)
+            if cp:
+                if cp not in canon:
+                    canon.append(cp)
+            else:
+                bad = True
+        if not canon:
+            # nothing salvageable — clear so later tiers can refill properly
+            d["country"] = ""
+            stats["T0_cleared"] += 1
+            save(fp, d, "T0_cleared-invalid")
+        elif bad or len(canon) != len(parts) or \
+                any(canon[i] != parts[i] for i in range(min(len(canon), len(parts)))):
+            d["country"] = ", ".join(canon)
+            stats["T0_normalized"] += 1
+            save(fp, d, "T0_normalized")
+
+    # rebuild the working copy after T0 mutations
+    for fp in list(entries.keys()):
+        row = eng.store._conn.execute(
+            "SELECT designation, data FROM entries WHERE fingerprint=?",
+            (fp,)).fetchone()
+        entries[fp] = (row["designation"], _json.loads(row["data"]))
+
+    # ---- T1: own specs ----
+    SPEC_LABELS = ("origin:", "country of origin:", "country users:",
+                   "operator country:", "country:")
+    for fp, (desig, d) in list(entries.items()):
+        if (d.get("country") or "").strip():
+            continue
+        for sp in d.get("specs", []):
+            sl = sp.lower()
+            for lab in SPEC_LABELS:
+                if not sl.startswith(lab):
+                    continue
+                val = sp[len(lab):].strip().strip(".").strip()
+                # strip trailing commentary and annotations
+                val = re.split(r";|\bpotential\b|\baccording\b", val, 1)[0]
+                parts = [p.strip() for p in re.split(r",| and ", val) if p.strip()]
+                canon = [canon_part(p) for p in parts]
+                canon = [c for c in canon if c]
+                if not canon or len(canon) != len(parts) or \
+                        len(", ".join(canon)) > 120 or \
+                        re.match(r"^(various|none|unknown|see |multiple)",
+                                 val, re.I):
+                    continue
+                d["country"] = ", ".join(dict.fromkeys(canon))
+                stats["T1_spec"] += 1
+                save(fp, d, f"T1_spec ({lab.rstrip(':')})")
+                break
+            if (d.get("country") or "").strip():
+                break
+
+    # ---- T2: cached Wikipedia infobox mining ----
+    INFOLABEL = re.compile(r"^\s*(origin(?:\s+country)?|used?d?\s+by(?:\s+\w+)?|"
+                           r"users|primary users|operators?)\s*:?\s*$", re.I)
+    for fp, (desig, d) in list(entries.items()):
+        if (d.get("country") or "").strip():
+            continue
+        url = (d.get("sources") or [{}])[0].get("url", "")
+        if "wikipedia.org" not in url:
+            continue
+        hrow = eng.store._conn.execute(
+            "SELECT html FROM raw_html WHERE url=?", (url,)).fetchone()
+        if not hrow or not hrow["html"]:
+            continue
+        m = re.search(r'<table[^>]*class="[^"]*infobox[^"]*"[^>]*>(.*?)</table>',
+                      hrow["html"], re.S | re.I)
+        if not m:
+            continue
+        val = ""
+        for row in re.findall(r"<tr[^>]*>(.*?)</tr>", m.group(1), re.S | re.I):
+            cells = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.S | re.I)
+            if len(cells) >= 2 and INFOLABEL.match(
+                    re.sub(r"\s+", " ", re.sub(
+                        r"<[^>]+>", "", re.sub(r"<style.*?</style>", "",
+                                               cells[0], flags=re.S | re.I))).strip()):
+                val = re.sub(r"\s+", " ", html_lib.unescape(re.sub(
+                    r"<[^>]+>", " ", re.sub(r"<style.*?</style>", "",
+                                            cells[1], flags=re.S | re.I)))).strip(" ,;")
+                break
+        if not val or len(val) > 250:
+            continue
+        # keep only recognised nation names appearing in the cell text
+        low = f" {val.lower()} "
+        nations = []
+        for k in sorted(KNOWN, key=len, reverse=True):
+            if k in low and not any(k in n.lower() for n in nations):
+                nations.append(k.title().replace("Of ", "of "))
+        if nations:
+            d["country"] = ", ".join(nations)[:120]
+            stats["T2_infobox"] += 1
+            save(fp, d, "T2_wiki-infobox")
+
+    # ---- T3: strict cross-source token match ----
+    def toks(s):
+        return {t for t in re.findall(r"[a-z0-9]{2,}", s.lower())
+                if not t.isdigit() and len(t) >= 3
+                and t not in ("the", "and", "for")}
+
+    have_index = defaultdict(set)   # token -> {(country, designation)}
+    for fp, (desig, d) in entries.items():
+        c = (d.get("country") or "").strip()
+        if not c:
+            continue
+        for t in toks(desig):
+            have_index[t].add((c, desig))
+    for fp, (desig, d) in list(entries.items()):
+        if (d.get("country") or "").strip():
+            continue
+        dt = toks(desig)
+        if len(dt) < 2:
+            continue
+        cand = {}
+        for t in dt:
+            for c, hd in have_index.get(t, ()):
+                cand.setdefault(hd, [set(), c])[0].add(t)
+        agree = None
+        for hd, (inter, c) in cand.items():
+            ht = toks(hd)
+            if len(inter) >= 2 and len(inter) >= 0.7 * min(len(dt), len(ht)):
+                if agree is None:
+                    agree = c
+                elif agree != c:
+                    agree = None
+                    conflicts_t3 += 1
+                    break
+        if agree:
+            d["country"] = agree[:120]
+            stats["T3_cross"] += 1
+            save(fp, d, "T3_cross-source")
+
+    # ---- T4: FAS dod-101 US heuristic ----
+    FOREIGN = re.compile(
+        r"\b(soviet|russian|chinese|french|german|british|ukrainian|israeli|"
+        r"indian|japanese|swedish|italian|iranian|north korean|european)\b", re.I)
+    for fp, (desig, d) in list(entries.items()):
+        if (d.get("country") or "").strip():
+            continue
+        url = (d.get("sources") or [{}])[0].get("url", "")
+        if "man.fas.org/dod-101/sys/" not in url:
+            continue
+        txt = f"{desig} {d.get('description', '')} {' '.join(d.get('specs', [])[:6])}"
+        if not FOREIGN.search(txt):
+            d["country"] = "United States"
+            stats["T4_fas"] += 1
+            save(fp, d, "T4_fas-dod101-heuristic")
+
+    # ---- T5: hisutton single-nation prose ----
+    for fp, (desig, d) in list(entries.items()):
+        if (d.get("country") or "").strip():
+            continue
+        url = (d.get("sources") or [{}])[0].get("url", "")
+        if "hisutton.com" not in url:
+            continue
+        window = (d.get("description") or "")[:500].lower()
+        found = {k.title() if k != "united states" else "United States"
+                 for k in KNOWN if k in window}
+        # exclude multi-national roundups
+        if len(found) == 1:
+            d["country"] = next(iter(found))
+            stats["T5_prose"] += 1
+            save(fp, d, "T5_hisutton-prose")
+
+    eng.store._conn.commit()
+    remaining = sum(1 for _, (x, d) in entries.items()
+                    if not (d.get("country") or "").strip())
+    print(_json.dumps({
+        "entries_scanned": len(rows), "filled_by_tier": stats,
+        "t3_ambiguous_skipped": conflicts_t3,
+        "still_missing_country": remaining,
+    }, indent=2))
+    eng.close()
+
+
+def cmd_discover_round7(args, s: Settings):
+    """Enumerate globalmilitary.net (added 2026-08-26): an open military
+    equipment database whose robots.txt explicitly welcomes crawlers with
+    attribution. Equipment detail URLs come from sitemap-main.xml; every
+    entry carries origin + operators + a structured spec table.
+    Run once, then crawl --domains www.globalmilitary.net."""
+    from .parsers_globalmilitary import GM_SITEMAP, gm_category_for, is_gm_detail
+    eng = Engine(s)
+    eng.seed_from_catalog()
+    res = eng._fetcher("www.globalmilitary.net").fetch(
+        GM_SITEMAP, store=eng.store, use_cache=True)
+    if res.status != 200 or not res.html:
+        print(json.dumps({"error": f"sitemap fetch failed ({res.status})"}))
+        eng.close()
+        return
+    by_cat: dict[str, int] = {}
+    n = 0
+    for m in re.finditer(r"<loc>([^<]+)</loc>", res.html):
+        u = m.group(1).strip()
+        if not is_gm_detail(u):
+            continue
+        cat = gm_category_for(u)
+        if not cat:
+            continue
+        n += eng.store.enqueue(u, "www.globalmilitary.net",
+                               category=cat, kind="product")
+        by_cat[cat] = by_cat.get(cat, 0) + 1
+    print(json.dumps({
+        "enqueued_total": n,
+        "enqueued_by_category": by_cat,
+        "next": ("python -m scan crawl --domains www.globalmilitary.net "
+                 "(~2600 pages; robots welcomes us, default delay applies)"),
+    }, indent=2))
+    eng.close()
+
+
+def cmd_discover_te(args, s: Settings):
+    """Enumerate tanks-encyclopedia.com (added 2026-08-26): robots allows
+    generic crawlers (Content-Signal use=reference); sitemaps are bot-blocked
+    so discovery walks the four era index pages. Articles are pre-categorized
+    as Armored vehicles and equipment."""
+    from .parsers_tanksencyclopedia import TE_INDEX_URLS, parse_te_listing, is_te_article_url
+    eng = Engine(s)
+    eng.seed_from_catalog()
+    fetcher = eng._fetcher("tanks-encyclopedia.com")
+    seen: set[str] = set()
+    n = 0
+    # Level 1: era indexes -> article links + country hubs (/<era>/<country>/)
+    for idx_url in TE_INDEX_URLS:
+        res = fetcher.fetch(idx_url, store=eng.store, use_cache=True)
+        if res.status != 200 or not res.html:
+            continue
+        for u in parse_te_listing(res.html):
+            if u in seen or not is_te_article_url(u):
+                continue
+            seen.add(u)
+            n += eng.store.enqueue(u, "tanks-encyclopedia.com",
+                                   category="Armored vehicles and equipment",
+                                   kind="product")
+        for m in re.finditer(
+                r'href="(https://tanks-encyclopedia\.com/'
+                r'(?:modern|cold-war|coldwar|ww2|ww1|interwar)/'
+                r'[a-z-]{3,22})/?"',
+                res.html or "", re.I):
+            hub = m.group(1).rstrip("/") + "/"
+            if hub in seen:
+                continue
+            seen.add(hub)
+            hres = fetcher.fetch(hub, store=eng.store, use_cache=True)
+            if hres.status != 200 or not hres.html:
+                continue
+            for u in parse_te_listing(hres.html):
+                if u in seen or not is_te_article_url(u):
+                    continue
+                seen.add(u)
+                n += eng.store.enqueue(u, "tanks-encyclopedia.com",
+                                       category="Armored vehicles and equipment",
+                                       kind="product")
+    print(json.dumps({
+        "enqueued_total": n,
+        "next": ("python -m scan crawl --domains tanks-encyclopedia.com "
+                 "(default delay; robots permits with attribution)"),
+    }, indent=2))
+    eng.close()
+
+
+def cmd_discover_helis(args, s: Settings):
+    """Enumerate helis.com model pages (added 2026-08-26): walk the
+    manufacturer matrix (/database/model/ -> 134 manufacturer pages ->
+    /database/model/<id>/ detail pages). Robots allows; spec tables are
+    structured. Pre-categorized as Aircraft."""
+    from .parsers_helis import parse_helis_listing
+    eng = Engine(s)
+    eng.seed_from_catalog()
+    fetcher = eng._fetcher("www.helis.com")
+    seen: set[str] = set()
+    n = 0
+    r = fetcher.fetch("https://www.helis.com/database/model/",
+                      store=eng.store, use_cache=True)
+    hubs = sorted(set(re.findall(
+        r'href="(/database/(?:model|manufacturer)/\d+/)"', r.html or "")))
+    for hub in hubs:
+        hub_url = "https://www.helis.com" + hub
+        res = fetcher.fetch(hub_url, store=eng.store, use_cache=True)
+        if res.status != 200 or not res.html:
+            continue
+        for u in parse_helis_listing(res.html):
+            if u in seen:
+                continue
+            seen.add(u)
+            n += eng.store.enqueue(u, "www.helis.com",
+                                   category="Aircraft", kind="product")
+    print(json.dumps({
+        "hubs_walked": len(hubs),
+        "enqueued_total": n,
+        "next": "python -m scan crawl --domains www.helis.com",
+    }, indent=2))
+    eng.close()
+
+
 def cmd_import_janes(args, s: Settings):
     rows = janes_import_csv(args.csv)
     print(f"imported {len(rows)} Janes rows (research-desk licensed data); "
@@ -1093,6 +1675,31 @@ def main(argv=None):
                          help="re-parse weaponsystems.net entries from cached "
                               "HTML with current parser (handles site redesign)")
     _add_common(rew)
+    rea = sub.add_parser("re-enrich-all",
+                         help="offline: re-parse cached detail HTML with improved "
+                              "parsers and merge richer specs (no network)")
+    _add_common(rea)
+    cs = sub.add_parser("clean-specs",
+                        help="offline hygiene sweep: merge keyless fragments, trim "
+                             "prose values, drop nav junk, clear placeholder text")
+    _add_common(cs)
+    bc = sub.add_parser("backfill-country",
+                        help="offline: fill missing country via own-specs, wiki "
+                             "infoboxes, cross-source match, FAS US-heuristic, "
+                             "hisutton prose (provenance recorded)")
+    _add_common(bc)
+    r7 = sub.add_parser("discover-round7",
+                        help="enumerate globalmilitary.net equipment pages "
+                             "(crawler-friendly open database)")
+    _add_common(r7)
+    te = sub.add_parser("discover-tanks-encyclopedia",
+                        help="enumerate tanks-encyclopedia.com articles from "
+                             "era index pages")
+    _add_common(te)
+    hl = sub.add_parser("discover-helis",
+                        help="enumerate helis.com helicopter model pages via "
+                             "manufacturer matrix")
+    _add_common(hl)
     wp = sub.add_parser("import-wikipedia",
                         help="parse Wikipedia 'List of military electronics' pages "
                              "(CC BY-SA 4.0) + enqueue EW system pages from "
@@ -1145,6 +1752,18 @@ def main(argv=None):
         cmd_dedupe_keys(args, s)
     elif args.cmd == "re-enrich-weaponsystems":
         cmd_reenrich_weaponsystems(args, s)
+    elif args.cmd == "re-enrich-all":
+        cmd_reenrich_all(args, s)
+    elif args.cmd == "clean-specs":
+        cmd_clean_specs(args, s)
+    elif args.cmd == "backfill-country":
+        cmd_backfill_country(args, s)
+    elif args.cmd == "discover-round7":
+        cmd_discover_round7(args, s)
+    elif args.cmd == "discover-tanks-encyclopedia":
+        cmd_discover_te(args, s)
+    elif args.cmd == "discover-helis":
+        cmd_discover_helis(args, s)
     elif args.cmd == "import-wikipedia":
         cmd_import_wikipedia(args, s)
     elif args.cmd == "curate":

@@ -94,6 +94,51 @@ def parse_modernfirearms_listing(html: str) -> list[tuple[str, str, str]]:
     return deduped
 
 
+def _td_cells(el_html: str) -> list[str]:
+    """Cell texts of a <tr> row, tags stripped and entities unescaped."""
+    return [
+        re.sub(r"\s+", " ", html_lib.unescape(re.sub(r"<[^>]+>", "", c))).strip()
+        for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", el_html, re.S | re.I)
+    ]
+
+
+def _spec_table(body_html: str) -> list[str]:
+    """Extract 'Key: Value' pairs from MF spec tables. Two page shapes:
+      1. TTX: <thead>Specification|Value</thead> + <tr><td>k</td><td>v</td></tr>
+      2. Bordered: >=3 rows of <td><b>Key</b></td><td>value</td>
+    Returns specs in page order; skips header/no-value rows."""
+    specs: list[str] = []
+    seen: set[str] = set()
+    for tbl_m in re.finditer(r"<table[^>]*>(.*?)</table>", body_html, re.S | re.I):
+        tbl = tbl_m.group(1)
+        ttx = bool(re.search(r">\s*Specification\s*<", tbl, re.I))
+        rows = re.findall(r"<tr[^>]*>(.*?)</tr>", tbl, re.S | re.I)
+        parsed: list[tuple[str, str]] = []
+        bold_keys = 0
+        for tr in rows:
+            cells = _td_cells(tr)
+            raw_cells = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", tr, re.S | re.I)
+            if len(cells) < 2 or not cells[0] or not cells[1]:
+                continue
+            k, v = cells[0], " ".join(cells[1:])
+            if k.lower() in ("specification", "value"):
+                continue
+            if any(re.search(r"<(b|strong)[^>]*>", rc.strip()[:20], re.I)
+                   for rc in raw_cells[:1]):
+                bold_keys += 1
+            parsed.append((k, v))
+        if not (ttx or bold_keys >= 3):
+            continue
+        for k, v in parsed:
+            pair = f"{k}: {v}"
+            if v.lower() not in ("&nbsp;", "nbsp") and pair not in seen:
+                seen.add(pair)
+                specs.append(pair)
+        if specs:
+            break
+    return specs
+
+
 def parse_modernfirearms(url: str, html: str, category_display: str = "") -> CatalogEntry | None:
     """Parse a modernfirearms.net detail page (e.g. /en/assault-rifles/finland-.../slug/)."""
     if not html:
@@ -125,7 +170,12 @@ def parse_modernfirearms(url: str, html: str, category_display: str = "") -> Cat
         # Try URL: /en/assault-rifles/finland-assault-rifles/slug/
         url_m = re.search(r"/en/[^/]+/([a-z]+)-[a-z-]+/", url, re.I)
         if url_m:
-            country = url_m.group(1).capitalize()
+            from .config import COUNTRY_FIXUPS, COUNTRIES
+            cand = url_m.group(1).lower()
+            if cand in COUNTRY_FIXUPS:
+                country = COUNTRY_FIXUPS[cand]
+            elif cand in COUNTRIES:
+                country = url_m.group(1).capitalize()
 
     # Main content column: <div class="col-sm-9 col-lg-8"> ... </div>
     # (some templates use class="col-xs-12 col-sm-9")
@@ -143,28 +193,44 @@ def parse_modernfirearms(url: str, html: str, category_display: str = "") -> Cat
     if not body:
         body = f"Modern Firearms encyclopedia entry: {title_clean}"
 
-    # Spec list: <p>...specifications...</p><ul><li>Key: Value</li>...</ul>
-    specs: list[str] = []
-    # Find a heading paragraph that contains "specifications" then the following <ul>
-    spec_h_m = re.search(
-        r"<p[^>]*>\s*<[^>]*>\s*<strong[^>]*>[^<]*specifications[^<]*</strong>[^<]*</[^>]*>\s*</p>(.*?)</ul>",
-        body_html, re.S | re.I)
-    if not spec_h_m:
-        # Looser: any <ul> of <li>Key: Value</li> items
-        spec_h_m = re.search(r"specifications.*?<ul[^>]*>(.*?)</ul>", body_html, re.S | re.I)
-    if spec_h_m:
-        ul_body = spec_h_m.group(1) if "spec_h_m" in dir() else spec_h_m.group(0)
-        # Get the actual <ul> contents
-        ul_m = re.search(r"<ul[^>]*>(.*?)</ul>", spec_h_m.group(0), re.S | re.I)
-        if ul_m:
-            ul_body = ul_m.group(1)
-        lis = re.findall(r"<li[^>]*>(.*?)</li>", ul_body, re.S | re.I)
-        for li in lis:
-            t = re.sub(r"\s+", " ", html_lib.unescape(re.sub(r"<[^>]+>", "", li))).strip()
-            if ":" in t:
-                k, v = t.split(":", 1)
-                if k.strip() and v.strip():
-                    specs.append(f"{k.strip()}: {v.strip()}")
+    # Spec list, two shapes:
+    #   1. TTX table: <thead>Specification|Value</thead> + <tr><td>k</td><td>v</td></tr>
+    #   2. <p>...specifications...</p><ul><li>Key: Value</li></ul>
+    specs: list[str] = _spec_table(body_html)
+    if not specs:
+        # Shape 3: <p><strong>Characteristics:</strong></p>
+        #          <p><b>Key: </b>value<br /><b>Key2:</b> value2</p>
+        char_m = re.search(
+            r"(?:characteristics|specifications)[^<]*</(?:strong|em|b)>.*?<p[^>]*>(.*?)</p>",
+            body_html, re.S | re.I)
+        if char_m:
+            block = re.sub(r"<br\s*/?>", "\n", char_m.group(1), flags=re.I)
+            for line in block.split("\n"):
+                t = re.sub(r"\s+", " ", html_lib.unescape(re.sub(r"<[^>]+>", "", line))).strip()
+                m = re.match(r"^([A-Za-z][A-Za-z0-9 /(),.'-]{1,38}):\s*(.+)$", t)
+                if m and m.group(2).strip():
+                    specs.append(f"{m.group(1).strip()}: {m.group(2).strip()}")
+    if not specs:
+        # Find a heading paragraph that contains "specifications" then the following <ul>
+        spec_h_m = re.search(
+            r"<p[^>]*>\s*<[^>]*>\s*<strong[^>]*>[^<]*specifications[^<]*</strong>[^<]*</[^>]*>\s*</p>(.*?)</ul>",
+            body_html, re.S | re.I)
+        if not spec_h_m:
+            # Looser: any <ul> of <li>Key: Value</li> items
+            spec_h_m = re.search(r"specifications.*?<ul[^>]*>(.*?)</ul>", body_html, re.S | re.I)
+        if spec_h_m:
+            ul_body = spec_h_m.group(1) if "spec_h_m" in dir() else spec_h_m.group(0)
+            # Get the actual <ul> contents
+            ul_m = re.search(r"<ul[^>]*>(.*?)</ul>", spec_h_m.group(0), re.S | re.I)
+            if ul_m:
+                ul_body = ul_m.group(1)
+            lis = re.findall(r"<li[^>]*>(.*?)</li>", ul_body, re.S | re.I)
+            for li in lis:
+                t = re.sub(r"\s+", " ", html_lib.unescape(re.sub(r"<[^>]+>", "", li))).strip()
+                if ":" in t:
+                    k, v = t.split(":", 1)
+                    if k.strip() and v.strip():
+                        specs.append(f"{k.strip()}: {v.strip()}")
 
     # Category from URL path or fallback
     if not category_display or category_display == "Uncategorized":

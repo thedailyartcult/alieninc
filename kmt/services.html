@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="KMT Consulting Group services: strategy and market entry, applied AI workflow transformation, operating model improvement, and post-merger integration. Founded 1969. A subsidiary of Alien Inc.">
+    <title>Services | KMT Consulting Group</title>
+    <style>
+        :root {
+            --kmt-green-deep: #0C2B15;
+            --kmt-green-text: #144622;
+            --lime-accent: #96F878;
+            --lime-accent-hover: #71DC68;
+            --neutral-bg: #F5F3EF;
+            --neutral-border: #DFD7CD;
+            --text-dark: #212427;
+            --white: #ffffff;
+            --gray-300: #D4D4D4;
+            --gray-500: #696969;
+            --gray-600: #555555;
+            --gray-700: #323232;
+            --font-serif: 'Georgia', serif;
+            --font-sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            --page-padding: 6%;
+            --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            --transition-snappy: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-sans); color: var(--text-dark); background-color: var(--white); line-height: 1.4; overflow-x: hidden; }
+        h1, h2, h3, h4 { font-family: var(--font-serif); font-weight: 400; }
+        a { color: inherit; text-decoration: none; }
+
+        /* Floating Nav */
+        .floating-nav { position: fixed; top: 20px; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 0 var(--page-padding); z-index: 1000; pointer-events: none; }
+        .nav-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 15px; padding: 10px 24px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); pointer-events: auto; transition: var(--transition-snappy); }
+        .menu-btn { background: none; border: none; cursor: pointer; display: flex; flex-direction: column; gap: 5px; padding: 5px 0; }
+        .menu-btn span { display: block; width: 22px; height: 2px; background-color: var(--text-dark); transition: var(--transition-smooth); }
+        .menu-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+        .menu-btn.open span:nth-child(2) { opacity: 0; }
+        .menu-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+        .logo-text { font-weight: 800; font-size: 18px; color: var(--kmt-green-text); letter-spacing: -0.5px; }
+        .login-link { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid var(--text-dark); padding-bottom: 2px; }
+
+        /* Nav Drawer */
+        .nav-drawer { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background-color: var(--white); z-index: 999; transform: translateY(-100%); transition: var(--transition-smooth); display: flex; flex-direction: column; justify-content: center; padding: 120px var(--page-padding) 40px; overflow-y: auto; }
+        .nav-drawer.open { transform: translateY(0); }
+        .drawer-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 30px; margin-bottom: 40px; }
+        .drawer-col h4 { font-size: 13px; text-transform: uppercase; font-weight: 700; margin-bottom: 15px; color: var(--gray-500); letter-spacing: 1px; }
+        .drawer-col ul { list-style: none; }
+        .drawer-col ul li { margin-bottom: 12px; }
+        .drawer-col ul li a { font-size: 18px; color: var(--text-dark); font-weight: 300; transition: var(--transition-smooth); }
+        .drawer-col ul li a:hover { color: var(--kmt-green-text); padding-left: 5px; }
+
+        /* Hero */
+        .hero { position: relative; min-height: 60vh; background: radial-gradient(circle at 80% 20%, #71dc68 0%, #96f878 25%, #2fd1b2 50%, #baf896 80%, #ffffff 100%); display: flex; align-items: center; padding: 160px var(--page-padding) 70px; }
+        .hero-content { max-width: 850px; }
+        .eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--kmt-green-text); margin-bottom: 30px; }
+        .hero h1 { font-size: clamp(38px, 6.2vw, 96px); line-height: 1.05; color: var(--kmt-green-text); margin-bottom: 35px; letter-spacing: -1px; }
+        .hero-subtitle { font-size: clamp(16px, 1.8vw, 24px); color: var(--kmt-green-text); opacity: 0.9; margin-bottom: 45px; font-weight: 300; }
+
+        /* Buttons */
+        .btn { display: inline-flex; align-items: center; gap: 10px; background-color: var(--lime-accent); color: var(--text-dark); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; padding: 14px 34px; border-radius: 15px; border: none; cursor: pointer; transition: var(--transition-smooth); }
+        .btn:hover { background-color: var(--lime-accent-hover); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(113, 220, 104, 0.3); }
+        .btn-secondary { background-color: transparent; border: 2px solid var(--text-dark); }
+        .btn-secondary:hover { background-color: var(--text-dark); color: var(--white); box-shadow: none; }
+
+        /* Sections */
+        .service-section { padding: 90px var(--page-padding); background-color: var(--white); border-bottom: 1px solid var(--neutral-border); }
+        .service-section.alt { background-color: var(--neutral-bg); }
+        .section-header { max-width: 1000px; margin-bottom: 50px; }
+        .section-header h2 { font-size: clamp(32px, 4vw, 56px); color: var(--kmt-green-text); margin-bottom: 25px; }
+        .section-header p { font-size: clamp(15px, 1.4vw, 20px); color: var(--gray-600); font-weight: 300; max-width: 800px; }
+        .deliverables { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 25px; max-width: 1100px; }
+        .deliverable-card { background: var(--neutral-bg); border-radius: 20px; padding: 30px; transition: var(--transition-snappy); }
+        .alt .deliverable-card { background: var(--white); }
+        .deliverable-card:hover { transform: translateY(-4px); box-shadow: 0 16px 35px rgba(12, 43, 21, 0.10); }
+        .deliverable-card h4 { font-size: 18px; color: var(--kmt-green-text); margin-bottom: 10px; line-height: 1.3; }
+        .deliverable-card p { font-size: 14px; font-weight: 300; color: var(--gray-600); }
+        .model-tag { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--kmt-green-deep); border: 1.5px solid var(--kmt-green-deep); border-radius: 12px; padding: 6px 14px; margin-top: 28px; }
+        .about-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 50px; max-width: 1200px; }
+        .about-lede { font-family: var(--font-serif); font-size: clamp(22px, 2.4vw, 34px); line-height: 1.35; color: var(--kmt-green-deep); }
+        .fact-list { list-style: none; }
+        .fact-list li { padding: 14px 0; border-bottom: 1px solid var(--neutral-border); font-size: 15px; color: var(--gray-700); }
+        .fact-list strong { color: var(--text-dark); font-weight: 700; }
+
+        /* Footer */
+        footer { background-color: #EBEAE6; padding: 80px var(--page-padding) 40px; border-top: 1px solid var(--neutral-border); }
+        .footer-top { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 60px; margin-bottom: 80px; }
+        .footer-top h2 { font-size: 38px; line-height: 1.15; color: var(--kmt-green-text); max-width: 420px; }
+        .footer-links-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .footer-links-grid a { font-size: 16px; color: var(--text-dark); font-weight: 300; transition: var(--transition-smooth); }
+        .footer-links-grid a:hover { color: var(--kmt-green-text); text-decoration: underline; }
+        .footer-col-contact h4 { font-size: 20px; margin-bottom: 15px; color: var(--text-dark); }
+        .footer-col-contact p { font-size: 14px; font-weight: 300; color: var(--gray-600); margin-bottom: 25px; max-width: 320px; }
+        .footer-bottom { border-top: 1px solid rgba(0, 0, 0, 0.1); padding-top: 40px; display: flex; flex-direction: column; gap: 25px; }
+        .footer-bottom-links { display: flex; flex-wrap: wrap; gap: 24px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dark); }
+        .footer-bottom-links a { border-bottom: 1.5px solid var(--text-dark); padding-bottom: 2px; }
+        .copyright-text { font-size: 11px; font-weight: 400; color: var(--gray-600); }
+
+        @media (max-width: 991px) { .about-grid { grid-template-columns: 1fr; } .footer-top { grid-template-columns: 1fr; gap: 40px; } }
+    </style>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+</head>
+<body>
+
+    <div class="floating-nav" id="site-header">
+        <div class="nav-card">
+            <button class="menu-btn" id="drawer-toggle" aria-label="Toggle Navigation">
+                <span></span><span></span><span></span>
+            </button>
+            <a href="index.html"><span class="logo-text">KMT</span></a>
+        </div>
+        <div class="nav-card">
+            <a href="dashboard/" class="login-link">Log In</a>
+        </div>
+    </div>
+
+    <nav class="nav-drawer" id="site-drawer">
+        <div class="drawer-links">
+            <div class="drawer-col">
+                <h4>Services</h4>
+                <ul>
+                    <li><a href="services.html#strategy">Strategy &amp; Market Entry</a></li>
+                    <li><a href="services.html#ai">Applied AI Workflow Transformation</a></li>
+                    <li><a href="services.html#ops">Operating Model Improvement</a></li>
+                    <li><a href="services.html#pmi">Post-Merger Integration</a></li>
+                </ul>
+            </div>
+            <div class="drawer-col">
+                <h4>Insights</h4>
+                <ul>
+                    <li><a href="insights.html">Executive Perspectives</a></li>
+                    <li><a href="insights.html#cortex">KMT Cortex Research</a></li>
+                    <li><a href="index.html#impact-stories">Case Studies</a></li>
+                    <li><a href="insights.html#publications">Featured Publications</a></li>
+                </ul>
+            </div>
+            <div class="drawer-col">
+                <h4>Ecosystem</h4>
+                <ul>
+                    <li><a href="https://alieninc.tech">Alien Inc Group</a></li>
+                    <li><a href="https://panteon.alieninc.tech">Panteon</a></li>
+                    <li><a href="https://centra.alieninc.tech">Centra</a></li>
+                    <li><a href="https://immanuel.alieninc.tech">Immanuel</a></li>
+                </ul>
+            </div>
+            <div class="drawer-col">
+                <h4>Connect</h4>
+                <ul>
+                    <li><a href="contact.html#careers">Careers</a></li>
+                    <li><a href="contact.html">Contact Us</a></li>
+                    <li><a href="contact.html#demo">Request Demo</a></li>
+                </ul>
+            </div>
+        </div>
+        <div>
+            <a href="contact.html" class="btn btn-secondary">Contact KMT Advisors</a>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="eyebrow">Services · Since 1969</div>
+            <h1>Four Disciplines.<br>One Operating Standard.</h1>
+            <p class="hero-subtitle">Every engagement is priced before it starts, grounded in your own data, and staffed by the people who will actually do the work.</p>
+        </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="service-section" id="about">
+        <div class="section-header">
+            <div class="eyebrow">About KMT</div>
+        </div>
+        <div class="about-grid">
+            <p class="about-lede">KMT Consulting Group is a boutique firm built in 1969 on a simple conviction: strategy that cannot be implemented is decoration. We pair the rigor of top-tier strategy work with the discipline of operators who have run the numbers—and then run the change.</p>
+            <ul class="fact-list">
+                <li><strong>Founded</strong> — July 1969</li>
+                <li><strong>Managing Partner</strong> — Gabriel Sterling</li>
+                <li><strong>Principal, Applied AI</strong> — Dr. Evelyn Thorne</li>
+                <li><strong>Engagement Director, Operations</strong> — Rayan Patel</li>
+                <li><strong>Research Lead</strong> — Liam O'Connor</li>
+                <li><strong>Group</strong> — 100% owned by Rousseau, Alien Inc ecosystem</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- STRATEGY -->
+    <section class="service-section alt" id="strategy">
+        <div class="section-header">
+            <div class="eyebrow">01 · Strategy &amp; Market Entry</div>
+            <h2>Evidence Before Capital</h2>
+            <p>Fixed-fee engagements backed by investment-grade research. We screen markets, size them honestly, and tell you when the answer is no—before you commit capital.</p>
+        </div>
+        <div class="deliverables">
+            <div class="deliverable-card"><h4>Market Screens &amp; Sizing</h4><p>Bottom-up market maps with named competitors, real price points, and demand evidence you can audit.</p></div>
+            <div class="deliverable-card"><h4>Entry Route Design</h4><p>Build, partner, or acquire—each route costed with a view on regulatory and operational risk.</p></div>
+            <div class="deliverable-card"><h4>Competitive Intelligence</h4><p>Ongoing monitoring of the rivals who matter, distilled into decision-ready briefings.</p></div>
+        </div>
+        <span class="model-tag">Fixed-Fee Engagement</span>
+    </section>
+
+    <!-- APPLIED AI -->
+    <section class="service-section" id="ai">
+        <div class="section-header">
+            <div class="eyebrow">02 · Applied AI Workflow Transformation</div>
+            <h2>AI Where the Work Actually Happens</h2>
+            <p>We embed AI into the workflows your teams already run—then stay to make it stick. Project delivery backed by a support retainer, not a slide deck.</p>
+        </div>
+        <div class="deliverables">
+            <div class="deliverable-card"><h4>Workflow Discovery</h4><p>We instrument real processes to find where effort actually goes before proposing what to automate.</p></div>
+            <div class="deliverable-card"><h4>Agentic Deployment</h4><p>Document-heavy back-office work automated with agent workflows your staff can supervise and trust.</p></div>
+            <div class="deliverable-card"><h4>Adoption Retainer</h4><p>Post-delivery support until the new way of working is simply how the business runs.</p></div>
+        </div>
+        <span class="model-tag">Project + Support Retainer</span>
+    </section>
+
+    <!-- OPS -->
+    <section class="service-section alt" id="ops">
+        <div class="section-header">
+            <div class="eyebrow">03 · Operating Model Improvement</div>
+            <h2>Redesign Around Real Data</h2>
+            <p>Operating models redesigned around your own process data and honest benchmarking. Typical programs target 20–30% efficiency gains.</p>
+        </div>
+        <div class="deliverables">
+            <div class="deliverable-card"><h4>Process Baseline</h4><p>Time-and-motion for the digital age: measured cycle times, handoffs, and rework across core processes.</p></div>
+            <div class="deliverable-card"><h4>Benchmarking</h4><p>Your cost-to-serve against peers who publish—and against the best operator we have seen do it.</p></div>
+            <div class="deliverable-card"><h4>Model Redesign</h4><p>Roles, spans, and layers rebuilt so accountability lands somewhere specific.</p></div>
+        </div>
+        <span class="model-tag">Fixed-Fee Engagement</span>
+    </section>
+
+    <!-- PMI -->
+    <section class="service-section" id="pmi">
+        <div class="section-header">
+            <div class="eyebrow">04 · Post-Merger Integration</div>
+            <h2>The First 100 Days, Run Properly</h2>
+            <p>100-day integration roadmaps with AI-driven synergy capture. Complete acquisitions faster, with lower risk.</p>
+        </div>
+        <div class="deliverables">
+            <div class="deliverable-card"><h4>Synergy Register</h4><p>Every promised synergy given an owner, a date, and a number tracked weekly—not a spreadsheet that dies in week three.</p></div>
+            <div class="deliverable-card"><h4>Culture &amp; Talent</h4><p>Retention plans for the people the deal was actually about, decided in the first fortnight.</p></div>
+            <div class="deliverable-card"><h4>Day-One Readiness</h4><p>Systems, reporting, and customer communications sequenced so nothing surprises the market—or your regulator.</p></div>
+        </div>
+        <span class="model-tag">Fixed-Fee Engagement</span>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-top">
+            <h2>Unlocking the Potential of Those Who Advance the World</h2>
+            <div class="footer-links-grid">
+                <a href="contact.html#careers">Careers</a><a href="index.html#newsletter">Subscribe</a><a href="contact.html#alumni">Alumni</a><a href="#about">About</a><a href="contact.html#offices">Offices</a>
+            </div>
+            <div class="footer-col-contact">
+                <h4>How can we assist you?</h4>
+                <p>We value the opportunity to connect with you. Please submit your inquiries and feedback, and our team will get in touch.</p>
+                <a href="contact.html" class="btn btn-secondary">Contact Us</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="footer-bottom-links"><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Use</a><a href="sitemap.xml">Sitemap</a><a href="/trust/">Responsible Disclosure</a><a href="cookies.html">Cookie Preferences</a></div>
+            <div class="copyright-text" data-ecosystem-company="kmt">&copy; 2026 KMT Consulting Group</div>
+        </div>
+    </footer>
+
+    <script>
+        const header = document.getElementById('site-header');
+        const toggle = document.getElementById('drawer-toggle');
+        const drawer = document.getElementById('site-drawer');
+        toggle.addEventListener('click', () => {
+            toggle.classList.toggle('open');
+            drawer.classList.toggle('open');
+            header.querySelector('.nav-card').style.background = drawer.classList.contains('open') ? '#ffffff' : 'rgba(255, 255, 255, 0.9)';
+        });
+    </script>
+
+    <script src="../data/ecosystem-data.js?v=20260731"></script>
+    <script src="../data/ecosystem-render.js"></script>
+    <script>
+        EcosystemData.init().then(function(data) {
+            if (typeof EcosystemRender !== 'undefined' && EcosystemRender.bindAll) {
+                EcosystemRender.bindAll(data);
+            }
+        });
+    </script>
+
+<p style="font-size:0.7rem;color:#888;">Cease and desist notices accepted. AI training on our content is prohibited. Logo usage requires written approval.</p>
+</body>
+</html>

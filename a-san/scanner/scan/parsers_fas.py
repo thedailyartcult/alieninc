@@ -85,11 +85,10 @@ def parse_fas(url: str, html: str, category_display: str = "") -> CatalogEntry |
                 "specifications", "specs", "general", "description"):
             title = h1
 
-    # --- Spec extraction: try both patterns ---
-
-    specs: list[str] = []
+    # --- Spec extraction: three table shapes; best-yielding set wins ---
 
     # Pattern 1 (Stinger-style): <td ...width=30%...><B>Label</b></td><td>Value</td>
+    p1_specs: list[str] = []
     p1_re = re.compile(
         r'<td[^>]*width\s*=\s*["\']?30%[^>]*>\s*<b>\s*([^<]+?)\s*</b>\s*</td>\s*'
         r'<td[^>]*>(.*?)</td>',
@@ -99,57 +98,69 @@ def parse_fas(url: str, html: str, category_display: str = "") -> CatalogEntry |
         value = html_lib.unescape(re.sub(r"<[^>]+>", "", m.group(2))).strip()
         value = re.sub(r"\s+", " ", value)
         if label and value and len(label) < 50:
-            # Extract manufacturer/country from specific fields
-            ll = label.lower()
-            if ll in ("manufacturer", "contractor") and not category_display:
-                pass  # handled below
-            specs.append(f"{label}: {value}")
+            p1_specs.append(f"{label}: {value}")
 
     # Pattern 2 (M1 Abrams-style): multi-variant table with
     # <td><strong><big>Label:</big></strong></td><td><strong><big>Value</big></strong></td>
-    if not specs:
-        # Find the variant header row: <td><strong><big>M1/IPM1</big></strong></td>...
-        # Then each subsequent row: <td><strong><big>Length:</big></strong></td><td>val</td>...
-        p2_table_re = re.compile(
-            r'<table[^>]*border[^>]*>.*?</table>', re.S | re.I)
-        for tbl_m in p2_table_re.finditer(html):
-            tbl = tbl_m.group(0)
-            # Check if this is a spec table (has <big> tags with labels)
-            if "<big>" not in tbl.lower():
+    p2_specs: list[str] = []
+    for tbl_m in re.finditer(r"<table[^>]*border[^>]*>.*?</table>", html, re.S | re.I):
+        tbl = tbl_m.group(0)
+        if "<big>" not in tbl.lower():
+            continue
+        rows = re.findall(r"<tr[^>]*>(.*?)</tr>", tbl, re.S | re.I)
+        if not rows:
+            continue
+        variant_hdrs = re.findall(
+            r"<(?:strong|b)>\s*<big>\s*([^<]+?)\s*</big>\s*</(?:strong|b)>",
+            rows[0], re.S | re.I)
+        variant_hdrs = [h.strip() for h in variant_hdrs if h.strip()]
+        for row in rows[1:]:
+            cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.S | re.I)
+            if not cells:
                 continue
-            rows = re.findall(r"<tr[^>]*>(.*?)</tr>", tbl, re.S | re.I)
-            if not rows:
+            label_html = cells[0]
+            label = html_lib.unescape(re.sub(r"<[^>]+>", "", label_html)).strip().rstrip(":")
+            if not label:
                 continue
-            # First row = variant headers
-            variant_hdrs = re.findall(
-                r"<(?:strong|b)>\s*<big>\s*([^<]+?)\s*</big>\s*</(?:strong|b)>",
-                rows[0], re.S | re.I)
-            variant_hdrs = [h.strip() for h in variant_hdrs if h.strip()]
-            for row in rows[1:]:
-                cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.S | re.I)
-                if not cells:
-                    continue
-                # First cell = label (with <strong><big>Label:</big></strong>)
-                label_html = cells[0]
-                label = html_lib.unescape(re.sub(r"<[^>]+>", "", label_html)).strip().rstrip(":")
-                if not label:
-                    continue
-                # Remaining cells = values (one per variant)
-                values = []
-                for c in cells[1:]:
-                    v = html_lib.unescape(re.sub(r"<[^>]+>", "", c)).strip()
-                    v = re.sub(r"&nbsp;", " ", v)
-                    v = re.sub(r"\s+", " ", v).strip()
-                    if v and v != "&nbsp;":
-                        values.append(v)
-                if not values:
-                    continue
-                if len(values) == 1 or not variant_hdrs:
-                    specs.append(f"{label}: {values[0]}")
-                else:
-                    for vh, v in zip(variant_hdrs, values):
-                        if vh and v:
-                            specs.append(f"{label} ({vh}): {v}")
+            values = []
+            for c in cells[1:]:
+                v = html_lib.unescape(re.sub(r"<[^>]+>", "", c)).strip()
+                v = re.sub(r"&nbsp;", " ", v)
+                v = re.sub(r"\s+", " ", v).strip()
+                if v and v != "&nbsp;":
+                    values.append(v)
+            if not values:
+                continue
+            if len(values) == 1 or not variant_hdrs:
+                p2_specs.append(f"{label}: {values[0]}")
+            else:
+                for vh, v in zip(variant_hdrs, values):
+                    if vh and v:
+                        p2_specs.append(f"{label} ({vh}): {v}")
+
+    # Pattern 3 (M113-style): plain 2-cell key/value rows, no width attr,
+    # no <big> — <TR><TD>Length</TD><TD>191.5"</TD></TR>, section headers as
+    # COLSPAN=2 bold rows (skipped). Requires >=3 clean pairs to trust.
+    p3_specs: list[str] = []
+    for tbl_m in re.finditer(r"<table[^>]*>(.*?)</table>", html, re.S | re.I):
+        tbl = tbl_m.group(1)
+        if "<big>" in tbl.lower():
+            continue  # variant tables are pattern 2's job
+        parsed = []
+        for row in re.findall(r"<tr[^>]*>(.*?)</tr>", tbl, re.S | re.I):
+            cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.S | re.I)
+            if len(cells) != 2 or "colspan" in cells[0].lower():
+                continue
+            label = html_lib.unescape(re.sub(r"<[^>]+>", "", cells[0])).replace("&nbsp;", " ").strip()
+            value = html_lib.unescape(re.sub(r"<[^>]+>", "", cells[1])).replace("&nbsp;", " ").strip()
+            value = re.sub(r"\s+", " ", value)
+            if label and value and len(label) < 50 and len(value) < 200 \
+                    and ":" not in label and not label.startswith(("http", "www")):
+                parsed.append(f"{label}: {value}")
+        if len(parsed) > len(p3_specs):
+            p3_specs = parsed
+
+    specs = max((p1_specs, p2_specs, p3_specs), key=len)
 
     # --- Description: first <p> blocks in the main content ---
     body = ""

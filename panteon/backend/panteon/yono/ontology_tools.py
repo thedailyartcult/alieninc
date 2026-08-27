@@ -302,6 +302,14 @@ class OntologyToolExecutor:
         Returns a result dict suitable for inclusion in LLM context.
         """
         try:
+            if tool_name.startswith("geo_"):
+                # GDAL-backed geospatial decision tools (governed same as ontology tools)
+                from panteon.yono.geo_tools import execute_geo_tool
+                return await execute_geo_tool(tool_name, arguments)
+            if tool_name.startswith("maven_"):
+                # MAVEN mission tools — tasking/COA operations on the war ontology
+                from panteon.maven import execute_maven_tool
+                return await execute_maven_tool(self.db, tool_name, arguments)
             handler = getattr(self, f"_tool_{tool_name}", None)
             if not handler:
                 return {"error": f"Unknown tool: {tool_name}"}
@@ -616,6 +624,17 @@ class OntologyToolExecutor:
 
     async def _tool_set_map_view(self, args: dict) -> dict:
         """Validate and echo a map-view directive for the panel to apply."""
+        target = str(args.get("target") or "").strip()
+        if target and (args.get("center") is None):
+            from panteon.maven import resolve_maven_target
+            hit = await resolve_maven_target(self.db, target)
+            if hit and hit.get("lat") is not None:
+                z = max(1.0, min(float(args.get("zoom") or 8.5), 18.0))
+                return {"directive": {"op": "fly_to",
+                                      "center": [float(hit["lng"]), float(hit["lat"])],
+                                      "zoom": z,
+                                      "label": hit["label"], "kind": hit["kind"]}}
+            return {"error": f"could not resolve target '{target}'"}
         center = args.get("center")
         zoom = args.get("zoom")
         bounds = args.get("bounds")
@@ -642,8 +661,14 @@ class OntologyToolExecutor:
 
     async def _tool_highlight_objects(self, args: dict) -> dict:
         """Echo a highlight directive for the panel to apply."""
-        pks = args.get("primary_keys") or []
-        pks = [str(p) for p in pks][:50]
+        pks = [str(p) for p in (args.get("primary_keys") or [])][:50]
+        if not pks and args.get("target"):
+            from panteon.maven import resolve_maven_target
+            hit = await resolve_maven_target(self.db, str(args["target"]))
+            if hit:
+                pks = [str(hit.get("pk") or hit.get("id"))]
+                if not hit.get("pk"):
+                    pks = [str(hit.get("label") or "")]
         if not pks:
             return {"error": "primary_keys must be a non-empty list"}
         directive = {
@@ -711,4 +736,6 @@ class OntologyToolExecutor:
 
 def get_tool_definitions() -> list[dict]:
     """Return tool definitions in OpenAI function-calling format."""
-    return ONTOLOGY_TOOLS
+    from panteon.yono.geo_tools import GEO_TOOLS
+    from panteon.maven import MAVEN_AGENT_TOOLS
+    return ONTOLOGY_TOOLS + GEO_TOOLS + MAVEN_AGENT_TOOLS

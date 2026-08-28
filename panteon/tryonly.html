@@ -1,0 +1,2046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <title>Panteon | AI-Powered Automation // Subterranean Bullagao</title>
+    
+    <!-- Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Montserrat:wght@500;700&family=Playfair+Display:wght@600&family=Zen+Dots&display=swap" rel="stylesheet">
+
+    <!-- Three.js + Lenis -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        /* CSS Reset & Design Tokens */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-dark: #000000;
+            --bg-panel: rgba(8, 10, 12, 0.78);
+            --bg-panel-hover: rgba(14, 18, 22, 0.9);
+            --text-light: #f4f4f5;
+            --text-muted: #8e9099;
+            --accent-neon: #DFF140; /* Tactical Yellow-Green Neon */
+            --border-light: rgba(255, 255, 255, 0.12);
+            --border-neon: rgba(223, 241, 64, 0.35);
+            
+            --font-sans: "Inter", -apple-system, sans-serif;
+            --font-tech: "Space Grotesk", monospace;
+            --font-mono: "JetBrains Mono", monospace;
+            --font-brand: "Inter", -apple-system, sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            background-color: #000000;
+        }
+
+        body {
+            background-color: transparent;
+            color: var(--text-light);
+            font-family: var(--font-sans);
+            line-height: 1.5;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+            transition: color 0.25s ease, opacity 0.25s ease;
+        }
+
+        /* 3D WEBGL BACKGROUND CANVAS */
+        #webgl-bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            background: radial-gradient(circle at 50% 30%, #06090d 0%, #000000 90%);
+        }
+
+        /* FIXED TACTICAL HUD TELEMETRY OVERLAY */
+        .hud-telemetry {
+            position: fixed;
+            z-index: 100;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            letter-spacing: 0.12em;
+            color: rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+            text-transform: uppercase;
+        }
+
+        .hud-top-left {
+            top: 90px;
+            left: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .hud-top-left .target-name {
+            color: var(--accent-neon);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hud-top-left .target-name::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            background-color: var(--accent-neon);
+            display: inline-block;
+            box-shadow: 0 0 8px var(--accent-neon);
+        }
+
+        .hud-bottom-right {
+            bottom: 30px;
+            right: 40px;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .hud-reticle-cross {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+            z-index: 99;
+            opacity: 0.35;
+        }
+
+        .hud-reticle-tl { top: 80px; left: 30px; border-top: 1px solid var(--accent-neon); border-left: 1px solid var(--accent-neon); }
+        .hud-reticle-br { bottom: 20px; right: 30px; border-bottom: 1px solid var(--accent-neon); border-right: 1px solid var(--accent-neon); }
+
+        /* Top Reading Scroll Indicator Bar */
+        .scroll-progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 2px;
+            width: 0%;
+            background-color: var(--accent-neon);
+            z-index: 1005;
+            box-shadow: 0 0 10px var(--accent-neon);
+        }
+
+        /* 1. Announcement ribbon */
+        .announcement-bar {
+            background-color: rgba(5, 6, 8, 0.85);
+            backdrop-filter: blur(10px);
+            color: var(--text-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 40px;
+            font-size: 0.75rem;
+            font-family: var(--font-tech);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-light);
+            position: relative;
+            z-index: 1001;
+        }
+
+        .announcement-bar a {
+            margin-left: 6px;
+            font-weight: 400;
+            color: var(--accent-neon);
+            border-bottom: 1px solid var(--accent-neon);
+        }
+
+        .announcement-bar .close-btn {
+            position: absolute;
+            right: 40px;
+            background: none;
+            border: none;
+            color: var(--text-light);
+            cursor: pointer;
+            font-size: 1.1rem;
+            opacity: 0.5;
+        }
+
+        /* 2. Sticky Glass Header */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background-color: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-light);
+            transition: background-color 0.4s ease, border-color 0.4s ease;
+        }
+
+        header.scrolled {
+            background-color: rgba(0, 0, 0, 0.9);
+            border-bottom-color: rgba(223, 241, 64, 0.2);
+        }
+
+        .navWrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        .top-nav {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            height: 72px;
+        }
+
+        .logo {
+            font-family: var(--font-brand);
+            font-weight: 500;
+            font-size: 0.98rem;
+            letter-spacing: 0.11em;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .logo svg {
+            fill: currentColor;
+            width: auto;
+            height: 26px;
+        }
+
+        .center-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .nav-item-dropdown {
+            cursor: pointer;
+            font-family: var(--font-tech);
+            font-size: 0.8rem;
+            font-weight: 400;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            padding: 24px 0;
+            position: relative;
+        }
+
+        .nav-item-dropdown:hover {
+            color: var(--accent-neon);
+        }
+
+        .plus-sign {
+            position: relative;
+            width: 8px;
+            height: 8px;
+            margin-left: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .plus-sign span {
+            position: absolute;
+            background-color: currentColor;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .plus-sign span:nth-child(1) { width: 100%; height: 1.5px; }
+        .plus-sign span:nth-child(2) { width: 1.5px; height: 100%; }
+
+        .nav-item-dropdown:hover .plus-sign span:nth-child(2) {
+            transform: rotate(90deg) scaleY(0);
+        }
+
+        .right-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .header-icon-box {
+            width: 38px;
+            height: 38px;
+            border: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            cursor: pointer;
+            color: inherit;
+            transition: all 0.2s;
+        }
+
+        .header-icon-box:hover {
+            border-color: var(--accent-neon);
+            color: var(--accent-neon);
+        }
+
+        .burger-lines {
+            width: 14px;
+            height: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .burger-lines span {
+            display: block;
+            width: 100%;
+            height: 1.5px;
+            background-color: currentColor;
+        }
+
+        /* 3. Mega Menus Overlay */
+        .mega-menu-overlay {
+            position: fixed;
+            top: 72px;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 72px);
+            background-color: rgba(0, 0, 0, 0.8);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 998;
+            transition: opacity 0.4s ease;
+        }
+
+        .mega-menu-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .mega-menu-container {
+            position: absolute;
+            top: 72px;
+            left: 0;
+            width: 100%;
+            background-color: rgba(5, 7, 9, 0.96);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-neon);
+            color: #ffffff;
+            z-index: 999;
+            transform: translateY(-20px);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+            padding: 60px 40px;
+        }
+
+        .mega-menu-container.active {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .mega-menu-grid {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr 1fr;
+            gap: 60px;
+        }
+
+        .mega-menu-grid .col-1 {
+            border-right: 1px solid var(--border-light);
+            padding-right: 60px;
+        }
+
+        .mega-menu-grid h3 {
+            font-family: var(--font-tech);
+            font-size: 0.75rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .mega-menu-grid .col-1 p {
+            font-size: 1.1rem;
+            font-weight: 300;
+            line-height: 1.5;
+            color: #e2e3e5;
+            margin-bottom: 24px;
+        }
+
+        .mega-menu-grid .menu-link-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .mega-menu-grid .menu-link-item .plus-sign {
+            margin-right: 12px;
+            margin-left: 0;
+            color: var(--accent-neon);
+        }
+
+        .mega-menu-grid .menu-link-item:hover a {
+            transform: translateX(4px);
+            color: var(--accent-neon);
+        }
+
+        .mega-menu-grid .product-group {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .mega-menu-grid .product-group a {
+            font-size: 0.9rem;
+            color: #b1b2b5;
+        }
+
+        .mega-menu-grid .product-group a:hover {
+            color: var(--accent-neon);
+            text-decoration: underline;
+        }
+
+        /* 4. Cinematic Transparent Hero */
+        .hero {
+            position: relative;
+            min-height: 94vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 40px 20px;
+            z-index: 10;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 3;
+            max-width: 1100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .hero-title {
+            font-size: clamp(2.4rem, 6.5vw, 4.5rem);
+            font-weight: 300;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            margin-bottom: 24px;
+            color: var(--text-light);
+            text-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
+        }
+
+        .hero-subtitle {
+            font-family: var(--font-tech);
+            font-size: 0.9rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--accent-neon);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hero-subtitle::before,
+        .hero-subtitle::after {
+            content: "";
+            width: 24px;
+            height: 1px;
+            background-color: var(--accent-neon);
+        }
+
+        .stylized-A {
+            font-weight: 500;
+            color: var(--accent-neon);
+            text-shadow: 0 0 16px rgba(223, 241, 64, 0.4);
+        }
+
+        .scroll-explore-tag {
+            font-family: var(--font-tech);
+            font-size: 0.7rem;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-top: 20px;
+        }
+
+        .hero-arrow {
+            margin-top: 30px;
+            animation: bounce 2.2s infinite;
+        }
+
+        .hero-arrow svg {
+            width: 16px;
+            height: 18px;
+            fill: var(--accent-neon);
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-8px); }
+            60% { transform: translateY(-4px); }
+        }
+
+        /* 5. Main Content Layout (Glassmorphic) */
+        .main-content {
+            background-color: transparent;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* TACTICAL STACKED HOVER BUTTON */
+        .alien-btn-wrapper {
+            display: inline-block;
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .alien-stacked-btn {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .alien-stacked-btn .btn-layer-main {
+            background-color: #000000;
+            color: #ffffff;
+            padding: 12px 22px;
+            border: 1px solid var(--accent-neon);
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            z-index: 4;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .alien-stacked-btn .btn-layer-main .square-dot {
+            width: 5px;
+            height: 5px;
+            background-color: var(--accent-neon);
+            display: inline-block;
+        }
+
+        .alien-stacked-btn .btn-layer-back-1,
+        .alien-stacked-btn .btn-layer-back-2 {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(223, 241, 64, 0.08);
+            border: 1px solid rgba(223, 241, 64, 0.4);
+            pointer-events: none;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .alien-stacked-btn .btn-layer-back-1 { z-index: 3; }
+        .alien-stacked-btn .btn-layer-back-2 { z-index: 2; }
+
+        .alien-stacked-btn:hover .btn-layer-main {
+            transform: translate(-4px, -4px);
+            background-color: var(--accent-neon);
+            color: #000000;
+            border-color: var(--accent-neon);
+            box-shadow: 0 0 15px rgba(223, 241, 64, 0.3);
+        }
+
+        .alien-stacked-btn:hover .btn-layer-main .square-dot {
+            background-color: #000000;
+        }
+
+        .alien-stacked-btn:hover .btn-layer-back-1 {
+            transform: translate(2px, 2px);
+        }
+
+        .alien-stacked-btn:hover .btn-layer-back-2 {
+            transform: translate(6px, 6px);
+        }
+
+        /* 6. USE CASES SECTION (Glass Track) */
+        .alien-use-cases-section {
+            border-top: 1px solid var(--border-light);
+            border-bottom: 1px solid var(--border-light);
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            padding: 60px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section-header-bar {
+            max-width: 1400px;
+            margin: 0 auto 30px auto;
+            padding: 0 40px 16px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .section-header-bar h2 {
+            font-family: var(--font-tech);
+            font-size: 2.2rem;
+            font-weight: 300;
+            letter-spacing: -0.02em;
+            color: var(--text-light);
+        }
+
+        .section-badge {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            background-color: rgba(223, 241, 64, 0.12);
+            color: var(--accent-neon);
+            padding: 6px 14px;
+            font-weight: 600;
+            border: 1px solid var(--accent-neon);
+        }
+
+        .use-cases-track-container {
+            width: 100%;
+            overflow: hidden;
+            cursor: grab;
+            padding: 10px 0 30px 0;
+            position: relative;
+            user-select: none;
+        }
+
+        .use-cases-track-container:active {
+            cursor: grabbing;
+        }
+
+        .use-cases-track-wrapper {
+            display: flex;
+            gap: 20px;
+            width: max-content;
+            will-change: transform;
+        }
+
+        .use-case-card {
+            width: 38vw;
+            min-width: 330px;
+            max-width: 500px;
+            flex-shrink: 0;
+            background-color: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-light);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+        }
+
+        .use-case-card:hover {
+            border-color: var(--accent-neon);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(223, 241, 64, 0.15);
+            transform: translateY(-6px);
+            background-color: var(--bg-panel-hover);
+        }
+
+        .use-case-card .card-media {
+            width: 100%;
+            padding-bottom: 60%;
+            position: relative;
+            overflow: hidden;
+            background-color: #0a0b0c;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .use-case-card .card-media img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            filter: brightness(0.85);
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .use-case-card:hover .card-media img {
+            transform: scale(1.05);
+            filter: brightness(1);
+        }
+
+        .use-case-card .card-body {
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            flex-grow: 1;
+        }
+
+        .use-case-card .card-tag {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--accent-neon);
+            padding: 4px 10px;
+            border: 1px solid rgba(223, 241, 64, 0.2);
+            align-self: flex-start;
+            font-weight: 600;
+        }
+
+        .use-case-card h3 {
+            font-family: var(--font-tech);
+            font-size: 1.4rem;
+            font-weight: 400;
+            line-height: 1.25;
+            color: var(--text-light);
+        }
+
+        .use-case-card p {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* 7. PARTNERS SECTION */
+        .partners-section {
+            padding: 60px 0;
+            max-width: 100%;
+            margin: 0 auto;
+            border-bottom: 1px solid var(--border-light);
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            overflow: hidden;
+        }
+
+        .partners-header {
+            max-width: 1400px;
+            margin: 0 auto 30px auto;
+            padding: 0 40px 16px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .partners-header h2 {
+            font-family: var(--font-tech);
+            font-size: 1.8rem;
+            font-weight: 300;
+            color: var(--text-light);
+        }
+
+        .partners-marquee-container {
+            width: 100%;
+            overflow: hidden;
+            padding: 10px 0;
+            user-select: none;
+        }
+
+        .partners-marquee-track {
+            display: flex;
+            gap: 20px;
+            width: max-content;
+            will-change: transform;
+        }
+
+        .partner-box {
+            background-color: var(--bg-panel);
+            backdrop-filter: blur(12px);
+            width: 180px;
+            height: 180px;
+            flex-shrink: 0;
+            border: 1px solid var(--border-light);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            color: #ffffff;
+            transition: all 0.3s;
+        }
+
+        .partner-box:hover {
+            border-color: var(--accent-neon);
+            transform: scale(1.03);
+            background-color: var(--bg-panel-hover);
+        }
+
+        /* 8. USER SEGMENTS SECTION */
+        .user-segments-section {
+            border-bottom: 1px solid var(--border-light);
+            background-color: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(12px);
+        }
+
+        .user-segments-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .user-segment-col {
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-segment-col:first-child {
+            border-right: 1px solid var(--border-light);
+        }
+
+        .segment-num-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .segment-num-bar .square-block {
+            width: 7px;
+            height: 7px;
+            background-color: var(--accent-neon);
+            box-shadow: 0 0 8px var(--accent-neon);
+        }
+
+        .segment-num-bar .num-title {
+            font-family: var(--font-tech);
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent-neon);
+        }
+
+        .user-segment-col h3 {
+            font-family: var(--font-tech);
+            font-size: 1.8rem;
+            font-weight: 400;
+            margin-bottom: 12px;
+            color: var(--text-light);
+        }
+
+        .user-segment-col p.lead {
+            font-weight: 500;
+            font-size: 0.95rem;
+            margin-bottom: 16px;
+            color: #e4e4e7;
+        }
+
+        .user-segment-col p.body-text {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .user-segment-col .bullet-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 32px;
+            font-size: 0.88rem;
+            color: #d4d4d8;
+        }
+
+        .user-segment-col .bullet-list li::before {
+            content: "— ";
+            color: var(--accent-neon);
+            font-weight: 700;
+        }
+
+        /* 9. EDITORIAL CALLOUT */
+        .editorial-callout {
+            background-color: rgba(4, 5, 7, 0.7);
+            backdrop-filter: blur(16px);
+            border-top: 1px solid var(--border-light);
+            border-bottom: 1px solid var(--border-light);
+            padding: 110px 40px;
+            text-align: center;
+        }
+
+        .editorial-callout-text {
+            max-width: 980px;
+            margin: 0 auto;
+            font-size: clamp(1.3rem, 2.8vw, 1.9rem);
+            font-weight: 300;
+            line-height: 1.35;
+            letter-spacing: -0.02em;
+            color: var(--text-light);
+        }
+
+        /* 10. SOFTWARE SECTION */
+        .software-section {
+            padding: 90px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .software-header {
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 16px;
+            margin-bottom: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .software-header h2 {
+            font-family: var(--font-tech);
+            font-size: 2rem;
+            font-weight: 300;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-light);
+        }
+
+        .software-grid-matrix {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 32px;
+        }
+
+        .software-card {
+            background-color: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-light);
+            display: flex;
+            flex-direction: column;
+            padding: 32px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .software-card:hover {
+            border-color: var(--accent-neon);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(223, 241, 64, 0.12);
+            transform: translateY(-4px);
+            background-color: var(--bg-panel-hover);
+        }
+
+        .software-card .card-num-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+
+        .software-card .card-num-bar .square-block {
+            width: 6px;
+            height: 6px;
+            background-color: var(--accent-neon);
+        }
+
+        .software-card .card-num-bar .num-tag {
+            font-family: var(--font-tech);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .software-card h3 {
+            font-family: var(--font-tech);
+            font-size: 1.6rem;
+            font-weight: 400;
+            margin-bottom: 12px;
+            color: var(--text-light);
+        }
+
+        .software-card p.desc {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .software-card .preview-box {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            border: 1px solid var(--border-light);
+            margin-bottom: 20px;
+            background-color: #000;
+        }
+
+        .software-card .preview-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.85);
+            transition: transform 0.5s ease;
+        }
+
+        .software-card:hover .preview-box img {
+            transform: scale(1.04);
+            filter: brightness(1);
+        }
+
+        .software-card .bullet-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #d4d4d8;
+            margin-bottom: 28px;
+        }
+
+        .software-card .bullet-list li::before {
+            content: "— ";
+            color: var(--accent-neon);
+            font-weight: 700;
+        }
+
+        .software-card .card-action {
+            margin-top: auto;
+        }
+
+        /* 11. PRESS SECTION */
+        .press-section {
+            padding: 80px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+            border-bottom: 1px solid var(--border-light);
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+        }
+
+        .press-header-tag {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            background-color: var(--accent-neon);
+            color: #000000;
+            padding: 8px 18px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        .press-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .press-item {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            padding: 28px 20px;
+            border-top: 1px solid var(--border-light);
+            border-bottom: 1px solid var(--border-light);
+            margin-top: -1px;
+            transition: all 0.25s;
+            cursor: pointer;
+            background-color: rgba(10, 12, 14, 0.4);
+        }
+
+        .press-item:hover {
+            background-color: rgba(223, 241, 64, 0.08);
+            border-color: var(--accent-neon);
+            color: var(--accent-neon);
+        }
+
+        .press-item .press-title {
+            font-family: var(--font-tech);
+            font-size: clamp(1.1rem, 2vw, 1.4rem);
+            font-weight: 400;
+            padding-right: 20px;
+        }
+
+        .press-item .press-discover {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .press-item .press-discover .square-dot {
+            width: 5px;
+            height: 5px;
+            background-color: currentColor;
+        }
+
+        /* 12. PRE-FOOTER MAKE CONTACT */
+        .pre-footer-contact {
+            position: relative;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(14px);
+            border-top: 1px solid var(--border-light);
+            border-bottom: 1px solid var(--border-light);
+            padding: 140px 20px;
+            text-align: center;
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .pre-footer-content h2 {
+            font-family: var(--font-tech);
+            font-size: clamp(2.5rem, 9vw, 6.2rem);
+            font-weight: 300;
+            line-height: 1.08;
+            letter-spacing: -0.03em;
+            margin-bottom: 36px;
+            color: var(--text-light);
+        }
+
+        /* 13. FOOTER */
+        footer {
+            background-color: rgba(4, 5, 7, 0.9);
+            backdrop-filter: blur(20px);
+            color: var(--text-light);
+            border-top: 1px solid var(--border-light);
+            padding: 100px 40px 60px;
+            position: relative;
+            z-index: 20;
+        }
+
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 80px;
+        }
+
+        .footer-left-branding p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .footer-divider-line {
+            width: 100%;
+            height: 1px;
+            background-color: var(--border-light);
+            margin: 20px 0;
+        }
+
+        .footer-cookie-btn {
+            background: none;
+            border: none;
+            font-family: var(--font-tech);
+            font-size: 0.75rem;
+            color: var(--text-light);
+            cursor: pointer;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .footer-social-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .social-capsule {
+            border: 1px solid var(--border-light);
+            padding: 5px 14px;
+            font-family: var(--font-tech);
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            transition: all 0.25s;
+        }
+
+        .social-capsule:hover {
+            border-color: var(--accent-neon);
+            color: var(--accent-neon);
+        }
+
+        .footer-links-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 32px;
+        }
+
+        .footer-links-col h4 {
+            font-family: var(--font-tech);
+            font-size: 0.72rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.1em;
+        }
+
+        .footer-links-col ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            font-size: 0.85rem;
+        }
+
+        .footer-links-col ul a {
+            color: #d4d4d8;
+        }
+
+        .footer-links-col ul a:hover {
+            color: var(--accent-neon);
+            transform: translateX(2px);
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 1200px) {
+            .footer-container { grid-template-columns: 1fr; gap: 50px; }
+            .footer-links-grid { grid-template-columns: repeat(2, 1fr); }
+            .software-grid-matrix, .user-segments-grid { grid-template-columns: 1fr; }
+            .user-segment-col:first-child { border-right: none; border-bottom: 1px solid var(--border-light); }
+            .software-card[style*="grid-column"] { grid-column: span 1 !important; }
+        }
+
+        @media (max-width: 768px) {
+            .top-nav { grid-template-columns: 1fr auto; height: 64px; }
+            .center-wrapper, .right-wrapper .alien-stacked-btn { display: none; }
+            .navWrapper { padding: 0 20px; }
+            .use-case-card { width: 85vw; min-width: 280px; }
+            .footer-links-grid { grid-template-columns: 1fr; }
+            .section-header-bar, .partners-header, .press-section, .software-section { padding-left: 20px; padding-right: 20px; }
+            .hud-top-left { left: 20px; top: 75px; }
+            .hud-bottom-right { right: 20px; bottom: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 3D WEBGL PERSISTENT BACKGROUND CANVAS -->
+    <canvas id="webgl-bg-canvas"></canvas>
+
+    <!-- FIXED TACTICAL HUD OVERLAY -->
+    <div class="hud-reticle-cross hud-reticle-tl"></div>
+    <div class="hud-reticle-cross hud-reticle-br"></div>
+    <div class="hud-telemetry hud-top-left">
+        <div class="target-name">TARGET: MT. BULLAGAO // SLEEPING BEAUTY</div>
+        <div>ELEVATION: 1,119+ MASL // SECTOR: ABRA-ILOCOS</div>
+        <div>COORDINATES: 17°38'16"N 120°34'12"E</div>
+    </div>
+    <div class="hud-telemetry hud-bottom-right">
+        <div>SUBTERRANEAN LIDAR RECONNAISSANCE</div>
+        <div id="hud-depth-readout">SCAN DEPTH: -1,119 M</div>
+        <div id="hud-tilt-readout">PITCH: 32.4° // AZIMUTH: 284°</div>
+    </div>
+
+    <!-- Reading Progress Bar -->
+    <div class="scroll-progress-bar" id="scroll-bar"></div>
+
+    <!-- 1. Top Ribbon Announcement -->
+    <div class="announcement-bar" id="top-announcement">
+        Read CEO Patrick Neil's <a href="letters/shareholder-letter.html">Letter to Shareholders ↗</a>
+        <button class="close-btn" onclick="document.getElementById('top-announcement').style.display='none'">×</button>
+    </div>
+
+    <!-- 2. Sticky Glass Header -->
+    <header id="main-header">
+        <div class="navWrapper">
+            <div class="top-nav">
+                <div class="left-wrapper">
+                    <div class="logo" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+                        <svg viewBox="0 0 520 80" role="img" aria-label="Panteon"><use href="#panteon-lockup"/></svg>
+                    </div>
+                </div>
+                
+                <div class="center-wrapper">
+                    <div class="nav-item-dropdown" data-menu="five-elements">
+                        Five Elements
+                        <div class="plus-sign"><span></span><span></span></div>
+                    </div>
+                    <div class="nav-item-dropdown" data-menu="capabilities">
+                        Capabilities
+                        <div class="plus-sign"><span></span><span></span></div>
+                    </div>
+                    <div class="nav-item-dropdown" data-menu="company">
+                        Company
+                        <div class="plus-sign"><span></span><span></span></div>
+                    </div>
+                </div>
+                
+                <div class="right-wrapper">
+                    <a href="login.html" class="alien-stacked-btn" aria-label="Get Started">
+                        <div class="btn-layer-main">
+                            <span class="square-dot"></span>
+                            Get Started
+                            <span class="square-dot"></span>
+                        </div>
+                        <div class="btn-layer-back-1"></div>
+                        <div class="btn-layer-back-2"></div>
+                    </a>
+                    <button class="header-icon-box" id="open-menu-drawer-btn" aria-label="Menu button">
+                        <div class="burger-lines">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mega Menus Overlay -->
+        <div class="mega-menu-overlay" id="mega-menu-overlay"></div>
+        
+        <div class="mega-menu-container" id="menu-five-elements">
+            <div class="mega-menu-grid">
+                <div class="col-1">
+                    <h3>Overview</h3>
+                    <p>The Five Elements of Effective Warfare. Decisive military technology deployed across land, sea, air, space, and cyberspace.</p>
+                </div>
+                <div class="col-2">
+                    <h3>The Domains</h3>
+                    <div class="menu-link-item"><div class="plus-sign"><span></span><span></span></div><a href="platforms/yono.html">Terra (Land)</a></div>
+                    <div class="menu-link-item"><div class="plus-sign"><span></span><span></span></div><a href="platforms/crackerbox.html">Abyss (Sea)</a></div>
+                    <div class="menu-link-item"><div class="plus-sign"><span></span><span></span></div><a href="platforms/statham.html">Stratos (Air)</a></div>
+                    <div class="menu-link-item"><div class="plus-sign"><span></span><span></span></div><a href="platforms/spinal-craker.html">Cosmos (Space)</a></div>
+                </div>
+                <div class="col-3">
+                    <h3>Subterranean Operations</h3>
+                    <div class="product-group">
+                        <a href="#">Deep Bedrock Acoustic Sensing</a>
+                        <a href="#">Crust Penetration Radar</a>
+                        <a href="#">Autonomous Tactical Boring</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mega-menu-container" id="menu-capabilities">
+            <div class="mega-menu-grid">
+                <div class="col-1">
+                    <h3>Capabilities</h3>
+                    <p>Advanced capabilities built on our software platform to drive ontology-powered intelligence, twin visualization, and edge AI.</p>
+                </div>
+                <div class="col-2">
+                    <h3>Intelligence & AI</h3>
+                    <div class="menu-link-item"><div class="plus-sign"><span></span><span></span></div><a href="capabilities/ai-ml.html">AI + ML</a></div>
+                    <div class="menu-link-item"><div class="plus-sign"><span></span><span></span></div><a href="capabilities/edge-ai.html">Edge AI</a></div>
+                    <div class="menu-link-item"><div class="plus-sign"><span></span><span></span></div><a href="capabilities/data-integration.html">Data Integration</a></div>
+                </div>
+                <div class="col-3">
+                    <h3>Infrastructure</h3>
+                    <div class="product-group">
+                        <a href="capabilities/digital-twin.html">Digital Twin Topography</a>
+                        <a href="capabilities/dynamic-scheduling.html">Dynamic Scheduling</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mega-menu-container" id="menu-company">
+            <div class="mega-menu-grid">
+                <div class="col-1">
+                    <h3>Company</h3>
+                    <p>Building the operating system for the next century across sovereign critical infrastructure.</p>
+                </div>
+                <div class="col-2">
+                    <h3>Organization</h3>
+                    <div class="menu-link-item"><div class="plus-sign"><span></span><span></span></div><a href="letters/shareholder-letter.html">Shareholder Letter</a></div>
+                    <div class="menu-link-item"><div class="plus-sign"><span></span><span></span></div><a href="panteon-research-institute/index.html">Research Institute</a></div>
+                </div>
+                <div class="col-3">
+                    <h3>Ecosystem</h3>
+                    <div class="product-group">
+                        <a href="https://rousseau.alieninc.tech">Rousseau</a>
+                        <a href="https://centra.alieninc.tech">Centra</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 3. Cinematic Hero -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-subtitle">SUBTERRANEAN DOMAIN // MOUNT BULLAGAO SURVEY</div>
+            <h1 class="hero-title">Defense-Grade <span class="stylized-A">AI</span> for Every Critical Decision</h1>
+            <p class="scroll-explore-tag">Scroll to Explore Topography & Faults</p>
+            <div class="hero-arrow">
+                <svg viewBox="0 0 242.07 238.58">
+                    <path d="M135.85,0v187.55l106.22-93.17v38.53l-121.31,105.67L0,132.91v-38.53l105.67,93.17V0"></path>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. Main Stream Layout (Glassmorphic Panels) -->
+    <main class="main-content" id="scroll-content">
+
+        <!-- 5. USE CASES -->
+        <section class="alien-use-cases-section">
+            <div class="section-header-bar">
+                <h2>Use Cases</h2>
+                <div class="section-badge">CRUST-TO-ORBIT INTEGRATION</div>
+            </div>
+
+            <div class="use-cases-track-container" id="use-cases-container">
+                <div class="use-cases-track-wrapper" id="use-cases-track">
+                    
+                    <div class="use-case-card">
+                        <div class="card-media">
+                            <img src="luzon_satellite.avif" alt="YONO Platform Dashboard">
+                        </div>
+                        <div class="card-body">
+                            <span class="card-tag">TERRA (LAND)</span>
+                            <h3>YONO — Operational Automation</h3>
+                            <p>Automate mission-critical operations, from factory floors to frontline tactical units in rugged terrain.</p>
+                            <div class="alien-btn-wrapper">
+                                <a href="platforms/yono.html" class="alien-stacked-btn">
+                                    <div class="btn-layer-main">
+                                        <span class="square-dot"></span>
+                                        DISCOVER YONO
+                                        <span class="square-dot"></span>
+                                    </div>
+                                    <div class="btn-layer-back-1"></div>
+                                    <div class="btn-layer-back-2"></div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="use-case-card">
+                        <div class="card-media">
+                            <img src="west_philippine.png" alt="Crackerbox Marine Interface">
+                        </div>
+                        <div class="card-body">
+                            <span class="card-tag">ABYSS (SEA)</span>
+                            <h3>Crackerbox — Domain Intelligence</h3>
+                            <p>Achieve AI-driven combat superiority and deep maritime domain awareness, from satellite orbits to ocean floors.</p>
+                            <div class="alien-btn-wrapper">
+                                <a href="platforms/crackerbox.html" class="alien-stacked-btn">
+                                    <div class="btn-layer-main">
+                                        <span class="square-dot"></span>
+                                        DISCOVER CRACKERBOX
+                                        <span class="square-dot"></span>
+                                    </div>
+                                    <div class="btn-layer-back-1"></div>
+                                    <div class="btn-layer-back-2"></div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="use-case-card">
+                        <div class="card-media">
+                            <img src="stratos.png" alt="Statham Aerial Delivery">
+                        </div>
+                        <div class="card-body">
+                            <span class="card-tag">STRATOS (AIR)</span>
+                            <h3>Statham — Autonomous Delivery</h3>
+                            <p>Autonomous software deployment and tactical fleet coordination across edge nodes in contested airspace.</p>
+                            <div class="alien-btn-wrapper">
+                                <a href="platforms/statham.html" class="alien-stacked-btn">
+                                    <div class="btn-layer-main">
+                                        <span class="square-dot"></span>
+                                        DISCOVER STATHAM
+                                        <span class="square-dot"></span>
+                                    </div>
+                                    <div class="btn-layer-back-1"></div>
+                                    <div class="btn-layer-back-2"></div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. USER SEGMENTS -->
+        <section class="user-segments-section">
+            <div class="user-segments-grid">
+                
+                <div class="user-segment-col">
+                    <div class="segment-num-bar">
+                        <div class="square-block"></div>
+                        <span class="num-title">01</span>
+                    </div>
+                    <h3>For Operations & Defense</h3>
+                    <p class="lead">Automate operations from the bedrock to the front lines.</p>
+                    <p class="body-text">Panteon deploys secure zero-trust connectors streaming real-time sensor telemetry across deep subterranean and surface nodes.</p>
+                    <ul class="bullet-list">
+                        <li>Subterranean acoustic &amp; seismic tracking</li>
+                        <li>Full traceability across edge tactical nodes</li>
+                        <li>Zero data leakage across sovereign boundaries</li>
+                    </ul>
+                    <div class="alien-btn-wrapper">
+                        <a href="capabilities/data-integration.html" class="alien-stacked-btn">
+                            <div class="btn-layer-main">
+                                <span class="square-dot"></span>
+                                EXPLORE DATA INTEGRATION
+                                <span class="square-dot"></span>
+                            </div>
+                            <div class="btn-layer-back-1"></div>
+                            <div class="btn-layer-back-2"></div>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="user-segment-col">
+                    <div class="segment-num-bar">
+                        <div class="square-block"></div>
+                        <span class="num-title">02</span>
+                    </div>
+                    <h3>For AI Product Builders</h3>
+                    <p class="lead">Defense-grade geospatial data: live, verified, pay-per-query.</p>
+                    <p class="body-text">High-resolution elevation models, LiDAR point clouds, and topological ontologies streamed straight to your AI pipelines via MCP.</p>
+                    <ul class="bullet-list">
+                        <li>Verified topographic datasets (Cordillera / Ilocos)</li>
+                        <li>Sub-millimeter point cloud accuracy</li>
+                        <li>Instant API &amp; vector bridge integration</li>
+                    </ul>
+                    <div class="alien-btn-wrapper">
+                        <a href="capabilities/yono-for-developers.html" class="alien-stacked-btn">
+                            <div class="btn-layer-main">
+                                <span class="square-dot"></span>
+                                YONO FOR DEVELOPERS
+                                <span class="square-dot"></span>
+                            </div>
+                            <div class="btn-layer-back-1"></div>
+                            <div class="btn-layer-back-2"></div>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 7. EDITORIAL BLOCK -->
+        <section class="editorial-callout">
+            <h2 class="editorial-callout-text">
+                Some interesting things happen once you can control and understand the crust of the earth.
+            </h2>
+        </section>
+
+        <!-- 8. SOFTWARE PLATFORMS -->
+        <section class="software-section">
+            <div class="software-header">
+                <h2>Our Software</h2>
+                <div class="section-badge">TACTICAL PLATFORMS</div>
+            </div>
+
+            <div class="software-grid-matrix">
+                
+                <div class="software-card">
+                    <div class="card-num-bar">
+                        <div class="square-block"></div>
+                        <span class="num-tag">/ 0.1</span>
+                    </div>
+                    <h3>YONO</h3>
+                    <p class="desc">Automate operations from high-altitude summits to subterranean facilities.</p>
+                    <div class="preview-box">
+                        <img src="panteon-software.png" alt="YONO Interface Preview">
+                    </div>
+                    <ul class="bullet-list">
+                        <li>Real-time automated edge telemetry</li>
+                        <li>Fault line and seismic analysis integration</li>
+                    </ul>
+                    <div class="card-action">
+                        <div class="alien-btn-wrapper">
+                            <a href="platforms/yono.html" class="alien-stacked-btn">
+                                <div class="btn-layer-main">
+                                    <span class="square-dot"></span>
+                                    DISCOVER YONO
+                                    <span class="square-dot"></span>
+                                </div>
+                                <div class="btn-layer-back-1"></div>
+                                <div class="btn-layer-back-2"></div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="software-card">
+                    <div class="card-num-bar">
+                        <div class="square-block"></div>
+                        <span class="num-tag">/ 0.2</span>
+                    </div>
+                    <h3>Crackerbox</h3>
+                    <p class="desc">Achieve AI-driven combat superiority from seabed trenches to mountain peaks.</p>
+                    <div class="preview-box">
+                        <img src="panteon-software.png" alt="Crackerbox Interface Preview">
+                    </div>
+                    <ul class="bullet-list">
+                        <li>Cross-domain intelligence fusion</li>
+                        <li>Contested environment sync</li>
+                    </ul>
+                    <div class="card-action">
+                        <div class="alien-btn-wrapper">
+                            <a href="platforms/crackerbox.html" class="alien-stacked-btn">
+                                <div class="btn-layer-main">
+                                    <span class="square-dot"></span>
+                                    DISCOVER CRACKERBOX
+                                    <span class="square-dot"></span>
+                                </div>
+                                <div class="btn-layer-back-1"></div>
+                                <div class="btn-layer-back-2"></div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 9. PRESS COVERAGE -->
+        <section class="press-section">
+            <div class="press-header-tag">PRESS</div>
+            <div class="press-list">
+                <div class="press-item">
+                    <span class="press-title">TechCrunch — Panteon's ontology platforms redefine defense-grade topological surveillance</span>
+                    <div class="press-discover"><span class="square-dot"></span>DISCOVER</div>
+                </div>
+                <div class="press-item">
+                    <span class="press-title">Financial Times — Subterranean sensing and the new frontier of national infrastructure defense</span>
+                    <div class="press-discover"><span class="square-dot"></span>DISCOVER</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 10. PRE-FOOTER MAKE CONTACT -->
+        <section class="pre-footer-contact">
+            <div class="pre-footer-content">
+                <h2>Connect With Us</h2>
+                <div class="alien-btn-wrapper">
+                    <a href="login.html" class="alien-stacked-btn">
+                        <div class="btn-layer-main" style="padding: 16px 36px; font-size: 0.85rem;">
+                            <span class="square-dot"></span>
+                            Initialize Contact
+                            <span class="square-dot"></span>
+                        </div>
+                        <div class="btn-layer-back-1"></div>
+                        <div class="btn-layer-back-2"></div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 11. FOOTER -->
+    <footer id="footer">
+        <div class="footer-container">
+            <div class="footer-left-branding">
+                <div class="logo" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+                    <svg viewBox="0 0 520 80" role="img" aria-label="Panteon"><use href="#panteon-lockup"/></svg>
+                </div>
+                <p>© 2026 Panteon Technologies Inc.</p>
+                <p>All rights reserved.</p>
+                <div class="footer-divider-line"></div>
+                <button class="footer-cookie-btn">Cookies Settings</button>
+                <div class="footer-social-container">
+                    <a href="#" class="social-capsule">Youtube</a>
+                    <a href="#" class="social-capsule">X</a>
+                    <a href="#" class="social-capsule">Linkedin</a>
+                    <a href="#" class="social-capsule">Github</a>
+                </div>
+            </div>
+
+            <div class="footer-links-grid">
+                <div class="footer-links-col">
+                    <h4>Research</h4>
+                    <ul>
+                        <li><a href="panteon-research-institute/index.html">Research Institute</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Capabilities</h4>
+                    <ul>
+                        <li><a href="capabilities/ai-ml.html">AI + ML</a></li>
+                        <li><a href="capabilities/edge-ai.html">Edge AI</a></li>
+                        <li><a href="capabilities/data-integration.html">Data Integration</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Domains</h4>
+                    <ul>
+                        <li><a href="platforms/yono.html">Terra (Land)</a></li>
+                        <li><a href="platforms/crackerbox.html">Abyss (Sea)</a></li>
+                        <li><a href="platforms/statham.html">Stratos (Air)</a></li>
+                        <li><a href="platforms/spinal-craker.html">Cosmos (Space)</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Legal & Trust</h4>
+                    <ul>
+                        <li><a href="trust/trust-center.html">Trust Center</a></li>
+                        <li><a href="trust/modern-slavery.html">Modern Slavery Statement</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Single Source Brand Lockup Asset -->
+    <svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden">
+        <defs>
+            <filter id="panteon-brush" x="-10%" y="-10%" width="120%" height="120%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.23" numOctaves="4" result="noise"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.85" xChannelSelector="R" yChannelSelector="B"/>
+            </filter>
+            <g id="panteon-lockup" fill="currentColor">
+                <path d="M63 19 C57 19 54 23 54 29 L54 55 C54 59 56 62 60 64 L46 64 C42 64 40 66 40 68 C41 70 44 70 48 70 L65 70 C69 70 72 67 72 63 L72 29 C72 23 69 19 63 19 Z"/>
+                <circle cx="20" cy="64" r="7"/>
+                <text x="78" y="62" fill="currentColor" font-family="'Zen Dots', Inter, Arial, sans-serif" font-size="58" font-weight="300" letter-spacing="0.9">PANTEON</text>
+            </g>
+        </defs>
+    </svg>
+
+    <!-- 3D MOUNT BULLAGAO PROCEDURAL TOPOGRAPHY & SCROLL RIG ENGINE -->
+    <script>
+        /* ========================================================
+           1. THREE.JS PROCEDURAL MT. BULLAGAO TOPOGRAPHY ENGINE
+           ======================================================== */
+        const canvas = document.getElementById('webgl-bg-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000000, 0.0018);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 3000);
+        camera.position.set(0, 380, 520);
+
+        // Custom GLSL Noise for Terrain
+        const customTerrainVertexShader = `
+            uniform float uTime;
+            uniform float uScanPlaneY;
+            varying float vElevation;
+            varying vec3 vWorldPos;
+            varying float vScanDist;
+
+            // Simplex-inspired procedural noise functions
+            vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+
+            float snoise(vec2 v) {
+                const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+                vec2 i  = floor(v + dot(v, C.yy) );
+                vec2 x0 = v -   i + dot(i, C.xx);
+                vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+                vec4 x12 = x0.xyxy + C.xxzz;
+                x12.xy -= i1;
+                i = mod289(i);
+                vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 )) + i.x + vec3(0.0, i1.x, 1.0 ));
+                vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+                m = m*m ;
+                m = m*m ;
+                vec3 x = 2.0 * fract(p * C.www) - 1.0;
+                vec3 h = abs(x) - 0.5;
+                vec3 ox = floor(x + 0.5);
+                vec3 a0 = x - ox;
+                m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+                vec3 g;
+                g.x  = a0.x  * x0.x  + h.x  * x0.y;
+                g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+                return 130.0 * dot(m, g);
+            }
+
+            // TOPOGRAPHIC FORMULA SPECIFICALLY SCULPTING MT. BULLAGAO ("SLEEPING BEAUTY OF ABRA", 1,119 MASL)
+            float getSleepingBeautyHeight(vec2 p) {
+                float nx = p.x * 0.0032;
+                float nz = p.y * 0.0032;
+
+                // 1. Core Massif Envelope
+                float baseMass = exp(-pow(nx * 0.9, 2.0) - pow(nz * 1.3, 2.0)) * 220.0;
+
+                // 2. Sleeping Beauty Silhouette Ridges (Reclined face, twin breast peaks, torso slope)
+                // Left peak: Forehead/Face (-nx)
+                float headPeak = exp(-pow((nx + 0.48) * 3.8, 2.0) - pow((nz - 0.05) * 3.8, 2.0)) * 140.0;
+                // Center-Right twin peaks: Contoured Breasts & Summit (1,119 MASL)
+                float breastPeak1 = exp(-pow((nx - 0.02) * 3.6, 2.0) - pow((nz + 0.04) * 3.6, 2.0)) * 185.0;
+                float breastPeak2 = exp(-pow((nx - 0.32) * 3.4, 2.0) - pow((nz - 0.02) * 3.4, 2.0)) * 175.0;
+                // Torso & Leg Ridge descending toward Langiden / Abra river
+                float bodySlope = exp(-pow((nx - 0.85) * 2.1, 2.0) - pow(nz * 2.8, 2.0)) * 105.0;
+
+                // 3. Dendritic Cordillera Mountain Spurs & Ravines (Fractal Noise)
+                float spurs = snoise(vec2(nx * 3.5, nz * 3.5)) * 48.0;
+                float ravines = snoise(vec2(nx * 7.0, nz * 7.0)) * 22.0;
+                float microCrags = snoise(vec2(nx * 14.0, nz * 14.0)) * 8.0;
+
+                // 4. Foreground Abra River Basin Depression (Low Valley)
+                float riverValley = smoothstep(-150.0, 150.0, p.y) * 0.4 + 0.6;
+
+                float totalHeight = (baseMass + headPeak + breastPeak1 + breastPeak2 + bodySlope + spurs + ravines + microCrags) * riverValley;
+                return totalHeight;
+            }
+
+            void main() {
+                vec3 pos = position;
+                float h = getSleepingBeautyHeight(pos.xy);
+                pos.z = h;
+
+                vElevation = h;
+                vec4 worldPos = modelMatrix * vec4(pos, 1.0);
+                vWorldPos = worldPos.xyz;
+                vScanDist = abs(worldPos.y - uScanPlaneY);
+
+                gl_Position = projectionMatrix * viewMatrix * worldPos;
+                
+                // Point size with perspective attenuation
+                float pSize = (3.5 + (h / 45.0));
+                gl_PointSize = clamp(pSize * (420.0 / - (viewMatrix * worldPos).z), 1.0, 8.0);
+            }
+        `;
+
+        const customTerrainFragmentShader = `
+            uniform vec3 uBaseColor;
+            uniform vec3 uNeonColor;
+            uniform float uScanPlaneY;
+            varying float vElevation;
+            varying vec3 vWorldPos;
+            varying float vScanDist;
+
+            void main() {
+                // Circular softened point particles
+                vec2 coord = gl_PointCoord - vec2(0.5);
+                if (length(coord) > 0.5) discard;
+
+                // Topographic Contour Lines calculation
+                float contourStep = 18.0;
+                float contourLineWidth = 1.6;
+                float contourMod = mod(vElevation, contourStep);
+                float isContour = step(contourMod, contourLineWidth);
+
+                // Scanning laser slice illumination
+                float scanHighlight = smoothstep(22.0, 0.0, vScanDist);
+
+                // Base palette shading (dark tactical slate with elevation lift)
+                vec3 col = mix(uBaseColor, vec3(0.4, 0.44, 0.48), clamp(vElevation / 240.0, 0.0, 1.0));
+
+                // Add glowing electric yellow-green contour rings
+                col = mix(col, uNeonColor, isContour * 0.85);
+
+                // Add active LiDAR scan plane pulse
+                col = mix(col, uNeonColor, scanHighlight * 0.9);
+
+                float alpha = clamp(0.35 + (vElevation / 200.0) * 0.55 + scanHighlight * 0.4, 0.2, 0.95);
+                gl_FragColor = vec4(col, alpha);
+            }
+        `;
+
+        // Generate Dense Topographic Plane Mesh & Point Cloud
+        const terrainGeo = new THREE.PlaneGeometry(900, 900, 260, 260);
+
+        const uniforms = {
+            uTime: { value: 0 },
+            uScanPlaneY: { value: 60.0 },
+            uBaseColor: { value: new THREE.Color(0x181e24) },
+            uNeonColor: { value: new THREE.Color(0xDFF140) }
+        };
+
+        const terrainMaterial = new THREE.ShaderMaterial({
+            vertexShader: customTerrainVertexShader,
+            fragmentShader: customTerrainFragmentShader,
+            uniforms: uniforms,
+            transparent: true,
+            depthWrite: false
+        });
+
+        // 1. Point Cloud Representation
+        const pointCloud = new THREE.Points(terrainGeo, terrainMaterial);
+        pointCloud.rotation.x = -Math.PI / 2;
+        scene.add(pointCloud);
+
+        // 2. Wireframe Underlay for Subterranean Lattice Feel
+        const wireMaterial = new THREE.MeshBasicMaterial({
+            color: 0x11161b,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.15
+        });
+        const wireMesh = new THREE.Mesh(terrainGeo, wireMaterial);
+        wireMesh.rotation.x = -Math.PI / 2;
+        wireMesh.position.y = -1.0;
+        scene.add(wireMesh);
+
+        // Ambient Floating Subterranean Dust
+        const dustGeo = new THREE.BufferGeometry();
+        const dustCount = 450;
+        const dustPos = new Float32Array(dustCount * 3);
+        for(let i = 0; i < dustCount * 3; i += 3) {
+            dustPos[i] = (Math.random() - 0.5) * 800;
+            dustPos[i+1] = Math.random() * 260;
+            dustPos[i+2] = (Math.random() - 0.5) * 800;
+        }
+        dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+        const dustMat = new THREE.PointsMaterial({
+            color: 0xDFF140,
+            size: 2.0,
+            transparent: true,
+            opacity: 0.35
+        });
+        const dustPoints = new THREE.Points(dustGeo, dustMat);
+        scene.add(dustPoints);
+
+        // Window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        /* ========================================================
+           2. SCROLL DRIVER & CAMERA ORBIT RIG
+           ======================================================== */
+        let scrollY = 0;
+        let targetScrollY = 0;
+        const hudDepth = document.getElementById('hud-depth-readout');
+        const hudTilt = document.getElementById('hud-tilt-readout');
+        const scrollBar = document.getElementById('scroll-bar');
+        const header = document.getElementById('main-header');
+
+        window.addEventListener('scroll', () => {
+            targetScrollY = window.scrollY;
+
+            // Reading Progress Bar
+            const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = (targetScrollY / totalScroll) * 100;
+            if (scrollBar) scrollBar.style.width = `${progress}%`;
+
+            if (targetScrollY > 60) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Smooth Animation Render Loop
+        const clock = new THREE.Clock();
+
+        function renderLoop() {
+            requestAnimationFrame(renderLoop);
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            // Smooth damping for scroll
+            scrollY += (targetScrollY - scrollY) * 0.06;
+
+            const totalHeight = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+            const scrollFraction = Math.min(Math.max(scrollY / totalHeight, 0.0), 1.0);
+
+            // Dynamic Camera Flight Path around Mt. Bullagao
+            // Aerial Approach -> Low Ridgeline Scan -> Subterranean Slicing -> Valley Exit
+            const radius = 540 - scrollFraction * 140;
+            const angle = 0.3 + scrollFraction * Math.PI * 0.85;
+            
+            camera.position.x = Math.sin(angle) * radius;
+            camera.position.z = Math.cos(angle) * radius;
+            camera.position.y = 380 - scrollFraction * 260; // Descend from summit to subterranean bedrock
+
+            const targetY = 120 - scrollFraction * 80;
+            camera.lookAt(0, targetY, 0);
+
+            // Dynamic Scanning Slice Height
+            const scanHeight = Math.sin(time * 1.4) * 80.0 + (140.0 - scrollFraction * 120.0);
+            uniforms.uScanPlaneY.value = scanHeight;
+            uniforms.uTime.value = time;
+
+            // Dust slow animation
+            dustPoints.rotation.y = time * 0.02;
+
+            // Update Tactical HUD Telemetry
+            if (hudDepth) {
+                const currentElev = Math.round(1119 - scrollFraction * 1800);
+                hudDepth.textContent = `SCAN DEPTH: ${currentElev >= 0 ? '+' : ''}${currentElev} M`;
+            }
+            if (hudTilt) {
+                const pitch = (32.4 - scrollFraction * 18.0).toFixed(1);
+                const azimuth = Math.round((angle * (180 / Math.PI)) % 360);
+                hudTilt.textContent = `PITCH: ${pitch}° // AZIMUTH: ${azimuth}°`;
+            }
+
+            renderer.render(scene, camera);
+        }
+        renderLoop();
+
+        /* ========================================================
+           3. UI & CONTINUOUS TRACKS
+           ======================================================== */
+        function createContinuousTrack(containerId, trackId, speed = 0.8) {
+            const container = document.getElementById(containerId);
+            const track = document.getElementById(trackId);
+            if (!container || !track) return;
+
+            const items = Array.from(track.children);
+            items.forEach(item => track.appendChild(item.cloneNode(true)));
+
+            let currentX = 0;
+            let isHovered = false;
+
+            container.addEventListener('mouseenter', () => isHovered = true);
+            container.addEventListener('mouseleave', () => isHovered = false);
+
+            function animateTrack() {
+                if (!isHovered) currentX -= speed;
+                const halfWidth = track.scrollWidth / 2;
+                if (Math.abs(currentX) >= halfWidth) currentX = 0;
+                track.style.transform = `translate3d(${currentX}px, 0, 0)`;
+                requestAnimationFrame(animateTrack);
+            }
+            requestAnimationFrame(animateTrack);
+        }
+        createContinuousTrack('use-cases-container', 'use-cases-track', 0.9);
+
+        // Mega menu triggers
+        const dropdowns = document.querySelectorAll('.nav-item-dropdown');
+        const overlay = document.getElementById('mega-menu-overlay');
+
+        dropdowns.forEach(dropdown => {
+            dropdown.addEventListener('mouseenter', () => {
+                document.querySelectorAll('.mega-menu-container').forEach(m => m.classList.remove('active'));
+                const menu = document.getElementById('menu-' + dropdown.getAttribute('data-menu'));
+                if (menu) {
+                    menu.classList.add('active');
+                    overlay.classList.add('active');
+                }
+            });
+        });
+
+        header.addEventListener('mouseleave', () => {
+            document.querySelectorAll('.mega-menu-container').forEach(m => m.classList.remove('active'));
+            overlay.classList.remove('active');
+        });
+    </script>
+</body>
+</html>
+<!-- END OF FILE index.html -->

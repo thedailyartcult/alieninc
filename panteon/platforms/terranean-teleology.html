@@ -22,14 +22,6 @@
             overflow: hidden;
             background-color: var(--bg-dark);
         }
-        .platform-hero-bg {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 1;
-            object-fit: cover;
-            filter: brightness(0.3) contrast(1.05);
-        }
         .platform-hero-content {
             position: relative;
             z-index: 2;
@@ -58,6 +50,20 @@
             color: rgba(255, 255, 255, 0.65);
             max-width: 600px;
             margin: 0 auto;
+        }
+        /* Terranean procedural terrain — hero-scoped Mt. Bullagao canvas (from tryonly.html engine, scoped to AGENTS.md exception) */
+        #webgl-bg-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            display: block;
+            background: radial-gradient(circle at 50% 30%, #06090d 0%, #000000 90%);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #webgl-bg-canvas { display: none; }
         }
         .platform-nav {
             display: flex;
@@ -239,10 +245,8 @@
         </div>
     </header>
 
-    <section class="platform-hero">
-        <video class="platform-hero-bg" autoplay loop muted playsinline poster="../panteon-software.png">
-            <source src="../hero-bg-panteon.mp4" type="video/mp4">
-        </video>
+    <section class="platform-hero" id="terranean-hero">
+        <canvas id="webgl-bg-canvas" aria-hidden="true"></canvas>
         <div class="platform-hero-content">
             <span class="tag">Terranean Teleology</span>
             <h1>Purpose Modeling<br>for Competitive Advantage</h1>
@@ -416,6 +420,189 @@
                 header.classList.remove('scrolled');
             }
         });
+    </script>
+    <!-- Terranean procedural terrain — Three.js r128 Mt. Bullagao engine (AGENTS.md exception, hero-scoped only; CSP-safe: jsdelivr + self-host fallback) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script>window.THREE||document.write('<script src="../vendor/three.r128.min.js"><\/script>')</script>
+    <script>
+    (function(){
+        const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if(prefersReduced) return;
+        const canvas = document.getElementById('webgl-bg-canvas');
+        const hero = document.getElementById('terranean-hero');
+        if(!canvas || !hero || typeof THREE === 'undefined'){ console.warn('[Terranean] THREE missing — canvas fallback'); if(canvas) canvas.style.display='none'; return; }
+        // WebGL feature check without stealing the canvas context (getContext would block THREE.WebGLRenderer)
+        if(!window.WebGLRenderingContext){ canvas.style.display='none'; return; }
+
+        let renderer;
+        try{ renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, powerPreference: 'low-power' }); }
+        catch(e){ console.error('[Terranean] WebGLRenderer failed', e); canvas.style.display='none'; return; }
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+        function sizeHero(){
+            const r = hero.getBoundingClientRect();
+            const w = Math.round(r.width) || hero.clientWidth || window.innerWidth;
+            const h = Math.round(r.height) || hero.clientHeight || 600;
+            return { w: w, h: h };
+        }
+        let hs = sizeHero();
+        renderer.setSize(hs.w, hs.h, false);
+        // ensure canvas covers hero visibly — will be behind .platform-hero-content (z-index:2)
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000000, 0.0018);
+        const camera = new THREE.PerspectiveCamera(45, hs.w / Math.max(hs.h,1), 1, 3000);
+        camera.position.set(0, 380, 520);
+
+        const customTerrainVertexShader = `
+            uniform float uTime;
+            uniform float uScanPlaneY;
+            varying float vElevation;
+            varying vec3 vWorldPos;
+            varying float vScanDist;
+            vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+            float snoise(vec2 v) {
+                const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+                vec2 i  = floor(v + dot(v, C.yy) );
+                vec2 x0 = v -   i + dot(i, C.xx);
+                vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+                vec4 x12 = x0.xyxy + C.xxzz;
+                x12.xy -= i1;
+                i = mod289(i);
+                vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 )) + i.x + vec3(0.0, i1.x, 1.0 ));
+                vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+                m = m*m ; m = m*m ;
+                vec3 x = 2.0 * fract(p * C.www) - 1.0;
+                vec3 h = abs(x) - 0.5;
+                vec3 ox = floor(x + 0.5);
+                vec3 a0 = x - ox;
+                m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+                vec3 g;
+                g.x  = a0.x  * x0.x  + h.x  * x0.y;
+                g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+                return 130.0 * dot(m, g);
+            }
+            float getSleepingBeautyHeight(vec2 p) {
+                float nx = p.x * 0.0032;
+                float nz = p.y * 0.0032;
+                float baseMass = exp(-pow(nx * 0.9, 2.0) - pow(nz * 1.3, 2.0)) * 220.0;
+                float headPeak = exp(-pow((nx + 0.48) * 3.8, 2.0) - pow((nz - 0.05) * 3.8, 2.0)) * 140.0;
+                float breastPeak1 = exp(-pow((nx - 0.02) * 3.6, 2.0) - pow((nz + 0.04) * 3.6, 2.0)) * 185.0;
+                float breastPeak2 = exp(-pow((nx - 0.32) * 3.4, 2.0) - pow((nz - 0.02) * 3.4, 2.0)) * 175.0;
+                float bodySlope = exp(-pow((nx - 0.85) * 2.1, 2.0) - pow(nz * 2.8, 2.0)) * 105.0;
+                float spurs = snoise(vec2(nx * 3.5, nz * 3.5)) * 48.0;
+                float ravines = snoise(vec2(nx * 7.0, nz * 7.0)) * 22.0;
+                float microCrags = snoise(vec2(nx * 14.0, nz * 14.0)) * 8.0;
+                float riverValley = smoothstep(-150.0, 150.0, p.y) * 0.4 + 0.6;
+                float totalHeight = (baseMass + headPeak + breastPeak1 + breastPeak2 + bodySlope + spurs + ravines + microCrags) * riverValley;
+                return totalHeight;
+            }
+            void main() {
+                vec3 pos = position;
+                float h = getSleepingBeautyHeight(pos.xy);
+                pos.z = h;
+                vElevation = h;
+                vec4 worldPos = modelMatrix * vec4(pos, 1.0);
+                vWorldPos = worldPos.xyz;
+                vScanDist = abs(worldPos.y - uScanPlaneY);
+                gl_Position = projectionMatrix * viewMatrix * worldPos;
+                float pSize = (3.5 + (h / 45.0));
+                gl_PointSize = clamp(pSize * (420.0 / - (viewMatrix * worldPos).z), 1.0, 8.0);
+            }
+        `;
+        const customTerrainFragmentShader = `
+            uniform vec3 uBaseColor;
+            uniform vec3 uNeonColor;
+            uniform float uScanPlaneY;
+            varying float vElevation;
+            varying vec3 vWorldPos;
+            varying float vScanDist;
+            void main() {
+                vec2 coord = gl_PointCoord - vec2(0.5);
+                if (length(coord) > 0.5) discard;
+                float contourStep = 18.0;
+                float contourLineWidth = 1.6;
+                float contourMod = mod(vElevation, contourStep);
+                float isContour = step(contourMod, contourLineWidth);
+                float scanHighlight = smoothstep(22.0, 0.0, vScanDist);
+                vec3 col = mix(uBaseColor, vec3(0.40, 0.44, 0.48), clamp(vElevation / 240.0, 0.0, 1.0));
+                col = mix(col, uNeonColor, isContour * 0.55);
+                col = mix(col, uNeonColor, scanHighlight * 0.9);
+                float alpha = clamp(0.28 + (vElevation / 200.0) * 0.45 + scanHighlight * 0.35, 0.18, 0.88);
+                gl_FragColor = vec4(col, alpha);
+            }
+        `;
+        const terrainGeo = new THREE.PlaneGeometry(900, 900, 260, 260);
+        const uniforms = {
+            uTime: { value: 0 },
+            uScanPlaneY: { value: 60.0 },
+            uBaseColor: { value: new THREE.Color(0x181e24) },
+            uNeonColor: { value: new THREE.Color(0xDFF140) }
+        };
+        const terrainMaterial = new THREE.ShaderMaterial({
+            vertexShader: customTerrainVertexShader,
+            fragmentShader: customTerrainFragmentShader,
+            uniforms: uniforms,
+            transparent: true,
+            depthWrite: false
+        });
+        const pointCloud = new THREE.Points(terrainGeo, terrainMaterial);
+        pointCloud.rotation.x = -Math.PI / 2;
+        scene.add(pointCloud);
+        const wireMaterial = new THREE.MeshBasicMaterial({ color: 0x11161b, wireframe: true, transparent: true, opacity: 0.15 });
+        const wireMesh = new THREE.Mesh(terrainGeo, wireMaterial);
+        wireMesh.rotation.x = -Math.PI / 2;
+        wireMesh.position.y = -1.0;
+        scene.add(wireMesh);
+        const dustGeo = new THREE.BufferGeometry();
+        const dustCount = 320;
+        const dustPos = new Float32Array(dustCount * 3);
+        for(let i=0;i<dustCount*3;i+=3){ dustPos[i]=(Math.random()-0.5)*800; dustPos[i+1]=Math.random()*260; dustPos[i+2]=(Math.random()-0.5)*800; }
+        dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+        const dustMat = new THREE.PointsMaterial({ color: 0xDFF140, size: 1.8, transparent: true, opacity: 0.28 });
+        const dustPoints = new THREE.Points(dustGeo, dustMat);
+        scene.add(dustPoints);
+
+        let scrollY = window.scrollY, targetScrollY = window.scrollY;
+        window.addEventListener('scroll', () => { targetScrollY = window.scrollY; }, { passive: true });
+        window.addEventListener('resize', () => {
+            hs = sizeHero();
+            camera.aspect = hs.w / Math.max(hs.h,1);
+            camera.updateProjectionMatrix();
+            renderer.setSize(hs.w, hs.h, false);
+        });
+
+        let isVisible = true;
+        const io = new IntersectionObserver((entries)=>{ isVisible = entries[0].isIntersecting; }, { threshold: 0 });
+        io.observe(hero);
+        document.addEventListener('visibilitychange', ()=>{ if(document.hidden) isVisible=false; else isVisible=true; });
+
+        const clock = new THREE.Clock();
+        function renderLoop(){
+            requestAnimationFrame(renderLoop);
+            if(!isVisible || document.hidden) return;
+            const time = clock.getElapsedTime();
+            scrollY += (targetScrollY - scrollY) * 0.06;
+            const totalHeight = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+            const scrollFraction = Math.min(Math.max(scrollY / totalHeight, 0.0), 1.0);
+            const radius = 540 - scrollFraction * 140;
+            const angle = 0.3 + scrollFraction * Math.PI * 0.85;
+            camera.position.x = Math.sin(angle) * radius;
+            camera.position.z = Math.cos(angle) * radius;
+            camera.position.y = 380 - scrollFraction * 260;
+            const targetY = 120 - scrollFraction * 80;
+            camera.lookAt(0, targetY, 0);
+            const scanHeight = Math.sin(time * 1.4) * 80.0 + (140.0 - scrollFraction * 120.0);
+            uniforms.uScanPlaneY.value = scanHeight;
+            uniforms.uTime.value = time;
+            dustPoints.rotation.y = time * 0.015;
+            renderer.render(scene, camera);
+        }
+        renderLoop();
+    })();
     </script>
 </body>
 </html>

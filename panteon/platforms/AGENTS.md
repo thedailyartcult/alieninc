@@ -64,3 +64,12 @@ Media paths on product pages MUST be `../`-prefixed (`../hero-bg-panteon.mp4`, `
 - NO different footer or header structures
 - NO commercial language for CMB (it's internal)
 - NO exposing internal technical details in product descriptions
+
+## Terranean Procedural Terrain Exception
+
+`terranean-etiology.html` and `terranean-teleology.html` are the **sole** pages permitted to load a third-party JS library (`three.js r128` via `cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js`) for the hero-scoped Mt. Bullagao procedural canvas (`#webgl-bg-canvas`). Rules:
+
+- Canvas is `position:absolute; inset:0; z-index:1; pointer-events:none` inside `.platform-hero` (which is `position:relative; overflow:hidden`), behind `.platform-hero-content` (`z-index:2`). Never `position:fixed` global.
+- Uses only Panteon tokens (`--accent-neon:#DFF140`, `--bg-dark:#000000`). No HUD/telemetry overlays, no glass-header overrides, no new colors/fonts.
+- Must include `@media (prefers-reduced-motion:reduce)` fallback (hide canvas) and `IntersectionObserver` pause + `document.hidden` guard.
+- All other platform pages remain vanilla-JS only.

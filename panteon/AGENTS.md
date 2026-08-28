@@ -107,7 +107,7 @@ Use `../platform-template.html` as the starting point for any new product, capab
 - NO different footer structures
 - NO different header structures
 - NO emoji in UI text
-- NO third-party JS libraries (all interaction engines are inline vanilla JS)
+- NO third-party JS libraries (all interaction engines are inline vanilla JS) — **Exception: `platforms/terranean-etiology.html` and `platforms/terranean-teleology.html` may load `three.js r128` (CDN `cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js`) solely for the hero-scoped Mt. Bullagao procedural terrain canvas (`#webgl-bg-canvas`). The canvas must be `position:absolute` inside `.platform-hero`, `pointer-events:none`, `z-index:1` behind `.platform-hero-content`, with `@media (prefers-reduced-motion:reduce)` fallback and no HUD/glass overrides. No other page may add third-party JS.**
 - NO inline `style=""` attributes that override the design system (the only sanctioned one is the `grid-column: span 2` software card)
 
 ## CMB Dashboard Exception

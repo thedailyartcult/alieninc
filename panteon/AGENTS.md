@@ -107,7 +107,7 @@ Use `../platform-template.html` as the starting point for any new product, capab
 - NO different footer structures
 - NO different header structures
 - NO emoji in UI text
-- NO third-party JS libraries (all interaction engines are inline vanilla JS) — **Exception: `platforms/terranean-etiology.html` and `platforms/terranean-teleology.html` may load `three.js r128` (CDN `cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js`) solely for the hero-scoped Mt. Bullagao procedural terrain canvas (`#webgl-bg-canvas`). The canvas must be `position:absolute` inside `.platform-hero`, `pointer-events:none`, `z-index:1` behind `.platform-hero-content`, with `@media (prefers-reduced-motion:reduce)` fallback and no HUD/glass overrides. No other page may add third-party JS.**
+- NO third-party JS libraries (all interaction engines are inline vanilla JS) — **Exception: `platforms/terranean-etiology.html` and `platforms/terranean-teleology.html` may load `three.js r128` (CDN `cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js` with `../vendor/three.r128.min.js` fallback) solely for the **fixed global** Mt. Bullagao procedural terrain canvas (`#webgl-bg-canvas` `position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:0; pointer-events:none` behind all content, with white `background-color:#ffffff` and `prefers-reduced-motion:reduce` fallback). Content uses white glass `rgba(255,255,255,0.88) blur` to reveal it, matching `../index.html`’s `#subterranean-bg-canvas` whole-site cover. No other page may add third-party JS.**
 - NO inline `style=""` attributes that override the design system (the only sanctioned one is the `grid-column: span 2` software card)
 
 ## CMB Dashboard Exception

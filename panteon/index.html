@@ -9,6 +9,10 @@
     <meta http-equiv="Permissions-Policy" content="geolocation=(), midi=(), notifications=(), push=(), sync-xhr=(), microphone=(), camera=(), magnetometer=(), gyroscope=(), speaker=(), vibrate=(), fullscreen=(self), payment=()">
     <title>Panteon | AI-Powered Automation</title>
     
+    <!-- Three.js for Subterranean Mountain Background (CSP-safe: jsdelivr + self-host fallback) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script>window.THREE||document.write('<script src="vendor/three.r128.min.js"><\/script>')</script>
+
     <!-- Import typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -54,6 +58,23 @@
             line-height: 1.5;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
+        }
+
+        /* FIXED SUBTERRANEAN MOUNTAIN CANVAS — Panteon white palette (structure from try.html) */
+        #subterranean-bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            background-color: #ffffff;
+            opacity: 1;
+            transition: opacity 0.6s ease;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #subterranean-bg-canvas { display: none; }
         }
 
         a {
@@ -121,73 +142,26 @@
             transition: width 0.1s ease-out;
         }
 
-        /* 1. Technical Announcement ribbon */
-        .announcement-bar {
-            background-color: #08090a;
-            color: var(--text-light);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 10px 40px;
-            font-size: 0.75rem;
-            font-family: var(--font-tech);
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            border-bottom: 1px solid var(--border-light);
-            position: relative;
-            z-index: 1001;
-            text-align: center;
-        }
-
-        .announcement-bar a {
-            text-decoration: none;
-            margin-left: 6px;
-            font-weight: 300;
-            color: var(--accent-neon);
-            border-bottom: 1px solid var(--accent-neon);
-            padding-bottom: 1px;
-        }
-
-        .announcement-bar .close-btn {
-            position: absolute;
-            right: 40px;
-            background: none;
-            border: none;
-            color: var(--text-light);
-            cursor: pointer;
-            font-size: 1.1rem;
-            opacity: 0.5;
-            transition: opacity 0.2s;
-        }
-
-        .announcement-bar .close-btn:hover {
-            opacity: 1;
-        }
-
-        /* 2. Sticky Glass Header */
+        /* 2. Sticky Header — Panteon canonical solid (no glass bleed over white mountain) */
         header {
             position: sticky;
             top: 0;
             z-index: 1000;
-            background-color: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border-light);
+            background-color: var(--bg-dark);
+            border-bottom: none;
             color: var(--text-light);
-            transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+            transition: background-color 0.15s linear, color 0.15s linear, box-shadow 0.3s ease;
         }
 
         header.scrolled {
-            background-color: rgba(255, 255, 255, 0.95);
+            background-color: var(--bg-light);
             color: var(--text-dark);
-            border-bottom-color: var(--border-dark);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+            border-bottom: none;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.04);
         }
 
         header.menu-active {
-            background-color: #000000 !important;
-            color: #ffffff !important;
-            border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+            border-bottom: none !important;
         }
 
         .navWrapper {
@@ -399,14 +373,37 @@
             left: 0;
             width: 100%;
             background-color: #000000;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: none;
             color: #ffffff;
             z-index: 999;
-            transform: translateY(-20px);
+            transform: translateY(-10px);
             opacity: 0;
             pointer-events: none;
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.35s ease, color 0.35s ease;
             padding: 60px 40px;
+        }
+
+        /* White mega-menu when header is scrolled (white nav) */
+        header.scrolled .mega-menu-container {
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            border-bottom: none;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+        }
+        header.scrolled .mega-menu-grid .col-1 { border-right-color: var(--border-dark); }
+        header.scrolled .mega-menu-grid h3 { color: var(--text-muted); }
+        header.scrolled .mega-menu-grid a { color: var(--text-dark); }
+        header.scrolled .mega-menu-grid a:hover { color: #000; opacity: 0.6; }
+
+        /* Hover bridge — eliminates 1px gap between header (72px) and menu */
+        .mega-menu-container::before {
+            content: '';
+            position: absolute;
+            top: -12px;
+            left: 0;
+            right: 0;
+            height: 12px;
+            background: transparent;
         }
 
         .mega-menu-container.active {
@@ -597,9 +594,9 @@
             60% { transform: translateY(-4px); }
         }
 
-        /* 5. Main Content Layout */
+        /* 5. Main Content Layout — transparent to reveal mountain (Panteon white glass) */
         .main-content {
-            background-color: var(--bg-light);
+            background-color: transparent;
             color: var(--text-dark);
             position: relative;
             z-index: 10;
@@ -995,18 +992,7 @@
             overflow: hidden;
             border-top: 1px solid var(--border-dark);
             border-bottom: 1px solid var(--border-dark);
-            background-color: #000;
-        }
-
-        .parallax-spacer-img {
-            position: absolute;
-            top: -30%;
-            left: 0;
-            width: 100%;
-            height: 160%;
-            object-fit: cover;
-            filter: brightness(0.7) contrast(1.1);
-            will-change: transform;
+            background-color: transparent;
         }
 
         /* 8. ALIEN USER SEGMENTS (01 / 02 Split View) */
@@ -1599,9 +1585,25 @@
             .footer-links-col ul { max-height: 0; overflow: hidden; opacity: 0; }
             .footer-links-col.open ul { max-height: 500px; opacity: 1; padding-top: 16px; padding-bottom: 16px; }
         }
+
+        /* Subterranean Mountain Glass Overrides — Panteon white (structure from try.html, colors from index.html) */
+        .alien-use-cases-section,
+        .partners-section,
+        .software-section,
+        .press-section { background-color: transparent; }
+        .use-case-card { background-color: rgba(255,255,255,0.88); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+        .partner-box { background-color: rgba(255,255,255,0.88); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+        .user-segment-col { background-color: rgba(255,255,255,0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+        .editorial-callout { background-color: #f8f9fa; background-color: rgba(248,249,250,0.82); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .software-card { background-color: rgba(255,255,255,0.88); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .press-item { background-color: rgba(255,255,255,0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+        .pre-footer-contact { background-color: rgba(255,255,255,0.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
     </style>
 </head>
 <body>
+
+    <!-- FIXED SUBTERRANEAN TOPOGRAPHIC MOUNTAIN BACKGROUND CANVAS (Panteon white glass) -->
+    <canvas id="subterranean-bg-canvas" aria-hidden="true"></canvas>
 
     <!-- DIMENSION SWITCH ENTRANCE OVERLAY -->
     <div class="dimension-transition-overlay" id="dim-overlay">
@@ -1620,13 +1622,7 @@
     <!-- Reading Progress Bar -->
     <div class="scroll-progress-bar" id="scroll-bar"></div>
 
-    <!-- 1. Top Ribbon Announcement -->
-    <div class="announcement-bar" id="top-announcement">
-        Read CEO Patrick Neil's <a href="letters/shareholder-letter.html">Letter to Shareholders ↗</a>
-        <button class="close-btn" onclick="document.getElementById('top-announcement').style.display='none'">×</button>
-    </div>
-
-    <!-- 2. Sticky Glass Header -->
+    <!-- 2. Sticky Header -->
     <header id="main-header">
         <div class="navWrapper">
             <div class="top-nav">
@@ -1990,10 +1986,8 @@
             </div>
         </section>
 
-        <!-- Dynamic Parallax Image Spacer -->
-        <div class="parallax-spacer">
-            <img class="parallax-spacer-img" src="cmb/assets/cmblogo.webp" alt="CMB — Cosmic Microwave Background" data-parallax>
-        </div>
+        <!-- Dynamic Parallax Mountain Spacer — reveals fixed subterranean rendering -->
+        <div class="parallax-spacer" aria-hidden="true"></div>
 
         <!-- 7. ALIEN 2-COLUMN USER SEGMENTS SECTION -->
         <section class="user-segments-section">
@@ -2062,10 +2056,8 @@
             </div>
         </section>
 
-        <!-- Dynamic Parallax Image Spacer -->
-        <div class="parallax-spacer">
-            <img class="parallax-spacer-img" src="cmb/assets/cmblogo.webp" alt="CMB — Cosmic Microwave Background" data-parallax>
-        </div>
+        <!-- Dynamic Parallax Mountain Spacer — reveals fixed subterranean rendering -->
+        <div class="parallax-spacer" aria-hidden="true"></div>
 
         <!-- 8. EDITORIAL BLOCK CALLOUT -->
         <section class="editorial-callout">
@@ -2374,6 +2366,93 @@
         </div>
     </footer>
 
+    <!-- Subterranean Mountain Engine (Panteon white palette — structure from try.html) -->
+    <script>
+        (function initSubterraneanBackground() {
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            const canvas = document.getElementById('subterranean-bg-canvas');
+            if (!canvas || typeof THREE === 'undefined') { if(canvas) canvas.style.display='none'; return; }
+            let renderer;
+            try {
+                renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
+            } catch(e){ console.error('[Panteon] Subterranean WebGL failed', e); canvas.style.display='none'; return; }
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 18, 52);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setClearColor(0xffffff, 1.0);
+            function getTerrainHeight(x, z) {
+                const r = Math.sqrt(x * x + z * z);
+                const p1 = Math.exp(-Math.pow(x - 6, 2) / 280 - Math.pow(z - 4, 2) / 280) * 14.5;
+                const p2 = Math.exp(-Math.pow(x + 12, 2) / 360 - Math.pow(z + 8, 2) / 320) * 18.0;
+                const p3 = Math.exp(-Math.pow(x + 2, 2) / 200 - Math.pow(z - 14, 2) / 220) * 12.0;
+                const ridge1 = Math.cos(x * 0.18 + z * 0.14) * Math.sin(z * 0.15 - x * 0.08) * 3.2;
+                const ridge2 = Math.sin(x * 0.35 - z * 0.25) * Math.cos(z * 0.4 + x * 0.2) * 1.4;
+                const decay = Math.exp(-Math.pow(r / 36, 2.2));
+                return Math.max(0.0, (p1 + p2 + p3 + ridge1 + ridge2) * decay);
+            }
+            const positions = []; const alphas = []; const elevations = [];
+            const gridSize = 140; const range = 42; const dx = (range * 2) / gridSize; const dz = (range * 2) / gridSize;
+            const grid = [];
+            for (let i = 0; i <= gridSize; i++) { grid[i] = []; const x = -range + i * dx; for (let j = 0; j <= gridSize; j++) { const z = -range + j * dz; grid[i][j] = getTerrainHeight(x, z); } }
+            const numLevels = 85; const maxElevation = 18.0;
+            for (let k = 1; k < numLevels; k++) {
+                const levelY = (k / numLevels) * maxElevation;
+                const levelAlpha = 0.18 + (k / numLevels) * 0.55;
+                for (let i = 0; i < gridSize; i++) {
+                    const x0 = -range + i * dx; const x1 = x0 + dx;
+                    for (let j = 0; j < gridSize; j++) {
+                        const z0 = -range + j * dz; const z1 = z0 + dz;
+                        const v0 = grid[i][j]; const v1 = grid[i + 1][j]; const v2 = grid[i + 1][j + 1]; const v3 = grid[i][j + 1];
+                        const crossings = [];
+                        if ((v0 < levelY && v1 >= levelY) || (v0 >= levelY && v1 < levelY)) { const t = (levelY - v0) / (v1 - v0 + 1e-6); crossings.push({ x: x0 + t * dx, z: z0 }); }
+                        if ((v1 < levelY && v2 >= levelY) || (v1 >= levelY && v2 < levelY)) { const t = (levelY - v1) / (v2 - v1 + 1e-6); crossings.push({ x: x1, z: z0 + t * dz }); }
+                        if ((v3 < levelY && v2 >= levelY) || (v3 >= levelY && v2 < levelY)) { const t = (levelY - v3) / (v2 - v3 + 1e-6); crossings.push({ x: x0 + t * dx, z: z1 }); }
+                        if ((v0 < levelY && v3 >= levelY) || (v0 >= levelY && v3 < levelY)) { const t = (levelY - v0) / (v3 - v0 + 1e-6); crossings.push({ x: x0, z: z0 + t * dz }); }
+                        if (crossings.length >= 2) {
+                            const pA = crossings[0]; const pB = crossings[1]; const dist = Math.hypot(pB.x - pA.x, pB.z - pA.z);
+                            const steps = Math.max(2, Math.floor(dist * 2.8));
+                            for (let s = 0; s <= steps; s++) { const frac = s / steps; positions.push(pA.x + (pB.x - pA.x) * frac, levelY - 4.5, pA.z + (pB.z - pA.z) * frac); alphas.push(levelAlpha); elevations.push(levelY); }
+                        }
+                    }
+                }
+            }
+            for (let r = 0; r < 2400; r++) { const angle = Math.random() * Math.PI * 2; const radius = Math.sqrt(Math.random()) * 38; const sx = Math.cos(angle) * radius; const sz = Math.sin(angle) * radius; const sy = -4.8 + (Math.random() - 0.5) * 1.5; positions.push(sx, sy, sz); alphas.push(0.09 + Math.random() * 0.12); elevations.push(0.0); }
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('aAlpha', new THREE.Float32BufferAttribute(alphas, 1));
+            geometry.setAttribute('aElevation', new THREE.Float32BufferAttribute(elevations, 1));
+            const uniforms = { uTime: { value: 0.0 }, uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) }, uScroll: { value: 0.0 } };
+            const vertexShader = `uniform float uTime; uniform float uPixelRatio; uniform float uScroll; attribute float aAlpha; attribute float aElevation; varying float vAlpha; varying float vDepth; void main() { vec3 pos = position; float wave = sin(pos.x * 0.12 + pos.z * 0.09 + uTime * 0.6) * 0.14; pos.y += wave * (aElevation / 18.0); vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0); gl_Position = projectionMatrix * mvPosition; gl_PointSize = (2.2 * uPixelRatio) * (45.0 / -mvPosition.z); gl_PointSize = clamp(gl_PointSize, 1.0, 7.5); vAlpha = aAlpha; vDepth = -mvPosition.z; }`;
+            const fragmentShader = `varying float vAlpha; varying float vDepth; void main() { float dist = length(gl_PointCoord - vec2(0.5)); if (dist > 0.5) discard; float smoothDot = smoothstep(0.5, 0.28, dist); float depthFade = smoothstep(75.0, 25.0, vDepth); vec3 pointColor = vec3(0.08, 0.09, 0.10); gl_FragColor = vec4(pointColor, smoothDot * vAlpha * depthFade * 0.82); }`;
+            const material = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms, transparent: true, depthWrite: false, blending: THREE.NormalBlending });
+            const pointsMesh = new THREE.Points(geometry, material);
+            scene.add(pointsMesh);
+            let scrollY = 0; let targetScrollY = 0; let mouseX = 0, mouseY = 0; let targetMouseX = 0, targetMouseY = 0;
+            window.addEventListener('scroll', () => { const maxScroll = document.documentElement.scrollHeight - window.innerHeight; targetScrollY = maxScroll > 0 ? (window.scrollY / maxScroll) : 0; }, {passive:true});
+            window.addEventListener('mousemove', (e) => { targetMouseX = (e.clientX / window.innerWidth - 0.5) * 2; targetMouseY = (e.clientY / window.innerHeight - 0.5) * 2; }, {passive:true});
+            let isVisible = true;
+            const heroObserver = new IntersectionObserver((entries)=>{ isVisible = entries[0].isIntersecting || window.scrollY < window.innerHeight; }, {threshold:0});
+            const sentinel = document.getElementById('subterranean-bg-canvas'); if(sentinel) heroObserver.observe(document.documentElement);
+            document.addEventListener('visibilitychange', ()=>{ if(document.hidden) isVisible=false; else isVisible=true; });
+            window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); uniforms.uPixelRatio.value = Math.min(window.devicePixelRatio, 2); });
+            let clock = new THREE.Clock();
+            function animate() {
+                requestAnimationFrame(animate);
+                if (!isVisible || document.hidden) { renderer.render(scene, camera); return; }
+                const elapsedTime = clock.getElapsedTime();
+                scrollY += (targetScrollY - scrollY) * 0.045; mouseX += (targetMouseX - mouseX) * 0.04; mouseY += (targetMouseY - mouseY) * 0.04;
+                uniforms.uTime.value = elapsedTime; uniforms.uScroll.value = scrollY;
+                pointsMesh.rotation.y = elapsedTime * 0.03 + scrollY * (Math.PI * 1.4) + mouseX * 0.25;
+                pointsMesh.rotation.x = 0.42 + mouseY * 0.12 + Math.sin(scrollY * Math.PI) * 0.18;
+                pointsMesh.position.y = -2.0 - scrollY * 6.0; pointsMesh.position.z = -scrollY * 10.0;
+                camera.lookAt(0, 0, 0); renderer.render(scene, camera);
+            }
+            animate();
+        })();
+    </script>
+
     <!-- Interactive Scripts -->
     <script>
         /* 1. DIMENSION SWITCH ENTRANCE REVEAL */
@@ -2435,12 +2514,14 @@
         window.addEventListener('scroll', () => {
             const scrollY = window.scrollY;
             const scrollThreshold = window.innerHeight * 0.35;
-
-            if (scrollY >= scrollThreshold) {
-                header.classList.add('scrolled');
-            } else {
-                header.classList.remove('scrolled');
-            }
+            const progress = Math.min(scrollY / scrollThreshold, 1);
+            // Smooth gradual black → white (0 = black #000, 1 = white #fff)
+            const v = Math.round(progress * 255);
+            header.style.backgroundColor = `rgb(${v},${v},${v})`;
+            header.style.color = progress > 0.5 ? '#000000' : '#ffffff';
+            header.style.borderBottomColor = progress > 0.5 ? '#000000' : 'rgba(255,255,255,0.15)';
+            if (progress >= 0.5) header.classList.add('scrolled');
+            else header.classList.remove('scrolled');
 
             const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
             const scrollPercent = (scrollY / totalScroll) * 100;
@@ -2579,26 +2660,51 @@
             linksEl.classList.add('has-content');
         }
 
-        dropdowns.forEach(dropdown => {
-            dropdown.addEventListener('mouseenter', () => {
-                document.querySelectorAll('.mega-menu-container').forEach(menu => menu.classList.remove('active'));
-                const targetMenu = document.getElementById('menu-' + dropdown.getAttribute('data-menu'));
-                if (targetMenu) {
-                    targetMenu.classList.add('active');
-                    overlay.classList.add('active');
-                    header.classList.add('menu-active');
+        // Perfect hover — header:hover aware, no ghost/overlap, respects solid white/dark header
+        let menuCloseTimeout = null;
+        const allMenus = document.querySelectorAll('.mega-menu-container');
+        function openMegaMenu(menuId) {
+            clearTimeout(menuCloseTimeout);
+            allMenus.forEach(m => m.classList.remove('active'));
+            const target = document.getElementById('menu-' + menuId);
+            if (target) {
+                target.classList.add('active');
+                overlay.classList.add('active');
+                header.classList.add('menu-active');
+            }
+        }
+        function isHoveringNav() {
+            return [...dropdowns].some(d => d.matches(':hover')) || [...allMenus].some(m => m.matches(':hover'));
+        }
+        function scheduleMegaClose() {
+            clearTimeout(menuCloseTimeout);
+            menuCloseTimeout = setTimeout(() => {
+                if (!isHoveringNav()) {
+                    allMenus.forEach(m => m.classList.remove('active'));
+                    overlay.classList.remove('active');
+                    header.classList.remove('menu-active');
                 }
-            });
+            }, 120);
+        }
+        function cancelMegaClose() { clearTimeout(menuCloseTimeout); }
+
+        dropdowns.forEach(dropdown => {
+            dropdown.addEventListener('mouseenter', () => openMegaMenu(dropdown.getAttribute('data-menu')));
+            dropdown.addEventListener('mouseleave', scheduleMegaClose);
         });
 
         document.querySelectorAll('.mega-menu-container').forEach(menu => {
+            menu.addEventListener('mouseenter', cancelMegaClose);
+            menu.addEventListener('mouseleave', scheduleMegaClose);
             menu.querySelectorAll('.menu-link-item[data-group]').forEach(item => {
                 item.addEventListener('mouseenter', () => populateCol3(menu.id, item.getAttribute('data-group')));
             });
         });
 
-        header.addEventListener('mouseleave', () => {
-            document.querySelectorAll('.mega-menu-container').forEach(menu => menu.classList.remove('active'));
+        header.addEventListener('mouseleave', scheduleMegaClose);
+        overlay.addEventListener('mouseenter', scheduleMegaClose);
+        overlay.addEventListener('click', () => {
+            allMenus.forEach(m => m.classList.remove('active'));
             overlay.classList.remove('active');
             header.classList.remove('menu-active');
         });

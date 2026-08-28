@@ -67,9 +67,9 @@ Media paths on product pages MUST be `../`-prefixed (`../hero-bg-panteon.mp4`, `
 
 ## Terranean Procedural Terrain Exception
 
-`terranean-etiology.html` and `terranean-teleology.html` are the **sole** pages permitted to load a third-party JS library (`three.js r128` via `cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js`) for the hero-scoped Mt. Bullagao procedural canvas (`#webgl-bg-canvas`). Rules:
+`terranean-etiology.html` and `terranean-teleology.html` are the **sole** pages permitted to load a third-party JS library (`three.js r128` via `cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js` with `../vendor/three.r128.min.js` fallback) for the Mt. Bullagao procedural canvas (`#webgl-bg-canvas`). Rules:
 
-- Canvas is `position:absolute; inset:0; z-index:1; pointer-events:none` inside `.platform-hero` (which is `position:relative; overflow:hidden`), behind `.platform-hero-content` (`z-index:2`). Never `position:fixed` global.
-- Uses only Panteon tokens (`--accent-neon:#DFF140`, `--bg-dark:#000000`). No HUD/telemetry overlays, no glass-header overrides, no new colors/fonts.
-- Must include `@media (prefers-reduced-motion:reduce)` fallback (hide canvas) and `IntersectionObserver` pause + `document.hidden` guard.
+- Canvas is `position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:0; pointer-events:none` **fixed global** behind all content (`main.main-content` and sections are `background:transparent` with white glass `rgba(255,255,255,0.88) blur` to reveal it), like `../index.html`’s `#subterranean-bg-canvas`. This whole-site cover was requested to match the homepage background behavior.
+- Uses only Panteon tokens (`--accent-neon:#DFF140`, `--bg-dark:#000000`, `--bg-light:#ffffff` with white glass). No HUD/telemetry overlays, no glass-header overrides, no new colors/fonts.
+- Must include `@media (prefers-reduced-motion:reduce)` fallback (hide canvas) and `document.hidden` guard with `requestAnimationFrame` pause.
 - All other platform pages remain vanilla-JS only.

@@ -9,8 +9,9 @@
     <meta http-equiv="Permissions-Policy" content="geolocation=(), midi=(), notifications=(), push=(), sync-xhr=(), microphone=(), camera=(), magnetometer=(), gyroscope=(), speaker=(), vibrate=(), fullscreen=(self), payment=()">
     <title>Panteon | AI-Powered Automation</title>
     
-    <!-- Three.js for Subterranean Mountain Point Cloud Background -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Three.js for Subterranean Mountain Point Cloud Background (CSP-safe: jsdelivr + self-host fallback) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script>window.THREE||document.write('<script src="panteon/vendor/three.r128.min.js"><\/script>')</script>
 
     <!-- Import typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,16 +30,16 @@
 
         :root {
             --bg-dark: #000000;
-            --bg-light: #ECEAE4; /* Anduril Architectural Off-White */
+            --bg-light: #ffffff; /* Panteon Canonical White */
             --bg-card: rgba(255, 255, 255, 0.88);
-            --bg-gray: rgba(244, 243, 238, 0.7);
-            --text-dark: #121314;
+            --bg-gray: #f8f9fa;
+            --text-dark: #000000;
             --text-light: #ffffff;
-            --text-muted: #66676b;
+            --text-muted: #71717a;
             
             --accent-neon: #DFF140; /* Yellow-Green Neon */
             --border-light: rgba(255, 255, 255, 0.15);
-            --border-dark: #121314;
+            --border-dark: #000000;
             --border-subtle: rgba(0, 0, 0, 0.12);
             
             --font-sans: "Inter", -apple-system, sans-serif;
@@ -66,7 +67,7 @@
             transition: color 0.25s ease, opacity 0.25s ease;
         }
 
-        /* FIXED SUBTERRANEAN MOUNTAIN CANVAS BACKGROUND */
+        /* FIXED SUBTERRANEAN MOUNTAIN CANVAS BACKGROUND — Panteon white palette */
         #subterranean-bg-canvas {
             position: fixed;
             top: 0;
@@ -75,7 +76,7 @@
             height: 100vh;
             z-index: 0;
             pointer-events: none;
-            background-color: #ECEAE4;
+            background-color: #ffffff;
             opacity: 1;
             transition: opacity 0.6s ease;
         }
@@ -139,75 +140,26 @@
             transition: width 0.1s ease-out;
         }
 
-        /* 1. Technical Announcement ribbon */
-        .announcement-bar {
-            background-color: #08090a;
-            color: var(--text-light);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 10px 40px;
-            font-size: 0.75rem;
-            font-family: var(--font-tech);
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            border-bottom: 1px solid var(--border-light);
-            position: relative;
-            z-index: 1001;
-            text-align: center;
-        }
-
-        .announcement-bar a {
-            text-decoration: none;
-            margin-left: 6px;
-            font-weight: 300;
-            color: var(--accent-neon);
-            border-bottom: 1px solid var(--accent-neon);
-            padding-bottom: 1px;
-        }
-
-        .announcement-bar .close-btn {
-            position: absolute;
-            right: 40px;
-            background: none;
-            border: none;
-            color: var(--text-light);
-            cursor: pointer;
-            font-size: 1.1rem;
-            opacity: 0.5;
-            transition: opacity 0.2s;
-        }
-
-        .announcement-bar .close-btn:hover {
-            opacity: 1;
-        }
-
-        /* 2. Sticky Glass Header */
+        /* 2. Sticky Header — Panteon canonical solid (no glass bleed over white mountain) */
         header {
             position: sticky;
             top: 0;
             z-index: 1000;
-            background-color: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border-light);
+            background-color: var(--bg-dark);
+            border-bottom: none;
             color: var(--text-light);
-            transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+            transition: background-color 0.15s linear, color 0.15s linear, box-shadow 0.3s ease;
         }
 
         header.scrolled {
-            background-color: rgba(236, 234, 228, 0.88);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background-color: var(--bg-light);
             color: var(--text-dark);
-            border-bottom-color: var(--border-dark);
+            border-bottom: none;
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.04);
         }
 
         header.menu-active {
-            background-color: #000000 !important;
-            color: #ffffff !important;
-            border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+            border-bottom: none !important;
         }
 
         .navWrapper {
@@ -419,14 +371,37 @@
             left: 0;
             width: 100%;
             background-color: #000000;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: none;
             color: #ffffff;
             z-index: 999;
-            transform: translateY(-20px);
+            transform: translateY(-10px);
             opacity: 0;
             pointer-events: none;
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.35s ease, color 0.35s ease;
             padding: 60px 40px;
+        }
+
+        /* White mega-menu when header is scrolled (white nav) */
+        header.scrolled .mega-menu-container {
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            border-bottom: none;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+        }
+        header.scrolled .mega-menu-grid .col-1 { border-right-color: var(--border-dark); }
+        header.scrolled .mega-menu-grid h3 { color: var(--text-muted); }
+        header.scrolled .mega-menu-grid a { color: var(--text-dark); }
+        header.scrolled .mega-menu-grid a:hover { color: #000; opacity: 0.6; }
+
+        /* Hover bridge — eliminates 1px gap between header (72px) and menu */
+        .mega-menu-container::before {
+            content: '';
+            position: absolute;
+            top: -12px;
+            left: 0;
+            right: 0;
+            height: 12px;
+            background: transparent;
         }
 
         .mega-menu-container.active {
@@ -1021,18 +996,7 @@
             overflow: hidden;
             border-top: 1px solid var(--border-dark);
             border-bottom: 1px solid var(--border-dark);
-            background-color: #000;
-        }
-
-        .parallax-spacer-img {
-            position: absolute;
-            top: -30%;
-            left: 0;
-            width: 100%;
-            height: 160%;
-            object-fit: cover;
-            filter: brightness(0.7) contrast(1.1);
-            will-change: transform;
+            background-color: transparent;
         }
 
         /* 8. USER SEGMENTS SECTION */
@@ -1372,10 +1336,10 @@
             transform: translate(-50%, -50%) scale(1);
         }
 
-        /* 12. PRE-FOOTER MAKE CONTACT */
+        /* 12. PRE-FOOTER MAKE CONTACT — Panteon white */
         .pre-footer-contact {
             position: relative;
-            background-color: rgba(236, 234, 228, 0.7);
+            background-color: rgba(255, 255, 255, 0.72);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             color: #000000;
@@ -1424,9 +1388,9 @@
             text-align: center;
         }
 
-        /* 13. STRUCTURED FOOTER */
+        /* 13. STRUCTURED FOOTER — Panteon white */
         footer {
-            background-color: #ECEAE4;
+            background-color: #ffffff;
             color: var(--text-dark);
             border-top: 1px solid var(--border-dark);
             padding: 100px 40px 60px;
@@ -1663,13 +1627,7 @@
     <!-- Reading Progress Bar -->
     <div class="scroll-progress-bar" id="scroll-bar"></div>
 
-    <!-- 1. Top Ribbon Announcement -->
-    <div class="announcement-bar" id="top-announcement">
-        Read CEO Patrick Neil's <a href="letters/shareholder-letter.html">Letter to Shareholders ↗</a>
-        <button class="close-btn" onclick="document.getElementById('top-announcement').style.display='none'">×</button>
-    </div>
-
-    <!-- 2. Sticky Glass Header -->
+    <!-- 2. Sticky Header -->
     <header id="main-header">
         <div class="navWrapper">
             <div class="top-nav">
@@ -2033,10 +1991,8 @@
             </div>
         </section>
 
-        <!-- Dynamic Parallax Image Spacer -->
-        <div class="parallax-spacer">
-            <img class="parallax-spacer-img" src="cmb/assets/cmblogo.webp" alt="CMB — Cosmic Microwave Background" data-parallax>
-        </div>
+        <!-- Dynamic Parallax Mountain Spacer — reveals fixed subterranean rendering -->
+        <div class="parallax-spacer" aria-hidden="true"></div>
 
         <!-- 7. USER SEGMENTS SECTION -->
         <section class="user-segments-section">
@@ -2105,10 +2061,8 @@
             </div>
         </section>
 
-        <!-- Dynamic Parallax Image Spacer -->
-        <div class="parallax-spacer">
-            <img class="parallax-spacer-img" src="cmb/assets/cmblogo.webp" alt="CMB — Cosmic Microwave Background" data-parallax>
-        </div>
+        <!-- Dynamic Parallax Mountain Spacer — reveals fixed subterranean rendering -->
+        <div class="parallax-spacer" aria-hidden="true"></div>
 
         <!-- 8. EDITORIAL BLOCK CALLOUT -->
         <section class="editorial-callout">
@@ -2439,7 +2393,7 @@
             });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.setClearColor(0xECEAE4, 1.0);
+            renderer.setClearColor(0xffffff, 1.0);
 
             // Procedural Terrain Height Equation (Multi-ridge Mountain Range)
             function getTerrainHeight(x, z) {
@@ -2601,7 +2555,7 @@
                     if (dist > 0.5) discard;
                     float smoothDot = smoothstep(0.5, 0.28, dist);
                     
-                    // Distance-based atmospheric depth fade into architectural bone (#ECEAE4)
+                    // Distance-based atmospheric depth fade into Panteon white (#ffffff)
                     float depthFade = smoothstep(75.0, 25.0, vDepth);
                     
                     // Dark graphite point color
@@ -2730,12 +2684,13 @@
         window.addEventListener('scroll', () => {
             const scrollY = window.scrollY;
             const scrollThreshold = window.innerHeight * 0.35;
-
-            if (scrollY >= scrollThreshold) {
-                header.classList.add('scrolled');
-            } else {
-                header.classList.remove('scrolled');
-            }
+            const progress = Math.min(scrollY / scrollThreshold, 1);
+            const v = Math.round(progress * 255);
+            header.style.backgroundColor = `rgb(${v},${v},${v})`;
+            header.style.color = progress > 0.5 ? '#000000' : '#ffffff';
+            header.style.borderBottomColor = progress > 0.5 ? '#000000' : 'rgba(255,255,255,0.15)';
+            if (progress >= 0.5) header.classList.add('scrolled');
+            else header.classList.remove('scrolled');
 
             const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
             const scrollPercent = totalScroll > 0 ? (scrollY / totalScroll) * 100 : 0;
@@ -2872,26 +2827,51 @@
             linksEl.classList.add('has-content');
         }
 
-        dropdowns.forEach(dropdown => {
-            dropdown.addEventListener('mouseenter', () => {
-                document.querySelectorAll('.mega-menu-container').forEach(menu => menu.classList.remove('active'));
-                const targetMenu = document.getElementById('menu-' + dropdown.getAttribute('data-menu'));
-                if (targetMenu) {
-                    targetMenu.classList.add('active');
-                    overlay.classList.add('active');
-                    header.classList.add('menu-active');
+        // Perfect hover — header:hover aware, no ghost/overlap, respects solid white/dark header
+        let menuCloseTimeout = null;
+        const allMenus = document.querySelectorAll('.mega-menu-container');
+        function openMegaMenu(menuId) {
+            clearTimeout(menuCloseTimeout);
+            allMenus.forEach(m => m.classList.remove('active'));
+            const target = document.getElementById('menu-' + menuId);
+            if (target) {
+                target.classList.add('active');
+                overlay.classList.add('active');
+                header.classList.add('menu-active');
+            }
+        }
+        function isHoveringNav() {
+            return [...dropdowns].some(d => d.matches(':hover')) || [...allMenus].some(m => m.matches(':hover'));
+        }
+        function scheduleMegaClose() {
+            clearTimeout(menuCloseTimeout);
+            menuCloseTimeout = setTimeout(() => {
+                if (!isHoveringNav()) {
+                    allMenus.forEach(m => m.classList.remove('active'));
+                    overlay.classList.remove('active');
+                    header.classList.remove('menu-active');
                 }
-            });
+            }, 120);
+        }
+        function cancelMegaClose() { clearTimeout(menuCloseTimeout); }
+
+        dropdowns.forEach(dropdown => {
+            dropdown.addEventListener('mouseenter', () => openMegaMenu(dropdown.getAttribute('data-menu')));
+            dropdown.addEventListener('mouseleave', scheduleMegaClose);
         });
 
         document.querySelectorAll('.mega-menu-container').forEach(menu => {
+            menu.addEventListener('mouseenter', cancelMegaClose);
+            menu.addEventListener('mouseleave', scheduleMegaClose);
             menu.querySelectorAll('.menu-link-item[data-group]').forEach(item => {
                 item.addEventListener('mouseenter', () => populateCol3(menu.id, item.getAttribute('data-group')));
             });
         });
 
-        header.addEventListener('mouseleave', () => {
-            document.querySelectorAll('.mega-menu-container').forEach(menu => menu.classList.remove('active'));
+        header.addEventListener('mouseleave', scheduleMegaClose);
+        overlay.addEventListener('mouseenter', scheduleMegaClose);
+        overlay.addEventListener('click', () => {
+            allMenus.forEach(m => m.classList.remove('active'));
             overlay.classList.remove('active');
             header.classList.remove('menu-active');
         });

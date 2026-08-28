@@ -51,20 +51,30 @@
             max-width: 600px;
             margin: 0 auto;
         }
-        /* Terranean procedural terrain — hero-scoped Mt. Bullagao canvas (from tryonly.html engine, scoped to AGENTS.md exception) */
+        /* Terranean procedural terrain — FIXED GLOBAL mountain background (whole-site cover like panteon/index.html) */
         #webgl-bg-canvas {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
             pointer-events: none;
             display: block;
-            background: radial-gradient(circle at 50% 30%, #06090d 0%, #000000 90%);
+            background-color: #ffffff;
+            opacity: 1;
+            transition: opacity 0.6s ease;
         }
         @media (prefers-reduced-motion: reduce) {
             #webgl-bg-canvas { display: none; }
         }
+        /* Make content reveal mountain — Panteon white glass (like index.html) */
+        main.main-content { background-color: transparent; position: relative; z-index: 10; }
+        .prose-section, .section, .editorial-callout { background-color: transparent; position: relative; z-index: 10; }
+        .architecture-card { background-color: rgba(255,255,255,0.88); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .workflow-step { background-color: rgba(255,255,255,0.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 0; }
+        .platform-hero { background: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.32) 100%); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); position: relative; z-index: 10; }
+        .platform-nav { background-color: rgba(255,255,255,0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); position: relative; z-index: 10; }
         .platform-nav {
             display: flex;
             gap: 6px;
@@ -218,11 +228,6 @@
         </defs>
     </svg>
 
-    <div class="announcement-bar" id="top-announcement">
-        Read CEO Patrick Neil's <a href="../letters/shareholder-letter.html">Letter to Shareholders ↗</a>
-        <button class="close-btn" onclick="document.getElementById('top-announcement').style.display='none'">×</button>
-    </div>
-
     <header id="main-header">
         <a href="../index.html" class="logo">
             <svg viewBox="0 0 520 80" role="img" aria-label="Panteon"><use href="#panteon-lockup"/></svg>
@@ -245,8 +250,8 @@
         </div>
     </header>
 
+    <canvas id="webgl-bg-canvas" aria-hidden="true"></canvas>
     <section class="platform-hero" id="terranean-hero">
-        <canvas id="webgl-bg-canvas" aria-hidden="true"></canvas>
         <div class="platform-hero-content">
             <span class="tag">Terranean Etiology</span>
             <h1>Causal Forensics<br>at the Scale of Reality</h1>
@@ -256,12 +261,6 @@
     </section>
 
     <main class="main-content">
-
-        <nav class="platform-nav">
-            <a href="terranean-etiology.html" class="active">Etiology</a>
-            <a href="terranean-teleology.html">Teleology</a>
-            <a href="../developers/terranean-documentation.html">Documentation</a>
-        </nav>
 
         <div class="prose-section" id="overview">
             <h2>The Discipline of Origin</h2>
@@ -435,22 +434,17 @@
         // WebGL feature check without stealing the canvas context (getContext would block THREE.WebGLRenderer)
         if(!window.WebGLRenderingContext){ canvas.style.display='none'; return; }
         let renderer;
-        try{ renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, powerPreference: 'low-power' }); }
+        try{ renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false, powerPreference: 'low-power' }); }
         catch(e){ console.error('[Terranean] WebGLRenderer failed', e); canvas.style.display='none'; return; }
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-        function sizeHero(){
-            const r = hero.getBoundingClientRect();
-            const w = Math.round(r.width) || hero.clientWidth || window.innerWidth;
-            const h = Math.round(r.height) || hero.clientHeight || 600;
-            return { w: w, h: h };
-        }
-        let hs = sizeHero();
+        function sizeWindow(){ return { w: window.innerWidth, h: window.innerHeight }; }
+        let hs = sizeWindow();
         renderer.setSize(hs.w, hs.h, false);
-        // ensure canvas covers hero visibly — will be behind .platform-hero-content (z-index:2)
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
+        renderer.setClearColor(0xffffff, 1.0);
+        canvas.style.width = '100vw';
+        canvas.style.height = '100vh';
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x000000, 0.0018);
+        scene.fog = new THREE.FogExp2(0xffffff, 0.0012);
         const camera = new THREE.PerspectiveCamera(45, hs.w / Math.max(hs.h,1), 1, 3000);
         camera.position.set(0, 380, 520);
         const customTerrainVertexShader = `
@@ -566,15 +560,13 @@
         let scrollY = window.scrollY, targetScrollY = window.scrollY;
         window.addEventListener('scroll', () => { targetScrollY = window.scrollY; }, { passive: true });
         window.addEventListener('resize', () => {
-            hs = sizeHero();
+            hs = sizeWindow();
             camera.aspect = hs.w / Math.max(hs.h,1);
             camera.updateProjectionMatrix();
             renderer.setSize(hs.w, hs.h, false);
         });
         let isVisible = true;
-        const io = new IntersectionObserver((entries)=>{ isVisible = entries[0].isIntersecting; }, { threshold: 0 });
-        io.observe(hero);
-        document.addEventListener('visibilitychange', ()=>{ if(document.hidden) isVisible=false; else isVisible=true; });
+        document.addEventListener('visibilitychange', ()=>{ isVisible = !document.hidden; });
         const clock = new THREE.Clock();
         function renderLoop(){
             requestAnimationFrame(renderLoop);

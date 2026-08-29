@@ -68,7 +68,7 @@ class RateLimitState:
             del self.clients[k]
 
 
-api_rate_limit = RateLimitState(max_requests=120, window_seconds=60)
+api_rate_limit = RateLimitState(max_requests=300, window_seconds=60)
 auth_rate_limit = RateLimitState(max_requests=10, window_seconds=300)
 
 

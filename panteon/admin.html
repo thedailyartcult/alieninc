@@ -10,6 +10,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Montserrat:wght@500;700&family=Playfair+Display:wght@600&family=Zen+Dots&display=swap" rel="stylesheet">
     <script src="/cmb_token.js"></script>
+    <!-- OVERRIDE 2026-08-29: three.js in admin.html per operator — MSS mountain/terrain/sea WebGL inside the gateway column. See CMB mem mss gateway. Intentionally breaks AGENTS.md three.js guard (terranean-only). -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script>window.THREE||document.write('<script src="/panteon/vendor/three.r128.min.js"><\/script>')</script>
     <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <style>
@@ -49,6 +52,7 @@
             --amber: #f59e0b;
             --blue: #3b82f6;
             --text: #ffffff;
+            --text-primary: var(--text);
             --text-dim: rgba(255, 255, 255, 0.5);
             --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
             --font-tech: "Space Grotesk", sans-serif;
@@ -73,6 +77,7 @@
             --border-color: var(--border-subtle);
             --border-hover: rgba(0, 0, 0, 0.2);
             --text: #000000;
+            --text-primary: var(--text);
             --text-muted: #71717a;
             --text-dim: rgba(0, 0, 0, 0.5);
         }
@@ -2759,6 +2764,7 @@
   <div class="maven-col-head">
     <span class="maven-col-mark">SC</span>
     <span class="maven-col-title">MAVEN SMART SYSTEM</span>
+    <span id="mssModeToggle" class="mss-mode-toggle" title="Switch MSS mode — Manual or Automatic">MANUAL &#8635;</span>
     <button type="button" id="mavenColToggle" title="Collapse sidebar">&#9662;</button>
   </div>
   <div class="maven-featbar" role="tablist" aria-label="Spinal Cracker side-panel features">
@@ -2775,6 +2781,113 @@
       <label>COUNTRY</label>
       <select id="mvScopeCountry"></select>
     </div>
+  </div>
+  <div id="mssGateway" class="mss-gateway mss-hidden" role="group" aria-label="MSS mode select">
+    <div id="mssDimOverlay" class="dimension-transition-overlay" aria-hidden="true"><div class="dim-grid-line dim-grid-v"></div><div class="dim-grid-line dim-grid-h"></div></div>
+    <canvas id="mssWebglCanvas" aria-hidden="true"></canvas>
+    <div class="mss-scan-bg" aria-hidden="true"></div><div class="mss-scan-line" aria-hidden="true"></div>
+    <div class="mss-gateway-shell">
+      <div class="mss-art-ghost" aria-hidden="true">MSS</div>
+      <div class="section-header-bar">
+        <div class="section-badge">MSS · MODE SELECT — MAVEN SMART SYSTEM</div>
+        <h2 class="reveal-text-line"><span class="reveal-inner">How should MSS operate?</span></h2>
+        <p class="reveal-text-line"><span class="reveal-inner">Manual gives you the full deck — MAVEN, GEO, NOTES and AGENT. Automatic hands the column to YONO — the agent talks, you confirm.</span></p>
+        <div class="mss-art-rule" aria-hidden="true"><span></span><span class="mss-art-rule--neon"></span></div>
+      </div>
+      <div class="software-grid-matrix mss-gw-cards">
+      <button type="button" class="mss-mode-card" data-mss="manual" aria-label="Enter Manual mode">
+        <span class="mss-mc-icon mss-mc-icon--manual" aria-hidden="true">
+          <svg width="42" height="42" viewBox="0 0 42 42" fill="none">
+            <rect x="0.7" y="0.7" width="40.6" height="40.6" stroke="rgba(223,241,64,0.18)" stroke-width="0.7"/>
+            <path d="M0 8 H5.5 M36.5 8 H42 M0 34 H5.5 M36.5 34 H42 M8 0 V5.5 M8 36.5 V42 M34 0 V5.5 M34 36.5 V42" stroke="rgba(223,241,64,0.52)" stroke-width="1"/>
+            <g class="mss-icon-grid">
+              <rect x="8.2" y="8.2" width="12" height="12" stroke="#DFF140" stroke-width="1" fill="rgba(223,241,64,0.07)"/>
+              <rect x="21.8" y="8.2" width="12" height="12" stroke="#DFF140" stroke-width="1" fill="none" opacity="0.9"/>
+              <rect x="8.2" y="21.8" width="12" height="12" stroke="#DFF140" stroke-width="1" fill="none" opacity="0.9"/>
+              <rect x="21.8" y="21.8" width="12" height="12" stroke="#DFF140" stroke-width="1" fill="rgba(223,241,64,0.14)"/>
+            </g>
+            <g class="mss-icon-reticle">
+              <circle cx="21" cy="21" r="1.7" fill="#DFF140"/>
+              <path d="M21 13.5 V28.5 M13.5 21 H28.5" stroke="#DFF140" stroke-width="0.9" opacity="0.72"/>
+              <circle cx="21" cy="21" r="6.8" stroke="rgba(223,241,64,0.28)" stroke-width="0.6" fill="none" stroke-dasharray="1.4 2.6"/>
+            </g>
+          </svg>
+        </span>
+        <span class="mss-mc-mark">&#9670; MANUAL</span>
+        <span class="mss-mc-title">Operator in control</span>
+        <span class="mss-mc-desc">MAVEN &middot; GEO &middot; NOTES &middot; AGENT</span>
+        <span class="mss-mc-meta">Governance + propose / confirm</span>
+        <span class="mss-mc-cta">Enter Manual</span>
+      </button>
+      <button type="button" class="mss-mode-card mss-mc-auto" data-mss="automatic" aria-label="Enter Automatic mode">
+        <span class="mss-mc-icon mss-mc-icon--auto" aria-hidden="true">
+          <svg width="42" height="42" viewBox="0 0 42 42" fill="none">
+            <circle cx="21" cy="21" r="16.8" stroke="rgba(128,224,255,0.18)" stroke-width="0.7" fill="none" stroke-dasharray="2 3.2"/>
+            <g class="mss-orbit-outer">
+              <circle cx="21" cy="21" r="12.2" stroke="#80e0ff" stroke-width="1" fill="none" opacity="0.92"/>
+              <circle cx="21" cy="8.1" r="1.7" fill="#80e0ff"/>
+            </g>
+            <g class="mss-orbit-inner">
+              <ellipse cx="21" cy="21" rx="12.2" ry="5.1" stroke="rgba(128,224,255,0.42)" stroke-width="0.7" fill="none"/>
+              <ellipse cx="21" cy="21" rx="5.1" ry="12.2" stroke="rgba(128,224,255,0.22)" stroke-width="0.6" fill="none"/>
+            </g>
+            <circle cx="21" cy="21" r="7.2" stroke="rgba(128,224,255,0.52)" stroke-width="0.8" fill="rgba(128,224,255,0.07)"/>
+            <circle cx="21" cy="21" r="2.1" fill="#80e0ff"/>
+            <g class="mss-orbit-dots">
+              <circle cx="31.2" cy="14.2" r="1.1" fill="#80e0ff" opacity="0.7"/>
+              <circle cx="10.8" cy="28.6" r="1" fill="#80e0ff" opacity="0.5"/>
+            </g>
+          </svg>
+        </span>
+        <span class="mss-mc-mark">&#11042; AUTOMATIC</span>
+        <span class="mss-mc-title">YONO autonomous</span>
+        <span class="mss-mc-desc">Spinal Craker talks — directives on the map</span>
+        <span class="mss-mc-meta">You confirm &middot; YONO executes</span>
+        <span class="mss-mc-cta">Enter Automatic</span>
+      </button>
+      </div>
+      <div class="mss-gw-foot">
+        <span class="mss-gw-hint">Manual = full deck. Automatic = YONO-only. Switch anytime via the header.</span>
+        <span id="mssGwModel" class="mss-gw-model">YONO —</span>
+      </div>
+    </div>
+  </div>
+  <div id="mssSkeleton" class="mss-skeleton mss-hidden" aria-hidden="true" data-skel="terrain">
+    <canvas id="mssSkeletonCanvas" aria-hidden="true"></canvas>
+    <div class="mss-skeleton-inner">
+      <div class="mss-sk-frame" aria-hidden="true">
+        <div class="mss-sk-head"></div>
+        <div class="mss-sk-featbar"><i></i><i></i><i></i><i></i></div>
+        <div class="mss-sk-scope"><i></i><i></i></div>
+        <div class="mss-sk-deck"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="mss-sk-yono"><div class="mss-sk-yono-head"></div><div class="mss-sk-yono-line w-90"></div><div class="mss-sk-yono-line w-70"></div><div class="mss-sk-yono-line w-60"></div></div>
+      </div>
+      <div class="mss-sk-kicker"><span class="sc-wireframe-boxes"><span class="sc-wireframe-box active"></span><span class="sc-wireframe-box active"></span></span> MSS &middot; <span id="mssSkeletonMode">MANUAL</span></div>
+    </div>
+    <div class="mss-skeleton-label"><span id="mssSkeletonLabel">ASSEMBLING TERRAIN MESH</span><span class="mss-sk-dots"></span></div>
+  </div>
+  <div id="mssAutoPanel" class="mss-auto-panel mss-hidden" data-mfeat-panel="automatic" aria-label="Automatic — voice YONO">
+    <div class="mss-auto-stage">
+      <canvas id="mssSpinalCanvas" width="280" height="280" aria-hidden="true"></canvas>
+      <div class="mss-spinal-glow" aria-hidden="true"></div>
+    </div>
+    <button type="button" id="mssVoiceBtn" class="mss-voice-btn" aria-label="Hold to talk">◉ HOLD TO TALK</button>
+    <div id="mssVoiceControls" class="mss-voice-controls">
+      <button type="button" id="mssVoiceStop" class="mss-voice-mini" title="Stop listening" disabled>■ STOP</button>
+      <button type="button" id="mssVoiceRetry" class="mss-voice-mini" title="Retry mic permission">↻ RETRY</button>
+      <button type="button" id="mssVoiceTest" class="mss-voice-mini" title="Test mic meter 3s">♫ TEST</button>
+      <button type="button" id="mssVoiceMode" class="mss-voice-mini" title="Toggle Hold vs Lock mode">MODE: HOLD</button>
+      <select id="mssMicSelect" class="mss-mic-select" title="Microphone device" style="display:none"></select>
+    </div>
+    <div id="mssVoiceMeter" class="mss-voice-meter" aria-hidden="true"><i id="mssVoiceMeterFill"></i></div>
+    <div id="mssVoiceDiag" class="mss-voice-diag" style="display:none"></div>
+    <div id="mssVoiceStatus" class="mss-voice-status">OFF — click to connect</div>
+    <div id="mssTranscript" class="mss-transcript" aria-live="polite"></div>
+    <div class="mss-auto-foot"><span class="mss-auto-hint">Voice drives YONO — transcript below. Map on right follows directives.</span><span id="mssVoiceModel" class="mss-voice-model">YONO</span></div>
+  </div>
+  <div id="mssSwitchBar" class="mss-switchbar mss-hidden">
+    <button type="button" id="mssSwitchBtn" title="Return to Manual / Automatic choice">&#8592; MODE SELECT</button>
+    <span class="mss-switch-hint">Switch MSS mode</span>
   </div>
 <div class="sc-deck sc-deck-docked" id="fusionDeck">
                                           <button type="button" class="hive-pent" id="hivePentBtn" aria-label="Toggle command hive" aria-expanded="false">
@@ -3355,6 +3468,7 @@
 
                               layout(); clampPos(); syncChips();
                           })();
+
                           </script>
 
                           
@@ -5191,7 +5305,7 @@ function loadPageData(page) {
         case 'sc-types': loadObjectTypes(); loadActionTypes(); break;
         case 'sc-objects': loadObjectTypeFilter(); loadObjects(); break;
         case 'sc-links': loadLinkTypes(); break;
-        case 'sc-fusion': initScopeBuilder(); renderFusionMap(); registerSimsGaiaLayers(); break;
+        case 'sc-fusion': initScopeBuilder(); renderFusionMap(); registerSimsGaiaLayers(); if(window.__mssOnFusionEnter) try{window.__mssOnFusionEnter();}catch(e){} break;
         case 'sims-war': initSimsWarRoom(); break;
         case 'sc-gdelt': loadGdeltHealth(); loadGdeltSnapshot(); refreshGdeltBqStatus(); break;
         case 'sc-aviation': loadAviationHealth(); loadAviationSnapshot(); loadAviationFlights(); break;
@@ -18592,15 +18706,15 @@ function renderFusionRealLayer() {
     width: 372px; flex: 0 0 372px; min-width: 0; order: -1;
     display: flex; flex-direction: column;
     height: calc(100vh - 130px);
-    background: var(--bg-card); border: 1px solid var(--border-color);
-    border-radius: 8px;
+    background: var(--bg-dark,#000); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 0;
     overflow-x: hidden; overflow-y: auto; scrollbar-width: thin;
     transition: width .22s ease, flex-basis .22s ease;
 }
 .maven-left-col .maven-col-head,
 .maven-left-col .maven-featbar {
     position: sticky; top: 0; z-index: 6;
-    background: var(--bg-card);
+    background: var(--bg-dark,#000);
 }
 .maven-left-col .maven-featbar { top: 41px; }
 .maven-left-col.collapsed .maven-featbar { display: none; }
@@ -20531,6 +20645,239 @@ function renderFusionRealLayer() {
 .yono-inputrow button{flex:none;width:38px;border-radius:2px;border:none;background:var(--accent-neon,#DFF140);
   color:var(--text-dark,#000);font-weight:800;cursor:pointer;font-size:.85rem;}
 .yono-inputrow button:disabled{opacity:.4;cursor:default;}
+/* --- MSS MODE GATEWAY (Manual → full deck, Automatic → YONO-only) — sea/terrain scan language --- */
+.mss-hidden{display:none !important;}
+.mss-mode-toggle{cursor:pointer;flex:none;font-family:var(--font-mono);font-size:8px;letter-spacing:.1em;
+  border:1px solid rgba(223,241,64,.35);border-radius:0;padding:3px 6px;color:var(--accent-neon);user-select:none;}
+.mss-mode-toggle:hover{border-color:rgba(223,241,64,.7);background:rgba(223,241,64,.08);}
+.mss-gateway{position:relative;display:flex;flex-direction:column;gap:0;padding:0;flex:1;min-height:0;overflow:hidden;overflow-y:auto;isolation:isolate;background:var(--bg-card);transition:background-color 0.4s ease,border-color 0.4s ease}
+.mss-gateway.mss-hidden{display:none !important;}
+.mss-gateway-shell{position:relative;z-index:1;display:flex;flex-direction:column;gap:22px;padding:28px 18px 20px;flex:1;min-height:0;background:var(--bg-panel);margin:10px;border:1px solid var(--border-color);max-width:720px;width:calc(100% - 20px);align-self:center;box-shadow:0 12px 40px rgba(0,0,0,0.28);overflow:hidden;transition:background-color 0.4s ease,border-color 0.4s ease,color 0.4s ease}[data-theme="light"] .mss-gateway-shell{background:rgba(255,255,255,0.96);border-color:rgba(0,0,0,0.12);box-shadow:0 12px 40px rgba(0,0,0,0.12)}
+.mss-gateway-shell::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;background:radial-gradient(520px 180px at 78% 4%, rgba(223,241,64,0.08), transparent 62%), radial-gradient(420px 160px at 12% 92%, rgba(128,224,255,0.06), transparent 60%);animation:mss-wash-drift 12s ease-in-out infinite alternate}
+@keyframes mss-wash-drift{0%{transform:translateX(0)}100%{transform:translateX(-10px)}}
+.mss-gateway-shell > *{position:relative;z-index:1}
+.mss-art-ghost{position:absolute;right:-6px;top:14px;z-index:0;pointer-events:none;font-family:var(--font-tech);font-weight:700;font-size:88px;line-height:1;letter-spacing:-0.04em;color:rgba(255,255,255,0.06);transform:rotate(0.5deg);user-select:none;transition:color 0.4s ease}[data-theme="light"] .mss-art-ghost{color:rgba(0,0,0,0.045)}
+.mss-art-rule{height:1px;display:flex;gap:0;margin-top:6px}
+.mss-art-rule span{flex:1;height:1px;background:var(--border-color);opacity:0.55;transition:background-color 0.4s ease}[data-theme="light"] .mss-art-rule span{background:rgba(0,0,0,0.09);opacity:1}
+.mss-art-rule span.mss-art-rule--neon{flex:0 0 84px;background:var(--accent-neon);opacity:0.9}
+.mss-gateway-shell .section-header-bar{position:relative;z-index:1}
+.dimension-transition-overlay{position:absolute;inset:0;z-index:3;pointer-events:none;background:var(--bg-dark,#000);transition:opacity 0.8s cubic-bezier(0.16,1,0.3,1),transform 0.8s cubic-bezier(0.16,1,0.3,1);display:flex;align-items:center;justify-content:center;opacity:1;transform:scale(1)}
+.dimension-transition-overlay.dim-passed{opacity:0;transform:scale(1.08);pointer-events:none}
+.dimension-transition-overlay .dim-grid-line{position:absolute;background:rgba(223,241,64,0.14)}
+.dimension-transition-overlay .dim-grid-v{width:1px;top:0;bottom:0;left:50%}
+.dimension-transition-overlay .dim-grid-h{height:1px;left:0;right:0;top:50%}
+.section-header-bar{max-width:720px;width:100%;padding:0 0 14px;border-bottom:1px solid var(--border-color);margin:0;transition:border-color 0.4s ease}
+.section-header-bar .section-badge{display:inline-flex;font-family:var(--font-mono);font-size:10.4px;letter-spacing:0.08em;text-transform:uppercase;background:var(--text);color:var(--bg);padding:6px 14px;transition:background-color 0.4s ease,color 0.4s ease}[data-theme="light"] .section-header-bar .section-badge{background:#000;color:#fff}
+.section-header-bar h2{font-family:var(--font-tech);font-weight:300;font-size:1.65rem;letter-spacing:-0.02em;line-height:1.15;margin:10px 0 8px;color:var(--text);overflow:hidden;transition:color 0.4s ease}
+.section-header-bar p{font-family:var(--font-sans);font-size:13px;line-height:1.6;color:var(--text-muted);margin:0;max-width:44em;overflow:hidden;transition:color 0.4s ease}
+.reveal-text-line{display:block;overflow:hidden}
+.reveal-text-line .reveal-inner{display:block;transform:translate3d(0,115%,0) scale(1.02);filter:blur(6px);opacity:0;transition:transform 1.1s cubic-bezier(0.16,1,0.3,1),filter 1.1s,opacity 1.1s;will-change:transform,filter,opacity}
+.reveal-text-line.revealed .reveal-inner{transform:translate3d(0,0,0) scale(1);filter:blur(0);opacity:1}
+.software-grid-matrix{display:grid;grid-template-columns:1fr 1fr;gap:18px;width:100%}
+.software-grid-matrix.mss-gw-cards{display:grid}
+@media (max-width:520px){.software-grid-matrix{grid-template-columns:1fr}}
+.mss-gateway-shell .mss-mode-card{background:var(--bg-card);border:1px solid var(--border-color);color:var(--text);box-shadow:none;transition:background-color 0.4s ease,border-color 0.4s ease,color 0.4s ease}
+.mss-gateway-shell .mss-mc-title{color:var(--text)}
+.mss-gateway-shell .mss-mc-desc{color:var(--text-muted)}
+.mss-gateway-shell .mss-mc-meta{color:var(--text-muted)}
+.mss-gateway-shell .mss-mc-mark{color:var(--text)}
+.mss-gateway-shell .mss-mc-cta{border-color:var(--border-color);color:var(--text)}
+.mss-gateway-shell .mss-mc-cta:hover{background:var(--text);color:var(--bg)}
+.mss-gateway-shell .mss-mc-icon--manual{border-color:var(--border-color)}
+.mss-gateway-shell .mss-gw-foot{border-top:1px solid var(--border-color);padding-top:10px;margin-top:8px}
+.mss-gateway-shell .mss-gw-hint{color:var(--text-muted)}
+.mss-gateway-shell .mss-gw-model{border-color:var(--border-color);color:var(--text-muted)}
+[data-theme="light"] .mss-gateway-shell .mss-mode-card{background:#fff;border-color:rgba(0,0,0,0.12);color:#000}
+[data-theme="light"] .mss-gateway-shell .mss-mc-title{color:#000}
+[data-theme="light"] .mss-gateway-shell .mss-mc-desc{color:#555658}
+[data-theme="light"] .mss-gateway-shell .mss-mc-meta{color:#71717a}
+[data-theme="light"] .mss-gateway-shell .mss-mc-mark{color:#000}
+[data-theme="light"] .mss-gateway-shell .mss-mc-cta{border-color:#000;color:#000}
+[data-theme="light"] .mss-gateway-shell .mss-mc-cta:hover{background:#000;color:#fff}
+[data-theme="light"] .mss-gateway-shell .mss-mc-icon--manual{border-color:rgba(0,0,0,0.12)}
+[data-theme="light"] .mss-gateway-shell .mss-gw-foot{border-top-color:rgba(0,0,0,0.12)}
+[data-theme="light"] .mss-gateway-shell .mss-gw-model{border-color:rgba(0,0,0,0.15)}
+/* WebGL terrain/sea canvas — gateway-only, behind cards, above bg-card (isolation) */
+#mssWebglCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block;opacity:1;transition:opacity .5s ease;}
+#mssWebglCanvas.mss-webgl-hidden{opacity:0;pointer-events:none;}
+/* CSS fallback scan — hidden when WebGL is live, shown when THREE missing or reduced-motion */
+.mss-scan-bg{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.0;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 14px, rgba(223,241,64,.07) 14px 15px),
+    repeating-linear-gradient(90deg, transparent 0 28px, rgba(128,224,255,.045) 28px 29px),
+    radial-gradient(120% 70% at 50% 0%, rgba(223,241,64,.07), transparent 60%);transition:opacity .4s;}
+.mss-scan-bg.mss-fallback-on{opacity:.42;}
+.mss-scan-line{position:absolute;left:0;right:0;height:48px;z-index:0;pointer-events:none;opacity:0;
+  background:linear-gradient(180deg, transparent, rgba(223,241,64,.16), transparent);
+  transform:translateY(-120%);animation:mss-scan 3.2s linear infinite;mix-blend-mode:screen;}
+.mss-scan-line.mss-fallback-on{opacity:.9;}
+@keyframes mss-scan{0%{transform:translateY(-28%)}100%{transform:translateY(360%)}}
+.mss-gw-kicker{position:relative;z-index:1;font-family:var(--font-mono);font-size:8px;letter-spacing:.14em;color:var(--text-muted);display:flex;align-items:center;gap:7px;}
+.mss-gw-q{position:relative;z-index:1;font-family:var(--font-tech);font-weight:300;font-size:18px;letter-spacing:.06em;color:var(--text);line-height:1.1;transition:color 0.4s ease;}
+.mss-gw-sub{position:relative;z-index:1;font-family:var(--font-sans);font-size:11px;line-height:1.5;color:var(--text-muted);max-width:32em;}
+.mss-gw-cards{position:relative;z-index:1;display:flex;gap:8px;margin-top:4px;}
+.mss-mode-card{flex:1;display:flex;flex-direction:column;gap:5px;text-align:left;padding:12px 10px;
+  background:rgba(255,255,255,.04);border:1px solid var(--border-color);border-radius:0;cursor:pointer;
+  transition:border-color .18s,background .18s,transform .22s cubic-bezier(0.16,1,0.3,1),box-shadow .22s,filter .22s;will-change:transform;}
+.mss-mode-card:active{transform:none;}
+.mss-mode-card:focus-visible{outline:1px solid var(--accent-neon);outline-offset:2px;}
+.mss-mode-card[data-mss="manual"]:hover{border-color:var(--border-color) !important;background:var(--bg-panel) !important;transform:none !important;box-shadow:none !important;filter:none !important}[data-theme="light"] .mss-mode-card[data-mss="manual"]:hover{border-color:rgba(0,0,0,0.16) !important;background:#fff !important}
+.mss-mode-card[data-mss="automatic"]:hover{border-color:rgba(128,224,255,0.55) !important;background:rgba(128,224,255,0.08) !important;transform:translateY(-5px) scale(1.015) !important;box-shadow:0 14px 28px rgba(0,0,0,0.32) !important;filter:drop-shadow(0 0 8px rgba(128,224,255,0.22)) !important}[data-theme="light"] .mss-mode-card[data-mss="automatic"]:hover{background:#f0fbff !important;box-shadow:0 14px 28px rgba(0,0,0,0.16) !important}
+.mss-mode-card[data-mss="automatic"]:hover .mss-mc-cta{transform:translateX(2px);}
+.mss-mode-card[data-mss="manual"]:hover .mss-mc-cta{transform:none;}
+.mss-mode-card.is-selecting{transform:scale(.97) !important;border-color:var(--accent-neon) !important;background:rgba(223,241,64,.13) !important;transition-duration:.12s !important;}
+.mss-mc-icon{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;flex:none;margin-bottom:6px;padding:4px;border:1px solid rgba(255,255,255,0.06);background:rgba(0,0,0,0.28);position:relative;overflow:hidden;transition:background-color 0.4s ease,border-color 0.4s ease}[data-theme="light"] .mss-mc-icon{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.08)}
+.mss-mc-icon--manual{border-color:rgba(223,241,64,0.22);box-shadow:inset 0 0 0 1px rgba(223,241,64,0.06), 0 0 14px rgba(223,241,64,0.10)}
+.mss-mc-icon--auto{border-color:rgba(128,224,255,0.22);box-shadow:inset 0 0 0 1px rgba(128,224,255,0.06), 0 0 14px rgba(128,224,255,0.10)}
+.mss-mode-card:hover .mss-mc-icon--manual{border-color:rgba(223,241,64,0.55);box-shadow:inset 0 0 0 1px rgba(223,241,64,0.12), 0 0 18px rgba(223,241,64,0.16)}
+.mss-mode-card:hover .mss-mc-icon--auto{border-color:rgba(128,224,255,0.55);box-shadow:inset 0 0 0 1px rgba(128,224,255,0.12), 0 0 18px rgba(128,224,255,0.16)}
+.mss-icon-reticle{transform-origin:21px 21px}
+.mss-mc-icon--manual .mss-icon-reticle{animation:none}
+.mss-orbit-outer,.mss-orbit-inner{transform-origin:21px 21px}
+.mss-orbit-outer{animation:mss-orbit-spin 7s linear infinite}
+.mss-orbit-inner{animation:mss-orbit-spin-rev 11s linear infinite}
+.mss-mode-card[data-mss="automatic"]:hover .mss-orbit-outer{animation-duration:3.2s}
+.mss-mode-card[data-mss="automatic"]:hover .mss-orbit-inner{animation-duration:5s}
+@keyframes mss-orbit-spin{to{transform:rotate(360deg)}}
+@keyframes mss-orbit-spin-rev{to{transform:rotate(-360deg)}}
+.mss-art-ghost{animation:mss-ghost-drift 14s ease-in-out infinite alternate}
+@keyframes mss-ghost-drift{0%{transform:translateX(0) rotate(0.5deg)}100%{transform:translateX(-6px) rotate(0deg)}}
+@media (prefers-reduced-motion:reduce){.mss-orbit-outer,.mss-orbit-inner,.mss-art-ghost{animation:none !important}}
+.mss-mode-card:nth-child(1){--mss-hd:40ms} .mss-mode-card:nth-child(2){--mss-hd:110ms}
+/* entrance — dimension reveal + hive bloom stagger (index.html:87 reveal-text-line + hive-layer 0.38s) */
+.mss-gateway.mss-enter .mss-gw-kicker{transition:transform .55s cubic-bezier(0.16,1,0.3,1) 0ms,opacity .45s 0ms,filter .55s 0ms}
+.mss-gateway.mss-enter .mss-gw-q{transition:transform .6s cubic-bezier(0.16,1,0.3,1) 80ms,opacity .45s 80ms,filter .6s 80ms}
+.mss-gateway.mss-enter .mss-gw-sub{transition:transform .55s cubic-bezier(0.16,1,0.3,1) 140ms,opacity .45s 140ms,filter .55s 140ms}
+.mss-gateway.mss-enter .mss-gw-cards{transition:opacity .3s 180ms}
+.mss-gateway.mss-enter .mss-gw-foot{transition:transform .5s cubic-bezier(0.16,1,0.3,1) 320ms,opacity .4s 320ms}
+#mssGateway.mss-enter-pre > *:not(.mss-scan-bg):not(.mss-scan-line){opacity:0;transform:translate3d(0,14px,0);filter:blur(6px)}
+#mssGateway.mss-enter > *:not(.mss-scan-bg):not(.mss-scan-line){opacity:1;transform:none;filter:none}
+#mssGateway.mss-enter-pre .mss-mode-card{opacity:0;transform:translateY(10px) scale(.98)}
+#mssGateway.mss-enter .mss-mode-card{opacity:1;transform:none;transition:transform .42s cubic-bezier(0.16,1,0.3,1) var(--mss-hd),opacity .28s ease var(--mss-hd),border-color .18s,background .18s,box-shadow .22s}
+.mss-gw-hint{animation:mss-hint-breathe 3.2s ease-in-out infinite alternate;}
+@keyframes mss-hint-breathe{0%{letter-spacing:.07em;opacity:.75}100%{letter-spacing:.11em;opacity:1}}
+@media (prefers-reduced-motion:reduce){#mssWebglCanvas{display:none !important}.mss-scan-line{animation:none !important;opacity:0 !important}.mss-gw-hint{animation:none !important}#mssGateway.mss-enter-pre > *{opacity:1 !important;transform:none !important;filter:none !important}.mss-mode-card{transform:none !important}}
+.mss-mc-mark{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--accent-neon);}
+.mss-mc-auto .mss-mc-mark{color:#80e000;}
+.mss-mc-title{font-family:var(--font-tech);font-size:12px;letter-spacing:.06em;color:var(--text);transition:color 0.4s ease;}
+.mss-mc-desc{font-family:var(--font-mono);font-size:9px;letter-spacing:.06em;color:var(--text);opacity:.85;transition:color 0.4s ease;}
+.mss-mc-meta{font-family:var(--font-mono);font-size:8px;letter-spacing:.07em;color:var(--text-muted);}
+.mss-mc-cta{margin-top:6px;align-self:flex-start;font-family:var(--font-mono);font-size:8px;letter-spacing:.12em;
+  border:1px solid var(--accent-neon);color:var(--accent-neon);padding:5px 8px;background:transparent;}
+.mss-mc-auto .mss-mc-cta{border-color:#80e000;color:#80e000;}
+.mss-mode-card:hover .mss-mc-cta{background:var(--accent-neon);color:var(--bg-dark);}
+.mss-mc-auto:hover .mss-mc-cta{background:#80e000;color:#000;}
+.mss-gw-foot{margin-top:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border-color);}
+.mss-gw-hint{font-family:var(--font-mono);font-size:8px;letter-spacing:.07em;color:var(--text-muted);flex:1;}
+.mss-gw-model{font-family:var(--font-mono);font-size:8px;letter-spacing:.08em;color:var(--text-muted);border:1px solid var(--border-color);padding:2px 6px;}
+/* gateway owns column: hide deck/drawer/featbar/scope — map on the right stays */
+#mavenLeftCol[data-mfeat="gateway"] .maven-featbar,
+#mavenLeftCol[data-mfeat="gateway"] .maven-scope-cluster,
+#mavenLeftCol[data-mfeat="gateway"] .sc-deck.sc-deck-docked,
+#mavenLeftCol[data-mfeat="gateway"] #mavenDrawer,
+#mavenLeftCol[data-mfeat="gateway"] section[data-mpanel]{display:none !important;}
+#mavenLeftCol[data-mfeat="gateway"] #mssGateway{display:flex !important;}
+#mavenLeftCol[data-mfeat="gateway"] .mss-mode-toggle{opacity:1;pointer-events:auto;border-color:rgba(223,241,64,.7);}
+.maven-left-col.collapsed #mssGateway{display:none !important;}
+.mss-switchbar{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--border-color);
+  background:rgba(223,241,64,.06);flex:none;}
+.mss-switchbar.mss-hidden{display:none !important;}
+#mssSwitchBtn{font-family:var(--font-mono);font-size:8px;letter-spacing:.12em;border:1px solid var(--accent-neon);
+  background:transparent;color:var(--accent-neon);padding:4px 8px;cursor:pointer;}
+#mssSwitchBtn:hover{background:var(--accent-neon);color:var(--bg-dark);}
+.mss-switch-hint{font-family:var(--font-mono);font-size:7px;letter-spacing:.08em;color:var(--text-muted);}
+#mavenLeftCol[data-mfeat="gateway"] #mssSwitchBar{display:none !important;}
+.maven-left-col.collapsed #mssSwitchBar{display:none !important;}
+/* --- MSS SKELETON — whole-section build (frame wire + nadir plan WebGL) --- */
+#mavenLeftCol{position:relative;}
+.mss-skeleton{position:absolute;inset:0;z-index:18;display:flex;flex-direction:column;gap:12px;padding:14px 12px;
+  background:var(--bg-card);border:1px solid rgba(223,241,64,.28);overflow:hidden;opacity:0;pointer-events:none;
+  transform:translateY(8px) scale(.98);filter:blur(6px);
+  transition:opacity .42s cubic-bezier(0.16,1,0.3,1),transform .42s cubic-bezier(0.16,1,0.3,1),filter .42s;}
+.mss-skeleton.mss-hidden{display:none !important;opacity:0 !important;pointer-events:none !important;}
+.mss-skeleton.mss-active{opacity:1;pointer-events:auto;transform:none;filter:none;}
+.mss-skeleton.mss-exit{opacity:0;transform:translateY(-8px) scale(.98);filter:blur(8px);}
+#mssSkeletonCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:1;}
+.mss-skeleton-inner{position:relative;z-index:1;display:flex;flex-direction:column;gap:10px;flex:1;min-height:0;pointer-events:none;}
+.mss-sk-kicker{font-family:var(--font-mono);font-size:8px;letter-spacing:.14em;color:var(--accent-neon);display:flex;align-items:center;gap:7px;}
+.mss-sk-frame{position:absolute;inset:10px 10px 36px 10px;z-index:0;pointer-events:none;display:flex;flex-direction:column;gap:8px;opacity:.95}
+.mss-sk-head{height:38px;border:1px solid rgba(223,241,64,.32);background:rgba(223,241,64,.04)}
+.mss-sk-featbar{display:flex;gap:6px}
+.mss-sk-featbar i{flex:1;height:26px;border:1px solid rgba(223,241,64,.28);background:rgba(255,255,255,.02);display:block}
+.mss-sk-scope{display:flex;gap:6px}
+.mss-sk-scope i{flex:1;height:28px;border:1px solid rgba(128,224,255,.22);background:rgba(255,255,255,.02);display:block}
+.mss-sk-deck{display:flex;flex-wrap:wrap;gap:6px}
+.mss-sk-deck i{flex:1 1 calc(50% - 6px);height:62px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.02);display:block}
+.mss-sk-yono{position:absolute;inset:10px 10px 36px 10px;display:none;flex-direction:column;gap:8px}
+.mss-sk-yono-head{height:32px;border:1px solid rgba(128,224,255,.32);background:rgba(128,224,255,.06)}
+.mss-sk-yono-line{height:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03)}
+.mss-sk-yono-line.w-90{width:90%} .mss-sk-yono-line.w-70{width:70%} .mss-sk-yono-line.w-60{width:60%}
+#mssSkeleton[data-skel="terrain"] .mss-sk-deck{display:flex} #mssSkeleton[data-skel="terrain"] .mss-sk-yono{display:none}
+#mssSkeleton[data-skel="sea"] .mss-sk-deck{display:none} #mssSkeleton[data-skel="sea"] .mss-sk-yono{display:flex}
+#mssSkeleton[data-skel="sea"] .mss-sk-head{border-color:rgba(128,224,255,.32);background:rgba(128,224,255,.04)}
+#mssSkeleton[data-skel="sea"] .mss-sk-featbar i{border-color:rgba(128,224,255,.28)}
+.mss-skeleton.mss-active .mss-sk-head{animation:mss-frame-in .28s cubic-bezier(0.16,1,0.3,1) 60ms both}
+.mss-skeleton.mss-active .mss-sk-featbar i:nth-child(1){animation:mss-frame-in .28s 140ms both} .mss-skeleton.mss-active .mss-sk-featbar i:nth-child(2){animation:mss-frame-in .28s 190ms both} .mss-skeleton.mss-active .mss-sk-featbar i:nth-child(3){animation:mss-frame-in .28s 240ms both} .mss-skeleton.mss-active .mss-sk-featbar i:nth-child(4){animation:mss-frame-in .28s 290ms both}
+.mss-skeleton.mss-active .mss-sk-scope i{animation:mss-frame-in .28s 360ms both}
+.mss-skeleton.mss-active .mss-sk-deck i:nth-child(1){animation:mss-frame-in .30s 480ms both} .mss-skeleton.mss-active .mss-sk-deck i:nth-child(2){animation:mss-frame-in .30s 530ms both} .mss-skeleton.mss-active .mss-sk-deck i:nth-child(3){animation:mss-frame-in .30s 580ms both} .mss-skeleton.mss-active .mss-sk-deck i:nth-child(4){animation:mss-frame-in .30s 630ms both} .mss-skeleton.mss-active .mss-sk-deck i:nth-child(5){animation:mss-frame-in .30s 680ms both} .mss-skeleton.mss-active .mss-sk-deck i:nth-child(6){animation:mss-frame-in .30s 730ms both}
+.mss-skeleton.mss-active .mss-sk-yono-head{animation:mss-frame-in .28s 140ms both} .mss-skeleton.mss-active .mss-sk-yono-line{animation:mss-frame-in .26s 320ms both}
+@keyframes mss-frame-in{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
+/* whole-section building: hide real content while skeleton builds */
+#mavenLeftCol.mss-building .maven-featbar,
+#mavenLeftCol.mss-building .maven-scope-cluster,
+#mavenLeftCol.mss-building .sc-deck.sc-deck-docked,
+#mavenLeftCol.mss-building #mavenDrawer,
+#mavenLeftCol.mss-building section[data-mpanel],
+#mavenLeftCol.mss-building #mssGateway{opacity:0 !important;transform:translateY(6px) !important;pointer-events:none !important;filter:blur(4px) !important;transition:none !important}
+#mavenLeftCol.mss-building #mssSwitchBar{opacity:0 !important;pointer-events:none !important}
+.mss-skeleton-label{position:relative;z-index:1;display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:10px;border-top:1px solid var(--border-color);font-family:var(--font-mono);font-size:8px;letter-spacing:.14em;color:var(--text-muted);}
+.mss-skeleton-label #mssSkeletonLabel{color:var(--accent-neon);}
+.mss-sk-dots{width:22px;height:4px;display:inline-flex;gap:3px;align-items:center;}
+.mss-sk-dots::before,.mss-sk-dots::after{content:"";width:4px;height:4px;border-radius:50%;background:var(--accent-neon);opacity:.9;animation:mss-dots 1s infinite alternate;}
+.mss-sk-dots::after{animation-delay:.3s}
+@keyframes mss-dots{0%{opacity:.3;transform:scale(.7)}100%{opacity:1;transform:scale(1)}}
+/* --- MSS AUTOMATIC — voice + spinal circle (divergent structure, not deck) --- */
+.mss-auto-panel{display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px 12px;flex:1;min-height:0;overflow-y:auto}
+.mss-auto-panel.mss-hidden{display:none !important}
+.mss-auto-stage{position:relative;width:280px;height:280px;flex:none;border-radius:50%;overflow:hidden;border:1px solid rgba(223,241,64,.28);background:rgba(0,0,0,.55);box-shadow:0 0 24px rgba(223,241,64,.12)}
+#mssSpinalCanvas{display:block;width:280px;height:280px;border-radius:50%}
+.mss-spinal-glow{position:absolute;inset:-22px;border-radius:50%;pointer-events:none;opacity:.0;background:radial-gradient(circle at 50% 50%, rgba(223,241,64,.14), transparent 62%);transition:opacity .25s;mix-blend-mode:screen;transform:scale(calc(1 + var(--mss-vol, 0)*0.12));transform-origin:center}
+.mss-auto-panel.mss-voice-listening .mss-spinal-glow{opacity:1}
+.mss-voice-btn{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;border:1px solid var(--accent-neon);background:transparent;color:var(--accent-neon);padding:9px 14px;cursor:pointer;min-width:168px;text-align:center;position:relative;z-index:2;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.mss-voice-btn:hover{background:var(--accent-neon);color:var(--bg-dark)}
+.mss-voice-btn.mss-voice-on{border-color:#ff4d4d;color:#ff4d4d;background:rgba(255,77,77,.08)}
+.mss-voice-btn.mss-voice-on:hover{background:#ff4d4d;color:#fff}
+.mss-voice-controls{display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:2px}
+.mss-voice-mini{font-family:var(--font-mono);font-size:7px;letter-spacing:.08em;border:1px solid var(--border-color);background:rgba(255,255,255,.03);color:var(--text-muted);padding:4px 7px;cursor:pointer}
+.mss-voice-mini:hover{border-color:var(--accent-neon);color:var(--text)}
+.mss-voice-mini:disabled{opacity:.35;cursor:not-allowed}
+.mss-mic-select{font-family:var(--font-mono);font-size:7px;max-width:160px;border:1px solid var(--border-color);background:var(--bg-input);color:var(--text-muted);padding:2px 4px}
+.mss-voice-meter{width:168px;height:4px;background:rgba(255,255,255,.08);border:1px solid var(--border-color);margin:0 auto;overflow:hidden}
+.mss-voice-meter i{display:block;height:100%;width:0%;background:var(--accent-neon);transition:width .08s linear}
+[data-theme="light"] .mss-voice-meter{background:rgba(0,0,0,.06)}
+.mss-voice-diag{font-family:var(--font-mono);font-size:7px;line-height:1.5;color:var(--text-muted);background:rgba(255,255,255,.03);border:1px solid var(--border-color);padding:6px 7px;max-width:320px;margin:0 auto;white-space:pre-wrap}
+.mss-voice-diag b{color:var(--text)}
+.mss-voice-status{font-family:var(--font-mono);font-size:8px;letter-spacing:.12em;color:var(--text-muted);text-align:center;min-height:12px}
+.mss-transcript{width:100%;flex:1;min-height:120px;max-height:38vh;overflow-y:auto;border:1px solid var(--border-color);background:rgba(255,255,255,.02);padding:8px 9px;display:flex;flex-direction:column;gap:6px}
+.mss-transcript:empty::before{content:"Transcript appears here — voice drives YONO. Map on right follows.";font-family:var(--font-mono);font-size:9px;color:var(--text-muted);opacity:.7}
+.mss-tline{font-family:var(--font-mono);font-size:11px;line-height:1.45;word-wrap:break-word}
+.mss-tline-user{color:var(--text-muted)} .mss-tline-user b{color:var(--text-primary)}
+.mss-tline-yono{color:var(--text-primary)} .mss-tline-yono b{color:var(--accent-neon)}
+.mss-auto-foot{width:100%;display:flex;align-items:center;gap:8px;padding-top:8px;border-top:1px solid var(--border-color);margin-top:auto}
+.mss-auto-hint{flex:1;font-family:var(--font-mono);font-size:7px;letter-spacing:.07em;color:var(--text-muted)}
+.mss-voice-model{font-family:var(--font-mono);font-size:7px;letter-spacing:.08em;color:var(--text-muted);border:1px solid var(--border-color);padding:2px 5px}
+/* Automatic owns column — hide Manual chrome */
+#mavenLeftCol[data-mfeat="automatic"] .maven-featbar,
+#mavenLeftCol[data-mfeat="automatic"] .maven-scope-cluster,
+#mavenLeftCol[data-mfeat="automatic"] .sc-deck.sc-deck-docked,
+#mavenLeftCol[data-mfeat="automatic"] #mavenDrawer,
+#mavenLeftCol[data-mfeat="automatic"] section[data-mpanel],
+#mavenLeftCol[data-mfeat="automatic"] #mssGateway{display:none !important}
+#mavenLeftCol[data-mfeat="automatic"] #mssAutoPanel{display:flex !important;flex:1}
+#mavenLeftCol:not([data-mfeat="automatic"]) #mssAutoPanel{display:none !important}
+#mavenLeftCol[data-mfeat="automatic"] #mssSwitchBar{display:flex !important}
+.maven-left-col.collapsed #mssAutoPanel{display:none !important}
+@media (prefers-reduced-motion:reduce){#mssSpinalCanvas{opacity:.85}.mss-spinal-glow{opacity:0 !important}}
 /* --- YONO AGENT docked-in-Maven mode (AGENT feature owns the column) --- */
 section[data-mpanel="yono"]{padding:0;border-top:1px solid var(--border-color);}
 #mavenLeftCol[data-mfeat="yono"] :is(.maven-scope-cluster,.sc-deck.sc-deck-docked,.maven-head,.maven-tabs,.maven-body,#mavenDetRail){display:none !important;}
@@ -20862,6 +21209,796 @@ if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded'
 window.YONO={open:open,close:close,toggle:toggle,minimize:minimize,
   get isOpen(){return !PANEL.classList.contains('yono-hidden');},
   get sessionId(){return sessionId;}};
+window.__yonoCloseForMss = close;
+window.__yonoDockForMss = dock;
+window.__yonoUndockForMss = undock;
+})();
+</script>
+<script id="mss-gateway-engine">
+/* ══════════════════════════════════════════════════════════════════════
+   MSS MODE GATEWAY — Manual vs Automatic for the MAVEN SMART SYSTEM.
+   No backend. Per-browser localStorage (mss_mode). Map stays live.
+   Manual → full deck (MAVEN|GEO|NOTES|AGENT feat-bar + drawer).
+   Automatic → YONO-only column, YONO docked + greeting.
+   ══════════════════════════════════════════════════════════════════════ */
+(function(){
+  "use strict";
+  var LS='mss_mode';
+  var COL_ID='mavenLeftCol', GW_ID='mssGateway', TOG_ID='mssModeToggle', GW_MODEL_ID='mssGwModel';
+  function col(){return document.getElementById(COL_ID);}
+  function gw(){return document.getElementById(GW_ID);}
+  function tog(){return document.getElementById(TOG_ID);}
+  function getMode(){try{return localStorage.getItem(LS);}catch(e){return null;}}
+  function setMode(v){
+    try{if(v===null) localStorage.removeItem(LS); else localStorage.setItem(LS,String(v));}catch(e){}
+    renderToggle();
+  }
+  function renderToggle(){
+    var t=tog(); if(!t) return;
+    var m=getMode();
+    var c=col(), isGw=c && c.getAttribute('data-mfeat')==='gateway';
+    if(isGw){ t.textContent='MODE \u25c6'; t.title='MSS mode select — pick Manual or Automatic'; }
+    else if(m==='automatic'){ t.textContent='AUTOMATIC \u21bb'; t.title='MSS is Automatic — click to return to Mode Select'; }
+    else if(m==='manual'){ t.textContent='MANUAL \u21bb'; t.title='MSS is Manual — click to return to Mode Select'; }
+    else { t.textContent='MSS \u25c6'; t.title='Choose MSS mode'; }
+    t.style.display='';
+    var bar=document.getElementById('mssSwitchBar');
+    if(bar){ bar.classList.toggle('mss-hidden', !!isGw || !m); }
+  }
+  function syncGwModel(){
+    var el=document.getElementById(GW_MODEL_ID); if(!el) return;
+    var b=document.getElementById('yonoModelBadge');
+    var txt=b ? (b.textContent||'').trim() : '';
+    el.textContent = txt ? ('YONO \u00b7 '+txt) : 'YONO \u2014 connecting\u2026';
+  }
+  function showGateway(){
+    var c=col(), g=gw(); if(!c||!g) return;
+    if(c.getAttribute('data-mfeat')!=='gateway'){
+      try{c.setAttribute('data-mss-prev', c.getAttribute('data-mfeat')||'maven');}catch(e){}
+    }
+    c.setAttribute('data-mfeat','gateway');
+    var ap2=document.getElementById('mssAutoPanel'); if(ap2) ap2.classList.add('mss-hidden');
+    g.classList.remove('mss-hidden');
+    // dimension reveal — whole section as Panteon section (index.html 87 dim-overlay + 543 reveal)
+    var dim=document.getElementById('mssDimOverlay');
+    if(dim){ dim.classList.remove('dim-passed'); void dim.offsetWidth; }
+    var lines=g.querySelectorAll('.reveal-text-line');
+    lines.forEach(function(l){ l.classList.remove('revealed'); });
+    g.classList.remove('mss-enter'); g.classList.add('mss-enter-pre');
+    void g.offsetWidth;
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      if(dim) dim.classList.add('dim-passed');
+      lines.forEach(function(l,i){
+        setTimeout(function(){ l.classList.add('revealed'); }, 80 + i*140);
+      });
+      g.classList.remove('mss-enter-pre'); g.classList.add('mss-enter');
+      setTimeout(function(){ g.classList.remove('mss-enter'); }, 900);
+    });});
+    if(window.YonoAgent && window.YonoAgent.isDocked && window.YonoAgent.isDocked()){ try{window.YonoAgent.undock(true);}catch(e){} }
+    syncGwModel(); renderToggle();
+    var b=document.getElementById('yonoModelBadge');
+    if(b && !b.__mssObs){
+      b.__mssObs=true;
+      try{new MutationObserver(syncGwModel).observe(b,{childList:true,characterData:true,subtree:true});}catch(e){}
+    }
+  }
+  function _runSkeletonThen(mode, done){
+    var c0=col();
+    // whole-section build: hide real content while skeleton frame + WebGL constructs the section
+    if(c0) c0.classList.add('mss-building');
+    var hasSkeleton = typeof window.__mssSkeletonRun==='function';
+    var reduced=false; try{ reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+    var wrapped=function(){
+      if(c0) c0.classList.remove('mss-building');
+      try{ done(); }catch(e){}
+    };
+    if(!hasSkeleton || reduced){ wrapped(); return; }
+    try{ window.__mssSkeletonRun(mode, wrapped); }catch(e){ wrapped(); }
+  }
+  function enterManual(){
+    setMode('manual');
+    var exec=function(){
+      var c=col(), g=gw(), ap=document.getElementById('mssAutoPanel');
+      if(c) c.setAttribute('data-mfeat','maven');
+      if(g) g.classList.add('mss-hidden');
+      if(ap) ap.classList.add('mss-hidden');
+      // stop voice if leaving automatic
+      if(window.__mssAuto && ap && ap.classList.contains('mss-voice-listening')){ /* voice stays off */ }
+      if(window.__mavenSetFeature) try{window.__mavenSetFeature('maven');}catch(e){}
+      if(window.YonoAgent && window.YonoAgent.isDocked && window.YonoAgent.isDocked()){ try{window.YonoAgent.undock(true);}catch(e){} }
+      var yp=document.getElementById('yono-panel');
+      if(yp && !yp.classList.contains('yono-hidden') && !(window.YonoAgent&&window.YonoAgent.isDocked&&window.YonoAgent.isDocked())){
+        yp.classList.add('yono-hidden');
+      }
+      renderToggle();
+      setTimeout(function(){ var m=window.fusionMap|| (typeof getMap==='function'?getMap():null); if(m) try{m.resize();}catch(e){} },260);
+    };
+    // Manual is instant — no skeleton/terrain build
+    exec();
+  }
+  function enterAutomatic(){
+    setMode('automatic');
+    var exec=function(){
+      var c=col(), g=gw(), ap=document.getElementById('mssAutoPanel');
+      if(g) g.classList.add('mss-hidden');
+      if(c) c.setAttribute('data-mfeat','automatic');
+      if(ap){ ap.classList.remove('mss-hidden'); }
+      // ensure YONO floating is hidden — Automatic is voice-only, not YONO dock
+      if(window.YonoAgent && window.YonoAgent.isDocked && window.YonoAgent.isDocked()){ try{window.YonoAgent.undock(true);}catch(e){} }
+      var yp=document.getElementById('yono-panel');
+      if(yp && !yp.classList.contains('yono-hidden')) yp.classList.add('yono-hidden');
+      // init spinal circle + voice
+      if(window.__mssAuto && window.__mssAuto.ensureCircle) try{ window.__mssAuto.ensureCircle(); }catch(e){}
+      if(typeof window.updateVoiceModel==='function') try{ window.updateVoiceModel(); }catch(e){}
+      // keep model badge in sync for Automatic foot
+      syncGwModel();
+      var vm=document.getElementById('mssVoiceModel');
+      if(vm){
+        var b=document.getElementById('yonoModelBadge');
+        var t=b? (b.textContent||'').trim():''; vm.textContent=t?('YONO · '+t):'YONO';
+      }
+      renderToggle();
+      setTimeout(function(){ var m=window.fusionMap|| (typeof getMap==='function'?getMap():null); if(m) try{m.resize();}catch(e){} },260);
+    };
+    _runSkeletonThen('automatic', exec);
+  }
+  function onFusionEnter(){
+    var c=col(); if(!c) return;
+    // don't hijack if user collapsed column
+    if(c.classList.contains('collapsed')) return;
+    var m=getMode();
+    if(m==='manual'){ if(c.getAttribute('data-mfeat')==='gateway') enterManual(); renderToggle(); return; }
+    if(m==='automatic'){ enterAutomatic(); return; }
+    // first visit — show gateway
+    showGateway();
+  }
+  // wire gateway cards + header toggle — tap feedback then governed enter
+  function wire(){
+    var g=gw(); if(!g||g.__wired) return; g.__wired=true;
+    g.querySelectorAll('[data-mss]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var v=b.getAttribute('data-mss');
+        b.classList.add('is-selecting');
+        setTimeout(function(){
+          b.classList.remove('is-selecting');
+          if(v==='manual') enterManual();
+          else if(v==='automatic') enterAutomatic();
+        }, 160);
+      });
+    });
+    var t=tog(); if(t && !t.__wired){ t.__wired=true; t.addEventListener('click', function(){ showGateway(); });}
+    var sb=document.getElementById('mssSwitchBtn'); if(sb && !sb.__wired){ sb.__wired=true; sb.addEventListener('click', function(){ showGateway(); }); }
+    var bar=document.getElementById('mssSwitchBar'); if(bar && !bar.__mssObs){
+      bar.__mssObs=true;
+      // allow double-click header also toggles - keep current behavior
+    }
+    // keyboard 1/2 while gateway visible
+    document.addEventListener('keydown', function(e){
+      var c=col(); if(!c || c.getAttribute('data-mfeat')!=='gateway') return;
+      if(e.key==='1'){ e.preventDefault(); enterManual(); }
+      if(e.key==='2'){ e.preventDefault(); enterAutomatic(); }
+      if(e.key==='Escape'){ e.preventDefault(); // gateway is mandatory first visit, but Esc after mode set returns to that mode
+        var m=getMode(); if(m==='manual') enterManual(); else if(m==='automatic') enterAutomatic();
+      }
+    });
+  }
+  // YONO × in automatic should return to gateway, not to maven
+  (function patchYonoClose(){
+    var iv=setInterval(function(){
+      if(!window.YONO || !window.__yonoCloseForMss) return;
+      if(window.__yonoCloseForMss.__mssPatched) { clearInterval(iv); return; }
+      // wrap close via YONO object
+      var origClose=window.__yonoCloseForMss;
+      var wrapped=function(){
+        var m=getMode();
+        var docked=window.YonoAgent && window.YonoAgent.isDocked && window.YonoAgent.isDocked();
+        if(m==='automatic' && docked){
+          showGateway(); return;
+        }
+        return origClose.apply(this, arguments);
+      };
+      window.__yonoCloseForMss.__mssPatched=true;
+      wrapped.__mssPatched=true;
+      window.__yonoCloseForMss=wrapped;
+      // also patch window.YONO.close and YonoAgent.close
+      if(window.YONO) window.YONO.close=wrapped;
+      if(window.YonoAgent) window.YonoAgent.close=function(){ return wrapped(); };
+      // patch toggle: Ctrl+Shift+Y in automatic should keep automatic (re-dock)
+      clearInterval(iv);
+    }, 400);
+  })();
+  // expose
+  window.__mssOnFusionEnter = onFusionEnter;
+  window.__mssShowGateway = showGateway;
+  window.__mssEnterManual = enterManual;
+  window.__mssEnterAutomatic = enterAutomatic;
+  window.__mssGetMode = getMode;
+  // boot
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ wire(); renderToggle(); syncGwModel(); });
+  else { wire(); renderToggle(); syncGwModel(); }
+  // if already on sc-fusion at load (deep link), trigger after a tick once fusionMap pane is visible
+  setTimeout(function(){
+    var sc=document.getElementById('page-sc-fusion');
+    if(sc && !sc.classList.contains('hidden') && sc.offsetParent!==null) onFusionEnter();
+  }, 900);
+})();
+</script>
+<script id="mss-terrain-engine">
+/* ══════════════════════════════════════════════════════════════════════
+   MSS WEBGL TERRAIN/SEA — Bullagao point-cloud port for the gateway
+   column (gateway-only 372px). OVERRIDE per operator 2026-08-29:
+   brings three.js r128 into admin.html outside terranean guard.
+   Manual = mountain (dark), Automatic = sea (Abyss blue + wave).
+   Pauses when gateway hidden/collapsed/reduced-motion.
+   ══════════════════════════════════════════════════════════════════════ */
+(function initMssTerrain(){
+  "use strict";
+  var LS='mss_mode';
+  function getMode(){ try{ return localStorage.getItem(LS); }catch(e){ return null; } }
+  function isReduced(){ try{ return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } }
+  if(isReduced()) return;
+  // Skeleton transform is the primary render — gateway bg canvas stays as fallback, hidden when skeleton WebGL live
+  var canvas=document.getElementById('mssSkeletonCanvas');
+  var sk=document.getElementById('mssSkeleton');
+  var bgCanvas=document.getElementById('mssWebglCanvas');
+  var gateway=document.getElementById('mssGateway');
+  var col=document.getElementById('mavenLeftCol');
+  if(!canvas||!sk||!gateway) return;
+  if(typeof THREE==='undefined'){
+    var bg=document.querySelector('.mss-scan-bg'), ln=document.querySelector('.mss-scan-line');
+    if(bg) bg.classList.add('mss-fallback-on'); if(ln) ln.classList.add('mss-fallback-on');
+    return;
+  }
+  var renderer;
+  try{ renderer=new THREE.WebGLRenderer({canvas:canvas, antialias:false, alpha:true, powerPreference:'high-performance'});}catch(e){
+    console.warn('[MSS] WebGL init failed',e);
+    var bg2=document.querySelector('.mss-scan-bg'), ln2=document.querySelector('.mss-scan-line');
+    if(bg2) bg2.classList.add('mss-fallback-on'); if(ln2) ln2.classList.add('mss-fallback-on');
+    if(bgCanvas) bgCanvas.classList.add('mss-webgl-hidden');
+    return;
+  }
+  // skeleton covers full left column (not just gateway) — portrait 372px x col height
+  function sizeCanvas(){
+    var w=col ? (col.clientWidth||372) : 372;
+    var h=col ? (col.clientHeight||520) : 520;
+    if(h<200) h=520;
+    if(w<100) w=372;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.5));
+    renderer.setSize(w, h, false);
+    return {w:w,h:h};
+  }
+  var sz=sizeCanvas();
+  var scene=new THREE.Scene();
+  var colFogDark=new THREE.Color(0x000000);
+  var colFogSea=new THREE.Color(0x00111a);
+  var colBaseDark=new THREE.Color(0x181e24);
+  var colBaseSea=new THREE.Color(0x0a1e2e);
+  var colNeonDark=new THREE.Color(0xDFF140);
+  var colNeonSea=new THREE.Color(0x80e0ff);
+  var colWireDark=new THREE.Color(0x11161b);
+  var colWireSea=new THREE.Color(0x0e2a3a);
+  var currentFog=new THREE.Color(0x000000);
+  var currentWire=new THREE.Color(0x11161b);
+  scene.fog=new THREE.FogExp2(0x000000, 0.0028);
+  renderer.setClearColor(0x000000, 1.0);
+  // nadir plan view — whole section builds as topographic plan filling the column rectangle
+  var camera=new THREE.PerspectiveCamera(48, sz.w/sz.h, 1, 3000);
+  camera.position.set(0, 620, 0.1);
+  camera.lookAt(0, 0, 0);
+  camera.rotation.z=Math.PI;
+  // Shaders — Bullagao verbatim + sea wave amp uniform
+  var vShader="uniform float uTime;uniform float uScanPlaneY;uniform float uHeightScale;uniform float uWaveAmp;varying float vElevation;varying vec3 vWorldPos;varying float vScanDist;vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}vec2 mod289(vec2 x){return x-floor(x*(1.0/289.0))*289.0;}vec3 permute(vec3 x){return mod289(((x*34.0)+1.0)*x);}float snoise(vec2 v){const vec4 C=vec4(0.211324865405187,0.366025403784439,-0.577350269189626,0.024390243902439);vec2 i=floor(v+dot(v,C.yy));vec2 x0=v-i+dot(i,C.xx);vec2 i1=(x0.x>x0.y)?vec2(1.0,0.0):vec2(0.0,1.0);vec4 x12=x0.xyxy+C.xxzz;x12.xy-=i1;i=mod289(i);vec3 p=permute(permute(i.y+vec3(0.0,i1.y,1.0))+i.x+vec3(0.0,i1.x,1.0));vec3 m=max(0.5-vec3(dot(x0,x0),dot(x12.xy,x12.xy),dot(x12.zw,x12.zw)),0.0);m=m*m;m=m*m;vec3 x=2.0*fract(p*C.www)-1.0;vec3 h=abs(x)-0.5;vec3 ox=floor(x+0.5);vec3 a0=x-ox;m*=1.79284291400159-0.85373472095314*(a0*a0+h*h);vec3 g;g.x=a0.x*x0.x+h.x*x0.y;g.yz=a0.yz*x12.xz+h.yz*x12.yw;return 130.0*dot(m,g);}float getSleepingBeautyHeight(vec2 p){float nx=p.x*0.0032;float nz=p.y*0.0032;float baseMass=exp(-pow(nx*0.9,2.0)-pow(nz*1.3,2.0))*220.0;float headPeak=exp(-pow((nx+0.48)*3.8,2.0)-pow((nz-0.05)*3.8,2.0))*140.0;float breastPeak1=exp(-pow((nx-0.02)*3.6,2.0)-pow((nz+0.04)*3.6,2.0))*185.0;float breastPeak2=exp(-pow((nx-0.32)*3.4,2.0)-pow((nz-0.02)*3.4,2.0))*175.0;float bodySlope=exp(-pow((nx-0.85)*2.1,2.0)-pow(nz*2.8,2.0))*105.0;float spurs=snoise(vec2(nx*3.5,nz*3.5))*48.0;float ravines=snoise(vec2(nx*7.0,nz*7.0))*22.0;float microCrags=snoise(vec2(nx*14.0,nz*14.0))*8.0;float riverValley=smoothstep(-150.0,150.0,p.y)*0.4+0.6;return (baseMass+headPeak+breastPeak1+breastPeak2+bodySlope+spurs+ravines+microCrags)*riverValley;}void main(){vec3 pos=position;float h=getSleepingBeautyHeight(pos.xy);float seaWave=snoise(vec2(pos.x*0.008+uTime*0.06, pos.y*0.008))*uWaveAmp;pos.z=h*uHeightScale+seaWave;vElevation=h*uHeightScale;vec4 worldPos=modelMatrix*vec4(pos,1.0);vWorldPos=worldPos.xyz;vScanDist=abs(worldPos.y-uScanPlaneY);gl_Position=projectionMatrix*viewMatrix*worldPos;float pSize=(3.5+(h*uHeightScale/45.0));gl_PointSize=clamp(pSize*(420.0/-(viewMatrix*worldPos).z),1.0,8.0);}";
+  var fShader="uniform vec3 uBaseColor;uniform vec3 uNeonColor;uniform float uScanPlaneY;varying float vElevation;varying vec3 vWorldPos;varying float vScanDist;void main(){vec2 coord=gl_PointCoord-vec2(0.5);if(length(coord)>0.5) discard;float contourStep=14.0;float contourLineWidth=1.6;float contourMod=mod(vElevation,contourStep);float isContour=step(contourMod,contourLineWidth);float scanHighlight=smoothstep(22.0,0.0,vScanDist);vec3 col=mix(uBaseColor,vec3(0.4,0.44,0.48),clamp(vElevation/240.0,0.0,1.0));col=mix(col,uNeonColor,isContour*0.85);col=mix(col,uNeonColor,scanHighlight*0.9);float alpha=clamp(0.35+(vElevation/200.0)*0.55+scanHighlight*0.4,0.2,0.95);gl_FragColor=vec4(col,alpha);}";
+  var terrainGeo=new THREE.PlaneGeometry(700, 520, 120, 80);
+  var uniforms={uTime:{value:0},uScanPlaneY:{value:60},uBaseColor:{value:new THREE.Color(colBaseDark)},uNeonColor:{value:new THREE.Color(colNeonDark)},uHeightScale:{value:1.0},uWaveAmp:{value:0.0}};
+  var terrainMat=new THREE.ShaderMaterial({vertexShader:vShader,fragmentShader:fShader,uniforms:uniforms,transparent:true,depthWrite:false});
+  var pointCloud=new THREE.Points(terrainGeo, terrainMat);
+  pointCloud.rotation.x=-Math.PI/2;
+  scene.add(pointCloud);
+  var wireMat=new THREE.MeshBasicMaterial({color:new THREE.Color(colWireDark),wireframe:true,transparent:true,opacity:0.13});
+  var wireMesh=new THREE.Mesh(terrainGeo, wireMat);
+  wireMesh.rotation.x=-Math.PI/2; wireMesh.position.y=-1.2;
+  scene.add(wireMesh);
+  var dustGeo=new THREE.BufferGeometry();
+  var dustCount=180;
+  var dustPos=new Float32Array(dustCount*3);
+  for(var i=0;i<dustCount*3;i+=3){ dustPos[i]=(Math.random()-0.5)*700; dustPos[i+1]=Math.random()*200; dustPos[i+2]=(Math.random()-0.5)*520; }
+  dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos,3));
+  var dustMat=new THREE.PointsMaterial({color:new THREE.Color(colNeonDark),size:2.0,transparent:true,opacity:0.30});
+  var dustPoints=new THREE.Points(dustGeo, dustMat);
+  scene.add(dustPoints);
+  // mode lerp targets
+  var targetFog=new THREE.Color(colFogDark), targetBase=new THREE.Color(colBaseDark), targetNeon=new THREE.Color(colNeonDark), targetWire=new THREE.Color(colWireDark);
+  var targetHeight=1.0, targetWave=0.0, targetFogExp=0.0028;
+  function applyMode(m){
+    if(m==='automatic'){ targetFog.copy(colFogSea); targetBase.copy(colBaseSea); targetNeon.copy(colNeonSea); targetWire.copy(colWireSea); targetHeight=0.42; targetWave=7.0; targetFogExp=0.0032; }
+    else { targetFog.copy(colFogDark); targetBase.copy(colBaseDark); targetNeon.copy(colNeonDark); targetWire.copy(colWireDark); targetHeight=1.0; targetWave=0.0; targetFogExp=0.0022; }
+  }
+  applyMode(getMode());
+  // listen for mode changes via storage + direct calls
+  window.addEventListener('storage', function(e){ if(e.key===LS) applyMode(e.newValue); });
+  var _origSetMode=window.__mssEnterManual;
+  // hook into gateway engine if available — poll
+  var hookIv=setInterval(function(){
+    if(window.__mssGetMode){
+      var last=null;
+      setInterval(function(){ var cur=window.__mssGetMode(); if(cur!==last){ last=cur; applyMode(cur); } }, 250);
+      clearInterval(hookIv);
+    }
+  }, 500);
+  // resize — skeleton covers full column
+  var ro=null;
+  try{ ro=new ResizeObserver(function(){ var s=sizeCanvas(); camera.aspect=s.w/s.h; camera.updateProjectionMatrix(); }); ro.observe(col); }catch(e){}
+  window.addEventListener('resize', function(){ var s=sizeCanvas(); camera.aspect=s.w/s.h; camera.updateProjectionMatrix(); });
+  var clock=new THREE.Clock();
+  function isSkeletonActive(){ return sk && sk.classList.contains('mss-active'); }
+  function checkVisible(){
+    if(!isSkeletonActive()) return false;
+    if(!sk.offsetParent) return false;
+    if(col && col.classList.contains('collapsed')) return false;
+    if(document.hidden) return false;
+    return true;
+  }
+  // skeleton provides the transform — hide gateway bg fallback when WebGL live (gateway bg stays for no-JS fallback only)
+  var bgEl=document.querySelector('.mss-scan-bg'), lnEl=document.querySelector('.mss-scan-line');
+  if(bgEl) bgEl.classList.remove('mss-fallback-on'); if(lnEl) lnEl.classList.remove('mss-fallback-on');
+  if(bgCanvas) bgCanvas.classList.add('mss-webgl-hidden');
+  // skeleton starts hidden — engine idles until triggered
+  // expose transform runner
+  window.__mssSkeletonRun=function(mode, cb){
+    var label=document.getElementById('mssSkeletonLabel'), modeEl=document.getElementById('mssSkeletonMode');
+    if(label) label.textContent = (mode==='automatic' ? 'CHARTING SEA CURRENTS' : 'ASSEMBLING TERRAIN MESH');
+    if(modeEl) modeEl.textContent = (mode==='automatic' ? 'AUTOMATIC · SEA' : 'MANUAL · TERRAIN');
+    try{ sk.setAttribute('data-skel', mode==='automatic'?'sea':'terrain'); }catch(e){}
+    applyMode(mode);
+    // start from flat for build effect then lerp to target in loop
+    uniforms.uHeightScale.value = (mode==='automatic' ? 0.06 : 0.08);
+    if(mode==='automatic') uniforms.uWaveAmp.value = 0.6; else uniforms.uWaveAmp.value = 0.0;
+    sk.classList.remove('mss-hidden','mss-exit');
+    // force reflow
+    void sk.offsetWidth;
+    sk.classList.add('mss-active');
+    sizeCanvas(); camera.aspect = (sk.clientWidth||372)/(sk.clientHeight||520); camera.updateProjectionMatrix();
+    // hold skeleton visible ~1100ms (terrain builds) then exit
+    setTimeout(function(){
+      sk.classList.add('mss-exit');
+      setTimeout(function(){
+        sk.classList.remove('mss-active','mss-exit');
+        sk.classList.add('mss-hidden');
+        if(typeof cb==='function') cb();
+      }, 380);
+    }, 1100);
+  };
+  // also keep applyMode exposed for direct call
+  window.__mssWebglApplyMode=applyMode;
+  function loop(){
+    requestAnimationFrame(loop);
+    if(!checkVisible()){
+      // keep canvas hidden when not in gateway to save GPU & avoid flash
+      if(!canvas.classList.contains('mss-webgl-hidden') && !checkVisible()){ /* keep rendered but paused */ }
+      return;
+    }
+    var t=clock.getElapsedTime();
+    uniforms.uTime.value=t;
+    // scan sweep — strong like terranean sin
+    uniforms.uScanPlaneY.value=Math.sin(t*0.42)*70.0 + 18.0 + Math.sin(t*0.17)*12.0;
+    // lerp uniforms toward target (smooth mode transition)
+    uniforms.uBaseColor.value.lerp(targetBase, 0.06);
+    uniforms.uNeonColor.value.lerp(targetNeon, 0.06);
+    uniforms.uHeightScale.value += (targetHeight - uniforms.uHeightScale.value)*0.07;
+    uniforms.uWaveAmp.value += (targetWave - uniforms.uWaveAmp.value)*0.07;
+    currentFog.lerp(targetFog, 0.05); scene.fog.color.copy(currentFog); scene.fog.density += (targetFogExp - scene.fog.density)*0.06; renderer.setClearColor(currentFog,1.0);
+    currentWire.lerp(targetWire, 0.05); wireMat.color.copy(currentWire);
+    dustMat.color.lerp(targetNeon, 0.05);
+    // gentle camera drift around Bullagao — portrait orbit
+    var ang=0.35 + Math.sin(t*0.07)*0.22;
+    var rad=340 + Math.sin(t*0.11)*22;
+    camera.position.x=Math.sin(ang)*rad*0.55;
+    camera.position.z=Math.cos(ang)*rad*0.9;
+    camera.position.y=210 + Math.sin(t*0.09)*10;
+    camera.lookAt(0, 10 + Math.sin(t*0.08)*6, 0);
+    dustPoints.rotation.y=t*0.015;
+    renderer.render(scene, camera);
+  }
+  loop();
+  // expose for gateway engine
+  window.__mssWebgl={applyMode:applyMode, renderer:renderer, scene:scene, camera:camera};
+})();
+</script>
+<script id="mss-auto-engine">
+/* MSS AUTOMATIC — voice + circle — enhanced controls 2026-08-29
+   - Fix not-allowed (Permissions-Policy now microphone=(self) on nginx + FastAPI)
+   - Explicit state: idle/requesting/listening/error
+   - Hold vs Toggle lock mode, Stop/Retry, device picker, live meter, diagnostics
+   - No longer stuck on "Listening" — recovers from not-allowed
+*/
+(function(){
+  "use strict";
+  var col=document.getElementById('mavenLeftCol');
+  var autoPanel=document.getElementById('mssAutoPanel');
+  var canvas=document.getElementById('mssSpinalCanvas');
+  var voiceBtn=document.getElementById('mssVoiceBtn');
+  var voiceStatus=document.getElementById('mssVoiceStatus');
+  var transcriptEl=document.getElementById('mssTranscript');
+  var voiceStop=document.getElementById('mssVoiceStop');
+  var voiceRetry=document.getElementById('mssVoiceRetry');
+  var voiceMode=document.getElementById('mssVoiceMode');
+  var micSelect=document.getElementById('mssMicSelect');
+  var meterFill=document.getElementById('mssVoiceMeterFill');
+  var diagEl=document.getElementById('mssVoiceDiag');
+  if(!autoPanel||!canvas||!voiceBtn) return;
+  var THREE0=window.THREE;
+  var circlesReady=false, circleRenderer, circleScene, circleCam, planetMesh, zodiacGroup, starPoints;
+  var audioCtx=null, analyser=null, micStream=null, dataArray=null, selectedDeviceId=null;
+  var volSmooth=0, holdMode=true;
+  function setDiag(html, show){ if(!diagEl) return; if(show){ diagEl.innerHTML=html; diagEl.style.display='block'; } else { diagEl.style.display='none'; } }
+  function diagInfo(){
+    var info=[];
+    try{ info.push('Secure: '+(window.isSecureContext?'yes':'NO — need https')); }catch(e){}
+    try{ info.push('Proto: '+location.protocol); }catch(e){}
+    try{ info.push('UA: '+navigator.userAgent.slice(0,90)); }catch(e){}
+    try{ info.push('PerPolicy: '+(document.featurePolicy && document.featurePolicy.allowsFeature ? (document.featurePolicy.allowsFeature('microphone')?'allow':'block') : 'n/a')); }catch(e){}
+    if(micSelect && micSelect.options.length) info.push('Mics: '+micSelect.options.length);
+    if(selectedDeviceId) info.push('Dev: '+selectedDeviceId.slice(0,12));
+    return info.join(' | ');
+  }
+  async function refreshDevices(){
+    if(!micSelect || !navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+    try{
+      var devs=await navigator.mediaDevices.enumerateDevices();
+      var mics=devs.filter(function(d){return d.kind==='audioinput';});
+      if(!mics.length) return;
+      micSelect.innerHTML='';
+      // sort: prefer built-in / internal analog, deprioritize monitor/webcam
+      mics.sort(function(a,b){
+        var la=(a.label||'').toLowerCase(), lb=(b.label||'').toLowerCase();
+        var sa = /built|internal|analog.*stereo|internal.*mic/.test(la) ? 0 : (/monitor|webcam|hdmi|usb.*camera/.test(la) ? 2 : 1);
+        var sb = /built|internal|analog.*stereo|internal.*mic/.test(lb) ? 0 : (/monitor|webcam|hdmi|usb.*camera/.test(lb) ? 2 : 1);
+        return sa - sb;
+      });
+      mics.forEach(function(m){
+        var o=document.createElement('option');
+        o.value=m.deviceId; o.textContent=m.label||('Mic '+(micSelect.options.length+1));
+        micSelect.appendChild(o);
+      });
+      micSelect.style.display='';
+      // restore persisted choice, else prefer built-in (now first after sort)
+      try{ var saved=localStorage.getItem('mss_mic_id'); if(saved && mics.some(function(m){return m.deviceId===saved;})) selectedDeviceId=saved; }catch(e){}
+      if(!selectedDeviceId && mics[0]) selectedDeviceId=mics[0].deviceId;
+      micSelect.value=selectedDeviceId||mics[0].deviceId;
+      try{ localStorage.setItem('mss_mic_id', micSelect.value); }catch(e){}
+    }catch(e){}
+  }
+  if(micSelect) micSelect.addEventListener('change', function(){
+    selectedDeviceId=micSelect.value;
+    try{ localStorage.setItem('mss_mic_id', selectedDeviceId); }catch(e){}
+    setDiag('Selected: '+micSelect.options[micSelect.selectedIndex].textContent+' — press RETRY or TEST', false);
+    // auto re-init audio so TEST shows new mic immediately
+    stopAudio();
+  });
+  if(voiceMode) voiceMode.addEventListener('click', function(){ holdMode=!holdMode; voiceMode.textContent='MODE: '+(holdMode?'HOLD':'LOCK'); voiceBtn.textContent= holdMode ? '◉ HOLD TO TALK' : '◉ TAP TO TALK'; setStatus(holdMode?'HOLD mode — press and hold':'LOCK mode — tap to start/stop'); });
+
+  async function ensureAudio(){
+    if(analyser) return;
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('getUserMedia not supported');
+    var constraints={audio: selectedDeviceId ? {deviceId:{exact:selectedDeviceId}} : true};
+    var stream=await navigator.mediaDevices.getUserMedia(constraints);
+    micStream=stream;
+    try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ audioCtx=null; throw e; }
+    var src=audioCtx.createMediaStreamSource(stream);
+    analyser=audioCtx.createAnalyser();
+    analyser.fftSize=256; analyser.smoothingTimeConstant=0.75;
+    src.connect(analyser);
+    dataArray=new Uint8Array(analyser.frequencyBinCount);
+    if(audioCtx.state==='suspended') await audioCtx.resume().catch(function(){});
+    await refreshDevices();
+  }
+  function stopAudio(){
+    try{ if(micStream) micStream.getTracks().forEach(function(t){t.stop();}); }catch(e){}
+    micStream=null;
+    try{ if(audioCtx) audioCtx.close(); }catch(e){}
+    audioCtx=null; analyser=null; dataArray=null; volSmooth=0;
+    if(meterFill) meterFill.style.width='0%';
+    try{ autoPanel.style.removeProperty('--mss-vol'); }catch(e){}
+  }
+  function currentVol(){
+    if(!analyser || !dataArray) return 0;
+    analyser.getByteFrequencyData(dataArray);
+    var sum=0; for(var i=0;i<dataArray.length;i++) sum+=dataArray[i];
+    return Math.min(1, Math.pow(sum/dataArray.length/255,0.9)*1.35);
+  }
+  function initCircle(){
+    if(circlesReady||!THREE0||!canvas) return;
+    try{
+      var w=280,h=280;
+      circleRenderer=new THREE0.WebGLRenderer({canvas:canvas, antialias:true, alpha:true, powerPreference:'high-performance'});
+      circleRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.6));
+      circleRenderer.setSize(w,h,false);
+      circleRenderer.setClearColor(0x030712, 0.0);
+      circleScene=new THREE0.Scene();
+      circleScene.fog=new THREE0.FogExp2(0x030712, 0.012);
+      circleCam=new THREE0.PerspectiveCamera(44, 1, 0.1, 800);
+      circleCam.position.set(0, 0, 210);
+      circleCam.lookAt(0,0,0);
+      var cosmosGroup=new THREE0.Group(); circleScene.add(cosmosGroup);
+      var vShader="uniform float uTime;varying float vDisplacement;varying vec3 vNormal;varying vec3 vWorldPos;vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}vec2 mod289(vec2 x){return x-floor(x*(1.0/289.0))*289.0;}vec3 permute(vec3 x){return mod289(((x*34.0)+1.0)*x);}float snoise(vec2 v){const vec4 C=vec4(0.211324865405187,0.366025403784439,-0.577350269189626,0.024390243902439);vec2 i=floor(v+dot(v,C.yy));vec2 x0=v-i+dot(i,C.xx);vec2 i1=(x0.x>x0.y)?vec2(1.0,0.0):vec2(0.0,1.0);vec4 x12=x0.xyxy+C.xxzz;x12.xy-=i1;i=mod289(i);vec3 p=permute(permute(i.y+vec3(0.0,i1.y,1.0))+i.x+vec3(0.0,i1.x,1.0));vec3 m=max(0.5-vec3(dot(x0,x0),dot(x12.xy,x12.xy),dot(x12.zw,x12.zw)),0.0);m=m*m;m=m*m;vec3 x=2.0*fract(p*C.www)-1.0;vec3 h=abs(x)-0.5;vec3 ox=floor(x+0.5);vec3 a0=x-ox;m*=1.79284291400159-0.85373472095314*(a0*a0+h*h);vec3 g;g.x=a0.x*x0.x+h.x*x0.y;g.yz=a0.yz*x12.xz+h.yz*x12.yw;return 130.0*dot(m,g);}void main(){vNormal=normal;vec3 pos=position;float pulse1=snoise(vec2(pos.x*0.02+uTime*0.8,pos.y*0.02))*12.0;float pulse2=sin(pos.y*0.05-uTime*1.5)*cos(pos.z*0.05+uTime*1.2)*7.0;float totalDeform=pulse1+pulse2;vDisplacement=totalDeform;pos+=normal*totalDeform;vec4 worldPos=modelMatrix*vec4(pos,1.0);vWorldPos=worldPos.xyz;gl_Position=projectionMatrix*viewMatrix*worldPos;}";
+      var fShader="uniform vec3 uPlanetColor;uniform vec3 uFlareColor;uniform float uTime;varying float vDisplacement;varying vec3 vNormal;varying vec3 vWorldPos;void main(){vec3 viewDir=normalize(cameraPosition-vWorldPos);float rim=1.0-max(dot(viewDir,vNormal),0.0);float rimGlow=pow(rim,2.2);float flareNorm=clamp((vDisplacement+15.0)/30.0,0.0,1.0);vec3 col=mix(uPlanetColor,uFlareColor,flareNorm);col+=uFlareColor*rimGlow*1.25;gl_FragColor=vec4(col,0.88);}";
+      var planetGeo=new THREE0.SphereGeometry(56, 48, 48);
+      var planetUniforms={uTime:{value:0}, uPlanetColor:{value:new THREE0.Color(0x38bdf8)}, uFlareColor:{value:new THREE0.Color(0xDFF140)}};
+      var planetMat=new THREE0.ShaderMaterial({vertexShader:vShader,fragmentShader:fShader,uniforms:planetUniforms,wireframe:true,transparent:true});
+      planetMesh=new THREE0.Mesh(planetGeo, planetMat); cosmosGroup.add(planetMesh);
+      var coreMesh=new THREE0.Mesh(new THREE0.SphereGeometry(52, 32, 32), new THREE0.MeshBasicMaterial({color:0x030712, transparent:true, opacity:0.90}));
+      cosmosGroup.add(coreMesh);
+      var ZODIAC=[{pts:[[0,0],[25,12],[45,8],[55,-10]],lines:[[0,1],[1,2],[2,3]]},{pts:[[0,0],[18,15],[35,8],[50,22],[55,-12],[28,-8]],lines:[[0,1],[1,2],[2,3],[2,5],[5,4]]},{pts:[[0,30],[15,18],[30,5],[45,-15],[0,-30],[15,-18],[30,-5]],lines:[[0,1],[1,2],[2,3],[4,5],[5,6],[6,3],[1,5]]},{pts:[[0,0],[15,15],[30,0],[15,-20],[-15,-10]],lines:[[0,1],[1,2],[0,3],[0,4]]},{pts:[[0,20],[15,30],[28,18],[20,0],[0,0],[-20,-15],[-35,-10],[-25,15]],lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,4]]},{pts:[[0,30],[12,15],[25,0],[40,-15],[10,-20],[-10,-15],[20,-35]],lines:[[0,1],[1,2],[2,3],[2,4],[4,5],[4,6]]},{pts:[[0,20],[25,10],[15,-15],[-15,-15],[-25,10]],lines:[[0,1],[1,2],[2,3],[3,4],[4,0],[4,2]]},{pts:[[-30,25],[-15,18],[0,10],[15,0],[25,-15],[20,-30],[5,-35],[-10,-25]],lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7]]},{pts:[[0,25],[20,15],[35,0],[20,-20],[0,-15],[-20,0],[0,0]],lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[6,2]]},{pts:[[-30,15],[-10,25],[15,20],[35,0],[20,-20],[-15,-25],[-30,-10]],lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0]]},{pts:[[-30,15],[-10,25],[10,15],[30,25],[-30,-10],[-10,0],[10,-10],[30,0]],lines:[[0,1],[1,2],[2,3],[4,5],[5,6],[6,7],[1,5],[2,6]]},{pts:[[-25,20],[-10,10],[10,0],[25,-15],[35,-25],[-15,-15],[-30,-25]],lines:[[0,1],[1,2],[2,3],[3,4],[2,5],[5,6]]}];
+      zodiacGroup=new THREE0.Group();
+      var orbitRadius=96;
+      ZODIAC.forEach(function(sign, idx){
+        var g=new THREE0.Group();
+        var ang=(idx/ZODIAC.length)*Math.PI*2;
+        g.position.x=Math.cos(ang)*orbitRadius; g.position.z=Math.sin(ang)*orbitRadius; g.position.y=Math.sin(ang*2)*18;
+        var sPos=new Float32Array(sign.pts.length*3);
+        sign.pts.forEach(function(pt,i){ sPos[i*3]=pt[0]*0.85; sPos[i*3+1]=pt[1]*0.85; sPos[i*3+2]=0; });
+        var sGeo=new THREE0.BufferGeometry(); sGeo.setAttribute('position', new THREE0.BufferAttribute(sPos,3));
+        var sMat=new THREE0.PointsMaterial({color:0xDFF140, size:4.2, transparent:true, opacity:0.95});
+        g.add(new THREE0.Points(sGeo, sMat));
+        sign.lines.forEach(function(lp){
+          var p1=sign.pts[lp[0]], p2=sign.pts[lp[1]];
+          var lGeo=new THREE0.BufferGeometry();
+          lGeo.setAttribute('position', new THREE0.BufferAttribute(new Float32Array([p1[0]*0.85,p1[1]*0.85,0,p2[0]*0.85,p2[1]*0.85,0]),3));
+          g.add(new THREE0.Line(lGeo, new THREE0.LineBasicMaterial({color:0x38bdf8, transparent:true, opacity:0.55})));
+        });
+        zodiacGroup.add(g);
+      });
+      zodiacGroup.rotation.x=Math.PI/4.5; cosmosGroup.add(zodiacGroup);
+      var sCount=800;
+      var sPos2=new Float32Array(sCount*3), sAlp=new Float32Array(sCount);
+      for(var i=0;i<sCount;i++){ sPos2[i*3]=(Math.random()-0.5)*520; sPos2[i*3+1]=(Math.random()-0.5)*520; sPos2[i*3+2]=(Math.random()-0.5)*520; sAlp[i]=0.35+Math.random()*0.60; }
+      var sGeo2=new THREE0.BufferGeometry(); sGeo2.setAttribute('position', new THREE0.BufferAttribute(sPos2,3)); sGeo2.setAttribute('aAlpha', new THREE0.BufferAttribute(sAlp,1));
+      var sMat2=new THREE0.ShaderMaterial({
+        vertexShader:"uniform float uTime;attribute float aAlpha;varying float vAlpha;void main(){vec3 pos=position;vec4 mv=modelViewMatrix*vec4(pos,1.0);gl_Position=projectionMatrix*mv;float tw=sin(pos.x*0.05+uTime*2.5)*0.35+1.0;gl_PointSize=clamp((3.2*tw*(220.0/-mv.z)),1.2,6.0);vAlpha=aAlpha;}",
+        fragmentShader:"uniform vec3 uStarColor;varying float vAlpha;void main(){vec2 c=gl_PointCoord-vec2(0.5);if(length(c)>0.5) discard; gl_FragColor=vec4(uStarColor, vAlpha*0.9);}",
+        uniforms:{uTime:{value:0}, uStarColor:{value:new THREE0.Color(0x38bdf8)}}, transparent:true
+      });
+      starPoints=new THREE0.Points(sGeo2, sMat2); circleScene.add(starPoints);
+      circleScene.userData={planetUniforms:planetUniforms, starMat:sMat2, clock:new THREE0.Clock(), cosmosGroup:cosmosGroup, zodiacGroup:zodiacGroup};
+      var clock=circleScene.userData.clock;
+      function loop(){
+        requestAnimationFrame(loop);
+        if(!autoPanel.offsetParent || (col&&col.classList.contains('collapsed')) || col.getAttribute('data-mfeat')!=='automatic'){ return; }
+        var t=clock.getElapsedTime();
+        var listening=autoPanel.classList.contains('mss-voice-listening');
+        var v=currentVol();
+        if(listening){ volSmooth += (v - volSmooth)*0.22; } else { volSmooth *= 0.88; if(volSmooth<0.01) volSmooth=0; }
+        var vol=volSmooth;
+        try{ autoPanel.style.setProperty('--mss-vol', vol.toFixed(3)); if(meterFill) meterFill.style.width=Math.round(vol*100)+'%'; }catch(e){}
+        var timeScale = listening ? (0.55 + vol*2.2) : 0.08;
+        planetUniforms.uTime.value = t * timeScale;
+        sMat2.uniforms.uTime.value = t * (listening ? (1.0 + vol*0.8) : 0.12);
+        var rotY = listening ? (0.04 + vol*0.18) : 0.01;
+        planetMesh.rotation.y = t*rotY + (listening? Math.sin(t*1.2)*vol*0.06:0);
+        zodiacGroup.rotation.y = t*(listening? (0.03+vol*0.04):0.006);
+        starPoints.rotation.y = t*(listening? (0.01+vol*0.008):0.003);
+        var sc = listening ? (1.02 + vol*0.09 + Math.sin(t*7.0)*vol*0.015) : 1.0;
+        canvas.style.transform='scale('+sc+')';
+        var glow=document.querySelector('.mss-spinal-glow');
+        if(glow) glow.style.opacity = listening ? (0.22 + vol*0.55) : '';
+        circleRenderer.render(circleScene, circleCam);
+      }
+      loop();
+      circlesReady=true;
+      window.__mssSpinalTick=function(boost){ if(boost) planetUniforms.uFlareColor.value.setHex(0xffffff); else planetUniforms.uFlareColor.value.setHex(0xDFF140); };
+    }catch(e){ console.warn('[MSS circle] init failed',e); }
+  }
+  function ensureCircle(){ if(!circlesReady) initCircle(); }
+  try{
+    var mo=new MutationObserver(function(){ if(col.getAttribute('data-mfeat')==='automatic') ensureCircle(); });
+    mo.observe(col, {attributes:true, attributeFilter:['data-mfeat']});
+  }catch(e){}
+  if(col.getAttribute('data-mfeat')==='automatic') setTimeout(ensureCircle, 400);
+  window.__mssAutoCirclePulse=function(on){ if(on) autoPanel.classList.add('mss-voice-listening'); else autoPanel.classList.remove('mss-voice-listening'); if(window.__mssSpinalTick) window.__mssSpinalTick(on); if(!on) volSmooth=0; if(meterFill && !on) meterFill.style.width='0%'; };
+
+  function setStatus(t){ if(voiceStatus) voiceStatus.textContent=t; }
+  function addLine(who, text){
+    if(!transcriptEl) return;
+    var d=document.createElement('div');
+    d.className='mss-tline '+(who==='user'?'mss-tline-user':'mss-tline-yono');
+    d.innerHTML='<b>'+(who==='user'?'YOU':'YONO')+'</b> '+ (text||'').replace(/</g,'&lt;');
+    transcriptEl.appendChild(d);
+    transcriptEl.scrollTop=transcriptEl.scrollHeight;
+  }
+  function apiCall(path, opts){
+    if(typeof window.api==='function') return window.api(path, opts||{});
+    return Promise.reject(new Error('admin api() unavailable'));
+  }
+  var listening=false, recognition=null, isStarting=false;
+  function updateButtons(){
+    if(voiceStop) voiceStop.disabled=!listening && !isStarting;
+    if(voiceBtn){ voiceBtn.disabled=isStarting; voiceBtn.setAttribute('aria-busy', isStarting?'true':'false'); }
+  }
+  function startWebSpeech(){
+    var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR) { var isFirefox = /firefox/i.test(navigator.userAgent); var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent); var why = isFirefox ? 'Firefox does not support browser speech-to-text' : (isSafari ? 'Safari has limited STT — use Chrome/Edge for full voice' : 'This browser does not support SpeechRecognition'); throw new Error(why + ' — use Chrome/Edge on HTTPS. Mic pulse still works, or type below.'); }
+    recognition=new SR();
+    recognition.continuous=true; recognition.interimResults=true; recognition.lang='en-US';
+    recognition.onresult=function(e){
+      var finalTxt='', interimTxt='';
+      for(var i=e.resultIndex;i<e.results.length;i++){
+        var r=e.results[i];
+        if(r.isFinal) finalTxt+=r[0].transcript+' ';
+        else interimTxt+=r[0].transcript+' ';
+      }
+      if(interimTxt) setStatus('LISTENING — '+interimTxt.slice(0,52));
+      if(finalTxt){
+        var t=finalTxt.trim();
+        if(t){ addLine('user', t); sendToYono(t); }
+      }
+    };
+    recognition.onerror=function(e){
+      var err=e.error||'speech';
+      if(err==='not-allowed' || err==='service-not-allowed'){
+        var secure=window.isSecureContext ? 'secure' : 'NOT secure (need https)';
+        var perm='mic permission denied';
+        try{ if(navigator.permissions) navigator.permissions.query({name:'microphone'}).then(function(s){ perm=s.state; }).catch(function(){}); }catch(_){}
+        setStatus('ERROR — '+err+' ('+secure+')');
+        addLine('yono','Mic blocked — '+err+'. Fix: Chrome lock icon → Site settings → Microphone Allow → Reload. Secure:'+secure+' — '+diagInfo());
+        setDiag('<b>Mic blocked</b> ('+err+')<br>1) URL bar lock → Microphone → Allow<br>2) OS Settings → Privacy → Microphone → Chrome Allow<br>3) Reload page and retry<br><small>'+diagInfo()+'</small>', true);
+        stopAll();
+      } else if(err==='no-speech' || err==='audio-capture'){
+        var volNow = (typeof currentVol==='function' ? Math.round(currentVol()*100) : 0);
+        var isLinux = /Linux|X11/i.test(navigator.userAgent);
+        setStatus('ERROR — '+err+' — no mic signal (vol '+volNow+'%)');
+        var html = '<b>No audio captured ('+err+')</b> — vol '+volNow+'% — '+diagInfo()+'<br>'
+          + 'Mic sees '+ (analyser ? 'analyser live' : 'no analyser') +' — meter below shows live input.<br>'
+          + '1) Speak louder / hold mic closer<br>'
+          + '2) Switch mic in dropdown above (you have '+ (micSelect?micSelect.options.length:'?') +' devices) and press RETRY<br>'
+          + '3) Check system mixer: '+(isLinux ? '<b>pavucontrol</b> → Input Devices → unmute & raise' : 'OS Sound → Input → unmute & raise')+'<br>'
+          + '4) Chrome → lock icon → Microphone → Allow → Reload<br>'
+          + '5) Press <b>TEST MIC</b> to see meter without STT';
+        setDiag(html, true);
+        // keep analyser alive so meter still shows — don't stopAll(); just keep listening for retry
+        // nudge meter to show live vol for 3s
+        if(meterFill && analyser){
+          var t0=Date.now();
+          var iv=setInterval(function(){
+            var v=currentVol();
+            meterFill.style.width=Math.round(v*100)+'%';
+            if(Date.now()-t0>3000 || !listening) clearInterval(iv);
+          }, 80);
+        }
+      } else {
+        setStatus('ERROR — '+err);
+      }
+    };
+    recognition.onend=function(){ if(listening && !isStarting) try{ recognition.start(); }catch(_){ setStatus('ENDED — tap RETRY'); } };
+    recognition.start();
+    setStatus('LISTENING — speak now (browser STT)');
+    window.__mssAutoCirclePulse(true);
+  }
+  async function sendToYono(text){
+    try{
+      var payload={message:text};
+      if(typeof window.apiStream==='function'){
+        var live=null;
+        setStatus('YONO — consulting ontology…');
+        var resp=await window.apiStream('/yono/panel/chat/stream', {body:JSON.stringify(payload), timeout:300000}, function(evt){
+          if(evt.type==='delta'){
+            if(!live){ live=document.createElement('div'); live.className='mss-tline mss-tline-yono'; live.innerHTML='<b>YONO</b> '; transcriptEl.appendChild(live); }
+            live.textContent+=evt.text; transcriptEl.scrollTop=transcriptEl.scrollHeight;
+          }else if(evt.type==='tool'){
+            var c=document.createElement('span'); c.textContent=' · '+evt.entry.tool; c.style.opacity='.6';
+            if(live) live.appendChild(c);
+          }
+        });
+        if(resp&&resp.response) addLine('yono', resp.response);
+        if(resp&&resp.tool_calls){ resp.tool_calls.forEach(function(tc){ if(tc.proposed) addLine('yono', 'Proposed: '+(tc.args&&tc.args.action_name||tc.tool)); }); }
+        if(resp&&resp.tool_calls){ resp.tool_calls.forEach(function(tc){ if(tc.result&&tc.result.directive && typeof window.applyDirective==='function') try{ window.applyDirective(tc.result.directive);}catch(_){} }); }
+        setStatus('LISTENING — speak or hold to talk');
+      } else {
+        var r=await apiCall('/yono/panel/chat', {method:'POST', body:JSON.stringify(payload), timeout:300000});
+        if(r.response) addLine('yono', r.response);
+        setStatus('LISTENING');
+      }
+    }catch(e){ addLine('yono', 'YONO error: '+e.message); setStatus('ERROR'); }
+  }
+  function stopAll(){
+    listening=false; isStarting=false;
+    if(voiceBtn){ voiceBtn.textContent= holdMode ? '◉ HOLD TO TALK' : '◉ TAP TO TALK'; voiceBtn.classList.remove('mss-voice-on'); voiceBtn.setAttribute('aria-pressed','false'); }
+    setStatus('OFF — '+(holdMode ? 'hold to talk' : 'tap to talk'));
+    window.__mssAutoCirclePulse(false);
+    setDiag('', false);
+    stopAudio();
+    try{ if(recognition){ recognition.onend=null; recognition.onerror=null; recognition.stop(); recognition=null; } }catch(e){}
+    updateButtons();
+  }
+  async function startAll(){
+    if(listening || isStarting) return;
+    isStarting=true; updateButtons();
+    setStatus('REQUESTING MIC…');
+    setDiag('Requesting mic… '+diagInfo(), true);
+    ensureCircle();
+    try{ await ensureAudio(); }catch(e){
+      var msg=e.message||String(e);
+      var isNotAllowed = /NotAllowed|Permission|denied/i.test(msg);
+      setStatus('ERROR — '+(isNotAllowed?'not-allowed':'mic error'));
+      if(isNotAllowed){
+        addLine('yono','Mic permission blocked — Chrome lock → Allow → Reload. '+msg+' — '+diagInfo());
+        setDiag('<b>Mic blocked before STT</b><br>'+msg+'<br>1) Allow mic and reload<br>2) Try RETRY<br><small>'+diagInfo()+'</small>', true);
+      } else {
+        addLine('yono','Mic error — '+msg);
+        setDiag('Mic error: '+msg+'<br><small>'+diagInfo()+'</small>', true);
+      }
+      isStarting=false; updateButtons(); stopAudio(); return;
+    }
+    if(audioCtx && audioCtx.state==='suspended') try{ await audioCtx.resume(); }catch(e){}
+    listening=true; isStarting=false;
+    if(voiceBtn){ voiceBtn.textContent='● LISTENING — '+(holdMode?'release to stop':'tap to stop'); voiceBtn.classList.add('mss-voice-on'); voiceBtn.setAttribute('aria-pressed','true'); }
+    setStatus(holdMode?'HOLD — keep pressed':'LISTENING — speak now');
+    window.__mssAutoCirclePulse(true);
+    try{
+      startWebSpeech();
+      setDiag('', false);
+    }catch(e){
+      addLine('yono', 'Voice STT unavailable — '+(e.message||'mic')+' | Mic analyser still live — circle pulses with your voice. Type your command in YONO or switch to Chrome/Edge for full voice.');
+      setStatus('MIC LIVE (analyser) — STT off — circle pulses, type to chat');
+      setDiag('<b>STT unavailable</b> — '+(e.message||'')+'<br>Circle still pulses via analyser. Type below or use Chrome.<br><small>'+diagInfo()+'</small>', true);
+      // keep listening true for analyser pulse, but allow Stop to end
+    }
+    updateButtons();
+  }
+  // Controls
+  if(voiceStop) voiceStop.addEventListener('click', function(e){ e.preventDefault(); stopAll(); });
+  if(voiceRetry) voiceRetry.addEventListener('click', function(e){ e.preventDefault(); stopAll(); setTimeout(function(){ startAll(); }, 180); });
+  var voiceTest=document.getElementById('mssVoiceTest');
+  if(voiceTest) voiceTest.addEventListener('click', async function(e){
+    e.preventDefault();
+    ensureCircle();
+    setStatus('TEST — speak, watch meter…');
+    setDiag('Mic test 3s — speak now, meter should move. '+diagInfo()+'<br>Tip: if vol 0, switch mic dropdown to "Built-in" then RETRY — laptop built-in is now default after this update.', true);
+    try{ await ensureAudio(); if(audioCtx && audioCtx.state==='suspended') await audioCtx.resume(); }catch(err){ setDiag('Mic test failed: '+(err.message||err)+'<br>'+diagInfo(), true); setStatus('TEST FAILED'); return; }
+    window.__mssAutoCirclePulse(true);
+    var t0=Date.now();
+    var iv=setInterval(function(){
+      var v=currentVol();
+      if(meterFill) meterFill.style.width=Math.round(v*100)+'%';
+      setStatus('TEST — vol '+Math.round(v*100)+'% — '+(v>0.05?'OK':'quiet, speak louder'));
+      if(Date.now()-t0>3200){ clearInterval(iv); window.__mssAutoCirclePulse(false); setStatus('TEST done — vol '+(v>0.08?'OK':'low')+' — try RETRY or switch mic'); }
+    }, 90);
+  });
+  // Hold vs Lock wiring — pointer events unified
+  var holdActive=false, holdWasListening=false;
+  voiceBtn.addEventListener('pointerdown', function(e){
+    if(!holdMode) return;
+    e.preventDefault();
+    holdActive=true; holdWasListening=listening;
+    try{ voiceBtn.setPointerCapture(e.pointerId); }catch(_){}
+    if(!listening) startAll();
+  });
+  voiceBtn.addEventListener('pointerup', function(e){
+    if(!holdMode) return;
+    if(!holdActive) return;
+    holdActive=false;
+    e.preventDefault();
+    try{ voiceBtn.releasePointerCapture(e.pointerId); }catch(_){}
+    if(listening) stopAll();
+  });
+  voiceBtn.addEventListener('pointercancel', function(e){ if(holdMode && holdActive){ holdActive=false; if(listening) stopAll(); } });
+  voiceBtn.addEventListener('pointerleave', function(e){ if(holdMode && holdActive && e.buttons===0){ holdActive=false; if(listening && !holdWasListening) stopAll(); } });
+  voiceBtn.addEventListener('click', function(e){
+    if(holdMode){
+      // in HOLD mode, click is synthetic after pointerup — ignore (hold already handled)
+      if(holdWasListening!==undefined) return;
+      return;
+    }
+    // LOCK mode: tap toggle
+    e.preventDefault();
+    if(listening) stopAll(); else startAll();
+  });
+  // keyboard
+  voiceBtn.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); if(listening) stopAll(); else startAll(); } });
+  // init
+  refreshDevices();
+  if(col.getAttribute('data-mfeat')==='automatic') setTimeout(ensureCircle, 600);
+  window.__mssAuto={ensureCircle:ensureCircle, addLine:addLine};
 })();
 </script>
 <script id="platform-select-engine">

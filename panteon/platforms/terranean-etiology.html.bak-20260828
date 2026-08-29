@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panteon | Terranean Etiology — Causal Forensics at the Scale of Reality</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Montserrat:wght@500;700&family=Playfair+Display:wght@600&family=Zen+Dots&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        .platform-hero {
+            position: relative;
+            min-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 160px 40px 100px;
+            overflow: hidden;
+            background-color: var(--bg-dark);
+        }
+        .platform-hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 900px;
+        }
+        .platform-hero-content .tag {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 20px;
+            display: block;
+        }
+        .platform-hero-content h1 { font-family: var(--font-tech);
+            font-size: clamp(2.6rem, 6vw, 4.4rem);
+            font-weight: 300;
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+            margin-bottom: 24px;
+            color: var(--text-light);
+        }
+        .platform-hero-content p {
+            font-size: 1.15rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.65);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        /* Terranean contour mountain — fixed global homepage-style renderer */
+        #webgl-bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            display: block;
+            background-color: var(--bg-light);
+            opacity: 1;
+            transition: opacity 0.6s ease;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #webgl-bg-canvas { display: none; }
+        }
+        /* Make content reveal mountain — Panteon white glass (like index.html) */
+        main.main-content { background-color: transparent; position: relative; z-index: 10; }
+        .prose-section, .section, .editorial-callout { background-color: transparent; position: relative; z-index: 10; }
+        .architecture-card { background-color: rgba(255,255,255,0.88); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .workflow-step { background-color: rgba(255,255,255,0.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 0; }
+        .platform-hero { background: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.32) 100%); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); position: relative; z-index: 10; }
+        .platform-nav { background-color: rgba(255,255,255,0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); position: relative; z-index: 10; }
+        .platform-nav {
+            display: flex;
+            gap: 6px;
+            padding: 24px 40px;
+            border-bottom: 1px solid var(--border-dark);
+            max-width: 1400px;
+            margin: 0 auto;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .platform-nav::-webkit-scrollbar { display: none; }
+        .platform-nav a {
+            padding: 8px 18px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            border-radius: 0px;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+        .platform-nav a:hover { color: var(--text-dark); }
+        .platform-nav a.active {
+            color: var(--text-dark);
+            background-color: #ffffff;
+            border-color: rgba(0, 0, 0, 0.15);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+        .architecture-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 32px;
+        }
+        .architecture-card {
+            border: 1px solid var(--border-dark);
+            border-radius: 0px;
+            padding: 48px 40px;
+            background: var(--bg-light);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .architecture-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+        }
+        .architecture-card .card-tag {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            display: block;
+        }
+        .architecture-card h3 { font-family: var(--font-tech);
+            font-size: 1.3rem;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            margin-bottom: 16px;
+        }
+        .architecture-card p {
+            font-size: 0.95rem;
+            line-height: 1.55;
+            color: var(--text-muted);
+        }
+        .prose-section {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 100px 40px;
+        }
+        .prose-section h2 { font-family: var(--font-tech);
+            font-size: 2.4rem;
+            font-weight: 300;
+            letter-spacing: -0.02em;
+            margin-bottom: 32px;
+        }
+        .prose-section p {
+            font-size: 1.05rem;
+            line-height: 1.75;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+        .prose-section p strong {
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+        .workflow-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        .workflow-step {
+            display: grid;
+            grid-template-columns: 80px 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+            padding: 44px 20px;
+            border-top: 1px solid var(--border-dark);
+        }
+        .workflow-step:last-child {
+            border-bottom: 1px solid var(--border-dark);
+        }
+        .workflow-step .step-num {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .workflow-step h3 { font-family: var(--font-tech);
+            font-size: 1.2rem;
+            font-weight: 400;
+            margin-bottom: 8px;
+        }
+        .workflow-step p {
+            font-size: 0.95rem;
+            line-height: 1.55;
+            color: var(--text-muted);
+        }
+        .workflow-step .step-media {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-color: #000000;
+            border: 1px solid var(--border-dark);
+            border-radius: 0px;
+            overflow: hidden;
+        }
+        .workflow-step .step-media img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        @media (max-width: 1024px) {
+            .architecture-grid { grid-template-columns: 1fr; }
+            .workflow-step { grid-template-columns: 1fr; gap: 16px; }
+        }
+        @media (max-width: 768px) {
+            .platform-hero { padding: 120px 24px 60px; }
+            .platform-nav { padding: 16px 24px; }
+            .prose-section { padding: 60px 24px; }
+        }
+    
+        .logo svg{fill:currentColor;width:118px;height:34px;transition:transform .4s cubic-bezier(.16,1,.3,1)}
+        .logo:hover svg{transform:none}
+    </style>
+</head>
+<body>
+
+    <!-- Single-source brand lockup: the custom P and ANTEON share one SVG coordinate system. -->
+    <svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden">
+        <defs>
+            <filter id="panteon-brush" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.23" numOctaves="4" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="0.85" xChannelSelector="R" yChannelSelector="B"/></filter>
+            <mask id="panteon-roll"><rect width="100" height="100" fill="white"/><path d="M16 60 C20 58 24 59 27 63" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round"/></mask>
+            <g id="panteon-lockup" fill="currentColor"><g transform="translate(4 -4) scale(0.98)"><g filter="url(#panteon-brush)"><path d="M63 19 C57 19 54 23 54 29 L54 55 C54 59 56 62 60 64 L46 64 C42 64 40 66 40 68 C41 70 44 70 48 70 L65 70 C69 70 72 67 72 63 L72 29 C72 23 69 19 63 19 Z"/><circle cx="20" cy="64" r="7" mask="url(#panteon-roll)"/></g></g><text x="78" y="62" fill="currentColor" font-family="'Zen Dots', Inter, Arial, sans-serif" font-size="60" font-weight="300" letter-spacing="0.9">PANTEON</text></g>
+        </defs>
+    </svg>
+
+    <header id="main-header">
+        <a href="../index.html" class="logo">
+            <svg viewBox="0 0 520 80" role="img" aria-label="Panteon"><use href="#panteon-lockup"/></svg>
+        </a>
+        <div class="nav-right">
+            <a href="../login.html" class="get-started-btn"><span>↖</span> Get Started</a>
+            <button class="header-icon-box" aria-label="Search button">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 16 16">
+                    <circle cx="9.5" cy="6.5" r="5.5" stroke-width="1.5"></circle>
+                    <path d="M5.5 10.5l-4.5 4.5" stroke-width="1.5"></path>
+                </svg>
+            </button>
+            <button class="header-icon-box" aria-label="Menu button">
+                <div class="burger-lines">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </button>
+        </div>
+    </header>
+
+    <canvas id="webgl-bg-canvas" data-terrain-theme="light" aria-hidden="true"></canvas>
+    <section class="platform-hero" id="terranean-hero">
+        <div class="platform-hero-content">
+            <span class="tag">Terranean Etiology</span>
+            <h1>Causal Forensics<br>at the Scale of Reality</h1>
+            <p>Continuously reconstruct the full causal graph of the environment — the chains of decisions, logistics movements, influence operations, and human relationships that produced the present moment.</p>
+            <a href="#overview" class="cta-link-arrow" style="margin-top: 40px; color: var(--text-light);">Explore Etiology <span>↓</span></a>
+        </div>
+    </section>
+
+    <main class="main-content">
+
+        <div class="prose-section" id="overview">
+            <h2>The Discipline of Origin</h2>
+            <p>Etiology is the discipline of origin. It continuously reconstructs the full causal graph of the environment: the chains of decisions, logistics movements, influence operations, equipment states, human relationships, and environmental factors that produced the present moment.</p>
+            <p>Every significant event is treated as a node with ancestry. Every anomaly is traced through multi-hop causal paths. Alternative histories are generated and ranked. Confidence is quantified. Gaps in the graph are surfaced rather than ignored.</p>
+            <p>The result is digital forensics elevated from after-action review into continuous, real-time operational capability. Commanders and analysts no longer ask only "what occurred?" They ask, and receive structured answers to, <strong>"what sequence of causes made this inevitable, what interventions would have altered the path, and what latent causal structures remain active beneath the surface?"</strong></p>
+            <p>Etiology turns the past from a static record into a living diagnostic instrument.</p>
+        </div>
+
+        <section class="section">
+            <h2>Core Capabilities</h2>
+            <div class="architecture-grid">
+                <div class="architecture-card">
+                    <span class="card-tag">/01 Causal Graph Construction</span>
+                    <h3>Continuous Reconstruction</h3>
+                    <p>Continuous or on-demand causal graph construction from heterogeneous data sources — events, logs, sensor feeds, human reports, and external intelligence — maintaining a living model of the operational environment.</p>
+                </div>
+                <div class="architecture-card">
+                    <span class="card-tag">/02 Path Discovery</span>
+                    <h3>Multi-Hop Causal Tracing</h3>
+                    <p>Multi-hop causal path discovery with confidence scoring and alternative-history ranking. Every anomaly is traced through its ancestry, surfacing the chains that produced the present moment.</p>
+                </div>
+                <div class="architecture-card">
+                    <span class="card-tag">/03 Gap Detection</span>
+                    <h3>Surfacing the Unknown</h3>
+                    <p>Surfaces missing CausalNodes or low-confidence edges that require additional collection or human adjudication. Gaps in the graph are treated as operational signals, not oversights.</p>
+                </div>
+                <div class="architecture-card">
+                    <span class="card-tag">/04 Counterfactual Analysis</span>
+                    <h3>Alternative Histories</h3>
+                    <p>Given a CausalGraph, evaluate the effect of intervening on specific nodes and edges. Generate and rank alternative histories to understand what interventions would have altered the path.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="editorial-callout">
+            <h2 class="editorial-callout-text">
+                Etiology turns the past from a static record into a living diagnostic instrument. The past is no longer opaque.
+            </h2>
+        </section>
+
+        <section class="section">
+            <h2>How Etiology Works</h2>
+            <div class="workflow-steps">
+                <div class="workflow-step">
+                    <span class="step-num">/01</span>
+                    <div>
+                        <h3>Ingest & Reconstruct</h3>
+                        <p>Heterogeneous data sources are continuously ingested. Events, decisions, logistics movements, and observations are mapped into CausalNodes within the operational graph.</p>
+                    </div>
+                    <div class="step-media">
+                        <img src="../panteon-software.png" alt="Causal reconstruction interface">
+                    </div>
+                </div>
+                <div class="workflow-step">
+                    <span class="step-num">/02</span>
+                    <div>
+                        <h3>Trace & Score</h3>
+                        <p>Multi-hop causal paths are discovered and scored for confidence. Alternative histories are generated and ranked. Gaps in the causal graph are surfaced for further investigation.</p>
+                    </div>
+                    <div class="step-media">
+                        <img src="../panteon-software.png" alt="Causal path tracing interface">
+                    </div>
+                </div>
+                <div class="workflow-step">
+                    <span class="step-num">/03</span>
+                    <div>
+                        <h3>Analyze & Act</h3>
+                        <p>Counterfactual analysis evaluates interventions. Forensic replay reconstructs the state of the graph at any prior timestamp. Results feed into Teleology for forward-looking purpose modeling.</p>
+                    </div>
+                    <div class="step-media">
+                        <img src="../panteon-software.png" alt="Counterfactual analysis interface">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" style="text-align: center; padding-bottom: 140px;">
+            <h2>Explore Terranean</h2>
+            <p style="color: var(--text-muted); max-width: 520px; margin: 0 auto 40px; font-size: 1rem;">Etiology for the roots. Teleology for the ends. See how both systems work together in the developer documentation.</p>
+            <a href="../developers/terranean-documentation.html" class="get-started-btn" style="display:inline-flex;background-color:var(--text-dark);color:var(--text-light);border-color:var(--text-dark);padding:14px 40px;font-size:0.85rem;text-decoration:none">Read Documentation</a>
+        </section>
+
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-left-branding">
+                <p>© 2026 Panteon Technologies Inc.</p>
+                <p class="all-rights">All rights reserved.</p>
+                <div class="footer-divider-line"></div>
+                <a href="../cookies.html" class="footer-cookie-btn" style="text-decoration:none;">Cookies Settings</a>
+                <div class="footer-divider-line"></div>
+                <div class="footer-divider-line"></div>
+                <div class="footer-social-container">
+                    <a href="#" class="social-capsule">Youtube</a>
+                    <a href="#" class="social-capsule">X</a>
+                    <a href="#" class="social-capsule">Linkedin</a>
+                    <a href="#" class="social-capsule">Github</a>
+                    <a href="#" class="social-capsule">Store</a>
+                </div>
+            </div>
+            <div class="footer-links-grid">
+                <div class="footer-links-col">
+                    <h4>Research</h4>
+                    <ul>
+                        <li><a href="../panteon-research-institute/index.html">Panteon Research Institute</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Alien Inc</h4>
+                    <ul>
+                        <li><a href="https://rousseau.alieninc.tech" target="_blank">Rousseau</a></li>
+                        <li><a href="https://thedailyartcult.alieninc.tech" target="_blank">The Daily Art Cult</a></li>
+                        <li><a href="https://kmt.alieninc.tech" target="_blank">KMT Consulting Group</a></li>
+                        <li><a href="https://immanuel.alieninc.tech" target="_blank">Immanuel</a></li>
+                        <li><a href="https://centra.alieninc.tech" target="_blank">Centra</a></li>
+                        <li><a href="https://thedailyartcult.alieninc.tech" target="_blank">The Daily Art Cult</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Capabilities</h4>
+                    <ul>
+                        <li><a href="../capabilities/cognitive-engine.html">Cognitive Engine</a></li>
+                        <li><a href="../capabilities/yono-for-developers.html">YONO for Developers</a></li>
+                        <li><a href="../capabilities/signal-fusion.html">Signal Fusion</a></li>
+                        <li><a href="../capabilities/environmental-twin.html">Environmental Twin</a></li>
+                        <li><a href="../capabilities/resource-orchestration.html">Resource Orchestration</a></li>
+                        <li><a href="../capabilities/forward-intelligence.html">Forward Intelligence</a></li>
+                        <li><a href="../capabilities/arsenal.html">Arsenal</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links-col">
+                    <h4>Documents</h4>
+                    <ul>
+                        <li><a href="../developers/community.html">Developer Community</a></li>
+                        <li><a href="../developers/documentation.html">Platform Documentation</a></li>
+                        <li><a href="../developers/panteon-developers.html">Panteon Developers</a></li>
+                        <li><a href="../panteon-research-institute/index.html">Panteon Research Institute</a></li>
+                        <li><a href="../trust/trust-center.html">Trust Center</a></li>
+                        <li><a href="../trust/modern-slavery.html">Modern Slavery Statement</a></li>
+                        <li><a href="../cookies.html">Cookies</a></li>
+                        <li><a href="../trust/privacy-civil-liberties.html">Privacy and Civil Liberties</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const header = document.getElementById('main-header');
+        const scrollThreshold = window.innerHeight * 0.4;
+        window.addEventListener('scroll', () => {
+            if (window.scrollY >= scrollThreshold) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+    <!-- Terranean contour mountain — Panteon homepage point-cloud renderer -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script>window.THREE||document.write('<script src="../vendor/three.r128.min.js"><\/script>')</script>
+    <script>
+        (function initTerraneanContourBackground() {
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            const canvas = document.getElementById('webgl-bg-canvas');
+            if (!canvas || typeof THREE === 'undefined') { if(canvas) canvas.style.display='none'; return; }
+            let renderer;
+            try {
+                renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
+            } catch(e){ console.error('[Terranean] Contour WebGL failed', e); canvas.style.display='none'; return; }
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 18, 52);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            const isDarkVariant = canvas.dataset.terrainTheme === 'dark';
+            const palette = isDarkVariant
+                ? { background: 0x000000, pointColor: 'vec3(1.0)' }
+                : { background: 0xffffff, pointColor: 'vec3(0.08, 0.09, 0.10)' };
+            renderer.setClearColor(palette.background, 1.0);
+            function getTerrainHeight(x, z) {
+                const r = Math.sqrt(x * x + z * z);
+                const p1 = Math.exp(-Math.pow(x - 6, 2) / 280 - Math.pow(z - 4, 2) / 280) * 14.5;
+                const p2 = Math.exp(-Math.pow(x + 12, 2) / 360 - Math.pow(z + 8, 2) / 320) * 18.0;
+                const p3 = Math.exp(-Math.pow(x + 2, 2) / 200 - Math.pow(z - 14, 2) / 220) * 12.0;
+                const ridge1 = Math.cos(x * 0.18 + z * 0.14) * Math.sin(z * 0.15 - x * 0.08) * 3.2;
+                const ridge2 = Math.sin(x * 0.35 - z * 0.25) * Math.cos(z * 0.4 + x * 0.2) * 1.4;
+                const decay = Math.exp(-Math.pow(r / 36, 2.2));
+                return Math.max(0.0, (p1 + p2 + p3 + ridge1 + ridge2) * decay);
+            }
+            const positions = []; const alphas = []; const elevations = [];
+            const gridSize = 140; const range = 42; const dx = (range * 2) / gridSize; const dz = (range * 2) / gridSize;
+            const grid = [];
+            for (let i = 0; i <= gridSize; i++) { grid[i] = []; const x = -range + i * dx; for (let j = 0; j <= gridSize; j++) { const z = -range + j * dz; grid[i][j] = getTerrainHeight(x, z); } }
+            const numLevels = 85; const maxElevation = 18.0;
+            for (let k = 1; k < numLevels; k++) {
+                const levelY = (k / numLevels) * maxElevation;
+                const levelAlpha = 0.18 + (k / numLevels) * 0.55;
+                for (let i = 0; i < gridSize; i++) {
+                    const x0 = -range + i * dx; const x1 = x0 + dx;
+                    for (let j = 0; j < gridSize; j++) {
+                        const z0 = -range + j * dz; const z1 = z0 + dz;
+                        const v0 = grid[i][j]; const v1 = grid[i + 1][j]; const v2 = grid[i + 1][j + 1]; const v3 = grid[i][j + 1];
+                        const crossings = [];
+                        if ((v0 < levelY && v1 >= levelY) || (v0 >= levelY && v1 < levelY)) { const t = (levelY - v0) / (v1 - v0 + 1e-6); crossings.push({ x: x0 + t * dx, z: z0 }); }
+                        if ((v1 < levelY && v2 >= levelY) || (v1 >= levelY && v2 < levelY)) { const t = (levelY - v1) / (v2 - v1 + 1e-6); crossings.push({ x: x1, z: z0 + t * dz }); }
+                        if ((v3 < levelY && v2 >= levelY) || (v3 >= levelY && v2 < levelY)) { const t = (levelY - v3) / (v2 - v3 + 1e-6); crossings.push({ x: x0 + t * dx, z: z1 }); }
+                        if ((v0 < levelY && v3 >= levelY) || (v0 >= levelY && v3 < levelY)) { const t = (levelY - v0) / (v3 - v0 + 1e-6); crossings.push({ x: x0, z: z0 + t * dz }); }
+                        if (crossings.length >= 2) {
+                            const pA = crossings[0]; const pB = crossings[1]; const dist = Math.hypot(pB.x - pA.x, pB.z - pA.z);
+                            const steps = Math.max(2, Math.floor(dist * 2.8));
+                            for (let s = 0; s <= steps; s++) { const frac = s / steps; positions.push(pA.x + (pB.x - pA.x) * frac, levelY - 4.5, pA.z + (pB.z - pA.z) * frac); alphas.push(levelAlpha); elevations.push(levelY); }
+                        }
+                    }
+                }
+            }
+            for (let r = 0; r < 2400; r++) { const angle = Math.random() * Math.PI * 2; const radius = Math.sqrt(Math.random()) * 38; const sx = Math.cos(angle) * radius; const sz = Math.sin(angle) * radius; const sy = -4.8 + (Math.random() - 0.5) * 1.5; positions.push(sx, sy, sz); alphas.push(0.09 + Math.random() * 0.12); elevations.push(0.0); }
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('aAlpha', new THREE.Float32BufferAttribute(alphas, 1));
+            geometry.setAttribute('aElevation', new THREE.Float32BufferAttribute(elevations, 1));
+            const uniforms = { uTime: { value: 0.0 }, uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) }, uScroll: { value: 0.0 } };
+            const vertexShader = `uniform float uTime; uniform float uPixelRatio; uniform float uScroll; attribute float aAlpha; attribute float aElevation; varying float vAlpha; varying float vDepth; void main() { vec3 pos = position; float wave = sin(pos.x * 0.12 + pos.z * 0.09 + uTime * 0.6) * 0.14; pos.y += wave * (aElevation / 18.0); vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0); gl_Position = projectionMatrix * mvPosition; gl_PointSize = (2.2 * uPixelRatio) * (45.0 / -mvPosition.z); gl_PointSize = clamp(gl_PointSize, 1.0, 7.5); vAlpha = aAlpha; vDepth = -mvPosition.z; }`;
+            const fragmentShader = `varying float vAlpha; varying float vDepth; void main() { float dist = length(gl_PointCoord - vec2(0.5)); if (dist > 0.5) discard; float smoothDot = smoothstep(0.5, 0.28, dist); float depthFade = smoothstep(75.0, 25.0, vDepth); vec3 pointColor = ${palette.pointColor}; gl_FragColor = vec4(pointColor, smoothDot * vAlpha * depthFade * 0.82); }`;
+            const material = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms, transparent: true, depthWrite: false, blending: THREE.NormalBlending });
+            const pointsMesh = new THREE.Points(geometry, material);
+            scene.add(pointsMesh);
+            let scrollY = 0; let targetScrollY = 0; let mouseX = 0, mouseY = 0; let targetMouseX = 0, targetMouseY = 0;
+            window.addEventListener('scroll', () => { const maxScroll = document.documentElement.scrollHeight - window.innerHeight; targetScrollY = maxScroll > 0 ? (window.scrollY / maxScroll) : 0; }, {passive:true});
+            window.addEventListener('mousemove', (e) => { targetMouseX = (e.clientX / window.innerWidth - 0.5) * 2; targetMouseY = (e.clientY / window.innerHeight - 0.5) * 2; }, {passive:true});
+            let isVisible = true;
+            const heroObserver = new IntersectionObserver((entries)=>{ isVisible = entries[0].isIntersecting || window.scrollY < window.innerHeight; }, {threshold:0});
+            const sentinel = document.getElementById('webgl-bg-canvas'); if(sentinel) heroObserver.observe(document.documentElement);
+            document.addEventListener('visibilitychange', ()=>{ if(document.hidden) isVisible=false; else isVisible=true; });
+            window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); uniforms.uPixelRatio.value = Math.min(window.devicePixelRatio, 2); });
+            let clock = new THREE.Clock();
+            function animate() {
+                requestAnimationFrame(animate);
+                if (!isVisible || document.hidden) return;
+                const elapsedTime = clock.getElapsedTime();
+                scrollY += (targetScrollY - scrollY) * 0.045; mouseX += (targetMouseX - mouseX) * 0.04; mouseY += (targetMouseY - mouseY) * 0.04;
+                uniforms.uTime.value = elapsedTime; uniforms.uScroll.value = scrollY;
+                pointsMesh.rotation.y = elapsedTime * 0.03 + scrollY * (Math.PI * 1.4) + mouseX * 0.25;
+                pointsMesh.rotation.x = 0.42 + mouseY * 0.12 + Math.sin(scrollY * Math.PI) * 0.18;
+                pointsMesh.position.y = -2.0 - scrollY * 6.0; pointsMesh.position.z = -scrollY * 10.0;
+                camera.lookAt(0, 0, 0); renderer.render(scene, camera);
+            }
+            animate();
+        })();
+    </script>
+
+</body>
+</html>

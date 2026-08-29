@@ -60,7 +60,7 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* FIXED SUBTERRANEAN MOUNTAIN CANVAS — Panteon white palette (structure from try.html) */
+        /* FIXED TERRANEAN CONTOUR MOUNTAIN CANVAS — Panteon homepage renderer */
         #webgl-bg-canvas {
             position: fixed;
             top: 0;
@@ -69,7 +69,7 @@
             height: 100vh;
             z-index: 0;
             pointer-events: none;
-            background-color: #ffffff;
+            background-color: var(--bg-dark);
             opacity: 1;
             transition: opacity 0.6s ease;
         }
@@ -1597,13 +1597,13 @@
         .editorial-callout { background-color: #f8f9fa; background-color: rgba(248,249,250,0.82); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
         .software-card { background-color: rgba(255,255,255,0.88); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
         .press-item { background-color: rgba(255,255,255,0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-        .pre-footer-contact { background-color: rgba(255,255,255,0.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+        .pre-footer-contact { background-color: #ffffff; color: #000000; border-top: 1px solid var(--border-dark); border-bottom: 1px solid var(--border-dark); }
     </style>
 </head>
 <body>
 
-    <!-- FIXED SUBTERRANEAN TOPOGRAPHIC MOUNTAIN BACKGROUND CANVAS (Panteon white glass) -->
-    <canvas id="webgl-bg-canvas" aria-hidden="true"></canvas>
+    <!-- FIXED TERRANEAN CONTOUR MOUNTAIN BACKGROUND CANVAS -->
+    <canvas id="webgl-bg-canvas" data-terrain-theme="dark" aria-hidden="true"></canvas>
 
     <!-- DIMENSION SWITCH ENTRANCE OVERLAY -->
     <div class="dimension-transition-overlay" id="dim-overlay">
@@ -1978,181 +1978,291 @@
         </div>
     </footer>
 
-    <!-- Subterranean Mountain Engine (Panteon white palette — structure from try.html) -->
-    <!-- Terranean procedural terrain — Three.js r128 Mt. Bullagao engine (AGENTS.md exception, hero-scoped only; CSP-safe: jsdelivr + self-host fallback) -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-    <script>window.THREE||document.write('<script src="../vendor/three.r128.min.js"><\/script>')</script>
+    <!-- Terranean contour mountain — Panteon homepage point-cloud renderer -->
     <script>
-    (function(){
-        const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if(prefersReduced) return;
-        const canvas = document.getElementById('webgl-bg-canvas');
-        const hero = document.getElementById('terranean-hero');
-        if(!canvas || typeof THREE === 'undefined'){ console.warn('[Terranean] THREE missing — canvas fallback'); if(canvas) canvas.style.display='none'; return; }
-        // WebGL feature check without stealing the canvas context (getContext would block THREE.WebGLRenderer)
-        if(!window.WebGLRenderingContext){ canvas.style.display='none'; return; }
+        (function initTerraneanBullagaoBackground() {
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            const canvas = document.getElementById('webgl-bg-canvas');
+            if (!canvas || typeof THREE === 'undefined') { if (canvas) canvas.style.display = 'none'; return; }
 
-        let renderer;
-        try{ renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false, powerPreference: 'low-power' }); }
-        catch(e){ console.error('[Terranean] WebGLRenderer failed', e); canvas.style.display='none'; return; }
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-        function sizeWindow(){ return { w: window.innerWidth, h: window.innerHeight }; }
-        let hs = sizeWindow();
-        renderer.setSize(hs.w, hs.h, false);
-        renderer.setClearColor(0x000000, 1.0);
-        canvas.style.width = '100vw';
-        canvas.style.height = '100vh';
-        const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x000000, 0.0012);
-        const camera = new THREE.PerspectiveCamera(45, hs.w / Math.max(hs.h,1), 1, 3000);
-        camera.position.set(0, 380, 520);
-
-        const customTerrainVertexShader = `
-            uniform float uTime;
-            uniform float uScanPlaneY;
-            varying float vElevation;
-            varying vec3 vWorldPos;
-            varying float vScanDist;
-            vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-            vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-            vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
-            float snoise(vec2 v) {
-                const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
-                vec2 i  = floor(v + dot(v, C.yy) );
-                vec2 x0 = v -   i + dot(i, C.xx);
-                vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
-                vec4 x12 = x0.xyxy + C.xxzz;
-                x12.xy -= i1;
-                i = mod289(i);
-                vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 )) + i.x + vec3(0.0, i1.x, 1.0 ));
-                vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
-                m = m*m ; m = m*m ;
-                vec3 x = 2.0 * fract(p * C.www) - 1.0;
-                vec3 h = abs(x) - 0.5;
-                vec3 ox = floor(x + 0.5);
-                vec3 a0 = x - ox;
-                m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
-                vec3 g;
-                g.x  = a0.x  * x0.x  + h.x  * x0.y;
-                g.yz = a0.yz * x12.xz + h.yz * x12.yw;
-                return 130.0 * dot(m, g);
+            let renderer;
+            try {
+                renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+            } catch(e) {
+                console.error('[Terranean] WebGL init failed', e);
+                if (canvas) canvas.style.display = 'none';
+                return;
             }
-            float getSleepingBeautyHeight(vec2 p) {
-                float nx = p.x * 0.0032;
-                float nz = p.y * 0.0032;
-                float baseMass = exp(-pow(nx * 0.9, 2.0) - pow(nz * 1.3, 2.0)) * 220.0;
-                float headPeak = exp(-pow((nx + 0.48) * 3.8, 2.0) - pow((nz - 0.05) * 3.8, 2.0)) * 140.0;
-                float breastPeak1 = exp(-pow((nx - 0.02) * 3.6, 2.0) - pow((nz + 0.04) * 3.6, 2.0)) * 185.0;
-                float breastPeak2 = exp(-pow((nx - 0.32) * 3.4, 2.0) - pow((nz - 0.02) * 3.4, 2.0)) * 175.0;
-                float bodySlope = exp(-pow((nx - 0.85) * 2.1, 2.0) - pow(nz * 2.8, 2.0)) * 105.0;
-                float spurs = snoise(vec2(nx * 3.5, nz * 3.5)) * 48.0;
-                float ravines = snoise(vec2(nx * 7.0, nz * 7.0)) * 22.0;
-                float microCrags = snoise(vec2(nx * 14.0, nz * 14.0)) * 8.0;
-                float riverValley = smoothstep(-150.0, 150.0, p.y) * 0.4 + 0.6;
-                float totalHeight = (baseMass + headPeak + breastPeak1 + breastPeak2 + bodySlope + spurs + ravines + microCrags) * riverValley;
-                return totalHeight;
-            }
-            void main() {
-                vec3 pos = position;
-                float h = getSleepingBeautyHeight(pos.xy);
-                pos.z = h;
-                vElevation = h;
-                vec4 worldPos = modelMatrix * vec4(pos, 1.0);
-                vWorldPos = worldPos.xyz;
-                vScanDist = abs(worldPos.y - uScanPlaneY);
-                gl_Position = projectionMatrix * viewMatrix * worldPos;
-                float pSize = (3.5 + (h / 45.0));
-                gl_PointSize = clamp(pSize * (420.0 / - (viewMatrix * worldPos).z), 1.0, 8.0);
-            }
-        `;
-        const customTerrainFragmentShader = `
-            uniform vec3 uBaseColor;
-            uniform vec3 uNeonColor;
-            uniform float uScanPlaneY;
-            varying float vElevation;
-            varying vec3 vWorldPos;
-            varying float vScanDist;
-            void main() {
-                vec2 coord = gl_PointCoord - vec2(0.5);
-                if (length(coord) > 0.5) discard;
-                float contourStep = 18.0;
-                float contourLineWidth = 1.6;
-                float contourMod = mod(vElevation, contourStep);
-                float isContour = step(contourMod, contourLineWidth);
-                float scanHighlight = smoothstep(22.0, 0.0, vScanDist);
-                vec3 col = mix(uBaseColor, vec3(0.40, 0.44, 0.48), clamp(vElevation / 240.0, 0.0, 1.0));
-                col = mix(col, uNeonColor, isContour * 0.55);
-                col = mix(col, uNeonColor, scanHighlight * 0.9);
-                float alpha = clamp(0.28 + (vElevation / 200.0) * 0.45 + scanHighlight * 0.35, 0.18, 0.88);
-                gl_FragColor = vec4(col, alpha);
-            }
-        `;
-        const terrainGeo = new THREE.PlaneGeometry(900, 900, 260, 260);
-        const uniforms = {
-            uTime: { value: 0 },
-            uScanPlaneY: { value: 60.0 },
-            uBaseColor: { value: new THREE.Color(0x181e24) },
-            uNeonColor: { value: new THREE.Color(0xDFF140) }
-        };
-        const terrainMaterial = new THREE.ShaderMaterial({
-            vertexShader: customTerrainVertexShader,
-            fragmentShader: customTerrainFragmentShader,
-            uniforms: uniforms,
-            transparent: true,
-            depthWrite: false
-        });
-        const pointCloud = new THREE.Points(terrainGeo, terrainMaterial);
-        pointCloud.rotation.x = -Math.PI / 2;
-        scene.add(pointCloud);
-        const wireMaterial = new THREE.MeshBasicMaterial({ color: 0x11161b, wireframe: true, transparent: true, opacity: 0.15 });
-        const wireMesh = new THREE.Mesh(terrainGeo, wireMaterial);
-        wireMesh.rotation.x = -Math.PI / 2;
-        wireMesh.position.y = -1.0;
-        scene.add(wireMesh);
-        const dustGeo = new THREE.BufferGeometry();
-        const dustCount = 320;
-        const dustPos = new Float32Array(dustCount * 3);
-        for(let i=0;i<dustCount*3;i+=3){ dustPos[i]=(Math.random()-0.5)*800; dustPos[i+1]=Math.random()*260; dustPos[i+2]=(Math.random()-0.5)*800; }
-        dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
-        const dustMat = new THREE.PointsMaterial({ color: 0xDFF140, size: 1.8, transparent: true, opacity: 0.28 });
-        const dustPoints = new THREE.Points(dustGeo, dustMat);
-        scene.add(dustPoints);
 
-        let scrollY = window.scrollY, targetScrollY = window.scrollY;
-        window.addEventListener('scroll', () => { targetScrollY = window.scrollY; }, { passive: true });
-        window.addEventListener('resize', () => {
-            hs = sizeWindow();
-            camera.aspect = hs.w / Math.max(hs.h,1);
-            camera.updateProjectionMatrix();
-            renderer.setSize(hs.w, hs.h, false);
-        });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(window.innerWidth, window.innerHeight);
 
-        let isVisible = true;
-        document.addEventListener('visibilitychange', ()=>{ isVisible = !document.hidden; });
+            const scene = new THREE.Scene();
 
-        const clock = new THREE.Clock();
-        function renderLoop(){
-            requestAnimationFrame(renderLoop);
-            if(!isVisible || document.hidden) return;
-            const time = clock.getElapsedTime();
-            scrollY += (targetScrollY - scrollY) * 0.06;
-            const totalHeight = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-            const scrollFraction = Math.min(Math.max(scrollY / totalHeight, 0.0), 1.0);
-            const radius = 540 - scrollFraction * 140;
-            const angle = 0.3 + scrollFraction * Math.PI * 0.85;
-            camera.position.x = Math.sin(angle) * radius;
-            camera.position.z = Math.cos(angle) * radius;
-            camera.position.y = 380 - scrollFraction * 260;
-            const targetY = 120 - scrollFraction * 80;
-            camera.lookAt(0, targetY, 0);
-            const scanHeight = Math.sin(time * 1.4) * 80.0 + (140.0 - scrollFraction * 120.0);
-            uniforms.uScanPlaneY.value = scanHeight;
-            uniforms.uTime.value = time;
-            dustPoints.rotation.y = time * 0.015;
-            renderer.render(scene, camera);
-        }
-        renderLoop();
-    })();
+            // Dark (initial top-of-page) and Light (scrolled-down) color palettes
+            const colFogDark    = new THREE.Color(0x000000);
+            const colFogLight   = new THREE.Color(0xffffff);
+
+            const colBaseDark   = new THREE.Color(0x181e24);
+            const colBaseLight  = new THREE.Color(0xd0d5dd);
+
+            const colNeonDark   = new THREE.Color(0xDFF140);
+            const colNeonLight  = new THREE.Color(0x111827);
+
+            const colWireDark   = new THREE.Color(0x11161b);
+            const colWireLight  = new THREE.Color(0xe5e7eb);
+
+            const currentFog    = new THREE.Color(0x000000);
+            const currentWire   = new THREE.Color(0x11161b);
+
+            scene.fog = new THREE.FogExp2(0x000000, 0.0018);
+            renderer.setClearColor(0x000000, 1.0);
+
+            const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 3000);
+            camera.position.set(0, 380, 520);
+
+            // Custom GLSL Noise & Topographic Formula for Mt. Bullagao ("Sleeping Beauty of Abra", 1,119 MASL)
+            const customTerrainVertexShader = `
+                uniform float uTime;
+                uniform float uScanPlaneY;
+                varying float vElevation;
+                varying vec3 vWorldPos;
+                varying float vScanDist;
+
+                vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+                vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+                vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+
+                float snoise(vec2 v) {
+                    const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+                    vec2 i  = floor(v + dot(v, C.yy) );
+                    vec2 x0 = v -   i + dot(i, C.xx);
+                    vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+                    vec4 x12 = x0.xyxy + C.xxzz;
+                    x12.xy -= i1;
+                    i = mod289(i);
+                    vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 )) + i.x + vec3(0.0, i1.x, 1.0 ));
+                    vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+                    m = m*m ;
+                    m = m*m ;
+                    vec3 x = 2.0 * fract(p * C.www) - 1.0;
+                    vec3 h = abs(x) - 0.5;
+                    vec3 ox = floor(x + 0.5);
+                    vec3 a0 = x - ox;
+                    m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+                    vec3 g;
+                    g.x  = a0.x  * x0.x  + h.x  * x0.y;
+                    g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+                    return 130.0 * dot(m, g);
+                }
+
+                float getSleepingBeautyHeight(vec2 p) {
+                    float nx = p.x * 0.0032;
+                    float nz = p.y * 0.0032;
+
+                    float baseMass = exp(-pow(nx * 0.9, 2.0) - pow(nz * 1.3, 2.0)) * 220.0;
+                    float headPeak = exp(-pow((nx + 0.48) * 3.8, 2.0) - pow((nz - 0.05) * 3.8, 2.0)) * 140.0;
+                    float breastPeak1 = exp(-pow((nx - 0.02) * 3.6, 2.0) - pow((nz + 0.04) * 3.6, 2.0)) * 185.0;
+                    float breastPeak2 = exp(-pow((nx - 0.32) * 3.4, 2.0) - pow((nz - 0.02) * 3.4, 2.0)) * 175.0;
+                    float bodySlope = exp(-pow((nx - 0.85) * 2.1, 2.0) - pow(nz * 2.8, 2.0)) * 105.0;
+
+                    float spurs = snoise(vec2(nx * 3.5, nz * 3.5)) * 48.0;
+                    float ravines = snoise(vec2(nx * 7.0, nz * 7.0)) * 22.0;
+                    float microCrags = snoise(vec2(nx * 14.0, nz * 14.0)) * 8.0;
+
+                    float riverValley = smoothstep(-150.0, 150.0, p.y) * 0.4 + 0.6;
+                    return (baseMass + headPeak + breastPeak1 + breastPeak2 + bodySlope + spurs + ravines + microCrags) * riverValley;
+                }
+
+                void main() {
+                    vec3 pos = position;
+                    float h = getSleepingBeautyHeight(pos.xy);
+                    pos.z = h;
+
+                    vElevation = h;
+                    vec4 worldPos = modelMatrix * vec4(pos, 1.0);
+                    vWorldPos = worldPos.xyz;
+                    vScanDist = abs(worldPos.y - uScanPlaneY);
+
+                    gl_Position = projectionMatrix * viewMatrix * worldPos;
+                    
+                    float pSize = (3.5 + (h / 45.0));
+                    gl_PointSize = clamp(pSize * (420.0 / - (viewMatrix * worldPos).z), 1.0, 8.0);
+                }
+            `;
+
+            const customTerrainFragmentShader = `
+                uniform vec3 uBaseColor;
+                uniform vec3 uNeonColor;
+                uniform float uScanPlaneY;
+                varying float vElevation;
+                varying vec3 vWorldPos;
+                varying float vScanDist;
+
+                void main() {
+                    vec2 coord = gl_PointCoord - vec2(0.5);
+                    if (length(coord) > 0.5) discard;
+
+                    float contourStep = 18.0;
+                    float contourLineWidth = 1.6;
+                    float contourMod = mod(vElevation, contourStep);
+                    float isContour = step(contourMod, contourLineWidth);
+
+                    float scanHighlight = smoothstep(22.0, 0.0, vScanDist);
+                    vec3 col = mix(uBaseColor, vec3(0.4, 0.44, 0.48), clamp(vElevation / 240.0, 0.0, 1.0));
+
+                    col = mix(col, uNeonColor, isContour * 0.85);
+                    col = mix(col, uNeonColor, scanHighlight * 0.9);
+
+                    float alpha = clamp(0.35 + (vElevation / 200.0) * 0.55 + scanHighlight * 0.4, 0.2, 0.95);
+                    gl_FragColor = vec4(col, alpha);
+                }
+            `;
+
+            const terrainGeo = new THREE.PlaneGeometry(900, 900, 260, 260);
+
+            const uniforms = {
+                uTime: { value: 0 },
+                uScanPlaneY: { value: 60.0 },
+                uBaseColor: { value: new THREE.Color(colBaseDark) },
+                uNeonColor: { value: new THREE.Color(colNeonDark) }
+            };
+
+            const terrainMaterial = new THREE.ShaderMaterial({
+                vertexShader: customTerrainVertexShader,
+                fragmentShader: customTerrainFragmentShader,
+                uniforms: uniforms,
+                transparent: true,
+                depthWrite: false
+            });
+
+            const pointCloud = new THREE.Points(terrainGeo, terrainMaterial);
+            pointCloud.rotation.x = -Math.PI / 2;
+            scene.add(pointCloud);
+
+            const wireMaterial = new THREE.MeshBasicMaterial({
+                color: new THREE.Color(colWireDark),
+                wireframe: true,
+                transparent: true,
+                opacity: 0.15
+            });
+            const wireMesh = new THREE.Mesh(terrainGeo, wireMaterial);
+            wireMesh.rotation.x = -Math.PI / 2;
+            wireMesh.position.y = -1.0;
+            scene.add(wireMesh);
+
+            const dustGeo = new THREE.BufferGeometry();
+            const dustCount = 450;
+            const dustPos = new Float32Array(dustCount * 3);
+            for (let i = 0; i < dustCount * 3; i += 3) {
+                dustPos[i] = (Math.random() - 0.5) * 800;
+                dustPos[i + 1] = Math.random() * 260;
+                dustPos[i + 2] = (Math.random() - 0.5) * 800;
+            }
+            dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+            const dustMat = new THREE.PointsMaterial({
+                color: new THREE.Color(colNeonDark),
+                size: 2.0,
+                transparent: true,
+                opacity: 0.35
+            });
+            const dustPoints = new THREE.Points(dustGeo, dustMat);
+            scene.add(dustPoints);
+
+            let scrollY = 0;
+            let targetScrollY = 0;
+            const header = document.getElementById('main-header');
+            const scrollBar = document.getElementById('scroll-bar');
+
+            window.addEventListener('scroll', () => {
+                targetScrollY = window.scrollY;
+                const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
+                if (scrollBar && totalScroll > 0) {
+                    const progressPercent = (targetScrollY / totalScroll) * 100;
+                    scrollBar.style.width = `${progressPercent}%`;
+                }
+
+                // Smooth gradual black → white header nav transition
+                const scrollThreshold = Math.max(1, window.innerHeight * 0.35);
+                const progress = Math.min(targetScrollY / scrollThreshold, 1.0);
+                const v = Math.round(progress * 255);
+                if (header) {
+                    header.style.backgroundColor = `rgb(${v},${v},${v})`;
+                    header.style.color = progress > 0.5 ? '#000000' : '#ffffff';
+                    header.style.borderBottomColor = progress > 0.5 ? '#000000' : 'rgba(255,255,255,0.15)';
+                    if (progress >= 0.5) header.classList.add('scrolled');
+                    else header.classList.remove('scrolled');
+                }
+            }, { passive: true });
+
+            let isVisible = true;
+            const heroObserver = new IntersectionObserver((entries) => {
+                isVisible = entries[0].isIntersecting || window.scrollY < window.innerHeight;
+            }, { threshold: 0 });
+            heroObserver.observe(canvas);
+            document.addEventListener('visibilitychange', () => {
+                isVisible = !document.hidden;
+            });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            const clock = new THREE.Clock();
+
+            function renderLoop() {
+                requestAnimationFrame(renderLoop);
+                if (!isVisible || document.hidden) return;
+
+                const time = clock.getElapsedTime();
+                scrollY += (targetScrollY - scrollY) * 0.06;
+
+                const totalHeight = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+                const scrollFraction = Math.min(Math.max(scrollY / totalHeight, 0.0), 1.0);
+
+                // Calculate smooth dark-to-white color theme lerp based on scroll
+                const themeThreshold = Math.max(1, window.innerHeight * 0.38);
+                const themeProgress = Math.min(Math.max(scrollY / themeThreshold, 0.0), 1.0);
+
+                // Smoothly lerp background clear color & fog
+                currentFog.lerpColors(colFogDark, colFogLight, themeProgress);
+                scene.fog.color.copy(currentFog);
+                renderer.setClearColor(currentFog, 1.0);
+
+                // Smoothly lerp terrain shaders & points
+                uniforms.uBaseColor.value.lerpColors(colBaseDark, colBaseLight, themeProgress);
+                uniforms.uNeonColor.value.lerpColors(colNeonDark, colNeonLight, themeProgress);
+
+                // Smoothly lerp wireframe & dust particles
+                currentWire.lerpColors(colWireDark, colWireLight, themeProgress);
+                wireMaterial.color.copy(currentWire);
+                wireMaterial.opacity = 0.15 + themeProgress * 0.10;
+
+                dustMat.color.lerpColors(colNeonDark, colNeonLight, themeProgress);
+
+                // Camera flight path around Mt. Bullagao
+                const radius = 540 - scrollFraction * 140;
+                const angle = 0.3 + scrollFraction * Math.PI * 0.85;
+
+                camera.position.x = Math.sin(angle) * radius;
+                camera.position.z = Math.cos(angle) * radius;
+                camera.position.y = 380 - scrollFraction * 260;
+
+                const targetY = 120 - scrollFraction * 80;
+                camera.lookAt(0, targetY, 0);
+
+                const scanHeight = Math.sin(time * 1.4) * 80.0 + (140.0 - scrollFraction * 120.0);
+                uniforms.uScanPlaneY.value = scanHeight;
+                uniforms.uTime.value = time;
+
+                dustPoints.rotation.y = time * 0.02;
+
+                renderer.render(scene, camera);
+            }
+            renderLoop();
+        })();
     </script>
 
     <!-- Interactive Scripts -->
@@ -2452,175 +2562,243 @@
             });
         });
 
-        /* 6. HIGH-DPI SHARP 3D PERSPECTIVE VECTOR CANVAS ENGINE (PRE-FOOTER) */
-        const canvas = document.getElementById('spiralCanvas');
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            let dpr = 1;
-            let displayWidth = 0;
-            let displayHeight = 0;
+                                /* 6. THREE.JS ALIEN FUTURISTIC SUBTERRANEAN MOUNTAIN CANYON ENGINE (PRE-FOOTER WHITE DESIGN) */
+        (function initPreFooterMountainEngine() {
+            const canvas = document.getElementById('spiralCanvas');
+            if (!canvas || typeof THREE === 'undefined') return;
 
-            function resizeCanvas() {
-                dpr = window.devicePixelRatio || 1;
-                const rect = canvas.parentElement.getBoundingClientRect();
-                displayWidth = rect.width;
-                displayHeight = rect.height;
-                
-                canvas.width = Math.floor(displayWidth * dpr);
-                canvas.height = Math.floor(displayHeight * dpr);
-                canvas.style.width = displayWidth + 'px';
-                canvas.style.height = displayHeight + 'px';
-                
-                ctx.setTransform(1, 0, 0, 1, 0, 0);
-                ctx.scale(dpr, dpr);
+            let renderer;
+            try {
+                renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+            } catch (e) {
+                console.error('[PreFooter] WebGL init failed', e);
+                return;
             }
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
 
-            let time = 0;
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            const container = canvas.parentElement;
+            renderer.setSize(container.clientWidth, container.clientHeight);
 
-            // Mouse-reactive tunnel: hovering the Make Contact section tilts
-            // the tunnel toward the cursor and warps forward faster, then
-            // smoothly settles back. Inspired by alien.club's pre-footer.
-            const section = canvas.parentElement;
-            let targetMx = 0;      // normalized -1..1 from section center (x)
-            let targetMy = 0;      // normalized -1..1 from section center (y)
-            let targetHover = 0;   // 0 idle, 1 hovering
-            let mx = 0, my = 0, hover = 0;  // smoothed values
+            const scene = new THREE.Scene();
+            // Crisp White Fog matching white section background
+            scene.fog = new THREE.FogExp2(0xffffff, 0.0022);
+            renderer.setClearColor(0xffffff, 1.0);
 
-            section.addEventListener('mousemove', (e) => {
-                const rect = section.getBoundingClientRect();
-                targetMx = ((e.clientX - rect.left) / rect.width  - 0.5) * 2;
-                targetMy = ((e.clientY - rect.top)  / rect.height - 0.5) * 2;
+            const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 1, 2000);
+            camera.position.set(0, 180, 420);
+            camera.lookAt(0, 40, 0);
+
+            // Alien Mountain GLSL Shaders — White Theme Palette
+            const vertexShader = `
+                uniform float uTime;
+                uniform float uScanPlaneZ;
+                uniform float uWarpSpeed;
+                varying float vElevation;
+                varying vec3 vWorldPos;
+                varying float vScanDist;
+
+                vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+                vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+                vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+
+                float snoise(vec2 v) {
+                    const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+                    vec2 i  = floor(v + dot(v, C.yy) );
+                    vec2 x0 = v -   i + dot(i, C.xx);
+                    vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+                    vec4 x12 = x0.xyxy + C.xxzz;
+                    x12.xy -= i1;
+                    i = mod289(i);
+                    vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 )) + i.x + vec3(0.0, i1.x, 1.0 ));
+                    vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+                    m = m*m ;
+                    m = m*m ;
+                    vec3 x = 2.0 * fract(p * C.www) - 1.0;
+                    vec3 h = abs(x) - 0.5;
+                    vec3 ox = floor(x + 0.5);
+                    vec3 a0 = x - ox;
+                    m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+                    vec3 g;
+                    g.x  = a0.x  * x0.x  + h.x  * x0.y;
+                    g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+                    return 130.0 * dot(m, g);
+                }
+
+                // Subterranean Canyon Mountain Formula
+                float getCanyonHeight(vec2 p) {
+                    float nx = p.x * 0.004;
+                    float nz = p.y * 0.004 + uTime * 0.12;
+
+                    float canyonWall = pow(abs(nx), 1.8) * 160.0;
+                    float mountainPeaks = exp(-pow(nx * 1.2, 2.0)) * 90.0;
+                    
+                    float spurs = snoise(vec2(nx * 4.0, nz * 4.0)) * 35.0;
+                    float crags = snoise(vec2(nx * 10.0, nz * 10.0)) * 14.0;
+
+                    return canyonWall + mountainPeaks + spurs + crags;
+                }
+
+                void main() {
+                    vec3 pos = position;
+                    float h = getCanyonHeight(pos.xy);
+                    pos.z = h;
+
+                    vElevation = h;
+                    vec4 worldPos = modelMatrix * vec4(pos, 1.0);
+                    vWorldPos = worldPos.xyz;
+                    vScanDist = abs(worldPos.z - uScanPlaneZ);
+
+                    gl_Position = projectionMatrix * viewMatrix * worldPos;
+                    
+                    float pSize = (3.2 + (h / 38.0));
+                    gl_PointSize = clamp(pSize * (380.0 / - (viewMatrix * worldPos).z), 1.0, 7.5);
+                }
+            `;
+
+            const fragmentShader = `
+                uniform vec3 uBaseColor;
+                uniform vec3 uNeonColor;
+                uniform float uScanPlaneZ;
+                varying float vElevation;
+                varying vec3 vWorldPos;
+                varying float vScanDist;
+
+                void main() {
+                    vec2 coord = gl_PointCoord - vec2(0.5);
+                    if (length(coord) > 0.5) discard;
+
+                    float contourStep = 16.0;
+                    float contourLineWidth = 1.5;
+                    float contourMod = mod(vElevation, contourStep);
+                    float isContour = step(contourMod, contourLineWidth);
+
+                    float scanHighlight = smoothstep(24.0, 0.0, vScanDist);
+
+                    vec3 col = mix(uBaseColor, vec3(0.55, 0.58, 0.62), clamp(vElevation / 200.0, 0.0, 1.0));
+                    col = mix(col, uNeonColor, isContour * 0.90);
+                    col = mix(col, uNeonColor, scanHighlight * 0.95);
+
+                    float alpha = clamp(0.35 + (vElevation / 180.0) * 0.55 + scanHighlight * 0.4, 0.20, 0.92);
+                    gl_FragColor = vec4(col, alpha);
+                }
+            `;
+
+            const terrainGeo = new THREE.PlaneGeometry(800, 800, 200, 200);
+
+            const uniforms = {
+                uTime: { value: 0 },
+                uScanPlaneZ: { value: 0.0 },
+                uWarpSpeed: { value: 1.0 },
+                uBaseColor: { value: new THREE.Color(0xd0d5dd) },
+                uNeonColor: { value: new THREE.Color(0x111827) }
+            };
+
+            const terrainMaterial = new THREE.ShaderMaterial({
+                vertexShader: vertexShader,
+                fragmentShader: fragmentShader,
+                uniforms: uniforms,
+                transparent: true,
+                depthWrite: false
             });
-            section.addEventListener('mouseenter', () => { targetHover = 1; });
-            section.addEventListener('mouseleave', () => {
-                targetHover = 0;
-                targetMx = 0;
-                targetMy = 0;
+
+            // 1. Point Cloud Canyon Mesh (Dark contrast particles on white)
+            const pointCloud = new THREE.Points(terrainGeo, terrainMaterial);
+            pointCloud.rotation.x = -Math.PI / 2.2;
+            scene.add(pointCloud);
+
+            // 2. Wireframe Subterranean Lattice Mesh (Light slate)
+            const wireMaterial = new THREE.MeshBasicMaterial({
+                color: 0xe5e7eb,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.25
             });
-            // Touch: tap-and-drag drives the same state
-            section.addEventListener('touchmove', (e) => {
-                if (!e.touches[0]) return;
-                const rect = section.getBoundingClientRect();
-                targetMx = ((e.touches[0].clientX - rect.left) / rect.width  - 0.5) * 2;
-                targetMy = ((e.touches[0].clientY - rect.top)  / rect.height - 0.5) * 2;
-                targetHover = 1;
-            }, { passive: true });
-            section.addEventListener('touchend', () => {
-                targetHover = 0;
-                targetMx = 0;
-                targetMy = 0;
+            const wireMesh = new THREE.Mesh(terrainGeo, wireMaterial);
+            wireMesh.rotation.x = -Math.PI / 2.2;
+            wireMesh.position.y = -1.0;
+            scene.add(wireMesh);
+
+            // 3. Floating Ambient Subterranean Particles (Dark slate)
+            const dustGeo = new THREE.BufferGeometry();
+            const dustCount = 350;
+            const dustPos = new Float32Array(dustCount * 3);
+            for (let i = 0; i < dustCount * 3; i += 3) {
+                dustPos[i] = (Math.random() - 0.5) * 700;
+                dustPos[i + 1] = Math.random() * 220;
+                dustPos[i + 2] = (Math.random() - 0.5) * 700;
+            }
+            dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+            const dustMat = new THREE.PointsMaterial({
+                color: 0x111827,
+                size: 2.2,
+                transparent: true,
+                opacity: 0.35
             });
+            const dustPoints = new THREE.Points(dustGeo, dustMat);
+            scene.add(dustPoints);
+
+            // Interactive Steering Animation
+            let targetMx = 0, targetMy = 0, targetHover = 0;
+            let mx = 0, my = 0, hover = 0;
 
             function lerp(a, b, t) { return a + (b - a) * t; }
 
-            function draw3DTunnel() {
-                ctx.clearRect(0, 0, displayWidth, displayHeight);
+            container.addEventListener('mousemove', (e) => {
+                const rect = container.getBoundingClientRect();
+                targetMx = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+                targetMy = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+            });
+            container.addEventListener('mouseenter', () => { targetHover = 1; });
+            container.addEventListener('mouseleave', () => {
+                targetHover = 0;
+                targetMx = 0;
+                targetMy = 0;
+            });
+
+            window.addEventListener('resize', () => {
+                const w = container.clientWidth;
+                const h = container.clientHeight;
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+            });
+
+            let isVisible = true;
+            const observer = new IntersectionObserver((entries) => {
+                isVisible = entries[0].isIntersecting;
+            }, { threshold: 0 });
+            observer.observe(container);
+
+            const clock = new THREE.Clock();
+
+            function renderLoop() {
+                requestAnimationFrame(renderLoop);
+                if (!isVisible || document.hidden) return;
+
+                const time = clock.getElapsedTime();
                 
-                const cx = displayWidth / 2;
-                const cy = displayHeight / 2;
-                const fov = 380;
-                const numRings = 32;
-                const ringSpacing = 35;
-                const baseSize = Math.max(140, Math.min(260, Math.min(displayWidth, displayHeight) * 0.32));
+                mx = lerp(mx, targetMx, 0.06);
+                my = lerp(my, targetMy, 0.06);
+                hover = lerp(hover, targetHover, 0.05);
 
-                // Smooth the mouse state toward its target (ease in/out).
-                mx = lerp(mx, targetMx, 0.08);
-                my = lerp(my, targetMy, 0.08);
-                hover = lerp(hover, targetHover, 0.06);
+                // Interactive 3D Flight & Steering
+                camera.position.x = mx * 120.0;
+                camera.position.y = 180.0 - my * 60.0;
+                camera.rotation.z = -mx * 0.08;
+                camera.lookAt(mx * 40.0, 40.0 - my * 20.0, -100.0);
 
-                // Coherent tunnel: one shared rigid-body rotation for the whole
-                // tunnel + a smooth single-axis helical twist (small per-ring
-                // phase) so adjacent rings stay aligned and the mesh curves
-                // cleanly instead of crossing/tangling. See Lode's tunnel tut.
-                // On hover the cursor steers the tilt (up to ~22°) and adds a
-                // little extra oscillation, so the background reacts to the
-                // pointer over the "Book a Demo" CTA.
-                const baseRotX = Math.sin(time * 0.15) * 0.28;
-                const baseRotY = Math.cos(time * 0.11) * 0.28;
-                const globalRotX = baseRotX + my * 0.38 * hover;
-                const globalRotY = baseRotY + mx * 0.38 * hover;
-                const twistPerRing = 0.022 + hover * 0.012;
+                const speed = 1.0 + hover * 1.5;
+                uniforms.uTime.value = time * speed;
 
-                const ringVertices = [];
+                const scanZ = Math.sin(time * 1.6) * 300.0;
+                uniforms.uScanPlaneZ.value = scanZ;
 
-                for (let i = 0; i < numRings; i++) {
-                    let z = ((i * ringSpacing - time * 45) % (numRings * ringSpacing));
-                    if (z < -fov + 10) z += numRings * ringSpacing;
+                dustPoints.rotation.y = time * 0.03;
 
-                    const rotX = globalRotX;
-                    const rotY = globalRotY;
-                    const rotZ = time * 0.18 + i * twistPerRing;
-
-                    const half = baseSize;
-                    const corners = [
-                        { x: -half, y: -half, z: 0 },
-                        { x:  half, y: -half, z: 0 },
-                        { x:  half, y:  half, z: 0 },
-                        { x: -half, y:  half, z: 0 }
-                    ];
-
-                    const projected = corners.map(pt => {
-                        // Rotation Y
-                        let x1 = pt.x * Math.cos(rotY) - pt.z * Math.sin(rotY);
-                        let z1 = pt.x * Math.sin(rotY) + pt.z * Math.cos(rotY);
-                        // Rotation X
-                        let y2 = pt.y * Math.cos(rotX) - z1 * Math.sin(rotX);
-                        let z2 = pt.y * Math.sin(rotX) + z1 * Math.cos(rotX);
-                        // Rotation Z
-                        let x3 = x1 * Math.cos(rotZ) - y2 * Math.sin(rotZ);
-                        let y3 = x1 * Math.sin(rotZ) + y2 * Math.cos(rotZ);
-
-                        const scale = fov / (fov + z + z2 + 100);
-                        return {
-                            px: cx + x3 * scale,
-                            py: cy + y3 * scale,
-                            scale: scale
-                        };
-                    });
-
-                    ringVertices.push(projected);
-
-                    // Draw 3D Ring Polygon
-                    ctx.beginPath();
-                    ctx.moveTo(projected[0].px, projected[0].py);
-                    for (let c = 1; c < projected.length; c++) {
-                        ctx.lineTo(projected[c].px, projected[c].py);
-                    }
-                    ctx.closePath();
-
-                    const alpha = Math.max(0, Math.min(0.55 + hover * 0.15, (1 - (z / (numRings * ringSpacing))) * 0.65));
-                    ctx.strokeStyle = `rgba(0, 0, 0, ${alpha})`;
-                    ctx.lineWidth = 0.85 + hover * 0.35;
-                    ctx.stroke();
-                }
-
-                // Connect longitudinal 3D wireframe mesh lines across rings
-                for (let r = 0; r < ringVertices.length - 1; r++) {
-                    const ringA = ringVertices[r];
-                    const ringB = ringVertices[r + 1];
-                    if (!ringA || !ringB) continue;
-
-                    const alpha = Math.max(0, Math.min(0.35 + hover * 0.15, 0.4 - (r / ringVertices.length) * 0.35));
-                    ctx.strokeStyle = `rgba(0, 0, 0, ${alpha})`;
-                    ctx.lineWidth = 0.5 + hover * 0.25;
-
-                    for (let c = 0; c < 4; c++) {
-                        ctx.beginPath();
-                        ctx.moveTo(ringA[c].px, ringA[c].py);
-                        ctx.lineTo(ringB[c].px, ringB[c].py);
-                        ctx.stroke();
-                    }
-                }
-
-                // Warp forward faster while hovering (up to ~2.5x idle speed).
-                time += 0.012 + hover * 0.018;
-                requestAnimationFrame(draw3DTunnel);
+                renderer.render(scene, camera);
             }
-            draw3DTunnel();
-        }
+            renderLoop();
+        })();
     </script>
 </body>
 </html>
-

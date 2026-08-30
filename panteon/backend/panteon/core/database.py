@@ -1,4 +1,6 @@
-from sqlalchemy import Column, Float, String, DateTime, func
+from typing import List, Optional
+
+from sqlalchemy import Column, Float, Integer, String, DateTime, func
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 from panteon.core.config import settings

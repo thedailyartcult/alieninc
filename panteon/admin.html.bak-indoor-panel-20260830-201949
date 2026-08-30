@@ -3346,40 +3346,14 @@
                                                                     </div>
                               <div class="sc-map-canvas-wrap">
                                    <div class="retro-map-canvas" id="fusionMap"></div>
-                                   <div id="indoorDim" class="indoor-dim" aria-hidden="true"></div>
-                                   <!-- TACTICAL INDOOR OPS — panel-internal floorplan + trace tools (isolated selection) -->
+                                   <!-- TACTICAL INDOOR OPS — rendered inside fusionMap when a building object is selected -->
                                    <div id="indoorHud" class="indoor-hud" role="region" aria-label="Tactical Indoor Ops">
                                        <div class="indoor-hud-head"><span class="indoor-hud-title">TACTICAL INDOOR OPS</span><span id="indoorFloorLabel" class="indoor-hud-sub">—</span><button type="button" class="indoor-hud-close" onclick="window.IndoorOps&&IndoorOps.exit()" title="Exit indoor view">×</button></div>
                                        <div class="indoor-hud-body">
-                                           <div class="indoor-hud-label">SELECT FLOOR — ISOLATED BUILDING</div>
+                                           <div class="indoor-hud-label">SELECT FLOOR — BLUEPRINT OVERLAY</div>
                                            <div id="indoorFloorGrid" class="indoor-floor-grid"></div>
-                                           <div class="indoor-stage" id="indoorStage">
-                                               <img id="indoorImg" alt="Floorplan reference" />
-                                               <canvas id="indoorCanvas" width="900" height="640" aria-label="Trace canvas — click to draw"></canvas>
-                                           </div>
-                                           <div class="indoor-toolbar" role="toolbar" aria-label="Trace tools">
-                                               <button type="button" class="indoor-tbtn" data-tool="poly" id="indoorToolPoly">POLY</button>
-                                               <button type="button" class="indoor-tbtn" data-tool="rect" id="indoorToolRect">RECT</button>
-                                               <button type="button" class="indoor-tbtn" data-tool="wall" id="indoorToolWall">WALL</button>
-                                               <button type="button" class="indoor-tbtn" data-tool="door" id="indoorToolDoor">DOOR</button>
-                                               <button type="button" class="indoor-tbtn" id="indoorUndo">UNDO</button>
-                                               <button type="button" class="indoor-tbtn danger" id="indoorClear">CLEAR</button>
-                                               <button type="button" class="indoor-tbtn" id="indoorExport">EXPORT</button>
-                                           </div>
-                                            <div class="indoor-imgbar">
-                                                <input type="text" id="indoorUrl" placeholder="Paste floorplan image URL (internet) — ENTER to load" />
-                                                <button type="button" class="indoor-tbtn" id="indoorLoadUrl">LOAD</button>
-                                                <label class="indoor-upload" for="indoorFile">UPLOAD<input type="file" id="indoorFile" accept="image/*" hidden /></label>
-                                                <span class="indoor-opacity">OPA <input type="range" id="indoorOpacity" min="0" max="100" value="92" /></span>
-                                            </div>
-                                            <div class="indoor-simbar" role="group" aria-label="Occupancy simulation">
-                                                <button type="button" class="indoor-tbtn" id="indoorHumToggle">HUMANS OFF</button>
-                                                <label>COUNT <input type="range" id="indoorHumCount" min="0" max="80" value="18" step="2" /></label>
-                                                <label>SPEED <input type="range" id="indoorHumSpeed" min="0.2" max="2.5" value="1.0" step="0.1" /></label>
-                                                <span id="indoorHumStat" style="font-size:7px;color:rgba(255,255,255,.55)">18 agents · 1.0×</span>
-                                            </div>
-                                            <div class="indoor-hud-meta"><b id="indoorBName">—</b> · <span id="indoorBAddr">—</span><br>Height: <span id="indoorBHeight">—</span> · <span id="indoorSelHint" style="color:#00ffaa">Isolated — only this building visible</span></div>
-                                            <div class="indoor-hud-hint">Plan stays <b style="color:#00ffaa">inside panel</b>. Paste/upload floorplan, trace rooms, then toggle <b>HUMANS</b> to see 2.5D occupants walking. Real building footprint resolved from map 3D-buildings — no synthetic offset.</div>
+                                           <div class="indoor-hud-meta"><b id="indoorBName">—</b> · <span id="indoorBAddr">—</span><br>Height: <span id="indoorBHeight">—</span> · Matrix extrusion <span style="color:#00ffaa">#00ffaa 38%</span></div>
+                                           <div class="indoor-hud-hint">Floors × 3.5 m extruded translucent. Blueprint is a flat <code>image</code> source pinned to 4 corners — swap <code>BLUEPRINTS</code> URLs for real CAD.</div>
                                        </div>
                                    </div>
 
@@ -19464,12 +19438,12 @@ function renderFusionRealLayer() {
     }
     function pickBuildingAt(m, point) {
         try {
-            // ontology-honest: prefer real buildings over landuse — landuse was masking Grand Hyatt
-            var fs = m.queryRenderedFeatures(point, { layers: ['3d-buildings'] });
-            if (!fs || !fs.length) {
-                var landLayers=['landuse_residential','landuse_commercial','landuse_industrial','landuse_park','landuse_forest','landuse_farm'].filter(function(l){ return m.getLayer(l); });
-                if(landLayers.length) fs = m.queryRenderedFeatures(point, { layers: landLayers });
-            }
+            var layers = ['3d-buildings'];
+            // Check for landuse layers in the current style
+            ['landuse_residential', 'landuse_commercial', 'landuse_industrial', 'landuse_park', 'landuse_forest', 'landuse_farm'].forEach(function (l) {
+                if (m.getLayer(l)) layers.push(l);
+            });
+            var fs = m.queryRenderedFeatures(point, { layers: layers });
             if (!fs || !fs.length) return null;
             function geomArea(geom) {
                 if (!geom || !geom.coordinates) return 0;
@@ -19505,9 +19479,8 @@ function renderFusionRealLayer() {
                 var isLanduse = f.layer && f.layer.id && f.layer.id.startsWith('landuse');
                 var hasName = pr.name || pr['name:latin'] || pr['name:en'];
                 var height = Number(pr.height || pr.render_height) || 0;
-                var lvl = Number(pr['building:levels']||pr.levels||0);
-                // Score: honest — buildings win, landuse deprioritized (was 1000); named/height/levels still matter
-                var score = (isLanduse ? -800 : 0) + (hasName ? 180 : 0) + (height * 0.7) + (lvl*12) + (a * 1e6 * 0.25);
+                // Score: landuse=1000, named=100, height bonus, area bonus
+                var score = (isLanduse ? 1000 : 0) + (hasName ? 100 : 0) + (height * 0.1) + (a * 1e6);
                 return { feature: f, area: a, score: score, isLanduse: isLanduse };
             });
             // Filter out tiny features unless they're landuse or named
@@ -20646,58 +20619,14 @@ function renderFusionRealLayer() {
             };
         });
         var qg=$('quickGrandHyatt'); if(qg){ qg.onclick=async function(){
-            qg.disabled=true; qg.textContent='REGISTERING GH…';
+            qg.disabled=true; qg.textContent='REGISTERING…';
             try{
-                // VERIFIED OSM GH Manila: way 580263354, centroid 14.5570876,121.0520373, height 37.4, levels 6
-                var GH_GEOM_QG={type:"Polygon",coordinates:[[[121.0515136,14.5565806],[121.0516201,14.5565521],[121.0516017,14.5564962],[121.051631,14.5564872],[121.0516097,14.556422],[121.0516716,14.5564029],[121.051661,14.5563707],[121.0517991,14.5563283],[121.0519371,14.5562859],[121.0519494,14.5563231],[121.0519966,14.5563086],[121.0520146,14.5563634],[121.0520341,14.5563574],[121.0520538,14.5564173],[121.052145,14.5563865],[121.0522438,14.5566706],[121.0525377,14.5575155],[121.052303,14.557588],[121.0522712,14.5575971],[121.0522261,14.5576118],[121.0520748,14.5576585],[121.0518968,14.5577136],[121.0518575,14.5575951],[121.0518272,14.5575045],[121.0515136,14.5565806]]]};
-                var lat=14.5570876, lng=121.0520373, bheight=37.4;
-                var payloadFootprint=GH_GEOM_QG.coordinates;
-                // optional: if map is ready, try to use live 3d-buildings mesh for perfect extrusion (fallback to GH_GEOM_QG)
-                try{
-                    var m=null; try{ if(typeof getMap==='function') m=getMap(); }catch(e){}
-                    if(!m) try{ if(window.fusionMap) m=window.fusionMap; }catch(e){}
-                    if(!m) try{ if(typeof fusionMap!=='undefined' && fusionMap) m=fusionMap; }catch(e){}
-                    if(m && m.project && m.queryRenderedFeatures){
-                        // fly to correct GH first so tiles are present
-                        if(m.flyTo) try{ m.flyTo({center:[121.0520373,14.5570876], zoom:18.6, pitch:60, bearing:-10, duration:800}); }catch(e){}
-                        await new Promise(function(r){ setTimeout(r, 900); });
-                        var pt=m.project([121.0520373,14.5570876]);
-                        var feats=m.queryRenderedFeatures(pt, {layers:['3d-buildings']});
-                        if(!feats || !feats.length){
-                            var r2=24;
-                            feats=m.queryRenderedFeatures([[pt.x-r2,pt.y-r2],[pt.x+r2,pt.y+r2]], {layers:['3d-buildings']});
-                        }
-                        if(feats && feats.length){
-                            var best=feats[0], bestSc=-1;
-                            feats.forEach(function(f){
-                                var pr=f.properties||{};
-                                var nm=(pr.name||pr['name:en']||'').toLowerCase();
-                                var h=Number(pr.height||pr.render_height)||0;
-                                var sc=(nm.indexOf('grand hyatt')!==-1?2000:0)+h;
-                                if(sc>bestSc){ bestSc=sc; best=f; }
-                            });
-                            if(best && best.geometry && best.geometry.coordinates){
-                                payloadFootprint=best.geometry.coordinates;
-                                var prb=best.properties||{};
-                                var hb=Number(prb.height||prb.render_height);
-                                if(isFinite(hb) && hb>5) bheight=hb;
-                                // recenter to building centroid
-                                try{
-                                    var coords=best.geometry.coordinates;
-                                    var sx=0, sy=0, n=0;
-                                    (function walk(c){ if(!c||!c.length) return; if(typeof c[0]==='number'){ sx+=c[0]; sy+=c[1]; n++; return; } for(var i=0;i<c.length;i++) walk(c[i]); })(coords);
-                                    if(n){ lng=sx/n; lat=sy/n; }
-                                }catch(e){}
-                            }
-                        }
-                    }
-                }catch(e){}
                 await api('/maven/object',{method:'POST',body:JSON.stringify({
                     name:'Grand Hyatt Manila',
-                    lat:lat, lng:lng, height_m:bheight,
-                    footprint: payloadFootprint
+                    lat:14.5542, lng:121.0510, height_m:14,
+                    footprint:[[[121.05062,14.55455],[121.05138,14.55455],[121.05138,14.55385],[121.05062,14.55385],[121.05062,14.55455]]]
                 })});
-                toast('Grand Hyatt registered — correct building — click INDOOR', 'success');
+                toast('Grand Hyatt registered — FLY then click building to enter', 'success');
             }catch(e){ mErr(e); qg.disabled=false; qg.textContent='＋ QUICK REGISTER — GRAND HYATT MANILA (BGC)'; return; }
             refresh();
         };}
@@ -21458,8 +21387,6 @@ function renderFusionRealLayer() {
             if (now - lastMM < 70) return;
             lastMM = now;
             if (S.objMode) {
-                // enforce single highlight in Register Object mode — clear persisted hover so only the ghost shows
-                if(S._hovId!=null){ try{ m.setFeatureState({source:'maven-objs', id:S._hovId},{hover:false}); }catch(e){} S._hovId=null; }
                 var hb = pickBuildingAt(m, ev.point);
                 setGhost(hb ? hb.footprint : null, hb ? hb.height : null);
                 return;
@@ -21490,18 +21417,12 @@ function renderFusionRealLayer() {
                 }
                 return;
             }
-            // single-hover enforcement: only one maven object highlighted at a time — clear ghost when hovering persisted objects
-            setGhost(null);
             var fs = null;
-            try { fs = m.queryRenderedFeatures(ev.point, { layers: ['maven-objs-fill','maven-objs-vol'] }); } catch (err) {}
+            try { fs = m.queryRenderedFeatures(ev.point, { layers: ['maven-objs-fill'] }); } catch (err) {}
             var nid = (fs && fs.length) ? fs[0].id : null;
             if (nid !== S._hovId) {
                 if (S._hovId != null) {
                     try { m.setFeatureState({ source: 'maven-objs', id: S._hovId }, { hover: false }); } catch (e) {}
-                }
-                // defensive: if query returned stacked features (identical footprint), clear all others
-                if(fs && fs.length>1){
-                    for(var k=1;k<fs.length;k++){ try{ m.setFeatureState({source:'maven-objs', id:fs[k].id},{hover:false}); }catch(e){} }
                 }
                 S._hovId = nid;
                 if (nid != null) {
@@ -21954,48 +21875,24 @@ section[data-mpanel="yono"]{padding:0;border-top:1px solid var(--border-color);}
 #mavenLeftCol[data-mfeat="yono"] #yono-panel{position:relative;inset:auto;right:auto;top:auto;width:100%;height:100%;min-height:0;transform:none!important;opacity:1!important;pointer-events:auto;border-radius:0;border-width:1px 0 0 0;display:flex;flex-direction:column;}
 #mavenLeftCol[data-mfeat="yono"] #yono-panel .yono-body{flex:1;min-height:0;}
 #mavenLeftCol[data-mfeat="yono"] #yono-panel.yono-min{height:44px!important;min-height:44px!important;}
-/* TACTICAL INDOOR OPS — panel-internal floorplan (isolated selection) */
+/* TACTICAL INDOOR OPS — matrix HUD inside fusionMap */
 .sc-map-canvas-wrap{position:relative}
-.indoor-hud{position:absolute;top:12px;right:12px;z-index:15;width:460px;max-width:calc(100% - 24px);max-height:calc(100% - 24px);background:rgba(5,18,12,0.98);border:1px solid rgba(0,255,170,.32);box-shadow:0 8px 32px rgba(0,0,0,.55),0 0 18px rgba(0,255,170,.18);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-family:var(--font-mono);display:none;overflow:hidden;flex-direction:column}
-.indoor-hud.visible{display:flex}
-.indoor-hud-head{padding:10px 12px 8px;border-bottom:1px solid rgba(0,255,170,.22);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.indoor-hud{position:absolute;top:12px;right:12px;z-index:15;width:300px;background:rgba(5,18,12,0.96);border:1px solid rgba(0,255,170,.32);box-shadow:0 8px 32px rgba(0,0,0,.55),0 0 18px rgba(0,255,170,.18);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-family:var(--font-mono);display:none;overflow:hidden}
+.indoor-hud.visible{display:block}
+.indoor-hud-head{padding:10px 12px 8px;border-bottom:1px solid rgba(0,255,170,.22);display:flex;align-items:center;gap:8px}
 .indoor-hud-title{font-size:9px;letter-spacing:.16em;color:#00ffaa;text-transform:uppercase;flex:1}
 .indoor-hud-sub{font-size:9px;color:rgba(255,255,255,.6)}
 .indoor-hud-close{background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:22px;height:22px;cursor:pointer;font-size:14px;line-height:1}
 .indoor-hud-close:hover{border-color:#00ffaa;color:#00ffaa}
-.indoor-hud-body{padding:10px 12px;overflow:auto;flex:1;min-height:0}
+.indoor-hud-body{padding:10px 12px}
 .indoor-hud-label{font-size:8px;letter-spacing:.12em;color:rgba(0,255,170,.85);margin-bottom:8px}
 .indoor-floor-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .indoor-floor-btn{height:32px;border:1px solid rgba(0,255,170,.32);background:rgba(0,255,170,.06);color:#fff;font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;cursor:pointer;transition:all .15s}
 .indoor-floor-btn:hover{border-color:#00ffaa;background:rgba(0,255,170,.14)}
 .indoor-floor-btn.active{background:#00ffaa;color:#000;border-color:#00ffaa;box-shadow:0 0 10px rgba(0,255,170,.5);font-weight:700}
-.indoor-stage{position:relative;width:100%;aspect-ratio:900/640;background:#020805;border:1px solid rgba(0,255,170,.22);overflow:hidden;margin:10px 0 8px}
-.indoor-stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
-.indoor-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;opacity:.92}
-.indoor-toolbar{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 8px}
-.indoor-tbtn{height:26px;padding:0 8px;border:1px solid rgba(0,255,170,.30);background:rgba(0,255,170,.07);color:#fff;font-family:var(--font-mono);font-size:8px;letter-spacing:.08em;cursor:pointer}
-.indoor-tbtn:hover{border-color:#00ffaa;background:rgba(0,255,170,.14)}
-.indoor-tbtn.active{background:#00ffaa;color:#000;border-color:#00ffaa;font-weight:700}
-.indoor-tbtn.danger{border-color:rgba(255,93,93,.45);color:#ff9a9a}
-.indoor-tbtn.danger:hover{border-color:#ff5d5d;background:rgba(255,93,93,.12)}
-.indoor-imgbar{display:flex;gap:6px;align-items:center;margin:6px 0 8px}
-.indoor-imgbar input[type="text"]{flex:1;min-width:0;height:28px;padding:0 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#fff;font-family:var(--font-mono);font-size:9px}
-.indoor-imgbar input[type="text"]::placeholder{color:rgba(255,255,255,.45)}
-.indoor-imgbar .indoor-tbtn{height:28px;white-space:nowrap}
-.indoor-upload{height:28px;padding:0 10px;display:inline-flex;align-items:center;border:1px solid rgba(0,255,170,.30);background:rgba(0,255,170,.07);color:#fff;font-family:var(--font-mono);font-size:8px;letter-spacing:.08em;cursor:pointer}
-.indoor-upload:hover{border-color:#00ffaa;background:rgba(0,255,170,.14)}
-.indoor-opacity{display:flex;align-items:center;gap:6px;font-size:8px;color:rgba(255,255,255,.55);white-space:nowrap}
-.indoor-opacity input{width:70px}
-.indoor-simbar{display:flex;gap:6px;align-items:center;margin:6px 0 8px;padding:6px 8px;background:rgba(0,255,170,.05);border:1px solid rgba(0,255,170,.14)}
-.indoor-simbar label{font-size:8px;letter-spacing:.08em;color:rgba(255,255,255,.7)}
-.indoor-simbar input[type="range"]{width:90px}
-.indoor-simbar .indoor-tbtn{height:24px;font-size:7px}
 .indoor-hud-meta{margin-top:10px;padding-top:8px;border-top:1px dashed rgba(0,255,170,.18);font-size:9px;line-height:1.5;color:rgba(255,255,255,.62)}
 .indoor-hud-hint{margin-top:6px;font-size:8px;color:rgba(255,255,255,.45);line-height:1.4}
 .indoor-hud-hint code{background:rgba(0,255,170,.08);padding:0 3px;border:1px solid rgba(0,255,170,.15)}
-.indoor-dim{position:absolute;inset:0;background:rgba(0,0,0,.38);backdrop-filter:blur(1px);z-index:10;pointer-events:none;display:none}
-.indoor-dim.on{display:block}
-body.indoor-focus .sc-map-canvas-wrap .maplibregl-canvas{filter:saturate(.35) brightness(.85)}
 </style>
 <div id="yono-panel" class="yono-hidden">
   <div class="yono-header" id="yonoHeader">
@@ -24973,742 +24870,102 @@ document.querySelectorAll(".empty-state").forEach(el=>{
   window.__yonoTopbar={speak:function(){}, thinking:function(){}, clear:setIdle, ensureLine:function(){return title;}, get active(){return false;}};
 })();
 </script>
-<!-- TACTICAL INDOOR OPS — panel-internal floorplan + isolation (building-only highlight, trace inside panel) -->
+<!-- TACTICAL INDOOR OPS — building-selected 3D extrusion + floorplan image overlay on fusionMap -->
 <script>
 (function(){
-  // VERIFIED OSM GH Manila: way 580263354, centroid 14.5570876,121.0520373, height 37.4, building:levels 6, wikidata Q5440278
-  const GH_GEOM = {type:"Polygon",coordinates:[[[121.0515136,14.5565806],[121.0516201,14.5565521],[121.0516017,14.5564962],[121.051631,14.5564872],[121.0516097,14.556422],[121.0516716,14.5564029],[121.051661,14.5563707],[121.0517991,14.5563283],[121.0519371,14.5562859],[121.0519494,14.5563231],[121.0519966,14.5563086],[121.0520146,14.5563634],[121.0520341,14.5563574],[121.0520538,14.5564173],[121.052145,14.5563865],[121.0522438,14.5566706],[121.0525377,14.5575155],[121.052303,14.557588],[121.0522712,14.5575971],[121.0522261,14.5576118],[121.0520748,14.5576585],[121.0518968,14.5577136],[121.0518575,14.5575951],[121.0518272,14.5575045],[121.0515136,14.5565806]]]};
-  const GH_CENTER = [121.0520373,14.5570876];
-  const DEFAULT_ONTOLOGY = { buildingName:"Grand Hyatt Manila", address:"8th Ave cor 36th, BGC", totalFloors:6, floorLabels:["G","L2","L3","L4","L5","L6"], heightPerFloorM:6.23, center:GH_CENTER.slice(), height:37.4, levels:6 };
+  // ontology per-building (Grand Hyatt BGC default) — mirrors future facility_building object
+  const DEFAULT_ONTOLOGY = { buildingName:"Grand Hyatt Manila", address:"8th Ave cor 36th, BGC", totalFloors:4, floorLabels:["G","L2","L3","L4"], heightPerFloorM:3.5, center:[121.0510,14.5542] };
+  // open-source neon blueprints (replace URLs with real CAD when available)
   function neonSVG(label, sub){
-    const svg=`<svg xmlns='http://www.w3.org/2000/svg' width='900' height='640' viewBox='0 0 900 640'><rect width='900' height='640' fill='#020805'/><rect x='14' y='14' width='872' height='612' fill='none' stroke='#00ffaa' stroke-width='2'/><g stroke='#00ffaa' stroke-opacity='0.08' stroke-width='0.8'>${Array.from({length:18},(_,i)=>`<line x1='${40+i*48}' y1='40' x2='${40+i*48}' y2='600'/>`).join('')}${Array.from({length:12},(_,i)=>`<line x1='14' y1='${40+i*48}' x2='886' y2='${40+i*48}'/>`).join('')}</g><rect x='44' y='52' width='812' height='536' fill='none' stroke='#00ffaa' stroke-width='2.2'/><g fill='none' stroke='#00ffaa' stroke-width='1.4'><rect x='44' y='52' width='260' height='180'/><rect x='304' y='52' width='200' height='180'/><rect x='504' y='52' width='352' height='180'/><rect x='44' y='232' width='180' height='160'/><rect x='224' y='232' width='200' height='160'/><rect x='424' y='232' width='432' height='160'/><rect x='44' y='392' width='320' height='196'/><rect x='364' y='392' width='180' height='196'/><rect x='544' y='392' width='312' height='196'/></g><g fill='#00ffaa' font-family='JetBrains Mono, monospace'><text x='50' y='84' font-size='11' letter-spacing='2'>${label} — ${sub}</text><text x='50' y='102' font-size='9' opacity='0.55'>GRAND HYATT MANILA · BGC · MAPLIBRE IMAGE SOURCE — PANEL INTERNAL</text></g><circle cx='860' cy='38' r='5' fill='#00ffaa'/></svg>`;
+    const svg=`<svg xmlns='http://www.w3.org/2000/svg' width='900' height='640' viewBox='0 0 900 640'><rect width='900' height='640' fill='#020805'/><rect x='14' y='14' width='872' height='612' fill='none' stroke='#00ffaa' stroke-width='2'/><g stroke='#00ffaa' stroke-opacity='0.08' stroke-width='0.8'>${Array.from({length:18},(_,i)=>`<line x1='${40+i*48}' y1='40' x2='${40+i*48}' y2='600'/>`).join('')}${Array.from({length:12},(_,i)=>`<line x1='14' y1='${40+i*48}' x2='886' y2='${40+i*48}'/>`).join('')}</g><rect x='44' y='52' width='812' height='536' fill='none' stroke='#00ffaa' stroke-width='2.2'/><g fill='none' stroke='#00ffaa' stroke-width='1.4'><rect x='44' y='52' width='260' height='180'/><rect x='304' y='52' width='200' height='180'/><rect x='504' y='52' width='352' height='180'/><rect x='44' y='232' width='180' height='160'/><rect x='224' y='232' width='200' height='160'/><rect x='424' y='232' width='432' height='160'/><rect x='44' y='392' width='320' height='196'/><rect x='364' y='392' width='180' height='196'/><rect x='544' y='392' width='312' height='196'/></g><g fill='#00ffaa' font-family='JetBrains Mono, monospace'><text x='50' y='84' font-size='11' letter-spacing='2'>${label} — ${sub}</text><text x='50' y='102' font-size='9' opacity='0.55'>GRAND HYATT MANILA · BGC · MAPLIBRE IMAGE SOURCE</text></g><circle cx='860' cy='38' r='5' fill='#00ffaa'/></svg>`;
     return 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg);
   }
-  const BLUEPRINTS={ "G":neonSVG("G · GROUND","LOBBY · ARRIVAL"), "L2":neonSVG("L2 · LEVEL 2","MEETING ROOMS"), "L3":neonSVG("L3 · LEVEL 3","GUEST ROOMS — LOW"), "L4":neonSVG("L4 · LEVEL 4","GUEST ROOMS — MID"), "L5":neonSVG("L5 · LEVEL 5","SUITES — HIGH"), "L6":neonSVG("L6 · LEVEL 6","ROOFTOP · HELIPAD") };
-  let activeFloor="G", selectedObj=null;
-  let floorImages={}, floorTraces={}, activeTool="poly";
-  let pendingPts=[], isDragging=false, dragStart=null;
-  let prevVis=null;
-  // human occupancy (2.5D walkers inside panel)
-  let humOn=false, humCount=18, humSpeed=1.0, humRaf=null;
-  let floorHumans={}; // key -> [{x,y,vx,vy,tx,ty} normalized 0-1]
+  const BLUEPRINTS={ "G":neonSVG("G · GROUND","LOBBY · ARRIVAL"), "L2":neonSVG("L2 · LEVEL 2","MEETING ROOMS"), "L3":neonSVG("L3 · LEVEL 3","GUEST ROOMS — LOW"), "L4":neonSVG("L4 · LEVEL 4","GUEST ROOMS — MID") };
+  let activeFloor="G", selectedObj=null, selectedBounds=null;
 
   function getMap(){ try{ if(typeof fusionMap!=='undefined'&&fusionMap&&fusionMap.on) return fusionMap; }catch(e){} return window.fusionMap||null; }
-  var indoorBaseGeom=null;
+  function boundsFromFootprint(footprint){
+    if(!footprint) return null;
+    try{
+      const coords = footprint.coordinates ? footprint.coordinates[0] : footprint[0];
+      // fallback to footprint bbox expanded slightly
+      let minLng=Infinity,minLat=Infinity,maxLng=-Infinity,maxLat=-Infinity;
+      (coords||[]).forEach(([lng,lat])=>{ if(lng<minLng)minLng=lng; if(lng>maxLng)maxLng=lng; if(lat<minLat)minLat=lat; if(lat>maxLat)maxLat=lat; });
+      if(!isFinite(minLng)) return null;
+      return [[minLng,maxLat],[maxLng,maxLat],[maxLng,minLat],[minLng,minLat]]; // TL TR BR BL for image source
+    }catch(e){ return null; }
+  }
   function ensureIndoorLayers(){
     const m=getMap(); if(!m) return;
     if(!m.getSource('indoor-building')){
       m.addSource('indoor-building',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
-      m.addLayer({id:'indoor-building-fill',type:'fill',source:'indoor-building',paint:{'fill-color':'#00ffaa','fill-opacity':0.22}});
-      m.addLayer({id:'indoor-building-line',type:'line',source:'indoor-building',paint:{'line-color':'#00ffaa','line-width':1.6,'line-opacity':1}});
-      m.addLayer({id:'indoor-building-vol',type:'fill-extrusion',source:'indoor-building',paint:{'fill-extrusion-color':'#00ffaa','fill-extrusion-opacity':0.52,'fill-extrusion-height':['coalesce',['get','h'],12],'fill-extrusion-base':0}});
+      m.addLayer({id:'indoor-building-fill',type:'fill',source:'indoor-building',paint:{'fill-color':'#00ffaa','fill-opacity':0.14}});
+      m.addLayer({id:'indoor-building-line',type:'line',source:'indoor-building',paint:{'line-color':'#00ffaa','line-width':1.2,'line-opacity':0.95}});
+      m.addLayer({id:'indoor-building-vol',type:'fill-extrusion',source:'indoor-building',paint:{'fill-extrusion-color':'#00ffaa','fill-extrusion-opacity':0.38,'fill-extrusion-height':['coalesce',['get','h'],12],'fill-extrusion-base':0}});
     }
-    if(!m.getSource('indoor-building-floor')){
-      m.addSource('indoor-building-floor',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
-      m.addLayer({id:'indoor-building-floor-vol',type:'fill-extrusion',source:'indoor-building-floor',paint:{'fill-extrusion-color':'#DFF140','fill-extrusion-opacity':0.62,'fill-extrusion-height':['coalesce',['get','fh'],4],'fill-extrusion-base':['coalesce',['get','fb'],0]}});
-      m.addLayer({id:'indoor-building-floor-line',type:'line',source:'indoor-building-floor',paint:{'line-color':'#DFF140','line-width':1.8,'line-opacity':1,'line-dasharray':[3,2]}});
-    }
-  }
-  function updateFloorHighlight(){
-    try{
-      var m=getMap(); if(!m || !indoorBaseGeom) return;
-      var ont=currentOntology;
-      var idx=ont.floorLabels.indexOf(activeFloor);
-      if(idx<0) idx=0;
-      var hpf=ont.heightPerFloorM||6.23;
-      var fb=idx*hpf;
-      var fh=(idx+1)*hpf;
-      var src=m.getSource('indoor-building-floor');
-      if(!src) return;
-      src.setData({type:'FeatureCollection',features:[{type:'Feature',properties:{fb:fb, fh:fh},geometry:indoorBaseGeom}]});
-      // also pulse the main building opacity slightly to show whole vs floor
-      try{ m.setPaintProperty('indoor-building-vol','fill-extrusion-opacity',0.48); }catch(e){}
-    }catch(e){}
-  }
-  // ---- REALISTIC 3D BUILDING (replaces green box when selected) ----
-  let realisticReady=false, realisticVisible=false, realisticGroup=null;
-  function getWindowTexture(){
-    if(getWindowTexture._tex) return getWindowTexture._tex;
-    var c=document.createElement('canvas'); c.width=512; c.height=512;
-    var ctx=c.getContext('2d');
-    // base glass
-    ctx.fillStyle='#0a1e2e'; ctx.fillRect(0,0,512,512);
-    // window grid 8 cols x 12 rows
-    var cols=8, rows=12, pad=6, winW=(512-pad*(cols+1))/cols, winH=(512-pad*(rows+1))/rows;
-    for(var r=0;r<rows;r++) for(var col=0;col<cols;col++){
-      var x=pad+col*(winW+pad), y=pad+r*(winH+pad);
-      var lit=Math.random()<0.18;
-      if(lit){ ctx.fillStyle='#DFF140'; ctx.globalAlpha=0.95; } else { ctx.fillStyle='#c8e8ff'; ctx.globalAlpha=0.88; }
-      ctx.fillRect(x,y,winW,winH);
-      // glass specular highlight
-      ctx.fillStyle='rgba(255,255,255,0.12)'; ctx.fillRect(x,y,winW, winH*0.35);
-    }
-    ctx.globalAlpha=1;
-    // frame
-    ctx.strokeStyle='rgba(15,25,35,0.95)'; ctx.lineWidth=4; ctx.strokeRect(0,0,512,512);
-    var tex=new THREE.CanvasTexture(c); tex.wrapS=THREE.RepeatWrapping; tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(2,6); tex.needsUpdate=true;
-    getWindowTexture._tex=tex; return tex;
-  }
-  function ensureRealisticLayer(){
-    var m=getMap(); if(!m || realisticReady) return;
-    if(typeof THREE==='undefined' || !THREE.Scene){ console.warn('THREE not ready for realistic building'); return; }
-    if(m.getLayer('realistic-gh')) { realisticReady=true; return; }
-    try{
-      var custom={
-        id:'realistic-gh',
-        type:'custom',
-        renderingMode:'3d',
-        onAdd:function(map, gl){
-          this.map=map;
-          this.scene=new THREE.Scene();
-          this.camera=new THREE.Camera();
-          // lights for realistic facade
-          var dir=new THREE.DirectionalLight(0xffffff, 0.9); dir.position.set(0.6,1,0.8).normalize(); this.scene.add(dir);
-          var amb=new THREE.AmbientLight(0x8ec8ff, 0.45); this.scene.add(amb);
-          var hemi=new THREE.HemisphereLight(0x8ec8ff, 0x0a1e2e, 0.35); this.scene.add(hemi);
-          this.scene.add(new THREE.Group()); // placeholder
-          this.renderer=new THREE.WebGLRenderer({canvas:map.getCanvas(), context:gl, antialias:true}); this.renderer.autoClear=false;
-          // shadow off for perf, but keep for realism if needed
-        },
-        render:function(gl, matrix){
-          if(!realisticVisible || !realisticGroup){ this.map.triggerRepaint(); return; }
-          this.camera.projectionMatrix=new THREE.Matrix4().fromArray(matrix);
-          this.renderer.resetState();
-          this.renderer.render(this.scene, this.camera);
-          this.map.triggerRepaint();
-        }
-      };
-      m.addLayer(custom);
-      // store refs
-      realisticReady=true;
-      // grab refs after add
-      setTimeout(function(){
-        try{
-          var l=m.getLayer('realistic-gh'); if(l && l.implementation){ realisticGroup=l.implementation.scene; }
-        }catch(e){}
-      }, 400);
-    }catch(e){ console.warn('realistic layer failed', e); }
-  }
-  function buildRealisticMesh(geom, height){
-    if(typeof THREE==='undefined' || typeof maplibregl==='undefined') return null;
-    try{
-      var coords = geom.coordinates ? geom.coordinates[0] : geom;
-      if(!coords || !coords.length) return null;
-      var centerMerc = maplibregl.MercatorCoordinate.fromLngLat(GH_CENTER, 0);
-      var scale = centerMerc.meterInMercatorCoordinateUnits();
-      // shape in mercator units (tiny 0.0001) — offset from center
-      var shape=new THREE.Shape();
-      coords.forEach(function(ll,i){
-        var mc=maplibregl.MercatorCoordinate.fromLngLat([ll[0],ll[1]], 0);
-        var x = mc.x - centerMerc.x;
-        var y = mc.y - centerMerc.y;
-        if(i===0) shape.moveTo(x, -y); else shape.lineTo(x, -y);
-      });
-      var depthMerc = height * scale;
-      var geo=new THREE.ExtrudeGeometry(shape, {depth:depthMerc, bevelEnabled:false, steps:1});
-      geo.rotateX(Math.PI/2);
-      var tex=getWindowTexture();
-      var matSide=new THREE.MeshStandardMaterial({map:tex, color:0xffffff, roughness:0.32, metalness:0.18, emissive:0x051018, emissiveIntensity:0.14});
-      var matTop=new THREE.MeshStandardMaterial({color:0x0e2a3a, roughness:0.85, metalness:0.05});
-      var mesh=new THREE.Mesh(geo, [matSide, matTop]);
-      // anchor group at GH_CENTER mercator — custom layer uses mercator world
-      var mc0=maplibregl.MercatorCoordinate.fromLngLat(GH_CENTER, 0);
-      mesh.position.set(0,0,0);
-      // add rooftop helipad
-      try{
-        var roofGeo=new THREE.CircleGeometry(7, 24);
-        var roofMat=new THREE.MeshStandardMaterial({color:0x111111, roughness:0.9});
-        var roof=new THREE.Mesh(roofGeo, roofMat);
-        roof.rotation.x=-Math.PI/2;
-        roof.position.set(0, 0.2, height+0.15);
-        // place near tower top approx center
-        mesh.add(roof);
-        var hGeo=new THREE.RingGeometry(7.5,8.5,24);
-        var hMat=new THREE.MeshBasicMaterial({color:0xDFF140, side:THREE.DoubleSide});
-        var hRing=new THREE.Mesh(hGeo, hMat);
-        hRing.rotation.x=-Math.PI/2; hRing.position.set(0,0.25,height+0.16);
-        mesh.add(hRing);
-      }catch(e){}
-      // podium base for realism (9m high, slightly darker)
-      try{
-        var podiumShape=shape.clone();
-        var podiumDepth = 9 * scale;
-        var podiumGeo=new THREE.ExtrudeGeometry(podiumShape, {depth:podiumDepth, bevelEnabled:false});
-        podiumGeo.rotateX(Math.PI/2);
-        var podiumMat=new THREE.MeshStandardMaterial({color:0x0d2233, roughness:0.92, metalness:0.04, map:getWindowTexture()});
-        var podium=new THREE.Mesh(podiumGeo, podiumMat);
-        mesh.add(podium);
-      }catch(e){}
-      // rooftop helipad (atop tower)
-      try{
-        var roofDepthMerc = height * scale;
-        var roofGeo=new THREE.CircleGeometry(7*scale, 24);
-        var roofMat=new THREE.MeshStandardMaterial({color:0x111111, roughness:0.9});
-        var roof=new THREE.Mesh(roofGeo, roofMat);
-        roof.rotation.x=-Math.PI/2;
-        roof.position.set(0, 0, roofDepthMerc+0.15*scale);
-        mesh.add(roof);
-        var hGeo=new THREE.RingGeometry(7.5*scale,8.5*scale,24);
-        var hMat=new THREE.MeshBasicMaterial({color:0xDFF140, side:THREE.DoubleSide});
-        var hRing=new THREE.Mesh(hGeo, hMat);
-        hRing.rotation.x=-Math.PI/2; hRing.position.set(0,0,roofDepthMerc+0.16*scale);
-        mesh.add(hRing);
-      }catch(e){}
-      // anchor group at GH_CENTER mercator
-      var group=new THREE.Group();
-      group.position.set(centerMerc.x, centerMerc.y, centerMerc.z);
-      group.add(mesh);
-      return group;
-    }catch(e){ console.warn('buildRealisticMesh failed', e); return null; }
-  }
-  function showRealisticBuilding(geom, height){
-    try{
-      ensureRealisticLayer();
-      var m=getMap(); if(!m) return;
-      // hide green box when realistic is on — keep floor highlight visible
-      try{ m.setLayoutProperty('indoor-building-fill','visibility','none'); m.setLayoutProperty('indoor-building-line','visibility','none'); m.setLayoutProperty('indoor-building-vol','visibility','none'); }catch(e){}
-      // remove previous
-      if(realisticGroup){
-        try{
-          var l=m.getLayer('realistic-gh'); if(l && l.implementation && l.implementation.scene){
-            while(l.implementation.scene.children.length) l.implementation.scene.remove(l.implementation.scene.children[0]);
-          }
-        }catch(e){}
-      }
-      var mesh=buildRealisticMesh(geom, height);
-      if(mesh){
-        var l=m.getLayer('realistic-gh');
-        if(l && l.implementation && l.implementation.scene){
-          l.implementation.scene.add(mesh);
-          realisticGroup=l.implementation.scene;
-          realisticVisible=true;
-          m.triggerRepaint();
-        }
-      }
-    }catch(e){ console.warn('showRealisticBuilding err', e); }
-  }
-  function hideRealisticBuilding(){
-    try{
-      var m=getMap(); if(!m) return;
-      try{ m.setLayoutProperty('indoor-building-fill','visibility','visible'); m.setLayoutProperty('indoor-building-line','visibility','visible'); m.setLayoutProperty('indoor-building-vol','visibility','visible'); m.setLayoutProperty('indoor-building-floor-vol','visibility','visible'); }catch(e){}
-      realisticVisible=false;
-      if(realisticGroup){
-        try{
-          var l=m.getLayer('realistic-gh'); if(l && l.implementation && l.implementation.scene){
-            while(l.implementation.scene.children.length>0) l.implementation.scene.remove(l.implementation.scene.children[0]);
-          }
-        }catch(e){}
-      }
-      try{ m.triggerRepaint(); }catch(e){}
-    }catch(e){}
-  }
-  function isolateMap(){
-    // building-only highlight: realistic replaces green box — no hiding, no dim
-    try{ document.body.classList.add('indoor-focus'); }catch(e){}
-  }
-  function restoreMap(){
-    try{ document.body.classList.remove('indoor-focus'); }catch(e){}
-    prevVis=null;
-    hideRealisticBuilding();
-  }
-
-  // —— panel canvas helpers ——
-  function stageCanvas(){ return document.getElementById('indoorCanvas'); }
-  function stageImg(){ return document.getElementById('indoorImg'); }
-  function setFloorImage(label, url){
-    floorImages[label]=url;
-    const img=stageImg(); if(!img) return;
-    img.src=url;
-    const opa=document.getElementById('indoorOpacity');
-    img.style.opacity = opa? (Number(opa.value)/100).toFixed(2) : '0.92';
-  }
-  // ontology — per-building floor derivation (honest: not hardcoded L4)
-  function getBuildingOntology(obj, featureProps){
-    // 1) explicit ontology on the registered object wins
-    if(obj && obj.floorLabels && Array.isArray(obj.floorLabels) && obj.floorLabels.length) {
-      var tf = obj.totalFloors || obj.floorLabels.length;
-      return { buildingName: obj.name||DEFAULT_ONTOLOGY.buildingName, address: obj.address||DEFAULT_ONTOLOGY.address, totalFloors: tf, floorLabels: obj.floorLabels, heightPerFloorM: obj.heightPerFloorM||DEFAULT_ONTOLOGY.heightPerFloorM, center:[obj.lng,obj.lat], source:'object' };
-    }
-    if(obj && obj.totalFloors) {
-      var tf2=parseInt(obj.totalFloors,10);
-      if(isFinite(tf2) && tf2>0){
-        var labs=[]; for(var i=0;i<tf2;i++) labs.push(i===0?'G':'L'+(i+1));
-        return { buildingName: obj.name||DEFAULT_ONTOLOGY.buildingName, address: obj.address||DEFAULT_ONTOLOGY.address, totalFloors: tf2, floorLabels: labs, heightPerFloorM: obj.heightPerFloorM||DEFAULT_ONTOLOGY.heightPerFloorM, center:[obj.lng,obj.lat], source:'object.totalFloors' };
-      }
-    }
-    // 2) feature props from 3d-buildings / OSM
-    var lvl=null;
-    if(featureProps){
-      lvl = featureProps['building:levels'] || featureProps['building_levels'] || featureProps.levels;
-      if(!lvl) lvl = featureProps.Levels;
-      if(lvl!=null){ var n=parseInt(lvl,10); if(isFinite(n) && n>0) {
-        var labs3=[]; for(var i=0;i<n;i++) labs3.push(i===0?'G':'L'+(i+1));
-        return { buildingName: (featureProps.name||obj&&obj.name||DEFAULT_ONTOLOGY.buildingName), address: DEFAULT_ONTOLOGY.address, totalFloors: n, floorLabels: labs3, heightPerFloorM: 3.4, center:[obj?obj.lng:DEFAULT_ONTOLOGY.center[0], obj?obj.lat:DEFAULT_ONTOLOGY.center[1]], source:'feature.levels' };
-      }}
-      var h = Number(featureProps.height || featureProps.render_height || featureProps['height']);
-      if(isFinite(h) && h>4){
-        var est=Math.round(h/3.4); est=Math.max(1, Math.min(65, est));
-        var labsH=[]; for(var i=0;i<est;i++) labsH.push(i===0?'G':'L'+(i+1));
-        return { buildingName: (featureProps.name||obj&&obj.name||DEFAULT_ONTOLOGY.buildingName), address: DEFAULT_ONTOLOGY.address, totalFloors: est, floorLabels: labsH, heightPerFloorM: 3.4, center:[obj?obj.lng:DEFAULT_ONTOLOGY.center[0], obj?obj.lat:DEFAULT_ONTOLOGY.center[1]], source:'feature.height' };
-      }
-    }
-    // 3) object height fallback
-    if(obj && isFinite(Number(obj.height_m)) && Number(obj.height_m)>4){
-      var est2=Math.round(Number(obj.height_m)/3.5); est2=Math.max(1, Math.min(65, est2));
-      var labs2=[]; for(var i=0;i<est2;i++) labs2.push(i===0?'G':'L'+(i+1));
-      return { buildingName: obj.name||DEFAULT_ONTOLOGY.buildingName, address: obj.address||DEFAULT_ONTOLOGY.address, totalFloors: est2, floorLabels: labs2, heightPerFloorM: 3.5, center:[obj.lng,obj.lat], source:'object.height' };
-    }
-    // 4) default
-    return DEFAULT_ONTOLOGY;
-  }
-  var currentOntology=DEFAULT_ONTOLOGY;
-  function renderHud(){
-    const grid=document.getElementById('indoorFloorGrid'); if(!grid) return;
-    // ontology-aware labels
-    var ont=currentOntology;
-    if(selectedObj) ont=getBuildingOntology(selectedObj, selectedObj._featureProps||null);
-    else ont=DEFAULT_ONTOLOGY;
-    currentOntology=ont;
-    const labels = ont.floorLabels;
-    if(activeFloor && labels.indexOf(activeFloor)===-1) activeFloor=labels[0]||'G';
-    grid.innerHTML = labels.map(function(l){ return '<button class="indoor-floor-btn '+(l===activeFloor?'active':'')+'" data-floor="'+l+'">'+l+'</button>'; }).join('');
-    grid.querySelectorAll('.indoor-floor-btn').forEach(function(b){ b.onclick=function(){ setFloor(b.dataset.floor); }; });
-    const nameEl=document.getElementById('indoorBName'), addrEl=document.getElementById('indoorBAddr'), hEl=document.getElementById('indoorBHeight'), fl=document.getElementById('indoorFloorLabel');
-    if(nameEl) nameEl.textContent = (selectedObj&&selectedObj.name)||ont.buildingName;
-    if(addrEl) addrEl.textContent = ont.address + ' · <span style="color:rgba(255,255,255,.45)">'+ont.source+'</span>';
-    if(hEl) { var estH=(selectedObj&&selectedObj.height_m)? Number(selectedObj.height_m).toFixed(1)+' m' : ont.totalFloors+' lvls × '+ont.heightPerFloorM+'m ≈ '+(ont.totalFloors*ont.heightPerFloorM).toFixed(1)+'m'; hEl.textContent=estH; }
-    if(fl) fl.textContent = activeFloor + ' / ' + ont.totalFloors;
-    // tool buttons
-    document.querySelectorAll('[data-tool]').forEach(function(b){
-      b.classList.toggle('active', b.getAttribute('data-tool')===activeTool);
-    });
-  }
-  function getBlueprintFor(label){
-    if(BLUEPRINTS[label]) return BLUEPRINTS[label];
-    // honest: generate on-demand for any floor beyond L4 — use label as title and infer sub from height
-    var sub='LEVEL '+label;
-    if(label==='G') sub='GROUND — LOBBY';
-    else if(/^L\d+$/.test(label)) sub='LEVEL '+label.slice(1);
-    var svg=neonSVG(label, sub);
-    BLUEPRINTS[label]=svg;
-    return svg;
   }
   function setFloor(label){
     activeFloor=label;
-    pendingPts=[]; isDragging=false; dragStart=null;
     renderHud();
-    const url = floorImages[label] || getBlueprintFor(label) || BLUEPRINTS["G"];
-    const img=stageImg();
-    if(img && img.getAttribute('src')!==url) img.src=url;
-    if(humOn && !floorHumans[humKey()]) spawnHumans(humCount);
-    drawCanvas();
-    updateFloorHighlight();
+    const m=getMap(); if(!m||!selectedBounds) return;
+    if(m.getLayer('indoor-floorplan')) m.removeLayer('indoor-floorplan');
+    if(m.getSource('indoor-floorplan')) m.removeSource('indoor-floorplan');
+    const url=BLUEPRINTS[label]||BLUEPRINTS["G"];
+    m.addSource('indoor-floorplan',{type:'image',url,coordinates:selectedBounds});
+    m.addLayer({id:'indoor-floorplan',type:'raster',source:'indoor-floorplan',paint:{'raster-opacity':0.92}});
   }
-  function drawCanvas(){
-    const c=stageCanvas(); if(!c) return;
-    const ctx=c.getContext('2d'); if(!ctx) return;
-    ctx.clearRect(0,0,c.width,c.height);
-    // traces for active floor
-    const key = (selectedObj? selectedObj.name+'::':'') + activeFloor;
-    const shapes = floorTraces[key] || [];
-    shapes.forEach(s=>{
-      ctx.save();
-      if(s.tool==='poly' || s.tool==='rect'){
-        ctx.strokeStyle='#00ffaa'; ctx.lineWidth=2; ctx.fillStyle='rgba(0,255,170,0.12)';
-        ctx.beginPath();
-        s.pts.forEach((p,i)=>{
-          const x=p[0]*c.width, y=p[1]*c.height;
-          if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-        });
-        ctx.closePath(); ctx.fill(); ctx.stroke();
-        // vertices
-        ctx.fillStyle='#00ffaa';
-        s.pts.forEach(p=>{ ctx.beginPath(); ctx.arc(p[0]*c.width, p[1]*c.height, 3,0,Math.PI*2); ctx.fill(); });
-      } else if(s.tool==='wall'){
-        ctx.strokeStyle='#DFF140'; ctx.lineWidth=2.2;
-        ctx.beginPath();
-        s.pts.forEach((p,i)=>{
-          const x=p[0]*c.width, y=p[1]*c.height;
-          if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-        });
-        ctx.stroke();
-      } else if(s.tool==='door'){
-        const p=s.pts[0]; if(p){
-          const x=p[0]*c.width, y=p[1]*c.height;
-          ctx.fillStyle='#ff5d5d'; ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2); ctx.fill();
-          ctx.strokeStyle='rgba(255,255,255,.9)'; ctx.lineWidth=1; ctx.stroke();
-        }
-      }
-      ctx.restore();
-    });
-    // pending poly preview
-    if(pendingPts.length){
-      ctx.save();
-      ctx.strokeStyle='rgba(0,255,170,.9)'; ctx.lineWidth=1.4; ctx.setLineDash([6,4]);
-      ctx.beginPath();
-      pendingPts.forEach((p,i)=>{
-        const x=p[0]*c.width, y=p[1]*c.height;
-        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-      });
-      ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle='#00ffaa';
-      pendingPts.forEach(p=>{ ctx.beginPath(); ctx.arc(p[0]*c.width, p[1]*c.height, 2.5,0,Math.PI*2); ctx.fill(); });
-      ctx.restore();
-    }
-    // drag preview rect
-    if(isDragging && dragStart && pendingPts.length===1){
-      // pendingPts[0] is start, drag current is pendingPts[1] or last
-    }
-    if(humOn) drawHumans(ctx, c);
-  }
-  function humKey(){ return (selectedObj? selectedObj.name+'::':'') + activeFloor; }
-  function spawnHumans(cnt){
-    var k=humKey(); var arr=[]; var n = Math.max(0, Math.min(80, cnt|0));
-    for(var i=0;i<n;i++){
-      // distribute inside inset of stage (avoid border) with slight jitter
-      var x=0.14 + Math.random()*0.72;
-      var y=0.14 + Math.random()*0.72;
-      var ang=Math.random()*Math.PI*2;
-      var sp=0.35 + Math.random()*0.45;
-      arr.push({x:x, y:y, vx:Math.cos(ang)*sp*0.004, vy:Math.sin(ang)*sp*0.004, tx:x, ty:y, t:0, sp:sp});
-    }
-    floorHumans[k]=arr;
-  }
-  function stepHumans(dt){
-    var k=humKey(); var arr=floorHumans[k]; if(!arr) return;
-    // walls as line segments from traced wall/rect/poly for avoidance
-    var shapes=floorTraces[k]||[];
-    var walls=[]; shapes.forEach(function(s){
-      if(s.tool==='wall'){ for(var i=0;i<s.pts.length-1;i++) walls.push([s.pts[i], s.pts[i+1]]); }
-      if(s.tool==='poly' || s.tool==='rect'){
-        for(var i=0;i<s.pts.length;i++){ var a=s.pts[i], b=s.pts[(i+1)%s.pts.length]; walls.push([a,b]); }
-      }
-    });
-    arr.forEach(function(h){
-      // wander target jitter
-      h.t += dt*0.001*h.sp;
-      if(Math.random()<0.006 || Math.hypot(h.x-h.tx, h.y-h.ty) < 0.04){
-        h.tx=0.12+Math.random()*0.76; h.ty=0.12+Math.random()*0.76;
-      }
-      var ax=(h.tx - h.x)*0.002*h.sp*humSpeed;
-      var ay=(h.ty - h.y)*0.002*humSpeed;
-      h.vx = h.vx*0.96 + ax + (Math.random()-0.5)*0.0006;
-      h.vy = h.vy*0.96 + ay + (Math.random()-0.5)*0.0006;
-      // clamp velocity
-      var vs=Math.hypot(h.vx,h.vy); if(vs>0.006*humSpeed){ h.vx*=0.006*humSpeed/vs; h.vy*=0.006*humSpeed/vs; }
-      var nx=h.x + h.vx*dt*0.06;
-      var ny=h.y + h.vy*dt*0.06;
-      // soft border bounce (isometric floor inset)
-      if(nx<0.06||nx>0.94){ h.vx*=-0.7; nx=Math.max(0.06,Math.min(0.94,nx)); h.tx=nx; }
-      if(ny<0.06||ny>0.94){ h.vy*=-0.7; ny=Math.max(0.06,Math.min(0.94,ny)); h.ty=ny; }
-      // simple wall repulsion (distance to segments)
-      for(var w=0;w<walls.length;w++){
-        var a=walls[w][0], b=walls[w][1];
-        var px=nx, py=ny;
-        var vx=b[0]-a[0], vy=b[1]-a[1]; var wx=px-a[0], wy=py-a[1];
-        var c=(wx*vx+wy*vy)/(vx*vx+vy*vy+1e-9); c=Math.max(0,Math.min(1,c));
-        var cx=a[0]+c*vx, cy=a[1]+c*vy; var d=Math.hypot(px-cx, py-cy);
-        if(d<0.025){ var rx=(px-cx)/(d||1), ry=(py-cy)/(d||1); nx+=rx*0.009; ny+=ry*0.009; h.vx+=rx*0.001; h.vy+=ry*0.001; }
-      }
-      h.x=nx; h.y=ny;
-    });
-    // gentle separation
-    for(var i=0;i<arr.length;i++) for(var j=i+1;j<arr.length;j++){
-      var a=arr[i], b=arr[j]; var dx=a.x-b.x, dy=a.y-b.y; var d=Math.hypot(dx,dy);
-      if(d<0.02 && d>0){ var s=(0.02-d)*0.35; var ux=dx/d, uy=dy/d; a.x+=ux*s; a.y+=uy*s; b.x-=ux*s; b.y-=uy*s; }
-    }
-  }
-  function drawHumans(ctx, c){
-    var k=humKey(); var arr=floorHumans[k]; if(!arr) return;
-    // 2.5D perspective: slight vertical skew for depth
-    var skewY = c.height*0.06;
-    // sort by y for depth
-    arr.slice().sort(function(a,b){return a.y-b.y;}).forEach(function(h){
-      var x=h.x*c.width;
-      var y=h.y*c.height + h.y*skewY - 4; // add perspective lift
-      // shadow ellipse
-      ctx.save(); ctx.fillStyle='rgba(0,0,0,0.38)'; ctx.beginPath(); ctx.ellipse(x, y+6, 5, 2.2, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
-      // body stalk (vertical)
-      ctx.save(); ctx.strokeStyle='rgba(0,255,170,0.95)'; ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(x, y+3); ctx.lineTo(x, y-6); ctx.stroke(); ctx.restore();
-      // legs small V
-      ctx.save(); ctx.strokeStyle='rgba(223,241,64,0.95)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x, y+3); ctx.lineTo(x-2.5, y+6); ctx.moveTo(x, y+3); ctx.lineTo(x+2.5, y+6); ctx.stroke(); ctx.restore();
-      // head
-      ctx.save(); ctx.fillStyle='#00ffaa'; ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=0.8; ctx.beginPath(); ctx.arc(x, y-7.5, 3.2, 0, Math.PI*2); ctx.fill(); ctx.stroke(); ctx.restore();
-      // heading tick
-      var ang=Math.atan2(h.vy,h.vx);
-      ctx.save(); ctx.strokeStyle='rgba(223,241,64,0.95)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x, y-7.5); ctx.lineTo(x+Math.cos(ang)*5, y-7.5+Math.sin(ang)*5); ctx.stroke(); ctx.restore();
-    });
-  }
-  function startHumans(){
-    if(humRaf) return;
-    var last=performance.now();
-    function loop(now){
-      var dt=Math.min(48, now-last); last=now;
-      if(humOn){
-        var k=humKey(); if(!floorHumans[k]) spawnHumans(humCount);
-        // adjust count if slider changed
-        var arr=floorHumans[k]; if(arr && arr.length!==humCount) spawnHumans(humCount);
-        stepHumans(dt);
-        drawCanvas();
-      }
-      humRaf=requestAnimationFrame(loop);
-    }
-    humRaf=requestAnimationFrame(loop);
-  }
-  function stopHumans(){ // keep raf but humOn false will still loop cheaply
-  }
-  function canvasPos(ev){
-    const c=stageCanvas(); if(!c) return [0.5,0.5];
-    const r=c.getBoundingClientRect();
-    const x = (ev.clientX - r.left) / r.width;
-    const y = (ev.clientY - r.top) / r.height;
-    return [Math.max(0,Math.min(1,x)), Math.max(0,Math.min(1,y))];
-  }
-  function commitPendingAs(type){
-    if(!pendingPts.length) return;
-    const key=(selectedObj? selectedObj.name+'::':'')+activeFloor;
-    if(!floorTraces[key]) floorTraces[key]=[];
-    let pts=[...pendingPts];
-    if(type==='rect' && pts.length===2){
-      const [a,b]=pts;
-      pts=[ [a[0],a[1]], [b[0],a[1]], [b[0],b[1]], [a[0],b[1]] ];
-    }
-    floorTraces[key].push({tool:type, pts, floor:activeFloor, ts:Date.now()});
-    pendingPts=[]; isDragging=false; dragStart=null;
-    drawCanvas();
-  }
-
-  // image load handlers
-  function wireImageControls(){
-    const urlIn=document.getElementById('indoorUrl');
-    const loadBtn=document.getElementById('indoorLoadUrl');
-    const fileIn=document.getElementById('indoorFile');
-    const opa=document.getElementById('indoorOpacity');
-    const img=stageImg();
-    if(loadBtn && urlIn){
-      const doLoad=()=>{
-        const u=(urlIn.value||'').trim(); if(!u) return;
-        // basic SSRF guard is server-side; client just sets img src
-        setFloorImage(activeFloor, u);
-        drawCanvas();
-        try{ urlIn.value=''; }catch(e){}
-      };
-      loadBtn.onclick=doLoad;
-      urlIn.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); doLoad(); }});
-    }
-    if(fileIn){
-      fileIn.addEventListener('change', ()=>{
-        const f=fileIn.files&&fileIn.files[0]; if(!f) return;
-        const r=new FileReader();
-        r.onload=()=>{ setFloorImage(activeFloor, r.result); drawCanvas(); };
-        r.readAsDataURL(f);
-        try{ fileIn.value=''; }catch(e){}
-      });
-    }
-    if(opa && img){
-      opa.addEventListener('input', ()=>{
-        img.style.opacity=(Number(opa.value)/100).toFixed(2);
-      });
-    }
-    // toolbar
-    document.querySelectorAll('[data-tool]').forEach(b=>{
-      b.addEventListener('click', ()=>{
-        activeTool=b.getAttribute('data-tool');
-        pendingPts=[]; isDragging=false;
-        renderHud(); drawCanvas();
-      });
-    });
-    const undoBtn=document.getElementById('indoorUndo');
-    const clearBtn=document.getElementById('indoorClear');
-    const exportBtn=document.getElementById('indoorExport');
-    if(undoBtn) undoBtn.onclick=()=>{
-      const key=(selectedObj? selectedObj.name+'::':'')+activeFloor;
-      if(pendingPts.length){ pendingPts.pop(); drawCanvas(); return; }
-      const arr=floorTraces[key]; if(arr&&arr.length){ arr.pop(); drawCanvas(); }
-    };
-    if(clearBtn) clearBtn.onclick=()=>{
-      const key=(selectedObj? selectedObj.name+'::':'')+activeFloor;
-      if(pendingPts.length){ pendingPts=[]; isDragging=false; drawCanvas(); return; }
-      if(floorTraces[key]){ floorTraces[key]=[]; drawCanvas(); }
-    };
-    if(exportBtn) exportBtn.onclick=()=>{
-      const key=(selectedObj? selectedObj.name+'::':'')+activeFloor;
-      const shapes=floorTraces[key]||[];
-      const payload={ building:(selectedObj&&selectedObj.name)||DEFAULT_ONTOLOGY.buildingName, floor:activeFloor, image: floorImages[activeFloor]||BLUEPRINTS[activeFloor]||'', shapes, exportedAt:new Date().toISOString() };
-      const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a'); a.href=url; a.download=`indoor-${(payload.building||'building').replace(/[^A-Za-z0-9_-]/g,'_')}-${activeFloor}.json`; document.body.appendChild(a); a.click();
-      setTimeout(()=>{ try{ URL.revokeObjectURL(url); a.remove(); }catch(e){} }, 500);
-    };
-    // human sim controls
-    var humBtn=document.getElementById('indoorHumToggle');
-    var humCnt=document.getElementById('indoorHumCount');
-    var humSpd=document.getElementById('indoorHumSpeed');
-    var humStat=document.getElementById('indoorHumStat');
-    function humRefreshStat(){ if(humStat) humStat.textContent=humCount+' agents · '+humSpeed.toFixed(1)+'× '+(humOn?'LIVE':'PAUSED'); if(humBtn) humBtn.textContent= humOn?'HUMANS ON':'HUMANS OFF'; if(humBtn) humBtn.classList.toggle('active', humOn); }
-    if(humBtn){
-      humRefreshStat();
-      humBtn.onclick=function(){
-        humOn=!humOn; humRefreshStat();
-        if(humOn){ if(!floorHumans[humKey()]) spawnHumans(humCount); startHumans(); drawCanvas(); }
-        else drawCanvas();
-      };
-    }
-    if(humCnt){
-      humCnt.value=String(humCount);
-      humCnt.addEventListener('input', function(){ humCount=parseInt(this.value,10)||0; humRefreshStat(); if(humOn){ spawnHumans(humCount); drawCanvas(); } });
-    }
-    if(humSpd){
-      humSpd.addEventListener('input', function(){ humSpeed=parseFloat(this.value)||1; humRefreshStat(); });
-    }
-    // canvas interaction
-    const c=stageCanvas(); if(!c) return;
-    c.addEventListener('click', ev=>{
-      if(activeTool==='door'){
-        const p=canvasPos(ev);
-        const key=(selectedObj? selectedObj.name+'::':'')+activeFloor;
-        if(!floorTraces[key]) floorTraces[key]=[];
-        floorTraces[key].push({tool:'door', pts:[p], floor:activeFloor, ts:Date.now()});
-        drawCanvas(); return;
-      }
-      if(activeTool==='poly' || activeTool==='wall'){
-        const p=canvasPos(ev);
-        pendingPts.push(p);
-        drawCanvas();
-      }
-    });
-    c.addEventListener('dblclick', ev=>{
-      ev.preventDefault();
-      if(activeTool==='poly' || activeTool==='wall'){
-        if(pendingPts.length>=2) commitPendingAs(activeTool);
-        else { pendingPts=[]; drawCanvas(); }
-      }
-    });
-    c.addEventListener('mousedown', ev=>{
-      if(activeTool==='rect'){
-        isDragging=true; dragStart=canvasPos(ev); pendingPts=[dragStart];
-        drawCanvas();
-      }
-    });
-    c.addEventListener('mousemove', ev=>{
-      if(isDragging && activeTool==='rect' && dragStart){
-        const cur=canvasPos(ev);
-        pendingPts=[dragStart, cur];
-        drawCanvas();
-      }
-    });
-    c.addEventListener('mouseup', ev=>{
-      if(isDragging && activeTool==='rect'){
-        const cur=canvasPos(ev);
-        pendingPts=[dragStart, cur];
-        commitPendingAs('rect');
-      }
-      isDragging=false;
-    });
-    c.addEventListener('contextmenu', ev=>{
-      // right-click to finish poly/wall
-      if(activeTool==='poly' || activeTool==='wall'){
-        ev.preventDefault();
-        if(pendingPts.length>=2) commitPendingAs(activeTool);
-      }
-    });
-  }
-
-  function getRealBuilding(m, lat, lng){
-    try{
-      if(!m || !m.project || !m.queryRenderedFeatures) return null;
-      if(!isFinite(lat) || !isFinite(lng)) return null;
-      var pt=m.project([Number(lng), Number(lat)]);
-      var feats=m.queryRenderedFeatures(pt, {layers:['3d-buildings']});
-      if(!feats || !feats.length){
-        // widen to 44px box if exact point missed (common at low zoom)
-        try{ var r=22; feats=m.queryRenderedFeatures([[pt.x-r,pt.y-r],[pt.x+r,pt.y+r]], {layers:['3d-buildings']}); }catch(e2){}
-      }
-      if(feats && feats.length){
-        // prefer named building, then tallest, then largest area — avoids picking shed
-        var best=feats[0], bestScore=-1;
-        feats.forEach(function(f){
-          try{
-            var pr=f.properties||{};
-            var name=(pr.name||pr['name:en']||'').toLowerCase();
-            var isGH=name.indexOf('grand hyatt')!==-1;
-            var h=Number(pr.height||pr.render_height||0);
-            var lvl=Number(pr['building:levels']||pr.levels||0);
-            var g=f.geometry;
-            var area=0;
-            if(g && g.coordinates){
-              var ring=g.coordinates[0]; if(Array.isArray(ring)){ for(var i=0;i<ring.length-1;i++) area+=ring[i][0]*ring[i+1][1]-ring[i+1][0]*ring[i][1]; area=Math.abs(area); }
-            }
-            var score=(isGH?2000:0)+(h*0.6)+(lvl*12)+(area*1e6*0.0002);
-            if(score>bestScore){ bestScore=score; best=f; }
-          }catch(e){}
-        });
-        if(best && best.geometry) return {geometry:best.geometry, properties:best.properties||{}, feature:best};
-      }
-    }catch(e){}
-    return null;
-  }
-  function getRealFootprint(m, lat, lng){
-    var b=getRealBuilding(m,lat,lng);
-    return b? b.geometry : null;
+  function renderHud(){
+    const grid=document.getElementById('indoorFloorGrid'); if(!grid) return;
+    const labels = (selectedObj&&selectedObj.floorLabels)|| DEFAULT_ONTOLOGY.floorLabels;
+    grid.innerHTML = labels.map(l=>`<button class="indoor-floor-btn ${l===activeFloor?'active':''}" data-floor="${l}">${l}</button>`).join('');
+    grid.querySelectorAll('.indoor-floor-btn').forEach(b=> b.onclick=()=> setFloor(b.dataset.floor));
+    const nameEl=document.getElementById('indoorBName'), addrEl=document.getElementById('indoorBAddr'), hEl=document.getElementById('indoorBHeight'), fl=document.getElementById('indoorFloorLabel');
+    if(nameEl) nameEl.textContent = (selectedObj&&selectedObj.name)||DEFAULT_ONTOLOGY.buildingName;
+    if(addrEl) addrEl.textContent = DEFAULT_ONTOLOGY.address;
+    if(hEl) hEl.textContent = ((selectedObj&&selectedObj.height_m)|| (DEFAULT_ONTOLOGY.totalFloors*DEFAULT_ONTOLOGY.heightPerFloorM)).toFixed(1)+' m';
+    if(fl) fl.textContent = activeFloor;
   }
   function enter(obj){
-    // stash feature props for ontology derivation before we overwrite obj
-    var mPre=getMap();
-    var realB=mPre? getRealBuilding(mPre, Number(obj.lat), Number(obj.lng)) : null;
-    if(realB && realB.properties) obj._featureProps=realB.properties;
-    // derive ontology FIRST so floorLabels adapt (e.g., 2 vs 40 lvls)
-    var ont=getBuildingOntology(obj, obj._featureProps||null);
-    currentOntology=ont;
-    selectedObj=obj; activeFloor=(obj.floorLabels||ont.floorLabels)[0]||"G";
-    const m=getMap(); if(m) ensureIndoorLayers();
-    // resolve REAL footprint from 3D-buildings first, then stored footprint, then fallback
-    let geom= realB ? realB.geometry : getRealFootprint(m, Number(obj.lat), Number(obj.lng));
-    if(!geom && obj.footprint){
+    selectedObj=obj; activeFloor=(obj.floorLabels||DEFAULT_ONTOLOGY.floorLabels)[0]||"G";
+    const m=getMap(); if(!m) return;
+    ensureIndoorLayers();
+    // footprint may be array or GeoJSON geometry; normalize to GeoJSON
+    let geom=null;
+    if(obj.footprint){
       try{
-        if(obj.footprint.type) geom=obj.footprint;
-        else{
-          const isNested = Array.isArray(obj.footprint[0]) && Array.isArray(obj.footprint[0][0]) && Array.isArray(obj.footprint[0][0][0]);
-          geom = isNested ? {type:'MultiPolygon',coordinates:obj.footprint} : {type:'Polygon',coordinates:Array.isArray(obj.footprint[0][0])?obj.footprint:[obj.footprint]};
-        }
+        const coords= Array.isArray(obj.footprint) && Array.isArray(obj.footprint[0]) && Array.isArray(obj.footprint[0][0]) ? obj.footprint : [obj.footprint];
+        // if already nested polygon rings
+        const isNested = Array.isArray(obj.footprint[0][0][0]);
+        geom = isNested ? {type:'MultiPolygon',coordinates:obj.footprint} : {type:'Polygon',coordinates:Array.isArray(obj.footprint[0][0])?obj.footprint:[obj.footprint]};
+        // if obj.footprint is from api as flat array of rings
+        if(obj.footprint && obj.footprint.type) geom=obj.footprint;
       }catch(e){ geom=null; }
       if(!geom && obj.footprint && obj.footprint.coordinates) geom=obj.footprint;
     }
     if(!geom && obj.footprintCoords) geom={type:'Polygon',coordinates:[obj.footprintCoords]};
-    if(!geom){
-      geom=GH_GEOM;
-      console.warn('indoor: fallback GH_GEOM used — real building not found at', obj.lat, obj.lng);
-    } else if(geom && obj.footprint && JSON.stringify(geom).length < JSON.stringify(obj.footprint).length*0.6){
-      // if real is much smaller than stored, keep stored (avoids picking tiny shed)
+    // compute bounds for image overlay
+    selectedBounds = geom ? boundsFromFootprint(geom) : null;
+    if(!selectedBounds){
+      // fallback to Grand Hyatt BGC bounds
+      selectedBounds=[[121.05062,14.55455],[121.05138,14.55455],[121.05138,14.55385],[121.05062,14.55385]];
+      geom={type:'Polygon',coordinates:[[[121.05062,14.55455],[121.05138,14.55455],[121.05138,14.55385],[121.05062,14.55385],[121.05062,14.55455]]]};
     }
-    const h = Number(obj.height_m)|| (ont.totalFloors*ont.heightPerFloorM);
-    indoorBaseGeom=geom;
-    try{
-      const src=m&&m.getSource('indoor-building'); if(src) src.setData({type:'FeatureCollection',features:[{type:'Feature',properties:{h},geometry:geom}]});
-    }catch(e){}
-    // isolate — hide every other object/marker, dim background
-    isolateMap();
+    const h = Number(obj.height_m)|| (DEFAULT_ONTOLOGY.totalFloors*DEFAULT_ONTOLOGY.heightPerFloorM);
+    try{ m.getSource('indoor-building').setData({type:'FeatureCollection',features:[{type:'Feature',properties:{h},geometry:geom}]}); }catch(e){}
     document.getElementById('indoorHud')?.classList.add('visible');
-    renderHud();
-    // initialise panel image for this floor (keep per-floor image store, no map image source)
-    if(!floorImages[activeFloor]) floorImages[activeFloor]=BLUEPRINTS[activeFloor]||BLUEPRINTS["G"];
-    setFloor(activeFloor);
-    // realistic textured building replaces green polygon when selected — investors see real GH, green box stays for unselected
-    try{ showRealisticBuilding(geom, h); }catch(e){ console.warn('realistic show failed', e); }
-    try{ if(m) m.flyTo({center:[Number(obj.lng),Number(obj.lat)], zoom:18.6, pitch:62, bearing:-12, duration:900}); }catch(e){}
-    // lazy wire once + start humans if toggled on
-    if(!enter._wired){ enter._wired=true; setTimeout(wireImageControls, 60); }
-    if(humOn) startHumans();
+    renderHud(); setFloor(activeFloor);
+    try{ m.flyTo({center:[Number(obj.lng),Number(obj.lat)], zoom:18.1, pitch:62, bearing:-12, duration:900}); }catch(e){}
   }
   function exit(){
-    selectedObj=null; pendingPts=[]; isDragging=false; dragStart=null; indoorBaseGeom=null;
+    selectedObj=null; selectedBounds=null;
     const m=getMap(); if(m){
-      try{ const src=m.getSource('indoor-building'); if(src) src.setData({type:'FeatureCollection',features:[]}); }catch(e){}
-      try{ const fs=m.getSource('indoor-building-floor'); if(fs) fs.setData({type:'FeatureCollection',features:[]}); }catch(e){}
+      if(m.getLayer('indoor-floorplan')) try{m.removeLayer('indoor-floorplan')}catch(e){}
+      if(m.getSource('indoor-floorplan')) try{m.removeSource('indoor-floorplan')}catch(e){}
+      try{ m.getSource('indoor-building').setData({type:'FeatureCollection',features:[]}); }catch(e){}
     }
-    restoreMap();
     document.getElementById('indoorHud')?.classList.remove('visible');
   }
+  // hook into existing object fly buttons + map clicks on registered objects
   function hook(){
     document.addEventListener('click', function(e){
       const flyBtn=e.target.closest('[data-ofly]'); if(flyBtn){
@@ -25719,6 +24976,7 @@ document.querySelectorAll(".empty-state").forEach(el=>{
         }catch(err){}
       }
     });
+    // click on extruded registered object layer to enter indoor view
     let tries=0; const iv=setInterval(()=>{
       const m=getMap(); if(!m){ if(++tries>80) clearInterval(iv); return; }
       if(!m.getLayer('maven-objs-vol')) return;
@@ -25727,6 +24985,8 @@ document.querySelectorAll(".empty-state").forEach(el=>{
         try{
           const feats=m.queryRenderedFeatures(ev.point,{layers:['maven-objs-vol','maven-objs-fill']});
           if(!feats||!feats.length) return;
+          const pr=feats[0].properties||{};
+          // find matching stored object by lat/lng proximity
           const objs=(window.MAVEN&&MAVEN.state&&MAVEN.state.objects)||[];
           let best=null, bestD=1e9;
           objs.forEach(o=>{
@@ -25739,11 +24999,10 @@ document.querySelectorAll(".empty-state").forEach(el=>{
       m.on('mouseenter','maven-objs-vol',()=>{ try{m.getCanvas().style.cursor='pointer'}catch(e){} });
       m.on('mouseleave','maven-objs-vol',()=>{ try{if(!document.getElementById('indoorHud')?.classList.contains('visible')) m.getCanvas().style.cursor=''}catch(e){} });
     }, 600);
+    // ESC exits indoor view
     document.addEventListener('keydown', (ev)=>{ if(ev.key==='Escape' && document.getElementById('indoorHud')?.classList.contains('visible')) exit(); });
-    // also wire stage after DOM ready
-    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', wireImageControls); else setTimeout(wireImageControls, 300);
   }
-  window.IndoorOps={enter, exit, setFloor, _traces:floorTraces, _images:floorImages};
+  window.IndoorOps={enter, exit, setFloor};
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', hook); else hook();
 })();
 </script>

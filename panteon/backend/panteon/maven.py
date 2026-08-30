@@ -235,6 +235,60 @@ ECOSYSTEM_PUBLIC_URL = os.environ.get(
 PHOTO_MAX_BYTES = 8_000_000
 _PLACES_CACHE: dict = {"ts": 0.0, "data": None}
 
+# Famous landmarks — static reference layer for MAVEN Places.
+# Coordinates are precise landmark centers (WGS84) so FLY lands on target.
+# Shown alongside ecosystem nodes/companies; cached with the same TTL.
+_LANDMARKS: list[dict] = [
+    {"name": "Eiffel Tower", "city": "Paris", "country": "France", "lat": 48.85837, "lng": 2.29448, "industry": "Landmark", "district": "Champ de Mars"},
+    {"name": "Louvre Museum", "city": "Paris", "country": "France", "lat": 48.86061, "lng": 2.33764, "industry": "Landmark", "district": "Rue de Rivoli"},
+    {"name": "Arc de Triomphe", "city": "Paris", "country": "France", "lat": 48.87379, "lng": 2.29504, "industry": "Landmark", "district": "Champs-Élysées"},
+    {"name": "Notre-Dame de Paris", "city": "Paris", "country": "France", "lat": 48.85297, "lng": 2.34990, "industry": "Landmark", "district": "Île de la Cité"},
+    {"name": "Statue of Liberty", "city": "New York", "country": "USA", "lat": 40.68925, "lng": -74.04450, "industry": "Landmark", "district": "Liberty Island"},
+    {"name": "Empire State Building", "city": "New York", "country": "USA", "lat": 40.74844, "lng": -73.98566, "industry": "Landmark", "district": "Midtown Manhattan"},
+    {"name": "Times Square", "city": "New York", "country": "USA", "lat": 40.75800, "lng": -73.98550, "industry": "Landmark", "district": "Manhattan"},
+    {"name": "Brooklyn Bridge", "city": "New York", "country": "USA", "lat": 40.70608, "lng": -73.99686, "industry": "Landmark", "district": "East River"},
+    {"name": "Big Ben", "city": "London", "country": "UK", "lat": 51.50070, "lng": -0.12457, "industry": "Landmark", "district": "Westminster"},
+    {"name": "Tower of London", "city": "London", "country": "UK", "lat": 51.50811, "lng": -0.07593, "industry": "Landmark", "district": "Tower Hill"},
+    {"name": "Buckingham Palace", "city": "London", "country": "UK", "lat": 51.50136, "lng": -0.14189, "industry": "Landmark", "district": "Westminster"},
+    {"name": "London Eye", "city": "London", "country": "UK", "lat": 51.50332, "lng": -0.11954, "industry": "Landmark", "district": "South Bank"},
+    {"name": "Colosseum", "city": "Rome", "country": "Italy", "lat": 41.89021, "lng": 12.49223, "industry": "Landmark", "district": "Piazza del Colosseo"},
+    {"name": "St. Peter's Basilica", "city": "Vatican City", "country": "Vatican", "lat": 41.90222, "lng": 12.45394, "industry": "Landmark", "district": "Vatican"},
+    {"name": "Trevi Fountain", "city": "Rome", "country": "Italy", "lat": 41.90093, "lng": 12.48331, "industry": "Landmark", "district": "Trevi"},
+    {"name": "Sagrada Família", "city": "Barcelona", "country": "Spain", "lat": 41.40363, "lng": 2.17436, "industry": "Landmark", "district": "Eixample"},
+    {"name": "Alhambra", "city": "Granada", "country": "Spain", "lat": 37.17608, "lng": -3.58814, "industry": "Landmark", "district": "Granada"},
+    {"name": "Brandenburg Gate", "city": "Berlin", "country": "Germany", "lat": 52.51627, "lng": 13.37769, "industry": "Landmark", "district": "Pariser Platz"},
+    {"name": "Neuschwanstein Castle", "city": "Füssen", "country": "Germany", "lat": 47.55758, "lng": 10.74980, "industry": "Landmark", "district": "Bavaria"},
+    {"name": "Eiffel Tower — duplicate guard", "city": "Paris", "country": "France", "lat": 48.85837, "lng": 2.29448, "industry": "Landmark", "district": "Champ de Mars"},
+    {"name": "Burj Khalifa", "city": "Dubai", "country": "UAE", "lat": 25.19720, "lng": 55.27417, "industry": "Landmark", "district": "Downtown Dubai"},
+    {"name": "Petra — Treasury", "city": "Petra", "country": "Jordan", "lat": 30.32203, "lng": 35.45164, "industry": "Landmark", "district": "Ma'an"},
+    {"name": "Pyramids of Giza", "city": "Giza", "country": "Egypt", "lat": 29.97923, "lng": 31.13421, "industry": "Landmark", "district": "Al Haram"},
+    {"name": "Hagia Sophia", "city": "Istanbul", "country": "Turkey", "lat": 41.00858, "lng": 28.98017, "industry": "Landmark", "district": "Sultanahmet"},
+    {"name": "Acropolis of Athens", "city": "Athens", "country": "Greece", "lat": 37.97153, "lng": 23.72664, "industry": "Landmark", "district": "Acropolis"},
+    {"name": "Taj Mahal", "city": "Agra", "country": "India", "lat": 27.17501, "lng": 78.04210, "industry": "Landmark", "district": "Agra"},
+    {"name": "Great Wall — Mutianyu", "city": "Beijing", "country": "China", "lat": 40.43191, "lng": 116.57037, "industry": "Landmark", "district": "Huairou"},
+    {"name": "Tokyo Tower", "city": "Tokyo", "country": "Japan", "lat": 35.65858, "lng": 139.74544, "industry": "Landmark", "district": "Minato"},
+    {"name": "Tokyo Skytree", "city": "Tokyo", "country": "Japan", "lat": 35.71006, "lng": 139.81069, "industry": "Landmark", "district": "Sumida"},
+    {"name": "Sydney Opera House", "city": "Sydney", "country": "Australia", "lat": -33.85678, "lng": 151.21530, "industry": "Landmark", "district": "Bennelong Point"},
+    {"name": "Sydney Harbour Bridge", "city": "Sydney", "country": "Australia", "lat": -33.85230, "lng": 151.21000, "industry": "Landmark", "district": "Sydney Harbour"},
+    {"name": "Christ the Redeemer", "city": "Rio de Janeiro", "country": "Brazil", "lat": -22.95191, "lng": -43.21049, "industry": "Landmark", "district": "Corcovado"},
+    {"name": "Machu Picchu", "city": "Cusco Region", "country": "Peru", "lat": -13.16314, "lng": -72.54496, "industry": "Landmark", "district": "Andes"},
+    {"name": "Golden Gate Bridge", "city": "San Francisco", "country": "USA", "lat": 37.81992, "lng": -122.47825, "industry": "Landmark", "district": "Golden Gate"},
+    {"name": "Hollywood Sign", "city": "Los Angeles", "country": "USA", "lat": 34.13411, "lng": -118.32154, "industry": "Landmark", "district": "Hollywood Hills"},
+    {"name": "Mount Rushmore", "city": "Keystone", "country": "USA", "lat": 43.87910, "lng": -103.45907, "industry": "Landmark", "district": "Black Hills"},
+    {"name": "CN Tower", "city": "Toronto", "country": "Canada", "lat": 43.64257, "lng": -79.38705, "industry": "Landmark", "district": "Downtown Toronto"},
+    {"name": "Niagara Falls", "city": "Niagara", "country": "Canada/USA", "lat": 43.09621, "lng": -79.03774, "industry": "Landmark", "district": "Niagara Gorge"},
+    {"name": "Stonehenge", "city": "Salisbury", "country": "UK", "lat": 51.17888, "lng": -1.82622, "industry": "Landmark", "district": "Wiltshire"},
+    {"name": "Mount Fuji", "city": "Fujinomiya", "country": "Japan", "lat": 35.36056, "lng": 138.72778, "industry": "Landmark", "district": "Shizuoka"},
+]
+# de-dup by name (keeps first Eiffel entry)
+_LANDMARKS = [d for i, d in enumerate(_LANDMARKS) if next((j for j, x in enumerate(_LANDMARKS) if x["name"] == d["name"]), i) == i]
+# strip the guard duplicate if it survived
+_LANDMARKS = [d for d in _LANDMARKS if d["name"] != "Eiffel Tower — duplicate guard"]
+for _lm in _LANDMARKS:
+    _lm["techStack"] = []
+    _lm["address"] = f"{_lm['district']}, {_lm['city']}"
+    _lm["lastVerified"] = ""
+
 # In-memory mission engine state (positions re-derived lazily from elapsed
 # wall-clock so restarts need no persistence beyond sc_object stamps).
 _ASSETS: dict[str, dict] = {}
@@ -1227,14 +1281,20 @@ def _is_uuid(s: str) -> bool:
 
 async def get_places() -> dict:
     """Reference layer: group network nodes + BGC company directory from the
-    ecosystem source of truth (non-financial fields only), cached 10 min."""
+    ecosystem source of truth (non-financial fields only) PLUS the static
+    famous-landmarks layer, cached 10 min. Landmarks are always returned even
+    if the ecosystem is unreachable."""
     now = time.time()
     if _PLACES_CACHE["data"] and now - _PLACES_CACHE["ts"] < PLACES_TTL_S:
         return _PLACES_CACHE["data"]
-    async with httpx.AsyncClient(timeout=10) as client:
-        r = await client.get(ECOSYSTEM_PUBLIC_URL)
-        r.raise_for_status()
-        eco = r.json()
+    eco: dict = {}
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(ECOSYSTEM_PUBLIC_URL)
+            r.raise_for_status()
+            eco = r.json() if isinstance(r.json(), dict) else {}
+    except Exception:
+        eco = {}
     nm = eco.get("networkMap") or {}
     nodes = []
     for n in nm.get("nodes") or []:
@@ -1264,7 +1324,8 @@ async def get_places() -> dict:
             "techStack": [str(t) for t in (c.get("techStack") or [])][:12],
             "lastVerified": str(c.get("lastVerified") or ""),
         })
-    data = {"nodes": nodes, "companies": comps, "fetched_at": _now_iso()}
+    landmarks = [dict(l) for l in _LANDMARKS]
+    data = {"nodes": nodes, "companies": comps, "landmarks": landmarks, "fetched_at": _now_iso()}
     _PLACES_CACHE["ts"] = now
     _PLACES_CACHE["data"] = data
     return data

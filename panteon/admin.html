@@ -3345,7 +3345,17 @@
                                                                         </div>
                                                                     </div>
                               <div class="sc-map-canvas-wrap">
-                                  <div class="retro-map-canvas" id="fusionMap"></div>
+                                   <div class="retro-map-canvas" id="fusionMap"></div>
+                                   <!-- TACTICAL INDOOR OPS — rendered inside fusionMap when a building object is selected -->
+                                   <div id="indoorHud" class="indoor-hud" role="region" aria-label="Tactical Indoor Ops">
+                                       <div class="indoor-hud-head"><span class="indoor-hud-title">TACTICAL INDOOR OPS</span><span id="indoorFloorLabel" class="indoor-hud-sub">—</span><button type="button" class="indoor-hud-close" onclick="window.IndoorOps&&IndoorOps.exit()" title="Exit indoor view">×</button></div>
+                                       <div class="indoor-hud-body">
+                                           <div class="indoor-hud-label">SELECT FLOOR — BLUEPRINT OVERLAY</div>
+                                           <div id="indoorFloorGrid" class="indoor-floor-grid"></div>
+                                           <div class="indoor-hud-meta"><b id="indoorBName">—</b> · <span id="indoorBAddr">—</span><br>Height: <span id="indoorBHeight">—</span> · Matrix extrusion <span style="color:#00ffaa">#00ffaa 38%</span></div>
+                                           <div class="indoor-hud-hint">Floors × 3.5 m extruded translucent. Blueprint is a flat <code>image</code> source pinned to 4 corners — swap <code>BLUEPRINTS</code> URLs for real CAD.</div>
+                                       </div>
+                                   </div>
 
                                   
 
@@ -20511,10 +20521,10 @@ function renderFusionRealLayer() {
         }
         var objs = S.state.objects || [];
         var listHtml = objs.length ? '' :
-            '<div class="maven-empty">NO OBJECTS<br>+ REGISTER OBJECT: hover a building, click it, name it</div>';
+            '<div class="maven-empty">NO OBJECTS<br>+ REGISTER OBJECT: hover a building, click it, name it<br><button class="maven-btn" id="quickGrandHyatt" style="margin-top:8px">＋ QUICK REGISTER — GRAND HYATT MANILA (BGC)</button></div>';
         objs.forEach(function (o, i) {
             var atts = o.attachments || [];
-            html += '<div class="maven-row"><b>' + esc(o.name || 'unnamed') + '</b>' +
+            listHtml += '<div class="maven-row"><b>' + esc(o.name || 'unnamed') + '</b>' +
                 '<br><span class="mv-sub">' + Number(o.lat).toFixed(4) + 'N ' + Number(o.lng).toFixed(4) + 'E' +
                 (o.height_m ? ' \u00b7 h\u2248' + Math.round(o.height_m) + 'm' : '') +
                 ' \u00b7 ' + esc(o.registered_by || '') + '</span>' +
@@ -20607,6 +20617,38 @@ function renderFusionRealLayer() {
                 } catch (e) { mErr(e); }
                 refresh();
             };
+        });
+        var qg=$('quickGrandHyatt'); if(qg){ qg.onclick=async function(){
+            qg.disabled=true; qg.textContent='REGISTERING…';
+            try{
+                await api('/maven/object',{method:'POST',body:JSON.stringify({
+                    name:'Grand Hyatt Manila',
+                    lat:14.5542, lng:121.0510, height_m:14,
+                    footprint:[[[121.05062,14.55455],[121.05138,14.55455],[121.05138,14.55385],[121.05062,14.55385],[121.05062,14.55455]]]
+                })});
+                toast('Grand Hyatt registered — FLY then click building to enter', 'success');
+            }catch(e){ mErr(e); qg.disabled=false; qg.textContent='＋ QUICK REGISTER — GRAND HYATT MANILA (BGC)'; return; }
+            refresh();
+        };}
+        // hook indoor: FLY also enters indoor mode, and show INDOOR button
+        host.querySelectorAll('[data-ofly]').forEach(function(btn){
+            const prev=btn.onclick; // preserve fly
+            // add indoor entry after fly — reuse same selector but augment
+            btn.addEventListener('click', function(){
+                try{
+                    const o=(S.state.objects||[])[parseInt(btn.getAttribute('data-ofly'),10)];
+                    if(o && window.IndoorOps) setTimeout(()=> window.IndoorOps.enter(o), 900);
+                }catch(e){}
+            });
+        });
+        // inject INDOOR button beside FLY for each row
+        host.querySelectorAll('.maven-row').forEach(function(row, idx){
+            if(row.querySelector('[data-indoor]')) return;
+            const fly=row.querySelector('[data-ofly]');
+            if(!fly) return;
+            const b=document.createElement('button'); b.className='mut'; b.setAttribute('data-indoor', idx); b.textContent='⬢ INDOOR';
+            b.onclick=function(){ const o=(S.state.objects||[])[idx]; if(o&&window.IndoorOps) window.IndoorOps.enter(o); };
+            fly.insertAdjacentElement('afterend', b);
         });
     }
     async function submitObject() {
@@ -21833,6 +21875,24 @@ section[data-mpanel="yono"]{padding:0;border-top:1px solid var(--border-color);}
 #mavenLeftCol[data-mfeat="yono"] #yono-panel{position:relative;inset:auto;right:auto;top:auto;width:100%;height:100%;min-height:0;transform:none!important;opacity:1!important;pointer-events:auto;border-radius:0;border-width:1px 0 0 0;display:flex;flex-direction:column;}
 #mavenLeftCol[data-mfeat="yono"] #yono-panel .yono-body{flex:1;min-height:0;}
 #mavenLeftCol[data-mfeat="yono"] #yono-panel.yono-min{height:44px!important;min-height:44px!important;}
+/* TACTICAL INDOOR OPS — matrix HUD inside fusionMap */
+.sc-map-canvas-wrap{position:relative}
+.indoor-hud{position:absolute;top:12px;right:12px;z-index:15;width:300px;background:rgba(5,18,12,0.96);border:1px solid rgba(0,255,170,.32);box-shadow:0 8px 32px rgba(0,0,0,.55),0 0 18px rgba(0,255,170,.18);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-family:var(--font-mono);display:none;overflow:hidden}
+.indoor-hud.visible{display:block}
+.indoor-hud-head{padding:10px 12px 8px;border-bottom:1px solid rgba(0,255,170,.22);display:flex;align-items:center;gap:8px}
+.indoor-hud-title{font-size:9px;letter-spacing:.16em;color:#00ffaa;text-transform:uppercase;flex:1}
+.indoor-hud-sub{font-size:9px;color:rgba(255,255,255,.6)}
+.indoor-hud-close{background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:22px;height:22px;cursor:pointer;font-size:14px;line-height:1}
+.indoor-hud-close:hover{border-color:#00ffaa;color:#00ffaa}
+.indoor-hud-body{padding:10px 12px}
+.indoor-hud-label{font-size:8px;letter-spacing:.12em;color:rgba(0,255,170,.85);margin-bottom:8px}
+.indoor-floor-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.indoor-floor-btn{height:32px;border:1px solid rgba(0,255,170,.32);background:rgba(0,255,170,.06);color:#fff;font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;cursor:pointer;transition:all .15s}
+.indoor-floor-btn:hover{border-color:#00ffaa;background:rgba(0,255,170,.14)}
+.indoor-floor-btn.active{background:#00ffaa;color:#000;border-color:#00ffaa;box-shadow:0 0 10px rgba(0,255,170,.5);font-weight:700}
+.indoor-hud-meta{margin-top:10px;padding-top:8px;border-top:1px dashed rgba(0,255,170,.18);font-size:9px;line-height:1.5;color:rgba(255,255,255,.62)}
+.indoor-hud-hint{margin-top:6px;font-size:8px;color:rgba(255,255,255,.45);line-height:1.4}
+.indoor-hud-hint code{background:rgba(0,255,170,.08);padding:0 3px;border:1px solid rgba(0,255,170,.15)}
 </style>
 <div id="yono-panel" class="yono-hidden">
   <div class="yono-header" id="yonoHeader">
@@ -24808,6 +24868,142 @@ document.querySelectorAll(".empty-state").forEach(el=>{
   window.__topbarInfo={show:showInfo, clear:setIdle, get defaultTitle(){return IDLE_TEXT;}, get idle(){return IDLE_TEXT;}};
   // legacy stub — MSS/YONO callers previously drove the topbar; now no-ops (transcript stays in #mssTranscript)
   window.__yonoTopbar={speak:function(){}, thinking:function(){}, clear:setIdle, ensureLine:function(){return title;}, get active(){return false;}};
+})();
+</script>
+<!-- TACTICAL INDOOR OPS — building-selected 3D extrusion + floorplan image overlay on fusionMap -->
+<script>
+(function(){
+  // ontology per-building (Grand Hyatt BGC default) — mirrors future facility_building object
+  const DEFAULT_ONTOLOGY = { buildingName:"Grand Hyatt Manila", address:"8th Ave cor 36th, BGC", totalFloors:4, floorLabels:["G","L2","L3","L4"], heightPerFloorM:3.5, center:[121.0510,14.5542] };
+  // open-source neon blueprints (replace URLs with real CAD when available)
+  function neonSVG(label, sub){
+    const svg=`<svg xmlns='http://www.w3.org/2000/svg' width='900' height='640' viewBox='0 0 900 640'><rect width='900' height='640' fill='#020805'/><rect x='14' y='14' width='872' height='612' fill='none' stroke='#00ffaa' stroke-width='2'/><g stroke='#00ffaa' stroke-opacity='0.08' stroke-width='0.8'>${Array.from({length:18},(_,i)=>`<line x1='${40+i*48}' y1='40' x2='${40+i*48}' y2='600'/>`).join('')}${Array.from({length:12},(_,i)=>`<line x1='14' y1='${40+i*48}' x2='886' y2='${40+i*48}'/>`).join('')}</g><rect x='44' y='52' width='812' height='536' fill='none' stroke='#00ffaa' stroke-width='2.2'/><g fill='none' stroke='#00ffaa' stroke-width='1.4'><rect x='44' y='52' width='260' height='180'/><rect x='304' y='52' width='200' height='180'/><rect x='504' y='52' width='352' height='180'/><rect x='44' y='232' width='180' height='160'/><rect x='224' y='232' width='200' height='160'/><rect x='424' y='232' width='432' height='160'/><rect x='44' y='392' width='320' height='196'/><rect x='364' y='392' width='180' height='196'/><rect x='544' y='392' width='312' height='196'/></g><g fill='#00ffaa' font-family='JetBrains Mono, monospace'><text x='50' y='84' font-size='11' letter-spacing='2'>${label} — ${sub}</text><text x='50' y='102' font-size='9' opacity='0.55'>GRAND HYATT MANILA · BGC · MAPLIBRE IMAGE SOURCE</text></g><circle cx='860' cy='38' r='5' fill='#00ffaa'/></svg>`;
+    return 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg);
+  }
+  const BLUEPRINTS={ "G":neonSVG("G · GROUND","LOBBY · ARRIVAL"), "L2":neonSVG("L2 · LEVEL 2","MEETING ROOMS"), "L3":neonSVG("L3 · LEVEL 3","GUEST ROOMS — LOW"), "L4":neonSVG("L4 · LEVEL 4","GUEST ROOMS — MID") };
+  let activeFloor="G", selectedObj=null, selectedBounds=null;
+
+  function getMap(){ try{ if(typeof fusionMap!=='undefined'&&fusionMap&&fusionMap.on) return fusionMap; }catch(e){} return window.fusionMap||null; }
+  function boundsFromFootprint(footprint){
+    if(!footprint) return null;
+    try{
+      const coords = footprint.coordinates ? footprint.coordinates[0] : footprint[0];
+      // fallback to footprint bbox expanded slightly
+      let minLng=Infinity,minLat=Infinity,maxLng=-Infinity,maxLat=-Infinity;
+      (coords||[]).forEach(([lng,lat])=>{ if(lng<minLng)minLng=lng; if(lng>maxLng)maxLng=lng; if(lat<minLat)minLat=lat; if(lat>maxLat)maxLat=lat; });
+      if(!isFinite(minLng)) return null;
+      return [[minLng,maxLat],[maxLng,maxLat],[maxLng,minLat],[minLng,minLat]]; // TL TR BR BL for image source
+    }catch(e){ return null; }
+  }
+  function ensureIndoorLayers(){
+    const m=getMap(); if(!m) return;
+    if(!m.getSource('indoor-building')){
+      m.addSource('indoor-building',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+      m.addLayer({id:'indoor-building-fill',type:'fill',source:'indoor-building',paint:{'fill-color':'#00ffaa','fill-opacity':0.14}});
+      m.addLayer({id:'indoor-building-line',type:'line',source:'indoor-building',paint:{'line-color':'#00ffaa','line-width':1.2,'line-opacity':0.95}});
+      m.addLayer({id:'indoor-building-vol',type:'fill-extrusion',source:'indoor-building',paint:{'fill-extrusion-color':'#00ffaa','fill-extrusion-opacity':0.38,'fill-extrusion-height':['coalesce',['get','h'],12],'fill-extrusion-base':0}});
+    }
+  }
+  function setFloor(label){
+    activeFloor=label;
+    renderHud();
+    const m=getMap(); if(!m||!selectedBounds) return;
+    if(m.getLayer('indoor-floorplan')) m.removeLayer('indoor-floorplan');
+    if(m.getSource('indoor-floorplan')) m.removeSource('indoor-floorplan');
+    const url=BLUEPRINTS[label]||BLUEPRINTS["G"];
+    m.addSource('indoor-floorplan',{type:'image',url,coordinates:selectedBounds});
+    m.addLayer({id:'indoor-floorplan',type:'raster',source:'indoor-floorplan',paint:{'raster-opacity':0.92}});
+  }
+  function renderHud(){
+    const grid=document.getElementById('indoorFloorGrid'); if(!grid) return;
+    const labels = (selectedObj&&selectedObj.floorLabels)|| DEFAULT_ONTOLOGY.floorLabels;
+    grid.innerHTML = labels.map(l=>`<button class="indoor-floor-btn ${l===activeFloor?'active':''}" data-floor="${l}">${l}</button>`).join('');
+    grid.querySelectorAll('.indoor-floor-btn').forEach(b=> b.onclick=()=> setFloor(b.dataset.floor));
+    const nameEl=document.getElementById('indoorBName'), addrEl=document.getElementById('indoorBAddr'), hEl=document.getElementById('indoorBHeight'), fl=document.getElementById('indoorFloorLabel');
+    if(nameEl) nameEl.textContent = (selectedObj&&selectedObj.name)||DEFAULT_ONTOLOGY.buildingName;
+    if(addrEl) addrEl.textContent = DEFAULT_ONTOLOGY.address;
+    if(hEl) hEl.textContent = ((selectedObj&&selectedObj.height_m)|| (DEFAULT_ONTOLOGY.totalFloors*DEFAULT_ONTOLOGY.heightPerFloorM)).toFixed(1)+' m';
+    if(fl) fl.textContent = activeFloor;
+  }
+  function enter(obj){
+    selectedObj=obj; activeFloor=(obj.floorLabels||DEFAULT_ONTOLOGY.floorLabels)[0]||"G";
+    const m=getMap(); if(!m) return;
+    ensureIndoorLayers();
+    // footprint may be array or GeoJSON geometry; normalize to GeoJSON
+    let geom=null;
+    if(obj.footprint){
+      try{
+        const coords= Array.isArray(obj.footprint) && Array.isArray(obj.footprint[0]) && Array.isArray(obj.footprint[0][0]) ? obj.footprint : [obj.footprint];
+        // if already nested polygon rings
+        const isNested = Array.isArray(obj.footprint[0][0][0]);
+        geom = isNested ? {type:'MultiPolygon',coordinates:obj.footprint} : {type:'Polygon',coordinates:Array.isArray(obj.footprint[0][0])?obj.footprint:[obj.footprint]};
+        // if obj.footprint is from api as flat array of rings
+        if(obj.footprint && obj.footprint.type) geom=obj.footprint;
+      }catch(e){ geom=null; }
+      if(!geom && obj.footprint && obj.footprint.coordinates) geom=obj.footprint;
+    }
+    if(!geom && obj.footprintCoords) geom={type:'Polygon',coordinates:[obj.footprintCoords]};
+    // compute bounds for image overlay
+    selectedBounds = geom ? boundsFromFootprint(geom) : null;
+    if(!selectedBounds){
+      // fallback to Grand Hyatt BGC bounds
+      selectedBounds=[[121.05062,14.55455],[121.05138,14.55455],[121.05138,14.55385],[121.05062,14.55385]];
+      geom={type:'Polygon',coordinates:[[[121.05062,14.55455],[121.05138,14.55455],[121.05138,14.55385],[121.05062,14.55385],[121.05062,14.55455]]]};
+    }
+    const h = Number(obj.height_m)|| (DEFAULT_ONTOLOGY.totalFloors*DEFAULT_ONTOLOGY.heightPerFloorM);
+    try{ m.getSource('indoor-building').setData({type:'FeatureCollection',features:[{type:'Feature',properties:{h},geometry:geom}]}); }catch(e){}
+    document.getElementById('indoorHud')?.classList.add('visible');
+    renderHud(); setFloor(activeFloor);
+    try{ m.flyTo({center:[Number(obj.lng),Number(obj.lat)], zoom:18.1, pitch:62, bearing:-12, duration:900}); }catch(e){}
+  }
+  function exit(){
+    selectedObj=null; selectedBounds=null;
+    const m=getMap(); if(m){
+      if(m.getLayer('indoor-floorplan')) try{m.removeLayer('indoor-floorplan')}catch(e){}
+      if(m.getSource('indoor-floorplan')) try{m.removeSource('indoor-floorplan')}catch(e){}
+      try{ m.getSource('indoor-building').setData({type:'FeatureCollection',features:[]}); }catch(e){}
+    }
+    document.getElementById('indoorHud')?.classList.remove('visible');
+  }
+  // hook into existing object fly buttons + map clicks on registered objects
+  function hook(){
+    document.addEventListener('click', function(e){
+      const flyBtn=e.target.closest('[data-ofly]'); if(flyBtn){
+        const idx=parseInt(flyBtn.getAttribute('data-ofly'),10);
+        try{
+          const objs=(window.MAVEN&&MAVEN.state&&MAVEN.state.objects)||[];
+          const o=objs[idx]; if(o){ setTimeout(()=>enter(o), 950); }
+        }catch(err){}
+      }
+    });
+    // click on extruded registered object layer to enter indoor view
+    let tries=0; const iv=setInterval(()=>{
+      const m=getMap(); if(!m){ if(++tries>80) clearInterval(iv); return; }
+      if(!m.getLayer('maven-objs-vol')) return;
+      clearInterval(iv);
+      m.on('click','maven-objs-vol', (ev)=>{
+        try{
+          const feats=m.queryRenderedFeatures(ev.point,{layers:['maven-objs-vol','maven-objs-fill']});
+          if(!feats||!feats.length) return;
+          const pr=feats[0].properties||{};
+          // find matching stored object by lat/lng proximity
+          const objs=(window.MAVEN&&MAVEN.state&&MAVEN.state.objects)||[];
+          let best=null, bestD=1e9;
+          objs.forEach(o=>{
+            const d=Math.hypot(Number(o.lng)-ev.lngLat.lng, Number(o.lat)-ev.lngLat.lat);
+            if(d<bestD){ bestD=d; best=o; }
+          });
+          if(best && bestD<0.02) enter(best);
+        }catch(err){}
+      });
+      m.on('mouseenter','maven-objs-vol',()=>{ try{m.getCanvas().style.cursor='pointer'}catch(e){} });
+      m.on('mouseleave','maven-objs-vol',()=>{ try{if(!document.getElementById('indoorHud')?.classList.contains('visible')) m.getCanvas().style.cursor=''}catch(e){} });
+    }, 600);
+    // ESC exits indoor view
+    document.addEventListener('keydown', (ev)=>{ if(ev.key==='Escape' && document.getElementById('indoorHud')?.classList.contains('visible')) exit(); });
+  }
+  window.IndoorOps={enter, exit, setFloor};
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', hook); else hook();
 })();
 </script>
 </body>

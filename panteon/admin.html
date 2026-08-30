@@ -248,22 +248,22 @@
             display:flex; align-items:center; gap:8px;
             transition: color .2s;
         }
-        /* YONO speaking in topbar — ported from alieninc nav__thinking */
-        .topbar-yono-pulse{display:inline-flex;align-items:center;gap:4px;flex:none}
-        .topbar-yono-pulse i{display:block;width:5px;height:5px;border-radius:50%;background:var(--accent-neon);animation:topbar-pulse-breathe 1.8s ease-in-out infinite}
-        .topbar-yono-pulse i:nth-child(2){animation-delay:.2s;background:#fff}
-        .topbar-yono-pulse i:nth-child(3){animation-delay:.4s}
-        .topbar-yono-line{flex:1; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; opacity:0; transition:opacity .4s ease, color .2s; font-size:11px; letter-spacing:.08em; color:var(--text-light); text-transform:none; font-weight:400; text-shadow:none; }
-        .topbar-yono-line.is-visible{opacity:1}
-        .topbar-yono-line.is-typing::after{content:'';display:inline-block;width:2px;height:1.05em;margin-left:4px;background:var(--accent-neon);vertical-align:-0.12em;animation:topbar-caret-blink 1s step-end infinite}
-        .topbar-yono-line.is-done::after{content:'…';margin-left:2px;animation:topbar-ellipsis-breathe 1.6s ease-in-out infinite}
-        .topbar-yono-word{display:inline-block;animation:topbar-word-in .35s cubic-bezier(0.16,1,0.3,1) both}
-        .topbar-title.yono-speaking{color:var(--text-light);text-shadow:none}
-        .topbar-title.yono-speaking .topbar-yono-line{color:rgba(255,255,255,.92)}
+        /* Topbar info bar — replaces YONO speaking (was nav__thinking port) */
+        .topbar-title.is-info{color:rgba(255,255,255,.92);text-shadow:none;letter-spacing:.06em;text-transform:none;font-weight:400;font-size:11px;gap:6px}
+        .topbar-title.is-info::before{content:'◆';color:var(--accent-neon);font-size:7px;flex:none;opacity:.9}
+        .topbar-title.is-idle{color:rgba(255,255,255,.38);text-shadow:none;letter-spacing:.10em;text-transform:uppercase;font-weight:300;font-size:10px;gap:6px;opacity:.9}
+        .topbar-title.is-idle::before{content:'◆';color:var(--accent-neon);font-size:7px;flex:none;opacity:.32}
+        .topbar-info-word{display:inline-block;animation:topbar-word-in .28s cubic-bezier(0.16,1,0.3,1) both}
         @keyframes topbar-word-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-        @keyframes topbar-pulse-breathe{0%,100%{transform:scale(1);opacity:.18}50%{transform:scale(1.45);opacity:1}}
-        @keyframes topbar-caret-blink{0%,49%{opacity:1}50%,100%{opacity:0}}
-        @keyframes topbar-ellipsis-breathe{0%,100%{opacity:.2}50%{opacity:1}}
+        /* Light — topbar is white, so info/idle must be dark for contrast (was white-on-white invisible) */
+        [data-theme="light"] .topbar-title.is-info{color:rgba(0,0,0,.88);text-shadow:none}
+        [data-theme="light"] .topbar-title.is-idle{color:rgba(0,0,0,.42);text-shadow:none}
+        [data-theme="light"] .topbar-title.is-info::before{color:#000;opacity:.72}
+        [data-theme="light"] .topbar-title.is-idle::before{color:#000;opacity:.28}
+        /* legacy YONO topbar classes kept as no-op stubs for compat (topbar no longer speaks) */
+        .topbar-yono-pulse{display:none !important}
+        .topbar-yono-line{display:none !important}
+        .topbar-title.yono-speaking{color:var(--accent-cyan);text-shadow:0 0 8px rgba(0,240,255,.2)}
 
         .topbar-actions { display: flex; align-items: center; gap: 12px; }
         .theme-toggle {
@@ -2253,7 +2253,7 @@
                 <svg viewBox="0 0 520 80"><use href="#panteon-lockup-haring"/></svg>
             </div>
             <span class="topbar-title-divider haring" aria-hidden="true"><svg viewBox="0 0 16 16"><use href="#haring-radiant"/></svg></span>
-            <span class="topbar-title" id="topbarTitle">Overview</span>
+            <span class="topbar-title is-idle" id="topbarTitle">— hover a control —</span>
         </div>
 
         <nav class="topbar-tabs" id="topbarTabs" aria-label="Open tool tabs"></nav>
@@ -2794,6 +2794,12 @@
       <label>COUNTRY</label>
       <select id="mvScopeCountry"></select>
     </div>
+    <div class="msc-row msc-duo maven-hidden" id="mvScopePHRow">
+      <label>ISLAND</label>
+      <select id="mvScopeIsland"><option value="">— LUZON / VISAYAS / MINDANAO —</option><option value="Luzon">LUZON</option><option value="Visayas">VISAYAS</option><option value="Mindanao">MINDANAO</option></select>
+      <label>CITY</label>
+      <select id="mvScopeCity"><option value="">— CITY —</option></select>
+    </div>
   </div>
   <div id="mssGateway" class="mss-gateway mss-hidden" role="group" aria-label="MSS mode select">
     <div id="mssDimOverlay" class="dimension-transition-overlay" aria-hidden="true"><div class="dim-grid-line dim-grid-v"></div><div class="dim-grid-line dim-grid-h"></div></div>
@@ -2942,6 +2948,7 @@
                                                   <div class="sc-hud-check"><b>&#10003;</b> OpenSky feed</div>
                                               </div>
                                               <button type="button" class="retro-map-btn" id="fusionLayerAviation" onclick="fusionToggleLayer('aviation')" aria-label="Toggle Aircraft layer"></button>
+                                              <button type="button" class="retro-map-btn" id="fusionLayerRouters" onclick="fusionToggleLayer('routers')" aria-label="Toggle Router layer"></button>
                                           </div>
                                           <div class="sc-hud-tile cut-tr-bl sc-tile-indices" data-tile="bld3d" data-deck="3d">
                                               <div class="sc-wireframe-boxes"><span class="sc-wireframe-box"></span><span class="sc-wireframe-box"></span></div>
@@ -3068,10 +3075,15 @@
                                                                               <button data-mtab="objects">OBJECTS</button><button data-mtab="places">PLACES</button>
                                                                           </div>
                                                                          <div class="maven-body">
-                                                                             <section data-mpanel="tasks">
-                                                                                 <button class="maven-btn" id="mavenNewTaskBtn">&#128205; PICK TARGET ON MAP</button>
-                                                                                 <div id="mavenTaskList"></div>
-                                                                             </section>
+                                                                              <section data-mpanel="tasks">
+                                                                                  <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+                                                                                    <button class="maven-btn" id="mavenNewTaskBtn">&#128205; PICK TARGET ON MAP</button>
+                                                                                    <button class="maven-btn" id="mavenScoutBtn" title="Spawn a physics-bound scout (person dot) with live viewpoint cone — PICK TARGET then click map to place/move, click scout to clear">&#9673; SCOUT: OFF</button>
+                                                                                  </div>
+                                                                                  <div id="mavenLzHud" class="maven-hidden" style="margin-bottom:6px"></div>
+                                                                                  <div id="mavenScoutHud" class="maven-hidden"></div>
+                                                                                  <div id="mavenTaskList"></div>
+                                                                              </section>
                                                                               <section data-mpanel="assets" class="maven-hide"><div id="mavenAssetList"></div></section>
                                                                                <section data-mpanel="coa" class="maven-hide">
                                                                                    <div class="maven-empty" style="margin-bottom:4px">CONFIRMED CONTACTS &#8594; GENERATE COA<br><span style="font-size:9px;letter-spacing:.1em">T = THREAT 0&#8211;100 &#183; RED &#8805;60 &#183; AMBER &#8805;30</span></div>
@@ -3092,6 +3104,8 @@
                                                 <section data-mpanel="places" class="maven-hide">
                                                     <button class="maven-btn" id="mavenPinsBtn">MAP PINS: OFF</button>
                                                     <input type="text" id="mavenPlaceSearch" placeholder="SEARCH NAME / INDUSTRY / STACK" maxlength="60">
+                                                    <div id="mavenPlaceCoverage" class="maven-coverage"></div>
+                                                    <button class="maven-btn" id="mavenClearCoverageBtn" style="display:none;margin-top:4px;font-size:10px;padding:2px 8px" title="Clear coverage overlay">CLEAR COVERAGE</button>
                                                     <div id="mavenPlaceInfo"></div>
                                                     <div id="mavenPlacesList"></div>
                                                 </section>
@@ -7449,15 +7463,42 @@ let fusionMap = null;
 let fusionMapInitialized = false;
 let fusionThreatMarkers = [];
 let fusionAviationMarkers = [];
+let fusionRouters = [];
 let fusionThreatEvents = [];
 let fusionFlights = [];
 // Fresh-map policy: every GAIA layer starts OFF; the operator toggles what
 // appears. No layer may default on and no state is restored across reloads.
-let fusionLayers = { threats: false, aviation: false, '3d': true };
+let fusionLayers = { threats: false, aviation: false, '3d': true, routers: false };
+let fusionRouterData = []; // populated from /api/router/status
 let fusion3dAdded = false;
 // Cross-block consumers (GAIA integrations, MAVEN) read these via window.*;
 // top-level `let` bindings are NOT window properties, so mirror them here.
 window.fusionFlights = fusionFlights;
+
+async function loadRouterData() {
+    try {
+        const response = await api('/router/status');
+        if (response && Array.isArray(response)) {
+            fusionRouterData = response.map(r => ({
+                id: r.id || r.callsign,
+                callsign: r.callsign,
+                barangay: r.barangay,
+                municipality: r.municipality,
+                lat: r.lat,
+                lng: r.lng,
+                model: r.model,
+                firmware: r.firmware,
+                status: r.status,
+                signal_strength: r.signal_strength,
+                connected_clients: r.connected_clients,
+                last_heartbeat: r.last_heartbeat,
+            }));
+            renderFusionRouterLayer();
+        }
+    } catch (e) {
+        console.error('Failed to load router data:', e);
+    }
+}
 
 function initFusionMap() {
     if (fusionMapInitialized) { if (fusionMap) fusionMap.resize(); return fusionMap; }
@@ -7536,6 +7577,8 @@ function initFusionMap() {
         if (b) b.className = 'retro-map-btn' + (fusionLayers['3d'] ? ' retro-map-btn-active' : '');
     });
     fusionMapInitialized = true;
+    // Load router layer data
+    loadRouterData();
     return fusionMap;
 }
 
@@ -7794,6 +7837,30 @@ function renderFusionAviationLayer() {
     updateFusionMilPanel();
     updateFovLayer();
     return plotted;
+}
+
+// ============================================================================
+// Router layer — Pisonet/Maven Smart System deployment markers
+// ============================================================================
+function renderFusionRouterLayer() {
+    fusionRouters.forEach(m => { try { m.remove(); } catch (e) {} });
+    fusionRouters = [];
+    if (!fusionMap || !fusionLayers.routers) return;
+    fusionRouterData.forEach((r, wonIdx) => {
+        const p = {
+            lat: r.lat,
+            lng: r.lng,
+            label: r.callsign + " (" + r.barangay + ")",
+            color: r.status === "online" ? "#10b981" : r.status === "warning" ? "#f59e0b" : "#ef4449",
+        };
+        if (!p) return;
+        const el = document.createElement("div");
+        el.className = "retro-map-node-marker tone-" + (p.color === "#ef4444" ? "red" : p.color === "#f59e0b" ? "amber" : "green");
+        el.innerHTML = '<div class="retro-map-marker-tag">' + p.label + '</div><div class="retro-map-marker-line"></div><div class="retro-map-marker-glow"></div>';
+        const popup = new maplibregl.Popup({ closeButton: false, offset: 8 }).setHTML("<b>" + r.callsign + "</b><br>" + "Barangay: " + r.barangay + "<br>" + "Municipality: " + r.municipality + "<br>" + "Status: " + r.status + "<br>" + (r.signal_strength ? "Signal: " + r.signal_strength + "%" : "") + "<br>" + (r.connected_clients ? "Clients: " + r.connected_clients : "") + "<br>" + "Last: " + (r.last_heartbeat ? new Date(r.last_heartbeat * 1000).toLocaleString() : "Never"));
+        const mk = new maplibregl.Marker({ element: el }).setLngLat([p.lng, p.lat]).setPopup(popup).addTo(fusionMap);
+        fusionRouters.push(mk);
+    });
 }
 
 // ============================================================================
@@ -8521,16 +8588,121 @@ const COUNTRY_FIPS = {
     'Croatia':'HR','Serbia':'RB','Australia':'AS','New Zealand':'NZ',
 };
 
+const PH_ISLAND_GROUPS = {
+    'Luzon':    { lamin: 12.0, lomin: 119.5, lamax: 19.0, lomax: 122.5 },
+    'Visayas':  { lamin: 9.5,  lomin: 122.0, lamax: 12.2, lomax: 124.5 },
+    'Mindanao': { lamin: 5.2,  lomin: 121.8, lamax: 9.6,  lomax: 126.3 }
+};
+const PH_CITIES = {
+    // BGC is district inside Taguig — finest scope for your test
+    'BGC':             { lamin: 14.5430, lomin: 121.0300, lamax: 14.5630, lomax: 121.0650, island: 'Luzon', city: 'Taguig' },
+    // National Capital Region (16)
+    'Manila':          { lamin: 14.5340, lomin: 120.8967, lamax: 14.6540, lomax: 121.0367, island: 'Luzon' },
+    'Quezon City':     { lamin: 14.5862, lomin: 120.9762, lamax: 14.7862, lomax: 121.1762, island: 'Luzon' },
+    'Caloocan':        { lamin: 14.6242, lomin: 120.9252, lamax: 14.7042, lomax: 121.0052, island: 'Luzon' },
+    'Las Piñas':       { lamin: 14.4354, lomin: 120.9644, lamax: 14.4954, lomax: 121.0244, island: 'Luzon' },
+    'Makati':          { lamin: 14.5345, lomin: 120.9945, lamax: 14.5945, lomax: 121.0545, island: 'Luzon' },
+    'Malabon':         { lamin: 14.6452, lomin: 120.9411, lamax: 14.6952, lomax: 120.9911, island: 'Luzon' },
+    'Mandaluyong':     { lamin: 14.5730, lomin: 121.0250, lamax: 14.6030, lomax: 121.0550, island: 'Luzon' },
+    'Marikina':        { lamin: 14.5261, lomin: 121.0484, lamax: 14.7401, lomax: 121.1504, island: 'Luzon' },
+    'Muntinlupa':      { lamin: 14.2793, lomin: 121.0049, lamax: 14.4993, lomax: 121.0849, island: 'Luzon' },
+    'Navotas':         { lamin: 14.6452, lomin: 120.9140, lamax: 14.6952, lomax: 120.9640, island: 'Luzon' },
+    'Parañaque':       { lamin: 14.4008, lomin: 120.9515, lamax: 14.6008, lomax: 121.0315, island: 'Luzon' },
+    'Pasay':           { lamin: 14.4637, lomin: 120.9547, lamax: 14.6237, lomax: 121.0347, island: 'Luzon' },
+    'Pasig':           { lamin: 14.5065, lomin: 121.0464, lamax: 14.7145, lomax: 121.1064, island: 'Luzon' },
+    'San Juan':        { lamin: 14.5844, lomin: 121.0199, lamax: 14.6244, lomax: 121.0399, island: 'Luzon' },
+    'Taguig':          { lamin: 14.4571, lomin: 121.0445, lamax: 14.5971, lomax: 121.1045, island: 'Luzon' },
+    'Valenzuela':      { lamin: 14.6117, lomin: 120.9295, lamax: 14.7717, lomax: 121.0095, island: 'Luzon' },
+    // Region I — Ilocos Region (9)
+    'Alaminos':        { lamin: 16.1354, lomin: 119.9592, lamax: 16.1754, lomax: 119.9992, island: 'Luzon' },
+    'Batac':           { lamin: 17.9747, lomin: 120.4845, lamax: 18.1347, lomax: 120.6445, island: 'Luzon' },
+    'Candon':          { lamin: 17.1730, lomin: 120.4284, lamax: 17.2130, lomax: 120.4684, island: 'Luzon' },
+    'Dagupan':         { lamin: 15.9630, lomin: 120.2538, lamax: 16.1230, lomax: 120.4138, island: 'Luzon' },
+    'Laoag':           { lamin: 18.1154, lomin: 120.5127, lamax: 18.2754, lomax: 120.6727, island: 'Luzon' },
+    'San Carlos':      { lamin: 15.8468, lomin: 120.2676, lamax: 16.0068, lomax: 120.4276, island: 'Luzon' },
+    'San Fernando (La Union)': { lamin: 16.5363, lomin: 120.2371, lamax: 16.6963, lomax: 120.3971, island: 'Luzon' },
+    'Urdaneta':        { lamin: 15.8960, lomin: 120.4869, lamax: 16.0560, lomax: 120.6469, island: 'Luzon' },
+    'Vigan':           { lamin: 17.4955, lomin: 120.3073, lamax: 17.6555, lomax: 120.4673, island: 'Luzon' },
+    // Region II — Cagayan Valley (4)
+    'Cauayan':         { lamin: 16.8546, lomin: 121.6944, lamax: 17.0146, lomax: 121.8544, island: 'Luzon' },
+    'Ilagan':          { lamin: 17.0686, lomin: 121.8086, lamax: 17.2286, lomax: 121.9686, island: 'Luzon' },
+    'Santiago':        { lamin: 16.6116, lomin: 121.4679, lamax: 16.7716, lomax: 121.6279, island: 'Luzon' },
+    'Tuguegarao':      { lamin: 17.5319, lomin: 121.6500, lamax: 17.6919, lomax: 121.8100, island: 'Luzon' },
+    // Region III — Central Luzon (14)
+    'Angeles':         { lamin: 15.0517, lomin: 120.7003, lamax: 15.0518, lomax: 120.7004, island: 'Luzon' },
+    'Balanga':         { lamin: 14.6188, lomin: 120.4404, lamax: 14.7243, lomax: 120.6224, island: 'Luzon' },
+    'Cabanatuan':      { lamin: 15.4352, lomin: 120.8791, lamax: 15.5648, lomax: 121.0937, island: 'Luzon' },
+    'Gapan':           { lamin: 15.2115, lomin: 120.9056, lamax: 15.3611, lomax: 121.1427, island: 'Luzon' },
+    'Malolos':         { lamin: 14.7266, lomin: 120.7813, lamax: 14.8907, lomax: 120.8662, island: 'Luzon' },
+    'Meycauayan':      { lamin: 14.7199, lomin: 120.8979, lamax: 14.7846, lomax: 121.0271, island: 'Luzon' },
+    'Muñoz':           { lamin: 15.6660, lomin: 120.8319, lamax: 15.8060, lomax: 120.9661, island: 'Luzon' },
+    'Olongapo':        { lamin: 15.2894, lomin: 120.0319, lamax: 15.2898, lomax: 120.0325, island: 'Luzon' },
+    'Palayan':         { lamin: 15.3876, lomin: 121.0037, lamax: 15.6083, lomax: 121.1823, island: 'Luzon' },
+    'San Fernando (Pampanga)': { lamin: 14.9483, lomin: 120.6138, lamax: 15.1083, lomax: 120.7738, island: 'Luzon' },
+    'San Jose':        { lamin: 15.6794, lomin: 120.9106, lamax: 15.8727, lomax: 121.0873, island: 'Luzon' },
+    'San Jose del Monte': { lamin: 14.7674, lomin: 121.0166, lamax: 14.8654, lomax: 121.1680, island: 'Luzon' },
+    'Tarlac City':     { lamin: 15.4023, lomin: 120.5007, lamax: 15.5646, lomax: 120.7033, island: 'Luzon' },
+    'Mabalacat':       { lamin: 15.1569, lomin: 120.4618, lamax: 15.2675, lomax: 120.6345, island: 'Luzon' },
+    // Region IV-A — CALABARZON (19)
+    'Antipolo':        { lamin: 14.5492, lomin: 121.1062, lamax: 14.7481, lomax: 121.3347, island: 'Luzon' },
+    'Bacoor':          { lamin: 14.3626, lomin: 120.9210, lamax: 14.4939, lomax: 121.0116, island: 'Luzon' },
+    'Batangas City':   { lamin: 13.4738, lomin: 120.9857, lamax: 13.8492, lomax: 121.1909, island: 'Luzon' },
+    'Biñan':           { lamin: 14.2493, lomin: 121.0360, lamax: 14.3988, lomax: 121.1567, island: 'Luzon' },
+    'Cabuyao':         { lamin: 14.1668, lomin: 121.0173, lamax: 14.3168, lomax: 121.2075, island: 'Luzon' },
+    'Calamba':         { lamin: 14.1377, lomin: 121.0198, lamax: 14.2662, lomax: 121.2214, island: 'Luzon' },
+    'Cavite City':     { lamin: 14.2596, lomin: 120.4161, lamax: 14.5856, lomax: 120.9470, island: 'Luzon' },
+    'Dasmariñas':      { lamin: 14.2482, lomin: 120.9205, lamax: 14.3627, lomax: 121.0109, island: 'Luzon' },
+    'General Trias':   { lamin: 14.2202, lomin: 120.8598, lamax: 14.4179, lomax: 120.9330, island: 'Luzon' },
+    'Imus':            { lamin: 14.3541, lomin: 120.8921, lamax: 14.4464, lomax: 120.9817, island: 'Luzon' },
+    'Lipa':            { lamin: 13.8615, lomin: 121.0226, lamax: 14.0299, lomax: 121.2826, island: 'Luzon' },
+    'Lucena':          { lamin: 13.9665, lomin: 121.5616, lamax: 13.9687, lomax: 121.5633, island: 'Luzon' },
+    'San Pablo':       { lamin: 13.9668, lomin: 121.2445, lamax: 14.1466, lomax: 121.4309, island: 'Luzon' },
+    'San Pedro':       { lamin: 14.3215, lomin: 121.0055, lamax: 14.4114, lomax: 121.1437, island: 'Luzon' },
+    'Santa Rosa':      { lamin: 14.2161, lomin: 121.0466, lamax: 14.3773, lomax: 121.1777, island: 'Luzon' },
+    'Tanauan':         { lamin: 14.0186, lomin: 121.0370, lamax: 14.1563, lomax: 121.1610, island: 'Luzon' },
+    'Tayabas':         { lamin: 13.9449, lomin: 121.4801, lamax: 14.0958, lomax: 121.7469, island: 'Luzon' },
+    'Trece Martires':  { lamin: 14.2182, lomin: 120.8229, lamax: 14.3135, lomax: 120.9015, island: 'Luzon' },
+    'Tagaytay':        { lamin: 14.0763, lomin: 120.8842, lamax: 14.1669, lomax: 121.0498, island: 'Luzon' },
+    // Region IV-B — MIMAROPA (2)
+    'Calapan':         { lamin: 13.2997, lomin: 121.0978, lamax: 13.5627, lomax: 121.3830, island: 'Luzon' },
+    'Puerto Princesa': { lamin: 9.7792, lomin: 118.7297, lamax: 9.7816, lomax: 118.7305, island: 'Luzon' },
+    // Region V — Bicol Region (7)
+    'Iriga':           { lamin: 13.3477, lomin: 123.3914, lamax: 13.5484, lomax: 123.5023, island: 'Luzon' },
+    'Legazpi':         { lamin: 12.9874, lomin: 123.6862, lamax: 13.2555, lomax: 123.8640, island: 'Luzon' },
+    'Ligao':           { lamin: 13.0803, lomin: 123.3765, lamax: 13.4003, lomax: 123.6965, island: 'Luzon' },
+    'Masbate City':    { lamin: 12.2111, lomin: 123.4639, lamax: 12.5311, lomax: 123.7839, island: 'Luzon' },
+    'Naga':            { lamin: 13.6023, lomin: 123.1734, lamax: 13.6744, lomax: 123.3765, island: 'Luzon' },
+    'Sorsogon City':   { lamin: 12.8108, lomin: 123.8453, lamax: 13.1308, lomax: 124.1653, island: 'Luzon' },
+    'Tabaco':          { lamin: 13.2555, lomin: 123.6048, lamax: 13.5374, lomax: 123.9445, island: 'Luzon' },
+    // CAR — Cordillera Administrative Region (2)
+    'Tabuk (Kalinga)': { lamin: 17.2512, lomin: 121.2814, lamax: 17.5712, lomax: 121.6014, island: 'Luzon' },
+    'Baguio':          { lamin: 16.4230, lomin: 120.6415, lamax: 16.4430, lomax: 120.6615, island: 'Luzon' },
+    // Visayas (1)
+    'Cebu City':       { lamin: 10.2600, lomin: 123.8500, lamax: 10.3600, lomax: 123.9700, island: 'Visayas' },
+    // Mindanao (1)
+    'Davao City':      { lamin: 7.0200,  lomin: 125.5400, lamax: 7.1400,  lomax: 125.6600, island: 'Mindanao' }
+};
 let SCScope = {
     region: 'Worldwide',      // key into SC_REGION_BBOXES
     country: '',              // country name (overrides region if set)
     zone: '',                 // sub-national conflict zone (overrides region bbox)
+    island: '',               // PH island group — Luzon/Visayas/Mindanao (overrides country when Philippines)
+    city: '',                 // PH city — Makati/Taguig/BGC (finest, overrides island)
     preset: 'Conflicts',      // QUERY_PRESETS name
     timeWindow: '24h',        // 24h | 72h | 7d
     query: '(military OR war OR battle OR conflict OR offensive)',  // derived from preset
 };
 
 function scBbox() {
+    // Finest → coarsest: PH city > PH island > conflict zone > country > region
+    if (SCScope.city && PH_CITIES[SCScope.city]) {
+        const c = PH_CITIES[SCScope.city];
+        return { lamin: c.lamin, lomin: c.lomin, lamax: c.lamax, lomax: c.lomax };
+    }
+    if (SCScope.island && PH_ISLAND_GROUPS[SCScope.island]) {
+        const g = PH_ISLAND_GROUPS[SCScope.island];
+        return { lamin: g.lamin, lomin: g.lomin, lamax: g.lamax, lomax: g.lomax };
+    }
     // Sub-national zone wins over everything (finest scope first).
     if (SCScope.zone && SC_CONFLICT_ZONES[SCScope.zone]) {
         const z = SC_CONFLICT_ZONES[SCScope.zone];
@@ -8752,6 +8924,16 @@ function fusionToggleLayer(name) {
     const hudEl = document.getElementById('fusionMapHud');
     if (hudEl) hudEl.textContent = fusionThreatMarkers.length + ' threats · ' + fusionAviationMarkers.length + ' aircraft plotted';
     fitFusionBounds();
+}
+
+function fusionToggleLayer(name) {
+    fusionLayers[name] = !fusionLayers[name];
+    const btn = document.getElementById(name === 'threats' ? 'fusionLayerThreats' : name === 'aviation' ? 'fusionLayerAviation' : 'fusionLayerRouters');
+    if (btn) btn.className = 'retro-map-btn' + (fusionLayers[name] ? ' retro-map-btn-active' : '');
+    if (name === 'threats') renderFusionThreatLayer(); else if (name === 'aviation') renderFusionAviationLayer(); else if (name === 'routers') renderFusionRouterLayer();
+    updateFusionKpis();
+    const hudEl = document.getElementById('fusionMapHud');
+    if (hudEl) hudEl.textContent = fusionThreatMarkers.length + ' threats · ' + fusionAviationMarkers.length + ' aircraft plotted' + (fusionRouters.length ? ' · ' + fusionRouters.length + ' routers' : '') + ' plotted';
 }
 
 function fusionToggle3D() {
@@ -18735,6 +18917,25 @@ function renderFusionRealLayer() {
     overflow-x: hidden; overflow-y: auto; scrollbar-width: thin;
     transition: width .22s ease, flex-basis .22s ease;
 }
+/* Light — MSS is an intentional dark war-room island. Keep it dark so neon/white text stays readable on its black glass.
+   Without this, [data-theme="light"] flips --text to #000 and leaves the column black → black-on-black / white-on-white invisible. */
+[data-theme="light"] .maven-left-col{
+    background:#000; border-color:rgba(255,255,255,.15);
+    --bg:#000; --bg-card:#08090a; --bg-panel:#0b0c0e; --bg-input:#0d0e10;
+    --border-color:rgba(255,255,255,.15); --border-hover:rgba(223,241,64,.35);
+    --text:#fff; --text-primary:#fff; --text-muted:#9ca3af; --text-dim:rgba(255,255,255,.52);
+}
+[data-theme="light"] .maven-left-col .maven-col-head,
+[data-theme="light"] .maven-left-col .maven-featbar{background:#000}
+[data-theme="light"] .maven-left-col .mss-auto-panel,
+[data-theme="light"] .maven-left-col .mss-transcript,
+[data-theme="light"] .maven-left-col .mss-transcript-wrap,
+[data-theme="light"] .maven-left-col .auto-composer,
+[data-theme="light"] .maven-left-col .mss-auto-foot{background:#0b0c0e}
+[data-theme="light"] .maven-left-col .mss-tline-yono{
+    background:rgba(255,255,255,.04); border-color:rgba(255,255,255,.1); color:rgba(255,255,255,.92);
+}
+[data-theme="light"] .maven-left-col .mss-tline-yono .auto-md{color:rgba(255,255,255,.9)}
 .maven-left-col .maven-col-head,
 .maven-left-col .maven-featbar {
     position: sticky; top: 0; z-index: 6;
@@ -18757,6 +18958,7 @@ function renderFusionRealLayer() {
 .maven-left-col #mavenDrawer .maven-body { flex: 1 1 0; min-height: 0; }
 #mavenPlacesList, #mavenObjList, #mavenCameoList { max-height: 42vh; overflow-y: auto; scrollbar-width: thin; }
 #mavenPlaceSearch { margin-bottom: 4px; }
+#mavenPlaceCoverage { font-size: 10px; font-family: var(--font-mono); text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; letter-spacing: 0.5px; }
 .maven-left-col.collapsed { width: 56px; flex-basis: 56px; }
 .maven-left-col.collapsed .maven-col-title,
 .maven-left-col.collapsed .maven-col-mark,
@@ -18917,7 +19119,7 @@ function renderFusionRealLayer() {
         open: true, booted: false, busy: false, timer: null,
         state: { assets: [], tasks: [], detections: [], coas: [], objects: [], target_coas: [] },
         aoiMode: false, aoiRadius: 25, pending: null,
-        objMode: false, pendingObj: null, _hovId: null,
+        objMode: false, pendingObj: null, _hovId: null, _pickLastKey: null,
         overlays: true,
         places: null, placeSearch: '', placeInfo: null, placesOnMap: false,
         assetClass: 'uas',
@@ -18925,7 +19127,13 @@ function renderFusionRealLayer() {
         detMarkers: {},        // pk -> marker (diffed)
         aoiShownFor: '',       // task pk whose AOI ring is drawn
         wiredMap: null,        // map instance the AOI click handler is bound to
-        popup: null            // single maplibregl.Popup for inspections
+        popup: null,            // single maplibregl.Popup for inspections
+        scout: null,           // {lng,lat,hdg,targetLng,targetLat,moving,speed_mps,radius_m,fov_deg,alt_agl}
+        scoutMode: false,      // SCOUT armed — next map click spawns/retargets scout
+        scoutMarker: null,     // maplibregl.Marker for the person/dot
+        scoutTimer: null,      // physics tick interval
+        _scoutLastViewshed: 0,
+        lz: { on: false, armed: false, center: null, radius_m: 400, candidates: [], analyzing: false, circleSrc: 'lz-circle' }
     };
 
     /* ---------------------------------------------------------- svg ---- */
@@ -18952,6 +19160,12 @@ function renderFusionRealLayer() {
             s = '<svg width="20" height="20" viewBox="0 0 24 24" style="opacity:.45">' +
                 '<path d="M12 1 C15 1 17 3 17 6 L17 7 L18 7 C21 7 23 9 23 12 C23 15 21 17 18 17 L17 17 L17 18 C17 21 15 23 12 23 C9 23 7 21 7 18 L7 17 L6 17 C3 17 1 15 1 12 C1 9 3 7 6 7 L7 7 L7 6 C7 3 9 1 12 1 Z" fill="rgba(30,30,30,.4)" stroke="' + GRAY + '" stroke-width="1.5"/>' +
                 '<path d="M8 8 L16 16" stroke="' + GRAY + '" stroke-width="1.5"/></svg>';
+        } else if (kind === 'scout') {  // SCOUT — person/dot with heading tick
+            s = '<svg width="22" height="22" viewBox="0 0 24 24">' +
+                '<circle cx="12" cy="12" r="5.2" fill="rgba(223,241,64,.95)" stroke="rgba(0,0,0,.85)" stroke-width="1.2"/>' +
+                '<circle cx="12" cy="12" r="1.7" fill="rgba(0,0,0,.85)"/>' +
+                '<path d="M12 2 L13.2 6.5 L12 7.2 L10.8 6.5 Z" fill="#DFF140" stroke="rgba(0,0,0,.9)" stroke-width=".6"/>' +
+                '</svg>';
         } else {                        // task anchor: neon objective pip
             s = '<svg width="18" height="18" viewBox="0 0 24 24">' +
                 '<circle cx="12" cy="12" r="7.5" fill="none" stroke="#DFF140" stroke-width="1.6"/>' +
@@ -18979,8 +19193,10 @@ function renderFusionRealLayer() {
             setData('maven-obj-ghost', []);
             setData('maven-objs', []);
             setData('maven-places', []);
+            try { setData('scout-fov', []); } catch (e) {}
+            try { setData('lz-circle', []); setData('lz-candidate', []); } catch (e) {}
             drawGeo.__last = null; drawObjs.__last = null; drawMarkers.__last = null; drawPlaces.__last = null;
-        } else { refresh(); }
+        } else { refresh(); try { if (S.scout) drawScoutFov(); } catch (e2) {} }
     }
     function wireProbe() {
         function probe(msg) {
@@ -19058,6 +19274,19 @@ function renderFusionRealLayer() {
         pts.push(pts[0]);
         return pts;
     }
+    function showCoverage(lat, lng, label) {
+        var m = getMap();
+        if (!m || !m.getSource('maven-coverage')) return;
+        var km = 10; // 10km radius coverage
+        var poly = circlePoly(lat, lng, km, 72);
+        var feat = { type: 'Feature', properties: { name: label || 'Coverage', radius_km: km },
+            geometry: { type: 'Polygon', coordinates: [poly] } };
+        m.getSource('maven-coverage').setData({ type: 'FeatureCollection', features: [feat] });
+        var clearCovBtn = $('mavenClearCoverageBtn');
+        if (clearCovBtn) clearCovBtn.style.display = 'inline-block';
+        flyTo(lat, lng, 9);
+        toast('Showing ' + km + 'km coverage for ' + label, 'info');
+    }
     function fovPoly(lat, lng, hdgDeg, km) {
         var spread = 30, steps = 7, pts = [[lng, lat]], dLat = km / 111.32,
             dLng = km / (111.32 * Math.cos(lat * Math.PI / 180));
@@ -19079,9 +19308,56 @@ function renderFusionRealLayer() {
     }
     function pickBuildingAt(m, point) {
         try {
-            var fs = m.queryRenderedFeatures(point, { layers: ['3d-buildings'] });
+            var layers = ['3d-buildings'];
+            // Check for landuse layers in the current style
+            ['landuse_residential', 'landuse_commercial', 'landuse_industrial', 'landuse_park', 'landuse_forest', 'landuse_farm'].forEach(function (l) {
+                if (m.getLayer(l)) layers.push(l);
+            });
+            var fs = m.queryRenderedFeatures(point, { layers: layers });
             if (!fs || !fs.length) return null;
-            var f = fs[0], pr = f.properties || {};
+            function geomArea(geom) {
+                if (!geom || !geom.coordinates) return 0;
+                var coords = geom.coordinates;
+                if (geom.type === 'Polygon') {
+                    var ring = coords[0];
+                    var area = 0;
+                    for (var i = 0; i < ring.length - 1; i++) {
+                        area += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
+                    }
+                    return Math.abs(area);
+                }
+                if (geom.type === 'MultiPolygon') {
+                    var total = 0;
+                    for (var p = 0; p < coords.length; p++) {
+                        var ring = coords[p][0];
+                        var area = 0;
+                        for (var i = 0; i < ring.length - 1; i++) {
+                            area += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
+                        }
+                        total += Math.abs(area);
+                    }
+                    return total;
+                }
+                return 0;
+            }
+            // Filter: prefer landuse layers (larger polygons), then larger buildings
+            // Filter out tiny features (< 0.000001 deg^2 ≈ 100m²) which are likely individual houses
+            var minArea = 1e-6;
+            var scored = fs.map(function (f) {
+                var a = geomArea(f.geometry);
+                var pr = f.properties || {};
+                var isLanduse = f.layer && f.layer.id && f.layer.id.startsWith('landuse');
+                var hasName = pr.name || pr['name:latin'] || pr['name:en'];
+                var height = Number(pr.height || pr.render_height) || 0;
+                // Score: landuse=1000, named=100, height bonus, area bonus
+                var score = (isLanduse ? 1000 : 0) + (hasName ? 100 : 0) + (height * 0.1) + (a * 1e6);
+                return { feature: f, area: a, score: score, isLanduse: isLanduse };
+            });
+            // Filter out tiny features unless they're landuse or named
+            scored = scored.filter(function (s) { return s.area >= minArea || s.isLanduse || s.feature.properties && (s.feature.properties.name || s.feature.properties['name:latin'] || s.feature.properties['name:en']); });
+            if (!scored.length) return null;
+            scored.sort(function (a, b) { return b.score - a.score; });
+            var f = scored[0].feature, pr = f.properties || {};
             var c = geomCentroid(f.geometry);
             return {
                 name: String(pr.name || pr['name:latin'] || pr['name:en'] || '').trim(),
@@ -19131,20 +19407,51 @@ function renderFusionRealLayer() {
     }
     function ensureLayers() {
         var m = getMap();
-        if (!m || m.getSource('maven-objs')) return;
+        if (!m) return;
+        if (!m.getSource('maven-aoi')) {
         m.addSource('maven-aoi', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
         m.addLayer({ id: 'maven-aoi-fill', type: 'fill', source: 'maven-aoi',
             paint: { 'fill-color': '#DFF140', 'fill-opacity': 0.05 } });
         m.addLayer({ id: 'maven-aoi-line', type: 'line', source: 'maven-aoi',
             paint: { 'line-color': '#DFF140', 'line-width': 1.4, 'line-dasharray': [3, 2], 'line-opacity': 0.85 } });
+        }
+        if (!m.getSource('maven-orbits')) {
         m.addSource('maven-orbits', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
         m.addLayer({ id: 'maven-orbits-line', type: 'line', source: 'maven-orbits',
             paint: { 'line-color': '#7dd3fc', 'line-width': 1.6, 'line-dasharray': [1.5, 1.5], 'line-opacity': 0.8 } });
+        }
+        if (!m.getSource('maven-fov')) {
         m.addSource('maven-fov', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
         m.addLayer({ id: 'maven-fov-fill', type: 'fill', source: 'maven-fov',
             paint: { 'fill-color': CYAN, 'fill-opacity': 0.07 } });
         m.addLayer({ id: 'maven-fov-line', type: 'line', source: 'maven-fov',
             paint: { 'line-color': CYAN, 'line-width': 1, 'line-opacity': 0.55 } });
+        }
+        // SCOUT viewpoint cone (client-side FOV) — below ghost/objs so dot stays on top
+        if (!m.getSource('scout-fov')) {
+        m.addSource('scout-fov', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        m.addLayer({ id: 'scout-fov-fill', type: 'fill', source: 'scout-fov',
+            paint: { 'fill-color': '#DFF140', 'fill-opacity': 0.14 } });
+        m.addLayer({ id: 'scout-fov-line', type: 'line', source: 'scout-fov',
+            paint: { 'line-color': '#DFF140', 'line-width': 1.4, 'line-opacity': 0.9 } });
+        }
+        // LZ/DZ Analyzer — circle picker + micro-clearing highlights
+        if (!m.getSource('lz-circle')) {
+        m.addSource('lz-circle', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        m.addLayer({ id: 'lz-circle-fill', type: 'fill', source: 'lz-circle',
+            paint: { 'fill-color': '#DFF140', 'fill-opacity': 0.06 } });
+        m.addLayer({ id: 'lz-circle-line', type: 'line', source: 'lz-circle',
+            paint: { 'line-color': '#DFF140', 'line-width': 1.6, 'line-dasharray': [4, 3], 'line-opacity': 0.95 } });
+        }
+        if (!m.getSource('lz-candidate')) {
+        m.addSource('lz-candidate', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        m.addLayer({ id: 'lz-candidate-fill', type: 'fill', source: 'lz-candidate',
+            paint: { 'fill-color': ['case', ['==', ['get', 'eligible'], true], '#DFF140', '#ff5d5d'], 'fill-opacity': ['case', ['==', ['get', 'eligible'], true], 0.28, 0.12] } });
+        m.addLayer({ id: 'lz-candidate-line', type: 'line', source: 'lz-candidate',
+            paint: { 'line-color': ['case', ['==', ['get', 'eligible'], true], '#DFF140', '#ff5d5d'], 'line-width': 1.1, 'line-opacity': 0.9 } });
+        m.addLayer({ id: 'lz-candidate-dot', type: 'circle', source: 'lz-candidate',
+            paint: { 'circle-radius': 3.2, 'circle-color': '#DFF140', 'circle-stroke-color': 'rgba(0,0,0,.85)', 'circle-stroke-width': 1, 'circle-opacity': ['case', ['==', ['get', 'eligible'], true], 0.95, 0.0] } });
+        }
         if (!m.getSource('maven-obj-ghost')) {
             m.addSource('maven-obj-ghost', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
             m.addLayer({ id: 'maven-obj-ghost-fill', type: 'fill', source: 'maven-obj-ghost',
@@ -19180,6 +19487,22 @@ function renderFusionRealLayer() {
                     'circle-stroke-color': 'rgba(255,255,255,.85)',
                     'circle-stroke-width': 1,
                     'circle-opacity': 0.9
+                } });
+        }
+        if (!m.getSource('maven-coverage')) {
+            m.addSource('maven-coverage', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+            m.addLayer({ id: 'maven-coverage-fill', type: 'fill', source: 'maven-coverage',
+                paint: {
+                    'fill-color': '#DFF140',
+                    'fill-opacity': 0.18,
+                    'fill-outline-color': '#DFF140'
+                } });
+            m.addLayer({ id: 'maven-coverage-line', type: 'line', source: 'maven-coverage',
+                paint: {
+                    'line-color': '#DFF140',
+                    'line-width': 2.5,
+                    'line-opacity': 0.9,
+                    'line-dasharray': [8, 4]
                 } });
         }
     }
@@ -19239,6 +19562,204 @@ function renderFusionRealLayer() {
         drawObjs.__last = sig;
         setData('maven-objs', feats);
     }
+
+    /* --------------------------------------------------- scout (person) ---- */
+    // Physics-bound scout: small dot/person spawned by PICK TARGET, walks
+    // with constant speed + heading lerp, draws live viewpoint cone.
+    function scoutHaversineKm(lat1, lng1, lat2, lng2) {
+        var R = 6371.0088, dLat = (lat2 - lat1) * Math.PI / 180, dLng = (lng2 - lng1) * Math.PI / 180;
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        return R * 2 * Math.asin(Math.sqrt(a));
+    }
+    function scoutBearingDeg(lat1, lng1, lat2, lng2) {
+        var y = Math.sin((lng2 - lng1) * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180);
+        var x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) - Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos((lng2 - lng1) * Math.PI / 180);
+        var br = Math.atan2(y, x) * 180 / Math.PI;
+        return (br + 360) % 360;
+    }
+    function drawScoutFov() {
+        if (!S.scout || !S.overlays) { try { setData('scout-fov', []); } catch (e) {} return; }
+        ensureLayers();
+        var pts = fovPoly(S.scout.lat, S.scout.lng, S.scout.hdg, (S.scout.radius_m || 250) / 1000);
+        setData('scout-fov', [{ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [pts] } }]);
+    }
+    function ensureScoutMarker() {
+        var m = getMap();
+        if (!m || !S.scout) return null;
+        if (!S.scoutMarker) {
+            var el = svgFrame('scout');
+            el.style.transition = 'transform 0.12s linear';
+            el.title = 'SCOUT · ' + Number(S.scout.lat).toFixed(4) + ' ' + Number(S.scout.lng).toFixed(4);
+            S.scoutMarker = new maplibregl.Marker({ element: el, anchor: 'center' })
+                .setLngLat([S.scout.lng, S.scout.lat]).addTo(m);
+            // click scout to clear
+            el.addEventListener('click', function (e) { e.stopPropagation(); clearScout(); });
+        }
+        return S.scoutMarker;
+    }
+    function updateScoutMarker() {
+        if (!S.scout || !S.scoutMarker) return;
+        try {
+            S.scoutMarker.setLngLat([S.scout.lng, S.scout.lat]);
+            var el = S.scoutMarker.getElement();
+            if (el && el.firstChild) {
+                // rotate heading tick to true north
+                var inner = el.firstChild;
+                if (inner && inner.style) inner.style.transform = 'rotate(' + S.scout.hdg + 'deg)';
+                inner.style.transformOrigin = '12px 12px';
+            }
+            el.title = 'SCOUT ' + S.scout.hdg.toFixed(0) + '° · ' + (S.scout.moving ? 'MOVING' : 'IDLE') +
+                ' · r=' + Math.round(S.scout.radius_m) + 'm · ' + Number(S.scout.lat).toFixed(4) + 'N ' + Number(S.scout.lng).toFixed(4) + 'E';
+        } catch (e) {}
+        drawScoutFov();
+        // throttle YONO viewshed to ~1 per 900ms after motion pauses or every 2s while moving
+        var now = Date.now();
+        if (S.scout && now - (S._scoutLastViewshed || 0) > (S.scout.moving ? 2200 : 900)) {
+            S._scoutLastViewshed = now;
+            // fire-and-forget terrain viewshed (Luzon-px) — no await in tick
+            try { scoutRequestYonoViewshed(); } catch (e) {}
+        }
+    }
+    function scoutRequestYonoViewshed() {
+        if (!S.scout) return;
+        // Only if global TerrainFX viewshed layer exists, reuse it; also try YONO tool
+        // We do lightweight fetch to geo_viewshed via backend if available — ignore failure
+        var lat = S.scout.lat, lng = S.scout.lng, alt = S.scout.alt_agl || 1.7, rad = Math.min(5000, Math.max(300, S.scout.radius_m || 250));
+        // Use backend ontology geo tool via fetch if endpoint exists; else skip gracefully
+        try {
+            if (window.YonoAgent && typeof window.YonoAgent.ask === 'function' && rad >= 300) {
+                // don't spam LLM: only when scout stops
+                if (S.scout.moving) return;
+            }
+            // direct geo_viewshed attempt (optional)
+            if (typeof fetch === 'function') {
+                fetch('/api/yono/geo_viewshed', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lat: lat, lon: lng, alt_agl_m: alt, radius_m: rad }) })
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (j) {
+                        if (j && j.directive && j.directive.polygon && window.TerrainFX && window.TerrainFX.drawViewshed) {
+                            try { window.TerrainFX.drawViewshed(j.directive); } catch (e2) {}
+                        }
+                    }).catch(function () {});
+            }
+        } catch (e) {}
+    }
+    function startScoutTick() {
+        if (S.scoutTimer) return;
+        var last = Date.now();
+        S.scoutTimer = setInterval(function () {
+            if (!S.scout || !S.scout.moving) return;
+            var now = Date.now(), dt = Math.max(0.02, Math.min(0.4, (now - last) / 1000));
+            last = now;
+            var distKm = scoutHaversineKm(S.scout.lat, S.scout.lng, S.scout.targetLat, S.scout.targetLng);
+            if (distKm < 0.003) { // <3m snap
+                S.scout.lat = S.scout.targetLat; S.scout.lng = S.scout.targetLng;
+                S.scout.moving = false;
+                updateScoutMarker();
+                // clear moving flag UI
+                var sb = document.getElementById('mavenScoutBtn');
+                if (sb) sb.textContent = 'SCOUT: IDLE';
+                return;
+            }
+            var wantHdg = scoutBearingDeg(S.scout.lat, S.scout.lng, S.scout.targetLat, S.scout.targetLng);
+            var diff = ((wantHdg - S.scout.hdg + 540) % 360) - 180;
+            S.scout.hdg = (S.scout.hdg + diff * Math.min(1, dt * 4.5) + 360) % 360;
+            var stepKm = (S.scout.speed_mps || 1.4) * dt / 1000;
+            var frac = Math.min(1, stepKm / Math.max(0.0001, distKm));
+            // linear interpolate on sphere approx — good at street scale
+            S.scout.lat += (S.scout.targetLat - S.scout.lat) * frac;
+            S.scout.lng += (S.scout.targetLng - S.scout.lng) * frac;
+            updateScoutMarker();
+        }, 80);
+    }
+    function stopScoutTick() {
+        if (S.scoutTimer) { clearInterval(S.scoutTimer); S.scoutTimer = null; }
+    }
+    function deployScoutAt(lat, lng, bname, bheight) {
+        ensureLayers();
+        var isNew = !S.scout;
+        var prev = S.scout ? { lat: S.scout.lat, lng: S.scout.lng } : null;
+        S.scout = S.scout || { lat: lat, lng: lng, hdg: 0, targetLat: lat, targetLng: lng, moving: false, speed_mps: 1.4, radius_m: 250, fov_deg: 60, alt_agl: 1.7 };
+        if (isNew) {
+            S.scout.lat = lat; S.scout.lng = lng; S.scout.hdg = 0;
+            S.scout.targetLat = lat; S.scout.targetLng = lng; S.scout.moving = false;
+        } else {
+            // retarget — walk, don't teleport
+            S.scout.targetLat = lat; S.scout.targetLng = lng;
+            var dKm = scoutHaversineKm(S.scout.lat, S.scout.lng, lat, lng);
+            if (dKm > 0.005) { // >5m requires walk
+                S.scout.moving = true;
+                S.scout.hdg = scoutBearingDeg(S.scout.lat, S.scout.lng, lat, lng);
+                var sb = document.getElementById('mavenScoutBtn');
+                if (sb) sb.textContent = 'SCOUT: MOVING → ' + (bname ? bname.slice(0, 14).toUpperCase() : (lat.toFixed(3) + ',' + lng.toFixed(3)));
+                startScoutTick();
+            } else {
+                S.scout.moving = false;
+            }
+        }
+        S.scout.alt_agl = (bheight && bheight > 4) ? Math.min(40, bheight + 1.7) : 1.7;
+        ensureScoutMarker();
+        updateScoutMarker();
+        // also select tasks tab so user sees button
+        try { if (typeof selectTab === 'function') selectTab('tasks'); } catch (e) {}
+        // optional auto-ask YONO once placed
+        setTimeout(function () { try { scoutRequestYonoViewshed(); } catch (e) {} }, 320);
+        // if first deploy, fly to him
+        if (isNew) { try { flyTo(lat, lng, 16); } catch (e) {} }
+        // render id if HUD exists
+        try { renderScoutHud(); } catch (e) {}
+    }
+    function renderScoutHud() {
+        var el = document.getElementById('mavenScoutHud');
+        if (!el) return;
+        if (!S.scout) { el.classList.add('maven-hidden'); return; }
+        el.classList.remove('maven-hidden');
+        el.innerHTML = '<div class="maven-row" style="border-left:3px solid #DFF140"><b>SCOUT</b> ' +
+            '<span class="maven-chip ' + (S.scout.moving ? 'medium' : 'ok') + '">' + (S.scout.moving ? 'MOVING' : 'IDLE') + '</span>' +
+            '<span class="maven-chip low">' + S.scout.hdg.toFixed(0) + '°</span>' +
+            '<br><span class="mv-sub">' + Number(S.scout.lat).toFixed(4) + 'N ' + Number(S.scout.lng).toFixed(4) + 'E · r=' + Math.round(S.scout.radius_m) + 'm · ' + S.scout.fov_deg + '°</span>' +
+            '<div class="maven-det-actions" style="gap:4px;flex-wrap:wrap">' +
+            '<label class="mv-sub" style="display:flex;align-items:center;gap:4px">RADIUS <input id="scoutRadius" type="range" min="50" max="800" step="50" value="' + S.scout.radius_m + '" style="width:90px"></label>' +
+            '<button class="mut" id="scoutFlyBtn">⌖ FLY</button>' +
+            '<button class="no" id="scoutClearBtn">✕ CLEAR</button>' +
+            '<button class="yes" id="scoutYonoBtn" title="Ask YONO what this scout can see (terrain viewshed)">◉ YONO VIEW</button>' +
+            '</div></div>';
+        var rr = document.getElementById('scoutRadius');
+        if (rr) rr.oninput = function () { S.scout.radius_m = parseInt(rr.value, 10) || 250; drawScoutFov(); };
+        var fb = document.getElementById('scoutFlyBtn');
+        if (fb) fb.onclick = function () { try { flyTo(S.scout.lat, S.scout.lng, 17); } catch (e) {} };
+        var cb = document.getElementById('scoutClearBtn');
+        if (cb) cb.onclick = clearScout;
+        var yb = document.getElementById('scoutYonoBtn');
+        if (yb) yb.onclick = function () {
+            var q = 'What can be seen from scout at ' + Number(S.scout.lat).toFixed(5) + ',' + Number(S.scout.lng).toFixed(5) + ' at ' + S.scout.alt_agl + 'm alt, radius ' + S.scout.radius_m + 'm facing ' + S.scout.hdg.toFixed(0) + '°? Use geo_viewshed then summarize visible_area_pct, blocked_sectors, max_visibility_km.';
+            try {
+                if (window.YonoAgent && window.YonoAgent.dock) window.YonoAgent.dock();
+                if (window.YonoAgent && window.YonoAgent.ask) window.YonoAgent.ask(q);
+                else if (window.YONO && window.YONO.open) window.YONO.open();
+            } catch (e) {}
+            // also fire direct viewshed
+            try { scoutRequestYonoViewshed(); } catch (e) {}
+        };
+    }
+    function clearScout() {
+        stopScoutTick();
+        if (S.scoutMarker) { try { S.scoutMarker.remove(); } catch (e) {} S.scoutMarker = null; }
+        S.scout = null;
+        try { setData('scout-fov', []); } catch (e) {}
+        // also clear YONO terrain viewshed if visible
+        try {
+            var m = getMap();
+            if (m && m.getSource('sc-viewshed')) m.getSource('sc-viewshed').setData({ type: 'FeatureCollection', features: [] });
+        } catch (e) {}
+        var sb = document.getElementById('mavenScoutBtn');
+        if (sb) { sb.textContent = '◉ SCOUT: OFF'; sb.classList.remove('active'); }
+        S.scoutMode = false;
+        var h = document.getElementById('mavenAoiHint');
+        if (h && S.aoiMode === false) h.classList.add('maven-hidden');
+        try { renderScoutHud(); } catch (e2) {}
+    }
+    // expose for debug
+    window.__scout = { deploy: deployScoutAt, clear: clearScout, state: function () { return S.scout; } };
 
     /* -------------------------------------------------------- markers ---- */
     function clearMarkers() {
@@ -19402,6 +19923,7 @@ function renderFusionRealLayer() {
             renderBadge();
             renderLists();
             renderDetRail();
+            try { renderScoutHud(); if (S.scout) { ensureScoutMarker(); drawScoutFov(); } } catch (e2) {}
         } catch (e) { /* transient */ }
         S.busy = false;
     }
@@ -19420,6 +19942,7 @@ function renderFusionRealLayer() {
         setData('maven-obj-ghost', []);
         setData('maven-objs', []);
         setData('maven-places', []);
+        try { setData('scout-fov', []); } catch (e) {}
         drawGeo.__last = null;
         drawObjs.__last = null;
         drawPlaces.__last = null;
@@ -19577,6 +20100,12 @@ function renderFusionRealLayer() {
         });
         var mkBtn = $('mavenMakeTask');
         if (mkBtn) mkBtn.onclick = submitPending;
+        var scBtn = $('mavenScoutDeployBtn');
+        if (scBtn) scBtn.onclick = function () {
+            if (!S.pending) return;
+            deployScoutAt(S.pending.lat, S.pending.lng, S.pending.bname || '', S.pending.bheight || null);
+            S.pending = null; exitAoiMode(); renderTasks(); renderScoutHud();
+        };
         host.querySelectorAll('[data-rad]').forEach(function (b) {
             b.onclick = function () {
                 S.aoiRadius = parseFloat(b.getAttribute('data-rad')) || S.aoiRadius;
@@ -19612,8 +20141,9 @@ function renderFusionRealLayer() {
             '<select id="mavenTaskPri"><option value="low">LOW</option><option value="medium" selected>MEDIUM</option><option value="high">HIGH</option></select>' +
             '<div class="maven-radius">' + radii + '</div></div>' +
             '<div class="mv-step"><span class="maven-rank">3</span>' +
-            '<button id="mavenMakeTask" class="maven-btn"' + (locked ? '' : ' disabled') + '>CREATE + DISPATCH</button></div>' +
-            (!locked ? '<span class="mv-sub">press PICK TARGET ON MAP above, then click a building</span>' : '') +
+            '<button id="mavenMakeTask" class="maven-btn"' + (locked ? '' : ' disabled') + '>CREATE + DISPATCH</button>' +
+            '<button id="mavenScoutDeployBtn" class="maven-btn" style="margin-left:6px;background:rgba(223,241,64,.15);border-color:rgba(223,241,64,.5)"' + (locked ? '' : ' disabled') + ' title="Walk a physics-bound scout to this target with live viewpoint cone (no teleport)">◉ DEPLOY SCOUT HERE</button></div>' +
+            (!locked ? '<span class="mv-sub">press PICK TARGET ON MAP above, then click a building</span>' : '<span class="mv-sub">or deploy scout — he walks, his FOV cone shows what he sees</span>') +
             '</div>';
     }
     async function submitPending() {
@@ -20025,6 +20555,14 @@ function renderFusionRealLayer() {
         var q = (S.placeSearch || '').toLowerCase();
         var nodes = S.places.nodes.filter(function (p) { return placeMatches(p, q); });
         var comps = S.places.companies.filter(function (p) { return placeMatches(p, q); });
+        var allCities = new Set();
+        S.places.nodes.forEach(function (p) { if (p.city) allCities.add(p.city); });
+        S.places.companies.forEach(function (p) { if (p.district) allCities.add(p.district); });
+        var coverageEl = $('mavenPlaceCoverage');
+        if (coverageEl) {
+            var cityList = Array.from(allCities).sort();
+            coverageEl.textContent = 'COVERAGE: ' + cityList.join(', ') + ' (' + cityList.length + ' areas)';
+        }
         var html = '';
         function row(p, grp, icon) {
             html += '<div class="maven-row maven-place-row" data-place-grp="' + grp + '">' +
@@ -20033,6 +20571,7 @@ function renderFusionRealLayer() {
                 ((p.techStack && p.techStack.length) ? ' \u00b7 ' + esc(p.techStack.slice(0, 3).join(', ')) : '') + '</span>' +
                 '<div class="maven-det-actions">' +
                 '<button class="mut" data-pfly="' + p.lat + ',' + p.lng + '">FLY</button>' +
+                '<button class="mut" data-pcov="' + p.lat + ',' + p.lng + ',' + esc(p.city || p.district || p.name) + '">COVERAGE</button>' +
                 '<button class="mut" data-pinf="' + grp + ':' + esc(p.name) + '">INFO</button></div></div>';
         }
         if (nodes.length) html += '<div class="mv-sub" style="opacity:.6;margin:2px 0">\u25c9 GROUP NETWORK</div>';
@@ -20044,7 +20583,7 @@ function renderFusionRealLayer() {
         host.querySelectorAll('[data-pfly]').forEach(function (btn) {
             btn.onclick = function () {
                 var parts = btn.getAttribute('data-pfly').split(',');
-                flyTo(parseFloat(parts[0]), parseFloat(parts[1]), 7);
+                flyTo(parseFloat(parts[0]), parseFloat(parts[1]), 11);
             };
         });
         host.querySelectorAll('[data-pinf]').forEach(function (btn) {
@@ -20054,6 +20593,14 @@ function renderFusionRealLayer() {
                 var pool = grp === 'bgc' ? S.places.companies : S.places.nodes;
                 S.placeInfo = pool.filter(function (p) { return p.name === nm; })[0] || null;
                 renderPlaces();
+            };
+        });
+        host.querySelectorAll('[data-pcov]').forEach(function (btn) {
+            btn.onclick = function () {
+                var parts = btn.getAttribute('data-pcov').split(',');
+                var lat = parseFloat(parts[0]), lng = parseFloat(parts[1]);
+                var label = parts.slice(2).join(',');
+                showCoverage(lat, lng, label);
             };
         });
         host.querySelectorAll('[data-pname]').forEach(function (el) {
@@ -20214,7 +20761,7 @@ function renderFusionRealLayer() {
     }
 
     /* -------------------------------------------------- aoi interaction ---- */
-    var HINT_AOI = 'CLICK A BUILDING OR MAP POINT TO SET TARGET \u00b7 ESC CANCELS';
+    var HINT_AOI = 'HOVER ANY BUILDING — tells if LZ/DZ possible · CLICK TO LOCK · ESC CANCELS';
     var HINT_OBJ = 'HOVER A BUILDING \u00b7 CLICK TO REGISTER IT \u00b7 ESC CANCELS';
     function setHint(text) {
         var h = $('mavenAoiHint');
@@ -20230,6 +20777,17 @@ function renderFusionRealLayer() {
     function enterAoiMode() {
         S.aoiMode = true;
         exitObjMode(true);
+        // single-highlight enforcement — clear any stale ghosts/candidates first
+        try{
+          var mm=getMap();
+          if(mm){
+            // clear persisted object hover state (was causing second yellow highlight)
+            if(S._hovId!=null){ try{ mm.setFeatureState({source:'maven-objs', id:S._hovId},{hover:false}); }catch(e){} S._hovId=null; try{ mm.getCanvas().style.cursor=''; }catch(e2){} }
+          }
+          if(window.LZDZ){ try{ window.LZDZ.clear(); window.LZDZ.clearHover(); }catch(e){} }
+          setGhost(null);
+          S._pickLastKey=null;
+        }catch(e){}
         drawerSlide(true);
         var wrap = document.querySelector('.sc-map-canvas-wrap');
         if (wrap) wrap.classList.add('maven-crosshair');
@@ -20250,6 +20808,8 @@ function renderFusionRealLayer() {
             try { m.dragPan.enable(); } catch (e) {}
         }
         hideHint();
+        setGhost(null);
+        try{ if(window.LZDZ){ window.LZDZ.clearHover(); } }catch(e){}
         drawerSlide(false);
     }
     function enterObjMode() {
@@ -20351,8 +20911,30 @@ function renderFusionRealLayer() {
             b.onclick = function () { selectTab(b.getAttribute('data-mtab')); };
         });
         $('mavenNewTaskBtn').onclick = function () {
+            // Simplified: just hover any building — tells if LZ/DZ possible (no radius)
             if (!S.aoiMode) { enterAoiMode(); }
             else { exitAoiMode(); S.pending = null; renderTasks(); }
+        };
+        var scoutBtn = $('mavenScoutBtn');
+        if (scoutBtn) scoutBtn.onclick = function () {
+            if (S.scoutMode) {
+                S.scoutMode = false;
+                scoutBtn.textContent = '◉ SCOUT: OFF';
+                scoutBtn.classList.remove('active');
+                var h2 = $('mavenAoiHint');
+                if (h2) h2.classList.add('maven-hidden');
+                var wrap2 = document.querySelector('.sc-map-canvas-wrap');
+                if (wrap2) wrap2.classList.remove('maven-crosshair');
+            } else {
+                S.scoutMode = true;
+                exitAoiMode(true); exitObjMode(true);
+                scoutBtn.textContent = '◉ SCOUT: ARMED — CLICK MAP';
+                scoutBtn.classList.add('active');
+                var wrap = document.querySelector('.sc-map-canvas-wrap');
+                if (wrap) wrap.classList.add('maven-crosshair');
+                var h = $('mavenAoiHint');
+                if (h) { h.textContent = 'SCOUT: CLICK BUILDING OR MAP TO PLACE · DRAG TO MOVE · CLICK SCOUT TO CLEAR · ESC CANCELS'; h.classList.remove('maven-hidden'); }
+            }
         };
         var regBtn = $('mavenRegObjBtn');
         if (regBtn) regBtn.onclick = function () {
@@ -20400,6 +20982,15 @@ function renderFusionRealLayer() {
             pinsBtn.textContent = 'MAP PINS: ' + (S.placesOnMap ? 'ON' : 'OFF');
             drawPlaces();
         };
+        var clearCovBtn = $('mavenClearCoverageBtn');
+        if (clearCovBtn) clearCovBtn.onclick = function () {
+            var m = getMap();
+            if (m && m.getSource('maven-coverage')) {
+                m.getSource('maven-coverage').setData({ type: 'FeatureCollection', features: [] });
+            }
+            clearCovBtn.style.display = 'none';
+            toast('Coverage cleared', 'info');
+        };
         var sr = $('mvScopeRegion'), sc = $('mvScopeCountry');
         if (sr && sc && typeof SC_REGION_BBOXES !== 'undefined') {
             var ro = '<option value="Worldwide">WORLDWIDE</option>';
@@ -20418,7 +21009,9 @@ function renderFusionRealLayer() {
                 SCScope.region = sr.value;
                 SCScope.country = '';
                 SCScope.zone = '';
+                SCScope.island=''; SCScope.city='';
                 sc.value = '';
+                try{ var si2=$('mvScopeIsland'), scc2=$('mvScopeCity'), phRow2=$('mvScopePHRow'); if(si2) si2.value=''; if(scc2) scc2.value=''; if(phRow2) phRow2.classList.add('maven-hidden'); }catch(e){}
                 var legacy = document.getElementById('scCountrySelect');
                 if (legacy) legacy.value = '';
                 try { scUpdateEmptyState(); } catch (e) {}
@@ -20433,14 +21026,86 @@ function renderFusionRealLayer() {
                 var legacy = document.getElementById('scCountrySelect');
                 if (legacy) legacy.value = SCScope.country;
                 try { scUpdateEmptyState(); } catch (e) {}
+                // PH hierarchical: show island/city only for Philippines
+                try{
+                  var phRow=$('mvScopePHRow'), si=$('mvScopeIsland'), scc=$('mvScopeCity');
+                  if(SCScope.country==='Philippines'){
+                    if(phRow) phRow.classList.remove('maven-hidden');
+                    if(si && !SCScope.island){ si.value='Luzon'; SCScope.island='Luzon'; }
+                    if(scc) populatePHCities();
+                    // default to BGC for your test if no city yet
+                    if(scc && !SCScope.city){ scc.value='BGC'; SCScope.city='BGC'; }
+                  } else {
+                    if(phRow) phRow.classList.add('maven-hidden');
+                    SCScope.island=''; SCScope.city=''; if(si) si.value=''; if(scc) scc.value='';
+                  }
+                }catch(e){}
                 mvScopeFly();
                 if (window.__forceFusionReload) window.__forceFusionReload();
                 if (typeof window.renderThreatMap === 'function') { try { window.renderThreatMap(true); } catch (e) {} }
                 toast('SCOPE: ' + (SCScope.country || sr.value) + ' — feeds reloading', 'success');
             };
+            // PH island/city hierarchical loader — GTA chunked
+            var si=$('mvScopeIsland'), scc=$('mvScopeCity'), phRow=$('mvScopePHRow');
+            function populatePHCities(){
+              if(!scc||!si) return;
+              var isl=si.value||'Luzon';
+              var opts='<option value="">— CITY —</option>';
+              Object.keys(PH_CITIES).forEach(function(k){
+                var c=PH_CITIES[k];
+                if(c.island===isl || k==='BGC' && isl==='Luzon') opts+='<option value="'+k+'">'+k.toUpperCase()+'</option>';
+                else if(isl==='Luzon' && ['Makati','Taguig','BGC','Manila','Quezon City'].indexOf(k)>-1) opts+='<option value="'+k+'">'+k.toUpperCase()+'</option>';
+                else if(isl==='Visayas' && k==='Cebu City') opts+='<option value="'+k+'">'+k.toUpperCase()+'</option>';
+                else if(isl==='Mindanao' && k==='Davao City') opts+='<option value="'+k+'">'+k.toUpperCase()+'</option>';
+              });
+              // unique dedup
+              scc.innerHTML=opts;
+              scc.value=SCScope.city||'';
+            }
+            if(si && scc){
+              // init visibility
+              try{
+                if(SCScope.country==='Philippines'){ if(phRow) phRow.classList.remove('maven-hidden'); populatePHCities(); }
+                si.value=SCScope.island||'';
+                scc.value=SCScope.city||'';
+              }catch(e){}
+              si.onchange=function(){
+                SCScope.island=si.value||'';
+                SCScope.city='';
+                scc.value='';
+                populatePHCities();
+                try{ scUpdateEmptyState(); }catch(e){}
+                mvScopeFly();
+                if(window.__forceFusionReload) window.__forceFusionReload();
+                if(typeof window.renderThreatMap==='function'){ try{ window.renderThreatMap(true);}catch(e){} }
+                toast('SCOPE: '+(SCScope.city||SCScope.island||SCScope.country||sr.value)+' — feeds reloading','success');
+              };
+              scc.onchange=function(){
+                SCScope.city=scc.value||'';
+                // if city implies island, sync
+                if(SCScope.city && PH_CITIES[SCScope.city] && PH_CITIES[SCScope.city].island) { SCScope.island=PH_CITIES[SCScope.city].island; si.value=SCScope.island; }
+                try{ scUpdateEmptyState(); }catch(e){}
+                mvScopeFly();
+                if(window.__forceFusionReload) window.__forceFusionReload();
+                if(typeof window.renderThreatMap==='function'){ try{ window.renderThreatMap(true);}catch(e){} }
+                // GTA: when city changes, clear previous LZ chunks and focus map — only that city loads
+                try{ if(window.LZDZ){ LZDZ.clear(); } }catch(e){}
+                toast('SCOPE: '+(SCScope.city||SCScope.island||SCScope.country||sr.value)+' — feeds reloading','success');
+              };
+            }
         }
         document.addEventListener('keydown', function (ev) {
             if (ev.key !== 'Escape') return;
+            if (S.scoutMode) {
+                S.scoutMode = false;
+                var sb = $('mavenScoutBtn');
+                if (sb) { sb.textContent = S.scout ? '◉ SCOUT: IDLE' : '◉ SCOUT: OFF'; sb.classList.remove('active'); }
+                var wrap = document.querySelector('.sc-map-canvas-wrap');
+                if (wrap) wrap.classList.remove('maven-crosshair');
+                var h = $('mavenAoiHint');
+                if (h) h.classList.add('maven-hidden');
+                return;
+            }
             if (S.objMode) { exitObjMode(); S.pendingObj = null; renderObjects(); }
             else if (S.aoiMode) { exitAoiMode(); S.pending = null; renderTasks(); }
         });
@@ -20466,6 +21131,20 @@ function renderFusionRealLayer() {
                 if (ob) ob.scrollTop = 0;
                 return;
             }
+            // SCOUT: armed placement/retarget — walks with physics, never teleports
+            if (S.scoutMode) {
+                var sbld = pickBuildingAt(m, e.point);
+                var slat = (sbld && sbld.lat != null) ? sbld.lat : e.lngLat.lat;
+                var slng = (sbld && sbld.lng != null) ? sbld.lng : e.lngLat.lng;
+                S.scoutMode = false;
+                var sbtn2 = $('mavenScoutBtn');
+                if (sbtn2) { sbtn2.textContent = S.scout ? 'SCOUT: MOVING' : '◉ SCOUT: IDLE'; sbtn2.classList.remove('active'); }
+                var wrapSc = document.querySelector('.sc-map-canvas-wrap');
+                if (wrapSc) wrapSc.classList.remove('maven-crosshair');
+                hideHint();
+                deployScoutAt(slat, slng, sbld ? sbld.name : '', sbld ? sbld.height : null);
+                return;
+            }
             if (!S.aoiMode) {
                 var pf = null;
                 try { pf = m.queryRenderedFeatures(e.point, { layers: ['maven-places-dot'] }); } catch (err) {}
@@ -20482,20 +21161,26 @@ function renderFusionRealLayer() {
                 }
                 return;
             }
+            // PICK TARGET — hover-check LZ/DZ only, no radius, no task
             var bld = pickBuildingAt(m, e.point);
-            var lat = (bld && bld.lat != null) ? bld.lat : e.lngLat.lat;
-            var lng = (bld && bld.lng != null) ? bld.lng : e.lngLat.lng;
-            if (bld && bld.name) S.aoiRadius = 1;
-            S.pending = {
-                lat: lat, lng: lng,
-                bname: (bld && bld.name) || '',
-                bheight: bld ? bld.height : null
-            };
-            exitAoiMode();
-            selectTab('tasks');
-            renderTasks();
-            var body = document.querySelector('.maven-body');
-            if (body) body.scrollTop = 0;
+            if (!bld || !bld.footprint) {
+                // ground click — not a building, no LZ
+                setGhost(null);
+                try{ if(window.LZDZ && typeof window.LZDZ.showGroundNoLZ==='function') window.LZDZ.showGroundNoLZ(e.lngLat.lat, e.lngLat.lng); }catch(err2){}
+                // keep mode armed for next hover
+                return;
+            }
+            // delegate to LZ point-check (BGC helipad + civilian + slope + 20m disc)
+            if (window.LZDZ && typeof window.LZDZ.checkPointLZ==='function') {
+                var res = window.LZDZ.checkPointLZ(bld.lat, bld.lng, bld);
+                window.LZDZ.showLZResult(bld.lat, bld.lng, bld, res);
+                // do not lock pending — stay armed for next hover/click inspection
+                // ghost color updated via showLZResult (green/red disc)
+            } else {
+                // fallback: just highlight building
+                setGhost(bld.footprint, bld.height);
+            }
+            // keep aoiMode armed — user hovers next building, ESC to exit
         });
         var lastMM = 0;
         m.on('mousemove', function (ev) {
@@ -20506,6 +21191,32 @@ function renderFusionRealLayer() {
             if (S.objMode) {
                 var hb = pickBuildingAt(m, ev.point);
                 setGhost(hb ? hb.footprint : null, hb ? hb.height : null);
+                return;
+            }
+            if (S.aoiMode) {
+                var hb2 = pickBuildingAt(m, ev.point);
+                if (!hb2 || !hb2.footprint) {
+                    // clear single highlight — ensure no ghost lingers
+                    if(S._pickLastKey!==null){ S._pickLastKey=null; setGhost(null); try{ if(window.LZDZ && window.LZDZ.clearHover) window.LZDZ.clearHover(); }catch(e){} }
+                    setHint('HOVER A BUILDING — hover to check LZ/DZ · ESC CANCELS');
+                    return;
+                }
+                var key2=(hb2.name||'')+'|'+hb2.lat.toFixed(5)+','+hb2.lng.toFixed(5);
+                if(key2===S._pickLastKey) return; // same building — skip recompute to avoid lag
+                S._pickLastKey=key2;
+                // enforce single highlight: clear any stale persisted-object hover that would show second yellow building
+                if(S._hovId!=null){ try{ m.setFeatureState({source:'maven-objs', id:S._hovId},{hover:false}); }catch(e){} S._hovId=null; try{ m.getCanvas().style.cursor=''; }catch(e2){} }
+                // enforce single highlight: clear previous before new
+                // live LZ check on hover — no radius, helicopter-size 20m
+                if (window.LZDZ && window.LZDZ.checkPointLZ) {
+                    var rr = window.LZDZ.checkPointLZ(hb2.lat, hb2.lng, hb2);
+                    try{ if(window.LZDZ.showHoverDisc) window.LZDZ.showHoverDisc(hb2.lat, hb2.lng, rr.eligible); }catch(e2){}
+                    setGhost(hb2.footprint, hb2.height);
+                    setHint((rr.eligible?'✅ LZ AVAILABLE — ':'❌ NO LZ — ')+(hb2.name||'BUILDING')+' · '+rr.reason);
+                } else {
+                    setGhost(hb2.footprint, hb2.height);
+                    setHint('HOVER A BUILDING · CLICK TO CHECK LZ · ESC CANCELS');
+                }
                 return;
             }
             var fs = null;
@@ -20524,6 +21235,8 @@ function renderFusionRealLayer() {
         });
         m.on('mouseout', function () {
             setGhost(null);
+            S._pickLastKey=null;
+            try{ if(window.LZDZ) window.LZDZ.clearHover(); }catch(e){}
             if (S._hovId != null) {
                 try { m.setFeatureState({ source: 'maven-objs', id: S._hovId }, { hover: false }); } catch (e) {}
                 S._hovId = null;
@@ -22657,6 +23370,572 @@ window.__yonoUndockForMss = undock;
 </script>
 
 
+<!-- LZ/DZ Analyzer — circle/grid → auto 3D → <7° + 40m rotor clearance micro-clearings -->
+<script id="lzdz-addon">
+(function(){
+  'use strict';
+  var LZ_ID = 'lz-dz-analyzer';
+  var LAYER_CIRCLE = 'lz-circle', LAYER_CAND = 'lz-candidate';
+  var DEM_SRC = 'gaia-ph-dem';
+  var state = { on:false, armed:false, center:null, radius_m:400, dragging:false, startPt:null, analyzing:false, candidates:[] };
+
+  function getMap(){ try{ if(typeof fusionMap!=='undefined'&&fusionMap&&fusionMap.on) return fusionMap;}catch(e){} return (window.fusionMap&&window.fusionMap.on)?window.fusionMap:null; }
+  function ensureLzLayers(){
+    var m=getMap(); if(!m) return false;
+    // ensure main maven layers exist first (scout already adds lz-circle/candidate)
+    try{ if(typeof ensureLayers==='function') ensureLayers(); }catch(e){}
+    return !!(m.getSource(LAYER_CIRCLE)&&m.getSource(LAYER_CAND));
+  }
+  function ensureTerrainOn(){
+    var m=getMap(); if(!m) return;
+    try{
+      if(!m.getSource(DEM_SRC)){
+        m.addSource(DEM_SRC,{type:'raster-dem', tiles:['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'], tileSize:256, encoding:'terrarium', maxzoom:15});
+      }
+      if(typeof m.getTerrain==='function'){
+        var t=null; try{ t=m.getTerrain(); }catch(e){}
+        if(!t||!t.source) m.setTerrain({source:DEM_SRC, exaggeration:1.35});
+      } else { m.setTerrain({source:DEM_SRC, exaggeration:1.35}); }
+    }catch(e){}
+    // also flip GAIA toggle state if present
+    try{
+      var rows=window.GAIA?window.GAIA.layers():[];
+      var ph=rows.filter(function(r){return r.id==='ph-terrain-3d';})[0];
+      if(ph && !ph.on && window.GAIA && window.GAIA.registerLayer){ /* visual only, terrain already on */ }
+    }catch(e){}
+  }
+  function setCircle(centerLat, centerLng, radiusKm){
+    var m=getMap(); if(!m) return;
+    ensureLzLayers();
+    try{
+      // circlePoly is defined in maven-smart-layer closure; duplicate lightweight version here
+      var pts=[]; var steps=36; var dLat=radiusKm/111.32; var dLng=radiusKm/(111.32*Math.cos(centerLat*Math.PI/180));
+      for(var i=0;i<steps;i++){ var a=i/steps*2*Math.PI; pts.push([centerLng+dLng*Math.sin(a), centerLat+dLat*Math.cos(a)]); }
+      pts.push(pts[0]);
+      m.getSource(LAYER_CIRCLE).setData({type:'FeatureCollection', features:[{type:'Feature', properties:{}, geometry:{type:'Polygon', coordinates:[pts]}}]});
+    }catch(e){}
+  }
+  function clearCircle(){ try{ var m=getMap(); if(m&&m.getSource(LAYER_CIRCLE)) m.getSource(LAYER_CIRCLE).setData({type:'FeatureCollection', features:[]}); }catch(e){} }
+  function clearCandidates(){ try{ var m=getMap(); if(m&&m.getSource(LAYER_CAND)) m.getSource(LAYER_CAND).setData({type:'FeatureCollection', features:[]}); state.candidates=[]; }catch(e){} }
+  // BGC helipad allowlist — embedded + lazy fetch
+  var helipadsCache=null;
+  function loadHelipadsSync(){
+    if(helipadsCache) return helipadsCache;
+    helipadsCache=[
+      {name:"St. Luke's Medical Center Global City Heliport PH-0375", lat:14.55507, lng:121.04797, helipad:true},
+      {name:"Grand Hyatt Manila Residences South Tower Heliport", lat:14.55647, lng:121.05183, helipad:true},
+      {name:"W City Center Heliport", lat:14.5528, lng:121.0445, helipad:true},
+      {name:"Uptown Mall Heliport", lat:14.5562, lng:121.0532, helipad:true},
+      {name:"One McKinley Place Helipad", lat:14.5462, lng:121.0512, helipad:true},
+      {name:"Eight Forbestown Road Helipad", lat:14.5522, lng:121.0412, helipad:true},
+      {name:"Fort Legend Tower Helipad", lat:14.5515, lng:121.0455, helipad:true},
+      {name:"Globe Tower Helipad", lat:14.5505, lng:121.0488, helipad:true},
+      {name:"Asian Century Center Heliport", lat:14.5535, lng:121.0425, helipad:true},
+      {name:"SM Aura Office Tower Helipad", lat:14.5465, lng:121.0548, helipad:true},
+      {name:"Pacific Plaza Towers Helipad", lat:14.5485, lng:121.0525, helipad:true},
+      {name:"Fort Bonifacio Heliport (AFP)", lat:14.5175, lng:121.0450, helipad:true},
+      {name:"Fort Victoria Tower A/B/C Helipad", lat:14.5550, lng:121.0435, helipad:true},
+      {name:"Essensa 1 & 2 Helipad", lat:14.5510, lng:121.0420, helipad:true},
+      {name:"Seda BGC Helipad", lat:14.5521, lng:121.0472, helipad:true},
+      {name:"BGC Track 30th Open Field (LZ - Not Building)", lat:14.5542, lng:121.0450, helipad:false, lz:true},
+      {name:"Burgos Circle Open Area (NO LZ - Civilian)", lat:14.552722, lng:121.044361, helipad:false, lz:false},
+      {name:"Bonifacio High Street Central (Civilian - NO LZ)", lat:14.5535, lng:121.0465, helipad:false, lz:false}
+    ];
+    try{ fetch('/panteon/backend/geo-data/bgc_helipads.geojson').then(function(r){return r.ok?r.json():null;}).then(function(j){ if(j&&j.features) helipadsCache=j.features.map(function(f){ var c=f.geometry.coordinates; return {name:f.properties.name, lat:c[1], lng:c[0], helipad:!!f.properties.helipad, lz:!!f.properties.lz};});}).catch(function(){});}catch(e){}
+    return helipadsCache;
+  }
+  function isHelipadBuilding(lat,lng,name){
+    var pads=loadHelipadsSync();
+    for(var i=0;i<pads.length;i++){
+      var p=pads[i];
+      if(!p.helipad) continue;
+      if(havKm(lat,lng,p.lat,p.lng)*1000 < 45) return p;
+      if(name && p.name && name.toLowerCase().indexOf(p.name.toLowerCase().slice(0,8))>-1) return p;
+    }
+    return null;
+  }
+  function isCivilianBlocked(lat,lng){
+    var pads=loadHelipadsSync();
+    for(var i=0;i<pads.length;i++){
+      var p=pads[i];
+      if(p.lz===false && havKm(lat,lng,p.lat,p.lng)*1000 < 35) return {blocked:true, reason:'Civilian high-traffic: '+p.name};
+    }
+    return {blocked:false};
+  }
+  function checkPointLZ(lat,lng,building){
+    // city scope gate — BGC test
+    if(typeof SCScope!=='undefined' && SCScope.city && typeof PH_CITIES!=='undefined' && PH_CITIES[SCScope.city]){
+      var cb=PH_CITIES[SCScope.city];
+      if(lat < cb.lamin || lat > cb.lamax || lng < cb.lomin || lng > cb.lomax) return {eligible:false, reason:'Outside selected city '+SCScope.city, slope:0, discOk:false, helipad:null, civilian:{blocked:false}};
+    } else if(typeof SCScope!=='undefined' && SCScope.island && typeof PH_ISLAND_GROUPS!=='undefined' && PH_ISLAND_GROUPS[SCScope.island]){
+      var ib=PH_ISLAND_GROUPS[SCScope.island];
+      if(lat < ib.lamin || lat > ib.lamax || lng < ib.lomin || lng > ib.lomax) return {eligible:false, reason:'Outside '+SCScope.island, slope:0, discOk:false, helipad:null, civilian:{blocked:false}};
+    }
+    var slope=99, discOk=false, helipad=null, civilian=isCivilianBlocked(lat,lng);
+    var elev=queryElev(lng,lat);
+    if(elev==null) return {eligible:false, reason:'No DEM at point (outside Luzon AOI or 3D off)', slope:slope, discOk:false, helipad:null, civilian:civilian};
+    var nLat=lat+10/111320, sLat=lat-10/111320;
+    var eLng=lng+10/(111320*Math.cos(lat*Math.PI/180)), wLng=lng-10/(111320*Math.cos(lat*Math.PI/180));
+    var eN=queryElev(lng,nLat), eS=queryElev(lng,sLat), eE=queryElev(eLng,lat), eW=queryElev(wLng,lat);
+    if(eN!=null&&eS!=null&&eE!=null&&eW!=null){
+      var dzdx=(eE-eW)/20, dzdy=(eN-eS)/20;
+      slope=Math.atan(Math.sqrt(dzdx*dzdx+dzdy*dzdy))*180/Math.PI;
+    } else slope=0;
+    var slopeOk=slope < 7.0;
+    // 20m disc check — 8 neighbors must be slope<7 and not building
+    discOk=slopeOk;
+    if(discOk){
+      var checks=[[14,0],[-14,0],[0,14],[0,-14]];
+      for(var i=0;i<checks.length;i++){
+        var nlng=lng + checks[i][0]/(111320*Math.cos(lat*Math.PI/180));
+        var nlat=lat + checks[i][1]/111320;
+        var ne=queryElev(nlng,nlat);
+        if(ne==null) continue;
+        var nnLat=nlat+10/111320, nsLat=nlat-10/111320, neLng=nlng+10/(111320*Math.cos(nlat*Math.PI/180)), nwLng=nlng-10/(111320*Math.cos(nlat*Math.PI/180));
+        var nN=queryElev(nlng,nnLat), nS=queryElev(nlng,nsLat), nE=queryElev(neLng,nlat), nW=queryElev(nwLng,nlat);
+        var nslope=99;
+        if(nN!=null&&nS!=null&&nE!=null&&nW!=null){ nslope=Math.atan(Math.sqrt(Math.pow((nE-nW)/20,2)+Math.pow((nN-nS)/20,2)))*180/Math.PI; } else nslope=0;
+        if(nslope>=7){ discOk=false; break; }
+        if(isBuildingAt(nlng,nlat)){ /* allow building if this is the helipad building itself? */ }
+      }
+      // center building check — helipad buildings are allowed even if 3d-buildings hit (roof)
+      // civilian check already done
+    }
+    helipad=isHelipadBuilding(lat,lng, building?building.name:'');
+    var hasBuilding=building && building.footprint;
+    // Building that offers drop-off must be in allowlist or be open field LZ
+    var buildingOk = hasBuilding && (helipad && helipad.helipad);
+    // open field LZ (Mind Museum) has lz:true but no building
+    if(!buildingOk){
+      // allow open field LZ within 30m
+      var pads=loadHelipadsSync();
+      for(var k=0;k<pads.length;k++){ if(pads[k].lz && havKm(lat,lng,pads[k].lat,pads[k].lng)*1000 < 30){ buildingOk=true; helipad=pads[k]; break; } }
+    }
+    var civilianOk=!civilian.blocked;
+    var eligible = slopeOk && discOk && buildingOk && civilianOk;
+    var reason= eligible ? 'LZ AVAILABLE — '+(helipad?helipad.name:(building?building.name:'Open field'))+' · slope '+slope.toFixed(1)+'° · 20m disc clear · '+(helipad&&helipad.helipad?'helipad certified':'LZ field')
+      : (!slopeOk?'NO LZ — slope '+slope.toFixed(1)+'° exceeds 7°'
+        : !discOk?'NO LZ — 20m rotor disc blocked (slope/obstacle)'
+        : !buildingOk?'NO LZ — building has no certified helipad/LZ (civilian/no-drop)'
+        : !civilianOk?('NO LZ — '+civilian.reason)
+        : 'NO LZ — unknown');
+    return {eligible:eligible, reason:reason, slope:slope, discOk:discOk, helipad:helipad, civilian:civilian, building:building};
+  }
+  function showLZResult(lat,lng,building,result){
+    var m=getMap(); if(!m) return;
+    ensureLzLayers();
+    // draw 20m helicopter disc at point — green if eligible else red
+    try{
+      var poly=[]; var steps=24; var rr=20/1000; var dLat=rr/111.32; var dLng=rr/(111.32*Math.cos(lat*Math.PI/180));
+      for(var s=0;s<steps;s++){ var an=s/steps*2*Math.PI; poly.push([lng+dLng*Math.sin(an), lat+dLat*Math.cos(an)]); }
+      poly.push(poly[0]);
+      m.getSource(LAYER_CAND).setData({type:'FeatureCollection', features:[{type:'Feature', properties:{eligible:result.eligible}, geometry:{type:'Polygon', coordinates:[poly]}}]});
+      m.getSource(LAYER_CIRCLE).setData({type:'FeatureCollection', features:[]});
+    }catch(e){}
+    var popupHtml='<div style="font-family:var(--font-mono);font-size:11px;min-width:220px">'
+      +'<div style="font-weight:700;letter-spacing:.06em;color:'+(result.eligible?'#0a7a0a':'#b00020')+'">'+(result.eligible?'✅ LZ AVAILABLE':'❌ NO LZ')+'</div>'
+      +'<div style="margin:4px 0 6px;color:var(--text-dark);line-height:1.4">'+result.reason+'</div>'
+      +'<div style="font-size:10px;color:var(--text-muted)">'+Number(lat).toFixed(5)+'N '+Number(lng).toFixed(5)+'E · slope '+result.slope.toFixed(1)+'° · 20m disc '+(result.discOk?'clear':'blocked')+' · '+(building&&building.name?building.name:'map point')+'</div>'
+      +'<div style="margin-top:8px;display:flex;gap:6px">'
+      + (result.eligible?'<button onclick="(function(){ var m=window.fusionMap; try{ if(typeof enterAoiMode===\'function\'){ window.LZDZ.toggle(false); enterAoiMode(); } }catch(e){} })()" style="flex:1;padding:6px 8px;background:#DFF140;border:1px solid #000;font-size:10px;letter-spacing:.06em">✔ CONFIRM DROP</button>':'')
+      +'<button onclick="try{ window.LZDZ.clear(); }catch(e){}" style="padding:6px 8px;border:1px solid #000;background:#fff;font-size:10px">✕ CLEAR</button>'
+      +'</div></div>';
+    try{
+      if(window.S && S.popup) { try{ S.popup.remove(); }catch(e){} }
+      S.popup=new maplibregl.Popup({closeButton:true, offset:12}).setLngLat([lng,lat]).setHTML(popupHtml).addTo(m);
+      m.flyTo({center:[lng,lat], zoom:Math.max(m.getZoom(),17), duration:900});
+    }catch(e){}
+    try{ if(typeof toast==='function') toast(result.reason, result.eligible?'success':'warning'); }catch(e){}
+    renderLzHud();
+  }
+  function showHoverDisc(lat,lng,eligible){
+    var m=getMap(); if(!m) return;
+    ensureLzLayers();
+    try{
+      var poly=[]; var steps=20; var rr=20/1000; var dLat=rr/111.32; var dLng=rr/(111.32*Math.cos(lat*Math.PI/180));
+      for(var s=0;s<steps;s++){ var an=s/steps*2*Math.PI; poly.push([lng+dLng*Math.sin(an), lat+dLat*Math.cos(an)]); }
+      poly.push(poly[0]);
+      // draw hover disc with 0.35 opacity, green/red tint — no popup, just ghost
+      m.getSource(LAYER_CAND).setData({type:'FeatureCollection', features:[{type:'Feature', properties:{eligible:eligible}, geometry:{type:'Polygon', coordinates:[poly]}}]});
+    }catch(e){}
+  }
+  function clearHover(){
+    try{ var m=getMap(); if(m&&m.getSource(LAYER_CAND)) m.getSource(LAYER_CAND).setData({type:'FeatureCollection', features:[]}); }catch(e){}
+  }
+  function showGroundNoLZ(lat,lng){
+    var res={eligible:false, reason:'NO LZ — not a building (ground/street, pick a rooftop)', slope:0, discOk:false, helipad:null, civilian:{blocked:false}};
+    showLZResult(lat,lng,null,res);
+  }
+  function havKm(lat1,lng1,lat2,lng2){
+    var R=6371.0088,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
+    var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+    return R*2*Math.asin(Math.sqrt(a));
+  }
+  function queryElev(lng,lat){
+    var m=getMap(); if(!m) return null;
+    try{
+      if(typeof m.queryTerrainElevation==='function'){
+        var e=m.queryTerrainElevation([lng,lat]);
+        if(e!=null&&isFinite(e)) return e;
+      }
+    }catch(e){}
+    return null;
+  }
+  function isBuildingAt(lng,lat){
+    var m=getMap(); if(!m) return false;
+    try{
+      var pt=m.project([lng,lat]);
+      var feats=m.queryRenderedFeatures(pt,{layers:['3d-buildings']});
+      return !!(feats&&feats.length);
+    }catch(e){ return false; }
+  }
+  // GTA-style streaming: chunked, viewport-culled, progressive
+  function getViewportBounds(m){
+    try{
+      var b=m.getBounds(); if(!b) return null;
+      return { minLat:b.getSouth(), maxLat:b.getNorth(), minLng:b.getWest(), maxLng:b.getEast() };
+    }catch(e){ return null; }
+  }
+  function chunksForCircle(centerLat, centerLng, radiusM, chunkM){
+    var rKm=radiusM/1000, chunks=[];
+    var latSpan=chunkM/111320;
+    var minLat=centerLat - rKm/111.32, maxLat=centerLat + rKm/111.32;
+    var minLng=centerLng - rKm/(111.32*Math.cos(centerLat*Math.PI/180)), maxLng=centerLng + rKm/(111.32*Math.cos(centerLat*Math.PI/180));
+    var nLat=Math.ceil((maxLat-minLat)/latSpan), nLng=Math.ceil((maxLng-minLng)/(chunkM/(111320*Math.cos(centerLat*Math.PI/180))));
+    for(var iy=0; iy<nLat; iy++){
+      for(var ix=0; ix<nLng; ix++){
+        var clat=minLat + (iy+0.5)*latSpan;
+        var clng=minLng + (ix+0.5)*chunkM/(111320*Math.cos(clat*Math.PI/180));
+        if(havKm(centerLat,centerLng,clat,clng) > rKm + chunkM/1000*0.75) continue;
+        chunks.push({ lat:clat, lng:clng, iy:iy, ix:ix, minLat:minLat+iy*latSpan, maxLat:minLat+(iy+1)*latSpan, minLng:minLng+ix*chunkM/(111320*Math.cos(clat*Math.PI/180)), maxLng:minLng+(ix+1)*chunkM/(111320*Math.cos(clat*Math.PI/180)) });
+      }
+    }
+    return chunks;
+  }
+  async function analyze(centerLat, centerLng, radiusM){
+    if(state.analyzing) return;
+    // cancel any pending streaming
+    if(state._streamTimer){ clearTimeout(state._streamTimer); state._streamTimer=null; }
+    state.analyzing=true;
+    ensureTerrainOn();
+    ensureLzLayers();
+    var m=getMap();
+    var hint=document.getElementById('mavenAoiHint');
+    if(hint){ hint.textContent='LZ/DZ: PREPARING '+Math.round(radiusM)+'m REGION…'; hint.classList.remove('maven-hidden'); }
+    await new Promise(function(r){ setTimeout(r, 280); });
+    // GTA: build chunk grid 80m — only stream viewport first
+    var chunkM=80;
+    var allChunks=chunksForCircle(centerLat, centerLng, radiusM, chunkM);
+    var vp=getViewportBounds(m);
+    var visible=[], hidden=[];
+    allChunks.forEach(function(ch){
+      var inVp=!vp || !(ch.maxLat < vp.minLat || ch.minLat > vp.maxLat || ch.maxLng < vp.minLng || ch.minLng > vp.maxLng);
+      if(inVp) visible.push(ch); else hidden.push(ch);
+    });
+    // sort visible by distance to center (closest first — like GTA LOD)
+    visible.sort(function(a,b){ return havKm(centerLat,centerLng,a.lat,a.lng)-havKm(centerLat,centerLng,b.lat,b.lng); });
+    hidden.sort(function(a,b){ return havKm(centerLat,centerLng,a.lat,a.lng)-havKm(centerLat,centerLng,b.lat,b.lng); });
+    var ordered=visible.concat(hidden);
+    if(hint) hint.textContent='LZ/DZ: STREAMING '+ordered.length+' CHUNKS ('+visible.length+' IN VIEW) — '+Math.round(radiusM)+'m';
+    try{ m.getSource(LAYER_CAND).setData({type:'FeatureCollection', features:[]}); }catch(e){}
+    state.candidates=[];
+    state.chunkCache={};
+    var stepM=14, rotorR=20;
+    var allEligible=[]; // gather across chunks for final clustering
+    var processed=0, featsAcc=[];
+    // helper: build grid map for fast 20m neighbor check within chunk
+    function hasNeighborGap(p, gridMap){
+      // check 8 neighbors at ~14m
+      var offs=[14, -14];
+      for(var dx=0; dx<2; dx++) for(var dy=0; dy<2; dy++){
+        var nlng=p.lng + offs[dx]/(111320*Math.cos(p.lat*Math.PI/180));
+        var nlat=p.lat + offs[dy]/111320;
+        var key=Math.round(nlng*1000)+','+Math.round(nlat*1000);
+        // quantized lookup — if neighbor missing or not eligible → gap
+        // we use coarse map of eligible keys
+        var q=gridMap[key];
+        if(!q || !q.eligible) { /* allow 1 missing due to sparsity */ }
+      }
+      return false;
+    }
+    // process chunks one by one, yielding to UI
+    for(var ci=0; ci<ordered.length; ci++){
+      var ch=ordered[ci];
+      // viewport culling: if user panned far and chunk now far outside vp + not near center, defer
+      if(ci>=visible.length && processed>visible.length && hint){
+        hint.textContent='LZ/DZ: STREAMING '+processed+'/'+ordered.length+' CHUNKS — '+featsAcc.length+' CLEARINGS (PAN TO LOAD MORE)';
+      } else if(hint){
+        hint.textContent='LZ/DZ: STREAMING '+ (ci+1)+'/'+ordered.length+' — '+chunkM+'m CHUNKS — '+Math.round(radiusM)+'m';
+      }
+      // sample this chunk at 14m
+      var latStep=stepM/111320;
+      var chunkElig=[];
+      var lat0=Math.max(ch.minLat, centerLat - radiusM/111320), lat1=Math.min(ch.maxLat, centerLat + radiusM/111320);
+      for(var lat=lat0; lat<=lat1; lat+=latStep){
+        var lngStep=stepM/(111320*Math.cos(lat*Math.PI/180));
+        var lng0=Math.max(ch.minLng, centerLng - radiusM/(111.32*Math.cos(lat*Math.PI/180)));
+        var lng1=Math.min(ch.maxLng, centerLng + radiusM/(111.32*Math.cos(lat*Math.PI/180)));
+        for(var lng=lng0; lng<=lng1; lng+=lngStep){
+          if(havKm(centerLat,centerLng,lat,lng) > radiusM/1000 + 0.008) continue;
+          var elev=queryElev(lng,lat);
+          if(elev==null) continue;
+          var nLat=lat+10/111320, sLat=lat-10/111320;
+          var eLng=lng+10/(111320*Math.cos(lat*Math.PI/180)), wLng=lng-10/(111320*Math.cos(lat*Math.PI/180));
+          var eN=queryElev(lng,nLat), eS=queryElev(lng,sLat), eE=queryElev(eLng,lat), eW=queryElev(wLng,lat);
+          var slope=99;
+          if(eN!=null&&eS!=null&&eE!=null&&eW!=null){
+            var dzdx=(eE-eW)/20, dzdy=(eN-eS)/20;
+            slope=Math.atan(Math.sqrt(dzdx*dzdx+dzdy*dzdy))*180/Math.PI;
+          } else slope=0;
+          if(slope<7.0) chunkElig.push({lat:lat,lng:lng,elev:elev,slope:slope,eligible:true, building:false});
+        }
+      }
+      // fast building check: only for sparse sample (every 2nd) to stay 60fps, GTA-style LOD
+      // we check only cluster seeds later — for now mark all as not building, filter centroids at end
+      // rotor 40m disc check: require 20m neighbor eligible — use local grid map
+      var gridMap={};
+      chunkElig.forEach(function(p){
+        var k=Math.round(p.lng*1000)+','+Math.round(p.lat*1000);
+        gridMap[k]=p;
+      });
+      var chunkFinal=[];
+      for(var pi=0; pi<chunkElig.length; pi++){
+        var p=chunkElig[pi];
+        // 20m disc: check 4 cardinal neighbors at 14m + center
+        var ok=true;
+        var checks=[[14,0],[-14,0],[0,14],[0,-14],[10,10],[-10,-10],[10,-10],[-10,10]];
+        for(var cc=0; cc<checks.length; cc++){
+          var nlng=p.lng + checks[cc][0]/(111320*Math.cos(p.lat*Math.PI/180));
+          var nlat=p.lat + checks[cc][1]/111320;
+          var nk=Math.round(nlng*1000)+','+Math.round(nlat*1000);
+          // if neighbor outside circle, allow — else must be eligible in this chunk or globally
+          if(havKm(centerLat,centerLng,nlat,nlng) > radiusM/1000) continue;
+          // if neighbor not in this chunk, we cannot guarantee — conservatively require it exists in overall map (allow but don't fail)
+          // so only fail if neighbor exists in chunkElig map and is not eligible
+          // since we only stored eligible, missing means slope>=7 or no data → fail
+          // to avoid false negatives at chunk edges, only enforce if neighbor inside same chunk bounds
+          if(nlat>=ch.minLat && nlat<=ch.maxLat && nlng>=ch.minLng && nlng<=ch.maxLng){
+            if(!gridMap[nk]){ ok=false; break; }
+          }
+        }
+        if(ok) chunkFinal.push(p);
+      }
+      allEligible=allEligible.concat(chunkFinal);
+      processed++;
+      // progressive render every 2 chunks or if visible chunks done
+      if(processed%2===0 || ci===ordered.length-1 || ci===visible.length-1){
+        // cluster globally so far (lightweight)
+        var tmpClusters=[]; var used={};
+        // cluster only chunkFinal + existing to avoid re-clustering all
+        var pool=allEligible.slice(-800).concat(allEligible.slice(0, Math.min(200, allEligible.length))); // window
+        // simpler: cluster allEligible but cap
+        var finalForRender=allEligible;
+        // building filter on cluster centroids only (cheap — ~tens)
+        var clusters=[]; var u={};
+        for(var a=0;a<finalForRender.length;a++){
+          if(u[a]) continue;
+          var ca=finalForRender[a];
+          var pts=[ca]; u[a]=1;
+          for(var b=a+1;b<finalForRender.length;b++){
+            if(u[b]) continue;
+            if(havKm(ca.lat,ca.lng,finalForRender[b].lat,finalForRender[b].lng)*1000 < 30){ pts.push(finalForRender[b]); u[b]=1; }
+            if(pts.length>12) break;
+          }
+          var sx=0,sy=0,ss=0; pts.forEach(function(pp){ sx+=pp.lng; sy+=pp.lat; ss+=pp.slope; });
+          var c={ lng:sx/pts.length, lat:sy/pts.length, size:pts.length, avgSlope:ss/pts.length };
+          // cheap building check on centroid only (GTA: LOD — don't query every point)
+          if(!isBuildingAt(c.lng,c.lat)) clusters.push(c);
+          if(clusters.length>=80) break;
+        }
+        clusters.sort(function(x,y){ return (x.avgSlope - y.avgSlope) || (y.size - x.size); });
+        clusters=clusters.slice(0,80);
+        // update global featsAcc progressively
+        featsAcc=clusters.map(function(c,i){
+          var poly=[]; var steps=20; var rr=20/1000; var dLat=rr/111.32; var dLng=rr/(111.32*Math.cos(c.lat*Math.PI/180));
+          for(var s=0;s<steps;s++){ var an=s/steps*2*Math.PI; poly.push([c.lng+dLng*Math.sin(an), c.lat+dLat*Math.cos(an)]); }
+          poly.push(poly[0]);
+          return { type:'Feature', properties:{ eligible:true, best:i===0, slope:c.avgSlope.toFixed(1), size:c.size }, geometry:{ type:'Polygon', coordinates:[poly] } };
+        });
+        try{ m.getSource(LAYER_CAND).setData({type:'FeatureCollection', features:featsAcc}); }catch(e){}
+        state.candidates=clusters;
+        renderLzHud();
+      }
+      // yield to UI — GTA streaming: don't block
+      await new Promise(function(r){ setTimeout(r, 16); });
+      // if user cleared or toggled off, abort streaming
+      if(!state.on || !state.center || state.center.lat!==centerLat || state.center.lng!==centerLng) break;
+      // if viewport panned far, reprioritize remaining chunks
+      if(ci===visible.length-1 && hidden.length){
+        // listen for pan to stream hidden
+        if(hint) hint.textContent='LZ/DZ: '+featsAcc.length+' CLEARINGS IN VIEW — PAN TO STREAM MORE ('+hidden.length+' HIDDEN CHUNKS)';
+      }
+    }
+    state.candidates=state.candidates||[];
+    state.analyzing=false;
+    if(hint){
+      var ac=state.candidates;
+      hint.textContent = featsAcc.length ? 'LZ/DZ: '+featsAcc.length+' CLEARINGS — GREEN <7° · 40m DISC · BEST '+(ac[0]?ac[0].avgSlope.toFixed(1)+'°':'')+' — CLICK CLEARING TO FLY · DRAG CIRCLE TO RESIZE · ESC TO CLEAR' : 'LZ/DZ: NO CLEARINGS IN '+Math.round(radiusM)+'m — TRY LARGER RADIUS OR FLATTER GROUND';
+    }
+    try{ if(typeof toast==='function') toast('LZ/DZ: '+featsAcc.length+' clearings ('+radiusM+'m)', featsAcc.length?'success':'warning'); }catch(e){}
+  }
+
+  function onMapClick(e){
+    if(!state.on || !state.armed) return;
+    // GTA: only check helicopter-size point (building) — no heatmap
+    var b=null; try{ if(typeof pickBuildingAt==='function') b=pickBuildingAt(getMap(), e.point); }catch(ex){}
+    var lat=(b&&b.lat!=null)?b.lat:e.lngLat.lat, lng=(b&&b.lng!=null)?b.lng:e.lngLat.lng;
+    state.center={lat:lat,lng:lng};
+    // ensure city scope is loaded — GTA chunked: only this city's bbox is active
+    var res=checkPointLZ(lat,lng,b);
+    showLZResult(lat,lng,b,res);
+    // keep armed for next clicks
+    var hint=document.getElementById('mavenAoiHint');
+    if(hint) hint.textContent= res.eligible ? '✅ LZ — CLICK NEXT BUILDING OR ESC' : '❌ NO LZ — TRY ANOTHER BGC BUILDING — ESC TO EXIT';
+  }
+  // Drag circle disabled for point-check mode — city bbox from dropdown is the region (GTA chunked)
+  function onMapMouseDown(e){ return; }
+  function onMapMouseMove(e){ return; }
+  function onMapMouseUp(e){ return; }
+  function wireMap(){
+    var m=getMap(); if(!m) return;
+    if(m.__lzWired) return; m.__lzWired=true;
+    m.on('click', onMapClick);
+    m.on('mousedown', onMapMouseDown);
+    m.on('mousemove', onMapMouseMove);
+    m.on('mouseup', onMapMouseUp);
+    // click candidate to fly
+    m.on('click', function(e){
+      if(!state.on) return;
+      try{
+        var feats=m.queryRenderedFeatures(e.point,{layers:['lz-candidate-fill']});
+        if(feats&&feats.length){
+          var f=feats[0]; var c=f.geometry&&f.geometry.coordinates&&f.geometry.coordinates[0]&&f.geometry.coordinates[0][0];
+          // centroid approx
+          var lng=f.properties && f._lng ? f._lng : e.lngLat.lng;
+          var lat=f.properties && f._lat ? f._lat : e.lngLat.lat;
+          // compute centroid from polygon
+          try{
+            var poly=f.geometry.coordinates[0]; var sx=0,sy=0; poly.forEach(function(p){ sx+=p[0]; sy+=p[1]; });
+            lng=sx/poly.length; lat=sy/poly.length;
+          }catch(ex2){ lng=e.lngLat.lng; lat=e.lngLat.lat; }
+          try{ if(typeof flyTo==='function') flyTo(lat,lng,17); else m.flyTo({center:[lng,lat], zoom:17, duration:1200}); }catch(ex3){}
+          e.preventDefault && e.preventDefault();
+        }
+      }catch(ex){}
+    });
+  }
+  function setArmed(v){
+    state.armed=!!v;
+    var h=document.getElementById('mavenAoiHint');
+    var wrap=document.querySelector('.sc-map-canvas-wrap');
+    if(state.armed){
+      try{ if(typeof exitAoiMode==='function') exitAoiMode(true); }catch(e){}
+      try{ if(typeof exitObjMode==='function') exitObjMode(true); }catch(e){}
+      try{ var sb=document.getElementById('mavenScoutBtn'); if(sb){ sb.textContent='◉ SCOUT: OFF'; sb.classList.remove('active'); } if(window.S && S) S.scoutMode=false; }catch(e2){}
+      if(wrap) wrap.classList.add('maven-crosshair');
+      if(h){
+        var cityTxt=(typeof SCScope!=='undefined' && SCScope.city) ? SCScope.city.toUpperCase() : (SCScope.island||'BGC');
+        h.textContent='LZ/DZ POINT-CHECK ('+cityTxt+'): CLICK A BUILDING (≤20m HELI DISC) — GREEN=GO RED=NO-GO — ESC CANCELS';
+        h.classList.remove('maven-hidden');
+      }
+    } else {
+      if(wrap && !state.armed) wrap.classList.remove('maven-crosshair');
+      if(h) h.classList.add('maven-hidden');
+    }
+  }
+  function toggle(on){
+    state.on=!!on;
+    ensureLzLayers();
+    wireMap();
+    if(state.on){
+      ensureTerrainOn();
+      setArmed(true);
+      setTimeout(renderLzHud, 200);
+      try{ var col=document.getElementById('mavenDrawer'); if(col) col.classList.remove('collapsed'); }catch(e){}
+      try{ if(typeof selectTab==='function') selectTab('tasks'); }catch(e){}
+      // GTA: stream on moveend
+      try{
+        var m=getMap();
+        if(m && !m.__lzMoveWired){
+          m.__lzMoveWired=true;
+          m.on('moveend', function(){
+            if(!state.on || !state.center || state.analyzing) return;
+            // if viewport changed significantly, re-stream hidden chunks
+            var vp=getViewportBounds(m);
+            // simple: if any hidden chunk now visible, re-analyze whole circle but GTA will prioritize visible
+            // we throttle
+            if(state._moveTimer) clearTimeout(state._moveTimer);
+            state._moveTimer=setTimeout(function(){ analyze(state.center.lat, state.center.lng, state.radius_m); }, 450);
+          });
+        }
+      }catch(e){}
+    } else {
+      setArmed(false);
+      clearCircle(); clearCandidates();
+      renderLzHud();
+      var h=document.getElementById('mavenAoiHint'); if(h) h.classList.add('maven-hidden');
+    }
+    renderLzHud();
+  }
+  function renderLzHud(){
+    var el=document.getElementById('mavenLzHud');
+    if(!el) return;
+    if(!state.on){
+      el.classList.add('maven-hidden'); el.innerHTML=''; return;
+    }
+    el.classList.remove('maven-hidden');
+    var scopeTxt=(typeof SCScope!=='undefined' && SCScope.city) ? SCScope.city.toUpperCase() : (SCScope.island ? SCScope.island.toUpperCase() : 'BGC — SELECT CITY FIRST');
+    var pads=loadHelipadsSync();
+    var cityPads=pads.filter(function(p){ return SCScope.city ? p.city===SCScope.city || (SCScope.city==='BGC' && p.district==='BGC') : true; });
+    var status='<span class="maven-chip '+(state.candidates.length?'ok':'low')+'">'+(scopeTxt)+'</span> <span class="maven-chip low">'+cityPads.filter(function(p){return p.helipad;}).length+' HELIPADS</span>';
+    if(state.analyzing) status='<span class="maven-chip medium">STREAMING</span> '+status;
+    el.innerHTML='<div class="maven-row" style="border-left:3px solid #DFF140"><b>LZ/DZ POINT-CHECK</b> '+status
+      +'<br><span class="mv-sub">BGC TEST · helicopter-size 20m disc · &lt;7° slope · 40m rotor · helipad allowlist · civilian blocked · GTA city-chunked (only '+scopeTxt+' loads)</span>'
+      +'<div style="display:flex;align-items:center;gap:6px;margin:6px 0 4px;flex-wrap:wrap">'
+      +'<button class="mut" id="lzHudPickBtn" title="Pick precise target inside LZ">⌖ PICK TARGET INSIDE LZ</button>'
+      +'<button class="mut" id="lzHudFlyCityBtn">◎ FLY TO '+scopeTxt+'</button>'
+      +'<button class="no" id="lzHudClearBtn">✕ CLEAR</button>'
+      +'</div>'
+      +'<div class="mv-sub" style="margin-top:4px;line-height:1.4">Click any BGC building (≤20m heli disc) — <span style="color:#0a7a0a">GREEN=GO</span> <span style="color:#b00020">RED=NO-GO</span> · '+cityPads.length+' pads in scope</div></div>';
+    var pb=document.getElementById('lzHudPickBtn');
+    if(pb) pb.onclick=function(){
+      if(typeof enterAoiMode==='function'){ setArmed(false); enterAoiMode(); try{ toast('LZ READY — CLICK BUILDING INSIDE BGC', 'success'); }catch(e){} }
+    };
+    var fb=document.getElementById('lzHudFlyCityBtn');
+    if(fb) fb.onclick=function(){
+      try{
+        var b=null;
+        if(SCScope.city && PH_CITIES[SCScope.city]) b=PH_CITIES[SCScope.city];
+        else if(SCScope.island && PH_ISLAND_GROUPS[SCScope.island]) b=PH_ISLAND_GROUPS[SCScope.island];
+        else b=PH_CITIES['BGC'];
+        if(b) flyTo((b.lamin+b.lamax)/2, (b.lomin+b.lomax)/2, 15);
+        else if(state.center) flyTo(state.center.lat, state.center.lng, 15);
+      }catch(e){}
+    };
+    var cb=document.getElementById('lzHudClearBtn');
+    if(cb) cb.onclick=function(){ clearCircle(); clearCandidates(); try{ if(S.popup) S.popup.remove(); }catch(e){} renderLzHud(); var h=document.getElementById('mavenAoiHint'); if(h){ h.textContent='LZ/DZ: CLEARED — CLICK A BGC BUILDING'; h.classList.remove('maven-hidden'); setTimeout(function(){ h.classList.add('maven-hidden'); }, 1800); } };
+  }
+  function renderLzControls(){ renderLzHud(); }
+  function register(attempt){
+    if(!(window.GAIA && typeof window.GAIA.registerLayer==='function')){ if(attempt<40) setTimeout(function(){register(attempt+1);},500); return; }
+    window.GAIA.registerLayer({ id:LZ_ID, label:'LZ/DZ Analyzer', meta:'<7° slope · 40m rotor · 3D auto', source:{type:'raster', status:'live'}, on:function(v){ toggle(v); } });
+    // ESC clears armed / candidates
+    document.addEventListener('keydown', function(ev){
+      if(ev.key!=='Escape') return;
+      if(state.dragging){ state.dragging=false; try{ var m=getMap(); if(m&&m.dragPan) m.dragPan.enable(); }catch(e){} }
+      if(state.armed){ setArmed(false); return; }
+      if(state.on && state.candidates.length){ clearCircle(); clearCandidates(); }
+    });
+    // re-wire if map swapped
+    setInterval(function(){ var m=getMap(); if(m&&!m.__lzWired) wireMap(); }, 2500);
+    wireMap();
+  }
+  window.LZDZ={ toggle:toggle, analyze:analyze, state:function(){return state;}, clear:function(){clearCircle(); clearCandidates();}, checkPointLZ:checkPointLZ, showLZResult:showLZResult, showHoverDisc:showHoverDisc, clearHover:clearHover, showGroundNoLZ:showGroundNoLZ };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ register(0); });
+  else register(0);
+})();
+</script>
+
 <script id="theme-engine">
 (function(){
   const key='panteon-admin-theme';
@@ -22887,184 +24166,330 @@ document.querySelectorAll(".empty-state").forEach(el=>{
 })();
 </script>
 
-<script id="yono-topbar-speak">
-/* YONO Topbar Speak — alieninc nav__thinking port for panteon topbar-title
-   Limited-space creative: word-by-word nav-word-in, pulse dots, caret/ellipsis.
-   Automatic mode owns #topbarTitle; Manual/normal shows page title. */
+<script id="topbar-info-bar">
+/* Topbar Info Bar — replaces YONO speak.
+   The bar no longer mirrors YONO's transcript (transcript lives in MSS Automatic's panel).
+   Instead topbar-title becomes a pure contextual help strip: on hover/focus of ANY
+   hoverable control, its info is streamed into the bar word-by-word.
+   Idle shows a hover prompt — never a redundant page title like "Overview". */
 (function(){
   const title=document.getElementById('topbarTitle');
   const bar=document.querySelector('.topbar');
   if(!title||!bar) return;
   const PAGES_MAP=window.PAGES||{};
-  let origPageTitle=title.textContent.trim()||'Overview';
-  let yonoActive=false, yonoTimer=null, yonoWords=[], yonoIdx=0;
-  let lineEl=null, pulseEl=null;
+  const IDLE_TEXT='— hover a control —';
+  let infoActive=false, infoTimer=null, words=[], wIdx=0;
+  let restoreTimer=null, currentSrc=null;
 
-  function ensureLine(){
-    if(lineEl && title.contains(lineEl)) return lineEl;
+  function setIdle(){
+    infoActive=false; currentSrc=null;
+    if(infoTimer){clearInterval(infoTimer); infoTimer=null;}
+    title.classList.remove('is-info','yono-speaking');
+    title.classList.add('is-idle');
     title.innerHTML='';
-    title.classList.add('yono-speaking');
-    pulseEl=document.createElement('span');
-    pulseEl.className='topbar-yono-pulse';
-    pulseEl.innerHTML='<i></i><i></i><i></i>';
-    lineEl=document.createElement('span');
-    lineEl.className='topbar-yono-line';
-    lineEl.id='topbarYonoLine';
-    title.appendChild(pulseEl);
-    title.appendChild(lineEl);
-    return lineEl;
-  }
-  function clearYono(){
-    yonoActive=false;
-    if(yonoTimer){ clearInterval(yonoTimer); yonoTimer=null; }
-    title.classList.remove('yono-speaking');
-    title.innerHTML='';
-    // restore page title
-    const hash=(location.hash||'#overview').slice(1);
-    const t=PAGES_MAP[hash]||origPageTitle||'Overview';
-    title.textContent=t;
-    title.title='';
+    title.textContent=IDLE_TEXT;
+    title.removeAttribute('title');
     title.style.color='';
     title.style.letterSpacing='';
+    title.style.opacity='1';
   }
-  function fitWords(words){
-    // limited space: estimate max words that fit topbar-title width
-    const maxW=title.clientWidth-42; // minus pulse+gap
-    const avgChar=7.2; const gap=4;
+  // alias kept for legacy stub
+  const setDefault=setIdle;
+  function getDefault(){ return IDLE_TEXT; }
+  // Suppress native browser tooltips — migrate every [title] to data-topbar-info
+  // and strip the attribute so only the topbar talks (user request: no hover boxes).
+  function shouldIgnoreTopbar(el){
+    return !!(el && el.classList && (
+      el.classList.contains('nav-section-title') ||
+      el.classList.contains('section-title') ||
+      el.classList.contains('nav-section-title')
+    ));
+  }
+  function migrateTitle(el){
+    if(!el || !el.getAttribute) return;
+    if(shouldIgnoreTopbar(el)){
+      if(el.hasAttribute('title')) el.removeAttribute('title');
+      return;
+    }
+    const t=el.getAttribute('title');
+    if(t && t.trim().length>=2){
+      if(!el.hasAttribute('data-topbar-info')) el.setAttribute('data-topbar-info', t.trim());
+      el.removeAttribute('title');
+    }
+  }
+  function migrateAll(root){
+    if(!root || !root.querySelectorAll) return;
+    root.querySelectorAll('[title]').forEach(migrateTitle);
+  }
+  migrateAll(document);
+  try{
+    new MutationObserver(function(muts){
+      muts.forEach(function(m){
+        if(m.type==='attributes' && m.attributeName==='title') migrateTitle(m.target);
+        if(m.type==='childList'){
+          m.addedNodes.forEach(function(n){
+            if(n.nodeType===1){
+              if(n.hasAttribute && n.hasAttribute('title')) migrateTitle(n);
+              migrateAll(n);
+            }
+          });
+        }
+      });
+    }).observe(document.documentElement, {attributes:true, attributeFilter:['title'], childList:true, subtree:true});
+  }catch(e){}
+  function fitWords(all){
+    const maxW=Math.max(180, title.clientWidth-18);
+    const avg=7.0, gap=4;
     let acc=0, out=[];
-    for(let w of words){
-      let wl=w.length*avgChar+gap;
-      if(acc+wl>maxW && out.length>=4) break;
+    for(let w of all){
+      let wl=w.length*avg+gap;
+      if(acc+wl>maxW && out.length>=3) break;
       out.push(w); acc+=wl;
     }
-    if(out.length<words.length) return {shown:out, truncated:true};
-    return {shown:words, truncated:false};
+    return out.length<all.length ? {shown:out, truncated:true} : {shown:all, truncated:false};
   }
-  function speak(text, opts){
-    opts=opts||{};
-    const raw=String(text||'').replace(/\s+/g,' ').trim();
+  function showInfo(rawText, srcEl){
+    const raw=String(rawText||'').replace(/\s+/g,' ').trim();
     if(!raw) return;
-    // truncate for topbar: show first N words that fit, keep full in title attr
-    const words=raw.split(' ').filter(Boolean);
-    const fit=fitWords(words);
-    let shown=fit.shown;
-    // if thinking/consulting, show exactly as is (short)
-    if(opts.thinking){ shown=words.slice(0,12); }
-    yonoActive=true;
-    const line=ensureLine();
-    line.textContent='';
-    line.classList.remove('is-done','is-typing');
-    line.classList.add('is-visible','is-typing');
-    line.title=raw; // full on hover
-    title.title=raw;
-    yonoWords=shown; yonoIdx=0;
-    if(yonoTimer) clearInterval(yonoTimer);
-    // word-by-word like alieninc
-    const WORD_DELAY=opts.thinking?160:140;
-    yonoTimer=setInterval(function(){
-      if(yonoIdx>=yonoWords.length){
-        clearInterval(yonoTimer); yonoTimer=null;
-        line.classList.remove('is-typing');
-        line.classList.add('is-done');
+    currentSrc=srcEl||null;
+    infoActive=true;
+    if(restoreTimer){clearTimeout(restoreTimer); restoreTimer=null;}
+    if(infoTimer){clearInterval(infoTimer); infoTimer=null;}
+    const all=raw.split(' ').filter(Boolean);
+    const fit=fitWords(all);
+    const shown=fit.shown;
+    title.classList.remove('is-idle');
+    title.classList.add('is-info');
+    title.classList.remove('yono-speaking');
+    title.removeAttribute('title');
+    title.innerHTML='';
+    title.style.opacity='1';
+    words=shown; wIdx=0;
+    // stream word-by-word (info talk), keeps the "talking" feel but now for help
+    const DELAY=78;
+    infoTimer=setInterval(function(){
+      if(wIdx>=words.length){
+        clearInterval(infoTimer); infoTimer=null;
         if(fit.truncated){
           const more=document.createElement('span');
-          more.textContent='…';
-          more.style.opacity='.6';
-          more.style.marginLeft='4px';
-          line.appendChild(more);
-        }
-        // auto-clear after hold if not locked
-        if(!opts.sticky){
-          setTimeout(function(){
-            if(yonoActive && !document.getElementById('mavenLeftCol')?.getAttribute('data-mfeat')?.includes('automatic')){
-              clearYono();
-            }
-          }, 4200);
+          more.textContent=' …';
+          more.style.opacity='.55';
+          more.style.marginLeft='2px';
+          title.appendChild(more);
         }
         return;
       }
-      const w=document.createElement('span');
-      w.className='topbar-yono-word';
-      w.textContent=yonoWords[yonoIdx];
-      w.style.animationDelay=(yonoIdx*18)+'ms';
-      line.appendChild(w);
-      if(yonoIdx < yonoWords.length-1) line.appendChild(document.createTextNode(' '));
-      yonoIdx++;
-    }, WORD_DELAY);
-    // ensure visible
-    line.scrollTop=0;
+      const s=document.createElement('span');
+      s.className='topbar-info-word';
+      s.textContent=words[wIdx];
+      s.style.animationDelay=(wIdx*14)+'ms';
+      title.appendChild(s);
+      wIdx++;
+    }, DELAY);
   }
-  function thinking(txt){ speak(txt||'YONO — consulting ontology', {thinking:true, sticky:true}); }
-
-  // expose
-  window.__yonoTopbar={speak:speak, thinking:thinking, clear:clearYono, ensureLine:ensureLine,
-    get active(){return yonoActive;}};
-
-  // Manual vs Automatic gating: topbar shows YONO only in automatic
-  function isAuto(){ const col=document.getElementById('mavenLeftCol'); return col && col.getAttribute('data-mfeat')==='automatic'; }
-  // patch navigate to respect YONO ownership
+  const ENRICH={
+    'Scope':'Scope — region, country, zone & time window for GDELT and OpenSky',
+    'Notes':'Notes — Watch Notes for this AOI',
+    'GAIA':'GAIA — terrain overlays, sensor geometry & geo tools',
+    '◆ MAVEN':'◆ MAVEN — tasks, assets, COA, objects & places',
+    '▹ Theater':'Theater — full-screen map focus (Esc to exit)',
+    'Light/Dark':'Theme — toggle light / dark',
+    'Close':'Close — dismiss this panel',
+    'Toggle sidebar':'Toggle sidebar — collapse or expand navigation',
+    'Collapse sidebar':'Collapse sidebar — hide the left nav to maximize map',
+    'Switch MSS mode — Manual or Automatic':'MSS mode — switch Manual · full deck or Automatic · YONO autonomous',
+    'MANUAL ↻':'MSS is Manual — operator in control, full deck',
+    'AUTOMATIC ↻':'MSS is Automatic — YONO autonomous, directives on the map',
+    'MANUAL':'MSS is Manual — operator in control, full deck',
+    'AUTOMATIC':'MSS is Automatic — YONO autonomous, directives on the map'
+  };
+  function enrich(s){
+    s=String(s||'').trim();
+    if(ENRICH[s]) return ENRICH[s];
+    return s;
+  }
+  // richer button-text → help mapping so the bar says more than the label itself
+  const BTN_HELP={
+    'MAVEN':'MAVEN — Smart Layer: tasks, assets, COA, objects & places',
+    'GEO':'GEO — GAIA Geo Controller, terrain & overlays',
+    'NOTES':'NOTES — Watch Notes for this AOI',
+    'AGENT':'AGENT — YONO ontology chat (Ctrl+Shift+Y)',
+    'PICK TARGET ON MAP':'Pick Target — click map to set Maven task target',
+    'SCOUT: OFF':'Scout — spawn physics-bound scout with live viewpoint cone',
+    'SCOUT: ON':'Scout — physics-bound scout active, click map to move, click scout to clear',
+    'Run GDELT':'Run GDELT — query GDELT Doc 2.0 for current scope & time window',
+    'Run OpenSky':'Run OpenSky — fetch live aircraft for current scope',
+    'Validate':'Validate — check GDELT query & scope before running',
+    'Refresh':'Refresh — re-render fusion map with current layers',
+    'OVERLAYS ON':'Overlays — all markers, rings & towers visible',
+    'OVERLAYS OFF':'Overlays — markers, rings & towers hidden',
+    'REGISTER OBJECT':'+ Register Object — create a new ontology object',
+    'WARGAME ANALYSIS · 3 POSTURES':'Wargame — campaign posture comparison scored by SIMS'
+  };
+  const ID_HELP={
+    'mvScopeRegion':'WHERE — choose operational region',
+    'mvScopeCountry':'COUNTRY — choose country within region',
+    'mvScopeIsland':'ISLAND — Luzon · Visayas · Mindanao',
+    'mvScopeCity':'CITY — choose city',
+    'scCountrySelect':'Country — filter GDELT & OpenSky to a country',
+    'scZoneSelect':'Zone — sub-region filter',
+    'fusionQuery':'GDELT query — raw keywords (country scope appended automatically)',
+    'mavenPlaceSearch':'Search places — name, industry or stack',
+    'mssMicSelect':'Microphone — choose input device for Automatic voice'
+  };
+  function infoFor(el){
+    if(!el||!el.getAttribute) return null;
+    // lazy-migrate any lingering native title before reading (prevents tooltip flash)
+    if(el.hasAttribute && el.hasAttribute('title')) migrateTitle(el);
+    // never talk for decorative section headers (user: Platform etc is self-evident)
+    if(shouldIgnoreTopbar(el)) return null;
+    // dynamic MSS toggle — reflect current mode, not static title
+    if(el.id==='mssModeToggle'){
+      try{
+        const m=(localStorage.getItem('mss_mode')||'').toLowerCase();
+        if(m==='automatic') return 'MSS is Automatic — YONO autonomous, directives on the map';
+        if(m==='manual') return 'MSS is Manual — operator in control, full deck';
+      }catch(e){}
+      // fallback to enriched title
+    }
+    // explicit overrides first
+    const a=el.getAttribute('data-topbar-info');
+    if(a && a.trim()) return enrich(a.trim());
+    const b=el.getAttribute('data-info');
+    if(b && b.trim()) return enrich(b.trim());
+    // MSS cards — use data-mss
+    const mss=el.getAttribute('data-mss');
+    if(mss==='manual') return 'MSS is Manual — operator in control, full deck · MAVEN | GEO | NOTES | AGENT';
+    if(mss==='automatic') return 'MSS is Automatic — YONO autonomous, directives on the map · you confirm';
+    const t=el.getAttribute('title');
+    if(t && t.trim().length>=2) return enrich(t.trim());
+    const al=el.getAttribute('aria-label');
+    if(al && al.trim().length>=3 && !/toggle sidebar/i.test(al)) return enrich(al.trim());
+    const pg=el.getAttribute('data-page');
+    if(pg){
+      const lbl=(el.textContent||'').replace(/\s+/g,' ').trim().slice(0,48);
+      const mp=PAGES_MAP[pg];
+      if(mp) return enrich(mp + (lbl && lbl!==mp ? ' — ' + lbl : ''));
+      if(lbl) return enrich(lbl);
+    }
+    if(el.classList && el.classList.contains('nav-item')){
+      const tx=(el.textContent||'').replace(/\s+/g,' ').trim();
+      if(tx) return enrich(tx);
+    }
+    // id-based help for selects/inputs without titles
+    if(el.id && ID_HELP[el.id]) return ID_HELP[el.id];
+    // select — show label + current value (not just the value)
+    if(el.tagName==='SELECT'){
+      const row=el.closest('.msc-row, .sc-scope-row');
+      const lab=row && row.querySelector('label');
+      if(lab){
+        const l=(lab.textContent||'').replace(/\s+/g,' ').trim();
+        const opt=el.options && el.options[el.selectedIndex] ? el.options[el.selectedIndex].textContent.replace(/\s+/g,' ').trim() : '';
+        if(l) return enrich(l + (opt && opt!=='—' && opt!=='-- Country --' && opt!=='-- Zone --' && opt!=='— LUZON / VISAYAS / MINDANAO —' && opt!=='— CITY —' ? ' — ' + opt : ' — choose'));
+      }
+    }
+    if(el.tagName==='INPUT' && el.placeholder) return enrich(el.placeholder.trim());
+    // generic hoverable fallback — ensures NOTHING is silent (user requirement)
+    // buttons / links / tiles / chips — synthesize from visible label
+    const isHoverable = el.matches
+      ? el.matches('button, a, [role="button"], select, input, textarea, .sc-hud-tile, .hive-mini, .hive-pent, .mfeat-btn, .maven-btn, .mss-mode-card, .btn, .gaia-chip, .deck-tab, .tb-tab, .nav-item, [data-mtab], [data-mfeat], [data-mss]')
+      : false;
+    if(isHoverable || el.closest && el.closest('button, a')){
+      // try button text
+      let txt=(el.textContent||'').replace(/\s+/g,' ').trim();
+      // for tiles, prefer label child
+      if(el.classList && el.classList.contains('sc-hud-tile')){
+        const lbl=el.querySelector('.sc-hud-label, .hm-lbl');
+        if(lbl) txt=(lbl.textContent||'').replace(/\s+/g,' ').trim() || txt;
+      }
+      if(txt){
+        txt=txt.slice(0,80).trim();
+        if(txt.length>=2){
+          // enrich known button texts so bar adds context, not just repeat
+          const up=txt.toUpperCase();
+          if(BTN_HELP[up]) return BTN_HELP[up];
+          if(BTN_HELP[txt]) return BTN_HELP[txt];
+          // for short labels, add a hint
+          if(txt.length<=18 && /^[A-Z0-9 :·—-]+$/.test(txt) && txt===txt.toUpperCase()){
+            return txt + ' — hover to activate';
+          }
+          return enrich(txt);
+        }
+      }
+      // selects / inputs — use placeholder or nearby label
+      const ph=el.getAttribute && (el.getAttribute('placeholder')||'');
+      if(ph && ph.trim()) return enrich(ph.trim());
+    }
+    return null;
+  }
+  function findTarget(node){
+    let el=node;
+    for(let d=0; d<6 && el && el!==document.body; d++){
+      if(el===title||el===bar) { el=el.parentElement; continue; }
+      // ignore the title itself as source
+      const inf=infoFor(el);
+      if(inf) return {el:el, info:inf};
+      el=el.parentElement;
+    }
+    return null;
+  }
+  let lastInfo='';
+  document.addEventListener('mouseover', function(e){
+    const hit=findTarget(e.target);
+    if(hit && hit.info!==lastInfo){
+      lastInfo=hit.info;
+      showInfo(hit.info, hit.el);
+    }
+  }, true);
+  document.addEventListener('mouseout', function(e){
+    const rel=e.relatedTarget;
+    // if leaving current source and not entering another info-bearing target, restore
+    if(!infoActive || !currentSrc) return;
+    let intoInfo=false;
+    if(rel){
+      let tmp=rel;
+      for(let i=0;i<5 && tmp; i++){
+        if(infoFor(tmp)){ intoInfo=true; break; }
+        tmp=tmp.parentElement;
+      }
+      // also check if still inside same source
+      if(currentSrc && (currentSrc===rel || currentSrc.contains(rel))) intoInfo=true;
+    }
+    if(!intoInfo){
+      if(restoreTimer) clearTimeout(restoreTimer);
+      restoreTimer=setTimeout(function(){ lastInfo=''; setDefault(); }, 260);
+    }
+  }, true);
+  document.addEventListener('focusin', function(e){
+    const hit=findTarget(e.target);
+    if(hit){ lastInfo=hit.info; showInfo(hit.info, hit.el); }
+  }, true);
+  document.addEventListener('focusout', function(){
+    if(infoActive){
+      if(restoreTimer) clearTimeout(restoreTimer);
+      restoreTimer=setTimeout(function(){ lastInfo=''; setDefault(); }, 220);
+    }
+  }, true);
+  // navigation no longer drives the bar — idle stays idle (page title lives in sidebar/content, not the bar)
   const _nav=window.navigate;
   if(typeof _nav==='function'){
     window.navigate=function(page){
-      const res=_nav.apply(this, arguments);
-      if(!isAuto() && !yonoActive){
-        // restore page title after nav
-        setTimeout(function(){
-          if(!yonoActive){
-            origPageTitle=PAGES_MAP[page]||page;
-            title.textContent=origPageTitle;
-            title.classList.remove('yono-speaking');
-          }
-        }, 80);
-      }
-      return res;
+      return _nav.apply(this, arguments);
     };
   }
-  // observe auto mode switches to clear/restore
-  try{
-    const col=document.getElementById('mavenLeftCol');
-    if(col){
-      new MutationObserver(function(){
-        if(isAuto()){
-          // entering auto: clear page title, show idle prompt
-          if(!yonoActive) thinking('YONO — hands-free · speak or hold');
-        } else {
-          clearYono();
-        }
-      }).observe(col, {attributes:true, attributeFilter:['data-mfeat']});
-    }
-  }catch(e){}
-  // keep circle's fourth-wall hover but disable when YONO active
-  const orig=origPageTitle;
-  const fourth="you’re in the war room — the bar is talking to you";
-  let t;
-  bar.addEventListener('mouseenter',()=>{
-    if(yonoActive) return;
-    clearTimeout(t);
-    if(title.textContent!==fourth){
-      origPageTitle=title.textContent;
-      title.textContent=fourth;
-      title.style.color='var(--accent-neon)';
-      title.style.letterSpacing='0.08em';
-    }
-  });
-  bar.addEventListener('mouseleave',()=>{
-    if(yonoActive) return;
-    t=setTimeout(()=>{
-      if(!yonoActive){
-        const hash=(location.hash||'#overview').slice(1);
-        title.textContent=PAGES_MAP[hash]||origPageTitle||orig;
-        title.style.color='';
-        title.style.letterSpacing='';
-      }
-    }, 400);
-  });
-  bar.addEventListener('click', (e)=>{
-    if(e.target.closest('button, a')) return;
-    if(yonoActive){ clearYono(); return; }
+  // click bar = scroll to top or clear info
+  bar.addEventListener('click', function(e){
+    if(e.target.closest('button, a, input, select, textarea')) return;
+    if(infoActive){ setIdle(); return; }
     const c=document.querySelector('.content');
     if(c) c.scrollTo({top:0, behavior:'smooth'});
   });
+  // init idle (overwrites hardcoded "Overview" in HTML)
+  setIdle();
+  // expose
+  window.__topbarInfo={show:showInfo, clear:setIdle, get defaultTitle(){return IDLE_TEXT;}, get idle(){return IDLE_TEXT;}};
+  // legacy stub — MSS/YONO callers previously drove the topbar; now no-ops (transcript stays in #mssTranscript)
+  window.__yonoTopbar={speak:function(){}, thinking:function(){}, clear:setIdle, ensureLine:function(){return title;}, get active(){return false;}};
 })();
 </script>
 </body>

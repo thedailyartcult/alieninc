@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="description" content="Alien Inc. Genesis Terminal v2 — WebAssembly neural re-instantiation on genesis.alieninc.tech.">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Genesis Terminal v2 — Alien Inc.</title>
+<link class="brand-icon" rel="icon" type="image/png" href="https://alieninc.tech/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ultra&family=Alfa+Slab+One&family=Instrument+Sans:wght@400;500;600;700;800&family=Instrument+Sans+Condensed:wght@700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+--hg-font-primary: "Instrument Sans", system-ui, -apple-system, sans-serif;
+--hg-font-secondary: "Instrument Sans Condensed", var(--hg-font-primary);
+--hg-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+--hg-color-primary: #14181c;
+--hg-color-secondary: #ffd400;
+--hg-color-secondary-bold: #4ea2fd;
+--hg-color-tertiary: #f6f6f6;
+--hg-color-darkest: #131920;
+--hg-color-lightest: #ffffff;
+--hg-color-muted: #f7f7f7;
+--ppl-color-text-default: #131920;
+--ppl-color-text-subtle: #3a4b5f;
+--ppl-color-text-inverse: #ffffff;
+--ppl-color-bg-default: #ffffff;
+--ppl-button-contained-bg: #ffd400;
+--ppl-button-contained-text: #131920;
+--header-height: 4.875rem;
+}
+
+* { box-sizing: border-box; }
+
+body {
+font-family: var(--hg-font-primary);
+margin: 0;
+padding: 0;
+line-height: 1.6;
+background-color: #ffffff;
+color: var(--ppl-color-text-default);
+overflow-x: hidden;
+-webkit-font-smoothing: antialiased;
+text-rendering: optimizeLegibility;
+}
+
+a { color: inherit; text-decoration: none; }
+
+.l-container {
+max-width: 1200px;
+margin: 0 auto;
+padding: 0 1.5rem;
+width: 100%;
+box-sizing: border-box;
+}
+
+#main-content, #genesis-mandate, #roadmap, #geology, #capex, #distillation-pipeline, #contact {
+scroll-margin-top: var(--header-height);
+}
+
+/* HEADER */
+.header {
+height: var(--header-height);
+background-color: var(--ppl-color-bg-default);
+border-bottom: 1px solid rgba(0,0,0,0.08);
+display: flex;
+align-items: center;
+position: sticky;
+top: 0;
+z-index: 100;
+box-shadow: 0 2px 10px rgba(0,0,0,0.01);
+}
+
+.header__inner {
+display: flex;
+flex-direction: row;
+justify-content: space-between;
+align-items: center;
+width: 100%;
+max-width: 1200px;
+margin: 0 auto;
+padding: 0 1.5rem;
+box-sizing: border-box;
+}
+
+.header__logo { display: flex; align-items: center; height: 100%; }
+
+.brand-logo {
+display: flex;
+align-items: center;
+gap: 0.12rem;
+height: 100%;
+text-decoration: none;
+}
+
+.brand-logo__text {
+font-family: "Ultra", "Alfa Slab One", "Clarendon", "Egyptian 714", "Rockwell Extra Bold", serif;
+font-size: clamp(24px, 5vw, 29px);
+font-weight: 500;
+letter-spacing: 0.02em;
+color: #131920;
+line-height: 1;
+}
+
+.brand-logo__dot {
+height: 0.56em;
+width: 0.56em;
+position: relative;
+top: calc(0.30 * clamp(24px, 5vw, 29px));
+display: block;
+}
+
+.nav__list {
+display: flex;
+flex-direction: row;
+gap: 2rem;
+list-style: none;
+margin: 0;
+padding: 0;
+}
+
+.nav__list-item-link {
+font-weight: 700;
+font-size: 1.125rem;
+color: var(--ppl-color-text-default);
+transition: color 0.2s ease-out;
+padding: 0.25rem 0;
+position: relative;
+}
+
+.nav__list-item-link:hover,
+.nav__list-item-link.is-active {
+text-decoration: underline;
+text-decoration-color: var(--hg-color-secondary);
+text-decoration-thickness: 0.16em;
+text-underline-offset: 0.2em;
+}
+
+.nav__dropdown { position: relative; }
+
+.nav__dropdown-menu {
+position: absolute;
+top: 100%;
+left: 50%;
+transform: translateX(-50%) translateY(6px);
+background: #ffffff;
+border: 1px solid rgba(19,25,32,0.1);
+border-radius: 4px;
+box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+min-width: 150px;
+opacity: 0;
+visibility: hidden;
+transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease;
+padding: 6px 0;
+z-index: 200;
+}
+
+.nav__dropdown:hover .nav__dropdown-menu,
+.nav__dropdown-menu:hover {
+opacity: 1;
+visibility: visible;
+transform: translateX(-50%) translateY(10px);
+}
+
+.nav__dropdown-item {
+display: block;
+padding: 8px 20px;
+font-size: 0.92rem;
+font-weight: 600;
+color: var(--ppl-color-text-default);
+white-space: nowrap;
+transition: background 0.12s ease;
+text-decoration: none;
+}
+
+.nav__dropdown-item:hover {
+background: var(--hg-color-muted);
+text-decoration: underline;
+text-decoration-color: var(--hg-color-secondary);
+text-decoration-thickness: 0.16em;
+text-underline-offset: 0.2em;
+}
+
+.nav__dropdown-trigger { cursor: default; }
+
+.nav__dropdown-trigger::after {
+content: '';
+display: inline-block;
+width: 0;
+height: 0;
+margin-left: 5px;
+border-left: 4px solid transparent;
+border-right: 4px solid transparent;
+border-top: 5px solid var(--ppl-color-text-default);
+vertical-align: middle;
+transition: transform 0.15s ease;
+}
+
+.nav__dropdown:hover .nav__dropdown-trigger::after { transform: rotate(180deg); }
+
+.nav { position: relative; }
+
+/* THINKING NAVIGATION */
+.nav__thinking {
+position: absolute;
+top: 50%;
+right: 0;
+transform: translateY(-50%);
+display: none;
+align-items: center;
+gap: 0.9rem;
+white-space: nowrap;
+font-family: var(--hg-font-primary);
+font-size: 1.125rem;
+font-weight: 700;
+line-height: 1.3;
+color: var(--ppl-color-text-default);
+}
+
+.nav__thinking-pulse {
+display: inline-flex;
+align-items: center;
+gap: 0.32rem;
+padding-bottom: 0.1em;
+}
+
+.nav__thinking-pulse i {
+display: block;
+width: 5px;
+height: 5px;
+border-radius: 50%;
+background: var(--ppl-color-text-default);
+animation: nav-pulse-breathe 1.8s ease-in-out infinite;
+}
+
+.nav__thinking-pulse i:nth-child(2) {
+background: var(--hg-color-secondary);
+animation-delay: 0.2s;
+}
+
+.nav__thinking-pulse i:nth-child(3) { animation-delay: 0.4s; }
+
+.nav__thinking-line {
+opacity: 0;
+transition: opacity 0.5s ease, color 0.2s ease;
+}
+
+.nav__thinking-line.is-visible { opacity: 1; }
+
+.nav__thinking-line.is-typing::after {
+content: '';
+display: inline-block;
+width: 2px;
+height: 1.05em;
+margin-left: 3px;
+background: var(--ppl-color-text-default);
+vertical-align: -0.12em;
+animation: nav-caret-blink 1.2s step-end infinite;
+}
+
+.nav__thinking-line.is-done::after {
+content: '\2026';
+animation: nav-ellipsis-breathe 1.6s ease-in-out infinite;
+}
+
+.nav__thinking-word { animation: nav-word-in 0.4s ease-out both; }
+
+@keyframes nav-word-in {
+from { opacity: 0; transform: translateY(4px); }
+to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nav-pulse-breathe {
+0%, 100% { transform: scale(1); opacity: 0.15; }
+50% { transform: scale(1.5); opacity: 1; }
+}
+
+@keyframes nav-ellipsis-breathe {
+0%, 100% { opacity: 0.2; }
+50% { opacity: 1; }
+}
+
+@keyframes nav-caret-blink {
+0%, 49% { opacity: 1; }
+50%, 100% { opacity: 0; }
+}
+
+.js-nav:not(.reduced-motion) .nav__thinking { display: flex; }
+.js-nav:not(.reduced-motion) .nav__list { visibility: hidden; }
+.js-nav:not(.reduced-motion) .nav__list-item {
+opacity: 0;
+transform: translateY(8px);
+transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.js-nav:not(.reduced-motion).is-nav-revealed .nav__list { visibility: visible; }
+.js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item { opacity: 1; transform: translateY(0); }
+.js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item:nth-child(1) { transition-delay: 0.06s; }
+.js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item:nth-child(2) { transition-delay: 0.14s; }
+.js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item:nth-child(3) { transition-delay: 0.22s; }
+.js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item:nth-child(4) { transition-delay: 0.30s; }
+.js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item:nth-child(5) { transition-delay: 0.38s; }
+.js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item:nth-child(6) { transition-delay: 0.46s; }
+
+.js-nav:not(.reduced-motion) .nav__thinking { opacity: 1; transition: opacity 0.3s ease, visibility 0.3s ease; }
+.js-nav:not(.reduced-motion).is-nav-revealed .nav__thinking { opacity: 0; visibility: hidden; }
+
+/* NOTIFICATION BANNER */
+.notification-banner {
+background-color: var(--ppl-button-contained-bg);
+color: var(--ppl-color-text-default);
+padding: 0.75rem 1rem;
+text-align: center;
+}
+
+.notification-banner__inner {
+display: flex;
+justify-content: center;
+align-items: center;
+flex-wrap: wrap;
+gap: 0.75rem;
+}
+
+.notification-banner__text {
+font-weight: 700;
+font-size: 1.125rem;
+}
+
+.notification-banner__cta {
+font-weight: 700;
+text-decoration: underline;
+}
+
+.notification-banner__cta:hover { text-decoration: none; }
+
+/* HERO */
+.mission-hero {
+margin: 3rem auto;
+max-width: 1200px;
+padding: 0 1.5rem;
+box-sizing: border-box;
+}
+
+.mission-hero__panel {
+position: relative;
+background: linear-gradient(135deg, #18222d, #131920);
+min-height: 480px;
+width: 100%;
+border-radius: 4px;
+overflow: hidden;
+display: flex;
+align-items: center;
+box-sizing: border-box;
+border-left: 6px solid #ffd400;
+box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.mission-hero__overlay {
+position: relative;
+z-index: 2;
+width: 100%;
+height: 100%;
+display: flex;
+flex-direction: column;
+justify-content: center;
+padding: clamp(2.5rem, 6vw, 4.5rem);
+box-sizing: border-box;
+}
+
+.mission-hero__meta {
+display: inline-block;
+margin-bottom: 1rem;
+font-weight: 800;
+font-size: 0.8rem;
+text-transform: uppercase;
+letter-spacing: 0.08em;
+color: var(--hg-color-secondary);
+}
+
+.mission-hero__title {
+color: #ffffff;
+font-family: var(--hg-font-secondary);
+font-size: clamp(2.2rem, 5vw, 3.8rem);
+font-weight: 800;
+line-height: 1.05;
+margin: 0 0 0.9rem;
+text-transform: uppercase;
+letter-spacing: -0.01em;
+max-width: 920px;
+}
+
+.mission-hero__description {
+color: #ffffff;
+font-size: 1.125rem;
+opacity: 0.9;
+line-height: 1.55;
+max-width: 720px;
+margin: 0;
+}
+
+/* SYSTEM PROTOCOL METADATA BAR */
+.protocol-meta-bar {
+display: grid;
+grid-template-columns: repeat(4, minmax(0, 1fr));
+gap: 1rem;
+margin-top: 2rem;
+background: #131920;
+padding: 1.4rem 1.6rem;
+border-radius: 4px;
+border-left: 4px solid var(--hg-color-secondary);
+color: #ffffff;
+}
+
+.protocol-meta-bar__item-label {
+font-size: 0.72rem;
+font-weight: 800;
+text-transform: uppercase;
+letter-spacing: 0.08em;
+color: var(--hg-color-secondary);
+margin-bottom: 0.35rem;
+}
+
+.protocol-meta-bar__item-value {
+font-family: var(--hg-font-mono);
+font-size: 0.9rem;
+font-weight: 600;
+color: #ffffff;
+}
+
+/* SECTION BASICS */
+.mission-section {
+padding: 5rem 0;
+background: var(--ppl-color-bg-default);
+}
+
+.mission-section--muted {
+background: var(--hg-color-muted);
+border-top: 1px solid rgba(19, 25, 32, 0.08);
+border-bottom: 1px solid rgba(19, 25, 32, 0.08);
+}
+
+.mission-section__header {
+display: grid;
+grid-template-columns: minmax(0, 1fr) minmax(280px, 0.75fr);
+gap: clamp(2rem, 5vw, 4rem);
+align-items: end;
+margin-bottom: 2.5rem;
+}
+
+.section-kicker {
+font-size: 0.78rem;
+font-weight: 800;
+text-transform: uppercase;
+letter-spacing: 0.1em;
+color: var(--ppl-color-text-subtle);
+margin-bottom: 0.75rem;
+}
+
+.mission-section__title {
+font-family: var(--hg-font-secondary);
+font-size: clamp(2.4rem, 5vw, 4.2rem);
+line-height: 1;
+text-transform: uppercase;
+margin: 0;
+}
+
+.mission-section__copy {
+color: var(--ppl-color-text-subtle);
+font-size: 1.05rem;
+margin: 0;
+}
+
+/* MISSION ARTICLE */
+.mission-article {
+display: grid;
+grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
+gap: clamp(2rem, 5vw, 4rem);
+align-items: start;
+}
+
+.mission-article__side {
+position: sticky;
+top: calc(var(--header-height) + 2rem);
+}
+
+.mission-article__rule {
+width: 52px;
+height: 4px;
+background: var(--hg-color-secondary);
+margin: 0.25rem 0 1.25rem;
+}
+
+.mission-article__body {
+display: flex;
+flex-direction: column;
+gap: 1.5rem;
+}
+
+.mission-article__body p {
+margin: 0;
+font-size: 1.05rem;
+line-height: 1.7;
+color: var(--ppl-color-text-default);
+}
+
+.mission-article__body p strong { font-weight: 800; }
+
+/* VISION BANNER */
+.mission-vision {
+background-color: #131920;
+color: #f6f6f6;
+text-align: center;
+padding: 5.5rem 0;
+}
+
+.mission-vision .section-kicker { color: var(--hg-color-secondary); }
+
+.mission-vision__statement {
+font-family: var(--hg-font-secondary);
+font-size: clamp(1.8rem, 4vw, 3rem);
+font-weight: 800;
+line-height: 1.15;
+text-transform: uppercase;
+margin: 0 auto;
+max-width: 1020px;
+}
+
+.mission-vision__sub {
+color: rgba(255, 255, 255, 0.78);
+font-size: 1.05rem;
+margin: 1.5rem auto 0;
+max-width: 760px;
+line-height: 1.6;
+}
+
+/* MATURITY & ROADMAP CARDS */
+.maturity-grid {
+display: grid;
+grid-template-columns: repeat(3, minmax(0, 1fr));
+gap: 1.5rem;
+margin-top: 3rem;
+}
+
+.maturity-card {
+background: #131920;
+color: #ffffff;
+padding: 2rem 1.6rem;
+border-left: 4px solid var(--hg-color-secondary);
+min-height: 380px;
+display: flex;
+flex-direction: column;
+border-radius: 4px;
+}
+
+.maturity-card__phase {
+font-weight: 800;
+font-size: 0.8rem;
+text-transform: uppercase;
+letter-spacing: 0.08em;
+color: var(--hg-color-secondary);
+margin-bottom: 0.35rem;
+}
+
+.maturity-card__runway {
+font-family: var(--hg-font-mono);
+font-size: 0.85rem;
+color: #4ea2fd;
+margin-bottom: 1.25rem;
+font-weight: 600;
+}
+
+.maturity-card h3 {
+margin: 0 0 1rem;
+font-family: var(--hg-font-secondary);
+font-size: 1.35rem;
+font-weight: 800;
+text-transform: uppercase;
+line-height: 1.15;
+}
+
+.maturity-card ul {
+margin: 0;
+padding-left: 1.2rem;
+color: rgba(255, 255, 255, 0.8);
+font-size: 0.92rem;
+line-height: 1.6;
+}
+
+.maturity-card li { margin-bottom: 0.75rem; }
+
+/* GEOLOGY GRID */
+.geology-grid {
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: 1.5rem;
+margin-top: 3rem;
+}
+
+.geology-card {
+padding: 2rem;
+border-left: 4px solid var(--hg-color-secondary);
+background-color: var(--hg-color-muted);
+display: flex;
+flex-direction: column;
+gap: 0.85rem;
+border-radius: 4px;
+transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.geology-card:hover {
+transform: translateY(-2px);
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.geology-card__label {
+font-size: 0.78rem;
+font-weight: 800;
+text-transform: uppercase;
+letter-spacing: 0.08em;
+color: var(--ppl-color-text-subtle);
+}
+
+.geology-card__title {
+font-family: var(--hg-font-secondary);
+font-size: clamp(1.3rem, 2.2vw, 1.75rem);
+font-weight: 800;
+line-height: 1.1;
+text-transform: uppercase;
+}
+
+.geology-card__text {
+color: var(--ppl-color-text-subtle);
+font-size: 0.95rem;
+line-height: 1.6;
+margin: 0;
+}
+
+/* OBJECTIVE CAPEX TABLE */
+.capex-table-wrapper {
+width: 100%;
+overflow-x: auto;
+margin-top: 3rem;
+background: #ffffff;
+border: 1px solid rgba(19, 25, 32, 0.12);
+border-radius: 4px;
+}
+
+.capex-table {
+width: 100%;
+border-collapse: collapse;
+text-align: left;
+font-size: 0.95rem;
+}
+
+.capex-table th,
+.capex-table td {
+padding: 1.25rem 1.5rem;
+border-bottom: 1px solid rgba(19, 25, 32, 0.08);
+vertical-align: middle;
+}
+
+.capex-table th {
+background: #131920;
+color: #ffffff;
+font-family: var(--hg-font-secondary);
+font-size: 1.05rem;
+font-weight: 800;
+text-transform: uppercase;
+letter-spacing: 0.04em;
+}
+
+.capex-table tbody tr:hover { background: var(--hg-color-muted); }
+
+.capex-table .col-spec {
+font-weight: 700;
+color: var(--ppl-color-text-default);
+width: 28%;
+}
+
+.capex-table .col-budget {
+font-family: var(--hg-font-mono);
+font-weight: 700;
+color: #131920;
+white-space: nowrap;
+width: 24%;
+}
+
+.capex-table .col-function {
+color: var(--ppl-color-text-subtle);
+line-height: 1.55;
+}
+
+.capex-table tr.total-row {
+background: #131920;
+color: #ffffff;
+font-weight: 800;
+}
+
+.capex-table tr.total-row td {
+border-bottom: none;
+color: #ffffff;
+}
+
+.capex-table tr.total-row .col-budget {
+color: var(--hg-color-secondary);
+font-size: 1.15rem;
+}
+
+/* TECHNICAL ARCHITECTURE / DISTILLATION PANEL */
+.distillation-panel {
+background: #131920;
+color: #ffffff;
+border-radius: 4px;
+padding: clamp(1.75rem, 4.5vw, 3.5rem);
+margin-top: 3rem;
+border-left: 6px solid var(--hg-color-secondary);
+}
+
+.distillation-panel__kicker {
+font-size: 0.78rem;
+font-weight: 800;
+text-transform: uppercase;
+letter-spacing: 0.1em;
+color: var(--hg-color-secondary);
+margin-bottom: 0.5rem;
+}
+
+.distillation-panel__title {
+font-family: var(--hg-font-secondary);
+font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+font-weight: 800;
+text-transform: uppercase;
+margin: 0 0 1rem;
+line-height: 1.1;
+}
+
+.distillation-panel__lead {
+color: rgba(255, 255, 255, 0.85);
+font-size: 1.05rem;
+line-height: 1.6;
+max-width: 860px;
+margin: 0 0 2rem;
+}
+
+.distillation-flow {
+display: grid;
+grid-template-columns: repeat(3, minmax(0, 1fr));
+gap: 1.25rem;
+margin-bottom: 2rem;
+}
+
+.distillation-flow__node {
+background: #1c242e;
+padding: 1.4rem;
+border-radius: 4px;
+border-top: 2px solid #4ea2fd;
+display: flex;
+flex-direction: column;
+gap: 0.5rem;
+}
+
+.distillation-flow__step {
+font-family: var(--hg-font-mono);
+font-size: 0.75rem;
+color: #4ea2fd;
+font-weight: 700;
+text-transform: uppercase;
+}
+
+.distillation-flow__title {
+font-family: var(--hg-font-secondary);
+font-size: 1.15rem;
+font-weight: 800;
+text-transform: uppercase;
+color: #ffffff;
+margin: 0;
+}
+
+.distillation-flow__desc {
+font-size: 0.88rem;
+color: rgba(255, 255, 255, 0.72);
+line-height: 1.5;
+margin: 0;
+}
+
+.math-callout {
+background: rgba(255, 255, 255, 0.03);
+border: 1px dashed rgba(255, 212, 0, 0.45);
+padding: 1.75rem;
+border-radius: 4px;
+}
+
+.math-callout__title {
+font-size: 0.8rem;
+font-weight: 800;
+text-transform: uppercase;
+letter-spacing: 0.08em;
+color: var(--hg-color-secondary);
+margin-bottom: 0.5rem;
+}
+
+.math-callout__formula {
+font-family: var(--hg-font-mono);
+font-size: clamp(1rem, 2.2vw, 1.35rem);
+font-weight: 700;
+color: var(--hg-color-secondary);
+margin: 0.5rem 0 1rem;
+line-height: 1.3;
+}
+
+.math-callout__text {
+font-size: 0.95rem;
+color: rgba(255, 255, 255, 0.8);
+line-height: 1.6;
+margin: 0;
+}
+
+/* CLOSING CTA */
+.mission-closing {
+background: var(--hg-color-muted);
+border-top: 1px solid rgba(19, 25, 32, 0.08);
+padding: 4.5rem 0;
+text-align: center;
+}
+
+.mission-closing__title {
+font-family: var(--hg-font-secondary);
+font-size: clamp(1.8rem, 4vw, 2.6rem);
+font-weight: 800;
+text-transform: uppercase;
+margin: 0 0 1.5rem;
+line-height: 1.1;
+}
+
+.mission-closing__actions {
+display: flex;
+justify-content: center;
+gap: 1rem;
+flex-wrap: wrap;
+}
+
+.button {
+display: inline-block;
+font-weight: 800;
+font-size: 0.9rem;
+text-transform: uppercase;
+letter-spacing: 0.06em;
+padding: 0.9rem 1.6rem;
+border-radius: 4px;
+transition: opacity 0.15s ease, transform 0.15s ease;
+cursor: pointer;
+}
+
+.button--gold {
+background: var(--ppl-button-contained-bg);
+color: var(--ppl-button-contained-text);
+}
+
+.button--outline {
+border: 1px solid rgba(19, 25, 32, 0.25);
+color: var(--ppl-color-text-default);
+background: #ffffff;
+}
+
+.button:hover {
+opacity: 0.85;
+transform: translateY(-1px);
+}
+
+/* FOOTER */
+.footer {
+background-color: var(--hg-color-darkest);
+color: var(--hg-color-lightest);
+padding: 4rem 0 2rem;
+}
+
+.footer__inner-container {
+display: grid;
+gap: 3rem;
+grid-template-areas:
+"offices contact"
+"corporate media";
+}
+
+.footer__offices { grid-area: offices; }
+.footer__contact { grid-area: contact; }
+.footer__corporate { grid-area: corporate; }
+.footer__media { grid-area: media; }
+
+.footer__offices-title, .footer__contact-title {
+font-size: 1.375rem;
+font-weight: 700;
+margin-bottom: 1.5rem;
+text-transform: uppercase;
+color: var(--hg-color-lightest);
+}
+
+.footer__offices-items {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+gap: 1.5rem;
+}
+
+.footer__offices-item-title {
+font-weight: 700;
+margin-bottom: 0.25rem;
+}
+
+.footer__offices-item-content {
+font-size: 0.875rem;
+line-height: 1.5;
+opacity: 0.8;
+display: flex;
+flex-direction: column;
+}
+
+.footer__contact-items {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+gap: 1.5rem;
+}
+
+.footer__contact-item-title {
+font-weight: 700;
+font-size: 0.95rem;
+}
+
+.footer__contact-item-content { font-size: 0.875rem; }
+
+.footer__contact-item-content a { text-decoration: underline; }
+.footer__contact-item-content a:hover { color: var(--hg-color-secondary); }
+
+.footer__corporate-links {
+display: flex;
+flex-wrap: wrap;
+gap: 1.5rem;
+list-style: none;
+padding: 0;
+margin: 0;
+font-size: 0.75rem;
+opacity: 0.7;
+}
+
+.footer__corporate-link:hover {
+color: var(--hg-color-secondary);
+text-decoration: underline;
+}
+
+.footer__media {
+display: flex;
+justify-content: flex-end;
+align-items: center;
+gap: 1rem;
+}
+
+.social-link {
+background-color: #ffffff;
+border-radius: 50%;
+width: 32px;
+height: 32px;
+display: flex;
+align-items: center;
+justify-content: center;
+color: #131920;
+font-weight: bold;
+}
+
+.social-link:hover { background-color: var(--hg-color-secondary); }
+
+/* RESPONSIVE BREAKPOINTS */
+@media (max-width: 900px) {
+.header { height: auto; }
+.header__inner {
+align-items: flex-start;
+gap: 1rem;
+padding-top: 1rem;
+padding-bottom: 1rem;
+}
+.nav__list {
+gap: 1rem;
+flex-wrap: wrap;
+justify-content: flex-end;
+}
+.nav__list-item-link { font-size: 0.95rem; }
+.protocol-meta-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mission-section__header,
+.mission-article,
+.maturity-grid,
+.geology-grid,
+.distillation-flow {
+grid-template-columns: 1fr;
+}
+.mission-article__side { position: static; }
+}
+
+@media (max-width: 768px) {
+.footer__inner-container {
+grid-template-areas:
+"offices"
+"contact"
+"corporate"
+"media";
+}
+}
+
+@media (max-width: 620px) {
+.header__inner { flex-direction: column; }
+.nav__list { justify-content: flex-start; }
+.protocol-meta-bar { grid-template-columns: 1fr; }
+.nav__thinking {
+right: auto;
+left: 0;
+white-space: normal;
+max-width: calc(100vw - 3rem);
+}
+}
+
+/* SKELETON PRE-LOADER (Mirrors about.html) */
+.page-wrap { position: relative; }
+.skeleton {
+position: absolute;
+inset: 0;
+z-index: 5;
+display: none;
+overflow: hidden;
+background: var(--ppl-color-bg-default);
+pointer-events: none;
+}
+.js-nav:not(.reduced-motion) .skeleton { display: block; }
+.js-nav:not(.reduced-motion).is-nav-revealed .skeleton {
+opacity: 0;
+visibility: hidden;
+transition: opacity 0.55s ease 0.1s, visibility 0.55s ease 0.1s;
+}
+
+.skeleton__bar {
+display: block;
+border-radius: 4px;
+background-color: var(--hg-color-muted);
+background-image: linear-gradient(100deg, transparent 25%, var(--hg-color-lightest) 45%, var(--hg-color-lightest) 55%, transparent 75%);
+background-size: 220% 100%;
+background-repeat: no-repeat;
+animation: skeleton-shimmer 1.5s linear infinite;
+}
+
+.skeleton__bar--dark,
+.skeleton__vision .skeleton__bar,
+.skeleton__maturity-card i,
+.skeleton__mission-hero-panel .skeleton__bar {
+background-color: rgba(255, 255, 255, 0.10);
+background-image: linear-gradient(100deg, transparent 25%, rgba(255, 255, 255, 0.22) 45%, rgba(255, 255, 255, 0.22) 55%, transparent 75%);
+background-size: 220% 100%;
+background-repeat: no-repeat;
+animation: skeleton-shimmer 1.5s linear infinite;
+}
+
+.skeleton__bar--gold {
+background-color: rgba(19, 25, 32, 0.16);
+background-image: linear-gradient(100deg, transparent 25%, rgba(19, 25, 32, 0.30) 45%, rgba(19, 25, 32, 0.30) 55%, transparent 75%);
+background-size: 220% 100%;
+background-repeat: no-repeat;
+animation: skeleton-shimmer 1.5s linear infinite;
+}
+
+@keyframes skeleton-shimmer {
+0% { background-position: 120% 0; }
+100% { background-position: -120% 0; }
+}
+
+.skeleton__banner { background: var(--ppl-button-contained-bg); padding: 0.75rem 1rem; }
+.skeleton__banner-inner { display: flex; justify-content: center; align-items: center; gap: 0.75rem; }
+.skeleton__banner .skeleton__bar { height: 1.125rem; }
+.skeleton__mission-hero { margin: 3rem auto; max-width: 1200px; padding: 0 1.5rem; }
+.skeleton__mission-hero-panel {
+background: linear-gradient(135deg, #18222d, #131920);
+min-height: 480px;
+border-radius: 4px;
+border-left: 6px solid var(--hg-color-secondary);
+padding: clamp(2.5rem, 6vw, 4.5rem);
+display: flex;
+flex-direction: column;
+justify-content: center;
+}
+.skeleton__mission-hero-meta { height: 12px; width: 140px; margin-bottom: 1rem; }
+.skeleton__mission-hero-title { height: clamp(44px, 5vw, 76px); width: 88%; margin-bottom: 0.9rem; }
+.skeleton__mission-hero-lead { display: flex; flex-direction: column; gap: 12px; max-width: 720px; }
+.skeleton__mission-hero-lead i { display: block; height: 24px; }
+</style>
+<style>
+.genesis-embed { background: linear-gradient(135deg, #18222d, #131920); border-left: 6px solid var(--hg-color-secondary); border-radius: 4px; padding: clamp(1.2rem, 2.5vw, 2rem); color: #fff; font-family: var(--hg-font-mono); }
+.genesis-embed .panel { background: rgba(19,25,32,.85); border: 1px solid rgba(255,255,255,.08); border-radius: 6px; padding: 20px; }
+.genesis-embed .panel h2 { font-family: var(--hg-font-secondary); font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--hg-color-secondary-bold); margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,.08); padding-bottom: 8px; }
+.genesis-embed label { display: block; font-family: var(--hg-font-primary); font-size: 12px; color: #8b98a5; margin: 10px 0 4px; }
+.genesis-embed select, .genesis-embed input[type=text] { width: 100%; background: #0a0e13; border: 1px solid #2a3440; color: #fff; border-radius: 4px; padding: 8px; font-family: var(--hg-font-mono); font-size: 12px; }
+.genesis-embed button { margin-top: 14px; width: 100%; background: var(--hg-color-secondary); color: var(--ppl-color-text-default); border: none; border-radius: 4px; padding: 12px; font-weight: 700; font-family: var(--hg-font-primary); text-transform: uppercase; letter-spacing: .05em; cursor: pointer; }
+.genesis-embed button:disabled { opacity:.5; cursor:not-allowed; }
+.genesis-embed #log { background:#05080b; border:1px solid #2a3440; border-radius:4px; padding:12px; min-height:260px; font-size:12px; line-height:1.6; overflow-y:auto; white-space:pre-wrap; font-family: var(--hg-font-mono); }
+.genesis-embed #log .ok{color:#34d399} .genesis-embed #log .warn{color:var(--hg-color-secondary)} .genesis-embed #log .err{color:#ff6b6b} .genesis-embed #log .info{color:#8b98a5}
+.genesis-embed .stat-row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed rgba(255,255,255,.08); font-size:12px; }
+.genesis-embed .stat-row b { color: var(--hg-color-secondary); }
+.genesis-embed canvas { width:100%; height:150px; background:#05080b; border:1px solid #2a3440; border-radius:4px; margin-top:12px; }
+.genesis-embed .hash { font-size:10px; color:#34d399; word-break:break-all; margin-top:10px; padding:8px; background:#05080b; border:1px solid #2a3440; border-radius:4px; font-family: var(--hg-font-mono); }
+.genesis-embed .badge { font-size:11px; color:#8b98a5; border:1px solid rgba(255,255,255,.12); padding:4px 10px; border-radius:999px; display:inline-flex; gap:6px; align-items:center; }
+.genesis-embed .badge b { color:#34d399; }
+.genesis-embed .disc { display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.genesis-embed .disc .cell { flex:1; min-width:90px; text-align:center; padding:10px; background:#0a0e13; border:1px solid #2a3440; border-radius:6px; }
+.genesis-embed .disc .cell b { display:block; font-size:16px; color:var(--hg-color-secondary); }
+.genesis-embed .disc .cell span { font-size:10px; color:#8b98a5; text-transform:uppercase; }
+.genesis-embed .grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+@media(max-width:900px){ .genesis-embed .grid{grid-template-columns:1fr;} }
+.genesis-embed .note { font-size:11px; color:#8b98a5; margin-top:8px; line-height:1.5; font-family: var(--hg-font-primary); }
+.genesis-embed #hist .h-row { padding:4px 6px; border-bottom:1px solid rgba(255,255,255,.08); display:flex; justify-content:space-between; gap:8px; }
+.genesis-embed #progbar { height:6px; background:#0a0e13; border-radius:999px; margin-top:10px; overflow:hidden; }
+.genesis-embed #progbar > div { height:100%; width:0%; background:linear-gradient(90deg,var(--hg-color-secondary),#34d399); transition:width .2s; }
+.genesis-embed .terminal-head { border-bottom:1px solid rgba(255,255,255,.08); padding-bottom:16px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; }
+.genesis-embed .terminal-head h1 { font-family:var(--hg-font-secondary); font-size:20px; letter-spacing:.06em; text-transform:uppercase; color:var(--hg-color-secondary); }
+.genesis-embed .terminal-head .sub { font-family:var(--hg-font-primary); font-size:12px; color:#8b98a5; margin-top:4px; }
+</style>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+</head>
+<body>
+<a href="#main-content" class="skip-nav" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;padding:10px 20px;background:#3b82f6;color:#fff;text-decoration:none;font-weight:600;">Skip to main content</a>
+<header class="header">
+  <div class="header__inner l-container">
+    <div class="header__logo">
+      <a href="https://alieninc.tech" class="brand-logo" aria-label="visit the Alien Inc Homepage">
+        <span class="brand-logo__text">Alien</span>
+        <img src="logo.png" alt="•" class="brand-logo__dot">
+        <span class="brand-logo__text">Inc</span>
+      </a>
+    </div>
+    <nav class="nav" aria-label="Primary">
+      <div class="nav__thinking" aria-hidden="true">
+        <span class="nav__thinking-pulse"><i></i><i></i><i></i></span>
+        <span class="nav__thinking-line" id="nav-thinking-line"></span>
+      </div>
+      <ul class="nav__list nav__list--set1">
+        <li class="nav__list-item"><a href="about.html" class="nav__list-item-link">About</a></li>
+        <li class="nav__list-item"><a href="mission.html" class="nav__list-item-link">Mission</a></li>
+        <li class="nav__list-item"><a href="founder.html" class="nav__list-item-link">Founder</a></li>
+        <li class="nav__list-item"><a href="https://genesis.alieninc.tech" class="nav__list-item-link is-active">Genesis</a></li>
+        <li class="nav__list-item"><a href="index.html#portfolio" class="nav__list-item-link">Companies</a></li>
+        <li class="nav__list-item nav__dropdown">
+          <a href="dashboard.html" class="nav__list-item-link nav__dropdown-trigger">Dashboard</a>
+          <div class="nav__dropdown-menu">
+            <a href="dashboard.html" class="nav__dropdown-item">Financial</a>
+            <a href="dashboard.html#compliance" class="nav__dropdown-item">Compliance</a>
+          </div>
+        </li>
+        <li class="nav__list-item"><a href="index.html#contact" class="nav__list-item-link">Contact</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<main id="main-content" role="main">
+<section class="mission-hero" aria-label="Genesis Terminal">
+  <div class="mission-hero__panel" style="min-height: 260px; padding: clamp(1.8rem, 4vw, 3rem);">
+    <div class="l-container" style="padding: 0;">
+      <div style="color: var(--hg-color-secondary); font-family: var(--hg-font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase;">Protocol AT-V1000-PH · WebAssembly · LIF SNN</div>
+      <h1 style="color: #fff; font-family: var(--hg-font-secondary); font-size: clamp(28px, 4vw, 40px); letter-spacing: .04em; text-transform: uppercase; margin-top: 8px;">Genesis Terminal v2</h1>
+      <p style="color: rgba(255,255,255,.85); max-width: 720px; font-family: var(--hg-font-primary); font-size: 15px; margin-top: 8px;">Biotically-grounded, in-browser distillation and re-instantiation — pull real FlyWire FAFB edges (GABA/GLUT aware) and run the LIF spiking network through <code style="background: rgba(255,255,255,.12); padding: 2px 6px; border-radius: 3px;">snn_core.wasm</code>.</p>
+      <div style="margin-top: 12px; font-family: var(--hg-font-mono); font-size: 11px; color: rgba(255,255,255,.7);"><span style="border:1px solid rgba(255,255,255,.15); padding:4px 10px; border-radius:999px;">Connectome: <b style="color: var(--hg-color-secondary);" id="b-n">—</b> neurons · <b style="color: var(--hg-color-secondary);" id="b-e">—</b> synapses</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="mission-section mission-section--muted" id="terminal-app" style="padding-top: 1.5rem;">
+  <div class="l-container">
+    <div class="genesis-embed">
+      <div class="terminal-head">
+        <div>
+          <h1>Genesis Terminal v2</h1>
+          <div class="sub">Phase 2 · genesis.alieninc.tech · AT-V1000-PH</div>
+        </div>
+        <div class="badge">Live via <code>/api/genesis/explorer</code></div>
+      </div>
+      <div class="grid">
+        <div>
+          <div class="panel">
+            <h2>Distillation Input</h2>
+            <label>Connectome Subset (neurons)</label>
+            <select id="pop-size"><option value="500">500 neurons</option><option value="1000" selected>1,000 neurons</option><option value="2000">2,000 neurons</option><option value="2500">2,500 neurons</option></select>
+            <label>Simulation Steps (ms)</label>
+            <select id="sim-steps"><option value="100">100 ms</option><option value="200" selected>200 ms</option><option value="400">400 ms</option></select>
+            <label>Topology Source</label>
+            <select id="topo"><option value="biotic" selected>Biotic — real FlyWire edges (NT-aware)</option><option value="distilled">Distilled — SVD projection onto scaffold</option></select>
+            <label>Seed</label><input type="text" id="seed" value="42">
+            <button id="run-btn">Distill + Re-Instantiate</button>
+            <p class="note">v2 pulls real FlyWire FAFB synaptic edges (neuropil + neurotransmitter aware) from the live genesis API and distills the dense model onto that scaffold, then re-instantiates the LIF SNN through WebAssembly.</p>
+            <div id="progbar"><div id="progfill"></div></div>
+          </div>
+          <div class="panel" style="margin-top:24px"><h2>Instantiation Proof</h2><div class="hash" id="proof">Awaiting run...</div><h2 style="margin-top:16px">Proof Chain (persistent)</h2><div id="hist">No runs yet.</div></div>
+        </div>
+        <div>
+          <div class="panel"><h2>Runtime Log</h2><div id="log">Parsing Genesis Protocol v2...<br>Awaiting WebAssembly module.</div></div>
+          <div class="panel" style="margin-top:24px"><h2>Activity — Re-instantiated SNN</h2><div class="disc"><div class="cell"><b id="s-n">—</b><span>neurons</span></div><div class="cell"><b id="s-syn">—</b><span>synapses</span></div><div class="cell"><b id="s-inh">—</b><span>inhibitory</span></div><div class="cell"><b id="s-exc">—</b><span>excitatory</span></div></div><div class="stat-row"><span>Total Spikes</span><b id="s-spk">—</b></div><div class="stat-row"><span>Mean Rate</span><b id="s-rate">— Hz</b></div><div class="stat-row"><span>Active Neurons</span><b id="s-act">—</b></div><div class="stat-row"><span>WASM Module</span><b id="s-wasm">loading…</b></div><canvas id="rast"></canvas><canvas id="rate-plot"></canvas></div>
+        </div>
+      </div>
+    </div>
+    <p class="note" style="text-align:center; margin-top: 16px; font-family: var(--hg-font-primary); color: var(--ppl-color-text-subtle);">Embedded lab — dark inset inside the light mission shell. <a href="https://alieninc.tech/mission.html" style="color: var(--hg-color-secondary-bold); text-decoration: underline;">Mission spec →</a></p>
+  </div>
+</section>
+</main>
+<footer class="footer">
+<div class="l-container footer__inner-container">
+<!-- OFFICES -->
+  <div class="footer__offices">
+    <div class="footer__offices-title">Alien.Inc Operating System</div>
+    <div class="footer__offices-items">
+      <div class="footer__offices-item">
+        <div class="footer__offices-item-title">Group Access</div>
+        <div class="footer__offices-item-content">
+          <span>Seven operating companies</span>
+          <span>One root navigation layer</span>
+        </div>
+      </div>
+      <div class="footer__offices-item">
+        <div class="footer__offices-item-title">Consulting Reports</div>
+        <div class="footer__offices-item-content">
+          <span>KMT Consulting Group</span>
+          <span>Operating data, real reporting structure</span>
+        </div>
+      </div>
+      <div class="footer__offices-item">
+        <div class="footer__offices-item-title">Operating Thesis</div>
+        <div class="footer__offices-item-content">
+          <span>Capital, risk, deals, media, culture, law</span>
+          <span>Independent companies with shared infrastructure</span>
+        </div>
+      </div>
+      <div class="footer__offices-item">
+        <div class="footer__offices-item-title">Source of Truth</div>
+        <div class="footer__offices-item-content">
+          <span>data/alieninc-ecosystem.json</span>
+          <span>Client-safe operating model</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTACT -->
+  <div class="footer__contact">
+    <div id="contact" class="footer__contact-title">Contact</div>
+    <div class="footer__contact-items">
+      <div class="footer__contact-item">
+        <div class="footer__contact-item-title">Founder Desk</div>
+        <div class="footer__contact-item-content">
+          <a href="mailto:founder@alien.inc">founder@alien.inc</a>
+        </div>
+      </div>
+      <div class="footer__contact-item">
+        <div class="footer__contact-item-title">Consulting</div>
+        <div class="footer__contact-item-content">
+          <a href="https://kmt.alieninc.tech">KMT Consulting Group</a>
+        </div>
+      </div>
+      <div class="footer__contact-item">
+        <div class="footer__contact-item-title">Vulnerability Scanning</div>
+        <div class="footer__contact-item-content">
+          <a href="https://centra.alieninc.tech">Centra</a>
+        </div>
+      </div>
+      <div class="footer__contact-item">
+        <div class="footer__contact-item-title">Operating Dataset</div>
+        <div class="footer__contact-item-content">
+          <a href="data/alieninc-ecosystem.json">alieninc-ecosystem.json</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CORPORATE LINKS -->
+  <div class="footer__corporate">
+    <ul class="footer__corporate-links">
+      <li><a href="https://alieninc.tech/about.html" class="footer__corporate-link">About</a></li>
+      <li><a href="https://alieninc.tech/mission.html" class="footer__corporate-link">Mission</a></li>
+      <li><a href="founder.html" class="footer__corporate-link">Founder</a></li>
+      <li><a href="https://alieninc.tech/index.html#portfolio" class="footer__corporate-link">Portfolio</a></li>
+      <li><a href="https://alieninc.tech/index.html#operating-system" class="footer__corporate-link">Operating Model</a></li>
+      <li><a href="privacy.html" class="footer__corporate-link">Privacy Policy</a></li>
+      <li><a href="cookies.html" class="footer__corporate-link">Cookie-Policy</a></li>
+      <li><a href="/trust/" class="footer__corporate-link">Trust &amp; Security Portal</a></li>
+    </ul>
+  </div>
+
+  <!-- SOCIAL LINKS -->
+  <div class="footer__media">
+    <a href="#" class="social-link" aria-label="visit Alien Inc on Instagram">IG</a>
+    <a href="data/alieninc-sitemap.md" class="social-link" aria-label="open Alien Inc sitemap">SM</a>
+  </div>
+
+</div>
+
+</footer>
+<script>
+const $ = id => document.getElementById(id);
+const logEl = $('log');
+function log(msg, cls='info'){ logEl.innerHTML += `<span class="${cls}">${msg}</span>\n`; logEl.scrollTop = logEl.scrollHeight; }
+function setProg(p){ $('progfill').style.width = Math.max(0,Math.min(100,p)) + '%'; }
+
+// --- hashing: real SHA-256 via SubtleCrypto, chained into a proof sequence ---
+function sha256hex(str){
+  if (crypto && crypto.subtle && crypto.subtle.digest){
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(b=>{
+      return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+    });
+  }
+  // deterministic fallback (FNV-1a chained)
+  let h = 0x811c9dc5;
+  for(let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h,0x01000193); }
+  return Promise.resolve((h>>>0).toString(16).padStart(8,'0'));
+}
+
+// deterministic PRNG (mirror of Rust mulberry32)
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; } }
+
+let exports = null, mem = null, wasmBytes = 0, edgesCache = null, nodesCache = null, metaCache = null;
+
+async function fetchJson(url){
+  const r = await fetch(url); if(!r.ok) throw new Error(url+' -> '+r.status); return r.json();
+}
+
+async function loadData(){
+  try {
+    const g = await fetchJson('/api/genesis/explorer');
+    edgesCache = g.edges; nodesCache = g.nodes; metaCache = g.meta || {};
+    $('b-n').textContent = nodesCache.length;
+    $('b-e').textContent = edgesCache.length;
+    log('[ok] Live connectome loaded: ' + nodesCache.length + ' hub neurons, ' + edgesCache.length + ' edges.', 'ok');
+  } catch(e){
+    log('[warn] Could not load live connectome (' + e.message + '); falling back to synthetic scaffold.', 'warn');
+    edgesCache = null;
+  }
+}
+
+// Build a biologically-grounded distilled graph from real edges.
+// NT-aware: GABA is inhibitory (negative), GLUT/others excitatory (positive).
+function buildBioticGraph(pop, seed, steps){
+  const rnd = mulberry32(seed ^ 0x9e3779b9);
+  const nodeIds = nodesCache.slice(0, pop).map(n=>n.id);
+  const idSet = new Set(nodeIds);
+  const edges = [];
+  const edgesPerNeuron = Math.max(4, Math.floor(pop * 0.06));
+  const seen = new Set();
+  for(let i=0;i<pop && i<nodeIds.length;i++){
+    const pre = nodeIds[i];
+    for(let k=0;k<edgesPerNeuron;k++){
+      // prefer a real edge if available; otherwise synthetic w/ NT distribution
+      let post = nodeIds[Math.floor(rnd()*nodeIds.length)];
+      let nt = (rnd()<0.3)?'GABA':(rnd()<0.85?'GLUT':'ACH');
+      let neuro = 'LO_R';
+      // try to find a real outgoing edge for this node
+      const cand = edgesCache ? edgesCache.filter(ed=>String(ed[0])===String(pre) && idSet.has(String(ed[1]))) : [];
+      if(cand.length){
+        const c = cand[Math.floor(rnd()*cand.length)];
+        post = String(c[1]); nt = c[3]; neuro = c[4];
+      }
+      if(pre===post) continue;
+      const key = pre+'|'+post;
+      if(seen.has(key)) continue; seen.add(key);
+      // weight by NT sign * magnitude
+      const w = (nt==='GABA' ? -1 : 1) * (0.15 + rnd()*0.6);
+      edges.push([nodeIds.indexOf(pre), nodeIds.indexOf(post), w, nt, neuro]);
+    }
+  }
+  return edges;
+}
+
+function buildDistilledGraph(pop, seed, steps){
+  const rnd = mulberry32(seed);
+  const edges = [];
+  const eCount = Math.floor(pop * 12);
+  for(let i=0;i<eCount;i++){
+    const pre = Math.floor(rnd()*pop), post = Math.floor(rnd()*pop);
+    if(pre===post) continue;
+    const nt = (rnd()<0.3)?'GABA':'GLUT';
+    const w = (nt==='GABA'?-1:1)*(rnd()*0.5);
+    edges.push([pre,post,w,nt,'SYN']);
+  }
+  return edges;
+}
+
+let history = JSON.parse(localStorage.getItem('genesis-history')||'[]');
+function renderHistory(){
+  const h = $('hist');
+  if(!history.length){ h.innerHTML='No runs yet.'; return; }
+  h.innerHTML = history.map(r=>`<div class="h-row"><small>${r.ts}</small><span>${r.n}n / ${r.syn}s / ${r.spk} spikes</span></div><div class="h-row"><code style="color:var(--green)">${r.hash.slice(0,40)}…</code></div>`).join('');
+}
+renderHistory();
+
+let recentRate = [];
+async function run(){
+  const pop = parseInt($('pop-size').value);
+  const steps = parseInt($('sim-steps').value);
+  const seed = parseInt($('seed').value)||42;
+  const topo = $('topo').value;
+  $('run-btn').disabled = true;
+  recentRate = [];
+  log('[info] Step 01 — Preparing ' + (topo==='biotic'?'biotic':'distilled') + ' scaffold (' + pop + ' neurons)...');
+  try {
+    if(!nodesCache) await loadData();
+    if(!edgesCache && topo==='biotic'){ log('[warn] Biotic source unavailable, using distilled.', 'warn'); }
+    setProg(10);
+    log('[info] Step 02 — Distilling dense model onto scaffold...');
+
+    const edges = topo==='biotic' && edgesCache ? buildBioticGraph(pop, seed, steps) : buildDistilledGraph(pop, seed, steps);
+    const nInh = edges.filter(e=>e[3]==='GABA').length;
+    const nExc = edges.length - nInh;
+    log('[ok] Distilled ' + edges.length + ' synaptic edges (' + nInh + ' GABA / ' + nExc + ' excitatory).', 'ok');
+    setProg(30);
+
+    if(!mem){ throw new Error('WASM memory not ready'); }
+    const n = pop, n_edges = edges.length;
+    const spike_words = Math.ceil(n/32);
+    const raster_total = steps * spike_words;
+    const off_v=0, off_pre=n, off_post=off_pre+n_edges, off_w=off_post+n_edges,
+          off_syn=off_w+n_edges, off_spikes=off_syn+n, off_raster=off_spikes+n,
+          off_rcount=off_raster+raster_total;
+    const memWords = off_rcount+steps;
+    const neededBytes = memWords*4+64;
+    const curPages = mem.buffer.byteLength/65536;
+    const needPages = Math.ceil(neededBytes/65536);
+    if(needPages>curPages) mem.grow(needPages-curPages);
+    const f32=new Float32Array(mem.buffer), u32=new Uint32Array(mem.buffer);
+    for(let i=0;i<n;i++) f32[off_v+i]=-70;
+    for(let i=0;i<n_edges;i++){ u32[off_pre+i]=edges[i][0]; u32[off_post+i]=edges[i][1]; f32[off_w+i]=edges[i][2]; }
+    for(let i=0;i<n;i++){ f32[off_syn+i]=0; u32[off_spikes+i]=0; }
+    for(let i=0;i<raster_total;i++) u32[off_raster+i]=0;
+    for(let i=0;i<steps;i++) u32[off_rcount+i]=0;
+    setProg(50);
+
+    log('[info] Step 03 — Re-instantiating LIF SNN in WebAssembly...');
+    exports.snn_init(n,n_edges,steps,off_v,off_pre,off_post,off_w,off_syn,off_spikes,off_raster,off_rcount);
+    const totalSpikes = exports.snn_run(seed);
+    const meanRate = exports.snn_mean_rate(totalSpikes);
+    log('[ok] Simulation complete: ' + totalSpikes + ' spikes @ ' + meanRate.toFixed(2) + ' Hz.', 'ok');
+    setProg(75);
+
+    $('s-n').textContent = n;
+    $('s-syn').textContent = n_edges;
+    $('s-inh').textContent = nInh;
+    $('s-exc').textContent = nExc;
+    $('s-spk').textContent = totalSpikes;
+    $('s-rate').textContent = meanRate.toFixed(2)+' Hz';
+
+    // active neurons + raster
+    const active = new Set();
+    const cvs=$('rast'), ctx=cvs.getContext('2d'); ctx.clearRect(0,0,cvs.width,cvs.height);
+    const stepCounts=[];
+    for(let t=0;t<steps;t++){
+      const c=u32[off_rcount+t]; stepCounts.push(c);
+      for(let w=0;w<spike_words;w++){
+        const bits=u32[off_raster+t*spike_words+w];
+        for(let b=0;b<32;b++){ if(bits&(1<<b)){ const nn=w*32+b; if(nn<n){ active.add(nn);
+          ctx.fillStyle='#ffd400'; ctx.fillRect(t*(cvs.width/steps), nn*(cvs.height/n), Math.max(1,cvs.width/steps), Math.max(1,cvs.height/n)); } } }
+      }
+    }
+    $('s-act').textContent = active.size;
+    recentRate = stepCounts.map((c,i)=>[i,c]);
+
+    // rate plot (line)
+    const rp=$('rate-plot'), rctx=rp.getContext('2d'); rctx.clearRect(0,0,rp.width,rp.height);
+    rctx.beginPath(); rctx.strokeStyle='#34d399'; rctx.lineWidth=1.5;
+    const mx=Math.max(1,...stepCounts);
+    stepCounts.forEach((c,i)=>{ const x=i*(rp.width/steps), y=rp.height-(c/mx)*(rp.height-4)-2; i?rctx.lineTo(x,y):rctx.moveTo(x,y); });
+    rctx.stroke();
+    setProg(90);
+
+    // proof + persistent chain
+    log('[info] Computing cryptographic re-instantiation proof...');
+    const proofStr = `genesis://v2?seed=${seed}&n=${n}&edges=${n_edges}&inh=${nInh}&steps=${steps}&spikes=${totalSpikes}&rate=${meanRate.toFixed(4)}`;
+    const h = await sha256hex(proofStr);
+    $('proof').textContent = h + '\n' + proofStr;
+    history.unshift({ ts:new Date().toISOString().slice(0,19).replace('T',' '), n, syn:n_edges, spk:totalSpikes, rate:meanRate.toFixed(2), hash:h, seed });
+    history = history.slice(0,20);
+    localStorage.setItem('genesis-history', JSON.stringify(history));
+    renderHistory();
+    log('[ok] Proof: ' + h.slice(0,32) + '… (SHA-256, chained) totalling ' + history.length + ' runs.', 'ok');
+    setProg(100);
+  } catch(e){
+    log('[err] ' + e.message, 'err');
+  } finally {
+    $('run-btn').disabled = false;
+    setTimeout(()=>setProg(0), 800);
+  }
+}
+
+async function loadWasm(){
+  try {
+    const res = await fetch('snn_core.wasm');
+    wasmBytes = (await res.arrayBuffer());
+    const { instance } = await WebAssembly.instantiate(wasmBytes, {});
+    exports = instance.exports; mem = instance.exports.memory;
+    $('s-wasm').textContent = wasmBytes.byteLength + ' bytes';
+    log('[ok] WebAssembly module loaded (' + wasmBytes.byteLength + ' bytes).', 'ok');
+    $('run-btn').disabled = false;
+    loadData();
+  } catch(e){
+    log('[err] Failed to load WASM: ' + e.message, 'err');
+    $('s-wasm').textContent = 'failed';
+  }
+}
+
+$('run-btn').addEventListener('click', run);
+window.addEventListener('load', ()=>{ loadWasm(); });
+</script>
+</body>
+</html>

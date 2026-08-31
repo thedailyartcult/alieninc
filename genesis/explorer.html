@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Genesis Connectome Explorer — Alien Inc.</title>
+<style>
+:root {
+  --gold: #ffd400;
+  --blue: #4ea2fd;
+  --dark: #131920;
+  --light: #f6f6f6;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--dark);
+  color: #fff;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  overflow: hidden;
+  height: 100vh;
+}
+#canvas-wrap { position: absolute; inset: 0; }
+hud {
+  position: fixed;
+  top: 16px; left: 16px;
+  background: rgba(19,25,32,.85);
+  border: 1px solid rgba(255,212,0,.35);
+  border-left: 4px solid var(--gold);
+  padding: 14px 18px;
+  border-radius: 6px;
+  z-index: 10;
+  max-width: 340px;
+  backdrop-filter: blur(4px);
+}
+hud h1 { font-size: 17px; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 4px; }
+hud .sub { font-size: 12px; color: rgba(255,255,255,.7); margin-bottom: 8px; }
+hud .stat { font-size: 12px; display: flex; justify-content: space-between; gap: 16px; padding: 2px 0; color: var(--blue); }
+hud .stat b { color: #fff; font-variant-numeric: tabular-nums; }
+controls {
+  position: fixed;
+  top: 16px; right: 16px;
+  background: rgba(19,25,32,.85);
+  border: 1px solid rgba(78,162,253,.35);
+  border-radius: 6px;
+  padding: 12px 16px;
+  z-index: 10;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  backdrop-filter: blur(4px);
+}
+controls label { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,.85); }
+controls select, controls input[type=range] { width: 140px; background: #1c242e; color: #fff; border: 1px solid #2a3440; border-radius: 4px; padding: 2px 4px; }
+#info {
+  position: fixed;
+  bottom: 16px; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(19,25,32,.9);
+  border-left: 4px solid var(--blue);
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  text-align: center;
+  z-index: 10;
+  max-width: 90%;
+  display: none;
+}
+#info b { color: var(--gold); }
+#legend {
+  position: fixed;
+  bottom: 16px; left: 16px;
+  background: rgba(19,25,32,.8);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 11px;
+  z-index: 10;
+  color: rgba(255,255,255,.8);
+}
+#legend .leg-item { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
+#legend .swatch { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+#loading {
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: var(--dark); z-index: 20; flex-direction: column; gap: 12px;
+}
+#loading .spin { width: 40px; height: 40px; border: 3px solid #2a3440; border-top-color: var(--gold); border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading .txt { font-size: 13px; color: rgba(255,255,255,.7); letter-spacing: .08em; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div id="loading"><div class="spin"></div><div class="txt">Parsing Genesis Protocol AT-V1000-PH</div></div>
+<div id="canvas-wrap"></div>
+
+<hud>
+  <h1>Genesis Connectome Explorer</h1>
+  <div class="sub">FlyWire FAFB — Alien Inc. Phase 1 Data Mirroring</div>
+  <div class="stat">Neurons <b id="st-neurons">—</b></div>
+  <div class="stat">Connections <b id="st-conn">—</b></div>
+  <div class="stat">Synapses <b id="st-syn">—</b></div>
+  <div class="stat">Hubs Rendered <b id="st-hubs">—</b></div>
+  <div class="stat">Edges Rendered <b id="st-edges">—</b></div>
+  <div class="stat">Neuropils <b id="st-np">—</b></div>
+</hud>
+
+<controls>
+  <label>Neuron Type <select id="type-filter"><option value="">All</option></select></label>
+  <label>Hemisphere <select id="heme-filter"><option value="">All</option><option>left</option><option>right</option></select></label>
+  <label>Edge Threshold <input type="range" id="edge-thresh" min="0" max="200" value="10"></label>
+  <label>Show Edges <input type="checkbox" id="show-edges" checked></label>
+</controls>
+
+<div id="legend">
+  <div class="leg-item"><span class="swatch" style="background:#ffd400"></span> Hub Neuron</div>
+  <div class="leg-item"><span class="swatch" style="background:#4ea2fd"></span> Synaptic Edge</div>
+</div>
+
+<div id="info"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const API = '/api/genesis';
+const sh = id => document.getElementById(id);
+let graph = null;
+let nodeMesh = [];
+let edgeLines = null;
+let edgeGeom = null;
+
+// Colors by hemisphere
+const HE_COLOR = { left: 0x4ea2fd, right: 0xffd400 };
+
+// --- Scene setup ---
+const wrap = document.getElementById('canvas-wrap');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d1117);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+camera.position.set(0, 0, 900);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+wrap.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.8;
+
+// Lights
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const dl1 = new THREE.DirectionalLight(0xffffff, 0.9); dl1.position.set(1,1,1); scene.add(dl1);
+const dl2 = new THREE.DirectionalLight(0x4ea2fd, 0.4); dl2.position.set(-1,-1,1); scene.add(dl2);
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+// --- Load data ---
+async function load() {
+  const [exRes, stRes] = await Promise.all([
+    fetch(`${API}/explorer`).then(r => r.json()),
+    fetch(`${API}/stats`).then(r => r.json())
+  ]);
+  graph = exRes;
+  const st = stRes;
+
+  sh('st-neurons').textContent = st.total_neurons?.toLocaleString() ?? graph.meta.total_neurons;
+  sh('st-conn').textContent = st.total_connections?.toLocaleString() ?? graph.meta.total_connections;
+  sh('st-syn').textContent = st.total_synapses?.toLocaleString() ?? graph.meta.total_synapses;
+  sh('st-hubs').textContent = graph.meta.hubs?.toLocaleString() ?? graph.nodes.length;
+  sh('st-edges').textContent = graph.meta.edges?.toLocaleString() ?? graph.edges.length;
+  sh('st-np').textContent = st.unique_neuropils?.length ?? '-';
+
+  // populate type filter
+  const types = new Set(graph.nodes.map(n => n.t));
+  const sel = sh('type-filter');
+  [...types].sort().forEach(t => {
+    const o = document.createElement('option'); o.value = t; o.textContent = t; sel.appendChild(o);
+  });
+
+  buildScene();
+  document.getElementById('loading').style.display = 'none';
+}
+
+function buildScene() {
+  // Remove existing
+  nodeMesh.forEach(m => scene.remove(m));
+  if (edgeLines) scene.remove(edgeLines);
+
+  nodeMesh = [];
+  const typeFilter = sh('type-filter').value;
+  const hemeFilter = sh('heme-filter').value;
+  const thresh = parseInt(sh('edge-thresh').value);
+
+  const G = new THREE.Group();
+  const nodes = graph.nodes.filter(n => {
+    if (typeFilter && n.t !== typeFilter) return false;
+    if (hemeFilter && n.h !== hemeFilter) return false;
+    return true;
+  });
+
+  // Position mapping: use (x,y) and p,q for 3d spread
+  const positions = new Float32Array(nodes.length * 3);
+  const colors = new Float32Array(nodes.length * 3);
+  const indexMap = {};
+
+  nodes.forEach((n, i) => {
+    const x = (n.x || 0) * 8;
+    const y = (n.y || 0) * 8;
+    const z = ((n.p || 0) + (n.q || 0)) * 4;
+    positions[i*3] = x; positions[i*3+1] = y; positions[i*3+2] = z;
+    const col = new THREE.Color(HE_COLOR[n.h] || 0xffffff);
+    colors[i*3] = col.r; colors[i*3+1] = col.g; colors[i*3+2] = col.b;
+    indexMap[n.id] = i;
+  });
+
+  const nGeom = new THREE.BufferGeometry();
+  nGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  nGeom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+  const nMat = new THREE.PointsMaterial({
+    size: 3.2,
+    vertexColors: true,
+    sizeAttenuation: true,
+    transparent: true,
+    opacity: 0.95
+  });
+  const points = new THREE.Points(nGeom, nMat);
+  G.add(points);
+
+  // Store node positions for raycasting & edges
+  const posArr = new Float32Array(nodes.length * 3);
+  nodes.forEach((n,i) => {
+    posArr[i*3] = (n.x||0)*8; posArr[i*3+1] = (n.y||0)*8; posArr[i*3+2] = ((n.p||0)+(n.q||0))*4;
+  });
+
+  // Edges (match the same filter)
+  if (sh('show-edges').checked) {
+    const ePos = [];
+    graph.edges.forEach(e => {
+      const [pre, post, syn, nt, np] = e;
+      if (syn < thresh) return;
+      const a = indexMap[pre];
+      const b = indexMap[post];
+      if (a === undefined || b === undefined) return;
+      ePos.push(posArr[a*3], posArr[a*3+1], posArr[a*3+2]);
+      ePos.push(posArr[b*3], posArr[b*3+1], posArr[b*3+2]);
+    });
+    if (ePos.length) {
+      edgeGeom = new THREE.BufferGeometry();
+      edgeGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(ePos), 3));
+      const eMat = new THREE.LineBasicMaterial({ color: 0x4ea2fd, transparent: true, opacity: 0.25 });
+      edgeLines = new THREE.LineSegments(edgeGeom, eMat);
+      G.add(edgeLines);
+    }
+  }
+
+  scene.add(G);
+  nodeMesh.push(points);
+
+  // store positions + node refs on userData for picking
+  points.userData.positions = posArr;
+  points.userData.nodes = nodes;
+}
+
+// --- Picking ---
+function pick(event) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+
+  for (const p of nodeMesh) {
+    const hits = raycaster.intersectObject(p);
+    if (hits.length) {
+      const idx = hits[0].index;
+      const nodes = p.userData.nodes;
+      if (!nodes || nodes[idx] === undefined) return;
+      const n = nodes[idx];
+      sh('info').style.display = 'block';
+      sh('info').innerHTML = `
+        <b>Neuron ${n.t}</b> — ${n.h} hemisphere<br>
+        ID: ${n.id} &nbsp; x:${n.x} y:${n.y} p:${n.p} q:${n.q}`;
+      return;
+    }
+  }
+}
+
+renderer.domElement.addEventListener('mousemove', pick);
+
+// --- Rebuild on control change ---
+['type-filter','heme-filter','edge-thresh','show-edges'].forEach(id => {
+  const el = sh(id);
+  if (el.type === 'checkbox') el.addEventListener('change', buildScene);
+  else el.addEventListener('change', buildScene);
+});
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+load().then(animate);
+</script>
+</body>
+</html>

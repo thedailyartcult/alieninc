@@ -1,0 +1,100 @@
+<!-- Platform: spinal-cracker | Page: sc-aviation | Extracted from admin.html — shell lazy-loads this fragment. Keep wrapper id='page-sc-aviation'. -->
+<div class="page" id="page-sc-aviation">
+                      <div class="section">
+                          <div class="section-header">
+                              <span class="section-title">Aviation Domain</span>
+                              <div style="display:flex;gap:8px;align-items:center">
+                                  <span class="pulse-dot" id="aviationHealthDot" style="width:10px;height:10px;border-radius:50%;background:#555;"></span>
+                                  <span class="mono" id="aviationHealthText" style="font-size:12px">Health: …</span>
+                              </div>
+                          </div>
+                          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px">
+                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
+                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">OpenSky Sources</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:600;color:var(--accent-cyan)">4</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">Commercial, Private, Jet, Military</div>
+                              </div>
+                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
+                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Regions</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:600;color:var(--accent-cyan)">30</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">Major aviation corridors @ 250nm</div>
+                              </div>
+                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
+                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">GPS Jamming</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:600;color:var(--amber)" id="aviationJammingCount">—</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">Aggregated via NACp threshold</div>
+                              </div>
+                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
+                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Flights Tracked</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:600;color:var(--green)" id="aviationFlightCount">0</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">Live aircraft in OSv2</div>
+                              </div>
+                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
+                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Classification</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:600;color:var(--accent-purple)">AI</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">Callsign + ADS-B emitter + cruise profile</div>
+                              </div>
+                          </div>
+                          <div style="margin-bottom:16px">
+                              <div style="display:flex;gap:4px;margin-bottom:12px">
+                                  <button class="aviation-tab active" data-tab="pipeline" onclick="switchAviationTab('pipeline')">OpenSky Pipeline</button>
+                                  <button class="aviation-tab" data-tab="flights" onclick="switchAviationTab('flights')">Classified Flights</button>
+                                  <button class="aviation-tab" data-tab="jamming" onclick="switchAviationTab('jamming')">GPS Jamming</button>
+                              </div>
+                              <!-- Pipeline Tab -->
+                              <div id="aviationTabPipeline" class="aviation-tab-content active">
+                                  <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+                                      <input id="aviationClientId" type="text" placeholder="OpenSky client ID (optional)" style="flex:1">
+                                      <input id="aviationClientSecret" type="password" placeholder="OpenSky client secret (optional)" style="flex:1">
+                                      <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:4px">
+                                          <input type="checkbox" id="aviationMilitary" checked> Military feed
+                                      </label>
+                                      <button class="btn btn-primary btn-sm" onclick="runAviationPipeline()">Run Pipeline</button>
+                                      <button class="btn btn-secondary btn-sm" onclick="loadAviationSnapshot()">Refresh</button>
+                                  </div>
+                                  <div id="aviationRunStatus" style="margin-bottom:12px;font-size:13px;color:#aaa"></div>
+                                  <div class="table-wrap">
+                                      <table>
+                                          <thead><tr><th>Object Types</th><th>Link Types</th><th>Flights (OSv2)</th><th>Links (OSv2)</th></tr></thead>
+                                          <tbody id="aviationSnapshotBody"><tr><td colspan="4"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody>
+                                      </table>
+                                  </div>
+                              </div>
+                              <!-- Classified Flights Tab -->
+                              <div id="aviationTabFlights" class="aviation-tab-content">
+                                  <div style="display:flex;gap:8px;margin-bottom:12px">
+                                      <button class="btn btn-sm" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;color:var(--accent-cyan)" onclick="loadAviationFlights('all')">All</button>
+                                      <button class="btn btn-sm" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;color:var(--green)" onclick="loadAviationFlights('commercial')">Commercial</button>
+                                      <button class="btn btn-sm" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;color:var(--amber)" onclick="loadAviationFlights('private')">Private</button>
+                                      <button class="btn btn-sm" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;color:var(--accent-cyan)" onclick="loadAviationFlights('jet')">Private Jets</button>
+                                      <button class="btn btn-sm" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;color:var(--red)" onclick="loadAviationFlights('military')">Military</button>
+                                  </div>
+                                  <div class="table-wrap">
+                                      <table>
+                                          <thead><tr><th>Callsign</th><th>ICAO24</th><th>Category</th><th>Model</th><th>Speed (kts)</th><th>Alt (ft)</th><th>Pos</th></tr></thead>
+                                          <tbody id="aviationFlightsBody"><tr><td colspan="7"><div class="empty-state">No flights loaded yet.</div></td></tr></tbody>
+                                      </table>
+                                  </div>
+                              </div>
+                              <!-- GPS Jamming Tab -->
+                              <div id="aviationTabJamming" class="aviation-tab-content">
+                                  <div id="aviationJammingStatus" style="margin-bottom:12px;font-size:13px;color:#aaa">No jamming clusters — run the pipeline to detect GPS spoofing.</div>
+                                  <div class="table-wrap">
+                                      <table>
+                                          <thead><tr><th>Lat</th><th>Lng</th><th>Aircraft</th><th>Severity</th></tr></thead>
+                                          <tbody id="aviationJammingBody"><tr><td colspan="4"><div class="empty-state">No GPS jamming detected.</div></td></tr></tbody>
+                                      </table>
+                                  </div>
+                                  <div class="card" style="margin-top:12px">
+                                      <div class="card-header">
+                                          <span class="card-title">GPS Jamming SOP</span>
+                                      </div>
+                                      <div style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">
+                                          <p>NACp &le; 4 with no ground flag indicates degraded navigation accuracy — a potential GPS jamming source. Aircraft clustering in a 2&deg; grid with 3+ members and low NACp are aggregated into severity clusters.</p>
+                                      </div>
+                                  </div>
+                              </div>
+                              <!-- Airspace Map Tab -->
+                          </div>
+                      </div>
+                  </div>

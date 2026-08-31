@@ -73,3 +73,27 @@ Media paths on product pages MUST be `../`-prefixed (`../hero-bg-panteon.mp4`, `
 - Uses only Panteon tokens (`--accent-neon:#DFF140`, `--bg-dark:#000000`, `--bg-light:#ffffff` with white glass). No HUD/telemetry overlays, no glass-header overrides, no new colors/fonts.
 - Must include `@media (prefers-reduced-motion:reduce)` fallback (hide canvas) and `document.hidden` guard with `requestAnimationFrame` pause.
 - All other platform pages remain vanilla-JS only.
+
+---
+
+## Admin Console Decomposition (2026-08-31) — Operational Rigor
+
+This directory now ALSO holds the admin console lazy platforms (separate from marketing product pages above). Do not confuse the two.
+
+Admin decomposition:
+- `registry.json` — single source of truth for shell lazy loading (sidebar + router). Shell `admin.html` fetches `/static/platforms/registry.json` on first navigate.
+- `{id}/nav.json` — sidebar metadata for one admin platform (NOT the marketing nav).
+- `{id}/manifest.json` — version, apiDependencies, budgets (maxLines 900 / maxTokens 16000).
+- `{id}/pages/*.html` — extracted `div.page` fragments from admin.html (lazy-fetched via `/static/platforms/{id}/pages/{page}.html`). Inline fallback remains in admin.html so no functionality is lost.
+- `{id}/module.js` — platform JS placeholder (future: move load* handlers here). Loader injects via `/static/platforms/{id}/module.js` on first navigate.
+- `shared/api.js`, `shared/design-tokens.md` — cross-platform contracts.
+
+Cohesive panel guarantee: admin.html still renders all nav/pages inline as fallback; loader (`ensurePageFragment` + `ensurePlatformModule`patched into async navigate at admin.html:5561) falls back silently if fetch fails — zero functional loss.
+
+LLM focus protocol (different context windows):
+1. Read `registry.json` (1k tokens)
+2. Read `platforms/{id}/manifest.json` + `nav.json`
+3. Read only that platforms `pages/*.html` + `module.js`
+Total < 25k fits 32k windows. Do NOT read other platforms or whole admin.html (26192 lines / 1.5M). Use `scripts/check-platform-budgets.sh` in CI.
+
+Next steps: move YONO handlers, then Spinal Cracker fusion (2289 lines), then delete inline duplicates after one release of dual fallback.

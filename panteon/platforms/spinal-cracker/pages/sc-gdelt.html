@@ -1,0 +1,119 @@
+<!-- Platform: spinal-cracker | Page: sc-gdelt | Extracted from admin.html — shell lazy-loads this fragment. Keep wrapper id='page-sc-gdelt'. -->
+<div class="page" id="page-sc-gdelt">
+                      <div class="section">
+                          <div class="section-header">
+                              <span class="section-title">GDELT Intelligence Engine</span>
+                              <div style="display:flex;gap:8px;align-items:center">
+                                  <span class="pulse-dot" id="gdeltHealthDot" style="width:10px;height:10px;border-radius:50%;background:#555;"></span>
+                                  <span class="mono" id="gdeltHealthText" style="font-size:12px">Health: …</span>
+                              </div>
+                          </div>
+                          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px">
+                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
+                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">DOC 2.0 Modes</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:300;color:var(--accent-neon)">8</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">artlist, tonechart, wordcloud, imagecollage</div>
+                              </div>
+                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
+                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Ngram Analysis</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:300;color:var(--amber)">2</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">Context + Web keyword co-occurrence</div>
+                              </div>
+                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
+                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Actor Graph</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:300;color:var(--accent-neon)">CAMEO</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">Manual event entry + relationship queries</div>
+                              </div>
+                              <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:12px">
+                                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">BigQuery Backend</div>
+                                  <div style="font-family:var(--font-tech);font-size:20px;font-weight:300;color:var(--green)" id="gdeltBqStatus">--</div>
+                                  <div style="font-size:10px;color:var(--text-muted)">Production GDELT access (tone + actors + geocoding)</div>
+                              </div>
+                          </div>
+                          <div style="margin-bottom:16px">
+                              <div style="display:flex;gap:4px;margin-bottom:12px">
+                                  <button class="gdelt-tab active" data-tab="doc2" onclick="switchGdeltTab('doc2')">DOC 2.0 Pipeline</button>
+                                  <button class="gdelt-tab" data-tab="ngram" onclick="switchGdeltTab('ngram')">Ngram Analysis</button>
+                                  <button class="gdelt-tab" data-tab="actor" onclick="switchGdeltTab('actor')">Actor Graph</button>
+                              </div>
+                              <div id="gdeltTabDoc2" class="gdelt-tab-content active">
+                                  <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+                                      <input id="gdeltQuery" type="text" placeholder='GDELT query e.g. ("military" OR "defense")' style="flex:1">
+                                      <input id="gdeltTimespan" type="text" placeholder="timespan e.g. 1m" value="1m" style="width:110px">
+                                      <select id="gdeltMode" style="padding:4px 8px;font-size:12px;border:1px solid var(--border-light);border-radius:4px;background:var(--bg);color:var(--text);min-width:140px">
+                                          <option value="artlist">artlist</option>
+                                          <option value="art">art</option>
+                                          <option value="imagecollage">imagecollage</option>
+                                          <option value="timelinevol">timelinevol</option>
+                                          <option value="tonechart">tonechart</option>
+                                          <option value="wordcloudenglish">wordcloudenglish</option>
+                                          <option value="wordcloudimagetags">wordcloudimagetags</option>
+                                          <option value="imagecollageshare">imagecollageshare</option>
+                                      </select>
+                                      <input id="gdeltMax" type="number" min="1" max="250" value="50" style="width:80px">
+                                      <button class="btn btn-primary btn-sm" onclick="runGdeltPipeline()">Run Pipeline</button>
+                                      <button class="btn btn-secondary btn-sm" onclick="loadGdeltSnapshot()">Refresh</button>
+                                  </div>
+                                  <div id="gdeltRunStatus" style="margin-bottom:12px;font-size:13px;color:#aaa"></div>
+                                  <div class="table-wrap">
+                                      <table>
+                                          <thead><tr><th>Object Types</th><th>Link Types</th><th>Objects (OSv2)</th><th>Links (OSv2)</th></tr></thead>
+                                          <tbody id="gdeltSnapshotBody"><tr><td colspan="4"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody>
+                                      </table>
+                                  </div>
+                              </div>
+                                  <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+                                      <input id="ngramKeyword" type="text" placeholder="Keyword e.g. military" style="flex:1">
+                                      <select id="ngramType" style="padding:4px 8px;font-size:12px;border:1px solid var(--border-light);border-radius:4px;background:var(--bg);color:var(--text);min-width:120px">
+                                          <option value="context">context</option>
+                                          <option value="web">web</option>
+                                      </select>
+                                      <input id="ngramTimespan" type="text" placeholder="timespan e.g. 30d" value="30d" style="width:110px">
+                                      <button class="btn btn-primary btn-sm" onclick="runNgramAnalysis()">Analyze</button>
+                                  </div>
+                                  <div id="ngramResult" style="margin-bottom:12px;font-size:13px;color:#aaa"></div>
+                                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                                      <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:16px">
+                                          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">Frequency</div>
+                                          <div id="ngramFrequency" style="font-family:var(--font-tech);font-size:24px;font-weight:600;color:var(--accent-cyan)">—</div>
+                                      </div>
+                                      <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:16px">
+                                          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">Confidence</div>
+                                          <div id="ngramConfidence" style="font-family:var(--font-tech);font-size:24px;font-weight:600;color:var(--accent-purple)">—</div>
+                                      </div>
+                                  </div>
+                                  <div style="margin-top:12px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:16px">
+                                      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">Correlation Keywords</div>
+                                      <div id="ngramCorrelations" style="font-size:12px;color:var(--text-muted)">—</div>
+                                  </div>
+                              </div>
+<div id="gdeltTabActor" class="gdelt-tab-content">
+                                   <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+                                       <input id="actorEventCode" type="text" placeholder="CAMEO code e.g. 3010" style="width:150px">
+                                       <input id="actorSource" type="text" placeholder="Source actor" style="flex:1">
+                                       <input id="actorTarget" type="text" placeholder="Target actor" style="flex:1">
+                                       <input id="actorCountry" type="text" placeholder="Country" style="width:120px">
+                                       <button class="btn btn-primary btn-sm" onclick="addActorEvent()">Add Event</button>
+                                       <button class="btn btn-secondary btn-sm" onclick="loadActorGraph()">Load Graph</button>
+                                   </div>
+                                   <div id="actorStatus" style="margin-bottom:12px;font-size:13px;color:#aaa"></div>
+                                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                                       <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:16px">
+                                           <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">Total Actors</div>
+                                           <div id="actorCount" style="font-family:var(--font-tech);font-size:24px;font-weight:600;color:var(--accent-cyan)">0</div>
+                                       </div>
+                                       <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:4px;padding:16px">
+                                           <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">Relationships</div>
+                                           <div id="actorRelations" style="font-family:var(--font-tech);font-size:24px;font-weight:600;color:var(--accent-purple)">0</div>
+                                       </div>
+                                   </div>
+                                   <div style="margin-top:12px" class="table-wrap">
+                                       <table>
+                                           <thead><tr><th>Actor</th><th>Type</th><th>Country</th><th>Relations</th></tr></thead>
+                                           <tbody id="actorTableBody"><tr><td colspan="4"><div class="empty-state">No actors loaded yet.</div></td></tr></tbody>
+                                       </table>
+                                   </div>
+                               </div>
+                           </div>
+                           <!-- Threat Map Tab Content -->
+                    </div>

@@ -2323,7 +2323,8 @@
         }
     </style>
 </head>
-<body>
+<body><div id="ghDebugBanner" style="position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:99999;background:#000;color:#DFF140;border:1px solid #DFF140;padding:6px 12px;font:10px JetBrains Mono;max-width:90%;display:none;white-space:pre-wrap;"></div><script>window._ghLog=function(m){try{var b=document.getElementById("ghDebugBanner"); if(b){b.style.display="block"; b.textContent+=m+"
+";} console.log(m);}catch(e){}};</script>
 
 <svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden">
     <defs>
@@ -5253,102 +5254,6 @@ const PAGES = {
     'cmb-analytics': 'CMB Analytics'
 };
 
-
-// ---- Platform Registry Loader (2026-08-31) ----
-// Read-only decomposition: admin.html is the shell (core pages stay inline).
-// Platforms live in platforms/{id}/ — registry.json + nav.json + pages/*.html + module.js
-// LLM guidance: read platforms/registry.json + one platforms/{id}/manifest.json + that platforms pages — never whole admin.html.
-// Operational rigor: fallback to inline markup if fetch fails; no functionality lost.
-(function(){
-  const REGISTRY_URL = "/static/platforms/registry.json";
-  let registry = null;
-  let loadedModules = new Set();
-  const pageToPlatform = new Map();
-
-  async function ensureRegistry(){
-    if(registry) return registry;
-    try{
-      const r = await fetch(REGISTRY_URL, {cache:"no-store"});
-      if(!r.ok) throw new Error("registry fetch "+r.status);
-      registry = await r.json();
-      registry.platforms.forEach(p=>{
-        (p.pages||[]).forEach(pg=> pageToPlatform.set(pg, p.id));
-      });
-      console.log("[platform-loader] registry", registry.platforms.length, "platforms");
-    }catch(e){
-      console.warn("[platform-loader] registry unavailable, falling back to inline", e);
-    }
-    return registry;
-  }
-
-  // Expose for debugging and for LLM tooling
-  window.PanteonPlatforms = {
-    ensureRegistry,
-    getPagePlatform: (page)=> pageToPlatform.get(page) || "core",
-    isLoaded: (pid)=> loadedModules.has(pid),
-    markLoaded: (pid)=> loadedModules.add(pid),
-    getRegistry: ()=> registry
-  };
-
-  // Lazy page loader: if the page div is missing or empty, fetch its html partial
-  window.ensurePageFragment = async function(page){
-    await ensureRegistry();
-    const plat = pageToPlatform.get(page);
-    if(!plat || plat==="core") return true; // core always inline
-    const target = document.getElementById("page-"+page);
-    if(!target){
-      // No inline target — try to create from fetch and append to .content
-      try{
-        const url = "/static/platforms/"+plat+"/pages/"+page+".html";
-        const r = await fetch(url, {cache:"no-store"});
-        if(!r.ok) throw new Error(r.status);
-        const html = await r.text();
-        const content = document.querySelector(".content");
-        if(content){
-          const holder = document.createElement("div");
-          holder.innerHTML = html.trim();
-          const pageEl = holder.firstElementChild;
-          if(pageEl) content.appendChild(pageEl);
-          console.log("[platform-loader] injected", page, "from", url);
-          return true;
-        }
-      }catch(e){ console.warn("[platform-loader] failed to inject", page, e); }
-      return false;
-    }
-    // Target exists inline — we keep it as fallback; no fetch needed until we have split JS.
-    // Future: when inline pages are removed, this becomes mandatory fetch above.
-    return true;
-  };
-
-  // Lazy JS module loader — idempotent
-  window.ensurePlatformModule = async function(platformId){
-    if(!platformId || platformId==="core" || loadedModules.has(platformId)) return true;
-    await ensureRegistry();
-    const plat = registry && registry.platforms.find(p=>p.id===platformId);
-    if(!plat || !plat.module) return true;
-    try{
-      // Use dynamic import if available, else fetch+eval fallback
-      const url = plat.module.startsWith('/static/') ? plat.module : '/static/' + plat.module;
-      // Prefer <script type=module> injection for compatibility with non-ESM global code
-      await new Promise((res, rej)=>{
-        const s = document.createElement("script");
-        s.src = url;
-        s.async = true;
-        s.onload = ()=>{ loadedModules.add(platformId); console.log("[platform-loader] module loaded", platformId); res(); };
-        s.onerror = rej;
-        document.head.appendChild(s);
-      });
-      return true;
-    }catch(e){
-      console.warn("[platform-loader] module load failed", platformId, e);
-      return false;
-    }
-  };
-
-  // Patch navigate to ensure fragments/modules are ready before loadPageData fires
-  // We wrap after the original is defined — store and re-chain below.
-})();
-
 // ---- Auth resilience ----------------------------------------------------
 // Cross-tab channel: hard sign-out in one tab ends the others cleanly
 // instead of letting them race on a revoked session.
@@ -5561,16 +5466,10 @@ async function checkHealth() {
     }
 }
 
-async function navigate(page) {
+function navigate(page) {
     if (window.PLATFORM_SELECT && !PLATFORM_SELECT.allowsPage(page)) page = 'overview';
     if (isMimiOnly()) page = 'statham-smm';
     else if (page === 'statham-smm' && !canAccessMimi()) page = 'overview';
-    // Platform lazy preflight — fetch fragment/module if shell no longer has inline page (future), otherwise no-op fallback (current keeps functionality)
-    try{
-      if(window.ensurePageFragment) await window.ensurePageFragment(page);
-      const plat = window.PanteonPlatforms ? window.PanteonPlatforms.getPagePlatform(page) : null;
-      if(plat && window.ensurePlatformModule) await window.ensurePlatformModule(plat);
-    }catch(e){ console.warn('[navigate] preflight failed', e); }
     document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
     if (typeof window.revealNavSection === 'function') window.revealNavSection(page);
     if (window.DECK && typeof DECK.refreshTabs === 'function') {
@@ -5589,8 +5488,6 @@ async function navigate(page) {
             requestAnimationFrame(() => { target.style.opacity = '1'; target.style.transform = 'translateY(0)'; });
             initCMBReveal(target);
         }, 150);
-    } else {
-        console.warn('[navigate] target missing for', page, '— fragment may have failed to load, will retry on next navigation');
     }
     document.getElementById('topbarTitle').textContent = PAGES[page] || page;
     window.location.hash = page;
@@ -20172,7 +20069,6 @@ function renderFusionRealLayer() {
             var m = getMap();
             if (m && S.wiredMap !== m) { S.wiredMap = m; wireMapClicks(m); }
             S.state = await api('/maven/state');
-            try{ window._S=S; if(window.MAVEN) try{ window.MAVEN.state=S.state; }catch(e){} }catch(e){}
             try {
                 window.MAVEN_VIEW = {
                     detections: S.state.detections || [],
@@ -20676,7 +20572,6 @@ function renderFusionRealLayer() {
                 }).join('') + '</div>' : '') +
                 '<div class="maven-det-actions">' +
                 '<button class="mut" data-ofly="' + i + '">\u2316 FLY</button>' +
-                '<button class="mut" data-view3d="' + i + '" data-view3d-id="' + esc(o.id) + '" data-view3d-name="' + esc(o.name||'') + '" data-view3d-lat="' + o.lat + '" data-view3d-lng="' + o.lng + '" style="' + (((o.name||'').toLowerCase().indexOf('grand hyatt')!==-1)?'border-color:#00ffaa;color:#00ffaa;background:rgba(0,255,170,0.14);font-weight:700':'') + '" onclick="try{window._view3dDirect&&window._view3dDirect(this)}catch(e){} return false;">\u2B22 VIEW 3D</button>' +
                 '<button class="mut" data-osnap="' + esc(o.id) + '">\uD83D\uDCF8 SNAP</button>' +
                 '<label class="mut mv-up" data-oup="' + esc(o.id) + '">\u2B06 PHOTO<input type="file" accept="image/*" hidden></label>' +
                 '<button class="mut" data-oren="' + esc(o.id) + '">RENAME</button>' +
@@ -20694,35 +20589,6 @@ function renderFusionRealLayer() {
                 } catch (e) {}
             };
         });
-          // VIEW 3D handlers
-          try{
-          host.querySelectorAll('[data-view3d]').forEach(function(btn){
-            if(btn._view3dHooked) return; btn._view3dHooked=true;
-            btn.addEventListener('click', function(ev){
-              ev.preventDefault(); ev.stopPropagation();
-              const idx=parseInt(this.getAttribute('data-view3d'),10);
-              const id=this.getAttribute('data-view3d-id');
-              const objs=(S.state.objects||[]);
-              let o=objs.find(x=> String(x.id)===String(id));
-              if(!o) o=objs[idx];
-              if(o && window.IndoorOps && window.IndoorOps.enter){ try{ window.IndoorOps.enter(o); }catch(e){} }
-            });
-          });
-          if(!host._view3dDelegation){
-            host._view3dDelegation=true;
-            host.addEventListener('click', function(e){
-              const b=e.target.closest('[data-view3d]');
-              if(!b) return;
-              e.preventDefault(); e.stopPropagation();
-              const idx=parseInt(b.getAttribute('data-view3d'),10);
-              const id=b.getAttribute('data-view3d-id');
-              const objs=(S.state.objects||[]);
-              let o=objs.find(x=> String(x.id)===String(id)); if(!o) o=objs[idx];
-              if(o && window.IndoorOps) window.IndoorOps.enter(o);
-            });
-          }
-          }catch(e){ console.warn('VIEW 3D hook failed', e); }
-
         host.querySelectorAll('[data-osnap]').forEach(function (btn) {
             btn.onclick = function () {
                 var oid = btn.getAttribute('data-osnap');
@@ -20795,7 +20661,7 @@ function renderFusionRealLayer() {
             try{
                 // VERIFIED OSM GH Manila: way 580263354, centroid 14.5570876,121.0520373, height 37.4, levels 6
                 var GH_GEOM_QG={type:"Polygon",coordinates:[[[121.0515,14.5566],[121.0523,14.5566],[121.0523,14.5569],[121.0515,14.5569],[121.0515,14.5566]]]};
-                var lat=14.5566, lng=121.0519, bheight=38;
+                var lat=14.5566, lng=121.0519, bheight=180; // 38 was too flat - make GH 3D visible (true 318m would be 318, 180 is visibly tall without dominating)
                 var GH_GEOM_OSM_QG={type:"Polygon",coordinates:[[[121.0515136,14.5565806],[121.0516201,14.5565521],[121.0516017,14.5564962],[121.051631,14.5564872],[121.0516097,14.556422],[121.0516716,14.5564029],[121.051661,14.5563707],[121.0517991,14.5563283],[121.0519371,14.5562859],[121.0519494,14.5563231],[121.0519966,14.5563086],[121.0520146,14.5563634],[121.0520341,14.5563574],[121.0520538,14.5564173],[121.052145,14.5563865],[121.0522438,14.5566706],[121.0525377,14.5575155],[121.052303,14.557588],[121.0522712,14.5575971],[121.0522261,14.5576118],[121.0520748,14.5576585],[121.0518968,14.5577136],[121.0518575,14.5575951],[121.0518272,14.5575045],[121.0515136,14.5565806]]]};
                 var lat2=14.5570876, lng2=121.0520373;
                 var payloadFootprint=GH_GEOM_QG.coordinates;
@@ -20861,6 +20727,7 @@ function renderFusionRealLayer() {
                   // auto-enter after 700ms so Indoor panel takes over (blackout + 3D)
                   setTimeout(function(){
                     try{
+                      console.log('QUICK REGISTER auto-enter GH');
                       const objs=(window.MAVEN&&window.MAVEN.state&&window.MAVEN.state.objects)||[];
                       const gh=objs.find(o=>(o.name||'').toLowerCase().indexOf('grand hyatt')!==-1);
                       if(gh && window.IndoorOps) window.IndoorOps.enter(gh);
@@ -20890,7 +20757,7 @@ function renderFusionRealLayer() {
             const _o=(S.state.objects||[])[idx];
             const isGH=_o && ((_o.name||'').toLowerCase().indexOf('grand hyatt')!==-1);
             const b=document.createElement('button'); b.className='mut'; b.setAttribute('data-indoor', idx); b.textContent=isGH?'⬢ VIEW 3D':'⬢ INDOOR';
-            b.onclick=function(){ const o=(S.state.objects||[])[idx]; if(o&&window.IndoorOps) window.IndoorOps.enter(o); };
+            b.onclick=function(){ const o=(S.state.objects||[])[idx]; console.log('VIEW 3D click', idx, o&&o.name, o); if(o&&window.IndoorOps){ try{ window.IndoorOps.enter(o); }catch(e){ console.warn('enter err',e); try{ showRealisticBuilding(o.footprint||GH_GEOM, Number(o.height_m)||180); }catch(e2){} } } else { console.warn('No IndoorOps'); } };
             fly.insertAdjacentElement('afterend', b);
         });
     }
@@ -21719,10 +21586,8 @@ function renderFusionRealLayer() {
                 window.MAVEN = {
                     toggle: toggleDrawer, refresh: refresh,
                     isAoiMode: function () { return S.aoiMode; },
-                    isOpen: function () { return S.open; },
-                    get state(){ return S.state; }
+                    isOpen: function () { return S.open; }
                 };
-                try{ window._S=S; }catch(e){}
                 $('mavenToggleBtn').disabled = false;
             }
         }, 500);
@@ -25384,11 +25249,13 @@ document.querySelectorAll(".empty-state").forEach(el=>{
         try{
           var l=m.getLayer('realistic-gh');
           if(l && l.implementation && l.implementation.scene){
+            try{ m.setLayoutProperty('realistic-gh','visibility','visible'); }catch(e){}
             // clear again before add to avoid duplicate during async
             while(l.implementation.scene.children.length>1) l.implementation.scene.remove(l.implementation.scene.children[l.implementation.scene.children.length-1]);
             l.implementation.scene.add(mesh);
             realisticGroup=l.implementation.scene;
             realisticVisible=true;
+            window._ghLog('GH addMesh visible'); console.log('GH addMesh visible', mesh, 'realisticVisible', realisticVisible);
             m.triggerRepaint();
           }
         }catch(e){ console.warn('addMesh err',e); }
@@ -25402,7 +25269,7 @@ document.querySelectorAll(".empty-state").forEach(el=>{
         try{
           var loader=new THREE.GLTFLoader();
           loader.load(glbUrl, function(gltf){
-            console.log('GH GLB loaded', glbUrl, gltf);
+            window._ghLog('GH GLB loaded'); console.log('GH GLB loaded', glbUrl, gltf); try{ var _box=new THREE.Box3().setFromObject(gltf.scene||gltf.scenes[0]); var _size=new THREE.Vector3(); _box.getSize(_size); window._ghLog('GH BOX'); console.log('GH BOX', JSON.stringify({min:_box.min,max:_box.max,size:_size})); }catch(e){}
             try{
               var scene=gltf.scene || gltf.scenes[0];
               if(!scene) throw new Error('no scene');
@@ -25412,11 +25279,11 @@ document.querySelectorAll(".empty-state").forEach(el=>{
               var modelH=size.y || size.z || 183;
               var targetH=height||38; if(targetH<8) targetH=38;
               // FIX: building height is 136 (321-185), not 321 overall — use building height for scale so 38m is correct and not floating/short
-              var buildingBaseY = 185;
-              try{ if(box.min.y < 10) buildingBaseY = 185; else buildingBaseY = box.min.y; }catch(e){}
+              var buildingBaseY = 0;
+              try{ buildingBaseY = box.min.y; }catch(e){ buildingBaseY=0; } // headless base ~0
               var buildingH = (modelH||321) - buildingBaseY;
-              if(buildingH < 10) buildingH = 136;
-              var scaleFactor= targetH / (buildingH||136);
+              if(buildingH < 10) buildingH = size.y||321; // fallback full height
+              var scaleFactor= targetH / (buildingH||size.y||321);
               try{
                 var size=new THREE.Vector3(); box.getSize(size);
                 scene.position.x -= center.x;
@@ -25424,7 +25291,7 @@ document.querySelectorAll(".empty-state").forEach(el=>{
                 scene.position.y -= buildingBaseY;
               }catch(e){ scene.position.sub(center); }
               scene.scale.set(scaleFactor, scaleFactor, scaleFactor);
-              scene.rotation.x = Math.PI/2;
+              scene.rotation.x = -Math.PI/2;
               // keep true GLB materials (OpenSKP blue/gold) — make them bright and doubleSided (was black due to below ground and single light)
               try{
                 var isTrueGLB = (gltf.asset && gltf.asset.generator && gltf.asset.generator.indexOf('OpenSKP')!==-1) || (gltf.parser && gltf.parser.json && JSON.stringify(gltf.parser.json).indexOf('OpenSKP')!==-1);
@@ -25477,7 +25344,7 @@ document.querySelectorAll(".empty-state").forEach(el=>{
               console.log('GH realistic visible, scaleFactor',scaleFactor,'s',s);
             }catch(e){ console.warn('GLB process failed, fallback procedural', e); var fallback=buildRealisticMesh(geom, height); if(fallback) addMeshToScene(fallback); }
           }, undefined, function(err){
-            console.warn('GLB load failed, fallback procedural', err);
+            window._ghLog('GLB load failed'); console.warn('GLB load failed, fallback procedural', err);
             var fallback=buildRealisticMesh(geom, height); if(fallback) addMeshToScene(fallback);
           });
         }catch(e){ console.warn('GLTFLoader init failed', e); }
@@ -25531,8 +25398,8 @@ document.querySelectorAll(".empty-state").forEach(el=>{
           if(ghGeom && ghGeom.coordinates) ghGeom={type:ghGeom.type||'Polygon',coordinates:ghGeom.coordinates};
         }
       }catch(e){}
-      ghH=Number(gh.height_m)||38;
-      if(ghH<4) ghH=38;
+      ghH=Number(gh.height_m)||180; // 180m tall visible GH
+      if(ghH<4) ghH=180;
       // synthesize small rect footprint centered on object's lng/lat if none stored (manual point object)
       if(!ghGeom && isFinite(gh.lng) && isFinite(gh.lat)){
         var dLng=0.0004, dLat=0.00015;
@@ -25540,6 +25407,7 @@ document.querySelectorAll(".empty-state").forEach(el=>{
         ghGeom={type:'Polygon',coordinates:[[[cx-dLng,cy-dLat],[cx+dLng,cy-dLat],[cx+dLng,cy+dLat],[cx-dLng,cy+dLat],[cx-dLng,cy-dLat]]]};
       }
       if(!ghGeom) ghGeom=GH_GEOM;
+      try{ const mm=getMap(); if(mm && mm.getLayer('realistic-gh')) mm.setLayoutProperty('realistic-gh','visibility','visible'); }catch(e){}
       if(!persistentGH || !realisticVisible){
         persistentGH=true;
         showRealisticBuilding(ghGeom, ghH);
@@ -26129,7 +25997,6 @@ document.querySelectorAll(".empty-state").forEach(el=>{
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', hook); else hook();
 })();
 </script>
-
 <script>
 // === INDOOR 3D GH PANEL — isolated viewer (only Grand Hyatt), not MapLibre custom layer ===
 (function(){
@@ -26291,70 +26158,7 @@ document.querySelectorAll(".empty-state").forEach(el=>{
   console.log('indoor3D: hook installed');
 })();
 </script>
-<script>
-window._view3dDirect = function(btn){
-  try{
-    var id=btn.getAttribute('data-view3d-id');
-    var idx=parseInt(btn.getAttribute('data-view3d'),10);
-    var name=btn.getAttribute('data-view3d-name')||'';
-    var lat=parseFloat(btn.getAttribute('data-view3d-lat'));
-    var lng=parseFloat(btn.getAttribute('data-view3d-lng'));
-    var objs=[];
-    try{ objs=(window.MAVEN&&window.MAVEN.state&&window.MAVEN.state.objects)||[]; }catch(e){}
-    if(!objs.length) try{ objs=(window._S&&window._S.state&&window._S.state.objects)||[]; }catch(e){}
-    var o=null;
-    if(id) o=objs.find(function(x){ return String(x.id)===String(id); });
-    if(!o && isFinite(idx)) o=objs[idx];
-    if(!o) o={id:id||('tmp-'+idx), name:name||'Grand Hyatt Manila', lat:lat||14.5566, lng:lng||121.0519, height_m:318, footprint:null};
-    if(window.IndoorOps && typeof window.IndoorOps.enter==='function'){ try{ window.IndoorOps.enter(o); }catch(e){} }
-    try{
-      var hud=document.getElementById('indoorHud');
-      var cvs=document.getElementById('indoor3D');
-      var badge=document.getElementById('indoor3DBadge');
-      if(hud && !hud.classList.contains('visible')) hud.classList.add('visible');
-      document.body.classList.add('indoor-focus');
-      if(cvs){
-        var isGH=(o.name||'').toLowerCase().indexOf('grand hyatt')!==-1;
-        if(isGH){
-          cvs.classList.add('gh-visible');
-          if(badge) badge.classList.add('on');
-          try{ if(window._indoor3D && window._indoor3D.show) window._indoor3D.show(o); }catch(e){}
-          try{ var img=document.getElementById('indoorImg'); if(img) img.style.opacity='0.08'; }catch(e){}
-        }
-      }
-    }catch(e){}
-    try{ var m=(typeof getMap==='function'?getMap(): window.fusionMap); if(m && o) m.flyTo({center:[Number(o.lng), Number(o.lat)], zoom:18.6, pitch:62, bearing:-12, duration:900}); }catch(e){}
-  }catch(e){ console.error(e); }
-};
-</script>
-
-
-<script>
-// VIEW 3D global fallback
-(function(){
-  if(window._view3dGlobalPatched) return; window._view3dGlobalPatched=true;
-  document.addEventListener('click', function(e){
-    const b=e.target.closest('[data-view3d]');
-    if(!b) return;
-    e.preventDefault(); try{ e.stopPropagation(); }catch(_){}
-    const id=b.getAttribute('data-view3d-id');
-    const idx=parseInt(b.getAttribute('data-view3d'),10);
-    let objs=[];
-    try{ objs=(window.MAVEN&&window.MAVEN.state&&window.MAVEN.state.objects)||[]; }catch(e){}
-    if(!objs.length) try{ objs=(window._S&&window._S.state&&window._S.state.objects)||[]; }catch(e){}
-    let o=null;
-    if(id) o=objs.find(x=> String(x.id)===String(id));
-    if(!o && isFinite(idx)) o=objs[idx];
-    if(!o) return;
-    if(window.IndoorOps && typeof window.IndoorOps.enter==='function'){
-      try{ window.IndoorOps.enter(o); }catch(e){}
-      try{ document.getElementById('indoorHud')?.classList.add('visible'); document.body.classList.add('indoor-focus'); }catch(e){}
-      try{ const isGH=(o.name||'').toLowerCase().indexOf('grand hyatt')!==-1; if(isGH && window._indoor3D && window._indoor3D.show) window._indoor3D.show(o); }catch(e){}
-    }
-  }, true);
-})();
-</script>
-
+</body>
 </body>
 
 </html>

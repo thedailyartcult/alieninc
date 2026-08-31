@@ -14,7 +14,6 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script>window.THREE||document.write('<script src="/panteon/vendor/three.r128.min.js"><\/script>')</script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <!-- ChatGPT-grade markdown: marked + DOMPurify + highlight.js (no build, single-file) -->
@@ -3358,8 +3357,6 @@
                                            <div class="indoor-stage" id="indoorStage">
                                                <img id="indoorImg" alt="Floorplan reference" />
                                                <canvas id="indoorCanvas" width="900" height="640" aria-label="Trace canvas — click to draw"></canvas>
-                                                <canvas id="indoor3D" width="900" height="640" aria-label="Grand Hyatt 3D"></canvas>
-                                                <div id="indoor3DBadge" class="indoor-3d-badge">GH 3D — DRAG TO ORBIT · SCROLL TO ZOOM</div>
   <div style="position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:6px;z-index:6">
     <button type="button" class="indoor-tbtn" onclick="try{const m=(typeof getMap==='function'?getMap():window.fusionMap); if(m) m.setZoom(Math.min(20, m.getZoom()+0.7));}catch(e){}" title="Zoom in">＋</button>
     <button type="button" class="indoor-tbtn" onclick="try{const m=(typeof getMap==='function'?getMap():window.fusionMap); if(m) m.setZoom(Math.max(14, m.getZoom()-0.7));}catch(e){}" title="Zoom out">－</button>
@@ -22145,10 +22142,6 @@ section[data-mpanel="yono"]{padding:0;border-top:1px solid var(--border-color);}
 .indoor-floor-btn.active{background:#00ffaa;color:#000;border-color:#00ffaa;box-shadow:0 0 10px rgba(0,255,170,.5);font-weight:700}
 .indoor-stage{position:relative;width:100%;aspect-ratio:900/640;background:#020805;border:1px solid rgba(0,255,170,.22);overflow:hidden;margin:10px 0 8px}
 .indoor-stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
-.indoor-stage canvas#indoor3D{z-index:4;background:#020805;display:none;cursor:grab}
-.indoor-stage canvas#indoor3D.gh-visible{display:block}
-.indoor-3d-badge{position:absolute;top:6px;left:6px;z-index:5;background:rgba(0,0,0,.78);border:1px solid rgba(0,255,170,.32);color:#DFF140;font:8px JetBrains Mono;padding:3px 6px;letter-spacing:1px;display:none}
-.indoor-3d-badge.on{display:block}
 .indoor-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;opacity:.92}
 .indoor-toolbar{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 8px}
 .indoor-tbtn{height:26px;padding:0 8px;border:1px solid rgba(0,255,170,.30);background:rgba(0,255,170,.07);color:#fff;font-family:var(--font-mono);font-size:8px;letter-spacing:.08em;cursor:pointer}
@@ -26130,167 +26123,6 @@ document.querySelectorAll(".empty-state").forEach(el=>{
 })();
 </script>
 
-<script>
-// === INDOOR 3D GH PANEL — isolated viewer (only Grand Hyatt), not MapLibre custom layer ===
-(function(){
-  let r=null, s=null, cam=null, ctrl=null, raf=null, model=null, badge=null, canvas=null;
-  let loadedUrl=null;
-  function ensure(){
-    if(r) return;
-    canvas = document.getElementById('indoor3D');
-    badge = document.getElementById('indoor3DBadge');
-    if(!canvas || typeof THREE==='undefined') { console.warn('indoor3D: no canvas or THREE'); return; }
-    try{
-      s = new THREE.Scene();
-      s.background = new THREE.Color(0x020805);
-      cam = new THREE.PerspectiveCamera(42, 900/640, 0.1, 2000);
-      cam.position.set(160, 140, 160);
-      r = new THREE.WebGLRenderer({canvas:canvas, antialias:true, alpha:true});
-      r.setPixelRatio(window.devicePixelRatio||1);
-      r.setSize(900,640,false);
-      try{ r.outputEncoding = THREE.sRGBEncoding; r.toneMappingExposure = 1.05; }catch(e){}
-      // lights — bright for dark glass (was black on map)
-      const dir = new THREE.DirectionalLight(0xffffff, 1.35); dir.position.set(180,220,160); s.add(dir);
-      const dir2 = new THREE.DirectionalLight(0xffffff, 0.85); dir2.position.set(-120, 80, -140); s.add(dir2);
-      const amb = new THREE.AmbientLight(0xffffff, 0.95); s.add(amb);
-      const hemi = new THREE.HemisphereLight(0xffffff, 0x0a1e2e, 0.65); s.add(hemi);
-      const point = new THREE.PointLight(0xDFF140, 0.7, 900); point.position.set(0, 180, 60); s.add(point);
-      // grid helper
-      try{ const grid=new THREE.GridHelper(520, 26, 0x00ffaa, 0x00ffaa); grid.material.opacity=0.12; grid.material.transparent=true; s.add(grid);}catch(e){}
-      if(typeof THREE.OrbitControls !== 'undefined'){
-        ctrl = new THREE.OrbitControls(cam, canvas);
-        ctrl.enableDamping=true; ctrl.dampingFactor=0.08;
-        ctrl.minDistance=40; ctrl.maxDistance=520; ctrl.target.set(0, 80, 0);
-        ctrl.update();
-      }
-      window.addEventListener('resize', ()=>{ try{ if(canvas && r){ const rect=canvas.getBoundingClientRect(); const w=rect.width||900, h=rect.height||640; r.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix(); }}catch(e){} });
-      console.log('indoor3D: initialized');
-    }catch(e){ console.warn('indoor3D ensure failed', e); }
-  }
-  function animate(){
-    if(!r || !s || !cam) return;
-    raf = requestAnimationFrame(animate);
-    try{ if(ctrl) ctrl.update(); }catch(e){}
-    try{ r.render(s, cam); }catch(e){}
-  }
-  function stop(){ if(raf) cancelAnimationFrame(raf); raf=null; }
-  function show(obj){
-    const isGH = obj && ((obj.name||'').toLowerCase().indexOf('grand hyatt')!==-1);
-    if(!isGH){ hide(); return; }
-    ensure();
-    if(!r || !s) return;
-    const cvs=document.getElementById('indoor3D');
-    const bdg=document.getElementById('indoor3DBadge');
-    if(cvs) cvs.classList.add('gh-visible');
-    if(bdg) bdg.classList.add('on');
-    // hide 2D blueprint behind 3D when GH (keep trace canvas below)
-    try{ const img=document.getElementById('indoorImg'); if(img) img.style.opacity='0.08'; }catch(e){}
-    // load GLB once
-    const url='/static/models/grandhyatt.glb';
-    if(model && loadedUrl===url){ if(!raf) animate(); return; }
-    if(typeof THREE.GLTFLoader==='undefined'){ console.warn('indoor3D: GLTFLoader missing'); return; }
-    console.log('indoor3D: loading', url);
-    if(bdg) bdg.textContent='GH 3D — LOADING…';
-    const loader=new THREE.GLTFLoader();
-    loader.load(url, function(gltf){
-      try{
-        const scene=gltf.scene||gltf.scenes[0];
-        if(!scene) throw new Error('no scene');
-        // center + scale to ~180m tall visible (box 321 -> 180)
-        const box=new THREE.Box3().setFromObject(scene);
-        const size=new THREE.Vector3(); box.getSize(size);
-        const center=new THREE.Vector3(); box.getCenter(center);
-        const targetH=180; // requested visible GH
-        const scaleFactor= targetH / (size.y||321);
-        scene.position.sub(center);
-        // lift base to ground: after sub(center), base = box.min.y - center.y = -size.y/2 (~ -160); after scale, base = -size.y/2 * scaleFactor (~ -90)
-        // add half scaled height to put base at 0
-        scene.position.y += (size.y/2 * scaleFactor);
-        scene.scale.set(scaleFactor, scaleFactor, scaleFactor);
-        // keep original materials bright — don't overwrite with window texture
-        scene.traverse(function(o){
-          if(o.isMesh && o.material){
-            try{
-              const mats=Array.isArray(o.material)?o.material:[o.material];
-              mats.forEach(function(m){
-                m.side=THREE.DoubleSide;
-                // brighten dark PBR: keep baseColor, boost emissive
-                if(m.emissive && m.color){
-                  try{ m.emissive.copy(m.color); m.emissiveIntensity=0.45; }catch(e){}
-                  if(m.color && m.color.getHex()===0) m.color.setHex(0x4aa0d0);
-                }
-                m.roughness=0.42; m.metalness=0.12; m.needsUpdate=true;
-              });
-            }catch(e){}
-          }
-        });
-        // remove old model
-        if(model) try{ s.remove(model); }catch(e){}
-        model=scene;
-        s.add(model);
-        loadedUrl=url;
-        // frame camera
-        try{
-          const b2=new THREE.Box3().setFromObject(model);
-          const sz=new THREE.Vector3(); b2.getSize(sz);
-          const cen=new THREE.Vector3(); b2.getCenter(cen);
-          if(ctrl){ ctrl.target.copy(cen); ctrl.target.y = sz.y*0.42; }
-          cam.position.set(cen.x+ 220, cen.y + 140, cen.z + 220);
-          cam.lookAt(cen);
-          if(ctrl) ctrl.update();
-        }catch(e){}
-        if(bdg) bdg.textContent='GH 3D — DRAG TO ORBIT · SCROLL TO ZOOM';
-        console.log('indoor3D: GH loaded, size', size, 'scale', scaleFactor);
-        if(!raf) animate();
-      }catch(e){ console.warn('indoor3D process failed', e); if(bdg) bdg.textContent='GH 3D — LOAD FAILED'; }
-    }, undefined, function(err){
-      console.warn('indoor3D load failed', err);
-      const bdg2=document.getElementById('indoor3DBadge');
-      if(bdg2) bdg2.textContent='GH 3D — FAILED (fallback to 2D)';
-    });
-    if(!raf) animate();
-  }
-  function hide(){
-    const cvs=document.getElementById('indoor3D');
-    const bdg=document.getElementById('indoor3DBadge');
-    if(cvs) cvs.classList.remove('gh-visible');
-    if(bdg) bdg.classList.remove('on');
-    try{ const img=document.getElementById('indoorImg'); if(img) img.style.opacity='0.92'; }catch(e){}
-    stop();
-  }
-  // hook into existing IndoorOps
-  const origEnter = window.IndoorOps && window.IndoorOps.enter;
-  const origExit = window.IndoorOps && window.IndoorOps.exit;
-  if(origEnter){
-    window.IndoorOps.enter = function(obj){
-      try{ origEnter.call(this, obj); }catch(e){ console.warn('orig enter err', e); }
-      try{ show(obj); }catch(e){ console.warn('indoor3D show err', e); }
-    };
-  }
-  if(origExit){
-    window.IndoorOps.exit = function(){
-      try{ origExit.call(this); }catch(e){}
-      try{ hide(); }catch(e){}
-    };
-  }
-  // also hide map overlay realistic-gh for GH to avoid black double
-  // monkey-patch showRealisticBuilding to no-op for GH (keep for other buildings if needed)
-  const prevShow = window.showRealisticBuilding;
-  if(typeof prevShow==='function'){
-    window.showRealisticBuilding = function(geom, height){
-      try{
-        // if GH panel is active, skip map overlay (was black)
-        const sel = window.IndoorOps && document.getElementById('indoorHud')?.classList.contains('visible');
-        const isGHPanel = document.getElementById('indoor3D')?.classList.contains('gh-visible');
-        if(sel && isGHPanel) { console.log('showRealisticBuilding skipped — indoor3D active'); return; }
-      }catch(e){}
-      return prevShow.apply(this, arguments);
-    };
-  }
-  window._indoor3D = {show, hide, ensure};
-  console.log('indoor3D: hook installed');
-})();
-</script>
 <script>
 window._view3dDirect = function(btn){
   try{

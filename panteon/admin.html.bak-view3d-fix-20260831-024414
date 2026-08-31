@@ -2323,7 +2323,8 @@
         }
     </style>
 </head>
-<body>
+<body><div id="ghDebugBanner" style="position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:99999;background:#000;color:#DFF140;border:1px solid #DFF140;padding:6px 12px;font:10px JetBrains Mono;max-width:90%;display:none;white-space:pre-wrap;"></div><script>window._ghLog=function(m){try{var b=document.getElementById("ghDebugBanner"); if(b){b.style.display="block"; b.textContent+=m+"
+";} console.log(m);}catch(e){}};</script>
 
 <svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden">
     <defs>
@@ -3353,13 +3354,14 @@
                                    <div id="indoorHud" class="indoor-hud" role="region" aria-label="Tactical Indoor Ops">
                                        <div class="indoor-hud-head"><span class="indoor-hud-title">TACTICAL INDOOR OPS</span><span id="indoorFloorLabel" class="indoor-hud-sub">—</span><button type="button" class="indoor-hud-close" onclick="window.IndoorOps&&IndoorOps.exit()" title="Exit indoor view">×</button></div>
                                        <div class="indoor-hud-body">
-                                           <div class="indoor-hud-label">SELECT FLOOR — ISOLATED BUILDING</div>
-                                           <div id="indoorFloorGrid" class="indoor-floor-grid"></div>
+                                           <div class="indoor-hud-label" id="indoorFloorToggle" style="cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px">SELECT FLOOR — ISOLATED BUILDING <span style="opacity:.6;font-size:9px">▸ CLICK TO SHOW 66 FLOORS</span> <span style="margin-left:auto;font-size:7px;opacity:.45">GH 66F HOVER ON 3D →</span></div>
+                                           <div id="indoorFloorGrid" class="indoor-floor-grid" style="display:none;max-height:160px;overflow:auto"></div>
                                            <div class="indoor-stage" id="indoorStage">
                                                <img id="indoorImg" alt="Floorplan reference" />
                                                <canvas id="indoorCanvas" width="900" height="640" aria-label="Trace canvas — click to draw"></canvas>
                                                 <canvas id="indoor3D" width="900" height="640" aria-label="Grand Hyatt 3D"></canvas>
                                                 <div id="indoor3DBadge" class="indoor-3d-badge">GH 3D — DRAG TO ORBIT · SCROLL TO ZOOM</div>
+                                                <div id="indoorFloorTooltip" style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);z-index:6;background:rgba(0,0,0,.86);border:1px solid rgba(0,255,170,.42);color:#DFF140;font:9px JetBrains Mono;padding:4px 8px;display:none;pointer-events:none;letter-spacing:1px;white-space:nowrap"></div>
   <div style="position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:6px;z-index:6">
     <button type="button" class="indoor-tbtn" onclick="try{const m=(typeof getMap==='function'?getMap():window.fusionMap); if(m) m.setZoom(Math.min(20, m.getZoom()+0.7));}catch(e){}" title="Zoom in">＋</button>
     <button type="button" class="indoor-tbtn" onclick="try{const m=(typeof getMap==='function'?getMap():window.fusionMap); if(m) m.setZoom(Math.max(14, m.getZoom()-0.7));}catch(e){}" title="Zoom out">－</button>
@@ -5253,102 +5255,6 @@ const PAGES = {
     'cmb-analytics': 'CMB Analytics'
 };
 
-
-// ---- Platform Registry Loader (2026-08-31) ----
-// Read-only decomposition: admin.html is the shell (core pages stay inline).
-// Platforms live in platforms/{id}/ — registry.json + nav.json + pages/*.html + module.js
-// LLM guidance: read platforms/registry.json + one platforms/{id}/manifest.json + that platforms pages — never whole admin.html.
-// Operational rigor: fallback to inline markup if fetch fails; no functionality lost.
-(function(){
-  const REGISTRY_URL = "/static/platforms/registry.json";
-  let registry = null;
-  let loadedModules = new Set();
-  const pageToPlatform = new Map();
-
-  async function ensureRegistry(){
-    if(registry) return registry;
-    try{
-      const r = await fetch(REGISTRY_URL, {cache:"no-store"});
-      if(!r.ok) throw new Error("registry fetch "+r.status);
-      registry = await r.json();
-      registry.platforms.forEach(p=>{
-        (p.pages||[]).forEach(pg=> pageToPlatform.set(pg, p.id));
-      });
-      console.log("[platform-loader] registry", registry.platforms.length, "platforms");
-    }catch(e){
-      console.warn("[platform-loader] registry unavailable, falling back to inline", e);
-    }
-    return registry;
-  }
-
-  // Expose for debugging and for LLM tooling
-  window.PanteonPlatforms = {
-    ensureRegistry,
-    getPagePlatform: (page)=> pageToPlatform.get(page) || "core",
-    isLoaded: (pid)=> loadedModules.has(pid),
-    markLoaded: (pid)=> loadedModules.add(pid),
-    getRegistry: ()=> registry
-  };
-
-  // Lazy page loader: if the page div is missing or empty, fetch its html partial
-  window.ensurePageFragment = async function(page){
-    await ensureRegistry();
-    const plat = pageToPlatform.get(page);
-    if(!plat || plat==="core") return true; // core always inline
-    const target = document.getElementById("page-"+page);
-    if(!target){
-      // No inline target — try to create from fetch and append to .content
-      try{
-        const url = "/static/platforms/"+plat+"/pages/"+page+".html";
-        const r = await fetch(url, {cache:"no-store"});
-        if(!r.ok) throw new Error(r.status);
-        const html = await r.text();
-        const content = document.querySelector(".content");
-        if(content){
-          const holder = document.createElement("div");
-          holder.innerHTML = html.trim();
-          const pageEl = holder.firstElementChild;
-          if(pageEl) content.appendChild(pageEl);
-          console.log("[platform-loader] injected", page, "from", url);
-          return true;
-        }
-      }catch(e){ console.warn("[platform-loader] failed to inject", page, e); }
-      return false;
-    }
-    // Target exists inline — we keep it as fallback; no fetch needed until we have split JS.
-    // Future: when inline pages are removed, this becomes mandatory fetch above.
-    return true;
-  };
-
-  // Lazy JS module loader — idempotent
-  window.ensurePlatformModule = async function(platformId){
-    if(!platformId || platformId==="core" || loadedModules.has(platformId)) return true;
-    await ensureRegistry();
-    const plat = registry && registry.platforms.find(p=>p.id===platformId);
-    if(!plat || !plat.module) return true;
-    try{
-      // Use dynamic import if available, else fetch+eval fallback
-      const url = plat.module.startsWith('/static/') ? plat.module : '/static/' + plat.module;
-      // Prefer <script type=module> injection for compatibility with non-ESM global code
-      await new Promise((res, rej)=>{
-        const s = document.createElement("script");
-        s.src = url;
-        s.async = true;
-        s.onload = ()=>{ loadedModules.add(platformId); console.log("[platform-loader] module loaded", platformId); res(); };
-        s.onerror = rej;
-        document.head.appendChild(s);
-      });
-      return true;
-    }catch(e){
-      console.warn("[platform-loader] module load failed", platformId, e);
-      return false;
-    }
-  };
-
-  // Patch navigate to ensure fragments/modules are ready before loadPageData fires
-  // We wrap after the original is defined — store and re-chain below.
-})();
-
 // ---- Auth resilience ----------------------------------------------------
 // Cross-tab channel: hard sign-out in one tab ends the others cleanly
 // instead of letting them race on a revoked session.
@@ -5561,16 +5467,10 @@ async function checkHealth() {
     }
 }
 
-async function navigate(page) {
+function navigate(page) {
     if (window.PLATFORM_SELECT && !PLATFORM_SELECT.allowsPage(page)) page = 'overview';
     if (isMimiOnly()) page = 'statham-smm';
     else if (page === 'statham-smm' && !canAccessMimi()) page = 'overview';
-    // Platform lazy preflight — fetch fragment/module if shell no longer has inline page (future), otherwise no-op fallback (current keeps functionality)
-    try{
-      if(window.ensurePageFragment) await window.ensurePageFragment(page);
-      const plat = window.PanteonPlatforms ? window.PanteonPlatforms.getPagePlatform(page) : null;
-      if(plat && window.ensurePlatformModule) await window.ensurePlatformModule(plat);
-    }catch(e){ console.warn('[navigate] preflight failed', e); }
     document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
     if (typeof window.revealNavSection === 'function') window.revealNavSection(page);
     if (window.DECK && typeof DECK.refreshTabs === 'function') {
@@ -5589,8 +5489,6 @@ async function navigate(page) {
             requestAnimationFrame(() => { target.style.opacity = '1'; target.style.transform = 'translateY(0)'; });
             initCMBReveal(target);
         }, 150);
-    } else {
-        console.warn('[navigate] target missing for', page, '— fragment may have failed to load, will retry on next navigation');
     }
     document.getElementById('topbarTitle').textContent = PAGES[page] || page;
     window.location.hash = page;
@@ -20172,7 +20070,6 @@ function renderFusionRealLayer() {
             var m = getMap();
             if (m && S.wiredMap !== m) { S.wiredMap = m; wireMapClicks(m); }
             S.state = await api('/maven/state');
-            try{ window._S=S; if(window.MAVEN) try{ window.MAVEN.state=S.state; }catch(e){} }catch(e){}
             try {
                 window.MAVEN_VIEW = {
                     detections: S.state.detections || [],
@@ -20676,7 +20573,6 @@ function renderFusionRealLayer() {
                 }).join('') + '</div>' : '') +
                 '<div class="maven-det-actions">' +
                 '<button class="mut" data-ofly="' + i + '">\u2316 FLY</button>' +
-                '<button class="mut" data-view3d="' + i + '" data-view3d-id="' + esc(o.id) + '" data-view3d-name="' + esc(o.name||'') + '" data-view3d-lat="' + o.lat + '" data-view3d-lng="' + o.lng + '" style="' + (((o.name||'').toLowerCase().indexOf('grand hyatt')!==-1)?'border-color:#00ffaa;color:#00ffaa;background:rgba(0,255,170,0.14);font-weight:700':'') + '" onclick="try{window._view3dDirect&&window._view3dDirect(this)}catch(e){} return false;">\u2B22 VIEW 3D</button>' +
                 '<button class="mut" data-osnap="' + esc(o.id) + '">\uD83D\uDCF8 SNAP</button>' +
                 '<label class="mut mv-up" data-oup="' + esc(o.id) + '">\u2B06 PHOTO<input type="file" accept="image/*" hidden></label>' +
                 '<button class="mut" data-oren="' + esc(o.id) + '">RENAME</button>' +
@@ -20694,35 +20590,6 @@ function renderFusionRealLayer() {
                 } catch (e) {}
             };
         });
-          // VIEW 3D handlers
-          try{
-          host.querySelectorAll('[data-view3d]').forEach(function(btn){
-            if(btn._view3dHooked) return; btn._view3dHooked=true;
-            btn.addEventListener('click', function(ev){
-              ev.preventDefault(); ev.stopPropagation();
-              const idx=parseInt(this.getAttribute('data-view3d'),10);
-              const id=this.getAttribute('data-view3d-id');
-              const objs=(S.state.objects||[]);
-              let o=objs.find(x=> String(x.id)===String(id));
-              if(!o) o=objs[idx];
-              if(o && window.IndoorOps && window.IndoorOps.enter){ try{ window.IndoorOps.enter(o); }catch(e){} }
-            });
-          });
-          if(!host._view3dDelegation){
-            host._view3dDelegation=true;
-            host.addEventListener('click', function(e){
-              const b=e.target.closest('[data-view3d]');
-              if(!b) return;
-              e.preventDefault(); e.stopPropagation();
-              const idx=parseInt(b.getAttribute('data-view3d'),10);
-              const id=b.getAttribute('data-view3d-id');
-              const objs=(S.state.objects||[]);
-              let o=objs.find(x=> String(x.id)===String(id)); if(!o) o=objs[idx];
-              if(o && window.IndoorOps) window.IndoorOps.enter(o);
-            });
-          }
-          }catch(e){ console.warn('VIEW 3D hook failed', e); }
-
         host.querySelectorAll('[data-osnap]').forEach(function (btn) {
             btn.onclick = function () {
                 var oid = btn.getAttribute('data-osnap');
@@ -20795,7 +20662,7 @@ function renderFusionRealLayer() {
             try{
                 // VERIFIED OSM GH Manila: way 580263354, centroid 14.5570876,121.0520373, height 37.4, levels 6
                 var GH_GEOM_QG={type:"Polygon",coordinates:[[[121.0515,14.5566],[121.0523,14.5566],[121.0523,14.5569],[121.0515,14.5569],[121.0515,14.5566]]]};
-                var lat=14.5566, lng=121.0519, bheight=38;
+                var lat=14.5566, lng=121.0519, bheight=318; // GH religious 66F 318m (Federated Tower)
                 var GH_GEOM_OSM_QG={type:"Polygon",coordinates:[[[121.0515136,14.5565806],[121.0516201,14.5565521],[121.0516017,14.5564962],[121.051631,14.5564872],[121.0516097,14.556422],[121.0516716,14.5564029],[121.051661,14.5563707],[121.0517991,14.5563283],[121.0519371,14.5562859],[121.0519494,14.5563231],[121.0519966,14.5563086],[121.0520146,14.5563634],[121.0520341,14.5563574],[121.0520538,14.5564173],[121.052145,14.5563865],[121.0522438,14.5566706],[121.0525377,14.5575155],[121.052303,14.557588],[121.0522712,14.5575971],[121.0522261,14.5576118],[121.0520748,14.5576585],[121.0518968,14.5577136],[121.0518575,14.5575951],[121.0518272,14.5575045],[121.0515136,14.5565806]]]};
                 var lat2=14.5570876, lng2=121.0520373;
                 var payloadFootprint=GH_GEOM_QG.coordinates;
@@ -20827,6 +20694,8 @@ function renderFusionRealLayer() {
                                 var prb=best.properties||{};
                                 var hb=Number(prb.height||prb.render_height);
                                 if(isFinite(hb) && hb>5) bheight=hb;
+                                // GH religious: keep 318m even if OSM says 37.4
+                                if(bheight<100) bheight=318;
                                 // recenter to building centroid
                                 try{
                                     var coords=best.geometry.coordinates;
@@ -20861,6 +20730,7 @@ function renderFusionRealLayer() {
                   // auto-enter after 700ms so Indoor panel takes over (blackout + 3D)
                   setTimeout(function(){
                     try{
+                      console.log('QUICK REGISTER auto-enter GH');
                       const objs=(window.MAVEN&&window.MAVEN.state&&window.MAVEN.state.objects)||[];
                       const gh=objs.find(o=>(o.name||'').toLowerCase().indexOf('grand hyatt')!==-1);
                       if(gh && window.IndoorOps) window.IndoorOps.enter(gh);
@@ -20871,28 +20741,69 @@ function renderFusionRealLayer() {
             refresh();
             setTimeout(function(){ try{ window.syncPersistentGH&&window.syncPersistentGH(); }catch(e){} }, 1200);
         };}
-        // hook indoor: FLY also enters indoor mode, and show INDOOR button
-        host.querySelectorAll('[data-ofly]').forEach(function(btn){
-            const prev=btn.onclick; // preserve fly
-            // add indoor entry after fly — reuse same selector but augment
+        // hook indoor: FLY also enters indoor mode (fallback + delegation)
+        try{
+          host.querySelectorAll('[data-ofly]').forEach(function(btn){
+            if(btn._indoorHooked) return; btn._indoorHooked=true;
             btn.addEventListener('click', function(){
-                try{
-                    const o=(S.state.objects||[])[parseInt(btn.getAttribute('data-ofly'),10)];
-                    if(o && window.IndoorOps) setTimeout(()=> window.IndoorOps.enter(o), 900);
-                }catch(e){}
+              try{
+                const o=(S.state.objects||[])[parseInt(btn.getAttribute('data-ofly'),10)];
+                if(o && window.IndoorOps) setTimeout(()=> window.IndoorOps.enter(o), 700);
+              }catch(e){}
             });
-        });
-        // inject INDOOR button beside FLY for each row
-        host.querySelectorAll('.maven-row').forEach(function(row, idx){
+          });
+          if(!host._indoorDelegation){
+            host._indoorDelegation=true;
+            host.addEventListener('click', function(e){
+              const b=e.target.closest('[data-indoor]');
+              if(!b) return;
+              e.preventDefault(); e.stopPropagation();
+              const id=b.getAttribute('data-indoor');
+              const idx2=parseInt(b.getAttribute('data-indoor-idx'),10);
+              const objs=(S.state.objects||[]);
+              let o=objs.find(x=> String(x.id)===String(id)); if(!o) o=objs[idx2];
+              if(o && window.IndoorOps) window.IndoorOps.enter(o);
+            });
+          }
+        }catch(e){ console.warn('FLY hook failed', e); }
+        // inject INDOOR button beside FLY for each row - FIX robust via id
+        try{
+          host.querySelectorAll('.maven-row').forEach(function(row, idx){
             if(row.querySelector('[data-indoor]')) return;
             const fly=row.querySelector('[data-ofly]');
             if(!fly) return;
             const _o=(S.state.objects||[])[idx];
+            if(!_o) return;
             const isGH=_o && ((_o.name||'').toLowerCase().indexOf('grand hyatt')!==-1);
-            const b=document.createElement('button'); b.className='mut'; b.setAttribute('data-indoor', idx); b.textContent=isGH?'⬢ VIEW 3D':'⬢ INDOOR';
-            b.onclick=function(){ const o=(S.state.objects||[])[idx]; if(o&&window.IndoorOps) window.IndoorOps.enter(o); };
+            const b=document.createElement('button');
+            b.className='mut';
+            b.setAttribute('data-indoor', _o.id || idx);
+            b.setAttribute('data-indoor-idx', idx);
+            b.textContent=isGH?'VIEW 3D':'INDOOR';
+            if(isGH){ b.style.cssText='border-color:#00ffaa;color:#00ffaa;background:rgba(0,255,170,0.12);font-weight:700'; }
+            b.onclick=function(ev){
+              ev.preventDefault(); ev.stopPropagation();
+              const id=this.getAttribute('data-indoor');
+              const idx2=parseInt(this.getAttribute('data-indoor-idx'),10);
+              let o=null;
+              const objs=(S.state.objects||[]);
+              o=objs.find(x=> String(x.id)===String(id));
+              if(!o) o=objs[idx2];
+              console.log('VIEW 3D click', {id, idx2, o});
+              if(o&&window.IndoorOps && window.IndoorOps.enter){
+                try{ window.IndoorOps.enter(o); }catch(e){ console.error('enter err',e); }
+              } else {
+                console.warn('No IndoorOps or object', o);
+              }
+            };
             fly.insertAdjacentElement('afterend', b);
-        });
+            row.style.cursor='pointer';
+            row.addEventListener('click', function(e){
+              if(e.target.closest('button')) return;
+              const id=b.getAttribute('data-indoor'); const objs2=(S.state.objects||[]); let oo=objs2.find(x=>String(x.id)===String(id)); if(!oo) oo=objs2[idx]; if(oo && window.IndoorOps) window.IndoorOps.enter(oo);
+            });
+          });
+        }catch(e){ console.warn('indoor button inject failed', e); }
     }
     async function submitObject() {
         if (!S.pendingObj) return;
@@ -21719,10 +21630,8 @@ function renderFusionRealLayer() {
                 window.MAVEN = {
                     toggle: toggleDrawer, refresh: refresh,
                     isAoiMode: function () { return S.aoiMode; },
-                    isOpen: function () { return S.open; },
-                    get state(){ return S.state; }
+                    isOpen: function () { return S.open; }
                 };
-                try{ window._S=S; }catch(e){}
                 $('mavenToggleBtn').disabled = false;
             }
         }, 500);
@@ -22139,7 +22048,10 @@ section[data-mpanel="yono"]{padding:0;border-top:1px solid var(--border-color);}
 .indoor-hud-close:hover{border-color:#00ffaa;color:#00ffaa}
 .indoor-hud-body{padding:10px 12px;overflow:auto;flex:1;min-height:0}
 .indoor-hud-label{font-size:8px;letter-spacing:.12em;color:rgba(0,255,170,.85);margin-bottom:8px}
-.indoor-floor-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.indoor-floor-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+.indoor-floor-grid.on{display:grid}
+.indoor-floor-grid:not(.on){display:none}
+#indoorFloorToggle:hover{color:#DFF140}
 .indoor-floor-btn{height:32px;border:1px solid rgba(0,255,170,.32);background:rgba(0,255,170,.06);color:#fff;font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;cursor:pointer;transition:all .15s}
 .indoor-floor-btn:hover{border-color:#00ffaa;background:rgba(0,255,170,.14)}
 .indoor-floor-btn.active{background:#00ffaa;color:#000;border-color:#00ffaa;box-shadow:0 0 10px rgba(0,255,170,.5);font-weight:700}
@@ -25169,7 +25081,7 @@ document.querySelectorAll(".empty-state").forEach(el=>{
   // to test GLB: window.GH_USE_GLB=true; hideRealisticBuilding(); persistentGH=false; syncPersistentGH()
   const GH_GEOM = GH_GEOM_OSM;
   const GH_CENTER = GH_CENTER_OSM.slice();
-  const DEFAULT_ONTOLOGY = { buildingName:"Grand Hyatt Manila", address:"8th Ave cor 36th, BGC", totalFloors:6, floorLabels:["G","L2","L3","L4","L5","L6"], heightPerFloorM:6.23, center:GH_CENTER.slice(), height:37.4, levels:6 };
+  const DEFAULT_ONTOLOGY = { buildingName:"Grand Hyatt Manila", address:"8th Ave cor 36th, BGC", totalFloors:66, floorLabels:["G","L2","L3","L4","L5","L6","L7","L8","L9","L10","L11","L12","L13","L14","L15","L16","L17","L18","L19","L20","L21","L22","L23","L24","L25","L26","L27","L28","L29","L30","L31","L32","L33","L34","L35","L36","L37","L38","L39","L40","L41","L42","L43","L44","L45","L46","L47","L48","L49","L50","L51","L52","L53","L54","L55","L56","L57","L58","L59","L60","L61","L62","L63","L64","L65","L66"], heightPerFloorM:4.82, center:GH_CENTER.slice(), height:318, levels:66 }; // verified Federated Tower 66F 318m — religious, not invented 6F
   function neonSVG(label, sub){
     const svg=`<svg xmlns='http://www.w3.org/2000/svg' width='900' height='640' viewBox='0 0 900 640'><rect width='900' height='640' fill='#020805'/><rect x='14' y='14' width='872' height='612' fill='none' stroke='#00ffaa' stroke-width='2'/><g stroke='#00ffaa' stroke-opacity='0.08' stroke-width='0.8'>${Array.from({length:18},(_,i)=>`<line x1='${40+i*48}' y1='40' x2='${40+i*48}' y2='600'/>`).join('')}${Array.from({length:12},(_,i)=>`<line x1='14' y1='${40+i*48}' x2='886' y2='${40+i*48}'/>`).join('')}</g><rect x='44' y='52' width='812' height='536' fill='none' stroke='#00ffaa' stroke-width='2.2'/><g fill='none' stroke='#00ffaa' stroke-width='1.4'><rect x='44' y='52' width='260' height='180'/><rect x='304' y='52' width='200' height='180'/><rect x='504' y='52' width='352' height='180'/><rect x='44' y='232' width='180' height='160'/><rect x='224' y='232' width='200' height='160'/><rect x='424' y='232' width='432' height='160'/><rect x='44' y='392' width='320' height='196'/><rect x='364' y='392' width='180' height='196'/><rect x='544' y='392' width='312' height='196'/></g><g fill='#00ffaa' font-family='JetBrains Mono, monospace'><text x='50' y='84' font-size='11' letter-spacing='2'>${label} — ${sub}</text><text x='50' y='102' font-size='9' opacity='0.55'>GRAND HYATT MANILA · BGC · MAPLIBRE IMAGE SOURCE — PANEL INTERNAL</text></g><circle cx='860' cy='38' r='5' fill='#00ffaa'/></svg>`;
     return 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg);
@@ -25384,11 +25296,13 @@ document.querySelectorAll(".empty-state").forEach(el=>{
         try{
           var l=m.getLayer('realistic-gh');
           if(l && l.implementation && l.implementation.scene){
+            try{ m.setLayoutProperty('realistic-gh','visibility','visible'); }catch(e){}
             // clear again before add to avoid duplicate during async
             while(l.implementation.scene.children.length>1) l.implementation.scene.remove(l.implementation.scene.children[l.implementation.scene.children.length-1]);
             l.implementation.scene.add(mesh);
             realisticGroup=l.implementation.scene;
             realisticVisible=true;
+            window._ghLog('GH addMesh visible'); console.log('GH addMesh visible', mesh, 'realisticVisible', realisticVisible);
             m.triggerRepaint();
           }
         }catch(e){ console.warn('addMesh err',e); }
@@ -25402,7 +25316,7 @@ document.querySelectorAll(".empty-state").forEach(el=>{
         try{
           var loader=new THREE.GLTFLoader();
           loader.load(glbUrl, function(gltf){
-            console.log('GH GLB loaded', glbUrl, gltf);
+            window._ghLog('GH GLB loaded'); console.log('GH GLB loaded', glbUrl, gltf); try{ var _box=new THREE.Box3().setFromObject(gltf.scene||gltf.scenes[0]); var _size=new THREE.Vector3(); _box.getSize(_size); window._ghLog('GH BOX'); console.log('GH BOX', JSON.stringify({min:_box.min,max:_box.max,size:_size})); }catch(e){}
             try{
               var scene=gltf.scene || gltf.scenes[0];
               if(!scene) throw new Error('no scene');
@@ -25412,11 +25326,11 @@ document.querySelectorAll(".empty-state").forEach(el=>{
               var modelH=size.y || size.z || 183;
               var targetH=height||38; if(targetH<8) targetH=38;
               // FIX: building height is 136 (321-185), not 321 overall — use building height for scale so 38m is correct and not floating/short
-              var buildingBaseY = 185;
-              try{ if(box.min.y < 10) buildingBaseY = 185; else buildingBaseY = box.min.y; }catch(e){}
+              var buildingBaseY = 0;
+              try{ buildingBaseY = box.min.y; }catch(e){ buildingBaseY=0; } // headless base ~0
               var buildingH = (modelH||321) - buildingBaseY;
-              if(buildingH < 10) buildingH = 136;
-              var scaleFactor= targetH / (buildingH||136);
+              if(buildingH < 10) buildingH = size.y||321; // fallback full height
+              var scaleFactor= targetH / (buildingH||size.y||321);
               try{
                 var size=new THREE.Vector3(); box.getSize(size);
                 scene.position.x -= center.x;
@@ -25424,7 +25338,7 @@ document.querySelectorAll(".empty-state").forEach(el=>{
                 scene.position.y -= buildingBaseY;
               }catch(e){ scene.position.sub(center); }
               scene.scale.set(scaleFactor, scaleFactor, scaleFactor);
-              scene.rotation.x = Math.PI/2;
+              scene.rotation.x = -Math.PI/2;
               // keep true GLB materials (OpenSKP blue/gold) — make them bright and doubleSided (was black due to below ground and single light)
               try{
                 var isTrueGLB = (gltf.asset && gltf.asset.generator && gltf.asset.generator.indexOf('OpenSKP')!==-1) || (gltf.parser && gltf.parser.json && JSON.stringify(gltf.parser.json).indexOf('OpenSKP')!==-1);
@@ -25477,7 +25391,7 @@ document.querySelectorAll(".empty-state").forEach(el=>{
               console.log('GH realistic visible, scaleFactor',scaleFactor,'s',s);
             }catch(e){ console.warn('GLB process failed, fallback procedural', e); var fallback=buildRealisticMesh(geom, height); if(fallback) addMeshToScene(fallback); }
           }, undefined, function(err){
-            console.warn('GLB load failed, fallback procedural', err);
+            window._ghLog('GLB load failed'); console.warn('GLB load failed, fallback procedural', err);
             var fallback=buildRealisticMesh(geom, height); if(fallback) addMeshToScene(fallback);
           });
         }catch(e){ console.warn('GLTFLoader init failed', e); }
@@ -25531,8 +25445,8 @@ document.querySelectorAll(".empty-state").forEach(el=>{
           if(ghGeom && ghGeom.coordinates) ghGeom={type:ghGeom.type||'Polygon',coordinates:ghGeom.coordinates};
         }
       }catch(e){}
-      ghH=Number(gh.height_m)||38;
-      if(ghH<4) ghH=38;
+      ghH=Number(gh.height_m)||180; // 180m tall visible GH
+      if(ghH<4) ghH=180;
       // synthesize small rect footprint centered on object's lng/lat if none stored (manual point object)
       if(!ghGeom && isFinite(gh.lng) && isFinite(gh.lat)){
         var dLng=0.0004, dLat=0.00015;
@@ -25540,6 +25454,7 @@ document.querySelectorAll(".empty-state").forEach(el=>{
         ghGeom={type:'Polygon',coordinates:[[[cx-dLng,cy-dLat],[cx+dLng,cy-dLat],[cx+dLng,cy+dLat],[cx-dLng,cy+dLat],[cx-dLng,cy-dLat]]]};
       }
       if(!ghGeom) ghGeom=GH_GEOM;
+      try{ const mm=getMap(); if(mm && mm.getLayer('realistic-gh')) mm.setLayoutProperty('realistic-gh','visibility','visible'); }catch(e){}
       if(!persistentGH || !realisticVisible){
         persistentGH=true;
         showRealisticBuilding(ghGeom, ghH);
@@ -25622,13 +25537,22 @@ document.querySelectorAll(".empty-state").forEach(el=>{
       }}
       var h = Number(featureProps.height || featureProps.render_height || featureProps['height']);
       if(isFinite(h) && h>4){
+        const isGHFeat = ((featureProps.name||'') .toLowerCase().indexOf('grand hyatt')!==-1) || ((obj&&obj.name||'').toLowerCase().indexOf('grand hyatt')!==-1);
+        if(isGHFeat && h>200){ // GH true height ~318
+          return { buildingName: (featureProps.name||obj&&obj.name||DEFAULT_ONTOLOGY.buildingName), address: DEFAULT_ONTOLOGY.address, totalFloors: 66, floorLabels: DEFAULT_ONTOLOGY.floorLabels.slice(), heightPerFloorM: 4.82, center:[obj?obj.lng:DEFAULT_ONTOLOGY.center[0], obj?obj.lat:DEFAULT_ONTOLOGY.center[1]], source:'feature.height:GH-66' };
+        }
         var est=Math.round(h/3.4); est=Math.max(1, Math.min(65, est));
         var labsH=[]; for(var i=0;i<est;i++) labsH.push(i===0?'G':'L'+(i+1));
         return { buildingName: (featureProps.name||obj&&obj.name||DEFAULT_ONTOLOGY.buildingName), address: DEFAULT_ONTOLOGY.address, totalFloors: est, floorLabels: labsH, heightPerFloorM: 3.4, center:[obj?obj.lng:DEFAULT_ONTOLOGY.center[0], obj?obj.lat:DEFAULT_ONTOLOGY.center[1]], source:'feature.height' };
       }
+      }
     }
-    // 3) object height fallback
+    // 3) object height fallback — religious GH: Grand Hyatt always 66F / 318m (don't invent via 3.5 divisor)
     if(obj && isFinite(Number(obj.height_m)) && Number(obj.height_m)>4){
+      const isGHObj = obj && ((obj.name||'').toLowerCase().indexOf('grand hyatt')!==-1);
+      if(isGHObj){
+        return { buildingName: obj.name||DEFAULT_ONTOLOGY.buildingName, address: obj.address||DEFAULT_ONTOLOGY.address, totalFloors: 66, floorLabels: DEFAULT_ONTOLOGY.floorLabels.slice(), heightPerFloorM: 4.82, center:[obj.lng,obj.lat], source:'object.height:GH-66' };
+      }
       var est2=Math.round(Number(obj.height_m)/3.5); est2=Math.max(1, Math.min(65, est2));
       var labs2=[]; for(var i=0;i<est2;i++) labs2.push(i===0?'G':'L'+(i+1));
       return { buildingName: obj.name||DEFAULT_ONTOLOGY.buildingName, address: obj.address||DEFAULT_ONTOLOGY.address, totalFloors: est2, floorLabels: labs2, heightPerFloorM: 3.5, center:[obj.lng,obj.lat], source:'object.height' };
@@ -25636,18 +25560,32 @@ document.querySelectorAll(".empty-state").forEach(el=>{
     // 4) default
     return DEFAULT_ONTOLOGY;
   }
-  var currentOntology=DEFAULT_ONTOLOGY;
+  var currentOntology=DEFAULT_ONTOLOGY; try{ window.currentOntology=currentOntology; window.DEFAULT_ONTOLOGY=DEFAULT_ONTOLOGY; }catch(e){}
   function renderHud(){
     const grid=document.getElementById('indoorFloorGrid'); if(!grid) return;
     // ontology-aware labels
     var ont=currentOntology;
     if(selectedObj) ont=getBuildingOntology(selectedObj, selectedObj._featureProps||null);
     else ont=DEFAULT_ONTOLOGY;
-    currentOntology=ont;
+    currentOntology=ont; try{ window.currentOntology=ont; }catch(e){}
     const labels = ont.floorLabels;
     if(activeFloor && labels.indexOf(activeFloor)===-1) activeFloor=labels[0]||'G';
-    grid.innerHTML = labels.map(function(l){ return '<button class="indoor-floor-btn '+(l===activeFloor?'active':'')+'" data-floor="'+l+'">'+l+'</button>'; }).join('');
+    // collapsible: keep hidden until toggle
+    const gridWrap = document.getElementById('indoorFloorGrid');
+    grid.innerHTML = labels.map(function(l){ return '<button class="indoor-floor-btn '+(l===activeFloor?'active':'')+'" data-floor="'+l+'" title="'+l+'">' + l + '</button>'; }).join('');
     grid.querySelectorAll('.indoor-floor-btn').forEach(function(b){ b.onclick=function(){ setFloor(b.dataset.floor); }; });
+    // wire toggle once
+    if(!window._indoorFloorToggleWired){
+      window._indoorFloorToggleWired=true;
+      const tog=document.getElementById('indoorFloorToggle');
+      if(tog) tog.addEventListener('click', function(){
+        const g=document.getElementById('indoorFloorGrid');
+        if(!g) return;
+        g.classList.toggle('on');
+        if(g.classList.contains('on')){ g.style.display='grid'; tog.querySelector('span').textContent='▾ HIDE'; }
+        else { g.style.display='none'; tog.querySelector('span').textContent='▸ CLICK TO SHOW 66 FLOORS'; }
+      });
+    }
     const nameEl=document.getElementById('indoorBName'), addrEl=document.getElementById('indoorBAddr'), hEl=document.getElementById('indoorBHeight'), fl=document.getElementById('indoorFloorLabel');
     if(nameEl) nameEl.textContent = (selectedObj&&selectedObj.name)||ont.buildingName;
     if(addrEl) addrEl.textContent = ont.address + ' · <span style="color:rgba(255,255,255,.45)">'+ont.source+'</span>';
@@ -25668,7 +25606,7 @@ document.querySelectorAll(".empty-state").forEach(el=>{
     BLUEPRINTS[label]=svg;
     return svg;
   }
-  function setFloor(label){
+  function setFloor(label){ try{ window.activeFloor=label; }catch(e){}
     activeFloor=label;
     pendingPts=[]; isDragging=false; dragStart=null;
     renderHud();
@@ -26034,7 +25972,7 @@ document.querySelectorAll(".empty-state").forEach(el=>{
     if(realB && realB.properties) obj._featureProps=realB.properties;
     // derive ontology FIRST so floorLabels adapt (e.g., 2 vs 40 lvls)
     var ont=getBuildingOntology(obj, obj._featureProps||null);
-    currentOntology=ont;
+    currentOntology=ont; try{ window.currentOntology=ont; }catch(e){}
     selectedObj=obj; activeFloor=(obj.floorLabels||ont.floorLabels)[0]||"G";
     const m=getMap(); if(m) ensureIndoorLayers();
     // resolve REAL footprint from 3D-buildings first, then stored footprint, then fallback
@@ -26129,7 +26067,6 @@ document.querySelectorAll(".empty-state").forEach(el=>{
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', hook); else hook();
 })();
 </script>
-
 <script>
 // === INDOOR 3D GH PANEL — isolated viewer (only Grand Hyatt), not MapLibre custom layer ===
 (function(){
@@ -26148,7 +26085,12 @@ document.querySelectorAll(".empty-state").forEach(el=>{
       r = new THREE.WebGLRenderer({canvas:canvas, antialias:true, alpha:true});
       r.setPixelRatio(window.devicePixelRatio||1);
       r.setSize(900,640,false);
-      try{ r.outputEncoding = THREE.sRGBEncoding; r.toneMappingExposure = 1.05; }catch(e){}
+      try{
+        r.outputEncoding = THREE.sRGBEncoding;
+        r.toneMapping = THREE.ACESFilmicToneMapping;
+        r.toneMappingExposure = 1.05;
+        r.physicallyCorrectLights = true;
+      }catch(e){}
       // lights — bright for dark glass (was black on map)
       const dir = new THREE.DirectionalLight(0xffffff, 1.35); dir.position.set(180,220,160); s.add(dir);
       const dir2 = new THREE.DirectionalLight(0xffffff, 0.85); dir2.position.set(-120, 80, -140); s.add(dir2);
@@ -26163,6 +26105,65 @@ document.querySelectorAll(".empty-state").forEach(el=>{
         ctrl.minDistance=40; ctrl.maxDistance=520; ctrl.target.set(0, 80, 0);
         ctrl.update();
       }
+      // hover floor via raycast (GH 66F)
+      try{
+        const ray = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let hoverPlane=null;
+        function makeHoverPlane(){ if(hoverPlane) return; const g=new THREE.PlaneGeometry(520, 520); const m=new THREE.MeshBasicMaterial({color:0x00ffaa, transparent:true, opacity:0.0, side:THREE.DoubleSide, wireframe:false}); hoverPlane=new THREE.Mesh(g,m); hoverPlane.rotation.x=-Math.PI/2; hoverPlane.visible=false; s.add(hoverPlane); }
+        makeHoverPlane();
+        const tip=document.getElementById('indoorFloorTooltip');
+        canvas.addEventListener('mousemove', function(e){
+          if(!model){ if(tip) tip.style.display='none'; return; }
+          const rect=canvas.getBoundingClientRect();
+          mouse.x = ((e.clientX - rect.left)/rect.width)*2 -1;
+          mouse.y = -((e.clientY - rect.top)/rect.height)*2 +1;
+          ray.setFromCamera(mouse, cam);
+          const hits = ray.intersectObject(model, true);
+          if(hits && hits.length){
+            const pt=hits[0].point;
+            // model is centered at origin with base at 0 (after our lift), so y is height 0..180
+            const h = pt.y;
+            const hPer = 4.82; // GH 66F
+            let idx = Math.floor(h / hPer);
+            if(idx<0) idx=0; if(idx>65) idx=65;
+            const ont = window.currentOntology || window.DEFAULT_ONTOLOGY || {floorLabels:['G']};
+            // use GH labels (66) regardless of currentOntology if GH
+            let labels = ont.floorLabels;
+            // if labels <66 and is GH, use DEFAULT_ONTOLOGY 66
+            if(labels.length < 66){
+              try{ if(window.DEFAULT_ONTOLOGY && window.DEFAULT_ONTOLOGY.floorLabels.length===66) labels=window.DEFAULT_ONTOLOGY.floorLabels; }catch(e){}
+            }
+            const label = labels[idx] || ('L'+(idx+1));
+            const floorY = idx * hPer;
+            if(tip){ tip.textContent = label + ' · ' + floorY.toFixed(1) + 'm / 318m · HOVER — CLICK TO LOCK'; tip.style.display='block'; }
+            if(hoverPlane){ hoverPlane.position.y = floorY + 0.3; hoverPlane.material.opacity=0.09; hoverPlane.visible=true; }
+            canvas.style.cursor='crosshair';
+          } else {
+            if(tip) tip.style.display='none';
+            if(hoverPlane) hoverPlane.visible=false;
+            canvas.style.cursor='grab';
+          }
+        });
+        canvas.addEventListener('mouseleave', function(){ const tp=document.getElementById('indoorFloorTooltip'); if(tp) tp.style.display='none'; if(hoverPlane) hoverPlane.visible=false; });
+        canvas.addEventListener('click', function(e){
+          if(!model) return;
+          const rect=canvas.getBoundingClientRect();
+          mouse.x = ((e.clientX - rect.left)/rect.width)*2 -1;
+          mouse.y = -((e.clientY - rect.top)/rect.height)*2 +1;
+          ray.setFromCamera(mouse, cam);
+          const hits = ray.intersectObject(model, true);
+          if(hits && hits.length){
+            const pt=hits[0].point; const hPer=4.82; let idx=Math.floor(pt.y / hPer); if(idx<0) idx=0; if(idx>65) idx=65;
+            const ont = window.currentOntology || window.DEFAULT_ONTOLOGY;
+            let labels = ont.floorLabels; if(labels.length <66) try{ labels=window.DEFAULT_ONTOLOGY.floorLabels; }catch(e){}
+            const label = labels[idx];
+            if(label && typeof window.IndoorOps!=='undefined' && window.IndoorOps.setFloor){ try{ window.IndoorOps.setFloor(label); }catch(e){} }
+            // also highlight map floor
+            try{ if(typeof updateFloorHighlight==='function' && window.activeFloor===label) updateFloorHighlight(); }catch(e){}
+          }
+        });
+      }catch(e){ console.warn('hover setup failed', e); }
       window.addEventListener('resize', ()=>{ try{ if(canvas && r){ const rect=canvas.getBoundingClientRect(); const w=rect.width||900, h=rect.height||640; r.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix(); }}catch(e){} });
       console.log('indoor3D: initialized');
     }catch(e){ console.warn('indoor3D ensure failed', e); }
@@ -26213,13 +26214,11 @@ document.querySelectorAll(".empty-state").forEach(el=>{
             try{
               const mats=Array.isArray(o.material)?o.material:[o.material];
               mats.forEach(function(m){
-                m.side=THREE.DoubleSide;
-                // brighten dark PBR: keep baseColor, boost emissive
-                if(m.emissive && m.color){
-                  try{ m.emissive.copy(m.color); m.emissiveIntensity=0.45; }catch(e){}
-                  if(m.color && m.color.getHex()===0) m.color.setHex(0x4aa0d0);
-                }
-                m.roughness=0.42; m.metalness=0.12; m.needsUpdate=true;
+                // true-color: preserve authored PBR, no emissive tint — only fix doubleSide for transparent
+                if(m.transparent) m.side=THREE.DoubleSide;
+                // keep roughness/metalness as authored; just ensure sRGB
+                if(m.map) try{ m.map.encoding=THREE.sRGBEncoding; }catch(e){}
+                m.needsUpdate=true;
               });
             }catch(e){}
           }
@@ -26291,70 +26290,7 @@ document.querySelectorAll(".empty-state").forEach(el=>{
   console.log('indoor3D: hook installed');
 })();
 </script>
-<script>
-window._view3dDirect = function(btn){
-  try{
-    var id=btn.getAttribute('data-view3d-id');
-    var idx=parseInt(btn.getAttribute('data-view3d'),10);
-    var name=btn.getAttribute('data-view3d-name')||'';
-    var lat=parseFloat(btn.getAttribute('data-view3d-lat'));
-    var lng=parseFloat(btn.getAttribute('data-view3d-lng'));
-    var objs=[];
-    try{ objs=(window.MAVEN&&window.MAVEN.state&&window.MAVEN.state.objects)||[]; }catch(e){}
-    if(!objs.length) try{ objs=(window._S&&window._S.state&&window._S.state.objects)||[]; }catch(e){}
-    var o=null;
-    if(id) o=objs.find(function(x){ return String(x.id)===String(id); });
-    if(!o && isFinite(idx)) o=objs[idx];
-    if(!o) o={id:id||('tmp-'+idx), name:name||'Grand Hyatt Manila', lat:lat||14.5566, lng:lng||121.0519, height_m:318, footprint:null};
-    if(window.IndoorOps && typeof window.IndoorOps.enter==='function'){ try{ window.IndoorOps.enter(o); }catch(e){} }
-    try{
-      var hud=document.getElementById('indoorHud');
-      var cvs=document.getElementById('indoor3D');
-      var badge=document.getElementById('indoor3DBadge');
-      if(hud && !hud.classList.contains('visible')) hud.classList.add('visible');
-      document.body.classList.add('indoor-focus');
-      if(cvs){
-        var isGH=(o.name||'').toLowerCase().indexOf('grand hyatt')!==-1;
-        if(isGH){
-          cvs.classList.add('gh-visible');
-          if(badge) badge.classList.add('on');
-          try{ if(window._indoor3D && window._indoor3D.show) window._indoor3D.show(o); }catch(e){}
-          try{ var img=document.getElementById('indoorImg'); if(img) img.style.opacity='0.08'; }catch(e){}
-        }
-      }
-    }catch(e){}
-    try{ var m=(typeof getMap==='function'?getMap(): window.fusionMap); if(m && o) m.flyTo({center:[Number(o.lng), Number(o.lat)], zoom:18.6, pitch:62, bearing:-12, duration:900}); }catch(e){}
-  }catch(e){ console.error(e); }
-};
-</script>
-
-
-<script>
-// VIEW 3D global fallback
-(function(){
-  if(window._view3dGlobalPatched) return; window._view3dGlobalPatched=true;
-  document.addEventListener('click', function(e){
-    const b=e.target.closest('[data-view3d]');
-    if(!b) return;
-    e.preventDefault(); try{ e.stopPropagation(); }catch(_){}
-    const id=b.getAttribute('data-view3d-id');
-    const idx=parseInt(b.getAttribute('data-view3d'),10);
-    let objs=[];
-    try{ objs=(window.MAVEN&&window.MAVEN.state&&window.MAVEN.state.objects)||[]; }catch(e){}
-    if(!objs.length) try{ objs=(window._S&&window._S.state&&window._S.state.objects)||[]; }catch(e){}
-    let o=null;
-    if(id) o=objs.find(x=> String(x.id)===String(id));
-    if(!o && isFinite(idx)) o=objs[idx];
-    if(!o) return;
-    if(window.IndoorOps && typeof window.IndoorOps.enter==='function'){
-      try{ window.IndoorOps.enter(o); }catch(e){}
-      try{ document.getElementById('indoorHud')?.classList.add('visible'); document.body.classList.add('indoor-focus'); }catch(e){}
-      try{ const isGH=(o.name||'').toLowerCase().indexOf('grand hyatt')!==-1; if(isGH && window._indoor3D && window._indoor3D.show) window._indoor3D.show(o); }catch(e){}
-    }
-  }, true);
-})();
-</script>
-
+</body>
 </body>
 
 </html>

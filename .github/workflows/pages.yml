@@ -1,26 +1,54 @@
 name: Deploy to GitHub Pages
 on:
-  push: { branches: [master] }
+  push:
+    branches: [master]
   workflow_dispatch:
-permissions: { contents: read, pages: write, id-token: write }
-concurrency: { group: "pages", cancel-in-progress: false }
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
   deploy:
-    environment: { name: github-pages, url: ${{ steps.deployment.outputs.page_url }} }
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - name: Build static artifact (no Jekyll)
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build - inject API base for laptop backend
         run: |
+          echo "Frontend is static - no build needed"
+          echo "API base will be https://api.alieninc.tech (via Cloudflare Tunnel to laptop :8000)"
+          cat CNAME
           rm -rf _pages && mkdir -p _pages
           cp -r index.html 404.html CNAME assets _pages/ 2>/dev/null || true
-          cp -r mission.html privacy.html terms.html _pages/ 2>/dev/null || true
-          cat > _pages/config.js <<'JS'
-          window.ALIENINC_CONFIG={API_BASE:"https://api.alieninc.tech",PANTEON_API:"https://api.alieninc.tech/api/v1",SUPABASE_URL:"https://frwjaixxlgthkgjtafhz.supabase.co"};
+          cp -r mission.html privacy.html terms.html founder.html _pages/ 2>/dev/null || true
+          cat > _pages/config.js << 'JS'
+          window.ALIENINC_CONFIG = {
+            API_BASE: "https://api.alieninc.tech",
+            PANTEON_API: "https://api.alieninc.tech/api/v1",
+            SUPABASE_URL: "https://frwjaixxlgthkgjtafhz.supabase.co"
+          };
           JS
-          cat _pages/CNAME; ls -lh _pages/*.html | head
-      - uses: actions/upload-pages-artifact@v3
-        with: { path: '_pages' }
-      - id: deployment
+          cat _pages/config.js
+          cat _pages/CNAME; ls -lh _pages/*.html | head -n 20
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_pages'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4

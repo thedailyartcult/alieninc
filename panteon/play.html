@@ -151,6 +151,8 @@
         #typing-display .letter.extra{color:#ff2a2a;opacity:0.9}
         #typing-display .letter.pending{color:#a1a1aa}
         #typing-display .word.current{ /* underline current word subtle */ }
+        @keyframes wordShake{0%,100%{transform:translateX(0)} 20%{transform:translateX(-3px)} 40%{transform:translateX(3px)} 60%{transform:translateX(-2px)} 80%{transform:translateX(2px)}}
+        .word.shake{animation:wordShake 0.25s ease;}
         #caret{position:absolute;width:2px;height:1.35em;background:var(--accent-neon);border-left:2px solid #000;pointer-events:none;transition:left 0.07s linear,top 0.07s linear,opacity 0.15s;mix-blend-mode:normal;z-index:2}
         #caret.blink{animation:caretBlink 1s step-end infinite}
         @keyframes caretBlink{0%,50%{opacity:1} 51%,100%{opacity:0}}
@@ -876,13 +878,27 @@ function handleInput(key){
         updateLiveStats();
         return;
     }
-    // Space: commit current word (like Monkeytype commit=" ")
+    // Space: commit current word — 10FF strict: only advance if exactly correct (like 10fastfingers inputfield)
+    // You type in the box and it won't go through unless correct, otherwise it stays and you must correct
     if(key===' ' || key==='Space'){
-        // If currentInput is empty and we press space, ignore (don't advance)
         if(state.currentInput===""){
             return;
         }
-        // Commit current word
+        const target = state.words[state.activeWordIndex];
+        if(state.currentInput !== target){
+            // Strict: don't advance — mark as error and require correction (repeat typing)
+            const wordEl = $display.querySelector(`.word[data-wi="${state.activeWordIndex}"]`);
+            if(wordEl){
+                wordEl.classList.add('shake');
+                setTimeout(()=>wordEl.classList.remove('shake'), 250);
+            }
+            renderWord(state.activeWordIndex);
+            updateCaret();
+            ensureCaretVisible();
+            updateLiveStats();
+            return;
+        }
+        // Correct: commit and advance
         state.inputHistory[state.activeWordIndex]=state.currentInput;
         renderWord(state.activeWordIndex);
         state.activeWordIndex++;

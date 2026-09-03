@@ -143,8 +143,8 @@
         .play-focus-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.72);backdrop-filter:blur(6px);z-index:5;opacity:0;pointer-events:none;transition:opacity 0.2s}
         .play-focus-hint.show{opacity:1;pointer-events:auto;cursor:pointer}
         .play-focus-hint span{font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;background:#000;color:#fff;padding:8px 14px;border:1px solid #000}
-        #typing-display{font-family:var(--font-mono);font-size:clamp(1.05rem,2.1vw,1.35rem);line-height:1.95;letter-spacing:0.01em;word-break:break-word;user-select:none;min-height:120px;max-height:5.85em;overflow:hidden;outline:none;scroll-behavior:smooth}
-        #typing-display .word{display:inline-block;margin:0 0.42em 0.18em 0;white-space:nowrap}
+        #typing-display{font-family:var(--font-mono);font-size:clamp(1.05rem,2.1vw,1.35rem);line-height:1em;letter-spacing:0.01em;user-select:none;min-height:120px;max-height:5.85em;overflow:hidden;outline:none;scroll-behavior:smooth; display:flex; flex-wrap:wrap; width:100%; align-content:flex-start; height:fit-content; padding-bottom:0.5em;}
+        #typing-display .word{margin:0.25em 0.6em 0.25em 0; display:inline-block; white-space:nowrap; vertical-align:top;}
         #typing-display .letter{position:relative;transition:color 0.08s,background-color 0.08s}
         #typing-display .letter.correct{color:#111}
         #typing-display .letter.incorrect{color:#ff2a2a;background:rgba(255,42,42,0.08);border-bottom:1px solid #ff2a2a}
@@ -493,19 +493,19 @@ const $results=document.getElementById('results');
 const $controls=document.getElementById('controls');
 
 let state = {
-    mode:'time', // time | words | quote
-    length:30, // for time: seconds; for words: count
+    mode:'time',
+    length:30,
     punctuation:false, numbers:false,
-    words:[], // array of strings
-    wordEls:[], // DOM word spans
-    letterEls:[], // flat list of letter spans
-    idx:0, // current letter index
-    wordIdx:0,
+    words:[], // Monkeytype spaceless: no trailing spaces, commit is margin
+    activeWordIndex:0,
+    currentInput:"",
+    inputHistory:[], // committed inputs per word
+    wordEls:[],
     started:false, finished:false,
     startTime:0, endTime:0,
     timerId:null, elapsed:0, remaining:0,
     correctChars:0, incorrectChars:0, extraChars:0, missedChars:0,
-    history:[], // per-second wpm samples
+    history:[],
     sampleTimer:null,
     keyCount:0, correctKeyCount:0
 };
@@ -529,7 +529,7 @@ function renderHistory(){
     list.innerHTML=h.slice(0,10).map(r=>`<div class="history-item"><span>${r.mode} · ${r.lengthLabel} · ${new Date(r.ts).toLocaleDateString()}</span><strong>${r.wpm} wpm</strong></div>`).join('');
 }
 
-// word generation — mirrors monkeytype: random sample, punct/numbers injection
+// word generation — mirrors monkeytype WordsGenerator + QuotesController (spaceless)
 function randomWord(){
     return ALL_WORDS[Math.floor(Math.random()*ALL_WORDS.length)];
 }
@@ -538,7 +538,6 @@ function maybePunctuate(word){
     const roll=Math.random();
     if(roll<0.18){
         const p=PUNCT[Math.floor(Math.random()*PUNCT.length)];
-        // attach punctuation sensibly
         if(p==='(') return '('+word;
         if(p===')') return word+')';
         if(p==='"' || p==="'") return Math.random()<0.5 ? '"'+word+'"' : word;
@@ -555,7 +554,7 @@ function maybeNumber(word){
 function generateWords(){
     if(state.mode==='quote'){
         const q=QUOTES[Math.floor(Math.random()*QUOTES.length)];
-        // split preserving punctuation
+        // Monkeytype: keep punctuation inside word, split only on spaces — same as before but now spaceless
         return q.split(/\s+/);
     }
     if(state.mode==='words'){
@@ -568,7 +567,6 @@ function generateWords(){
         }
         return out;
     }
-    // time mode: generate just enough for ~3 lines (not 200) — append more as you type
     const target = state.length===15? 20 : state.length===30? 32 : state.length===60? 50 : state.length===120? 80 : 40;
     const out=[];
     for(let i=0;i<target;i++){
@@ -581,7 +579,7 @@ function generateWords(){
 
 function buildDisplay(){
     $display.innerHTML='';
-    state.wordEls=[]; state.letterEls=[];
+    state.wordEls=[];
     state.words.forEach((w, wi)=>{
         const wordEl=document.createElement('span');
         wordEl.className='word';
@@ -591,46 +589,73 @@ function buildDisplay(){
             s.className='letter pending';
             s.textContent=ch;
             wordEl.appendChild(s);
-            state.letterEls.push(s);
         });
-        // trailing space is implicit via word margin; we track word boundaries via idx
         $display.appendChild(wordEl);
     });
-    state.idx=0; state.wordIdx=0;
-    updateCaret(true);
+    // spaceless: no extra idx, activeWordIndex/currentInput drive everything
+    state.activeWordIndex=0;
+    state.currentInput="";
+    state.inputHistory=[];
+    renderAllWords();
+    updateCaret();
     updateLiveStats();
-    $display.querySelectorAll('.word')[0]?.classList.add('current');
 }
 
-function currentWordIndexForLetter(idx){
-    let count=0;
-    for(let wi=0; wi<state.words.length; wi++){
-        const len=state.words[wi].length;
-        if(idx < count+len) return wi;
-        if(idx === count+len) return wi; // at space after word
-        count += len+1; // +1 for space
+function renderWord(wi){
+    const w = state.words[wi];
+    const wordEl = $display.querySelector(`.word[data-wi="${wi}"]`);
+    if(!wordEl || w===undefined) return;
+    // Determine input for this word: currentInput if active, else history, else ""
+    let input = "";
+    if(wi === state.activeWordIndex) input = state.currentInput;
+    else if(state.inputHistory[wi] !== undefined) input = state.inputHistory[wi];
+    else input = "";
+
+    // Clear and rebuild letters for this word (like Monkeytype updateWordLetters)
+    wordEl.innerHTML='';
+    const chars = [...w];
+    const inputChars = [...input];
+    // Render base letters
+    for(let i=0;i<chars.length;i++){
+        const s=document.createElement('span');
+        s.className='letter';
+        s.textContent=chars[i];
+        if(i < inputChars.length){
+            const isCorrect = inputChars[i] === chars[i];
+            s.classList.add(isCorrect ? 'correct' : 'incorrect');
+        } else {
+            // Not yet typed: if word is committed (in history) and input was shorter, remaining are incorrect (missed)
+            if(state.inputHistory[wi] !== undefined && inputChars.length < chars.length){
+                s.classList.add('incorrect');
+            } else {
+                s.classList.add('pending');
+            }
+        }
+        wordEl.appendChild(s);
     }
-    return state.words.length-1;
+    // Extra letters beyond word length
+    if(inputChars.length > chars.length){
+        for(let i=chars.length;i<inputChars.length;i++){
+            const s=document.createElement('span');
+            s.className='letter extra incorrect';
+            // Monkeytype shows "_" for space typed as extra, but we just show char
+            s.textContent = inputChars[i]===" " ? "_" : inputChars[i];
+            wordEl.appendChild(s);
+        }
+    }
+    // Word-level classes like Monkeytype: .typed/.error
+    wordEl.classList.remove('typed','error');
+    if(state.inputHistory[wi] !== undefined){
+        wordEl.classList.add('typed');
+        const hist = state.inputHistory[wi];
+        if(hist !== w) wordEl.classList.add('error');
+    }
 }
 
-function isAtSpace(idx){
-    let count=0;
-    for(let w of state.words){
-        count+=w.length;
-        if(idx===count) return true; // before space
-        count+=1;
-    }
-    return false;
-}
-
-function letterAt(idx){
-    let count=0;
-    for(let w of state.words){
-        if(idx < count + w.length) return w[idx-count];
-        if(idx===count+w.length) return ' '; // space
-        count+=w.length+1;
-    }
-    return null;
+function renderAllWords(){
+    state.words.forEach((_, wi)=>renderWord(wi));
+    $display.querySelectorAll('.word').forEach(el=>el.classList.remove('current'));
+    $display.querySelector(`.word[data-wi="${state.activeWordIndex}"]`)?.classList.add('current');
 }
 
 function resetRun(generateNew=true){
@@ -638,6 +663,7 @@ function resetRun(generateNew=true){
     state.started=false; state.finished=false; state.startTime=0; state.endTime=0;
     state.elapsed=0; state.correctChars=0; state.incorrectChars=0; state.extraChars=0; state.missedChars=0;
     state.keyCount=0; state.correctKeyCount=0; state.history=[];
+    state.activeWordIndex=0; state.currentInput=""; state.inputHistory=[];
     if(generateNew) state.words=generateWords();
     buildDisplay();
     $results.classList.remove('show');
@@ -646,7 +672,9 @@ function resetRun(generateNew=true){
     else if(state.mode==='words') $liveTimer.textContent=state.words.length;
     else $liveTimer.textContent='—';
     $caret.style.opacity='1'; $caret.classList.add('blink');
+    $display.scrollTop=0;
     updateFocusHint();
+    updateCaret();
 }
 
 function startRun(){
@@ -654,7 +682,6 @@ function startRun(){
     state.started=true; state.startTime=performance.now();
     $caret.classList.remove('blink');
     state.remaining = state.mode==='time' ? state.length : 0;
-    // per-second timer + sampling
     state.timerId=setInterval(()=>{
         state.elapsed=(performance.now()-state.startTime)/1000;
         if(state.mode==='time'){
@@ -677,8 +704,55 @@ function startRun(){
     },1000);
 }
 
+function recomputeCounts(){
+    // Recompute from inputHistory + currentInput like Monkeytype does for stats
+    let correct=0, incorrect=0, extra=0, missed=0, keyCount=0, correctKeyCount=0;
+    state.words.forEach((w, wi)=>{
+        let input = "";
+        if(wi === state.activeWordIndex) input = state.currentInput;
+        else if(state.inputHistory[wi] !== undefined) input = state.inputHistory[wi];
+        else return; // not yet typed
+        const wChars=[...w], iChars=[...input];
+        const len = Math.min(wChars.length, iChars.length);
+        for(let i=0;i<len;i++){
+            keyCount++;
+            if(iChars[i]===wChars[i]){ correct++; correctKeyCount++; }
+            else incorrect++;
+        }
+        if(iChars.length > wChars.length){
+            extra += iChars.length - wChars.length;
+            incorrect += iChars.length - wChars.length;
+            keyCount += iChars.length - wChars.length;
+        }
+        if(state.inputHistory[wi]!==undefined && iChars.length < wChars.length){
+            // Word was committed via space with missing letters
+            missed += wChars.length - iChars.length;
+            incorrect += wChars.length - iChars.length;
+        }
+    });
+    // Space commits: each committed word (except maybe last if time) counts as a correct char for WPM
+    // Monkeytype counts spaces as correctChars for WPM; we approximate as number of committed words
+    const committedSpaces = state.inputHistory.length;
+    correct += committedSpaces;
+    // keyCount for spaces
+    keyCount += committedSpaces;
+    correctKeyCount += committedSpaces; // spaces are correct if word was committed
+
+    state.correctChars=correct;
+    state.incorrectChars=incorrect;
+    state.extraChars=extra;
+    state.missedChars=missed;
+    state.keyCount=keyCount;
+    state.correctKeyCount=correctKeyCount;
+}
+
 function finishRun(){
     if(state.finished) return;
+    // If still typing current word, commit it as history for stats (like Monkeytype does on finish)
+    if(state.currentInput && state.inputHistory[state.activeWordIndex]===undefined){
+        state.inputHistory[state.activeWordIndex]=state.currentInput;
+    }
+    recomputeCounts();
     state.finished=true; state.endTime=performance.now();
     state.elapsed=(state.endTime-state.startTime)/1000;
     clearInterval(state.timerId); clearInterval(state.sampleTimer);
@@ -707,6 +781,7 @@ function stddev(a){ const m=avg(a); return Math.sqrt(a.reduce((s,v)=>s+(v-m)**2,
 
 function updateLiveStats(){
     if(!state.started){ $liveWpm.textContent='—'; $liveAcc.textContent='—'; return; }
+    recomputeCounts();
     const mins=state.elapsed/60 || 0.01;
     const wpm=Math.round((state.correctChars/5)/mins) || 0;
     const acc= state.keyCount? Math.round((state.correctKeyCount/state.keyCount)*100) : 100;
@@ -714,29 +789,10 @@ function updateLiveStats(){
     $liveAcc.textContent=acc+'%';
 }
 
-function updateCaret(immediate=false){
-    // find letter at idx
-    let count=0, target=null, isSpace=false;
-    for(let wi=0; wi<state.words.length; wi++){
-        const w=state.words[wi];
-        if(state.idx < count + w.length){
-            // inside word
-            const wordEl=$display.querySelector(`.word[data-wi="${wi}"]`);
-            const letterIdx=state.idx - count;
-            target=wordEl?.children[letterIdx] || null;
-            break;
-        }
-        if(state.idx===count + w.length){
-            // at space after word
-            const wordEl=$display.querySelector(`.word[data-wi="${wi}"]`);
-            target=wordEl || null;
-            isSpace=true;
-            break;
-        }
-        count+=w.length+1;
-    }
-    if(!target){
-        // after last char
+function updateCaret(){
+    const wi = state.activeWordIndex;
+    const wordEl = $display.querySelector(`.word[data-wi="${wi}"]`);
+    if(!wordEl){
         const lastWord=$display.querySelector('.word:last-child');
         if(lastWord){
             const r=lastWord.getBoundingClientRect();
@@ -744,17 +800,46 @@ function updateCaret(immediate=false){
             $caret.style.left=(r.right - ar.left)+'px';
             $caret.style.top=(r.top - ar.top)+'px';
             $caret.style.height=r.height+'px';
-            return;
+        }
+        return;
+    }
+    const letterIndex = [...state.currentInput].length;
+    const wLen = [...state.words[wi]].length;
+    let target=null;
+    let isAfter=false;
+    if(letterIndex < wLen){
+        target = wordEl.children[letterIndex] || null;
+        isAfter=false;
+    } else {
+        // After last letter or on extra
+        if(wordEl.children.length > 0){
+            // If there are extra letters, caret after last extra
+            if(letterIndex >= wLen && wordEl.children.length > wLen){
+                target = wordEl.lastChild;
+                isAfter=true;
+            } else {
+                // After last correct letter
+                target = wordEl.children[wLen-1] || wordEl;
+                isAfter=true;
+            }
+        } else {
+            target = wordEl;
+            isAfter=false;
         }
     }
     const ar=$display.getBoundingClientRect();
-    if(isSpace){
-        const r=target.getBoundingClientRect();
-        $caret.style.left=(r.right - ar.left + 4)+'px';
+    if(!target){
+        $caret.style.left=(wordEl.getBoundingClientRect().left - ar.left)+'px';
+        $caret.style.top=(wordEl.getBoundingClientRect().top - ar.top)+'px';
+        $caret.style.height=wordEl.getBoundingClientRect().height+'px';
+        return;
+    }
+    const r=target.getBoundingClientRect();
+    if(isAfter){
+        $caret.style.left=(r.right - ar.left + 2)+'px';
         $caret.style.top=(r.top - ar.top)+'px';
         $caret.style.height=r.height+'px';
-    } else if(target){
-        const r=target.getBoundingClientRect();
+    } else {
         $caret.style.left=(r.left - ar.left)+'px';
         $caret.style.top=(r.top - ar.top)+'px';
         $caret.style.height=r.height+'px';
@@ -763,179 +848,89 @@ function updateCaret(immediate=false){
 
 function handleInput(key){
     if(state.finished) return;
-    // space handling
+    // Space: commit current word (like Monkeytype commit=" ")
     if(key===' ' || key==='Space'){
-        // if at space position, advance; else it's incorrect char
-        const expected=letterAt(state.idx);
-        if(expected===' '){
-            // mark current word done, count missed letters in word as missed
-            const wi=currentWordIndexForLetter(state.idx);
-            const wordEl=$display.querySelector(`.word[data-wi="${wi}"]`);
-            if(wordEl){
-                [...wordEl.children].forEach(ch=>{
-                    if(ch.classList.contains('pending')){
-                        ch.classList.remove('pending'); ch.classList.add('incorrect');
-                        state.missedChars++; state.incorrectChars++;
-                    }
-                });
-            }
-            state.idx+=1;
-            state.keyCount++; state.correctKeyCount++;
-            state.correctChars++; // space counts as correct char
-            if(!state.started) startRun();
-            advanceWordHighlight();
-            updateCaret();
-            ensureCaretVisible();
-            updateLiveStats();
-            if(state.mode==='time' && !state.finished && state.idx > totalChars() - 20){
-                appendWords(20);
-            }
-            // check words mode finish: if we've typed all words
-            if(state.mode!=='time' && state.idx >= totalChars()){
-                finishRun();
-            }
+        // If currentInput is empty and we press space, ignore (don't advance)
+        if(state.currentInput===""){
             return;
         }
-        // otherwise treat as typed char ' ' where letter expected
+        // Commit current word
+        state.inputHistory[state.activeWordIndex]=state.currentInput;
+        renderWord(state.activeWordIndex);
+        state.activeWordIndex++;
+        state.currentInput="";
+        // Check if we need more words for time mode (keep ~3 lines buffer)
+        if(state.mode==='time' && !state.finished && state.activeWordIndex > state.words.length - 12){
+            appendWords(20);
+        }
+        // If we've typed all words in words/quote mode, finish
+        if((state.mode==='words' || state.mode==='quote') && state.activeWordIndex >= state.words.length){
+            // Render next word highlight will be out of range, but finish
+            $display.querySelectorAll('.word').forEach(el=>el.classList.remove('current'));
+            updateCaret();
+            finishRun();
+            return;
+        }
+        if(!state.started) startRun();
+        $display.querySelectorAll('.word').forEach(el=>el.classList.remove('current'));
+        $display.querySelector(`.word[data-wi="${state.activeWordIndex}"]`)?.classList.add('current');
+        updateCaret();
+        ensureCaretVisible();
+        updateLiveStats();
+        return;
     }
 
     if(key==='Backspace'){
-        if(state.idx===0) return;
-        const prevIdx = state.idx - 1;
-        const wasAtSpace = isAtSpace(prevIdx);
-        if(wasAtSpace){
-            // Deleting the space between words — just move back, don't touch letters
-            state.idx -= 1;
-            state.correctChars = Math.max(0, state.correctChars - 1);
-            state.keyCount = Math.max(0, state.keyCount - 1);
-            state.correctKeyCount = Math.max(0, state.correctKeyCount - 1);
-            // Also undo the "missed" marking if we had marked pending as incorrect on space
-            // (keep them incorrect so user can see what was missed, but allow re-typing)
-            updateCaret();
-            advanceWordHighlight();
-            updateLiveStats();
-            ensureCaretVisible();
+        if(state.currentInput.length > 0){
+            // Delete last char of current word
+            state.currentInput = state.currentInput.slice(0, -1);
+            renderWord(state.activeWordIndex);
+        } else if(state.activeWordIndex > 0){
+            // At beginning of word with empty input: go back to previous word (like Monkeytype with freedomMode)
+            // Only allow if previous word was not correctly typed? Monkeytype allows always; we allow
+            state.activeWordIndex--;
+            const prevInput = state.inputHistory[state.activeWordIndex];
+            // Remove its history so it becomes current again
+            state.inputHistory.splice(state.activeWordIndex, 1);
+            state.currentInput = prevInput || "";
+            // Need to re-render that word as current (was typed/error)
+            renderWord(state.activeWordIndex);
+            // Re-render next word (the one we came from) as pending
+            const nextWi = state.activeWordIndex + 1;
+            if(state.words[nextWi]!==undefined){
+                // Clear its history is already done via splice, but need to re-render it as pending
+                const nextEl = $display.querySelector(`.word[data-wi="${nextWi}"]`);
+                if(nextEl){
+                    // It will be re-rendered as pending on next renderAll? Just render it
+                    renderWord(nextWi);
+                }
+            }
+            $display.querySelectorAll('.word').forEach(el=>el.classList.remove('current'));
+            $display.querySelector(`.word[data-wi="${state.activeWordIndex}"]`)?.classList.add('current');
+        } else {
             return;
         }
-        // Inside a word — check for extra first
-        let count=0;
-        let handled=false;
-        for(let wi=0; wi<state.words.length; wi++){
-            const w=state.words[wi];
-            const wordLen=w.length;
-            if(prevIdx < count + wordLen){
-                const wordEl=$display.querySelector(`.word[data-wi="${wi}"]`);
-                if(!wordEl) break;
-                const extraCount = wordEl.children.length - wordLen;
-                if(extraCount > 0){
-                    // Last char typed in this word was an extra — remove the last extra span
-                    const lastEl = wordEl.lastChild;
-                    if(lastEl && lastEl.classList.contains('extra')){
-                        lastEl.remove();
-                        state.extraChars = Math.max(0, state.extraChars - 1);
-                        state.incorrectChars = Math.max(0, state.incorrectChars - 1);
-                        state.keyCount = Math.max(0, state.keyCount - 1);
-                        // correctKeyCount not affected (extra is always incorrect)
-                        state.idx -= 1;
-                        handled=true;
-                        break;
-                    }
-                }
-                // Normal letter
-                const li = prevIdx - count;
-                const el = wordEl.children[li];
-                if(el){
-                    if(el.classList.contains('correct')){
-                        state.correctChars = Math.max(0, state.correctChars - 1);
-                        state.correctKeyCount = Math.max(0, state.correctKeyCount - 1);
-                        state.keyCount = Math.max(0, state.keyCount - 1);
-                    } else if(el.classList.contains('incorrect')){
-                        state.incorrectChars = Math.max(0, state.incorrectChars - 1);
-                        state.keyCount = Math.max(0, state.keyCount - 1);
-                        // if it was a missed (pending->incorrect on space), missedChars stays
-                    }
-                    el.className='letter pending';
-                    // restore original char (in case it was an extra, but we already handled)
-                    // el.textContent already is w[li]
-                }
-                state.idx -= 1;
-                handled=true;
-                break;
-            }
-            if(prevIdx === count + wordLen){
-                // Should have been handled as wasAtSpace above
-                state.idx -= 1;
-                state.correctChars = Math.max(0, state.correctChars - 1);
-                handled=true;
-                break;
-            }
-            count += wordLen + 1;
-        }
-        if(!handled) state.idx = Math.max(0, state.idx - 1);
         updateCaret();
-        advanceWordHighlight();
-        updateLiveStats();
         ensureCaretVisible();
+        updateLiveStats();
         return;
     }
 
-    if(key.length!==1) return; // ignore modifiers
+    if(key.length!==1) return; // ignore modifiers like Shift, Control
 
-    // regular char
-    const expected=letterAt(state.idx);
-    let count=0, handled=false;
-    for(let wi=0; wi<state.words.length; wi++){
-        const w=state.words[wi];
-        if(state.idx < count + w.length){
-            const wordEl=$display.querySelector(`.word[data-wi="${wi}"]`);
-            const li=state.idx - count;
-            const el=wordEl?.children[li];
-            if(el){
-                const isCorrect = key===expected;
-                el.classList.remove('pending');
-                if(isCorrect){ el.classList.add('correct'); state.correctChars++; state.correctKeyCount++; }
-                else { el.classList.add('incorrect'); state.incorrectChars++; }
-                state.keyCount++;
-                if(!state.started) startRun();
-            }
-            state.idx+=1;
-            handled=true; break;
-        }
-        if(state.idx===count+w.length){
-            // at space, but typed a letter => this is extra char inserted into previous word
-            const prevWordEl=$display.querySelector(`.word[data-wi="${wi}"]`);
-            if(prevWordEl){
-                const extra=document.createElement('span');
-                extra.className='letter extra';
-                extra.textContent=key;
-                prevWordEl.appendChild(extra);
-                state.letterEls.push(extra);
-                state.extraChars++; state.incorrectChars++; state.keyCount++;
-                if(!state.started) startRun();
-                state.idx+=1; // still advance logical idx? In monkeytype, extra chars consume idx but are counted separately; we advance past space + track extra. Simpler: advance idx (so next expected is next word's first letter) but keep extra visually.
-                // Actually after typing extra at space, next key should still be for next word. So we keep idx as is for next word start? We advanced 1 already.
-            }
-            handled=true; break;
-        }
-        count+=w.length+1;
-    }
-    if(!handled){
-        // after end — ignore
-        return;
-    }
-    advanceWordHighlight();
+    // Regular char: append to currentInput (like Monkeytype currentInput += key)
+    // For sentences/quotes, punctuation is just a letter in the word, so it compares naturally
+    state.currentInput += key;
+    renderWord(state.activeWordIndex);
+    if(!state.started) startRun();
+    $display.querySelectorAll('.word').forEach(el=>el.classList.remove('current'));
+    $display.querySelector(`.word[data-wi="${state.activeWordIndex}"]`)?.classList.add('current');
     updateCaret();
     ensureCaretVisible();
     updateLiveStats();
-    // For time mode, keep buffer filled — append more words when near end (so display never shows 200 at once)
-    if(state.mode==='time' && !state.finished){
-        if(state.idx > totalChars() - 20){
-            appendWords(20);
-        }
-    }
-    // check finish conditions
-    if(state.mode==='words' || state.mode==='quote'){
-        if(state.idx >= totalChars()) finishRun();
+    // For time mode, keep buffer
+    if(state.mode==='time' && !state.finished && state.activeWordIndex > state.words.length - 12){
+        appendWords(12);
     }
 }
 
@@ -946,15 +941,13 @@ function totalChars(){
 }
 function advanceWordHighlight(){
     $display.querySelectorAll('.word').forEach(el=>el.classList.remove('current'));
-    const wi=currentWordIndexForLetter(state.idx);
-    $display.querySelector(`.word[data-wi="${wi}"]`)?.classList.add('current');
+    $display.querySelector(`.word[data-wi="${state.activeWordIndex}"]`)?.classList.add('current');
 }
 function ensureCaretVisible(){
     const cur = $display.querySelector('.word.current');
     if(!cur) return;
     const arenaRect = $display.getBoundingClientRect();
     const curRect = cur.getBoundingClientRect();
-    // if current word is below visible area (max-height 5.85em ~ 3 lines), scroll
     if(curRect.bottom > arenaRect.bottom - 8){
         $display.scrollTop += (curRect.bottom - arenaRect.bottom) + 12;
     } else if(curRect.top < arenaRect.top + 4){
@@ -975,7 +968,6 @@ function appendWords(n){
             s.className='letter pending';
             s.textContent=ch;
             wordEl.appendChild(s);
-            state.letterEls.push(s);
         });
         $display.appendChild(wordEl);
     }

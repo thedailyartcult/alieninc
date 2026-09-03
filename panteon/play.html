@@ -163,6 +163,23 @@
         .play-input-box:disabled{opacity:0.5;cursor:not-allowed;}
         .play-hint-row{margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted)}
         .play-hint-row kbd{font-family:var(--font-mono);font-size:0.62rem;background:#000;color:#fff;padding:2px 6px;border:1px solid #000}
+        .play-multiplayer{background:rgba(255,255,255,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--border-dark);padding:16px 20px;margin-bottom:16px;}
+        .mp-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+        .mp-server-info{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);}
+        .info.info-server{display:flex;align-items:center;gap:8px;background:#000;color:#fff;padding:6px 12px;border:1px solid #000;font-weight:600;}
+        .server-dot{width:7px;height:7px;background:var(--accent-neon);display:inline-block;animation:serverPulse 1.5s infinite;}
+        @keyframes serverPulse{0%,100%{opacity:1} 50%{opacity:0.4}}
+        .mp-race-status{color:var(--text-dark);font-weight:500;}
+        .mp-opponents{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;}
+        .mp-opponent{border:1px solid var(--border-dark);background:#fff;padding:12px;display:flex;flex-direction:column;gap:8px;}
+        .mp-opp-header{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+        .mp-opp-name{font-family:var(--font-tech);font-size:0.85rem;font-weight:600;letter-spacing:-0.01em;display:flex;align-items:center;gap:6px;}
+        .mp-opp-name .opp-avatar{width:22px;height:22px;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;}
+        .mp-opp-wpm{font-family:var(--font-mono);font-size:0.75rem;font-weight:600;color:var(--text-dark);background:var(--accent-neon);padding:2px 6px;border:1px solid #000;}
+        .mp-opp-progress{height:6px;background:rgba(0,0,0,0.08);border:1px solid var(--border-dark);position:relative;overflow:hidden;}
+        .mp-opp-bar{position:absolute;left:0;top:0;height:100%;background:var(--text-dark);width:0%;transition:width 0.3s linear;}
+        .mp-opp-bar.you{background:var(--accent-neon);border-right:1px solid #000;}
+        .mp-opp-meta{font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-muted);display:flex;justify-content:space-between;}
 
         /* RESULTS */
         .play-results{display:none;background:rgba(255,255,255,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--border-dark);padding:32px;margin-top:20px}
@@ -292,6 +309,17 @@
                         <span class="play-timer" id="live-timer">30</span>
                     </div>
                 </div>
+            </div>
+
+            <div class="play-multiplayer" id="multiplayer-panel">
+                <div class="mp-header">
+                    <div class="mp-server-info">
+                        <span class="info info-server"><span class="server-dot"></span> <span id="server-count">1,247</span> players on server</span>
+                        <span class="mp-race-status" id="race-status">Click to start — 4 opponents ready</span>
+                    </div>
+                    <button class="play-pill active" id="toggle-ai" type="button">Race vs AI: ON</button>
+                </div>
+                <div class="mp-opponents" id="opponents-list"></div>
             </div>
 
             <div class="play-arena" id="arena" tabindex="0" aria-label="Typing arena — click to focus and start typing">
@@ -1277,6 +1305,146 @@ renderHistory();
 updateFocusHint();
 // auto-focus after hero transition
 setTimeout(()=>{ focusArena(); }, 900);
+// --- Multiplayer AI init hook: expose for AI script
+window.PanteonPlay = { getState: ()=>state, getTotalChars: ()=>state.words.join(' ').length + state.words.length, getProgress: ()=> state.words.length? (state.activeWordIndex/ state.words.length*100):0 };
+})();
+</script>
+<script>
+// --- Panteon Multiplayer AI — 10FF-style info-server, pretends to be real humans (all at same time) ---
+(function(){
+  const names = [
+    {name:"Alex Rivera", flag:"🇺🇸", baseWpm: 67},
+    {name:"Maya Chen", flag:"🇨🇳", baseWpm: 84},
+    {name:"Jordan Blake", flag:"🇬🇧", baseWpm: 59},
+    {name:"Sierra Quinn", flag:"🇨🇦", baseWpm: 92},
+    {name:"Kaito Tanaka", flag:"🇯🇵", baseWpm: 76},
+    {name:"Elena Petrova", flag:"🇷🇺", baseWpm: 71},
+    {name:"Lucas Silva", flag:"🇧🇷", baseWpm: 88},
+    {name:"Aarav Mehta", flag:"🇮🇳", baseWpm: 63},
+    {name:"Nora Fischer", flag:"🇩🇪", baseWpm: 79},
+    {name:"Liam O'Connor", flag:"🇮🇪", baseWpm: 69},
+  ];
+  const $list = document.getElementById('opponents-list');
+  const $serverCount = document.getElementById('server-count');
+  const $raceStatus = document.getElementById('race-status');
+  const $toggle = document.getElementById('toggle-ai');
+  let aiEnabled = true;
+  let aiPlayers = [];
+  let serverCount = 1247 + Math.floor(Math.random()*80);
+  let raceInterval = null;
+
+  function pickOpponents(){
+    const shuffled = [...names].sort(()=>Math.random()-0.5).slice(0,4);
+    aiPlayers = shuffled.map((n,i)=>({
+      id: 'ai-'+i,
+      name: n.name,
+      flag: n.flag,
+      baseWpm: n.baseWpm + Math.floor(Math.random()*12 -6),
+      wpm: n.baseWpm,
+      progress: 0,
+      chars: 0,
+      variance: 0.9 + Math.random()*0.2,
+      pauseUntil: 0,
+    }));
+    renderOpponents();
+  }
+
+  function renderOpponents(){
+    if(!$list) return;
+    const youProgress = window.PanteonPlay ? window.PanteonPlay.getProgress() : 0;
+    const youWpmEl = document.getElementById('live-wpm');
+    const youWpm = youWpmEl && youWpmEl.textContent !== '—' ? youWpmEl.textContent : '—';
+    const all = [
+      {name:"You", flag:"●", wpm: youWpm, progress: youProgress, isYou:true},
+      ...aiPlayers.map(p=>({...p, isYou:false}))
+    ];
+    $list.innerHTML = all.map(p=>`
+      <div class="mp-opponent${p.isYou?' is-you':''}">
+        <div class="mp-opp-header">
+          <span class="mp-opp-name"><span class="opp-avatar">${p.isYou ? 'YOU' : p.flag}</span> ${p.name}</span>
+          <span class="mp-opp-wpm">${typeof p.wpm==='number'? p.wpm+' wpm' : p.wpm}</span>
+        </div>
+        <div class="mp-opp-progress"><div class="mp-opp-bar${p.isYou?' you':''}" style="width:${Math.min(100, p.progress).toFixed(1)}%"></div></div>
+        <div class="mp-opp-meta"><span>${p.isYou?'you':p.flag}</span><span>${Math.min(100, p.progress).toFixed(0)}%</span></div>
+      </div>
+    `).join('');
+  }
+
+  function updateServerCount(){
+    const delta = Math.floor(Math.random()*5)-2;
+    serverCount = Math.max(900, Math.min(2500, serverCount + delta));
+    if($serverCount) $serverCount.textContent = serverCount.toLocaleString();
+  }
+  setInterval(updateServerCount, 1800);
+  setInterval(renderOpponents, 400);
+
+  function startRace(){
+    if(!aiEnabled) return;
+    if(raceInterval) clearInterval(raceInterval);
+    if($raceStatus) $raceStatus.textContent = 'Race in progress — all players typing together...';
+    raceInterval = setInterval(()=>{
+      const state = window.PanteonPlay ? window.PanteonPlay.getState() : null;
+      if(!state || state.finished){
+        if(state && state.finished){
+          const youProg = window.PanteonPlay.getProgress();
+          const bestAi = Math.max(...aiPlayers.map(p=>p.progress), 0);
+          if($raceStatus) $raceStatus.textContent = youProg > bestAi ? 'You won against 4 opponents!' : 'AI won — try again';
+          clearInterval(raceInterval);
+        }
+        return;
+      }
+      const totalChars = window.PanteonPlay.getTotalChars();
+      aiPlayers.forEach(p=>{
+        if(performance.now() < p.pauseUntil) return;
+        if(Math.random()<0.025){
+          p.pauseUntil = performance.now() + Math.random()*420 + 110;
+          return;
+        }
+        const jitter = 0.92 + Math.random()*0.16;
+        const cps = (p.baseWpm * 5 / 60) * jitter * p.variance;
+        p.chars += cps * 0.1;
+        p.progress = Math.min(100, (p.chars / totalChars) * 100);
+        p.wpm = Math.round(p.baseWpm * jitter);
+      });
+    }, 100);
+  }
+
+  function stopRace(){
+    if(raceInterval) clearInterval(raceInterval);
+    if($raceStatus) $raceStatus.textContent = aiEnabled ? 'Waiting — type to start' : 'AI race disabled';
+  }
+
+  let wasStarted = false;
+  setInterval(()=>{
+    const s = window.PanteonPlay ? window.PanteonPlay.getState() : null;
+    if(!s) return;
+    if(s.started && !wasStarted){
+      wasStarted = true;
+      if(aiEnabled) startRace();
+    }
+    if(!s.started && wasStarted){
+      wasStarted = false;
+      aiPlayers.forEach(p=>{p.chars=0; p.progress=0;});
+      renderOpponents();
+      if($raceStatus) $raceStatus.textContent = 'Waiting for next race...';
+      stopRace();
+    }
+  }, 200);
+
+  $toggle?.addEventListener('click', ()=>{
+    aiEnabled = !aiEnabled;
+    $toggle.textContent = aiEnabled ? 'Race vs AI: ON' : 'Race vs AI: OFF';
+    $toggle.classList.toggle('active', aiEnabled);
+    document.getElementById('multiplayer-panel').style.opacity = aiEnabled ? '1' : '0.6';
+    if(!aiEnabled) stopRace();
+    else { pickOpponents(); if($raceStatus) $raceStatus.textContent = 'AI ready — everyone starts together'; renderOpponents(); }
+  });
+
+  document.getElementById('restart-btn')?.addEventListener('click', ()=>{ aiPlayers.forEach(p=>{p.chars=0; p.progress=0;}); if($raceStatus) $raceStatus.textContent='Race reset — type to start'; renderOpponents(); });
+  document.getElementById('new-text-btn')?.addEventListener('click', ()=>{ pickOpponents(); if($raceStatus) $raceStatus.textContent='4 opponents found — all typing together'; renderOpponents(); });
+
+  pickOpponents();
+  if($raceStatus) $raceStatus.textContent = '4 opponents ready — everyone starts together';
 })();
 </script>
 </body>

@@ -143,7 +143,7 @@
         .play-focus-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.72);backdrop-filter:blur(6px);z-index:5;opacity:0;pointer-events:none;transition:opacity 0.2s}
         .play-focus-hint.show{opacity:1;pointer-events:auto;cursor:pointer}
         .play-focus-hint span{font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;background:#000;color:#fff;padding:8px 14px;border:1px solid #000}
-        #typing-display{font-family:var(--font-mono);font-size:clamp(1.05rem,2.1vw,1.35rem);line-height:1.95;letter-spacing:0.01em;word-break:break-word;user-select:none;min-height:120px;outline:none}
+        #typing-display{font-family:var(--font-mono);font-size:clamp(1.05rem,2.1vw,1.35rem);line-height:1.95;letter-spacing:0.01em;word-break:break-word;user-select:none;min-height:120px;max-height:5.85em;overflow:hidden;outline:none;scroll-behavior:smooth}
         #typing-display .word{display:inline-block;margin:0 0.42em 0.18em 0;white-space:nowrap}
         #typing-display .letter{position:relative;transition:color 0.08s,background-color 0.08s}
         #typing-display .letter.correct{color:#111}
@@ -568,9 +568,10 @@ function generateWords(){
         }
         return out;
     }
-    // time mode: need enough words to fill duration — generate 200
+    // time mode: generate just enough for ~3 lines (not 200) — append more as you type
+    const target = state.length===15? 20 : state.length===30? 32 : state.length===60? 50 : state.length===120? 80 : 40;
     const out=[];
-    for(let i=0;i<200;i++){
+    for(let i=0;i<target;i++){
         let w=randomWord();
         w=maybeNumber(maybePunctuate(w));
         out.push(w);
@@ -784,7 +785,11 @@ function handleInput(key){
             if(!state.started) startRun();
             advanceWordHighlight();
             updateCaret();
+            ensureCaretVisible();
             updateLiveStats();
+            if(state.mode==='time' && !state.finished && state.idx > totalChars() - 20){
+                appendWords(20);
+            }
             // check words mode finish: if we've typed all words
             if(state.mode!=='time' && state.idx >= totalChars()){
                 finishRun();
@@ -796,39 +801,81 @@ function handleInput(key){
 
     if(key==='Backspace'){
         if(state.idx===0) return;
-        // step back one char (including space)
-        state.idx-=1;
-        const expected=letterAt(state.idx);
-        // find the letter element to reset
+        const prevIdx = state.idx - 1;
+        const wasAtSpace = isAtSpace(prevIdx);
+        if(wasAtSpace){
+            // Deleting the space between words — just move back, don't touch letters
+            state.idx -= 1;
+            state.correctChars = Math.max(0, state.correctChars - 1);
+            state.keyCount = Math.max(0, state.keyCount - 1);
+            state.correctKeyCount = Math.max(0, state.correctKeyCount - 1);
+            // Also undo the "missed" marking if we had marked pending as incorrect on space
+            // (keep them incorrect so user can see what was missed, but allow re-typing)
+            updateCaret();
+            advanceWordHighlight();
+            updateLiveStats();
+            ensureCaretVisible();
+            return;
+        }
+        // Inside a word — check for extra first
         let count=0;
+        let handled=false;
         for(let wi=0; wi<state.words.length; wi++){
             const w=state.words[wi];
-            if(state.idx < count + w.length){
+            const wordLen=w.length;
+            if(prevIdx < count + wordLen){
                 const wordEl=$display.querySelector(`.word[data-wi="${wi}"]`);
-                const li=state.idx - count;
-                const el=wordEl?.children[li];
-                if(el){
-                    // undo counts
-                    if(el.classList.contains('correct')) state.correctChars=Math.max(0,state.correctChars-1);
-                    else if(el.classList.contains('incorrect')) state.incorrectChars=Math.max(0,state.incorrectChars-1);
-                    else if(el.classList.contains('extra')){ state.extraChars=Math.max(0,state.extraChars-1); el.remove(); state.letterEls.splice(state.letterEls.indexOf(el),1); }
-                    el.className='letter pending';
-                    el.textContent=w[li];
+                if(!wordEl) break;
+                const extraCount = wordEl.children.length - wordLen;
+                if(extraCount > 0){
+                    // Last char typed in this word was an extra — remove the last extra span
+                    const lastEl = wordEl.lastChild;
+                    if(lastEl && lastEl.classList.contains('extra')){
+                        lastEl.remove();
+                        state.extraChars = Math.max(0, state.extraChars - 1);
+                        state.incorrectChars = Math.max(0, state.incorrectChars - 1);
+                        state.keyCount = Math.max(0, state.keyCount - 1);
+                        // correctKeyCount not affected (extra is always incorrect)
+                        state.idx -= 1;
+                        handled=true;
+                        break;
+                    }
                 }
+                // Normal letter
+                const li = prevIdx - count;
+                const el = wordEl.children[li];
+                if(el){
+                    if(el.classList.contains('correct')){
+                        state.correctChars = Math.max(0, state.correctChars - 1);
+                        state.correctKeyCount = Math.max(0, state.correctKeyCount - 1);
+                        state.keyCount = Math.max(0, state.keyCount - 1);
+                    } else if(el.classList.contains('incorrect')){
+                        state.incorrectChars = Math.max(0, state.incorrectChars - 1);
+                        state.keyCount = Math.max(0, state.keyCount - 1);
+                        // if it was a missed (pending->incorrect on space), missedChars stays
+                    }
+                    el.className='letter pending';
+                    // restore original char (in case it was an extra, but we already handled)
+                    // el.textContent already is w[li]
+                }
+                state.idx -= 1;
+                handled=true;
                 break;
             }
-            if(state.idx===count+w.length){
-                // was at space — backspace from space goes to last letter of previous word? Actually space is not a letter element, so idx now points to last char of word. No visual to revert except counts.
-                state.correctChars=Math.max(0,state.correctChars-1);
+            if(prevIdx === count + wordLen){
+                // Should have been handled as wasAtSpace above
+                state.idx -= 1;
+                state.correctChars = Math.max(0, state.correctChars - 1);
+                handled=true;
                 break;
             }
-            count+=w.length+1;
+            count += wordLen + 1;
         }
-        // also need to handle extra chars beyond word length that were appended
-        // we handled via extra removal above
+        if(!handled) state.idx = Math.max(0, state.idx - 1);
         updateCaret();
         advanceWordHighlight();
         updateLiveStats();
+        ensureCaretVisible();
         return;
     }
 
@@ -878,12 +925,18 @@ function handleInput(key){
     }
     advanceWordHighlight();
     updateCaret();
+    ensureCaretVisible();
     updateLiveStats();
+    // For time mode, keep buffer filled — append more words when near end (so display never shows 200 at once)
+    if(state.mode==='time' && !state.finished){
+        if(state.idx > totalChars() - 20){
+            appendWords(20);
+        }
+    }
     // check finish conditions
     if(state.mode==='words' || state.mode==='quote'){
         if(state.idx >= totalChars()) finishRun();
     }
-    // words mode: if we filled buffer and not finished, generate more? not needed for 200 buffer in time mode
 }
 
 function totalChars(){
@@ -895,6 +948,37 @@ function advanceWordHighlight(){
     $display.querySelectorAll('.word').forEach(el=>el.classList.remove('current'));
     const wi=currentWordIndexForLetter(state.idx);
     $display.querySelector(`.word[data-wi="${wi}"]`)?.classList.add('current');
+}
+function ensureCaretVisible(){
+    const cur = $display.querySelector('.word.current');
+    if(!cur) return;
+    const arenaRect = $display.getBoundingClientRect();
+    const curRect = cur.getBoundingClientRect();
+    // if current word is below visible area (max-height 5.85em ~ 3 lines), scroll
+    if(curRect.bottom > arenaRect.bottom - 8){
+        $display.scrollTop += (curRect.bottom - arenaRect.bottom) + 12;
+    } else if(curRect.top < arenaRect.top + 4){
+        $display.scrollTop -= (arenaRect.top - curRect.top) + 12;
+    }
+}
+function appendWords(n){
+    for(let i=0;i<n;i++){
+        let w=randomWord();
+        w=maybeNumber(maybePunctuate(w));
+        state.words.push(w);
+        const wi = state.words.length - 1;
+        const wordEl=document.createElement('span');
+        wordEl.className='word';
+        wordEl.dataset.wi=wi;
+        [...w].forEach(ch=>{
+            const s=document.createElement('span');
+            s.className='letter pending';
+            s.textContent=ch;
+            wordEl.appendChild(s);
+            state.letterEls.push(s);
+        });
+        $display.appendChild(wordEl);
+    }
 }
 
 // input wiring — hidden input + arena focus (layout-agnostic: uses beforeinput for Dvorak/Colemak)

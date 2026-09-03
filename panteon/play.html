@@ -897,7 +897,7 @@ function advanceWordHighlight(){
     $display.querySelector(`.word[data-wi="${wi}"]`)?.classList.add('current');
 }
 
-// input wiring — hidden input + arena focus
+// input wiring — hidden input + arena focus (layout-agnostic: uses beforeinput for Dvorak/Colemak)
 function focusArena(){
     $input.focus();
     $arena.classList.add('focused');
@@ -917,6 +917,52 @@ $arena.addEventListener('click', focusArena);
 $hint.addEventListener('click', focusArena);
 $input.addEventListener('focus', updateFocusHint);
 $input.addEventListener('blur', updateFocusHint);
+// --- Dvorak/layout fix: use beforeinput's data (actual inserted text, OS layout aware) as primary source.
+// This makes Dvorak, Colemak, AZERTY etc. work without remapping, and fixes double-fire bug
+// where both arena + input keydown were calling handleInput twice.
+let _beforeInputFired = false;
+$input.addEventListener('beforeinput', (e)=>{
+    // Only handle insert/delete that produce text; let Tab/Escape through to keydown
+    if(e.inputType === 'insertText' && e.data){
+        e.preventDefault();
+        _beforeInputFired = true;
+        // e.data may be multiple chars (e.g. paste, or composition)
+        for(const ch of e.data) handleInput(ch);
+        // keep input empty
+        $input.value = '';
+        return;
+    }
+    if(e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph'){
+        e.preventDefault();
+        _beforeInputFired = true;
+        handleInput(' ');
+        $input.value = '';
+        return;
+    }
+    if(e.inputType === 'deleteContentBackward'){
+        e.preventDefault();
+        _beforeInputFired = true;
+        handleInput('Backspace');
+        $input.value = '';
+        return;
+    }
+    if(e.inputType === 'deleteContentForward'){
+        e.preventDefault();
+        _beforeInputFired = true;
+        handleInput('Backspace');
+        $input.value = '';
+        return;
+    }
+});
+$input.addEventListener('input', (e)=>{
+    // Fallback for browsers that don't fire beforeinput for some layouts/IME
+    if(_beforeInputFired){ _beforeInputFired = false; return; }
+    const val = $input.value;
+    if(!val) return;
+    for(const ch of val) handleInput(ch);
+    $input.value = '';
+    _beforeInputFired = false;
+});
 $arena.addEventListener('keydown', (e)=>{
     if(e.key==='Tab'){
         e.preventDefault();
@@ -931,20 +977,34 @@ $arena.addEventListener('keydown', (e)=>{
         return;
     }
     if(e.key==='Escape'){ $input.blur(); return; }
-    if(e.key==='Tab' && e.shiftKey) return;
-    // prevent page scroll on space
+    // Backspace via keydown is fallback if beforeinput didn't fire (e.g. holding backspace)
+    if(e.key==='Backspace'){
+        // if beforeinput already handled this, prevent double
+        if(_beforeInputFired){ _beforeInputFired = false; e.preventDefault(); return; }
+        e.preventDefault();
+        handleInput('Backspace');
+        return;
+    }
+    // For character keys, prefer beforeinput; don't double-handle here.
+    // Only handle non-text keys like Tab/Escape above.
     if(e.key===' ' || e.code==='Space') e.preventDefault();
-    handleInput(e.key);
 });
 $input.addEventListener('keydown', (e)=>{
     if(e.key==='Tab'){ e.preventDefault(); $arena.dataset.tabArmed='1'; return; }
     if(e.key==='Enter' && $arena.dataset.tabArmed==='1'){ e.preventDefault(); $arena.dataset.tabArmed=''; resetRun(false); focusArena(); return; }
     if(e.key==='Escape'){ $input.blur(); return; }
+    if(e.key==='Backspace'){
+        if(_beforeInputFired){ _beforeInputFired = false; e.preventDefault(); return; }
+        // let beforeinput handle it; if it doesn't fire, we handle here (handled above in arena, but keep for input)
+        // prevent double: only handle if beforeinput didn't
+        setTimeout(()=>{ if(!$input.value && !_beforeInputFired) handleInput('Backspace'); }, 0);
+        e.preventDefault();
+        return;
+    }
     if(e.key===' ' || e.code==='Space') e.preventDefault();
-    // let arena handler do the work, but also handle here if arena not focused
-    handleInput(e.key);
-    // keep input value empty (we manage state manually)
-    $input.value='';
+    // Don't call handleInput here for text keys — beforeinput/input will handle.
+    // Keep input empty
+    setTimeout(()=>{ $input.value=''; }, 0);
 });
 document.addEventListener('keydown',(e)=>{
     if(e.key==='Tab' && document.activeElement!==$input && document.activeElement!==$arena){

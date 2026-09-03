@@ -36,7 +36,10 @@ jobs:
           cp -r mission.html privacy.html terms.html founder.html _pages/ 2>/dev/null || true
           # Panteon site — copy self-contained frontend (play.html, index.html, etc.) without heavy backups
           mkdir -p _pages/panteon
-          rsync -a --exclude='*.bak*' --exclude='.git' --exclude='backend' --exclude='__pycache__' --exclude='*.db' --exclude='*.db-*' panteon/ _pages/panteon/ 2>/dev/null || cp -r panteon _pages/panteon 2>/dev/null || true
+          rsync -a --exclude='*.bak*' --exclude='.git' --exclude='backend' --exclude='__pycache__' --exclude='*.db' --exclude='*.db-*' --exclude='data' --exclude='logs' --exclude='*.log' --exclude='*.jsonl' panteon/ _pages/panteon/ 2>/dev/null || cp -r panteon _pages/panteon 2>/dev/null || true
+          # Ensure play.html is always present even if rsync filtered aggressively
+          cp -f panteon/play.html _pages/panteon/play.html 2>/dev/null || true
+          cp -f panteon/index.html _pages/panteon/index.html 2>/dev/null || true
           cat > _pages/config.js << 'JS'
           window.ALIENINC_CONFIG = {
             API_BASE: "https://api.alieninc.tech",

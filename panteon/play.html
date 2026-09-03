@@ -157,6 +157,10 @@
         #caret.blink{animation:caretBlink 1s step-end infinite}
         @keyframes caretBlink{0%,50%{opacity:1} 51%,100%{opacity:0}}
         #hidden-input{position:absolute;opacity:0;pointer-events:none;left:-9999px}
+        .play-input-box{width:100%;margin-top:18px;padding:14px 16px;border:1px solid var(--border-dark);background:#fff;color:var(--text-dark);font-family:var(--font-mono);font-size:0.95rem;letter-spacing:0.02em;outline:none;transition:border-color 0.2s,box-shadow 0.2s;}
+        .play-input-box:focus{border-color:#000;box-shadow:0 6px 20px rgba(0,0,0,0.08);}
+        .play-input-box::placeholder{color:var(--text-muted);opacity:0.7;}
+        .play-input-box:disabled{opacity:0.5;cursor:not-allowed;}
         .play-hint-row{margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted)}
         .play-hint-row kbd{font-family:var(--font-mono);font-size:0.62rem;background:#000;color:#fff;padding:2px 6px;border:1px solid #000}
 
@@ -295,7 +299,8 @@
                 <div id="caret" class="blink"></div>
                 <div id="typing-display" aria-live="polite"></div>
                 <input id="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true">
-                <div class="play-hint-row"><span><kbd>tab</kbd> + <kbd>enter</kbd> restart</span><span>·</span><span><kbd>esc</kbd> or click to unfocus</span><span>·</span><span id="hint-language" style="color:#000;background:var(--accent-neon);padding:2px 6px;border:1px solid #000">english</span></div>
+                <input id="typing-input" type="text" class="play-input-box" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Type here — press space to commit each word (must be exact, like 10FF)…">
+                <div class="play-hint-row"><span><kbd>tab</kbd> + <kbd>enter</kbd> restart</span><span>·</span><span><kbd>esc</kbd> or click to unfocus</span><span>·</span><span><kbd>ctrl</kbd>+<kbd>backspace</kbd> delete word</span><span>·</span><span id="hint-language" style="color:#000;background:var(--accent-neon);padding:2px 6px;border:1px solid #000">english</span></div>
             </div>
 
             <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;align-items:center">
@@ -486,7 +491,8 @@ const PUNCT = [",",".",":",";","—","'","\"","(",")","?","!"];
 const $display=document.getElementById('typing-display');
 const $arena=document.getElementById('arena');
 const $caret=document.getElementById('caret');
-const $input=document.getElementById('hidden-input');
+const $input=document.getElementById('typing-input');
+const $hiddenInput=document.getElementById('hidden-input');
 const $hint=document.getElementById('focus-hint');
 const $liveWpm=document.getElementById('live-wpm');
 const $liveAcc=document.getElementById('live-acc');
@@ -675,6 +681,8 @@ function resetRun(generateNew=true){
     else $liveTimer.textContent='—';
     $caret.style.opacity='1'; $caret.classList.add('blink');
     $display.scrollTop=0;
+    if(typeof $input !== 'undefined' && $input) $input.value='';
+    if(typeof $hiddenInput !== 'undefined' && $hiddenInput) $hiddenInput.value='';
     updateFocusHint();
     updateCaret();
 }
@@ -1017,7 +1025,7 @@ function appendWords(n){
     }
 }
 
-// input wiring — hidden input + arena focus (layout-agnostic: uses beforeinput for Dvorak/Colemak)
+// input wiring — visible 10FF-style box + hidden fallback (layout-agnostic, Dvorak via beforeinput)
 function focusArena(){
     $input.focus();
     $arena.classList.add('focused');
@@ -1028,68 +1036,76 @@ function blurArena(){
     updateFocusHint();
 }
 function updateFocusHint(){
-    const isFocused=document.activeElement===$input;
+    const isFocused=document.activeElement===$input || document.activeElement===$hiddenInput;
     if(isFocused && !state.finished) $hint.classList.remove('show');
     else if(!state.finished) $hint.classList.add('show');
     else $hint.classList.remove('show');
+}
+function syncInputBox(){
+    // Visible box always mirrors currentInput (like 10FF #inputfield)
+    if($input) $input.value = state.currentInput;
+    if($hiddenInput) $hiddenInput.value = state.currentInput;
 }
 $arena.addEventListener('click', focusArena);
 $hint.addEventListener('click', focusArena);
 $input.addEventListener('focus', updateFocusHint);
 $input.addEventListener('blur', updateFocusHint);
-// --- Dvorak/layout fix: use beforeinput's data (actual inserted text, OS layout aware) as primary source
-// for regular letters, but handle Space and Backspace via keydown to avoid beforeinput/keydown race.
-// Fixes double-fire and space-not-working bug.
+$hiddenInput.addEventListener('focus', updateFocusHint);
+$hiddenInput.addEventListener('blur', updateFocusHint);
 let _beforeInputFired = false;
 $input.addEventListener('beforeinput', (e)=>{
-    // Let Space be handled via keydown (more reliable, avoids preventDefault race)
     if(e.inputType === 'insertText' && e.data){
-        // If data is a single space, let keydown handle it
-        if(e.data === ' ' || e.data === '  ') return;
+        if(e.data === ' ' || e.data === '  ') return; // space via keydown
         e.preventDefault();
         _beforeInputFired = true;
         for(const ch of e.data) handleInput(ch);
-        $input.value = '';
+        syncInputBox();
         return;
     }
     if(e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph'){
         e.preventDefault();
         _beforeInputFired = true;
         handleInput(' ');
-        $input.value = '';
+        syncInputBox();
         return;
     }
     if(e.inputType === 'deleteContentBackward'){
         e.preventDefault();
         _beforeInputFired = true;
-        // Check for Ctrl/Cmd + Backspace (deleteWordBackward is separate, but some browsers use this with ctrlKey)
-        if(e.data === undefined) handleInput('Backspace');
-        else handleInput('Backspace');
-        $input.value = '';
+        handleInput('Backspace');
+        syncInputBox();
         return;
     }
     if(e.inputType === 'deleteWordBackward'){
         e.preventDefault();
         _beforeInputFired = true;
         handleInput('CtrlBackspace');
-        $input.value = '';
+        syncInputBox();
         return;
     }
     if(e.inputType === 'deleteContentForward'){
         e.preventDefault();
         _beforeInputFired = true;
         handleInput('Backspace');
-        $input.value = '';
+        syncInputBox();
         return;
     }
 });
 $input.addEventListener('input', (e)=>{
     if(_beforeInputFired){ _beforeInputFired = false; return; }
     const val = $input.value;
-    if(!val) return;
-    // Input may contain space if pasted — handle each char
-    for(const ch of val) handleInput(ch);
-    $input.value = '';
+    // Fallback: if browser didn't fire beforeinput, sync via input value diff
+    if(val === state.currentInput) return;
+    // If user pasted or typed without beforeinput, treat the whole value as new input
+    // For simplicity, reset and re-apply
+    const diff = val.slice(state.currentInput.length);
+    if(diff){
+        for(const ch of diff) handleInput(ch);
+    } else if(val.length < state.currentInput.length){
+        // Deletion via input (not beforeinput)
+        handleInput('Backspace');
+    }
+    syncInputBox();
     _beforeInputFired = false;
 });
 $arena.addEventListener('keydown', (e)=>{
@@ -1106,24 +1122,25 @@ $arena.addEventListener('keydown', (e)=>{
         return;
     }
     if(e.key==='Escape'){ $input.blur(); return; }
-    // Space must be handled here (beforeinput is ignored for space)
     if(e.key===' ' || e.code==='Space' || e.key==='Space'){
         e.preventDefault();
-        _beforeInputFired = false; // prevent beforeinput double
+        _beforeInputFired = false;
         handleInput(' ');
+        syncInputBox();
         return;
     }
-    // Ctrl/Cmd + Backspace => delete whole word/sentence
     if((e.ctrlKey || e.metaKey) && e.key==='Backspace'){
         e.preventDefault();
         _beforeInputFired = false;
         handleInput('CtrlBackspace');
+        syncInputBox();
         return;
     }
     if(e.key==='Backspace'){
         if(_beforeInputFired){ _beforeInputFired = false; e.preventDefault(); return; }
         e.preventDefault();
         handleInput('Backspace');
+        syncInputBox();
         return;
     }
 });

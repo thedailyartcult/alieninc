@@ -848,6 +848,36 @@ function updateCaret(){
 
 function handleInput(key){
     if(state.finished) return;
+    // Ctrl/Cmd + Backspace: delete whole current word or go back (like Monkeytype deleteWordBackward)
+    if(key==='CtrlBackspace'){
+        if(state.currentInput.length > 0){
+            // Clear current word's input
+            state.currentInput = "";
+            renderWord(state.activeWordIndex);
+        } else if(state.activeWordIndex > 0){
+            // At empty input at start of word: delete previous word's committed history and jump back
+            // This allows Ctrl+Backspace to delete whole sentences word-by-word
+            const targetIndex = state.activeWordIndex - 1;
+            // Remove that word's history and make it current
+            state.inputHistory.splice(targetIndex, 1);
+            // Adjust activeWordIndex to that word
+            state.activeWordIndex = targetIndex;
+            state.currentInput = "";
+            // Re-render both words
+            renderWord(state.activeWordIndex);
+            // The word after (old active) is now at same index, need to shift data-wi for following words
+            // Simplest: rebuild display from that point or just render next
+            for(let wi=state.activeWordIndex+1; wi<state.words.length; wi++){
+                renderWord(wi);
+            }
+            $display.querySelectorAll('.word').forEach(el=>el.classList.remove('current'));
+            $display.querySelector(`.word[data-wi="${state.activeWordIndex}"]`)?.classList.add('current');
+        }
+        updateCaret();
+        ensureCaretVisible();
+        updateLiveStats();
+        return;
+    }
     // Space: commit current word (like Monkeytype commit=" ")
     if(key===' ' || key==='Space'){
         // If currentInput is empty and we press space, ignore (don't advance)
@@ -993,18 +1023,18 @@ $arena.addEventListener('click', focusArena);
 $hint.addEventListener('click', focusArena);
 $input.addEventListener('focus', updateFocusHint);
 $input.addEventListener('blur', updateFocusHint);
-// --- Dvorak/layout fix: use beforeinput's data (actual inserted text, OS layout aware) as primary source.
-// This makes Dvorak, Colemak, AZERTY etc. work without remapping, and fixes double-fire bug
-// where both arena + input keydown were calling handleInput twice.
+// --- Dvorak/layout fix: use beforeinput's data (actual inserted text, OS layout aware) as primary source
+// for regular letters, but handle Space and Backspace via keydown to avoid beforeinput/keydown race.
+// Fixes double-fire and space-not-working bug.
 let _beforeInputFired = false;
 $input.addEventListener('beforeinput', (e)=>{
-    // Only handle insert/delete that produce text; let Tab/Escape through to keydown
+    // Let Space be handled via keydown (more reliable, avoids preventDefault race)
     if(e.inputType === 'insertText' && e.data){
+        // If data is a single space, let keydown handle it
+        if(e.data === ' ' || e.data === '  ') return;
         e.preventDefault();
         _beforeInputFired = true;
-        // e.data may be multiple chars (e.g. paste, or composition)
         for(const ch of e.data) handleInput(ch);
-        // keep input empty
         $input.value = '';
         return;
     }
@@ -1018,7 +1048,16 @@ $input.addEventListener('beforeinput', (e)=>{
     if(e.inputType === 'deleteContentBackward'){
         e.preventDefault();
         _beforeInputFired = true;
-        handleInput('Backspace');
+        // Check for Ctrl/Cmd + Backspace (deleteWordBackward is separate, but some browsers use this with ctrlKey)
+        if(e.data === undefined) handleInput('Backspace');
+        else handleInput('Backspace');
+        $input.value = '';
+        return;
+    }
+    if(e.inputType === 'deleteWordBackward'){
+        e.preventDefault();
+        _beforeInputFired = true;
+        handleInput('CtrlBackspace');
         $input.value = '';
         return;
     }
@@ -1031,10 +1070,10 @@ $input.addEventListener('beforeinput', (e)=>{
     }
 });
 $input.addEventListener('input', (e)=>{
-    // Fallback for browsers that don't fire beforeinput for some layouts/IME
     if(_beforeInputFired){ _beforeInputFired = false; return; }
     const val = $input.value;
     if(!val) return;
+    // Input may contain space if pasted — handle each char
     for(const ch of val) handleInput(ch);
     $input.value = '';
     _beforeInputFired = false;
@@ -1053,33 +1092,50 @@ $arena.addEventListener('keydown', (e)=>{
         return;
     }
     if(e.key==='Escape'){ $input.blur(); return; }
-    // Backspace via keydown is fallback if beforeinput didn't fire (e.g. holding backspace)
+    // Space must be handled here (beforeinput is ignored for space)
+    if(e.key===' ' || e.code==='Space' || e.key==='Space'){
+        e.preventDefault();
+        _beforeInputFired = false; // prevent beforeinput double
+        handleInput(' ');
+        return;
+    }
+    // Ctrl/Cmd + Backspace => delete whole word/sentence
+    if((e.ctrlKey || e.metaKey) && e.key==='Backspace'){
+        e.preventDefault();
+        _beforeInputFired = false;
+        handleInput('CtrlBackspace');
+        return;
+    }
     if(e.key==='Backspace'){
-        // if beforeinput already handled this, prevent double
         if(_beforeInputFired){ _beforeInputFired = false; e.preventDefault(); return; }
         e.preventDefault();
         handleInput('Backspace');
         return;
     }
-    // For character keys, prefer beforeinput; don't double-handle here.
-    // Only handle non-text keys like Tab/Escape above.
-    if(e.key===' ' || e.code==='Space') e.preventDefault();
 });
 $input.addEventListener('keydown', (e)=>{
     if(e.key==='Tab'){ e.preventDefault(); $arena.dataset.tabArmed='1'; return; }
     if(e.key==='Enter' && $arena.dataset.tabArmed==='1'){ e.preventDefault(); $arena.dataset.tabArmed=''; resetRun(false); focusArena(); return; }
     if(e.key==='Escape'){ $input.blur(); return; }
-    if(e.key==='Backspace'){
-        if(_beforeInputFired){ _beforeInputFired = false; e.preventDefault(); return; }
-        // let beforeinput handle it; if it doesn't fire, we handle here (handled above in arena, but keep for input)
-        // prevent double: only handle if beforeinput didn't
-        setTimeout(()=>{ if(!$input.value && !_beforeInputFired) handleInput('Backspace'); }, 0);
+    if(e.key===' ' || e.code==='Space' || e.key==='Space'){
         e.preventDefault();
+        _beforeInputFired = false;
+        handleInput(' ');
         return;
     }
-    if(e.key===' ' || e.code==='Space') e.preventDefault();
-    // Don't call handleInput here for text keys — beforeinput/input will handle.
-    // Keep input empty
+    if((e.ctrlKey || e.metaKey) && e.key==='Backspace'){
+        e.preventDefault();
+        _beforeInputFired = false;
+        handleInput('CtrlBackspace');
+        return;
+    }
+    if(e.key==='Backspace'){
+        if(_beforeInputFired){ _beforeInputFired = false; e.preventDefault(); return; }
+        e.preventDefault();
+        handleInput('Backspace');
+        return;
+    }
+    // For other text keys, let beforeinput handle; just clear value
     setTimeout(()=>{ $input.value=''; }, 0);
 });
 document.addEventListener('keydown',(e)=>{

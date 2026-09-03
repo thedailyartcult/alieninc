@@ -177,6 +177,16 @@ async def admin():
     return {"detail": "Admin dashboard not found"}
 
 
+@app.get("/play.html")
+@app.get("/play")
+@app.get("/play/")
+async def play():
+    play_file = PANTEON_SITE / "play.html"
+    if play_file.exists():
+        return FileResponse(play_file, headers={"Cache-Control": "no-cache"})
+    return {"detail": "Play not found"}
+
+
 @app.get("/yono-forge")
 @app.get("/yono-forge/")
 async def yono_forge():
@@ -201,3 +211,7 @@ async def health():
 
 
 app.mount("/static", StaticFiles(directory=str(PANTEON_SITE)), name="panteon-site")
+# Serve any file in PANTEON_SITE at root (e.g. /hero-bg-panteon.mp4, /vendor/...) for
+# direct asset access when served via FastAPI tunnel. Explicit routes above take
+# precedence, so / and /play.html etc. are still handled by their handlers.
+app.mount("/", StaticFiles(directory=str(PANTEON_SITE), html=True), name="panteon-site-root")

@@ -138,7 +138,7 @@
 
         /* ARENA — the monkeytype core, skinned panteon */
         .play-arena{position:relative;background-color:rgba(255,255,255,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--border-dark);padding:36px 32px;min-height:220px;cursor:text;transition:box-shadow 0.3s,border-color 0.2s}
-        .play-arena:focus-within{border-color:#000;box-shadow:0 12px 32px rgba(0,0,0,0.08)}
+        .play-arena:focus-within,.play-arena.focused{border-color:#000;box-shadow:0 12px 32px rgba(0,0,0,0.08)}
         .play-arena.blurred{filter:blur(0px)} /* we manage focus overlay instead */
         .play-focus-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.72);backdrop-filter:blur(6px);z-index:5;opacity:0;pointer-events:none;transition:opacity 0.2s}
         .play-focus-hint.show{opacity:1;pointer-events:auto;cursor:pointer}
@@ -792,13 +792,14 @@ function updateLiveStats(){
 function updateCaret(){
     const wi = state.activeWordIndex;
     const wordEl = $display.querySelector(`.word[data-wi="${wi}"]`);
+    // Caret is inside #arena (position:relative), so use arena rect, not display rect
+    const arenaRect = $arena.getBoundingClientRect();
     if(!wordEl){
         const lastWord=$display.querySelector('.word:last-child');
         if(lastWord){
             const r=lastWord.getBoundingClientRect();
-            const ar=$display.getBoundingClientRect();
-            $caret.style.left=(r.right - ar.left)+'px';
-            $caret.style.top=(r.top - ar.top)+'px';
+            $caret.style.left=(r.right - arenaRect.left)+'px';
+            $caret.style.top=(r.top - arenaRect.top)+'px';
             $caret.style.height=r.height+'px';
         }
         return;
@@ -811,14 +812,11 @@ function updateCaret(){
         target = wordEl.children[letterIndex] || null;
         isAfter=false;
     } else {
-        // After last letter or on extra
         if(wordEl.children.length > 0){
-            // If there are extra letters, caret after last extra
             if(letterIndex >= wLen && wordEl.children.length > wLen){
                 target = wordEl.lastChild;
                 isAfter=true;
             } else {
-                // After last correct letter
                 target = wordEl.children[wLen-1] || wordEl;
                 isAfter=true;
             }
@@ -827,21 +825,21 @@ function updateCaret(){
             isAfter=false;
         }
     }
-    const ar=$display.getBoundingClientRect();
     if(!target){
-        $caret.style.left=(wordEl.getBoundingClientRect().left - ar.left)+'px';
-        $caret.style.top=(wordEl.getBoundingClientRect().top - ar.top)+'px';
-        $caret.style.height=wordEl.getBoundingClientRect().height+'px';
+        const wr = wordEl.getBoundingClientRect();
+        $caret.style.left=(wr.left - arenaRect.left)+'px';
+        $caret.style.top=(wr.top - arenaRect.top)+'px';
+        $caret.style.height=wr.height+'px';
         return;
     }
     const r=target.getBoundingClientRect();
     if(isAfter){
-        $caret.style.left=(r.right - ar.left + 2)+'px';
-        $caret.style.top=(r.top - ar.top)+'px';
+        $caret.style.left=(r.right - arenaRect.left + 2)+'px';
+        $caret.style.top=(r.top - arenaRect.top)+'px';
         $caret.style.height=r.height+'px';
     } else {
-        $caret.style.left=(r.left - ar.left)+'px';
-        $caret.style.top=(r.top - ar.top)+'px';
+        $caret.style.left=(r.left - arenaRect.left)+'px';
+        $caret.style.top=(r.top - arenaRect.top)+'px';
         $caret.style.height=r.height+'px';
     }
 }

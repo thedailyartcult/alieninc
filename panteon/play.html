@@ -143,43 +143,74 @@
         .play-focus-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.72);backdrop-filter:blur(6px);z-index:5;opacity:0;pointer-events:none;transition:opacity 0.2s}
         .play-focus-hint.show{opacity:1;pointer-events:auto;cursor:pointer}
         .play-focus-hint span{font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;background:#000;color:#fff;padding:8px 14px;border:1px solid #000}
-        #typing-display{font-family:var(--font-mono);font-size:clamp(1.05rem,2.1vw,1.35rem);line-height:1em;letter-spacing:0.01em;user-select:none;min-height:120px;max-height:5.85em;overflow:hidden;outline:none;scroll-behavior:smooth; display:flex; flex-wrap:wrap; width:100%; align-content:flex-start; height:fit-content; padding-bottom:0.5em;}
-        #typing-display .word{margin:0.25em 0.6em 0.25em 0; display:inline-block; white-space:nowrap; vertical-align:top;}
-        #typing-display .letter{position:relative;transition:color 0.08s,background-color 0.08s}
-        #typing-display .letter.correct{color:#111}
-        #typing-display .letter.incorrect{color:#ff2a2a;background:rgba(255,42,42,0.08);border-bottom:1px solid #ff2a2a}
-        #typing-display .letter.extra{color:#ff2a2a;opacity:0.9}
-        #typing-display .letter.pending{color:#a1a1aa}
-        #typing-display .word.current{ /* underline current word subtle */ }
+        #typing-display{font-family:var(--font-mono);font-size:clamp(1.05rem,2.1vw,1.35rem);line-height:1.75em;letter-spacing:0.01em;user-select:none;min-height:120px;max-height:5.85em;overflow:hidden;outline:none;scroll-behavior:smooth; display:flex; flex-wrap:wrap; width:100%; align-content:flex-start; height:fit-content; padding-bottom:0.5em;}
+        #typing-display .word{margin:0.2em 0.45em 0.2em 0; display:inline-block; white-space:nowrap; vertical-align:top; padding:1px 6px; border:1px solid transparent; line-height:1.4; transition:background 0.12s,color 0.12s,border-color 0.12s,opacity 0.12s}
+        #typing-display .word.pending{color:#a1a1aa; background:transparent}
+        #typing-display .word.current{background:#000;color:#fff;border-color:#000}
+        #typing-display .word.current.input-error{background:#ff2a2a;border-color:#ff2a2a;color:#fff;animation:wordShake 0.28s ease}
+        #typing-display .word.correct{color:#71717a;background:transparent;opacity:0.55;border-color:transparent}
+        #typing-display .word.error{background:rgba(255,42,42,0.09);border-color:#ff2a2a;color:#ff2a2a}
+        /* keep per-letter spans for no-JS fallback but style via word state */
+        #typing-display .letter{transition:color 0.08s}
+        #typing-display .word.pending .letter{color:inherit}
+        #typing-display .word.current .letter{color:inherit}
+        #typing-display .word.correct .letter{color:inherit}
         @keyframes wordShake{0%,100%{transform:translateX(0)} 20%{transform:translateX(-3px)} 40%{transform:translateX(3px)} 60%{transform:translateX(-2px)} 80%{transform:translateX(2px)}}
         .word.shake{animation:wordShake 0.25s ease;}
-        #caret{position:absolute;width:2px;height:1.35em;background:var(--accent-neon);border-left:2px solid #000;pointer-events:none;transition:left 0.07s linear,top 0.07s linear,opacity 0.15s;mix-blend-mode:normal;z-index:2}
-        #caret.blink{animation:caretBlink 1s step-end infinite}
-        @keyframes caretBlink{0%,50%{opacity:1} 51%,100%{opacity:0}}
+        #caret{display:none !important}
         #hidden-input{position:absolute;opacity:0;pointer-events:none;left:-9999px}
-        .play-input-box{width:100%;margin-top:18px;padding:14px 16px;border:1px solid var(--border-dark);background:#fff;color:var(--text-dark);font-family:var(--font-mono);font-size:0.95rem;letter-spacing:0.02em;outline:none;transition:border-color 0.2s,box-shadow 0.2s;}
+        .play-input-box{width:100%;margin-top:18px;padding:14px 16px;border:1px solid var(--border-dark);background:#fff;color:var(--text-dark);font-family:var(--font-mono);font-size:0.95rem;letter-spacing:0.02em;outline:none;transition:border-color 0.2s,box-shadow 0.2s,background 0.2s;}
         .play-input-box:focus{border-color:#000;box-shadow:0 6px 20px rgba(0,0,0,0.08);}
         .play-input-box::placeholder{color:var(--text-muted);opacity:0.7;}
         .play-input-box:disabled{opacity:0.5;cursor:not-allowed;}
+        .play-input-box.input-error{border-color:#ff2a2a;background:#fff1f1;box-shadow:0 0 0 2px rgba(255,42,42,0.12)}
         .play-hint-row{margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted)}
         .play-hint-row kbd{font-family:var(--font-mono);font-size:0.62rem;background:#000;color:#fff;padding:2px 6px;border:1px solid #000}
-        .play-multiplayer{background:rgba(255,255,255,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--border-dark);padding:16px 20px;margin-bottom:16px;}
+        .play-multiplayer{background:rgba(255,255,255,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--border-dark);padding:16px 20px;margin-bottom:16px;position:relative;overflow:hidden}
         .mp-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
         .mp-server-info{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);}
         .info.info-server{display:flex;align-items:center;gap:8px;background:#000;color:#fff;padding:6px 12px;border:1px solid #000;font-weight:600;}
         .server-dot{width:7px;height:7px;background:var(--accent-neon);display:inline-block;animation:serverPulse 1.5s infinite;}
+        .server-dot.searching{animation:serverPulse 0.6s infinite;background:#fff}
         @keyframes serverPulse{0%,100%{opacity:1} 50%{opacity:0.4}}
         .mp-race-status{color:var(--text-dark);font-weight:500;}
-        .mp-opponents{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;}
-        .mp-opponent{border:1px solid var(--border-dark);background:#fff;padding:12px;display:flex;flex-direction:column;gap:8px;}
-        .mp-opp-header{display:flex;justify-content:space-between;align-items:center;gap:8px;}
-        .mp-opp-name{font-family:var(--font-tech);font-size:0.85rem;font-weight:600;letter-spacing:-0.01em;display:flex;align-items:center;gap:6px;}
-        .mp-opp-name .opp-avatar{width:22px;height:22px;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;}
-        .mp-opp-wpm{font-family:var(--font-mono);font-size:0.75rem;font-weight:600;color:var(--text-dark);background:var(--accent-neon);padding:2px 6px;border:1px solid #000;}
-        .mp-opp-progress{height:6px;background:rgba(0,0,0,0.08);border:1px solid var(--border-dark);position:relative;overflow:hidden;}
-        .mp-opp-bar{position:absolute;left:0;top:0;height:100%;background:var(--text-dark);width:0%;transition:width 0.3s linear;}
-        .mp-opp-bar.you{background:var(--accent-neon);border-right:1px solid #000;}
-        .mp-opp-meta{font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-muted);display:flex;justify-content:space-between;}
+        /* RACE TRACK — typeracer/10FF style, Panteon glass */
+        .mp-opponents{display:flex;flex-direction:column;gap:8px;}
+        .mp-lane{display:flex;align-items:center;gap:12px;border:1px solid var(--border-dark);background:#fff;padding:10px 12px;transition:transform 0.25s ease, border-color 0.2s, background 0.2s}
+        .mp-lane.you{background:#000;color:#fff;border-color:#000}
+        .mp-lane.overtake{transform:translateX(4px);border-color:var(--accent-neon)}
+        .mp-lane-left{min-width:148px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+        .mp-opp-name{font-family:var(--font-tech);font-size:0.82rem;font-weight:600;letter-spacing:-0.01em;display:flex;align-items:center;gap:6px;white-space:nowrap}
+        .mp-lane.you .mp-opp-name{color:#fff}
+        .mp-opp-name .opp-avatar{width:22px;height:22px;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;flex-shrink:0}
+        .mp-lane.you .opp-avatar{background:var(--accent-neon);color:#000}
+        .lane-place{font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;padding:2px 6px;border:1px solid #000;background:var(--accent-neon);color:#000;font-weight:700}
+        .mp-lane.you .lane-place{background:#fff;color:#000}
+        .mp-opp-wpm{font-family:var(--font-mono);font-size:0.7rem;font-weight:600;color:var(--text-dark);background:var(--accent-neon);padding:2px 6px;border:1px solid #000;white-space:nowrap}
+        .mp-lane.you .mp-opp-wpm{background:#fff;color:#000;border-color:#fff}
+        .lane-rail{flex:1;height:8px;background:rgba(0,0,0,0.08);border:1px solid var(--border-dark);position:relative;overflow:hidden;min-width:80px}
+        .mp-lane.you .lane-rail{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.2)}
+        .lane-fill{position:absolute;left:0;top:0;height:100%;background:var(--text-dark);width:0%;transition:width 0.12s linear}
+        .mp-lane.you .lane-fill{background:var(--accent-neon)}
+        .lane-car{position:absolute;top:50%;width:14px;height:14px;background:var(--text-dark);border:1px solid #fff;transform:translate(-50%,-50%);transition:left 0.12s linear;box-shadow:0 1px 4px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;font-size:7px}
+        .mp-lane.you .lane-car{background:var(--accent-neon);border-color:#000;color:#000}
+        .lane-car.stalled{animation:carStall 0.35s ease}
+        @keyframes carStall{0%,100%{transform:translate(-50%,-50%)} 25%{transform:translate(-50%,-50%) translateX(-2px)} 75%{transform:translate(-50%,-50%) translateX(2px)}}
+        .mp-opp-meta{font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);min-width:36px;text-align:right}
+        .mp-lane.you .mp-opp-meta{color:rgba(255,255,255,0.7)}
+        .race-toasts{position:absolute;top:12px;right:12px;z-index:8;display:flex;flex-direction:column;gap:6px;pointer-events:none;max-width:280px}
+        .race-toast{font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.06em;text-transform:uppercase;background:#000;color:#fff;padding:7px 10px;border:1px solid #000;animation:toastIn 0.35s cubic-bezier(0.16,1,0.3,1), toastOut 0.3s ease 2.2s forwards}
+        .race-toast.accent{background:var(--accent-neon);color:#000;border-color:#000}
+        @keyframes toastIn{from{opacity:0;transform:translateX(12px)} to{opacity:1;transform:translateX(0)}}
+        @keyframes toastOut{from{opacity:1} to{opacity:0;transform:translateY(-6px)}}
+        .race-countdown{position:absolute;inset:0;background:rgba(255,255,255,0.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:7;gap:8px;transition:opacity 0.25s}
+        .race-countdown.hidden{opacity:0;pointer-events:none}
+        .countdown-num{font-family:var(--font-tech);font-size:clamp(3.2rem,10vw,5.5rem);font-weight:300;letter-spacing:-0.04em;color:var(--text-dark);line-height:1}
+        .countdown-num.go{color:#000;background:var(--accent-neon);padding:4px 18px;border:1px solid #000}
+        .countdown-label{font-family:var(--font-mono);font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-muted)}
+        .countdown-dots{display:flex;gap:6px;margin-top:6px}
+        .countdown-dots i{width:6px;height:6px;background:rgba(0,0,0,0.15);display:block}
+        .countdown-dots i.on{background:var(--text-dark)}
 
         /* RESULTS */
         .play-results{display:none;background:rgba(255,255,255,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--border-dark);padding:32px;margin-top:20px}
@@ -275,38 +306,27 @@
         <div class="play-hero-content" data-parallax-content>
             <div class="play-hero-eyebrow">PANTEON — PLAY</div>
             <div class="word-overflow-clip"><h1 class="play-hero-title reveal-text-line">Precision <span class="stylized-A">under</span> pressure</h1></div>
-            <p class="play-hero-sub">A Monkeytype-inspired typing test, rebuilt in the Panteon design language. Measure speed, accuracy, and focus — no account required. Inspired by <a href="https://github.com/monkeytypegame/monkeytype" target="_blank" rel="noopener" style="color:var(--accent-neon);text-decoration:underline;text-underline-offset:3px">monkeytypegame/monkeytype</a> (GPL-3.0).</p>
+            <p class="play-hero-sub">A 10FastFingers (<a href="https://10fastfingers.com" target="_blank" rel="noopener" style="color:var(--accent-neon);text-decoration:underline;text-underline-offset:3px">10FF</a>) multiplayer race rebuilt in the Panteon design language. Everyone gets the same 40 words — first to type them correctly wins. Strict inputfield: you must fix errors before Space advances.</p>
         </div>
     </section>
 
     <main class="main-content" id="scroll-content">
         <section class="play-section">
-            <div class="section-header-bar"><div class="word-overflow-clip"><h2 class="reveal-text-line">Type Test</h2></div><div class="section-badge">60,000+ WORDS · LIVE WPM</div></div>
+            <div class="section-header-bar"><div class="word-overflow-clip"><h2 class="reveal-text-line">10FF Race</h2></div><div class="section-badge">40 WORDS · STRICT · LIVE RACE</div></div>
 
             <div class="play-controls-wrap" id="controls">
                 <div class="play-mode-group">
-                    <span class="play-mode-label">Mode</span>
-                    <button class="play-pill active" data-mode="time">time</button>
-                    <button class="play-pill" data-mode="words">words</button>
-                    <button class="play-pill" data-mode="quote">quote</button>
+                    <span class="play-mode-label">10FF Race</span>
+                    <span class="play-pill active" style="pointer-events:none">40 words</span>
+                    <span class="play-pill dot" style="pointer-events:none">first to finish wins</span>
                     <span class="play-sep"></span>
-                    <span class="play-mode-label">Length</span>
-                    <button class="play-pill active" data-length="30">30</button>
-                    <button class="play-pill" data-length="15">15</button>
-                    <button class="play-pill" data-length="60">60</button>
-                    <button class="play-pill" data-length="120">120</button>
-                    <button class="play-pill" data-length="25" data-words-only style="display:none">25</button>
-                    <button class="play-pill" data-length="50" data-words-only style="display:none">50</button>
-                    <button class="play-pill" data-length="100" data-words-only style="display:none">100</button>
+                    <span class="play-mode-label" style="color:var(--text-dark);font-weight:600">inputfield · strict like 10FastFingers</span>
                 </div>
                 <div class="play-mode-group">
-                    <button class="play-pill" data-toggle="punctuation">punctuation</button>
-                    <button class="play-pill" data-toggle="numbers">numbers</button>
-                    <span class="play-sep"></span>
                     <div class="play-stats-strip">
                         <span class="play-stat">wpm <strong id="live-wpm">—</strong></span>
                         <span class="play-stat">acc <strong id="live-acc">—</strong></span>
-                        <span class="play-timer" id="live-timer">30</span>
+                        <span class="play-timer" id="live-timer">—</span>
                     </div>
                 </div>
             </div>
@@ -314,15 +334,17 @@
             <div class="play-multiplayer" id="multiplayer-panel">
                 <div class="mp-header">
                     <div class="mp-server-info">
-                        <span class="info info-server"><span class="server-dot"></span> <span id="server-count">1,247</span> players on server</span>
-                        <span class="mp-race-status" id="race-status">Click to start — 4 opponents ready</span>
+                        <span class="info info-server"><span class="server-dot" id="server-dot"></span> <span id="server-count">1,247</span> players on server</span>
+                        <span class="mp-race-status" id="race-status">Searching for opponents…</span>
                     </div>
-                    <button class="play-pill active" id="toggle-ai" type="button">Race vs AI: ON</button>
+                    <button class="play-pill active" id="toggle-ai" type="button">Live race: ON</button>
                 </div>
                 <div class="mp-opponents" id="opponents-list"></div>
+                <div class="race-toasts" id="race-toasts" aria-live="polite"></div>
             </div>
 
             <div class="play-arena" id="arena" tabindex="0" aria-label="Typing arena — click to focus and start typing">
+                <div class="race-countdown hidden" id="race-countdown" aria-hidden="true"><div class="countdown-num" id="countdown-num">3</div><div class="countdown-label" id="countdown-label">Get ready — everyone starts together</div><div class="countdown-dots" id="countdown-dots"><i class="on"></i><i></i><i></i></div></div>
                 <div class="play-focus-hint" id="focus-hint"><span>Click to focus — start typing</span></div>
                 <div id="caret" class="blink"></div>
                 <div id="typing-display" aria-live="polite"></div>
@@ -372,9 +394,9 @@
             <div class="play-info-grid">
                 <div class="play-info-card" data-parallax-item>
                     <div class="card-num-bar"><div class="square-block"></div><span class="num-tag">/ 01 — HOW IT WORKS</span></div>
-                    <h3>Monkeytype mechanics, Panteon skin</h3>
-                    <p>We reimplement the core loop from <a href="https://github.com/monkeytypegame/monkeytype" target="_blank" rel="noopener" style="text-decoration:underline;text-underline-offset:3px">monkeytype</a> without embedding it: live errors, smooth caret, word-by-word validation, and WPM = (correct chars ÷ 5) ÷ minutes. Punctuation and numbers are injected at generation time — same as Monkeytype's funbox pipeline.</p>
-                    <ul><li>Time, words, and quote modes</li><li>Live WPM / accuracy / raw</li><li>Restart with <code>tab</code> + <code>enter</code></li></ul>
+                    <h3>10FF race, Panteon skin</h3>
+                    <p>Strict <code>inputfield</code> like <a href="https://10fastfingers.com" target="_blank" rel="noopener" style="text-decoration:underline;text-underline-offset:3px">10FastFingers</a>: everyone gets the same 40 words, current word is highlighted. Type in the box below — if your prefix is wrong the box and word turn red, and <code>Space</code> only advances when the word is exactly correct. First to finish wins.</p>
+                    <ul><li>40-word sprint · strict Space</li><li>Live WPM / accuracy from committed words</li><li>Restart with <code>tab</code> + <code>enter</code></li></ul>
                 </div>
                 <div class="play-info-card" data-parallax-item>
                     <div class="card-num-bar"><div class="square-block"></div><span class="num-tag">/ 02 — DESIGN LANGUAGE</span></div>
@@ -497,28 +519,13 @@
 </script>
 
 <script>
-// ---------- Typing engine — Monkeytype-inspired, Panteon-skinned ----------
+// ---------- Typing engine — 10FF-style inputfield, Panteon-skinned ----------
 (function(){
 const WORDS = ("the be to of and a in that have i it for not on with he as you do at this but his by from they we say her she or an will my one all would there their what so up out if about who get which go me when make can like time no just him know take people into year your good some could them see other than then now look only come its over think also back after use two how our work first well way even new want because any these give day most us is are was were has had been have do does did will would can could should may might must shall being having doing going making taking knowing seeing coming looking thinking saying going there here where why how what when which who whom whose that this these those am is are was were be been being have has had do does did will would shall should may might can could must ought need dare used").split(/\s+/);
 const EXTRA = ["panteon","ontology","tactical","autonomy","platform","signal","fusion","edge","sovereign","domain","interface","operator","mission","crackerbox","yono","statham","alien","intelligence","cognitive","deployment","streaming","connector","pipeline","telemetry","reconnaissance","logistics","deterrence","infrastructure","resilient","contested","orchestration","synchronization","provenance","classified","terrain","maritime","aerospace","propulsion","fabric","ledger","vector","graph","memory","recall","temporal","semantic","bi-temporal","handoff","workspace","repository","session","agent","model","inference","training","dataset"];
 const ALL_WORDS = WORDS.concat(EXTRA);
-// Quotes — short curated, like monkeytype quotes
-const QUOTES = [
-    "The most dangerous phrase in the language is we have always done it this way.",
-    "Precision is not an accident. It is a system that survives pressure.",
-    "In contested environments, latency is not a metric — it is a casualty.",
-    "Ontology is how machines learn to mean what humans already know.",
-    "Speed without accuracy is noise. Accuracy without speed is hesitation.",
-    "Every query is a contract: traced, sourced, and audited.",
-    "The mountain reveals itself only to those who keep moving.",
-    "Software that cannot operate disconnected cannot be trusted connected.",
-    "We build the operating system for the next century — one keystroke at a time.",
-    "Focus is a weapon. Distraction is a vulnerability."
-];
-const PUNCT = [",",".",":",";","—","'","\"","(",")","?","!"];
 const $display=document.getElementById('typing-display');
 const $arena=document.getElementById('arena');
-const $caret=document.getElementById('caret');
 const $input=document.getElementById('typing-input');
 const $hiddenInput=document.getElementById('hidden-input');
 const $hint=document.getElementById('focus-hint');
@@ -526,26 +533,21 @@ const $liveWpm=document.getElementById('live-wpm');
 const $liveAcc=document.getElementById('live-acc');
 const $liveTimer=document.getElementById('live-timer');
 const $results=document.getElementById('results');
-const $controls=document.getElementById('controls');
 
 let state = {
-    mode:'time',
-    length:30,
-    punctuation:false, numbers:false,
-    words:[], // Monkeytype spaceless: no trailing spaces, commit is margin
+    words:[],
     activeWordIndex:0,
     currentInput:"",
-    inputHistory:[], // committed inputs per word
-    wordEls:[],
+    inputHistory:[],
     started:false, finished:false,
     startTime:0, endTime:0,
-    timerId:null, elapsed:0, remaining:0,
-    correctChars:0, incorrectChars:0, extraChars:0, missedChars:0,
+    timerId:null, elapsed:0,
     history:[],
     sampleTimer:null,
-    keyCount:0, correctKeyCount:0
+    correctChars:0, totalKeystrokes:0, correctKeystrokes:0
 };
 const LS_KEY='panteon_play_history_v1';
+const RACE_WORDS=40;
 
 function saveHistory(entry){
     try{
@@ -561,79 +563,32 @@ function renderHistory(){
     const list=document.getElementById('history-list');
     if(!list) return;
     const h=loadHistory();
-    if(!h.length){ list.innerHTML='<span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-muted)">No runs yet — finish a test to see it here.</span>'; return; }
-    list.innerHTML=h.slice(0,10).map(r=>`<div class="history-item"><span>${r.mode} · ${r.lengthLabel} · ${new Date(r.ts).toLocaleDateString()}</span><strong>${r.wpm} wpm</strong></div>`).join('');
+    if(!h.length){ list.innerHTML='<span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-muted)">No races yet — finish a race to see it here.</span>'; return; }
+    list.innerHTML=h.slice(0,10).map(r=>`<div class="history-item"><span>10FF · 40w · ${new Date(r.ts).toLocaleDateString()}</span><strong>${r.wpm} wpm</strong></div>`).join('');
 }
 
-// word generation — mirrors monkeytype WordsGenerator + QuotesController (spaceless)
 function randomWord(){
     return ALL_WORDS[Math.floor(Math.random()*ALL_WORDS.length)];
 }
-function maybePunctuate(word){
-    if(!state.punctuation) return word;
-    const roll=Math.random();
-    if(roll<0.18){
-        const p=PUNCT[Math.floor(Math.random()*PUNCT.length)];
-        if(p==='(') return '('+word;
-        if(p===')') return word+')';
-        if(p==='"' || p==="'") return Math.random()<0.5 ? '"'+word+'"' : word;
-        return word+p;
-    }
-    if(roll<0.22) return word.charAt(0).toUpperCase()+word.slice(1);
-    return word;
-}
-function maybeNumber(word){
-    if(!state.numbers) return word;
-    if(Math.random()<0.12) return String(Math.floor(Math.random()*9000)+100);
-    return word;
-}
 function generateWords(){
-    if(state.mode==='quote'){
-        const q=QUOTES[Math.floor(Math.random()*QUOTES.length)];
-        // Monkeytype: keep punctuation inside word, split only on spaces — same as before but now spaceless
-        return q.split(/\s+/);
-    }
-    if(state.mode==='words'){
-        const n=state.length;
-        const out=[];
-        for(let i=0;i<n;i++){
-            let w=randomWord();
-            w=maybeNumber(maybePunctuate(w));
-            out.push(w);
-        }
-        return out;
-    }
-    const target = state.length===15? 20 : state.length===30? 32 : state.length===60? 50 : state.length===120? 80 : 40;
     const out=[];
-    for(let i=0;i<target;i++){
-        let w=randomWord();
-        w=maybeNumber(maybePunctuate(w));
-        out.push(w);
-    }
+    for(let i=0;i<RACE_WORDS;i++) out.push(randomWord());
     return out;
 }
 
 function buildDisplay(){
     $display.innerHTML='';
-    state.wordEls=[];
     state.words.forEach((w, wi)=>{
         const wordEl=document.createElement('span');
-        wordEl.className='word';
+        wordEl.className='word pending';
         wordEl.dataset.wi=wi;
-        [...w].forEach(ch=>{
-            const s=document.createElement('span');
-            s.className='letter pending';
-            s.textContent=ch;
-            wordEl.appendChild(s);
-        });
+        wordEl.textContent=w;
         $display.appendChild(wordEl);
     });
-    // spaceless: no extra idx, activeWordIndex/currentInput drive everything
     state.activeWordIndex=0;
     state.currentInput="";
     state.inputHistory=[];
     renderAllWords();
-    updateCaret();
     updateLiveStats();
 }
 
@@ -641,94 +596,49 @@ function renderWord(wi){
     const w = state.words[wi];
     const wordEl = $display.querySelector(`.word[data-wi="${wi}"]`);
     if(!wordEl || w===undefined) return;
-    // Determine input for this word: currentInput if active, else history, else ""
-    let input = "";
-    if(wi === state.activeWordIndex) input = state.currentInput;
-    else if(state.inputHistory[wi] !== undefined) input = state.inputHistory[wi];
-    else input = "";
-
-    // Clear and rebuild letters for this word (like Monkeytype updateWordLetters)
-    wordEl.innerHTML='';
-    const chars = [...w];
-    const inputChars = [...input];
-    // Render base letters
-    for(let i=0;i<chars.length;i++){
-        const s=document.createElement('span');
-        s.className='letter';
-        s.textContent=chars[i];
-        if(i < inputChars.length){
-            const isCorrect = inputChars[i] === chars[i];
-            s.classList.add(isCorrect ? 'correct' : 'incorrect');
+    wordEl.classList.remove('pending','current','correct','error','input-error','shake');
+    if(wi < state.activeWordIndex){
+        wordEl.classList.add('correct');
+    } else if(wi === state.activeWordIndex){
+        wordEl.classList.add('current');
+        if(state.currentInput && !w.startsWith(state.currentInput)){
+            wordEl.classList.add('input-error');
+            if($input) $input.classList.add('input-error');
         } else {
-            // Not yet typed: if word is committed (in history) and input was shorter, remaining are incorrect (missed)
-            if(state.inputHistory[wi] !== undefined && inputChars.length < chars.length){
-                s.classList.add('incorrect');
-            } else {
-                s.classList.add('pending');
-            }
+            if($input) $input.classList.remove('input-error');
         }
-        wordEl.appendChild(s);
-    }
-    // Extra letters beyond word length
-    if(inputChars.length > chars.length){
-        for(let i=chars.length;i<inputChars.length;i++){
-            const s=document.createElement('span');
-            s.className='letter extra incorrect';
-            // Monkeytype shows "_" for space typed as extra, but we just show char
-            s.textContent = inputChars[i]===" " ? "_" : inputChars[i];
-            wordEl.appendChild(s);
-        }
-    }
-    // Word-level classes like Monkeytype: .typed/.error
-    wordEl.classList.remove('typed','error');
-    if(state.inputHistory[wi] !== undefined){
-        wordEl.classList.add('typed');
-        const hist = state.inputHistory[wi];
-        if(hist !== w) wordEl.classList.add('error');
+    } else {
+        wordEl.classList.add('pending');
     }
 }
 
 function renderAllWords(){
     state.words.forEach((_, wi)=>renderWord(wi));
-    $display.querySelectorAll('.word').forEach(el=>el.classList.remove('current'));
-    $display.querySelector(`.word[data-wi="${state.activeWordIndex}"]`)?.classList.add('current');
 }
 
 function resetRun(generateNew=true){
     clearInterval(state.timerId); clearInterval(state.sampleTimer);
     state.started=false; state.finished=false; state.startTime=0; state.endTime=0;
-    state.elapsed=0; state.correctChars=0; state.incorrectChars=0; state.extraChars=0; state.missedChars=0;
-    state.keyCount=0; state.correctKeyCount=0; state.history=[];
+    state.elapsed=0; state.correctChars=0; state.totalKeystrokes=0; state.correctKeystrokes=0; state.history=[];
     state.activeWordIndex=0; state.currentInput=""; state.inputHistory=[];
     if(generateNew) state.words=generateWords();
     buildDisplay();
     $results.classList.remove('show');
     $liveWpm.textContent='—'; $liveAcc.textContent='—';
-    if(state.mode==='time') $liveTimer.textContent=String(state.length);
-    else if(state.mode==='words') $liveTimer.textContent=state.words.length;
-    else $liveTimer.textContent='—';
-    $caret.style.opacity='1'; $caret.classList.add('blink');
+    $liveTimer.textContent='—';
     $display.scrollTop=0;
-    if(typeof $input !== 'undefined' && $input) $input.value='';
-    if(typeof $hiddenInput !== 'undefined' && $hiddenInput) $hiddenInput.value='';
+    if($input){ $input.value=''; $input.classList.remove('input-error'); $input.disabled=false; }
+    if($hiddenInput) $hiddenInput.value='';
     updateFocusHint();
-    updateCaret();
+    ensureVisible();
 }
 
 function startRun(){
     if(state.started) return;
     state.started=true; state.startTime=performance.now();
-    $caret.classList.remove('blink');
-    state.remaining = state.mode==='time' ? state.length : 0;
     state.timerId=setInterval(()=>{
         state.elapsed=(performance.now()-state.startTime)/1000;
-        if(state.mode==='time'){
-            state.remaining=Math.max(0, state.length - state.elapsed);
-            $liveTimer.textContent=Math.ceil(state.remaining);
-            if(state.remaining<=0) finishRun();
-        } else {
-            $liveTimer.textContent=String(Math.ceil(state.elapsed));
-        }
+        $liveTimer.textContent= state.elapsed.toFixed(1)+'s';
         updateLiveStats();
     },100);
     state.sampleTimer=setInterval(()=>{
@@ -737,81 +647,55 @@ function startRun(){
         const wpm=Math.round((state.correctChars/5)/mins) || 0;
         state.history.push(wpm);
         if(state.history.length>200) state.history.shift();
-        updateLiveStats();
         drawChart();
     },1000);
 }
 
 function recomputeCounts(){
-    // Recompute from inputHistory + currentInput like Monkeytype does for stats
-    let correct=0, incorrect=0, extra=0, missed=0, keyCount=0, correctKeyCount=0;
-    state.words.forEach((w, wi)=>{
-        let input = "";
-        if(wi === state.activeWordIndex) input = state.currentInput;
-        else if(state.inputHistory[wi] !== undefined) input = state.inputHistory[wi];
-        else return; // not yet typed
-        const wChars=[...w], iChars=[...input];
-        const len = Math.min(wChars.length, iChars.length);
-        for(let i=0;i<len;i++){
-            keyCount++;
-            if(iChars[i]===wChars[i]){ correct++; correctKeyCount++; }
-            else incorrect++;
-        }
-        if(iChars.length > wChars.length){
-            extra += iChars.length - wChars.length;
-            incorrect += iChars.length - wChars.length;
-            keyCount += iChars.length - wChars.length;
-        }
-        if(state.inputHistory[wi]!==undefined && iChars.length < wChars.length){
-            // Word was committed via space with missing letters
-            missed += wChars.length - iChars.length;
-            incorrect += wChars.length - iChars.length;
-        }
+    let correct=0, total=0, correctKeys=0;
+    state.inputHistory.forEach((inp, idx)=>{
+        const w=state.words[idx]||'';
+        correct += w.length + 1;
+        total += w.length + 1;
+        correctKeys += w.length + 1;
     });
-    // Space commits: each committed word (except maybe last if time) counts as a correct char for WPM
-    // Monkeytype counts spaces as correctChars for WPM; we approximate as number of committed words
-    const committedSpaces = state.inputHistory.length;
-    correct += committedSpaces;
-    // keyCount for spaces
-    keyCount += committedSpaces;
-    correctKeyCount += committedSpaces; // spaces are correct if word was committed
-
+    if(state.currentInput){
+        const curWord=state.words[state.activeWordIndex]||'';
+        const prefLen = state.currentInput.length;
+        total += prefLen;
+        let ok=0;
+        for(let i=0;i<Math.min(prefLen, curWord.length); i++) if(state.currentInput[i]===curWord[i]) ok++;
+        correctKeys += ok;
+        correct += ok;
+    }
     state.correctChars=correct;
-    state.incorrectChars=incorrect;
-    state.extraChars=extra;
-    state.missedChars=missed;
-    state.keyCount=keyCount;
-    state.correctKeyCount=correctKeyCount;
+    state.totalKeystrokes= total || 1;
+    state.correctKeystrokes= correctKeys;
 }
 
 function finishRun(){
     if(state.finished) return;
-    // If still typing current word, commit it as history for stats (like Monkeytype does on finish)
-    if(state.currentInput && state.inputHistory[state.activeWordIndex]===undefined){
-        state.inputHistory[state.activeWordIndex]=state.currentInput;
-    }
-    recomputeCounts();
     state.finished=true; state.endTime=performance.now();
     state.elapsed=(state.endTime-state.startTime)/1000;
     clearInterval(state.timerId); clearInterval(state.sampleTimer);
-    $caret.style.opacity='0';
+    recomputeCounts();
     const mins=state.elapsed/60 || 0.01;
     const wpm=Math.round((state.correctChars/5)/mins);
-    const raw=Math.round(((state.correctChars+state.incorrectChars+state.extraChars)/5)/mins);
-    const acc = state.keyCount? Math.round((state.correctKeyCount/state.keyCount)*100) : 100;
-    const chars=`${state.correctChars}/${state.incorrectChars}/${state.extraChars}/${state.missedChars}`;
+    const acc = state.correctKeystrokes ? Math.round((state.correctKeystrokes/state.totalKeystrokes)*100) : 100;
+    const raw=wpm;
     const consistency = state.history.length>2 ? Math.round(100 - (stddev(state.history)/ (avg(state.history)||1) *100)) : 100;
+    const chars=`${state.correctChars}/${Math.max(0, state.totalKeystrokes-state.correctKeystrokes)}/0/0`;
     document.getElementById('result-wpm').textContent=String(wpm);
     document.getElementById('result-acc').textContent=acc+'%';
     document.getElementById('result-raw').textContent=String(raw);
     document.getElementById('result-cons').textContent=Math.max(0,Math.min(100,consistency))+'%';
     document.getElementById('result-chars').textContent=chars;
     document.getElementById('result-time').textContent=state.elapsed.toFixed(1)+'s';
-    document.getElementById('result-mode').textContent=`${state.mode} ${state.mode==='time'? state.length+'s' : state.words.length+'w'}${state.punctuation?' · punct':''}${state.numbers?' · num':''}`;
+    document.getElementById('result-mode').textContent=`10FF 40 words`;
     $results.classList.add('show');
     $results.scrollIntoView({behavior:'smooth',block:'start'});
     drawChart();
-    saveHistory({ts:Date.now(), wpm, acc, raw, mode:state.mode, lengthLabel: state.mode==='time'? state.length+'s' : state.words.length+' words', chars});
+    saveHistory({ts:Date.now(), wpm, acc, raw, mode:'10FF', lengthLabel:'40 words', chars});
     renderHistory();
 }
 function avg(a){ return a.reduce((s,v)=>s+v,0)/a.length; }
@@ -822,208 +706,12 @@ function updateLiveStats(){
     recomputeCounts();
     const mins=state.elapsed/60 || 0.01;
     const wpm=Math.round((state.correctChars/5)/mins) || 0;
-    const acc= state.keyCount? Math.round((state.correctKeyCount/state.keyCount)*100) : 100;
+    const acc= state.totalKeystrokes? Math.round((state.correctKeystrokes/state.totalKeystrokes)*100) : 100;
     $liveWpm.textContent=String(wpm);
     $liveAcc.textContent=acc+'%';
 }
 
-function updateCaret(){
-    const wi = state.activeWordIndex;
-    const wordEl = $display.querySelector(`.word[data-wi="${wi}"]`);
-    // Caret is inside #arena (position:relative), so use arena rect, not display rect
-    const arenaRect = $arena.getBoundingClientRect();
-    if(!wordEl){
-        const lastWord=$display.querySelector('.word:last-child');
-        if(lastWord){
-            const r=lastWord.getBoundingClientRect();
-            $caret.style.left=(r.right - arenaRect.left)+'px';
-            $caret.style.top=(r.top - arenaRect.top)+'px';
-            $caret.style.height=r.height+'px';
-        }
-        return;
-    }
-    const letterIndex = [...state.currentInput].length;
-    const wLen = [...state.words[wi]].length;
-    let target=null;
-    let isAfter=false;
-    if(letterIndex < wLen){
-        target = wordEl.children[letterIndex] || null;
-        isAfter=false;
-    } else {
-        if(wordEl.children.length > 0){
-            if(letterIndex >= wLen && wordEl.children.length > wLen){
-                target = wordEl.lastChild;
-                isAfter=true;
-            } else {
-                target = wordEl.children[wLen-1] || wordEl;
-                isAfter=true;
-            }
-        } else {
-            target = wordEl;
-            isAfter=false;
-        }
-    }
-    if(!target){
-        const wr = wordEl.getBoundingClientRect();
-        $caret.style.left=(wr.left - arenaRect.left)+'px';
-        $caret.style.top=(wr.top - arenaRect.top)+'px';
-        $caret.style.height=wr.height+'px';
-        return;
-    }
-    const r=target.getBoundingClientRect();
-    if(isAfter){
-        $caret.style.left=(r.right - arenaRect.left + 2)+'px';
-        $caret.style.top=(r.top - arenaRect.top)+'px';
-        $caret.style.height=r.height+'px';
-    } else {
-        $caret.style.left=(r.left - arenaRect.left)+'px';
-        $caret.style.top=(r.top - arenaRect.top)+'px';
-        $caret.style.height=r.height+'px';
-    }
-}
-
-function handleInput(key){
-    if(state.finished) return;
-    // Ctrl/Cmd + Backspace: delete whole current word or go back (like Monkeytype deleteWordBackward)
-    if(key==='CtrlBackspace'){
-        if(state.currentInput.length > 0){
-            // Clear current word's input
-            state.currentInput = "";
-            renderWord(state.activeWordIndex);
-        } else if(state.activeWordIndex > 0){
-            // At empty input at start of word: delete previous word's committed history and jump back
-            // This allows Ctrl+Backspace to delete whole sentences word-by-word
-            const targetIndex = state.activeWordIndex - 1;
-            // Remove that word's history and make it current
-            state.inputHistory.splice(targetIndex, 1);
-            // Adjust activeWordIndex to that word
-            state.activeWordIndex = targetIndex;
-            state.currentInput = "";
-            // Re-render both words
-            renderWord(state.activeWordIndex);
-            // The word after (old active) is now at same index, need to shift data-wi for following words
-            // Simplest: rebuild display from that point or just render next
-            for(let wi=state.activeWordIndex+1; wi<state.words.length; wi++){
-                renderWord(wi);
-            }
-            $display.querySelectorAll('.word').forEach(el=>el.classList.remove('current'));
-            $display.querySelector(`.word[data-wi="${state.activeWordIndex}"]`)?.classList.add('current');
-        }
-        updateCaret();
-        ensureCaretVisible();
-        updateLiveStats();
-        return;
-    }
-    // Space: commit current word — 10FF strict: only advance if exactly correct (like 10fastfingers inputfield)
-    // You type in the box and it won't go through unless correct, otherwise it stays and you must correct
-    if(key===' ' || key==='Space'){
-        if(state.currentInput===""){
-            return;
-        }
-        const target = state.words[state.activeWordIndex];
-        if(state.currentInput !== target){
-            // Strict: don't advance — mark as error and require correction (repeat typing)
-            const wordEl = $display.querySelector(`.word[data-wi="${state.activeWordIndex}"]`);
-            if(wordEl){
-                wordEl.classList.add('shake');
-                setTimeout(()=>wordEl.classList.remove('shake'), 250);
-            }
-            renderWord(state.activeWordIndex);
-            updateCaret();
-            ensureCaretVisible();
-            updateLiveStats();
-            return;
-        }
-        // Correct: commit and advance
-        state.inputHistory[state.activeWordIndex]=state.currentInput;
-        renderWord(state.activeWordIndex);
-        state.activeWordIndex++;
-        state.currentInput="";
-        // Check if we need more words for time mode (keep ~3 lines buffer)
-        if(state.mode==='time' && !state.finished && state.activeWordIndex > state.words.length - 12){
-            appendWords(20);
-        }
-        // If we've typed all words in words/quote mode, finish
-        if((state.mode==='words' || state.mode==='quote') && state.activeWordIndex >= state.words.length){
-            // Render next word highlight will be out of range, but finish
-            $display.querySelectorAll('.word').forEach(el=>el.classList.remove('current'));
-            updateCaret();
-            finishRun();
-            return;
-        }
-        if(!state.started) startRun();
-        $display.querySelectorAll('.word').forEach(el=>el.classList.remove('current'));
-        $display.querySelector(`.word[data-wi="${state.activeWordIndex}"]`)?.classList.add('current');
-        updateCaret();
-        ensureCaretVisible();
-        updateLiveStats();
-        return;
-    }
-
-    if(key==='Backspace'){
-        if(state.currentInput.length > 0){
-            // Delete last char of current word
-            state.currentInput = state.currentInput.slice(0, -1);
-            renderWord(state.activeWordIndex);
-        } else if(state.activeWordIndex > 0){
-            // At beginning of word with empty input: go back to previous word (like Monkeytype with freedomMode)
-            // Only allow if previous word was not correctly typed? Monkeytype allows always; we allow
-            state.activeWordIndex--;
-            const prevInput = state.inputHistory[state.activeWordIndex];
-            // Remove its history so it becomes current again
-            state.inputHistory.splice(state.activeWordIndex, 1);
-            state.currentInput = prevInput || "";
-            // Need to re-render that word as current (was typed/error)
-            renderWord(state.activeWordIndex);
-            // Re-render next word (the one we came from) as pending
-            const nextWi = state.activeWordIndex + 1;
-            if(state.words[nextWi]!==undefined){
-                // Clear its history is already done via splice, but need to re-render it as pending
-                const nextEl = $display.querySelector(`.word[data-wi="${nextWi}"]`);
-                if(nextEl){
-                    // It will be re-rendered as pending on next renderAll? Just render it
-                    renderWord(nextWi);
-                }
-            }
-            $display.querySelectorAll('.word').forEach(el=>el.classList.remove('current'));
-            $display.querySelector(`.word[data-wi="${state.activeWordIndex}"]`)?.classList.add('current');
-        } else {
-            return;
-        }
-        updateCaret();
-        ensureCaretVisible();
-        updateLiveStats();
-        return;
-    }
-
-    if(key.length!==1) return; // ignore modifiers like Shift, Control
-
-    // Regular char: append to currentInput (like Monkeytype currentInput += key)
-    // For sentences/quotes, punctuation is just a letter in the word, so it compares naturally
-    state.currentInput += key;
-    renderWord(state.activeWordIndex);
-    if(!state.started) startRun();
-    $display.querySelectorAll('.word').forEach(el=>el.classList.remove('current'));
-    $display.querySelector(`.word[data-wi="${state.activeWordIndex}"]`)?.classList.add('current');
-    updateCaret();
-    ensureCaretVisible();
-    updateLiveStats();
-    // For time mode, keep buffer
-    if(state.mode==='time' && !state.finished && state.activeWordIndex > state.words.length - 12){
-        appendWords(12);
-    }
-}
-
-function totalChars(){
-    let t=0;
-    state.words.forEach((w,i)=>{ t+=w.length; if(i<state.words.length-1) t+=1; });
-    return t;
-}
-function advanceWordHighlight(){
-    $display.querySelectorAll('.word').forEach(el=>el.classList.remove('current'));
-    $display.querySelector(`.word[data-wi="${state.activeWordIndex}"]`)?.classList.add('current');
-}
-function ensureCaretVisible(){
+function ensureVisible(){
     const cur = $display.querySelector('.word.current');
     if(!cur) return;
     const arenaRect = $display.getBoundingClientRect();
@@ -1034,224 +722,149 @@ function ensureCaretVisible(){
         $display.scrollTop -= (arenaRect.top - curRect.top) + 12;
     }
 }
-function appendWords(n){
-    for(let i=0;i<n;i++){
-        let w=randomWord();
-        w=maybeNumber(maybePunctuate(w));
-        state.words.push(w);
-        const wi = state.words.length - 1;
-        const wordEl=document.createElement('span');
-        wordEl.className='word';
-        wordEl.dataset.wi=wi;
-        [...w].forEach(ch=>{
-            const s=document.createElement('span');
-            s.className='letter pending';
-            s.textContent=ch;
-            wordEl.appendChild(s);
-        });
-        $display.appendChild(wordEl);
+
+function handleInput(key){
+    if(state.finished) return;
+    if(key==='CtrlBackspace'){
+        state.currentInput="";
+        renderWord(state.activeWordIndex);
+        syncInputBox();
+        ensureVisible();
+        updateLiveStats();
+        return;
     }
+    if(key===' ' || key==='Space'){
+        if(state.currentInput==="") return;
+        const target = state.words[state.activeWordIndex];
+        if(state.currentInput !== target){
+            const wordEl = $display.querySelector(`.word[data-wi="${state.activeWordIndex}"]`);
+            if(wordEl){
+                wordEl.classList.add('shake');
+                setTimeout(()=>wordEl.classList.remove('shake'), 280);
+                wordEl.classList.add('input-error');
+            }
+            if($input) $input.classList.add('input-error');
+            return;
+        }
+        const wordEl = $display.querySelector(`.word[data-wi="${state.activeWordIndex}"]`);
+        if(wordEl) wordEl.classList.remove('input-error');
+        if($input) $input.classList.remove('input-error');
+        state.inputHistory[state.activeWordIndex]=state.currentInput;
+        renderWord(state.activeWordIndex);
+        state.activeWordIndex++;
+        state.currentInput="";
+        syncInputBox();
+        if(state.activeWordIndex >= state.words.length){
+            finishRun();
+            return;
+        }
+        if(!state.started) startRun();
+        renderWord(state.activeWordIndex);
+        ensureVisible();
+        updateLiveStats();
+        return;
+    }
+    if(key==='Backspace'){
+        if(state.currentInput.length > 0){
+            state.currentInput = state.currentInput.slice(0, -1);
+            renderWord(state.activeWordIndex);
+            syncInputBox();
+            ensureVisible();
+            updateLiveStats();
+        }
+        return;
+    }
+    if(key.length!==1) return;
+    state.currentInput += key;
+    renderWord(state.activeWordIndex);
+    if(!state.started) startRun();
+    ensureVisible();
+    updateLiveStats();
 }
 
-// input wiring — visible 10FF-style box + hidden fallback (layout-agnostic, Dvorak via beforeinput)
-function focusArena(){
-    $input.focus();
-    $arena.classList.add('focused');
-    updateFocusHint();
-}
-function blurArena(){
-    $arena.classList.remove('focused');
-    updateFocusHint();
-}
-function updateFocusHint(){
-    const isFocused=document.activeElement===$input || document.activeElement===$hiddenInput;
-    if(isFocused && !state.finished) $hint.classList.remove('show');
-    else if(!state.finished) $hint.classList.add('show');
-    else $hint.classList.remove('show');
-}
 function syncInputBox(){
-    // Visible box always mirrors currentInput (like 10FF #inputfield)
     if($input) $input.value = state.currentInput;
     if($hiddenInput) $hiddenInput.value = state.currentInput;
+    const target = state.words[state.activeWordIndex]||'';
+    if(state.currentInput && !target.startsWith(state.currentInput)){
+        if($input) $input.classList.add('input-error');
+        const curEl=$display.querySelector(`.word[data-wi="${state.activeWordIndex}"]`);
+        if(curEl) curEl.classList.add('input-error');
+    } else {
+        if($input) $input.classList.remove('input-error');
+        const curEl=$display.querySelector(`.word[data-wi="${state.activeWordIndex}"]`);
+        if(curEl) curEl.classList.remove('input-error');
+    }
+}
+function focusArena(){ if($input && !$input.disabled) $input.focus(); }
+function updateFocusHint(){
+    const isFocused=document.activeElement===$input || document.activeElement===$hiddenInput;
+    const hint=document.getElementById('focus-hint');
+    if(!hint) return;
+    if(isFocused && !state.finished) hint.classList.remove('show');
+    else if(!state.finished) hint.classList.add('show');
+    else hint.classList.remove('show');
 }
 $arena.addEventListener('click', focusArena);
-$hint.addEventListener('click', focusArena);
-$input.addEventListener('focus', updateFocusHint);
-$input.addEventListener('blur', updateFocusHint);
-$hiddenInput.addEventListener('focus', updateFocusHint);
-$hiddenInput.addEventListener('blur', updateFocusHint);
-let _beforeInputFired = false;
-$input.addEventListener('beforeinput', (e)=>{
-    if(e.inputType === 'insertText' && e.data){
-        if(e.data === ' ' || e.data === '  ') return; // space via keydown
+document.getElementById('focus-hint')?.addEventListener('click', focusArena);
+$input?.addEventListener('focus', updateFocusHint);
+$input?.addEventListener('blur', updateFocusHint);
+$hiddenInput?.addEventListener('focus', updateFocusHint);
+$hiddenInput?.addEventListener('blur', updateFocusHint);
+let _beforeInputFired=false;
+$input?.addEventListener('beforeinput', (e)=>{
+    if(e.inputType==='insertText' && e.data){
+        if(e.data===' '||e.data==='  ') return;
         e.preventDefault();
-        _beforeInputFired = true;
+        _beforeInputFired=true;
         for(const ch of e.data) handleInput(ch);
         syncInputBox();
         return;
     }
-    if(e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph'){
-        e.preventDefault();
-        _beforeInputFired = true;
-        handleInput(' ');
-        syncInputBox();
-        return;
+    if(e.inputType==='insertLineBreak'||e.inputType==='insertParagraph'){
+        e.preventDefault(); _beforeInputFired=true; handleInput(' '); syncInputBox(); return;
     }
-    if(e.inputType === 'deleteContentBackward'){
-        e.preventDefault();
-        _beforeInputFired = true;
-        handleInput('Backspace');
-        syncInputBox();
-        return;
+    if(e.inputType==='deleteContentBackward'){
+        e.preventDefault(); _beforeInputFired=true; handleInput('Backspace'); syncInputBox(); return;
     }
-    if(e.inputType === 'deleteWordBackward'){
-        e.preventDefault();
-        _beforeInputFired = true;
-        handleInput('CtrlBackspace');
-        syncInputBox();
-        return;
-    }
-    if(e.inputType === 'deleteContentForward'){
-        e.preventDefault();
-        _beforeInputFired = true;
-        handleInput('Backspace');
-        syncInputBox();
-        return;
+    if(e.inputType==='deleteWordBackward'){
+        e.preventDefault(); _beforeInputFired=true; handleInput('CtrlBackspace'); syncInputBox(); return;
     }
 });
-$input.addEventListener('input', (e)=>{
-    if(_beforeInputFired){ _beforeInputFired = false; return; }
-    const val = $input.value;
-    // Fallback: if browser didn't fire beforeinput, sync via input value diff
-    if(val === state.currentInput) return;
-    // If user pasted or typed without beforeinput, treat the whole value as new input
-    // For simplicity, reset and re-apply
-    const diff = val.slice(state.currentInput.length);
-    if(diff){
-        for(const ch of diff) handleInput(ch);
-    } else if(val.length < state.currentInput.length){
-        // Deletion via input (not beforeinput)
-        handleInput('Backspace');
-    }
+$input?.addEventListener('input', (e)=>{
+    if(_beforeInputFired){ _beforeInputFired=false; return; }
+    const val=$input.value;
+    if(val===state.currentInput) return;
+    state.currentInput=val;
+    renderWord(state.activeWordIndex);
     syncInputBox();
-    _beforeInputFired = false;
+    ensureVisible();
+    updateLiveStats();
+    _beforeInputFired=false;
 });
 $arena.addEventListener('keydown', (e)=>{
-    if(e.key==='Tab'){
-        e.preventDefault();
-        $arena.dataset.tabArmed='1';
-        return;
-    }
-    if(e.key==='Enter' && $arena.dataset.tabArmed==='1'){
-        e.preventDefault();
-        $arena.dataset.tabArmed='';
-        resetRun(false);
-        focusArena();
-        return;
-    }
-    if(e.key==='Escape'){ $input.blur(); return; }
-    if(e.key===' ' || e.code==='Space' || e.key==='Space'){
-        e.preventDefault();
-        _beforeInputFired = false;
-        handleInput(' ');
-        syncInputBox();
-        return;
-    }
-    if((e.ctrlKey || e.metaKey) && e.key==='Backspace'){
-        e.preventDefault();
-        _beforeInputFired = false;
-        handleInput('CtrlBackspace');
-        syncInputBox();
-        return;
-    }
-    if(e.key==='Backspace'){
-        if(_beforeInputFired){ _beforeInputFired = false; e.preventDefault(); return; }
-        e.preventDefault();
-        handleInput('Backspace');
-        syncInputBox();
-        return;
-    }
-});
-$input.addEventListener('keydown', (e)=>{
     if(e.key==='Tab'){ e.preventDefault(); $arena.dataset.tabArmed='1'; return; }
-    if(e.key==='Enter' && $arena.dataset.tabArmed==='1'){ e.preventDefault(); $arena.dataset.tabArmed=''; resetRun(false); focusArena(); return; }
+    if(e.key==='Enter' && $arena.dataset.tabArmed==='1'){ e.preventDefault(); $arena.dataset.tabArmed=''; resetRun(true); focusArena(); return; }
     if(e.key==='Escape'){ $input.blur(); return; }
-    if(e.key===' ' || e.code==='Space' || e.key==='Space'){
-        e.preventDefault();
-        _beforeInputFired = false;
-        handleInput(' ');
-        return;
-    }
-    if((e.ctrlKey || e.metaKey) && e.key==='Backspace'){
-        e.preventDefault();
-        _beforeInputFired = false;
-        handleInput('CtrlBackspace');
-        return;
-    }
-    if(e.key==='Backspace'){
-        if(_beforeInputFired){ _beforeInputFired = false; e.preventDefault(); return; }
-        e.preventDefault();
-        handleInput('Backspace');
-        return;
-    }
-    // For other text keys, let beforeinput handle; just clear value
-    setTimeout(()=>{ $input.value=''; }, 0);
+    if(e.key===' '||e.code==='Space'){ e.preventDefault(); _beforeInputFired=false; handleInput(' '); syncInputBox(); return; }
+    if((e.ctrlKey||e.metaKey)&&e.key==='Backspace'){ e.preventDefault(); _beforeInputFired=false; handleInput('CtrlBackspace'); syncInputBox(); return; }
+    if(e.key==='Backspace'){ if(_beforeInputFired){_beforeInputFired=false; e.preventDefault(); return;} e.preventDefault(); handleInput('Backspace'); syncInputBox(); return; }
 });
-document.addEventListener('keydown',(e)=>{
-    if(e.key==='Tab' && document.activeElement!==$input && document.activeElement!==$arena){
-        // allow tab to focus arena
-    }
+$input?.addEventListener('keydown', (e)=>{
+    if(e.key==='Tab'){ e.preventDefault(); $arena.dataset.tabArmed='1'; return; }
+    if(e.key==='Enter' && $arena.dataset.tabArmed==='1'){ e.preventDefault(); $arena.dataset.tabArmed=''; resetRun(true); focusArena(); return; }
+    if(e.key==='Escape'){ $input.blur(); return; }
+    if(e.key===' '||e.code==='Space'){ e.preventDefault(); _beforeInputFired=false; handleInput(' '); syncInputBox(); return; }
+    if((e.ctrlKey||e.metaKey)&&e.key==='Backspace'){ e.preventDefault(); _beforeInputFired=false; handleInput('CtrlBackspace'); syncInputBox(); return; }
+    if(e.key==='Backspace'){ if(_beforeInputFired){_beforeInputFired=false; e.preventDefault(); return;} e.preventDefault(); handleInput('Backspace'); syncInputBox(); return; }
 });
-// also allow typing when arena is focused but input not (click focus)
 $arena.tabIndex=0;
 $arena.addEventListener('focus', ()=>{ $input.focus(); });
-
-// controls
-function syncControlUI(){
-    document.querySelectorAll('[data-mode]').forEach(b=>{
-        b.classList.toggle('active', b.dataset.mode===state.mode);
-    });
-    // lengths: show relevant
-    const isWords = state.mode==='words';
-    const isTime = state.mode==='time';
-    const isQuote = state.mode==='quote';
-    document.querySelectorAll('[data-length]').forEach(b=>{
-        const wordsOnly=b.hasAttribute('data-words-only');
-        if(isQuote){ b.style.display='none'; }
-        else if(wordsOnly){ b.style.display= isWords? 'inline-flex':'none'; }
-        else { b.style.display= isTime? 'inline-flex':'none'; }
-        b.classList.toggle('active', Number(b.dataset.length)===state.length);
-    });
-    document.querySelectorAll('[data-toggle]').forEach(b=>{
-        const t=b.dataset.toggle;
-        b.classList.toggle('active', state[t]);
-    });
-}
-$controls.addEventListener('click',(e)=>{
-    const m=e.target.closest('[data-mode]');
-    if(m){
-        state.mode=m.dataset.mode;
-        if(state.mode==='words') state.length=25;
-        else if(state.mode==='time') state.length=30;
-        else state.length=0;
-        resetRun(true); syncControlUI(); focusArena(); return;
-    }
-    const l=e.target.closest('[data-length]');
-    if(l){
-        state.length=Number(l.dataset.length);
-        resetRun(true); syncControlUI(); focusArena(); return;
-    }
-    const t=e.target.closest('[data-toggle]');
-    if(t){
-        const k=t.dataset.toggle;
-        state[k]=!state[k];
-        resetRun(true); syncControlUI(); focusArena(); return;
-    }
-});
-document.getElementById('restart-btn').addEventListener('click',()=>{ resetRun(false); focusArena(); });
-document.getElementById('new-text-btn').addEventListener('click',()=>{ resetRun(true); focusArena(); });
-document.getElementById('result-restart').addEventListener('click',()=>{ resetRun(true); focusArena(); window.scrollTo({top: $arena.offsetTop - 80, behavior:'smooth'}); });
-document.getElementById('copy-result').addEventListener('click',()=>{
+function syncControlUI(){}
+document.getElementById('restart-btn')?.addEventListener('click',()=>{ resetRun(false); focusArena(); });
+document.getElementById('new-text-btn')?.addEventListener('click',()=>{ resetRun(true); focusArena(); });
+document.getElementById('result-restart')?.addEventListener('click',()=>{ resetRun(true); focusArena(); window.scrollTo({top: $arena.offsetTop - 80, behavior:'smooth'}); });
+document.getElementById('copy-result')?.addEventListener('click',()=>{
     const wpm=document.getElementById('result-wpm').textContent;
     const acc=document.getElementById('result-acc').textContent;
     const txt=`Panteon Play — ${wpm} WPM · ${acc} — panteon.alieninc.tech/play.html`;
@@ -1260,10 +873,9 @@ document.getElementById('copy-result').addEventListener('click',()=>{
         const old=b.textContent; b.textContent='Copied!'; setTimeout(()=>b.textContent=old,1200);
     });
 });
-document.getElementById('clear-history').addEventListener('click',()=>{
+document.getElementById('clear-history')?.addEventListener('click',()=>{
     localStorage.removeItem(LS_KEY); renderHistory();
 });
-
 function drawChart(){
     const c=document.getElementById('wpm-chart');
     if(!c) return;
@@ -1275,10 +887,8 @@ function drawChart(){
     const data=state.history.length? state.history : [0];
     const max=Math.max(10, ...data, 10);
     const min=0;
-    // grid
     ctx.strokeStyle='rgba(0,0,0,0.08)'; ctx.lineWidth=1;
     for(let i=0;i<=4;i++){ const y=(h-16)*(i/4)+8; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
-    // line
     ctx.strokeStyle='#000'; ctx.lineWidth=2; ctx.beginPath();
     data.forEach((v,i)=>{
         const x=(i/(Math.max(1,data.length-1)))* (w-8) +4;
@@ -1286,165 +896,528 @@ function drawChart(){
         if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
     });
     ctx.stroke();
-    // fill
     ctx.lineTo(w-4,h-8); ctx.lineTo(4,h-8); ctx.closePath();
     ctx.fillStyle='rgba(223,241,64,0.35)'; ctx.fill();
-    // peak label
     const peak=Math.max(...data);
     const peakEl=document.getElementById('chart-peak');
     if(peakEl) peakEl.textContent= peak? `peak ${peak} wpm` : '';
 }
-
-// resize caret
-window.addEventListener('resize',()=>updateCaret());
-
-// init
+window.addEventListener('resize',()=>ensureVisible());
 syncControlUI();
 resetRun(true);
 renderHistory();
 updateFocusHint();
-// auto-focus after hero transition
 setTimeout(()=>{ focusArena(); }, 900);
-// --- Multiplayer AI init hook: expose for AI script
-window.PanteonPlay = { getState: ()=>state, getTotalChars: ()=>state.words.join(' ').length + state.words.length, getProgress: ()=> state.words.length? (state.activeWordIndex/ state.words.length*100):0 };
+
+// --- Multiplayer init hook: expose for race script
+window.PanteonPlay = { getState: ()=>state, getTotalChars: ()=>state.words.join(' ').length, getProgress: ()=>{ if(!state.words.length) return 0; const total=state.words.join(' ').length||1; let typed=0; for(let i=0;i<state.inputHistory.length;i++) typed+=(state.words[i]?state.words[i].length:0)+1; typed+=state.currentInput.length; return Math.min(100, (typed/total)*100); } };
 })();
+
 </script>
 <script>
-// --- Panteon Multiplayer AI — 10FF-style info-server, pretends to be real humans (all at same time) ---
+// --- Panteon Multiplayer — 10FF / TypeRacer feel: humanized opponents, synchronized 3-2-1-GO, live track + toasts ---
 (function(){
-  const names = [
-    {name:"Alex Rivera", flag:"🇺🇸", baseWpm: 67},
-    {name:"Maya Chen", flag:"🇨🇳", baseWpm: 84},
-    {name:"Jordan Blake", flag:"🇬🇧", baseWpm: 59},
-    {name:"Sierra Quinn", flag:"🇨🇦", baseWpm: 92},
-    {name:"Kaito Tanaka", flag:"🇯🇵", baseWpm: 76},
-    {name:"Elena Petrova", flag:"🇷🇺", baseWpm: 71},
-    {name:"Lucas Silva", flag:"🇧🇷", baseWpm: 88},
-    {name:"Aarav Mehta", flag:"🇮🇳", baseWpm: 63},
-    {name:"Nora Fischer", flag:"🇩🇪", baseWpm: 79},
-    {name:"Liam O'Connor", flag:"🇮🇪", baseWpm: 69},
-  ];
+  const FLAG_POOL = ["🇺🇸","🇬🇧","🇨🇦","🇩🇪","🇯🇵","🇧🇷","🇮🇳","🇫🇷","🇸🇪","🇳🇱","🇦🇺","🇰🇷","🇲🇽","🇵🇱","🇪🇸","🇮🇹","🇨🇭","🇳🇴","🇩🇰","🇵🇹"];
+  function randomUsername(){
+    const a=["swift","nova","void","crisp","quiet","rust","flux","echo","dust","neon","prism","vapor","drift","haze","orbit","pulse","shard","apex","lumen","cinder","arc","hollow","velvet","sable","wired","quark","pixel","vector"];
+    const b=["fox","ray","wolf","hawk","nova","drift","code","byte","pulse","orbit","thread","spark","field","beam","line","trace","seek","node","link","wave","forge","bloom","kite","mask","veil","grid","loop"];
+    const adj=a[Math.floor(Math.random()*a.length)];
+    const noun=b[Math.floor(Math.random()*b.length)];
+    const n=Math.floor(Math.random()*900)+100;
+    return `${adj}_${noun}_${n}`;
+  }
+  function randomBaseWpm(){ return 58+Math.floor(Math.random()*38); } // 58-96 spread like real lobby
+
   const $list = document.getElementById('opponents-list');
   const $serverCount = document.getElementById('server-count');
+  const $serverDot = document.getElementById('server-dot');
   const $raceStatus = document.getElementById('race-status');
   const $toggle = document.getElementById('toggle-ai');
+  const $toasts = document.getElementById('race-toasts');
+  const $countdown = document.getElementById('race-countdown');
+  const $countNum = document.getElementById('countdown-num');
+  const $countLabel = document.getElementById('countdown-label');
+  const $countDots = document.getElementById('countdown-dots');
+  const $arena = document.getElementById('arena');
+  const $input = document.getElementById('typing-input');
+
   let aiEnabled = true;
   let aiPlayers = [];
   let serverCount = 1247 + Math.floor(Math.random()*80);
   let raceInterval = null;
+  let lobbyState = 'searching'; // searching | ready | countdown | racing | finished
+  let prevOrder = [];
+  let finishedNotified = new Set();
+  let lastYouPlace = null;
+  let serverCountTimer = null;
+
+  function showToast(msg, accent){
+    if(!$toasts) return;
+    const el=document.createElement('div');
+    el.className='race-toast'+(accent?' accent':'');
+    el.textContent=msg;
+    $toasts.appendChild(el);
+    setTimeout(()=>{ if(el.parentNode) el.remove(); }, 2600);
+  }
 
   function pickOpponents(){
-    const shuffled = [...names].sort(()=>Math.random()-0.5).slice(0,4);
-    aiPlayers = shuffled.map((n,i)=>({
-      id: 'ai-'+i,
-      name: n.name,
-      flag: n.flag,
-      baseWpm: n.baseWpm + Math.floor(Math.random()*12 -6),
-      wpm: n.baseWpm,
-      progress: 0,
-      chars: 0,
-      variance: 0.9 + Math.random()*0.2,
-      pauseUntil: 0,
-    }));
+    aiPlayers = Array.from({length:4}, (_,i)=>{
+      const uname = randomUsername();
+      return {
+        id:'p-'+i+'-'+uname,
+        name: uname,
+        flag: FLAG_POOL[Math.floor(Math.random()*FLAG_POOL.length)],
+        baseWpm: randomBaseWpm(),
+        wpm: 0,
+        progress:0,
+        chars:0,
+        wordIdx:0,
+        nextCharAt:0,
+        state:'typing',
+        mistakeAt:-1,
+        stallUntil:0,
+        burstLeft: 3+Math.floor(Math.random()*4),
+        burstFast: Math.random()<0.5,
+        finished:false,
+        finishWpm:0,
+        stalled:false
+      };
+    });
+    finishedNotified.clear();
+    prevOrder = aiPlayers.map(p=>p.id);
+    lobbyState='ready';
     renderOpponents();
+  }
+
+  function getYou(){
+    const youWpmEl=document.getElementById('live-wpm');
+    const youWpm=youWpmEl && youWpmEl.textContent!=='—' ? youWpmEl.textContent : '—';
+    const youProg=window.PanteonPlay? window.PanteonPlay.getProgress():0;
+    return {id:'you', name:'You', flag:'●', wpm:youWpm, progress:youProg, isYou:true, finished: !!(window.PanteonPlay && window.PanteonPlay.getState().finished)};
   }
 
   function renderOpponents(){
     if(!$list) return;
-    const youProgress = window.PanteonPlay ? window.PanteonPlay.getProgress() : 0;
-    const youWpmEl = document.getElementById('live-wpm');
-    const youWpm = youWpmEl && youWpmEl.textContent !== '—' ? youWpmEl.textContent : '—';
-    const all = [
-      {name:"You", flag:"●", wpm: youWpm, progress: youProgress, isYou:true},
-      ...aiPlayers.map(p=>({...p, isYou:false}))
-    ];
-    $list.innerHTML = all.map(p=>`
-      <div class="mp-opponent${p.isYou?' is-you':''}">
-        <div class="mp-opp-header">
-          <span class="mp-opp-name"><span class="opp-avatar">${p.isYou ? 'YOU' : p.flag}</span> ${p.name}</span>
-          <span class="mp-opp-wpm">${typeof p.wpm==='number'? p.wpm+' wpm' : p.wpm}</span>
-        </div>
-        <div class="mp-opp-progress"><div class="mp-opp-bar${p.isYou?' you':''}" style="width:${Math.min(100, p.progress).toFixed(1)}%"></div></div>
-        <div class="mp-opp-meta"><span>${p.isYou?'you':p.flag}</span><span>${Math.min(100, p.progress).toFixed(0)}%</span></div>
-      </div>
-    `).join('');
+    const you=getYou();
+    const all=[you, ...aiPlayers.map(p=>({...p, isYou:false}))];
+    // sort live by progress desc (like TypeRacer re-orders)
+    const sorted=[...all].sort((a,b)=> b.progress - a.progress);
+    // place labels
+    const placeLabel=(i)=> i===0?'1ST':i===1?'2ND':i===2?'3RD': (i+1)+'TH';
+    // overtake detection for you
+    const youIdx=sorted.findIndex(p=>p.isYou);
+    if(lastYouPlace!==null && youIdx!==lastYouPlace && lobbyState==='racing'){
+      const dir= youIdx < lastYouPlace ? 'up' : 'down';
+      if(dir==='up') showToast('You overtook '+(sorted[youIdx+1]?sorted[youIdx+1].name:'opponent')+' — '+placeLabel(youIdx)+'!', true);
+      else if(youIdx<=2) showToast('Overtaken — you\'re '+placeLabel(youIdx)+' now');
+    }
+    lastYouPlace=youIdx;
+    // detect bot overtake for stall flash
+    const curOrder=sorted.map(p=>p.id);
+    const overtook = curOrder.some((id,i)=> prevOrder[i]!==id);
+    prevOrder=curOrder;
+
+    $list.innerHTML = sorted.map((p,idx)=>{
+      const place=placeLabel(idx);
+      const isOvertake = overtook && idx<3;
+      const carStalled = !p.isYou && p.stalled;
+      const pct=Math.min(100, p.progress).toFixed(1);
+      const pctInt=Math.round(p.progress);
+      const displayWpm = typeof p.wpm==='number' ? p.wpm+' wpm' : p.wpm;
+      const sub = p.isYou ? (p.finished?'finished': (lobbyState==='racing'?'you':'')) : (p.finished ? 'finished' : p.flag);
+      return `
+        <div class="mp-lane${p.isYou?' you':''}${isOvertake&&!p.isYou?' overtake':''}" data-id="${p.id}">
+          <div class="mp-lane-left">
+            <span class="lane-place">${place}</span>
+            <span class="mp-opp-name"><span class="opp-avatar">${p.isYou?'YOU':p.flag}</span> ${p.name}</span>
+          </div>
+          <div class="lane-rail"><div class="lane-fill" style="width:${pct}%"></div><div class="lane-car${carStalled?' stalled':''}" style="left:${pct}%">${p.isYou?'▶':''}</div></div>
+          <span class="mp-opp-wpm">${displayWpm}</span>
+          <span class="mp-opp-meta">${sub} · ${pctInt}%</span>
+        </div>`;
+    }).join('');
+    // proximity toast (neck and neck)
+    if(lobbyState==='racing' && you.progress>8 && you.progress<98){
+      const near = sorted.filter(p=>!p.isYou && Math.abs(p.progress - you.progress)<4 && p.progress>5);
+      if(near.length && Math.random()<0.04){
+        const n=near[0];
+        showToast('Neck and neck with '+n.name+' — '+(n.progress>you.progress?'they\'re ahead by '+(n.progress-you.progress).toFixed(0)+'%':'you lead by '+(you.progress-n.progress).toFixed(0)+'%')+'!');
+      }
+    }
   }
 
   function updateServerCount(){
+    if(lobbyState==='searching'){
+      if($serverDot) $serverDot.classList.add('searching');
+      if($raceStatus) $raceStatus.textContent='Searching for opponents…';
+      return;
+    }
     const delta = Math.floor(Math.random()*5)-2;
     serverCount = Math.max(900, Math.min(2500, serverCount + delta));
     if($serverCount) $serverCount.textContent = serverCount.toLocaleString();
+    if($serverDot) $serverDot.classList.remove('searching');
   }
-  setInterval(updateServerCount, 1800);
-  setInterval(renderOpponents, 400);
+
+  // Lobby: searching → ready after 900ms (10FF "4 players found")
+  function enterSearching(){
+    lobbyState='searching';
+    if($raceStatus) $raceStatus.textContent='Searching for opponents…';
+    if($countdown) $countdown.classList.add('hidden');
+    if($serverDot) $serverDot.classList.add('searching');
+    setTimeout(()=>{
+      if(!aiEnabled) return;
+      lobbyState='ready';
+      if($raceStatus) $raceStatus.textContent='4 opponents found — click arena or press any key to start';
+      if($serverDot) $serverDot.classList.remove('searching');
+      renderOpponents();
+    }, 900);
+  }
+
+  function setCountdownDots(n){
+    if(!$countDots) return;
+    [...$countDots.children].forEach((el,i)=> el.classList.toggle('on', i < n));
+  }
+
+  function runCountdown(){
+    return new Promise(resolve=>{
+      if(!aiEnabled){ resolve(); return; }
+      if(lobbyState==='countdown' || lobbyState==='racing') { resolve(); return; }
+      lobbyState='countdown';
+      if($countdown) $countdown.classList.remove('hidden');
+      if($countLabel) $countLabel.textContent='Get ready — everyone starts together';
+      // disable typing during countdown
+      if($input) $input.disabled=true;
+      let step=3;
+      const tick=()=>{
+        if($countNum){
+          $countNum.textContent= step>0 ? String(step) : 'GO!';
+          $countNum.classList.toggle('go', step<=0);
+        }
+        setCountdownDots(step>0 ? 4-step : 3);
+        if($raceStatus) $raceStatus.textContent= step>0 ? 'Starting in '+step+'…' : 'GO! — type!';
+        if(step>0) showToast(step+'…', false);
+        else showToast('GO!', true);
+        step--;
+        if(step>=-1){
+          setTimeout(tick, step=== -0 ? 520 : 620);
+        } else {
+          if($countdown) $countdown.classList.add('hidden');
+          if($input) $input.disabled=false;
+          // focus for typing after GO
+          setTimeout(()=>{ try{$input.focus();}catch(e){} }, 40);
+          lobbyState='racing';
+          lastYouPlace=null;
+          resolve();
+        }
+      };
+      tick();
+    });
+  }
+
+  // Humanized tick — word-aware, burst, mistake+backspace
+  function humanMsPerChar(p){
+    const st=window.PanteonPlay? window.PanteonPlay.getState():null;
+    const words = st? st.words : [];
+    const word = words[p.wordIdx] || 'hello';
+    // difficulty from word shape (long words, caps, punct slower → like a real human)
+    let diff=1;
+    if(word.length>7) diff+=0.18;
+    else if(word.length>5) diff+=0.08;
+    if(/[A-Z]/.test(word)) diff+=0.12;
+    if(/[.,;:—"()!?']/.test(word)) diff+=0.15;
+    if(word.length<=3) diff-=0.08;
+    // burst: a few words fast, one slow
+    if(p.burstLeft<=0){ p.burstFast=!p.burstFast; p.burstLeft= p.burstFast ? 4+Math.floor(Math.random()*3) : 1; }
+    const burstMult = p.burstFast ? 0.86 : 1.18;
+    const baseMs = 60000 / (p.baseWpm*5); // ms per char at baseWpm
+    const jitter = 0.88 + Math.random()*0.24;
+    return baseMs * diff * burstMult * jitter;
+  }
 
   function startRace(){
     if(!aiEnabled) return;
     if(raceInterval) clearInterval(raceInterval);
-    if($raceStatus) $raceStatus.textContent = 'Race in progress — all players typing together...';
-    raceInterval = setInterval(()=>{
-      const state = window.PanteonPlay ? window.PanteonPlay.getState() : null;
-      if(!state || state.finished){
-        if(state && state.finished){
-          const youProg = window.PanteonPlay.getProgress();
-          const bestAi = Math.max(...aiPlayers.map(p=>p.progress), 0);
-          if($raceStatus) $raceStatus.textContent = youProg > bestAi ? 'You won against 4 opponents!' : 'AI won — try again';
-          clearInterval(raceInterval);
+    if($raceStatus) $raceStatus.textContent='Race in progress — all players typing!';
+    lobbyState='racing';
+    finishedNotified.clear();
+    aiPlayers.forEach(p=>{
+      p.nextCharAt=performance.now()+ 80+Math.random()*120;
+      p.stalled=false;
+      p.finished=false;
+      p.mistakeAt=-1;
+    });
+    raceInterval=setInterval(()=>{
+      const st=window.PanteonPlay? window.PanteonPlay.getState():null;
+      const totalChars=window.PanteonPlay? window.PanteonPlay.getTotalChars(): 260;
+      if(!st){ return; }
+      const playerFinished = st.finished;
+      if(playerFinished && !finishedNotified.has('you')){
+        finishedNotified.add('you');
+        const youWpmEl=document.getElementById('live-wpm');
+        const youWpm= youWpmEl? parseInt(youWpmEl.textContent)||0 : 0;
+        showToast('You finished — '+youWpm+' WPM', true);
+        if($raceStatus) $raceStatus.textContent='You finished — others still racing...';
+        // lock player at 100% for ranking
+        lobbyState='finished';
+      }
+      const allOpponentsDone = aiPlayers.length>0 && aiPlayers.every(p=>p.finished);
+      if(playerFinished && allOpponentsDone){
+        if(raceInterval){ clearInterval(raceInterval); raceInterval=null; }
+        const youProg=window.PanteonPlay.getProgress();
+        const youWpmEl=document.getElementById('live-wpm');
+        const youWpm= youWpmEl? parseInt(youWpmEl.textContent)||0 : 0;
+        const leaderboard=[{name:'You', wpm:youWpm, progress:youProg, isYou:true}, ...aiPlayers.map(p=>({name:p.name, wpm:p.wpm, progress:p.progress, isYou:false}))].sort((a,b)=> b.progress - a.progress || b.wpm - a.wpm);
+        const youPlace=leaderboard.findIndex(x=>x.isYou)+1;
+        const placeWord= youPlace===1?'1st':youPlace===2?'2nd':youPlace===3?'3rd':youPlace+'th';
+        if(youPlace===1) showToast('You won — '+placeWord+' place!', true);
+        else showToast('Finished '+placeWord+' — '+(leaderboard[0].name)+' won', false);
+        if($raceStatus){
+          const winner=leaderboard[0];
+          $raceStatus.textContent = youPlace===1 ? 'You finished 1st — '+youWpm+' WPM!' : winner.name+' won ('+winner.wpm+' WPM) — you '+placeWord+' at '+youWpm+' WPM';
         }
+        renderOpponents();
         return;
       }
-      const totalChars = window.PanteonPlay.getTotalChars();
+      const now=performance.now();
       aiPlayers.forEach(p=>{
-        if(performance.now() < p.pauseUntil) return;
-        if(Math.random()<0.025){
-          p.pauseUntil = performance.now() + Math.random()*420 + 110;
+        if(p.finished) return;
+        if(now < p.stallUntil){ p.stalled=true; return; }
+        p.stalled=false;
+        if(now < p.nextCharAt) return;
+        const words = st.words;
+        if(p.wordIdx >= words.length){
+          // time mode: words are appended, keep going until player finishes; cap at time
+          p.progress=Math.min(99.2, p.progress+0.22);
+          p.nextCharAt= now + humanMsPerChar(p);
           return;
         }
-        const jitter = 0.92 + Math.random()*0.16;
-        const cps = (p.baseWpm * 5 / 60) * jitter * p.variance;
-        p.chars += cps * 0.1;
-        p.progress = Math.min(100, (p.chars / totalChars) * 100);
-        p.wpm = Math.round(p.baseWpm * jitter);
+        const word = words[p.wordIdx];
+        const wordLen = [...word].length;
+        // decide mistake at word start
+        if(p.mistakeAt===-1 && wordLen>2 && Math.random()<0.13){
+          // 13% of words get a typo
+          p.mistakeAt = 1+Math.floor(Math.random()*Math.min(4, wordLen-1));
+        }
+        const charInWord = Math.round(p.chars - (words.slice(0,p.wordIdx).join(' ').length + (p.wordIdx>0?1:0) + (p.wordIdx>0?0:0)));
+        // simpler: track chars as float, advance by 1 char each tick
+        // handle hesitation at word boundary
+        const isWordStart = (p.chars - Math.floor(p.chars)) < 0.15 && p.chars>2;
+        // mistake handling: if at mistake position, do oops
+        const posInWord = Math.floor(p.chars) - words.slice(0,p.wordIdx).join('').length - p.wordIdx; // approx
+        // easier: use wordIdx + chars offset
+        // We'll just count chars linear and map to wordIdx via totalChars progress
+        // For mistake: when about to type middle of word
+        if(p.mistakeAt!==-1 && p.state==='typing'){
+          const charsIntoWord = (p.chars - words.slice(0,p.wordIdx).reduce((s,w)=>s+w.length+1,0) +1);
+          if(charsIntoWord>=p.mistakeAt && charsIntoWord < p.mistakeAt+1){
+            // type wrong char and stall
+            p.state='mistake';
+            p.stallUntil= now + 140 + Math.random()*180;
+            p.chars += 0.9; // wrong char still moves car tiny bit then back
+            p.progress=Math.min(99, (p.chars/ totalChars)*100);
+            p.wpm=Math.max(8, Math.round(p.baseWpm*0.62));
+            setTimeout(()=>{ // schedule the backspace
+              p.chars=Math.max(0, p.chars-1.0);
+              p.state='correcting';
+              p.stallUntil=performance.now()+ 85+Math.random()*110;
+              p.mistakeAt=-1;
+              p.state='typing';
+            }, p.stallUntil - now + 20);
+            p.nextCharAt= p.stallUntil + 40;
+            p.burstLeft--;
+            renderOpponents();
+            return;
+          }
+        }
+        // hesitation on long/punct words (10%)
+        if(p.wordIdx>0 && Math.random()<0.09 && wordLen>6 && p.state==='typing'){
+          p.stallUntil= now + 180 + Math.random()*420;
+          p.nextCharAt= p.stallUntil + humanMsPerChar(p)*0.3;
+          p.pausedCount=(p.pausedCount||0)+1;
+          p.nextCharAt+=0;
+          renderOpponents();
+          return;
+        }
+        // normal advance
+        const ms=humanMsPerChar(p);
+        p.chars += 1;
+        p.progress=Math.min(99.6, (p.chars/ totalChars)*100);
+        p.wpm=Math.round(p.baseWpm * (0.92 + Math.random()*0.16));
+        p.nextCharAt= now + ms;
+        p.burstLeft--;
+        // word boundary: advance wordIdx when chars crosses word
+        const totalBefore= words.slice(0,p.wordIdx+1).reduce((s,w)=>s+w.length+1,0)-1;
+        if(p.chars >= totalBefore+0.5){
+          p.wordIdx++;
+          p.mistakeAt=-1;
+          // add space char for progress (like real)
+          p.chars+=0.15;
+          if(p.wordIdx >= words.length && (st.mode==='words' || st.mode==='quote')){
+            p.finished=true;
+            p.progress=100;
+            p.finishWpm=p.wpm;
+            if(!finishedNotified.has(p.id)){
+              finishedNotified.add(p.id);
+              showToast(p.name+' finished — '+p.finishWpm+' WPM');
+              if($raceStatus) $raceStatus.textContent=p.name+' finished first!';
+            }
+          }
+        }
       });
-    }, 100);
+      renderOpponents();
+    }, 55);
   }
 
   function stopRace(){
-    if(raceInterval) clearInterval(raceInterval);
-    if($raceStatus) $raceStatus.textContent = aiEnabled ? 'Waiting — type to start' : 'AI race disabled';
+    if(raceInterval){ clearInterval(raceInterval); raceInterval=null; }
+    aiPlayers.forEach(p=>{p.chars=0; p.progress=0; p.wordIdx=0; p.stalled=false; p.finished=false; p.nextCharAt=0; p.mistakeAt=-1;});
+    lastYouPlace=null;
+    finishedNotified.clear();
+    if($countdown) $countdown.classList.add('hidden');
+    if($input) $input.disabled=false;
+    if(aiEnabled){
+      if(lobbyState!=='searching'){ lobbyState='ready'; if($raceStatus) $raceStatus.textContent='Ready — click arena or press any key to start'; }
+    } else {
+      if($raceStatus) $raceStatus.textContent='Solo mode — practice only';
+    }
+    renderOpponents();
   }
 
-  let wasStarted = false;
+  // Intercept first interaction → countdown → racing (10FF "everyone starts together")
+  async function ensureCountdownThenRace(e){
+    if(!aiEnabled) return;
+    if(lobbyState==='racing' || lobbyState==='countdown') return;
+    if(lobbyState==='finished'){
+      // need new text for new race
+      pickOpponents();
+      enterSearching();
+      return;
+    }
+    // if ready, consume this event, run countdown, then race
+    if(e) { e.preventDefault(); e.stopPropagation(); }
+    await runCountdown();
+    startRace();
+  }
+
+  // Hook arena click & keydown before typing engine sees it (capture phase)
+  const arenaEl=document.getElementById('arena');
+  const typingInput=document.getElementById('typing-input');
+  const hiddenInput=document.getElementById('hidden-input');
+  if(arenaEl){
+    arenaEl.addEventListener('click', (e)=>{
+      if(aiEnabled && (lobbyState==='ready' || lobbyState==='searching')){
+        ensureCountdownThenRace(e);
+      }
+    }, true);
+    arenaEl.addEventListener('keydown', (e)=>{
+      if(e.key===' ' || e.code==='Space' || (e.key.length===1 && !e.ctrlKey && !e.metaKey)){
+        if(aiEnabled && lobbyState==='ready'){
+          ensureCountdownThenRace(e);
+        }
+      }
+    }, true);
+  }
+  if(typingInput){
+    typingInput.addEventListener('keydown', (e)=>{
+      if(aiEnabled && lobbyState==='ready' && (e.key.length===1 || e.key===' ' || e.code==='Space')){
+        ensureCountdownThenRace(e);
+      }
+    }, true);
+  }
+  if(hiddenInput){
+    hiddenInput.addEventListener('keydown', (e)=>{
+      if(aiEnabled && lobbyState==='ready' && (e.key.length===1 || e.key===' ')){
+        ensureCountdownThenRace(e);
+      }
+    }, true);
+  }
+  // also global key to catch first press when arena not focused
+  document.addEventListener('keydown', (e)=>{
+    const st=window.PanteonPlay? window.PanteonPlay.getState():null;
+    if(!st || st.started) return;
+    if(!aiEnabled) return;
+    if(lobbyState!=='ready') return;
+    if(e.key.length===1 || e.key===' ' || e.code==='Space'){
+      if(document.activeElement===typingInput || document.activeElement===hiddenInput || document.activeElement===arenaEl){
+        // already handled above
+        return;
+      }
+      ensureCountdownThenRace(e);
+    }
+  }, true);
+
+  let wasStarted=false;
   setInterval(()=>{
-    const s = window.PanteonPlay ? window.PanteonPlay.getState() : null;
+    const s=window.PanteonPlay? window.PanteonPlay.getState():null;
     if(!s) return;
     if(s.started && !wasStarted){
-      wasStarted = true;
-      if(aiEnabled) startRace();
+      wasStarted=true;
+      // if player managed to start without countdown (ai off or race), ensure race is running
+      if(aiEnabled && lobbyState==='ready'){
+        // they bypassed — start race immediately without countdown (fallback)
+        lobbyState='racing';
+        if($countdown) $countdown.classList.add('hidden');
+        startRace();
+      } else if(aiEnabled && lobbyState==='racing'){
+        // already racing, nothing
+      }
     }
-    if(!s.started && wasStarted){
-      wasStarted = false;
-      aiPlayers.forEach(p=>{p.chars=0; p.progress=0;});
-      renderOpponents();
-      if($raceStatus) $raceStatus.textContent = 'Waiting for next race...';
+    if(!s.started && wasStarted && s.finished){
+      // finished handled in tick
+      wasStarted=false;
+    }
+    if(!s.started && wasStarted && !s.finished){
+      // reset without finish (tab+enter)
+      wasStarted=false;
       stopRace();
+      enterSearching();
+      setTimeout(()=>{ if(lobbyState==='searching') { lobbyState='ready'; if($raceStatus) $raceStatus.textContent='Ready — click arena or press any key to start'; renderOpponents();}}, 850);
     }
-  }, 200);
+  }, 120);
 
   $toggle?.addEventListener('click', ()=>{
-    aiEnabled = !aiEnabled;
-    $toggle.textContent = aiEnabled ? 'Race vs AI: ON' : 'Race vs AI: OFF';
+    aiEnabled=!aiEnabled;
+    $toggle.textContent=aiEnabled?'Live race: ON':'Live race: OFF';
     $toggle.classList.toggle('active', aiEnabled);
-    document.getElementById('multiplayer-panel').style.opacity = aiEnabled ? '1' : '0.6';
-    if(!aiEnabled) stopRace();
-    else { pickOpponents(); if($raceStatus) $raceStatus.textContent = 'AI ready — everyone starts together'; renderOpponents(); }
+    const panel=document.getElementById('multiplayer-panel');
+    if(panel) panel.style.opacity=aiEnabled?'1':'0.55';
+    if(!aiEnabled){
+      if(raceInterval){clearInterval(raceInterval); raceInterval=null;}
+      lobbyState='ready';
+      if($countdown) $countdown.classList.add('hidden');
+      if($input) $input.disabled=false;
+      if($raceStatus) $raceStatus.textContent='Solo mode — practice only';
+      renderOpponents();
+      if(serverCountTimer){clearInterval(serverCountTimer); serverCountTimer=setInterval(updateServerCount, 1800);}
+    } else {
+      pickOpponents();
+      enterSearching();
+      renderOpponents();
+    }
   });
 
-  document.getElementById('restart-btn')?.addEventListener('click', ()=>{ aiPlayers.forEach(p=>{p.chars=0; p.progress=0;}); if($raceStatus) $raceStatus.textContent='Race reset — type to start'; renderOpponents(); });
-  document.getElementById('new-text-btn')?.addEventListener('click', ()=>{ pickOpponents(); if($raceStatus) $raceStatus.textContent='4 opponents found — all typing together'; renderOpponents(); });
+  document.getElementById('restart-btn')?.addEventListener('click', ()=>{
+    stopRace();
+    aiPlayers.forEach(p=>{p.chars=0; p.progress=0; p.wordIdx=0;});
+    lobbyState='ready';
+    if($raceStatus) $raceStatus.textContent='Race reset — press any key for 3-2-1-GO!';
+    renderOpponents();
+    // keep searching illusion brief
+    setTimeout(enterSearching, 20);
+    setTimeout(()=>{ if(aiEnabled){ pickOpponents(); }}, 900);
+  });
+  document.getElementById('new-text-btn')?.addEventListener('click', ()=>{
+    stopRace();
+    pickOpponents();
+    enterSearching();
+    setTimeout(()=>{ renderOpponents(); }, 920);
+  });
 
+  // init
+  serverCountTimer=setInterval(updateServerCount, 1800);
+  setInterval(renderOpponents, 180);
   pickOpponents();
-  if($raceStatus) $raceStatus.textContent = '4 opponents ready — everyone starts together';
+  enterSearching();
 })();
 </script>
 </body>

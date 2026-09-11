@@ -815,6 +815,11 @@ class AlienHandler(http.server.SimpleHTTPRequestHandler):
         r'xmlrpc', r'phpmyadmin', r'server-status', r'server-info',
         r'\.ssh/', r'\.aws/', r'actuator/', r'druid/', r'vendor/phpunit',
         r'storage/logs', r'adminer', r'/console$',
+        # SECURITY 2026-09-11: block secrets exposed via GitHub + web (gdelt-bq-key, yono_secret, service accounts)
+        r'gdelt-bq-key', r'bq-key', r'bq_key', r'yono_secret', r'\.yono',
+        r'service.?account', r'credentials\.json', r'secret.*\.json',
+        r'\.pem$', r'\.key$',
+        r'gdelt.*\.json',
     ]]
 
     def _is_blocked_path(self, path):

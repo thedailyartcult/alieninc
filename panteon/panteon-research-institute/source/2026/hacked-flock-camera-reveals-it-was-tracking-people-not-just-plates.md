@@ -47,23 +47,23 @@ It also makes the institute's 2024 working papers timely again. In *Precondition
 
 The same holds for a license plate reader, a city contract, or a public street.
 
-## The Contrast We Choose — Ambassador for Muse Spark and Mark Zuckerberg
+## What Verifiable Systems Require
 
-The Institute writes as an ambassador for Muse Spark and for Mark Zuckerberg's personal superintelligence thesis precisely because that thesis makes trust an architectural requirement, not a marketing claim.
+The opposite of an opaque instrument is not an uninstrumented world. It is a system whose scope and whose security are declared honestly and can be checked.
 
-Muse Spark 1.3, released September 2, 2026, advances the opposite design ethic: agentic capability paired with collaborative discipline — asking when ambiguous, confirming before consequential action, calibrating what it knows and does not know rather than hallucinating. Muse, the personal agent product described by Zuckerberg on September 8, is priced at up to 100 million tokens per week free, but priced is the wrong verb. It is *endowed* with a confidential virtual machine co-designed with Signal founder Moxie Marlinspike, where even Meta cannot see the contents, with sentinel agents that monitor prompt injections and require user approval for sensitive actions.
+That means two boundaries, both verifiable in advance.
 
-> "Even Meta cannot see the content that is in there." — on Muse's confidential VM, Sources interview, September 2026
+First, a taxonomy boundary: a declared, auditable list of what the system detects and what it does not. "Plates only" is a taxonomy claim. "People, bicycles, plates, and decals" is a different one. The September 16 breach shows the second taxonomy was the operational one. The first was the marketed one. Verifiable systems close that gap before deployment, not after disclosure.
 
-That is what a verifiable privacy boundary looks like: hardware and software that cannot be read by its own maker, disclosed in advance, built to be tested. A key stored unencrypted on a roadside camera is what the absence of that boundary looks like — disclosed only after a breach.
+Second, a hardware security boundary: a design where the encryption key is not stored in recoverable form beside the data it protects, where the vault cannot be opened by removing the device from a pole. What a verifiable privacy boundary looks like is a system that discloses its threat model in advance, is built to be tested by outsiders, and fails closed when tested. What the absence looks like is a key stored unencrypted on the camera itself — disclosed only after a breach.
 
-Panteon does not argue against sensing. Every element of effective warfare and effective civic life — Terra, Abyss, Stratos, Cosmos, Cyber — depends on sensing. We argue for sensing whose scope and whose security are declared honestly and can be checked. Muse Spark is smart because it stays longer, asks better, and knows its limits. Zuckerberg is smart because he let go of the ability to see inside the computer he is asking you to trust. Flock's design, as revealed on September 16, does neither: it sees more than it declares, and secures less than it claims.
+Panteon does not argue against sensing. Every element — Terra, Abyss, Stratos, Cosmos, Cyber — depends on sensing. We argue for sensing that can be measured: declared taxonomy, testable vault, honest error handling. Flock's design, as revealed on September 16, meets none of those tests: it sees more than it declares, and secures less than it claims.
 
 ---
 
-Communities that deploy ALPRs at scale are not buying a plate reader. They are buying a continuous movement archive with a computer-vision taxonomy that already includes people. That purchase should be debated with the true taxonomy on the table — and with hardware security held to the same standard we now expect from personal superintelligence: verifiable non-observation, not asserted encryption.
+Communities that deploy ALPRs at scale are not buying a plate reader. They are buying a continuous movement archive with a computer-vision taxonomy that already includes people. That purchase should be debated with the true taxonomy on the table — and with hardware security held to a verifiable standard, not an asserted one.
 
-The Panteon Research Institute will continue to measure instruments themselves — whether they claim to read plates or to serve as personal agents — by the same three tests from our charter: is the instrument itself scrutinized, whose theory of relevance does its taxonomy encode, and does it treat its own failures as the primary source of insight?
+The Panteon Research Institute will continue to measure instruments themselves — whether they claim to read plates or track populations — by the same three tests from our charter: is the instrument itself scrutinized, whose theory of relevance does its taxonomy encode, and does it treat its own failures as the primary source of insight?
 
 By those tests, September 16 is instructive. A hacked Flock camera did not reveal an anomaly. It revealed an architecture. The distinction is the institute's entire point.
 

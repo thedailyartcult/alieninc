@@ -35,8 +35,12 @@ jobs:
           cp -r index.html 404.html CNAME assets _pages/ 2>/dev/null || true
           cp -r mission.html privacy.html terms.html founder.html _pages/ 2>/dev/null || true
           # Favicons + branding — required for alieninc.tech tab icon
-          cp -r ai-favicon* ai-*.png favicon.ico new.png logo.png _pages/ 2>/dev/null || true
-          cp -r *.svg _pages/ 2>/dev/null || true
+          ls -lh ai-favicon* ai-*.png favicon.ico *.svg 2>&1 | head -n 30
+          for f in ai-favicon.svg ai-favicon.png ai-favicon-16.png ai-favicon-32.png ai-favicon-180.png ai-favicon-192.png ai-favicon-512.png ai-favicon-light.png ai-favicon-light-16.png ai-favicon-light-32.png ai-favicon-light-180.png ai-favicon-light-192.png ai-favicon-light-512.png ai-16.png ai-32.png ai-180.png ai-192.png ai-512.png favicon.ico new.png logo.png; do cp -v "$f" _pages/ 2>&1 || true; done
+          cp -v *.svg _pages/ 2>&1 | head -n 20 || true
+          echo "--- _pages favicon verify ---"
+          ls -lh _pages/*.png _pages/*.svg _pages/*.ico 2>&1 | head -n 30
+          grep -o 'ai-favicon[^"?]*?v=[0-9]*' _pages/index.html | head
           # Panteon site — copy self-contained frontend (play.html, index.html, etc.) without heavy backups
           mkdir -p _pages/panteon
           rsync -a --exclude='*.bak*' --exclude='.git' --exclude='backend' --exclude='__pycache__' --exclude='*.db' --exclude='*.db-*' --exclude='data' --exclude='logs' --exclude='*.log' --exclude='*.jsonl' panteon/ _pages/panteon/ 2>/dev/null || cp -r panteon _pages/panteon 2>/dev/null || true
@@ -52,6 +56,7 @@ jobs:
           JS
           cat _pages/config.js
           cat _pages/CNAME; ls -lh _pages/*.html | head -n 20
+          echo "--- index.html favicon lines ---"; grep -n "favicon\|apple-touch" _pages/index.html | head
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

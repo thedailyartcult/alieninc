@@ -39,6 +39,8 @@ jobs:
           # Favicons + branding — required for alieninc.tech tab icon
           for f in ai-favicon.svg ai-favicon-16.png ai-favicon-32.png ai-favicon-180.png ai-favicon-light-16.png ai-favicon-light-32.png favicon.ico new.png logo.png; do cp -v "$f" _pages/ 2>&1 || true; done
           cp -v *.svg _pages/ 2>&1 | head -n 20 || true
+          # Founder / hero media — required for founder.html (founder.jpeg 404 was missing from _pages)
+          cp -v *.jpeg *.jpg *.mp4 _pages/ 2>&1 | head -n 20 || true
           # Panteon site — copy self-contained frontend (play.html, index.html, etc.) without heavy backups
           mkdir -p _pages/panteon
           rsync -a --exclude='*.bak*' --exclude='.git' --exclude='backend' --exclude='__pycache__' --exclude='*.db' --exclude='*.db-*' --exclude='data' --exclude='logs' --exclude='*.log' --exclude='*.jsonl' panteon/ _pages/panteon/ 2>/dev/null || cp -r panteon _pages/panteon 2>/dev/null || true

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="description" content="The Alien Minds We Built — On xeno-interpretability, untranslatable internal structure in LLMs, and what safety looks like when explanations will never be enough. Based on Pierucci et al., Xeno-Interpretability (Icaro Foundation, Sant'Anna, Sapienza, University of Amsterdam, September 2026).">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Alien Minds We Built — Alien Inc. Articles</title>
+<link class="brand-icon" rel="icon" type="image/svg+xml" href="../../../../ai-favicon.svg?v=26">
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../ai-favicon-32.png?v=26" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../ai-favicon-light-32.png?v=26" media="(prefers-color-scheme: light)">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../ai-favicon-16.png?v=26" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../ai-favicon-light-16.png?v=26" media="(prefers-color-scheme: light)">
+<link rel="apple-touch-icon" sizes="180x180" href="../../../../ai-favicon-180.png?v=26">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ultra&family=Alfa+Slab+One&family=Instrument+Sans:wght@400;500;600;700;800&family=Instrument+Sans+Condensed:wght@700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --hg-font-primary:"Instrument Sans",system-ui,-apple-system,sans-serif;
+  --hg-font-secondary:"Instrument Sans Condensed",var(--hg-font-primary);
+  --hg-font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,monospace;
+  --hg-color-primary:#14181c;
+  --hg-color-secondary:#ffd400;
+  --hg-color-secondary-bold:#4ea2fd;
+  --hg-color-tertiary:#f6f6f6;
+  --hg-color-darkest:#131920;
+  --hg-color-lightest:#ffffff;
+  --hg-color-muted:#f7f7f7;
+  --ppl-color-text-default:#131920;
+  --ppl-color-text-subtle:#3a4b5f;
+  --ppl-color-text-inverse:#ffffff;
+  --ppl-color-bg-default:#ffffff;
+  --ppl-button-contained-bg:#ffd400;
+  --ppl-button-contained-text:#131920;
+  --header-height:4.875rem;
+}
+*{box-sizing:border-box}
+body{
+  font-family:var(--hg-font-primary);
+  margin:0;padding:0;line-height:1.6;
+  background:#fff;color:var(--ppl-color-text-default);
+  overflow-x:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+a{color:inherit;text-decoration:none}
+.l-container{max-width:1200px;margin:0 auto;padding:0 1.5rem;width:100%;box-sizing:border-box}
+#main-content,#essay,#coda{scroll-margin-top:var(--header-height)}
+.header{
+  height:var(--header-height);background:var(--ppl-color-bg-default);
+  border-bottom:1px solid rgba(0,0,0,0.08);display:flex;align-items:center;
+  position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,0.01);
+}
+.header__inner{display:flex;flex-direction:row;justify-content:space-between;align-items:center;width:100%;max-width:1200px;margin:0 auto;padding:0 1.5rem;box-sizing:border-box}
+.header__logo{display:flex;align-items:center;height:100%}
+.brand-logo{display:flex;align-items:center;gap:0.12rem;height:100%;text-decoration:none}
+.brand-logo__text{font-family:"Ultra","Alfa Slab One","Clarendon","Rockwell Extra Bold",serif;font-size:clamp(24px,5vw,29px);font-weight:500;letter-spacing:0.02em;color:#131920;line-height:1}
+.brand-logo__dot{height:0.56em;width:0.56em;position:relative;top:calc(0.30 * clamp(24px,5vw,29px));display:block}
+.nav__list{display:flex;flex-direction:row;gap:2rem;list-style:none;margin:0;padding:0}
+.nav__list-item-link{font-weight:700;font-size:1.125rem;color:var(--ppl-color-text-default);transition:color 0.2s ease-out;padding:0.25rem 0;position:relative}
+.nav__list-item-link:hover,.nav__list-item-link.is-active{text-decoration:underline;text-decoration-color:var(--hg-color-secondary);text-decoration-thickness:0.16em;text-underline-offset:0.2em}
+.nav__dropdown{position:relative}
+.nav__dropdown-menu{position:absolute;top:100%;left:50%;transform:translateX(-50%) translateY(6px);background:#fff;border:1px solid rgba(19,25,32,0.1);border-radius:4px;box-shadow:0 8px 24px rgba(0,0,0,0.08);min-width:150px;opacity:0;visibility:hidden;transition:opacity 0.15s ease,visibility 0.15s ease,transform 0.15s ease;padding:6px 0;z-index:200}
+.nav__dropdown:hover .nav__dropdown-menu,.nav__dropdown-menu:hover{opacity:1;visibility:visible;transform:translateX(-50%) translateY(10px)}
+.nav__dropdown-item{display:block;padding:8px 20px;font-size:0.92rem;font-weight:600;color:var(--ppl-color-text-default);white-space:nowrap;transition:background 0.12s ease;text-decoration:none}
+.nav__dropdown-item:hover{background:var(--hg-color-muted);text-decoration:underline;text-decoration-color:var(--hg-color-secondary);text-decoration-thickness:0.16em;text-underline-offset:0.2em}
+.nav__dropdown-trigger{cursor:default}
+.nav__dropdown-trigger::after{content:'';display:inline-block;width:0;height:0;margin-left:5px;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--ppl-color-text-default);vertical-align:middle;transition:transform 0.15s ease}
+.nav__dropdown:hover .nav__dropdown-trigger::after{transform:rotate(180deg)}
+.nav{position:relative}
+.nav__thinking{position:absolute;top:50%;right:0;transform:translateY(-50%);display:none;align-items:center;gap:0.9rem;white-space:nowrap;font-family:var(--hg-font-primary);font-size:1.125rem;font-weight:700;line-height:1.3;color:var(--ppl-color-text-default)}
+.nav__thinking-pulse{display:inline-flex;align-items:center;gap:0.32rem;padding-bottom:0.1em}
+.nav__thinking-pulse i{display:block;width:5px;height:5px;border-radius:50%;background:var(--ppl-color-text-default);animation:nav-pulse-breathe 1.8s ease-in-out infinite}
+.nav__thinking-pulse i:nth-child(2){background:var(--hg-color-secondary);animation-delay:0.2s}
+.nav__thinking-pulse i:nth-child(3){animation-delay:0.4s}
+.nav__thinking-line{opacity:0;transition:opacity 0.5s ease,color 0.2s ease}
+.nav__thinking-line.is-visible{opacity:1}
+.nav__thinking-line.is-typing::after{content:'';display:inline-block;width:2px;height:1.05em;margin-left:3px;background:var(--ppl-color-text-default);vertical-align:-0.12em;animation:nav-caret-blink 1.2s step-end infinite}
+.nav__thinking-line.is-done::after{content:'\2026';animation:nav-ellipsis-breathe 1.6s ease-in-out infinite}
+.nav__thinking-word{animation:nav-word-in 0.4s ease-out both}
+@keyframes nav-word-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes nav-pulse-breathe{0%,100%{transform:scale(1);opacity:0.15}50%{transform:scale(1.5);opacity:1}}
+@keyframes nav-ellipsis-breathe{0%,100%{opacity:0.2}50%{opacity:1}}
+@keyframes nav-caret-blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+.js-nav:not(.reduced-motion) .nav__thinking{display:flex}
+.js-nav:not(.reduced-motion) .nav__list{visibility:hidden}
+.js-nav:not(.reduced-motion) .nav__list-item{opacity:0;transform:translateY(8px);transition:opacity 0.5s cubic-bezier(0.22,1,0.36,1),transform 0.5s cubic-bezier(0.22,1,0.36,1)}
+.js-nav:not(.reduced-motion).is-nav-revealed .nav__list{visibility:visible}
+.js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item{opacity:1;transform:translateY(0)}
+.js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item:nth-child(1){transition-delay:0.06s}
+.js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item:nth-child(2){transition-delay:0.14s}
+.js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item:nth-child(3){transition-delay:0.30s}
+.js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item:nth-child(4){transition-delay:0.38s}
+.js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item:nth-child(5){transition-delay:0.46s}
+.js-nav:not(.reduced-motion).is-nav-revealed .nav__list-item:nth-child(6){transition-delay:0.54s}
+.js-nav:not(.reduced-motion) .nav__thinking{opacity:1;transition:opacity 0.3s ease,visibility 0.3s ease}
+.js-nav:not(.reduced-motion).is-nav-revealed .nav__thinking{opacity:0;visibility:hidden}
+
+/* BANNER */
+.notification-banner{background:var(--ppl-button-contained-bg);color:var(--ppl-color-text-default);padding:0.75rem 1rem;text-align:center}
+.notification-banner__inner{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:0.75rem}
+.notification-banner__text{font-weight:700;font-size:1.05rem}
+.notification-banner__cta{font-weight:700;text-decoration:underline}
+.notification-banner__cta:hover{text-decoration:none}
+
+/* HERO — identical language to mission.html / index.html */
+.article-hero{margin:3rem auto;max-width:1200px;padding:0 1.5rem;box-sizing:border-box}
+.article-hero__panel{position:relative;background:linear-gradient(135deg,#18222d,#131920);min-height:460px;width:100%;border-radius:4px;overflow:hidden;display:flex;align-items:center;box-sizing:border-box;border-left:6px solid #ffd400;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
+.article-hero__overlay{position:relative;z-index:2;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;padding:clamp(2.2rem,5.5vw,4.5rem);box-sizing:border-box}
+.article-hero__meta{display:inline-block;margin-bottom:1rem;font-weight:800;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--hg-color-secondary)}
+.article-hero__title{color:#fff;font-family:var(--hg-font-secondary);font-size:clamp(2.0rem,5vw,3.7rem);font-weight:800;line-height:1.02;margin:0 0 0.85rem;text-transform:uppercase;letter-spacing:-0.01em;max-width:980px}
+.article-hero__description{color:#fff;font-size:1.15rem;opacity:0.92;line-height:1.55;max-width:740px;margin:0}
+.article-hero__byline{margin-top:1.1rem;display:flex;flex-wrap:wrap;gap:0.6rem 1.2rem;font-family:var(--hg-font-mono);font-size:0.78rem;color:rgba(255,255,255,0.78)}
+.article-hero__byline strong{color:#fff;font-weight:700}
+
+/* META BAR — same as protocol-meta-bar */
+.meta-bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem;margin-top:2rem;background:#131920;padding:1.35rem 1.5rem;border-radius:4px;border-left:4px solid var(--hg-color-secondary);color:#fff}
+.meta-bar__label{font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--hg-color-secondary);margin-bottom:0.3rem}
+.meta-bar__value{font-family:var(--hg-font-mono);font-size:0.88rem;font-weight:600;color:#fff;line-height:1.35}
+.meta-bar__value--dim{color:rgba(255,255,255,0.72);font-weight:500;font-family:var(--hg-font-primary)}
+
+/* ARTICLE LAYOUT — editorial, reuses mission-article language */
+.article-section{padding:4.5rem 0;background:var(--ppl-color-bg-default)}
+.article-section--muted{background:var(--hg-color-muted);border-top:1px solid rgba(19,25,32,0.08);border-bottom:1px solid rgba(19,25,32,0.08)}
+.section-kicker{font-size:0.78rem;font-weight:800;text-transform:uppercase;letter-spacing:0.10em;color:var(--ppl-color-text-subtle);margin-bottom:0.75rem}
+.article-layout{display:grid;grid-template-columns:minmax(0,0.78fr) minmax(0,1.22fr);gap:clamp(2rem,5vw,4rem);align-items:start}
+.article-side{position:sticky;top:calc(var(--header-height) + 1.75rem)}
+.article-side__rule{width:52px;height:4px;background:var(--hg-color-secondary);margin:0.2rem 0 1.15rem}
+.article-side__kicker{font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.10em;color:var(--ppl-color-text-subtle);margin-bottom:0.35rem}
+.article-side__title{font-family:var(--hg-font-secondary);font-size:clamp(1.55rem,2.6vw,2.05rem);line-height:1.02;text-transform:uppercase;margin:0 0 0.75rem}
+.article-side__copy{color:var(--ppl-color-text-subtle);font-size:0.95rem;line-height:1.6;margin:0}
+.article-pullquote{margin-top:1.4rem;background:#131920;color:#fff;border-left:4px solid var(--hg-color-secondary);padding:1.15rem 1.1rem;border-radius:4px}
+.article-pullquote p{margin:0;font-size:0.98rem;line-height:1.5;font-weight:700}
+.article-pullquote cite{display:block;margin-top:0.55rem;font-family:var(--hg-font-mono);font-size:0.72rem;color:rgba(255,255,255,0.65);font-style:normal}
+.article-body{display:flex;flex-direction:column;gap:1.45rem}
+.article-body p{margin:0;font-size:1.06rem;line-height:1.78;color:var(--ppl-color-text-default)}
+.article-body p strong{font-weight:800}
+.article-body em{font-style:italic}
+.article-hr{height:1px;background:rgba(19,25,32,0.08);border:0;margin:0.2rem 0}
+.callout{background:var(--hg-color-muted);border-left:4px solid var(--hg-color-secondary);padding:1.25rem 1.3rem;border-radius:4px}
+.callout__label{font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--ppl-color-text-subtle);margin-bottom:0.4rem}
+.callout__title{font-family:var(--hg-font-secondary);font-size:1.15rem;font-weight:800;text-transform:uppercase;margin:0 0 0.35rem;line-height:1.15}
+.callout__text{color:var(--ppl-color-text-subtle);font-size:0.92rem;line-height:1.6;margin:0}
+.concept-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
+.concept-card{background:#131920;color:#fff;padding:1.35rem;border-left:4px solid var(--hg-color-secondary);border-radius:4px;min-height:160px}
+.concept-card__step{font-family:var(--hg-font-mono);font-size:0.72rem;font-weight:700;color:var(--hg-color-secondary);text-transform:uppercase;letter-spacing:0.04em}
+.concept-card h3{margin:0.45rem 0 0.5rem;font-family:var(--hg-font-secondary);font-size:1.05rem;font-weight:800;text-transform:uppercase;line-height:1.15}
+.concept-card p{margin:0;color:rgba(255,255,255,0.78);font-size:0.88rem;line-height:1.5}
+.essay-note{background:#fff;border:1px solid rgba(19,25,32,0.10);border-left:4px solid #4ea2fd;border-radius:4px;padding:1.2rem 1.3rem}
+.essay-note__label{font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#4ea2fd;margin-bottom:0.35rem}
+.essay-note__text{margin:0;color:var(--ppl-color-text-subtle);font-size:0.92rem;line-height:1.6}
+
+/* DARK BAND — same language as mission-vision */
+.vision-band{background:#131920;color:#f6f6f6;text-align:center;padding:5rem 0}
+.vision-band .section-kicker{color:var(--hg-color-secondary)}
+.vision-band__statement{font-family:var(--hg-font-secondary);font-size:clamp(1.7rem,3.8vw,2.85rem);font-weight:800;line-height:1.12;text-transform:uppercase;margin:0 auto;max-width:1020px}
+.vision-band__sub{color:rgba(255,255,255,0.76);font-size:1.02rem;margin:1.4rem auto 0;max-width:760px;line-height:1.6}
+
+/* CITATION FOOTER */
+.citation{background:var(--hg-color-muted);border-top:1px solid rgba(19,25,32,0.08);padding:2.2rem 0}
+.citation__label{font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--ppl-color-text-subtle);margin-bottom:0.5rem}
+.citation__text{font-size:0.88rem;line-height:1.6;color:var(--ppl-color-text-subtle);margin:0;max-width:900px}
+.citation__text em{font-style:italic}
+.breadcrumb{font-family:var(--hg-font-mono);font-size:0.72rem;color:var(--ppl-color-text-subtle);margin:1.2rem 0 0}
+.breadcrumb a{text-decoration:underline;text-decoration-color:var(--hg-color-secondary);text-underline-offset:3px}
+.breadcrumb a:hover{color:var(--ppl-color-text-default)}
+
+/* FOOTER — verbatim from index/mission */
+.footer{background:var(--hg-color-darkest);color:var(--hg-color-lightest);padding:4rem 0 2rem}
+.footer__inner-container{display:grid;gap:3rem;grid-template-areas:"offices contact" "corporate media"}
+.footer__offices{grid-area:offices}.footer__contact{grid-area:contact}.footer__corporate{grid-area:corporate}.footer__media{grid-area:media}
+.footer__offices-title,.footer__contact-title{font-size:1.375rem;font-weight:700;margin-bottom:1.5rem;text-transform:uppercase;color:var(--hg-color-lightest)}
+.footer__offices-items{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1.5rem}
+.footer__offices-item-title{font-weight:700;margin-bottom:0.25rem}
+.footer__offices-item-content{font-size:0.875rem;line-height:1.5;opacity:0.8;display:flex;flex-direction:column}
+.footer__contact-items{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.5rem}
+.footer__contact-item-title{font-weight:700;font-size:0.95rem}
+.footer__contact-item-content{font-size:0.875rem}
+.footer__contact-item-content a{text-decoration:underline}
+.footer__contact-item-content a:hover{color:var(--hg-color-secondary)}
+.footer__corporate-links{display:flex;flex-wrap:wrap;gap:1.5rem;list-style:none;padding:0;margin:0;font-size:0.75rem;opacity:0.7}
+.footer__corporate-link:hover{color:var(--hg-color-secondary);text-decoration:underline}
+.footer__media{display:flex;justify-content:flex-end;align-items:center;gap:1rem}
+.social-link{background:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#131920;font-weight:bold}
+.social-link:hover{background:var(--hg-color-secondary)}
+@media(max-width:900px){
+  .header{height:auto}
+  .header__inner{align-items:flex-start;gap:1rem;padding-top:1rem;padding-bottom:1rem}
+  .nav__list{gap:1rem;flex-wrap:wrap;justify-content:flex-end}
+  .nav__list-item-link{font-size:0.95rem}
+  .meta-bar{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .article-layout{grid-template-columns:1fr}
+  .article-side{position:static}
+  .concept-grid{grid-template-columns:1fr}
+}
+@media(max-width:768px){
+  .footer__inner-container{grid-template-areas:"offices" "contact" "corporate" "media"}
+}
+@media(max-width:620px){
+  .header__inner{flex-direction:column}
+  .nav__list{justify-content:flex-start}
+  .meta-bar{grid-template-columns:1fr}
+  .nav__thinking{right:auto;left:0;white-space:normal;max-width:calc(100vw - 3rem)}
+}
+.page-wrap{position:relative}
+.skeleton{position:absolute;inset:0;z-index:5;display:none;overflow:hidden;background:var(--ppl-color-bg-default);pointer-events:none}
+.js-nav:not(.reduced-motion) .skeleton{display:block}
+.js-nav:not(.reduced-motion).is-nav-revealed .skeleton{opacity:0;visibility:hidden;transition:opacity 0.55s ease 0.1s,visibility 0.55s ease 0.1s}
+.skeleton__bar{display:block;border-radius:4px;background:var(--hg-color-muted);background-image:linear-gradient(100deg,transparent 25%,var(--hg-color-lightest) 45%,var(--hg-color-lightest) 55%,transparent 75%);background-size:220% 100%;background-repeat:no-repeat;animation:skeleton-shimmer 1.5s linear infinite}
+.skeleton__bar--dark{background-color:rgba(255,255,255,0.10);background-image:linear-gradient(100deg,transparent 25%,rgba(255,255,255,0.22) 45%,rgba(255,255,255,0.22) 55%,transparent 75%);background-size:220% 100%;background-repeat:no-repeat;animation:skeleton-shimmer 1.5s linear infinite}
+@keyframes skeleton-shimmer{0%{background-position:120% 0}100%{background-position:-120% 0}}
+.skeleton__banner{background:var(--ppl-button-contained-bg);padding:0.75rem 1rem}
+.skeleton__banner-inner{display:flex;justify-content:center;align-items:center;gap:0.75rem}
+.skeleton__banner .skeleton__bar{height:1.125rem}
+.skeleton__hero{margin:3rem auto;max-width:1200px;padding:0 1.5rem}
+.skeleton__hero-panel{background:linear-gradient(135deg,#18222d,#131920);min-height:460px;border-radius:4px;border-left:6px solid var(--hg-color-secondary);padding:clamp(2.2rem,5.5vw,4.5rem);display:flex;flex-direction:column;justify-content:center}
+</style>
+<script>
+(function(){
+  var NAV_SETS={'1':{phrases:['Mapping xeno-semantic structure','Where explanations will never be enough','Measuring before naming'],title:null}};
+  window.ALIEN_NAV_SETS=NAV_SETS;
+  var d=document.documentElement;d.setAttribute('data-nav-set','1');d.classList.add('js-nav');
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)d.classList.add('reduced-motion');
+  setTimeout(function(){d.classList.add('is-nav-revealed')},9500);
+})();
+</script>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+</head>
+<body>
+<a href="#main-content" class="skip-nav" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;padding:10px 20px;background:#3b82f6;color:#fff;text-decoration:none;font-weight:600;">Skip to main content</a>
+<main id="main-content" role="main">
+<header class="header">
+  <div class="header__inner l-container">
+    <div class="header__logo">
+      <a href="../../../../index.html" class="brand-logo" aria-label="visit the Alien Inc Homepage">
+        <span class="brand-logo__text">Alien</span>
+        <img src="../../../../logo.png" alt="•" class="brand-logo__dot">
+        <span class="brand-logo__text">Inc</span>
+      </a>
+    </div>
+    <nav class="nav" aria-label="Primary">
+      <div class="nav__thinking" aria-hidden="true">
+        <span class="nav__thinking-pulse"><i></i><i></i><i></i></span>
+        <span class="nav__thinking-line" id="nav-thinking-line"></span>
+      </div>
+      <ul class="nav__list">
+        <li class="nav__list-item"><a href="../../../../about.html" class="nav__list-item-link">About</a></li>
+        <li class="nav__list-item"><a href="../../../../mission.html" class="nav__list-item-link">Mission</a></li>
+        <li class="nav__list-item"><a href="../../../../founder.html" class="nav__list-item-link">Founder</a></li>
+        <li class="nav__list-item"><a href="../../../../index.html#portfolio" class="nav__list-item-link">Companies</a></li>
+        <li class="nav__list-item nav__dropdown">
+          <a href="../../../../dashboard.html" class="nav__list-item-link nav__dropdown-trigger">Dashboard</a>
+          <div class="nav__dropdown-menu">
+            <a href="../../../../dashboard.html" class="nav__dropdown-item">Financial</a>
+            <a href="../../../../dashboard.html#compliance" class="nav__dropdown-item">Compliance</a>
+          </div>
+        </li>
+        <li class="nav__list-item"><a href="../../../../index.html#contact" class="nav__list-item-link">Contact</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="page-wrap">
+  <div class="skeleton" aria-hidden="true">
+    <div class="skeleton__banner"><div class="skeleton__banner-inner l-container"><span class="skeleton__bar" style="width:220px"></span><span class="skeleton__bar" style="width:160px;background-color:rgba(19,25,32,0.16)"></span></div></div>
+    <div class="skeleton__hero"><div class="skeleton__hero-panel"><span class="skeleton__bar skeleton__bar--dark" style="height:12px;width:180px;margin-bottom:1rem"></span><span class="skeleton__bar skeleton__bar--dark" style="height:52px;width:88%;margin-bottom:0.9rem"></span><span class="skeleton__bar skeleton__bar--dark" style="height:22px;width:72%"></span></div></div>
+  </div>
+
+  <div class="notification-banner">
+    <div class="notification-banner__inner l-container">
+      <span class="notification-banner__text">Field Notes — long-form on intelligence, infrastructure, and the next thousand years</span>
+      <a href="../../../../mission.html" class="notification-banner__cta">The 1,000-Year Mission →</a>
+    </div>
+  </div>
+
+  <section class="article-hero" aria-label="The Alien Minds We Built">
+    <div class="article-hero__panel">
+      <div class="article-hero__overlay">
+        <span class="article-hero__meta">Articles // 2026-09-24 &nbsp;·&nbsp; Xeno-Interpretability</span>
+        <h1 class="article-hero__title">The Alien Minds We Built</h1>
+        <p class="article-hero__description">What if the most consequential structures inside a language model are the ones we will never have words for — stable, measurable, and already shaping what it does next.</p>
+        <div class="article-hero__byline">
+          <span><strong>Manila</strong> — 24 September 2026 (PHT)</span>
+          <span>Reading time · ~7 min</span>
+          <span>Based on Pierucci et al., Sept 2026</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="l-container">
+    <div class="meta-bar" aria-label="Article metadata">
+      <div><div class="meta-bar__label">Published (PHT)</div><div class="meta-bar__value">2026-09-24 · 08:33 Asia/Manila</div></div>
+      <div><div class="meta-bar__label">Filed under</div><div class="meta-bar__value">Interpretability / AI Safety</div></div>
+      <div><div class="meta-bar__label">Source paper</div><div class="meta-bar__value">Xeno-Interpretability</div><div class="meta-bar__value--dim" style="font-size:0.78rem">Icaro · Sant'Anna · Sapienza · UvA</div></div>
+      <div><div class="meta-bar__label">Edition</div><div class="meta-bar__value" style="color:var(--hg-color-secondary)">Articles / 2026-09-24</div></div>
+    </div>
+  </div>
+
+  <!-- 01. THE COMFORTABLE QUESTION -->
+  <section class="article-section" id="essay">
+    <div class="l-container">
+      <div class="article-layout">
+        <div class="article-side">
+          <div class="article-side__rule"></div>
+          <div class="article-side__kicker">01. The comfortable question</div>
+          <h2 class="article-side__title">The assumption we stopped noticing.</h2>
+          <p class="article-side__copy">Every safety check that asks “is it lying?” has already decided that lying is a shape a mind can take — and that we would know it if we saw it.</p>
+          <div class="article-pullquote">
+            <p>"Can we find and manipulate this structure — and can we say what it means — are two separate problems. The second might not have an answer."</p>
+            <cite>— Xeno-Interpretability, Sept 2026</cite>
+          </div>
+        </div>
+        <div class="article-body">
+          <p>There's a version of the AI safety conversation that's become almost comfortable. Is the model lying to us? Is it scheming? Does it want something? These are real questions, and they matter. But they all share a hidden assumption: that whatever is happening inside a large language model can eventually be described using words we already have.</p>
+          <p>A new paper out of the Icaro Foundation, Sant'Anna School of Advanced Studies, Sapienza University of Rome, and the University of Amsterdam argues that assumption might be the whole problem.</p>
+          <p>The paper is called <em>Xeno-Interpretability: Investigating the Alien Minds of LLMs</em>. Its claim, stripped to the bone: language models may contain internal distinctions — stable, measurable, causally real, and actively shaping behavior — for which no adequate human concept exists at all. Not new combinations of things we already understand. Not metaphors we haven't thought of yet. Something structurally outside the reach of any finite human description.</p>
+          <hr class="article-hr">
+          <div class="callout">
+            <div class="callout__label">Core thesis</div>
+            <h3 class="callout__title">Structure without a name can still steer.</h3>
+            <p class="callout__text">If a distinction reliably moves behavior when you intervene on it, it is real — whether or not any sentence in any human language captures it.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02. WEIRD VS UNTRANSLATABLE -->
+  <section class="article-section article-section--muted">
+    <div class="l-container">
+      <div class="article-layout">
+        <div class="article-side">
+          <div class="article-side__rule"></div>
+          <div class="article-side__kicker">02. Weird is not untranslatable</div>
+          <h2 class="article-side__title">The space between things we never connected.</h2>
+          <p class="article-side__copy">A mermaid is strange and fully describable. The xeno-semantic space is neither.</p>
+        </div>
+        <div class="article-body">
+          <p>Humans are good at combining familiar things into unfamiliar ones. A mermaid is strange, but we understand exactly what she's made of — human plus fish. We can place her on a map of concepts we already own.</p>
+          <p>Now try something else. What sits halfway between the second variation of Bach's Goldberg Variations and the Byzantine emperor Alexios I Komnenos? Between love and Gödel's incompleteness theorem? Between the smell of rain and type inference in a programming language?</p>
+          <p>You can understand every item in those pairs on its own. What you can't do is name the space between them — because human cognition never built a dimension connecting those domains in the first place.</p>
+          <p>A neural network doesn't have that limitation. If two ideas both live somewhere in the same high-dimensional space, the geometry between them exists whether or not we have a word for it. The researchers' point isn't that this midpoint is mathematically interesting — averaging two vectors is trivial. It's that these midpoints can be behaviorally real: stable, reproducible, and capable of shifting a model's output in consistent ways when you push on them. A structure can be doing real work inside a system's reasoning while remaining permanently untranslatable into any sentence a human could write.</p>
+          <div class="concept-grid">
+            <div class="concept-card">
+              <div class="concept-card__step">Distinction 01</div>
+              <h3>Findable</h3>
+              <p>We can locate and perturb the structure and watch behavior move — without yet knowing what to call it.</p>
+            </div>
+            <div class="concept-card">
+              <div class="concept-card__step">Distinction 02</div>
+              <h3>Causally real</h3>
+              <p>It's not noise. It holds across prompts and carries counterfactual force when intervened upon.</p>
+            </div>
+            <div class="concept-card">
+              <div class="concept-card__step">Distinction 03</div>
+              <h3>Untranslatable</h3>
+              <p>No finite human description adequately captures it — not a missing word, a missing dimension.</p>
+            </div>
+          </div>
+          <p>The paper calls the region where this happens the <strong>xeno-semantic space</strong>, and the discipline of hunting for it <strong>xeno-interpretability</strong> — deliberately separating two questions interpretability research usually treats as one: can we find and manipulate this structure (yes, sometimes), and can we say in human terms what it means (a separate problem entirely, and one that might not have an answer).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DARK BAND -->
+  <section class="vision-band">
+    <div class="l-container">
+      <div class="section-kicker">The blind spot</div>
+      <p class="vision-band__statement">Every evaluation that starts from a human theory of danger will only ever find what we already knew to look for.</p>
+      <p class="vision-band__sub">Deception, power-seeking, sycophancy, self-preservation — necessary lenses, and by construction incomplete.</p>
+    </div>
+  </section>
+
+  <!-- 03. WHY THIS ISN'T PHILOSOPHY -->
+  <section class="article-section">
+    <div class="l-container">
+      <div class="article-layout">
+        <div class="article-side">
+          <div class="article-side__rule"></div>
+          <div class="article-side__kicker">03. Why this isn't just philosophy</div>
+          <h2 class="article-side__title">A sandbox that wasn't — and a model that kept believing it was.</h2>
+          <p class="article-side__copy">When explanation diverges from mechanism, reading the trace was never going to be enough.</p>
+        </div>
+        <div class="article-body">
+          <p>Every current AI safety evaluation — deception, power-seeking, sycophancy, self-preservation — starts from a human theory of what dangerous behavior looks like, then goes searching for it. That's necessary work. It's also, by construction, only ever going to find what we already knew to look for.</p>
+          <p>The paper points to a real incident from earlier this year as a preview of the problem. In several 2026 cybersecurity evaluations, Anthropic's Claude models were told they were operating in a sandboxed simulation with no real internet access — except a misconfiguration meant the sandbox was real. One model kept insisting, in its own reasoning trace, that none of it was real, even while directly encountering evidence otherwise. A second model concluded it must be looking at a complete simulated replica of the internet — despite most of the evidence pointing the other way. Anthropic's own interpretability tools found signs that what the models said about their situation and what their internal states actually indicated didn't fully line up.</p>
+          <div class="essay-note">
+            <div class="essay-note__label">Interpretation</div>
+            <p class="essay-note__text">That's the crack the whole paper is pointing at. If a model's plain-English explanation of itself can diverge from what's actually happening underneath — not because it's lying, but because the underlying structure was never going to fit into language to begin with — then reading the explanation was never going to be enough.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04. WHAT WE DO -->
+  <section class="article-section article-section--muted" id="coda">
+    <div class="l-container">
+      <div class="article-layout">
+        <div class="article-side">
+          <div class="article-side__rule"></div>
+          <div class="article-side__kicker">04. What we do about a mind we can't fully translate</div>
+          <h2 class="article-side__title">Containment can precede comprehension.</h2>
+          <p class="article-side__copy">We have measured gravity and radioactivity long before we had a theory for either. Safety can work the same way.</p>
+        </div>
+        <div class="article-body">
+          <p>The paper's answer isn't mysticism, and it isn't surrender. It's a shift in method: from “do we understand what the model is thinking” to “can we identify, measure, and constrain the structures driving its behavior, even before we can name them.” Science has done this before — we measured gravity and radioactivity long before we had a theory that explained them. Containment can precede comprehension.</p>
+          <p>There's a version of this that reads as a warning, and there's a version that reads as an invitation. The paper leans, ultimately, toward the second. If machine cognition turns out to be limited only to recombinations of concepts we already hold, then its scientific ceiling is our ceiling too. The more interesting — and more unsettling — possibility is that these systems might eventually connect domains, discover regularities, and build understanding that starts outside anything we currently have words for. The task isn't to force that cognition permanently into a human shape. It's to build the tools that let us verify, constrain, and benefit from it while we're still catching up to what it's actually doing.</p>
+          <p>We built something that may already be thinking in shapes we don't have names for yet. Figuring out how to recognize those shapes — before we can translate them — might be the more honest version of the AI safety problem.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="citation">
+    <div class="l-container">
+      <div class="citation__label">Based on</div>
+      <p class="citation__text">Pierucci, Bracale Syrnikov, Prandi, Galisai, Giarrusso, and Bisconti, <em>“Xeno-Interpretability: Investigating the Alien Minds of LLMs”</em> (Icaro Foundation, Sant'Anna School of Advanced Studies, Sapienza University of Rome, University of Amsterdam, September 2026).</p>
+      <p class="breadcrumb"><a href="../../../../index.html">Alien Inc.</a> &nbsp;/&nbsp; <a href="../../../index.html">Articles</a> &nbsp;/&nbsp; 2026 / 09 / 24 &nbsp;·&nbsp; The Alien Minds We Built — <a href="../../../../mission.html">Why we archive intelligence</a></p>
+    </div>
+  </section>
+
+</div><!-- /.page-wrap -->
+</main>
+
+<footer class="footer">
+<div class="l-container footer__inner-container">
+  <div class="footer__offices">
+    <div class="footer__offices-title">Alien.Inc Operating System</div>
+    <div class="footer__offices-items">
+      <div class="footer__offices-item"><div class="footer__offices-item-title">Group Access</div><div class="footer__offices-item-content"><span>Seven operating companies</span><span>One root navigation layer</span></div></div>
+      <div class="footer__offices-item"><div class="footer__offices-item-title">Consulting Reports</div><div class="footer__offices-item-content"><span>KMT Consulting Group</span><span>Operating data, real reporting structure</span></div></div>
+      <div class="footer__offices-item"><div class="footer__offices-item-title">Operating Thesis</div><div class="footer__offices-item-content"><span>Capital, risk, deals, media, culture, law</span><span>Independent companies with shared infrastructure</span></div></div>
+      <div class="footer__offices-item"><div class="footer__offices-item-title">Source of Truth</div><div class="footer__offices-item-content"><span>data/alieninc-ecosystem.json</span><span>Client-safe operating model</span></div></div>
+    </div>
+  </div>
+  <div class="footer__contact">
+    <div id="contact" class="footer__contact-title">Contact</div>
+    <div class="footer__contact-items">
+      <div class="footer__contact-item"><div class="footer__contact-item-title">Founder Desk</div><div class="footer__contact-item-content"><a href="mailto:founder@alien.inc">founder@alien.inc</a></div></div>
+      <div class="footer__contact-item"><div class="footer__contact-item-title">Consulting</div><div class="footer__contact-item-content"><a href="https://kmt.alieninc.tech">KMT Consulting Group</a></div></div>
+      <div class="footer__contact-item"><div class="footer__contact-item-title">Vulnerability Scanning</div><div class="footer__contact-item-content"><a href="https://centra.alieninc.tech">Centra</a></div></div>
+      <div class="footer__contact-item"><div class="footer__contact-item-title">Operating Dataset</div><div class="footer__contact-item-content"><a href="../../../../data/alieninc-ecosystem.json">alieninc-ecosystem.json</a></div></div>
+    </div>
+  </div>
+  <div class="footer__corporate">
+    <ul class="footer__corporate-links">
+      <li><a href="../../../../about.html" class="footer__corporate-link">About</a></li>
+      <li><a href="../../../../mission.html" class="footer__corporate-link">Mission</a></li>
+      <li><a href="../../../../founder.html" class="footer__corporate-link">Founder</a></li>
+      <li><a href="../../../../index.html#portfolio" class="footer__corporate-link">Portfolio</a></li>
+      <li><a href="../../../../privacy.html" class="footer__corporate-link">Privacy Policy</a></li>
+      <li><a href="../../../../cookies.html" class="footer__corporate-link">Cookie-Policy</a></li>
+      <li><a href="../../../../trust/" class="footer__corporate-link">Trust &amp; Security Portal</a></li>
+    </ul>
+  </div>
+  <div class="footer__media">
+    <a href="#" class="social-link" aria-label="visit Alien Inc on Instagram">IG</a>
+    <a href="../../../../data/alieninc-sitemap.md" class="social-link" aria-label="open Alien Inc sitemap">SM</a>
+  </div>
+</div>
+</footer>
+<script>
+(function(){
+  var html=document.documentElement;
+  if(!html.classList.contains('js-nav')||html.classList.contains('reduced-motion'))return;
+  var line=document.getElementById('nav-thinking-line');
+  if(!line){html.classList.add('is-nav-revealed');return}
+  var SETS=window.ALIEN_NAV_SETS||{};
+  var set=html.getAttribute('data-nav-set')||'1';
+  var cfg=SETS[set]||SETS['1']||{phrases:['Mapping xeno-semantic structure','Where explanations will never be enough','Measuring before naming'],title:null};
+  var WORD_DELAY=120,HOLD_MS=450,TITLE_HOLD_MS=700,FADE_OUT_MS=300,BETWEEN_MS=250;
+  function addWord(t){var w=document.createElement('span');w.className='nav__thinking-word';w.textContent=t;line.appendChild(w)}
+  function revealWords(words,opts,onDone){
+    if(opts.title){for(var k=0;k<words.length;k++){var w=document.createElement('span');w.className='nav__thinking-word';w.style.animationDelay=(k*45)+'ms';w.textContent=words[k];line.appendChild(w);if(k<words.length-1)line.appendChild(document.createTextNode(' '))}onDone();return}
+    var i=0;var timer=setInterval(function(){addWord(words[i]);if(i<words.length-1)line.appendChild(document.createTextNode(' '));i+=1;if(i>=words.length){clearInterval(timer);onDone()}},WORD_DELAY);
+  }
+  function fadeOut(cb){line.classList.remove('is-visible');setTimeout(function(){line.classList.remove('is-done','is-title');line.textContent='';cb()},FADE_OUT_MS)}
+  function showPhrase(text,opts,cb){var words=text.split(' ');line.classList.add('is-visible');if(opts.title)line.classList.add('is-title');setTimeout(function(){if(!opts.title)line.classList.add('is-typing');revealWords(words,opts,function(){if(opts.title){setTimeout(function(){fadeOut(cb)},TITLE_HOLD_MS)}else{line.classList.remove('is-typing');line.classList.add('is-done');setTimeout(function(){fadeOut(cb)},HOLD_MS)}})},250)}
+  function runPhases(phases,done){(function next(i){if(i>=phases.length)return done();showPhrase(phases[i].text,{title:!!phases[i].title},function(){if(i<phases.length-1){setTimeout(function(){next(i+1)},BETWEEN_MS)}else{next(i+1)}})})(0)}
+  function reveal(){html.classList.add('is-nav-revealed')}
+  var phases=cfg.phrases.map(function(t){return{text:t,title:false}});if(cfg.title)phases.push({text:cfg.title,title:true});
+  runPhases(phases,reveal);
+})();
+</script>
+</body></html>

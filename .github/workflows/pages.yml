@@ -57,6 +57,14 @@ jobs:
               echo "$sub: $(ls _pages/$sub 2>/dev/null | wc -l) files"
             fi
           done
+          # The Daily Art Cult (separate apex domain thedailyartcult.lol, served via tdac-proxy worker)
+          # Lightweight frontend only — assets/ has audio (keep), exclude tools/ backend
+          if [ -d "thedailyartcult" ]; then
+            mkdir -p _pages/thedailyartcult
+            rsync -a --exclude='*.bak*' --exclude='.git' --exclude='tools' --exclude='node_modules' --exclude='__pycache__' --exclude='*.db' --exclude='*.log' thedailyartcult/ _pages/thedailyartcult/ 2>/dev/null || true
+            cp -f thedailyartcult/index.html _pages/thedailyartcult/index.html 2>/dev/null || true
+            echo "thedailyartcult: $(ls _pages/thedailyartcult 2>/dev/null | wc -l) files"
+          fi
           cat > _pages/config.js << 'JS'
           window.ALIENINC_CONFIG = {
             API_BASE: "https://api.alieninc.tech",
@@ -86,7 +94,7 @@ jobs:
         run: |
           echo "Waiting 30s for Pages to propagate..."
           sleep 30
-          for url in "https://alieninc.tech/" "https://alieninc.tech/panteon/" "https://panteon.alieninc.tech/" "https://panteon.alieninc.tech/play.html" "https://alieninc.tech/sitemap.xml" "https://a-san.alieninc.tech/" "https://centra.alieninc.tech/" "https://genesis.alieninc.tech/" "https://immanuel.alieninc.tech/" "https://kmt.alieninc.tech/" "https://rousseau.alieninc.tech/" "https://secure.alieninc.tech/"; do
+          for url in "https://alieninc.tech/" "https://alieninc.tech/panteon/" "https://panteon.alieninc.tech/" "https://panteon.alieninc.tech/play.html" "https://alieninc.tech/sitemap.xml" "https://a-san.alieninc.tech/" "https://centra.alieninc.tech/" "https://genesis.alieninc.tech/" "https://immanuel.alieninc.tech/" "https://kmt.alieninc.tech/" "https://rousseau.alieninc.tech/" "https://secure.alieninc.tech/" "https://thedailyartcult.lol" "https://alieninc.tech/thedailyartcult/"; do
             echo "Checking $url..."
             code=$(curl -s -o /tmp/out.html -w "%{http_code}" --max-time 20 "$url")
             echo "HTTP $code for $url"

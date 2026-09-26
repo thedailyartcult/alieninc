@@ -75,6 +75,25 @@ def main():
         pri = "0.6" if "cmb-docs" in rel else "0.7"
         add_url(urlset, loc, git_lastmod(p), pri, "weekly")
 
+    # Subdomain sites (each has canonical https://<sub>.alieninc.tech/ + worker route)
+    SUBS = ["a-san", "centra", "genesis", "immanuel", "kmt", "rousseau", "secure"]
+    for sub in SUBS:
+        idx = ROOT / sub / "index.html"
+        if idx.exists():
+            add_url(urlset, f"https://{sub}.alieninc.tech/", git_lastmod(idx), "0.9", "daily")
+        for page in sorted((ROOT / sub).glob("*.html")):
+            if page.name in ("index.html", "404.html") or ".bak" in page.name:
+                continue
+            add_url(urlset, f"https://{sub}.alieninc.tech/{page.name}", git_lastmod(page), "0.7", "weekly")
+    # The Daily Art Cult (separate apex domain, served via tdac-proxy worker)
+    tdac = ROOT / "thedailyartcult" / "index.html"
+    if tdac.exists():
+        add_url(urlset, "https://thedailyartcult.lol", git_lastmod(tdac), "0.9", "daily")
+        for page in sorted((ROOT / "thedailyartcult").glob("*.html")):
+            if page.name in ("index.html", "404.html") or ".bak" in page.name:
+                continue
+            add_url(urlset, f"https://thedailyartcult.lol/{page.name}", git_lastmod(page), "0.7", "weekly")
+
     # Also add trust subpages if exist
     for p in sorted((ROOT / "trust").rglob("*.html")) if (ROOT/"trust").exists() else []:
         rel = p.relative_to(ROOT).as_posix()

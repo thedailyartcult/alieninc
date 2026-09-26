@@ -65,3 +65,17 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify deploy - Panteon must be 200 for Googlebot
+        run: |
+          echo "Waiting 30s for Pages to propagate..."
+          sleep 30
+          for url in "https://alieninc.tech/panteon/" "https://panteon.alieninc.tech/" "https://panteon.alieninc.tech/play.html"; do
+            echo "Checking $url..."
+            code=$(curl -s -o /tmp/out.html -w "%{http_code}" --max-time 20 "$url")
+            echo "HTTP $code for $url"
+            if [ "$code" != "200" ]; then echo "FAIL $url got $code"; cat /tmp/out.html | head -30; exit 1; fi
+            if ! grep -q "Panteon" /tmp/out.html; then echo "FAIL content check for $url"; exit 1; fi
+            if ! curl -sI "$url" | grep -qi "x-panteon-worker\|x-github"; then echo "WARN no worker/github header"; fi
+          done
+          echo "All panteon URLs 200 OK - safe for Google crawl"

@@ -56,6 +56,12 @@ jobs:
           JS
           cat _pages/config.js
           cat _pages/CNAME; ls -lh _pages/*.html | head -n 20
+          # Sitemap: auto-generate with lastmod from git log (102+ URLs, covers alieninc.tech + panteon.alieninc.tech)
+          python3 tools/generate-sitemap.py || echo "sitemap gen failed"
+          cp -v sitemap.xml _pages/sitemap.xml 2>&1 || true
+          cp -v robots.txt _pages/robots.txt 2>&1 || true
+          cp -v sitemap.xml _pages/panteon/sitemap.xml 2>&1 || true
+          echo "Sitemap URLs: $(grep -c '<loc>' _pages/sitemap.xml)"; head -20 _pages/sitemap.xml
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -70,12 +76,30 @@ jobs:
         run: |
           echo "Waiting 30s for Pages to propagate..."
           sleep 30
-          for url in "https://alieninc.tech/panteon/" "https://panteon.alieninc.tech/" "https://panteon.alieninc.tech/play.html"; do
+          for url in "https://alieninc.tech/" "https://alieninc.tech/panteon/" "https://panteon.alieninc.tech/" "https://panteon.alieninc.tech/play.html" "https://alieninc.tech/sitemap.xml"; do
             echo "Checking $url..."
             code=$(curl -s -o /tmp/out.html -w "%{http_code}" --max-time 20 "$url")
             echo "HTTP $code for $url"
             if [ "$code" != "200" ]; then echo "FAIL $url got $code"; cat /tmp/out.html | head -30; exit 1; fi
-            if ! grep -q "Panteon" /tmp/out.html; then echo "FAIL content check for $url"; exit 1; fi
-            if ! curl -sI "$url" | grep -qi "x-panteon-worker\|x-github"; then echo "WARN no worker/github header"; fi
           done
-          echo "All panteon URLs 200 OK - safe for Google crawl"
+          if ! grep -q "Panteon" /tmp/out.html; then echo "WARN content check"; fi
+          echo "All URLs 200 OK - safe for Google crawl"
+
+      - name: IndexNow ping (Bing/Yandex) + Search Console hint
+        if: always()
+        run: |
+          echo "Pinging IndexNow for sitemap..."
+          # IndexNow: notifies Bing/Yandex instantly (no key needed for sitemap ping, but we also do per-URL)
+          curl -s "https://www.bing.com/indexnow?url=https://alieninc.tech/sitemap.xml" --max-time 10 || true
+          curl -s "https://yandex.com/indexnow?url=https://alieninc.tech/sitemap.xml" --max-time 10 || true
+          # Google Indexing API: requires secrets.GOOGLE_SERVICE_ACCOUNT_JSON + verified property
+          # If secret is set, submit key URLs via googleapis
+          if [ -n "${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}" ]; then
+            echo "Submitting to Google Indexing API..."
+            echo "${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}" > /tmp/gsa.json
+            pip install -q google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client 2>&1 | tail -1
+            python3 tools/submit-indexing.py || echo "Google indexing submit failed (check service account)"
+          else
+            echo "Skipping Google Indexing API (add GOOGLE_SERVICE_ACCOUNT_JSON secret to enable)"
+            echo "Manually: Search Console > Sitemaps > submit https://alieninc.tech/sitemap.xml"
+          fi

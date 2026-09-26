@@ -47,6 +47,16 @@ jobs:
           # Ensure play.html is always present even if rsync filtered aggressively
           cp -f panteon/play.html _pages/panteon/play.html 2>/dev/null || true
           cp -f panteon/index.html _pages/panteon/index.html 2>/dev/null || true
+          # Subdomain sites (a-san, centra, genesis, immanuel, kmt, rousseau, secure)
+          # Static frontend only — exclude GB-scale backend/data dirs so Pages stays laptop-independent
+          for sub in a-san centra genesis immanuel kmt rousseau secure platoon; do
+            if [ -d "$sub" ]; then
+              mkdir -p "_pages/$sub"
+              rsync -a --exclude='*.bak*' --exclude='.git' --exclude='backend' --exclude='engine' --exclude='plugins' --exclude='scanner' --exclude='node_modules' --exclude='__pycache__' --exclude='*.db' --exclude='*.db-*' --exclude='data' --exclude='dataset' --exclude='catalog-data.json' --exclude='logs' --exclude='*.log' --exclude='*.jsonl' --exclude='*.parquet' "$sub/" "_pages/$sub/" 2>/dev/null || true
+              cp -f "$sub/index.html" "_pages/$sub/index.html" 2>/dev/null || true
+              echo "$sub: $(ls _pages/$sub 2>/dev/null | wc -l) files"
+            fi
+          done
           cat > _pages/config.js << 'JS'
           window.ALIENINC_CONFIG = {
             API_BASE: "https://api.alieninc.tech",
@@ -76,7 +86,7 @@ jobs:
         run: |
           echo "Waiting 30s for Pages to propagate..."
           sleep 30
-          for url in "https://alieninc.tech/" "https://alieninc.tech/panteon/" "https://panteon.alieninc.tech/" "https://panteon.alieninc.tech/play.html" "https://alieninc.tech/sitemap.xml"; do
+          for url in "https://alieninc.tech/" "https://alieninc.tech/panteon/" "https://panteon.alieninc.tech/" "https://panteon.alieninc.tech/play.html" "https://alieninc.tech/sitemap.xml" "https://a-san.alieninc.tech/" "https://centra.alieninc.tech/" "https://genesis.alieninc.tech/" "https://immanuel.alieninc.tech/" "https://kmt.alieninc.tech/" "https://rousseau.alieninc.tech/" "https://secure.alieninc.tech/"; do
             echo "Checking $url..."
             code=$(curl -s -o /tmp/out.html -w "%{http_code}" --max-time 20 "$url")
             echo "HTTP $code for $url"

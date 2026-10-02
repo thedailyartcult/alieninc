@@ -2674,9 +2674,8 @@ AUDIT_PAGE_HTML = '''<!DOCTYPE html>
         <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <a href="/" class="brand-logo" aria-label="visit the Alien Inc Homepage">
-                    <span class="brand-logo__text">Alien</span>
+                    <span class="brand-logo__text">Alien Inc</span>
                     <img src="/logo.png" alt="•" class="brand-logo__dot">
-                    <span class="brand-logo__text">Inc</span>
                 </a>
                 <span class="text-gray-200 text-lg">/</span>
                 <a href="/" class="flex items-center gap-2" aria-label="Secure — home">
@@ -2784,9 +2783,8 @@ AUDIT_PAGE_HTML = '''<!DOCTYPE html>
         <div class="max-w-6xl mx-auto px-4">
             <div class="flex items-center justify-center gap-2 mb-2">
                 <a href="/" class="brand-logo" aria-label="visit the Alien Inc Homepage">
-                    <span class="brand-logo__text" style="font-size:18px;">Alien</span>
+                    <span class="brand-logo__text" style="font-size:18px;">Alien Inc</span>
                     <img src="/logo.png" alt="•" class="brand-logo__dot" style="height:0.35em;width:0.35em;top:calc(0.30*18px);">
-                    <span class="brand-logo__text" style="font-size:18px;">Inc</span>
                 </a>
                 <span class="text-gray-200">/</span>
                 <svg viewBox="0 0 300 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SECURE" style="height:18px;width:auto;">

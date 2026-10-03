@@ -27,7 +27,7 @@ var CentraScanner = (function () {
   var ECOSYSTEM_DOMAINS = [
     { id: 'alieninc',     name: 'Alien.Inc',                url: '/' },
     { id: 'panteon',      name: 'Panteon',                  url: 'https://panteon.alieninc.tech' },
-    { id: 'tdac',         name: 'The Daily Art Cult',       url: 'https://thedailyartcult.lol' },
+    { id: 'tdac',         name: 'The Daily Art Cult',       url: 'https://art.alieninc.tech' },
     { id: 'rousseau',     name: 'Rousseau Holdings',        url: 'https://rousseau.alieninc.tech' },
     { id: 'immanuel',     name: 'Immanuel',                 url: 'https://immanuel.alieninc.tech' },
     { id: 'centra',       name: 'Centra',                   url: 'https://centra.alieninc.tech' },

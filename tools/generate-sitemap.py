@@ -85,14 +85,11 @@ def main():
             if page.name in ("index.html", "404.html") or ".bak" in page.name:
                 continue
             add_url(urlset, f"https://{sub}.alieninc.tech/{page.name}", git_lastmod(page), "0.7", "weekly")
-    # The Daily Art Cult (separate apex domain, served via tdac-proxy worker)
-    tdac = ROOT / "thedailyartcult" / "index.html"
-    if tdac.exists():
-        add_url(urlset, "https://thedailyartcult.lol", git_lastmod(tdac), "0.9", "daily")
-        for page in sorted((ROOT / "thedailyartcult").glob("*.html")):
-            if page.name in ("index.html", "404.html") or ".bak" in page.name:
-                continue
-            add_url(urlset, f"https://thedailyartcult.lol/{page.name}", git_lastmod(page), "0.7", "weekly")
+    # The Daily Art Cult has its OWN sitemap (test domain until May 2027: thedailyartcult.lol,
+    # future canonical: https://art.alieninc.tech). NEVER mix .lol URLs into the root
+    # alieninc.tech sitemap — mixed-domain sitemaps get ignored by Google.
+    # TDAC sitemap is generated separately below.
+    tdac_out = ROOT / "thedailyartcult" / "sitemap.xml"
 
     # Also add trust subpages if exist
     for p in sorted((ROOT / "trust").rglob("*.html")) if (ROOT/"trust").exists() else []:
@@ -104,6 +101,31 @@ def main():
     ET.indent(tree, space="  ")
     tree.write(OUTPUT, encoding="utf-8", xml_declaration=True)
     print(f"Wrote {OUTPUT} with {len(urlset)} URLs")
+
+    # TDAC standalone sitemap (permanent canonical: https://art.alieninc.tech;
+    # test domain thedailyartcult.lol alive until May 2027, then 301s to art)
+    tdac_set = ET.Element("urlset", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
+    tdac_idx = ROOT / "thedailyartcult" / "index.html"
+    TDAC_BASE = "https://art.alieninc.tech"
+    if tdac_idx.exists():
+        add_url(tdac_set, TDAC_BASE, git_lastmod(tdac_idx), "0.9", "daily")
+        for page in sorted((ROOT / "thedailyartcult").glob("*.html")):
+            if page.name in ("index.html", "404.html") or ".bak" in page.name:
+                continue
+            add_url(tdac_set, f"{TDAC_BASE}/{page.name}", git_lastmod(page), "0.7", "weekly")
+        for p in sorted((ROOT / "thedailyartcult").rglob("*.html")):
+            if p.parent == ROOT / "thedailyartcult":
+                continue  # already added above
+            if any(x in p.parts for x in [".git", "node_modules", "tools", "__pycache__"]):
+                continue
+            if ".bak" in p.name:
+                continue
+            rel = p.relative_to(ROOT / "thedailyartcult").as_posix()
+            add_url(tdac_set, f"{TDAC_BASE}/{rel}", git_lastmod(p), "0.7", "weekly")
+        tdac_tree = ET.ElementTree(tdac_set)
+        ET.indent(tdac_tree, space="  ")
+        tdac_tree.write(tdac_out, encoding="utf-8", xml_declaration=True)
+        print(f"Wrote {tdac_out} with {len(tdac_set)} URLs")
     # Also copy to _pages if exists
     pages_sitemap = ROOT / "_pages" / "sitemap.xml"
     if pages_sitemap.parent.exists():

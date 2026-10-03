@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const ALLOWED_ORIGINS = [
   "https://thedailyartcult.lol",
-  "https://support.thedailyartcult.lol"
+  "https://art.alieninc.tech/support"
 ];
 
 serve(async (req: Request) => {

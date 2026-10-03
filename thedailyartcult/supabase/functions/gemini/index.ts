@@ -3,9 +3,9 @@ const allowedOrigins = [
   "https://www.thedailyartcult.com",
   "https://thedailyartcult.lol",
   "https://www.thedailyartcult.lol",
-  "https://accounts.thedailyartcult.lol",
-  "https://support.thedailyartcult.lol",
-  "https://privacy.thedailyartcult.lol",
+  "https://art.alieninc.tech/accounts",
+  "https://art.alieninc.tech/support",
+  "https://art.alieninc.tech/policy",
   "http://localhost:9999",
   "http://127.0.0.1:5500",
   "http://localhost:3000"

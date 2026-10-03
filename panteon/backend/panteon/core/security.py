@@ -16,10 +16,10 @@ logger = structlog.get_logger()
 ALLOWED_ORIGINS = [
     "https://alieninc.tech",
     "https://thedailyartcult.lol",
-    "https://accounts.thedailyartcult.lol",
-    "https://support.thedailyartcult.lol",
-    "https://policy.thedailyartcult.lol",
-    "https://publications.thedailyartcult.lol",
+    "https://art.alieninc.tech/accounts",
+    "https://art.alieninc.tech/support",
+    "https://art.alieninc.tech/policy",
+    "https://art.alieninc.tech/publications",
 ]
 
 if settings.debug:

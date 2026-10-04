@@ -4298,7 +4298,41 @@ async function runStudioPipeline() {
         const failureTerritory = ['markdown_archive', 'source_material'].includes(studioSubmissionSource) ? studioSubmissionSource : 'pipeline_error';
         logStudioInteraction(failureTerritory, err.message || "Pipeline failed");
       }
-      
+
+      // If Gemini succeeded but TTS failed, still show the written reflection
+      // instead of skipping straight past it with nothing seen or heard.
+      const fallbackText = latestStudioReading && latestStudioReading.expanded_text
+        ? latestStudioReading.expanded_text
+        : "";
+      const fallbackTerritory = (latestStudioReading && latestStudioReading.territory) || "becoming";
+      const fallbackBridge = (latestStudioReading && latestStudioReading.bridge_line) || "A quiet, unhurried reflection on who you are becoming.";
+      if (fallbackText) {
+        const transcriptEl = document.getElementById("ai-transcript");
+        if (transcriptEl) transcriptEl.textContent = fallbackText;
+        azureStatus.textContent = "Voice unavailable — your reading is below. Tap continue when ready.";
+        stillYours.classList.remove("opacity-0");
+        let continueBtn = document.getElementById("ai-continue-btn");
+        if (!continueBtn) {
+          continueBtn = document.createElement("button");
+          continueBtn.id = "ai-continue-btn";
+          continueBtn.type = "button";
+          continueBtn.className = "mt-5 mx-auto flex items-center gap-2 rounded-full border border-antique/40 bg-antique/10 px-6 py-3 text-xs uppercase tracking-[0.2em] text-cream transition duration-300 hover:bg-antique/25 active:scale-[0.97]";
+          continueBtn.textContent = "Continue →";
+          readingFrame.querySelector(".quiet-panel")?.appendChild(continueBtn);
+        }
+        continueBtn.classList.remove("hidden");
+        continueBtn.onclick = () => {
+          continueBtn.classList.add("hidden");
+          readingFrame.classList.add("opacity-0");
+          setTimeout(() => {
+            readingFrame.classList.add("hidden");
+            if (transcriptEl) transcriptEl.textContent = "";
+            showWorldviewGateWithRecommendation(fallbackTerritory, fallbackBridge);
+          }, 700);
+        };
+        return;
+      }
+
       // Gracefully transition to the Worldview Gate with a default suggestion instead of bypassing it
       readingFrame.classList.add("opacity-0");
       setTimeout(() => {

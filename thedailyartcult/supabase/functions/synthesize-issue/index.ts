@@ -3,6 +3,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const allowedOrigins = [
   "https://thedailyartcult.com",
   "https://www.thedailyartcult.com",
+  "https://thedailyartcult.lol",
+  "https://www.thedailyartcult.lol",
+  "https://art.alieninc.tech",
   "https://art.alieninc.tech/accounts",
   "http://localhost:9999",      
   "http://127.0.0.1:5500",      
@@ -13,7 +16,7 @@ Deno.serve(async (req) => {
   const origin = req.headers.get("Origin") || "";
   
   const corsHeaders = {
-    'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : 'https://art.alieninc.tech/accounts',
+    'Access-Control-Allow-Origin': (() => { if (allowedOrigins.includes(origin)) return origin; for (const b of allowedOrigins) { if (origin === b || origin.startsWith(b + "/")) return origin; } if (origin && origin.endsWith(".art.alieninc.tech")) return origin; return 'https://art.alieninc.tech'; })(),
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
   };

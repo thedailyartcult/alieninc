@@ -3,6 +3,7 @@ const allowedOrigins = [
   "https://www.thedailyartcult.com",
   "https://thedailyartcult.lol",
   "https://www.thedailyartcult.lol",
+  "https://art.alieninc.tech",
   "https://art.alieninc.tech/accounts",
   "https://art.alieninc.tech/support",
   "https://art.alieninc.tech/policy",
@@ -12,7 +13,13 @@ const allowedOrigins = [
 ];
 
 function getAllowedOrigin(origin) {
-  return allowedOrigins.includes(origin) ? origin : "https://thedailyartcult.lol";
+  if (allowedOrigins.includes(origin)) return origin;
+  // Browsers send bare Origin (scheme+host, no path) — accept any path under an allowed base
+  for (const base of allowedOrigins) {
+    if (origin === base || origin.startsWith(base + "/")) return origin;
+  }
+  if (origin && origin.endsWith(".art.alieninc.tech")) return origin;
+  return "https://art.alieninc.tech";
 }
 
 function extractYouTubeVideoId(input) {

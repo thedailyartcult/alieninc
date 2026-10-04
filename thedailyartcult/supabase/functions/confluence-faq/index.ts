@@ -3,6 +3,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const ALLOWED_ORIGINS = [
   "https://thedailyartcult.lol",
+  "https://www.thedailyartcult.lol",
+  "https://art.alieninc.tech",
   "https://art.alieninc.tech/support"
 ];
 

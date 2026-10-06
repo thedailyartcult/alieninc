@@ -46,6 +46,81 @@ function decodeHtmlEntities(value) {
     .replace(/&gt;/g, ">");
 }
 
+async function fetchYouTubeMeta(videoId) {
+  try {
+    const res = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
+    if (!res.ok) return {};
+    const data = await res.json();
+    return { title: data.title || "", author: data.author_name || "" };
+  } catch (_) {
+    return {};
+  }
+}
+
+function transcriptFromJson3(transcriptJson) {
+  return ((transcriptJson.events || [])
+    .flatMap((event) => event.segs || [])
+    .map((seg) => seg.utf8 || "")
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim()).slice(0, 24000);
+}
+
+async function fetchCaptionText(baseUrl) {
+  const url = decodeHtmlEntities(baseUrl).replace(/\\u0026/g, "&");
+  const sep = url.includes("?") ? "&" : "?";
+  const res = await fetch(`${url}${sep}fmt=json3`);
+  if (!res.ok) return { ok: false, status: res.status, transcript: "" };
+  const transcript = transcriptFromJson3(await res.json());
+  return { ok: true, status: 200, transcript };
+}
+
+async function fetchViaInnertube(videoId) {
+  // ANDROID client returns captionTracks + videoDetails without scraping HTML.
+  // Works from datacenter/edge IPs where watch-page HTML is bot-walled.
+  const res = await fetch("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      videoId,
+      context: { client: { clientName: "ANDROID", clientVersion: "20.10.38" } }
+    })
+  });
+  if (!res.ok) return { status: `innertube_${res.status}` };
+  const player = await res.json();
+  const details = player.videoDetails || {};
+  const tracks = player.captions?.playerCaptionsTracklistRenderer?.captionTracks || [];
+  const preferred = tracks.find((t) => String(t.languageCode || "").startsWith("en")) || tracks[0];
+  const meta = {
+    title: details.title || "",
+    author: details.author || "",
+    description: String(details.shortDescription || "").slice(0, 2000)
+  };
+  if (!preferred?.baseUrl) return { status: tracks.length ? "no_caption_url" : "no_public_caption_tracks", ...meta };
+  const cap = await fetchCaptionText(preferred.baseUrl);
+  if (cap.ok && cap.transcript) return { status: "transcript_found", transcript: cap.transcript, ...meta };
+  return { status: cap.ok ? "empty_transcript" : `caption_fetch_${cap.status}`, transcript: "", ...meta };
+}
+
+async function fetchViaWatchPage(videoId) {
+  const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+      "Accept-Language": "en-US,en;q=0.9"
+    }
+  });
+  if (!pageRes.ok) return { status: `youtube_page_${pageRes.status}` };
+  const page = await pageRes.text();
+  const tracksMatch = page.match(/"captionTracks":(\[.*?\])\s*,\s*"audioTracks"/);
+  if (!tracksMatch) return { status: "no_public_caption_tracks" };
+  const captionTracks = JSON.parse(decodeHtmlEntities(tracksMatch[1]));
+  const preferredTrack = captionTracks.find((track) => String(track.languageCode || "").startsWith("en")) || captionTracks[0];
+  if (!preferredTrack?.baseUrl) return { status: "no_caption_url" };
+  const cap = await fetchCaptionText(preferredTrack.baseUrl);
+  if (cap.ok) return { status: cap.transcript ? "transcript_found" : "empty_transcript", transcript: cap.transcript };
+  return { status: `caption_fetch_${cap.status}` };
+}
+
 async function fetchYouTubeTranscript(sourceInput) {
   const videoId = extractYouTubeVideoId(sourceInput);
   if (!videoId) {
@@ -53,50 +128,37 @@ async function fetchYouTubeTranscript(sourceInput) {
   }
 
   try {
-    const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 TheDailyArtCult/1.0",
-        "Accept-Language": "en-US,en;q=0.9"
-      }
-    });
-
-    if (!pageRes.ok) {
-      return { videoId, transcript: "", status: `youtube_page_${pageRes.status}` };
-    }
-
-    const page = await pageRes.text();
-    const tracksMatch = page.match(/"captionTracks":(\[.*?\])\s*,\s*"audioTracks"/);
-    if (!tracksMatch) {
-      return { videoId, transcript: "", status: "no_public_caption_tracks" };
-    }
-
-    const captionTracks = JSON.parse(decodeHtmlEntities(tracksMatch[1]));
-    const preferredTrack = captionTracks.find((track) => String(track.languageCode || "").startsWith("en")) || captionTracks[0];
-    if (!preferredTrack?.baseUrl) {
-      return { videoId, transcript: "", status: "no_caption_url" };
-    }
-
-    const transcriptRes = await fetch(`${decodeHtmlEntities(preferredTrack.baseUrl)}&fmt=json3`);
-    if (!transcriptRes.ok) {
-      return { videoId, transcript: "", status: `caption_fetch_${transcriptRes.status}` };
-    }
-
-    const transcriptJson = await transcriptRes.json();
-    const transcript = (transcriptJson.events || [])
-      .flatMap((event) => event.segs || [])
-      .map((seg) => seg.utf8 || "")
-      .join(" ")
-      .replace(/\s+/g, " ")
-      .trim();
-
-    return {
+    // 1) Innertube first (edge-safe), 2) watch-page scrape fallback.
+    // Always attach oEmbed title/author so Gemini can speak to the real
+    // video even when captions are unavailable.
+    const [innertube, meta] = await Promise.all([
+      fetchViaInnertube(videoId).catch((e) => ({ status: "transcript_lookup_failed", _err: e?.message })),
+      fetchYouTubeMeta(videoId)
+    ]);
+    const merged = {
       videoId,
-      transcript: transcript.slice(0, 24000),
-      status: transcript ? "transcript_found" : "empty_transcript"
+      transcript: innertube.transcript || "",
+      status: innertube.status || "transcript_lookup_failed",
+      title: innertube.title || meta.title || "",
+      author: innertube.author || meta.author || "",
+      description: innertube.description || ""
     };
+    if (merged.status === "transcript_found" && merged.transcript) return merged;
+
+    const fallback = await fetchViaWatchPage(videoId).catch((e) => ({ status: "transcript_lookup_failed", _err: e?.message }));
+    if (fallback.transcript) {
+      return { ...merged, transcript: fallback.transcript, status: "transcript_found" };
+    }
+    // Keep the most informative failure status, but never drop the title.
+    if (fallback.status && merged.status !== "transcript_found") {
+      const rank = (s) => s === "no_public_caption_tracks" ? 0 : 1;
+      if (rank(String(fallback.status)) < rank(String(merged.status))) merged.status = fallback.status;
+    }
+    return merged;
   } catch (err) {
     console.error("YouTube transcript lookup failed:", err.message);
-    return { videoId, transcript: "", status: "transcript_lookup_failed" };
+    const meta = await fetchYouTubeMeta(videoId);
+    return { videoId, transcript: "", status: "transcript_lookup_failed", title: meta.title || "", author: meta.author || "", description: "" };
   }
 }
 
@@ -194,10 +256,13 @@ Deno.serve(async (req) => {
       const sourceInput = source_input || q3;
       const transcriptLookup = await fetchYouTubeTranscript(sourceInput);
       const isYouTube = transcriptLookup.status !== "not_youtube";
+      const videoMeta = isYouTube && (transcriptLookup.title || transcriptLookup.author)
+        ? `Known video metadata — title: "${transcriptLookup.title || "unknown"}", channel: "${transcriptLookup.author || "unknown"}"${transcriptLookup.description ? `, description excerpt: "${transcriptLookup.description.slice(0, 1200)}"` : ""}.`
+        : "";
       const transcriptContext = transcriptLookup.transcript
-        ? `Verified public YouTube transcript for video id ${transcriptLookup.videoId}:\n"${transcriptLookup.transcript}"`
+        ? `Verified public YouTube transcript for video id ${transcriptLookup.videoId}${transcriptLookup.title ? ` ("${transcriptLookup.title}" by ${transcriptLookup.author || "unknown channel"})` : ""}:\n"${transcriptLookup.transcript}"`
         : isYouTube
-          ? `The submitted source appears to be a YouTube video (${sourceInput}), but no public transcript could be verified. Transcript lookup status: ${transcriptLookup.status}. Do not pretend to have read the transcript; work only from the visible link/title and say the archive will treat it as source material rather than verified captions.`
+          ? `The submitted source is a YouTube video (${sourceInput}, video id ${transcriptLookup.videoId}). No public transcript could be verified (lookup status: ${transcriptLookup.status}). ${videoMeta} Do not pretend to have read the captions and do not use the phrase "verified captions" or "awaits verified captions". Instead, speak directly to the video's actual title/channel/subject using your own knowledge of its themes, name the title in your preface, and say you are beginning from the source they gave.`
           : `The submitted source appears to be a book title or named text:\n"${sourceInput}"`;
 
       prompt = `
@@ -225,8 +290,8 @@ Deno.serve(async (req) => {
         3. WRITE AN "expanded_text":
            - Write exactly 2-4 warm, deeply conversational sentences.
            - CRITICAL GREETING RULE: Begin by directly addressing the user with their title and first name.
-           - If a YouTube transcript was verified, mention that you found the public transcript and are reading the source through its central concern.
-           - If no transcript was verified, do not claim you read it; say you are beginning from the source they gave.
+            - If a YouTube transcript was verified, mention that you found the public transcript and are reading the source through its central concern.
+            - If no transcript was verified, name the video's title/channel explicitly and speak to its known themes; never output generic "archive awaits verified captions" language.
            - If it is a book, speak to the book's central question and why it belongs near the recommended worldview.
            - Do not summarize mechanically. Compose it as a personal audio preface that prepares them for the suggested worldview publisher.
            - Do not write any markdown formatting, hash marks, or HTML tags.

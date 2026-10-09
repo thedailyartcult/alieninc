@@ -116,9 +116,8 @@ position: sticky;
 top: var(--header-height);
 height: calc(100vh - var(--header-height));
 min-height: 560px;
-background: radial-gradient(120% 90% at 50% 10%, #161e28 0%, var(--stage) 55%, #070b0f 100%);
+background: radial-gradient(120% 90% at 50% 20%, #ffffff 0%, #faf7ee 100%);
 overflow: hidden;
-border-right: 6px solid var(--gold);
 }
 .genesis-stage canvas {
 position: absolute;
@@ -129,60 +128,6 @@ display: block;
 cursor: grab;
 }
 .genesis-stage canvas:active { cursor: grabbing; }
-
-.stage-hud {
-position: absolute;
-inset: 0;
-pointer-events: none;
-font-family: var(--hg-font-mono);
-z-index: 2;
-}
-.stage-hud__top {
-position: absolute;
-top: 0; left: 0; right: 0;
-display: flex;
-justify-content: space-between;
-align-items: center;
-padding: 1rem 1.25rem;
-font-size: 0.68rem;
-font-weight: 700;
-letter-spacing: 0.12em;
-color: var(--gold);
-}
-.stage-hud__live { display: flex; align-items: center; gap: 0.5rem; }
-.stage-hud__dot {
-width: 8px; height: 8px; border-radius: 50%;
-background: var(--gold);
-box-shadow: 0 0 10px var(--gold);
-animation: hud-blink 2s ease-in-out infinite;
-}
-@keyframes hud-blink { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
-
-.stage-hud__bottom {
-position: absolute;
-bottom: 0; left: 0; right: 0;
-padding: 1rem 1.25rem;
-display: flex;
-justify-content: space-between;
-align-items: flex-end;
-gap: 1rem;
-}
-.stage-hud__view { color: #fff; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em; }
-.stage-hud__view small { display: block; color: rgba(255,212,0,0.7); font-size: 0.62rem; font-weight: 400; margin-top: 0.2rem; }
-.stage-hud__credit { color: rgba(255,255,255,0.35); font-size: 0.58rem; letter-spacing: 0.06em; text-align: right; }
-
-.stage-hud__frame {
-position: absolute;
-inset: 12px;
-border: 1px solid rgba(255,212,0,0.18);
-pointer-events: none;
-}
-.stage-hud__frame::before, .stage-hud__frame::after {
-content: ""; position: absolute; width: 22px; height: 22px;
-border: 2px solid var(--gold);
-}
-.stage-hud__frame::before { top: -2px; left: -2px; border-right: 0; border-bottom: 0; }
-.stage-hud__frame::after { bottom: -2px; right: -2px; border-left: 0; border-top: 0; }
 
 /* ---- RIGHT: story column ---- */
 .genesis-story { min-width: 0; background: var(--paper); }
@@ -353,7 +298,6 @@ top: var(--header-height);
 height: 46vh;
 min-height: 340px;
 border-right: 0;
-border-bottom: 6px solid var(--gold);
 z-index: 50;
 }
 .footer__inner-container { grid-template-columns: 1fr 1fr; }
@@ -368,7 +312,6 @@ z-index: 50;
 
 @media (prefers-reduced-motion: reduce) {
 html { scroll-behavior: auto; }
-.stage-hud__dot { animation: none; }
 }
 </style>
 <script>
@@ -416,17 +359,6 @@ setTimeout(function () { d.classList.add('is-nav-revealed'); }, 900);
   <!-- LEFT: sticky 3D gold map stage -->
   <div class="genesis-stage" id="genesis-stage">
     <canvas id="ph-stage" aria-label="Real-time 3D render of the Philippine archipelago in solid gold, marking the two Genesis vault sites"></canvas>
-    <div class="stage-hud" aria-hidden="true">
-      <div class="stage-hud__frame"></div>
-      <div class="stage-hud__top">
-        <span class="stage-hud__live"><span class="stage-hud__dot"></span>PH THEATER // LIVE RENDER</span>
-        <span id="stage-telemetry">YAW 000° · 30 ISLANDS</span>
-      </div>
-      <div class="stage-hud__bottom">
-        <div class="stage-hud__view"><span id="stage-view">OVERVIEW</span><small id="stage-sub">AT-V1000-PH · DRAG TO ORBIT</small></div>
-        <div class="stage-hud__credit">COASTLINE © NORDNORDWEST<br>CC BY-SA 3.0 DE</div>
-      </div>
-    </div>
   </div>
 
   <!-- RIGHT: story -->
@@ -704,19 +636,19 @@ setTimeout(function () { d.classList.add('is-nav-revealed'); }, 900);
   ];
 
   var VIEWS = {
-    overview: { yaw: 0.6,  zoom: 1.0,  fx: 0,    fz: 0 },
-    mandate:  { yaw: 1.15, zoom: 1.05, fx: 0,    fz: 0 },
-    vision:   { yaw: 1.7,  zoom: 1.1,  fx: 0,    fz: 0 },
-    roadmap:  { yaw: 2.3,  zoom: 1.0,  fx: 0,    fz: 0 },
-    vault1:   { yaw: 3.0,  zoom: 1.9,  fx: 1545 - CX, fz: 1920 - CY },
-    vault2:   { yaw: 3.6,  zoom: 1.9,  fx: 1049 - CX, fz: 978 - CY },
-    capex:    { yaw: 4.2,  zoom: 1.0,  fx: 0,    fz: 0 },
-    distill:  { yaw: 4.8,  zoom: 1.15, fx: 0,    fz: 0 },
-    closing:  { yaw: 5.4,  zoom: 1.0,  fx: 0,    fz: 0 }
+    overview: { yaw: -0.12, zoom: 1.0,  fx: 0,    fz: 0 },
+    mandate:  { yaw: -0.28, zoom: 1.05, fx: 0,    fz: 0 },
+    vision:   { yaw: 0.22,  zoom: 1.1,  fx: 0,    fz: 0 },
+    roadmap:  { yaw: -0.18, zoom: 1.0,  fx: 0,    fz: 0 },
+    vault1:   { yaw: -0.32, zoom: 1.9,  fx: 1545 - CX, fz: 1920 - CY },
+    vault2:   { yaw: 0.28,  zoom: 1.9,  fx: 1049 - CX, fz: 978 - CY },
+    capex:    { yaw: -0.14, zoom: 1.0,  fx: 0,    fz: 0 },
+    distill:  { yaw: 0.18,  zoom: 1.15, fx: 0,    fz: 0 },
+    closing:  { yaw: -0.12, zoom: 1.0,  fx: 0,    fz: 0 }
   };
 
   var S = {
-    yaw: 0.6, yawT: 0.6, dragYaw: 0,
+    yaw: -0.12, yawT: -0.12, dragYaw: 0,
     pitch: 0.92, pitchT: 0.92, dragPitch: 0,
     zoom: 1, zoomT: 1, fx: 0, fxT: 0, fz: 0, fzT: 0,
     t: 0, W: 0, Hh: 0, s: 1, cx: 0, cy: 0,
@@ -806,10 +738,10 @@ setTimeout(function () { d.classList.add('is-nav-revealed'); }, 900);
     for (g = -1200; g <= 1200; g += 240) {
       proj(CX + g, 0, CY - 1400, P); proj(CX + g, 0, CY + 1400, Q);
       ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(Q.x, Q.y);
-      ctx.strokeStyle = 'rgba(255,212,0,0.07)'; ctx.stroke();
+      ctx.strokeStyle = 'rgba(122,98,0,0.10)'; ctx.stroke();
       proj(CX - 1100, 0, CY + g, P); proj(CX + 1100, 0, CY + g, Q);
       ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(Q.x, Q.y);
-      ctx.strokeStyle = 'rgba(255,212,0,0.07)'; ctx.stroke();
+      ctx.strokeStyle = 'rgba(122,98,0,0.10)'; ctx.stroke();
     }
     void a; void b;
   }
@@ -821,19 +753,20 @@ setTimeout(function () { d.classList.add('is-nav-revealed'); }, 900);
     // stem
     proj(m.x, H + 60, m.y, Q);
     ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(Q.x, Q.y);
-    ctx.strokeStyle = 'rgba(255,212,0,0.6)'; ctx.lineWidth = 2; ctx.stroke();
-    // glow
+    ctx.strokeStyle = 'rgba(19,25,32,0.55)'; ctx.lineWidth = 2; ctx.stroke();
+    // halo + ink dot
     var g = ctx.createRadialGradient(Q.x, Q.y, 0, Q.x, Q.y, R * 4);
-    g.addColorStop(0, 'rgba(255,212,0,0.95)');
-    g.addColorStop(0.35, 'rgba(255,212,0,0.45)');
-    g.addColorStop(1, 'rgba(255,212,0,0)');
+    g.addColorStop(0, 'rgba(19,25,32,0.28)');
+    g.addColorStop(1, 'rgba(19,25,32,0)');
     ctx.beginPath(); ctx.arc(Q.x, Q.y, R * 4, 0, 6.2832); ctx.fillStyle = g; ctx.fill();
-    ctx.beginPath(); ctx.arc(Q.x, Q.y, R * 0.9, 0, 6.2832); ctx.fillStyle = '#ffd400'; ctx.fill();
+    ctx.beginPath(); ctx.arc(Q.x, Q.y, R * 0.9, 0, 6.2832); ctx.fillStyle = '#131920'; ctx.fill();
+    ctx.beginPath(); ctx.arc(Q.x, Q.y, R * 0.9, 0, 6.2832);
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 1.5; ctx.stroke();
     // pulse ring
     if (!reduced) {
       var ph = (t * 0.7 + m.id * 0.5) % 1;
       ctx.beginPath(); ctx.arc(Q.x, Q.y, R + ph * R * 4, 0, 6.2832);
-      ctx.strokeStyle = 'rgba(255,212,0,' + (0.7 * (1 - ph)).toFixed(3) + ')';
+      ctx.strokeStyle = 'rgba(122,98,0,' + (0.7 * (1 - ph)).toFixed(3) + ')';
       ctx.lineWidth = 2; ctx.stroke();
     }
   }
@@ -869,12 +802,6 @@ setTimeout(function () { d.classList.add('is-nav-revealed'); }, 900);
     }
     for (i = 0; i < MARKERS.length; i++) drawMarker(MARKERS[i], S.t, S.focusMarker === i);
 
-    var tel = document.getElementById('stage-telemetry');
-    if (tel) {
-      var deg = ((S.yaw + S.dragYaw) * 57.2958) % 360;
-      if (deg < 0) deg += 360;
-      tel.textContent = 'YAW ' + String(Math.round(deg)).padStart(3, '0') + '° · ' + ISLANDS.length + ' ISLANDS';
-    }
     if (!reduced) requestAnimationFrame(frame);
   }
 
@@ -885,13 +812,9 @@ setTimeout(function () { d.classList.add('is-nav-revealed'); }, 900);
   }
 
   // scrollytelling waypoints
-  var viewEl = document.getElementById('stage-view');
-  var subEl = document.getElementById('stage-sub');
   var cards = document.querySelectorAll('#site-bukidnon, #site-tanay');
   function activate(el) {
     setView(el.getAttribute('data-view'));
-    if (viewEl) viewEl.textContent = el.getAttribute('data-hud') || 'OVERVIEW';
-    if (subEl) subEl.textContent = el.getAttribute('data-sub') || '';
     cards.forEach(function (c) { c.classList.toggle('is-hot', c === el); });
     document.querySelectorAll('.chapter[data-view]').forEach(function (c) {
       c.classList.toggle('is-hot', false);

@@ -665,19 +665,48 @@
       justify-content: center;
       min-height: 46px;
       padding: 12px 24px;
+      border: 1px solid rgba(255, 255, 255, 0.34);
       border-radius: 4px;
       font-size: 0.85rem;
       font-weight: 800;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       text-decoration: none;
-      color: #ffffff;
-      transition: filter 0.2s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      transition: color 0.2s ease, border-color 0.2s ease;
     }
 
-    .hero-btn--blue { background: #1A66FF; }
-    .hero-btn--red { background: #CE1127; }
-    .hero-btn:hover { filter: brightness(1.15); }
+    .hero-btn--gold {
+      background: var(--hg-color-secondary);
+      border-color: var(--hg-color-secondary);
+      color: var(--hg-color-darkest);
+    }
+
+    .hero-btn:not(.hero-btn--gold) {
+      color: #ffffff;
+    }
+
+    .hero-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, #1A66FF 0%, #1A66FF 50%, #CE1127 50%, #CE1127 100%);
+      transform: translateX(-102%);
+      transition: transform 0.45s ease;
+      z-index: -1;
+    }
+
+    .hero-btn:hover::before {
+      transform: translateX(0);
+    }
+
+    .hero-btn:hover {
+      color: #ffffff;
+      border-color: transparent;
+    }
 
     html.reduced-motion .nav__sims-pulse i {
       animation: none;
@@ -3018,8 +3047,8 @@
             <h2 class="video-overlay__title">Independent Guardian of the Philippines' Digital Foundations — Built Toward 3020</h2>
             <p class="video-overlay__description">Sabotage detection, build tracking, and recovery verification for the country's data centers and cloud regions — with long-term recoverable archives held in the Philippines.</p>
             <div class="video-overlay__actions">
-              <a class="hero-btn hero-btn--blue" href="#portfolio">View Companies</a>
-              <a class="hero-btn hero-btn--red" href="data/alieninc-ecosystem.json">Open Dataset</a>
+              <a class="hero-btn hero-btn--gold" href="#portfolio">View Companies</a>
+              <a class="hero-btn" href="data/alieninc-ecosystem.json">Open Dataset</a>
             </div>
           </div>
         </div>

@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+"""Extract simplified island rings from data/philippines.svg for the mission 3D stage.
+
+Parses path/polygon coastlines, keeps the top N islands by area, simplifies
+with Douglas-Peucker (closed-ring aware), and emits data/ph-islands.js as
+window.PH_ISLANDS = [ [[x,y],...], ... ] in SVG pixel coords.
+Re-run after regenerating data/philippines.svg.
+"""
+import json
+import math
+import os
+import re
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SRC = os.path.join(ROOT, 'data', 'philippines.svg')
+OUT = os.path.join(ROOT, 'data', 'ph-islands.js')
+TOP = int(sys.argv[1]) if len(sys.argv) > 1 else 30
+TOL = float(sys.argv[2]) if len(sys.argv) > 2 else 3.0
+
+
+def parse_path(d):
+    toks = re.findall(r'[MLHVClhvzZc]|-?\d*\.?\d+(?:e-?\d+)?', d)
+    rings, cur, start, ring, implicit = [], [0.0, 0.0], None, None, 'L'
+    i = 0
+
+    def push(x, y):
+        cur[0], cur[1] = x, y
+        ring.append([x, y])
+
+    while i < len(toks):
+        t = toks[i]
+        if t in 'MLHVClhvzZc':
+            cmd, i = t, i + 1
+        else:
+            cmd = implicit
+        if cmd == 'M':
+            x, y = float(toks[i]), float(toks[i + 1]); i += 2
+            ring = []; rings.append(ring); start = [x, y]; push(x, y)
+            implicit = 'L'
+        elif cmd == 'L':
+            x, y = float(toks[i]), float(toks[i + 1]); i += 2; push(x, y); implicit = 'L'
+        elif cmd == 'l':
+            x, y = cur[0] + float(toks[i]), cur[1] + float(toks[i + 1]); i += 2
+            push(x, y); implicit = 'l'
+        elif cmd == 'H':
+            push(float(toks[i]), cur[1]); i += 1; implicit = 'H'
+        elif cmd == 'h':
+            push(cur[0] + float(toks[i]), cur[1]); i += 1; implicit = 'h'
+        elif cmd == 'V':
+            push(cur[0], float(toks[i])); i += 1; implicit = 'V'
+        elif cmd == 'v':
+            push(cur[0], cur[1] + float(toks[i])); i += 1; implicit = 'v'
+        elif cmd in ('C', 'c'):
+            n = [float(toks[i + k]) for k in range(6)]; i += 6
+            if cmd == 'c':
+                p0 = list(cur)
+                p1 = [cur[0] + n[0], cur[1] + n[1]]
+                p2 = [cur[0] + n[2], cur[1] + n[3]]
+                p3 = [cur[0] + n[4], cur[1] + n[5]]
+            else:
+                p0 = list(cur); p1 = n[0:2]; p2 = n[2:4]; p3 = n[4:6]
+            for s in range(1, 9):
+                u, mt = s / 8.0, 1 - s / 8.0
+                push(mt**3*p0[0] + 3*mt*mt*u*p1[0] + 3*mt*u*u*p2[0] + u**3*p3[0],
+                     mt**3*p0[1] + 3*mt*mt*u*p1[1] + 3*mt*u*u*p2[1] + u**3*p3[1])
+            implicit = cmd
+        elif cmd in ('z', 'Z'):
+            if start:
+                push(start[0], start[1])
+            implicit = 'L'
+        else:
+            raise ValueError('unexpected token ' + t)
+    return [r for r in rings if len(r) > 2]
+
+
+def area(r):
+    return abs(sum(r[i][0] * r[(i + 1) % len(r)][1] - r[(i + 1) % len(r)][0] * r[i][1]
+                   for i in range(len(r))) / 2)
+
+
+def dp_open(pts, tol):
+    if len(pts) < 4:
+        return pts
+
+    def perp(p, a, b):
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        L = math.hypot(dx, dy) or 1e-9
+        return abs((p[0] - a[0]) * dy - (p[1] - a[1]) * dx) / L
+
+    keep = [False] * len(pts)
+    keep[0] = keep[-1] = True
+    stack = [(0, len(pts) - 1)]
+    while stack:
+        a, b = stack.pop()
+        dmax, idx = 0.0, -1
+        for k in range(a + 1, b):
+            d = perp(pts[k], pts[a], pts[b])
+            if d > dmax:
+                dmax, idx = d, k
+        if dmax > tol:
+            keep[idx] = True
+            stack.append((a, idx))
+            stack.append((idx, b))
+    return [p for p, k in zip(pts, keep) if k]
+
+
+def simplify_closed(r, tol):
+    pts = [p for p in r]
+    if math.hypot(pts[0][0] - pts[-1][0], pts[0][1] - pts[-1][1]) < 1e-6:
+        pts = pts[:-1]
+    if len(pts) < 5:
+        return pts
+    k = max(range(len(pts)),
+            key=lambda j: math.hypot(pts[j][0] - pts[0][0], pts[j][1] - pts[0][1]))
+    seq = pts[k:] + pts[:k]  # open sequence; renderer closes the loop
+    return dp_open(seq, tol)
+
+
+def main():
+    src = open(SRC, encoding='utf-8').read()
+    rings = []
+    for m in re.finditer(r'<path[^>]*d="([^"]+)"', src):
+        rings.extend(parse_path(m.group(1)))
+    for m in re.finditer(r'<polygon[^>]*points="([^"]+)"', src):
+        nums = [float(x) for x in re.findall(r'-?\d*\.?\d+', m.group(1))]
+        ring = [[nums[k], nums[k + 1]] for k in range(0, len(nums) - 1, 2)]
+        if len(ring) > 2:
+            rings.append(ring)
+    shapes = sorted(((area(r), r) for r in rings), reverse=True)[:TOP]
+    out = []
+    for _, r in shapes:
+        s = simplify_closed(r, TOL)
+        out.append([[round(x, 1), round(y, 1)] for x, y in s])
+    with open(OUT, 'w', encoding='utf-8') as f:
+        f.write('// Simplified PH coastlines for the mission 3D stage (top %d islands).\n' % TOP)
+        f.write('// Generated by tools/extract-ph-islands.py — do not hand-edit.\n')
+        f.write('window.PH_ISLANDS = ' + json.dumps(out) + ';\n')
+    print('%d islands, %d pts, %d bytes -> %s'
+          % (len(out), sum(len(r) for r in out), os.path.getsize(OUT), OUT))
+
+
+if __name__ == '__main__':
+    main()

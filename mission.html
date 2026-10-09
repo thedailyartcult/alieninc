@@ -102,6 +102,63 @@ text-underline-offset: 0.2em;
 }
 .nav__thinking { display: none; }
 
+/* ============ RESOURCES DROPDOWN (dataset + company pages) ============ */
+.nav__dropdown { position: relative; }
+.nav__dropdown-menu {
+position: absolute;
+top: 100%;
+left: 50%;
+transform: translateX(-50%) translateY(6px);
+background: #ffffff;
+border: 1px solid rgba(19,25,32,0.1);
+border-radius: 4px;
+box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+min-width: 190px;
+opacity: 0;
+visibility: hidden;
+transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease;
+padding: 6px 0;
+z-index: 200;
+}
+.nav__dropdown:hover .nav__dropdown-menu,
+.nav__dropdown-menu:hover {
+opacity: 1;
+visibility: visible;
+transform: translateX(-50%) translateY(10px);
+}
+.nav__dropdown-item {
+display: block;
+padding: 8px 20px;
+font-size: 0.92rem;
+font-weight: 600;
+white-space: nowrap;
+}
+.nav__dropdown-item:hover {
+text-decoration: underline;
+text-decoration-color: #CE1127;
+text-decoration-thickness: 0.16em;
+text-underline-offset: 0.2em;
+}
+.nav__dropdown-trigger { cursor: default; }
+.nav__dropdown-trigger::after {
+content: '';
+display: inline-block;
+width: 0;
+height: 0;
+margin-left: 5px;
+border-left: 4px solid transparent;
+border-right: 4px solid transparent;
+border-top: 5px solid #1A66FF;
+vertical-align: middle;
+transition: transform 0.15s ease;
+}
+.nav__dropdown:hover .nav__dropdown-trigger::after { transform: rotate(180deg); }
+/* Philippine-flag accents for the resource buttons: blue at rest, red on hover */
+.nav__list-item-link.nav__resource { color: #1A66FF; }
+.nav__list-item-link.nav__resource:hover { color: #CE1127; text-decoration-color: #CE1127; }
+.nav__dropdown-item.nav__dataset { color: #1A66FF; }
+.nav__dropdown-item.nav__dataset:hover { color: #CE1127; }
+
 /* ============ GOLD BANNER ============ */
 .genesis-banner {
 background: var(--gold);
@@ -359,6 +416,14 @@ setTimeout(function () { d.classList.add('is-nav-revealed'); }, 900);
         <li><a href="founder.html" class="nav__list-item-link">Founder</a></li>
         <li><a href="index.html#portfolio" class="nav__list-item-link">Companies</a></li>
         <li><a href="dashboard.html" class="nav__list-item-link">Dashboard</a></li>
+        <li class="nav__dropdown">
+          <a href="data/alieninc-ecosystem.json" class="nav__list-item-link nav__dropdown-trigger nav__resource">Resources</a>
+          <div class="nav__dropdown-menu">
+            <a href="data/alieninc-ecosystem.json" class="nav__dropdown-item nav__dataset">Technical Dataset</a>
+            <a href="about.html" class="nav__dropdown-item">About the Company</a>
+            <a href="mission.html" class="nav__dropdown-item">Mission</a>
+          </div>
+        </li>
         <li><a href="index.html#contact" class="nav__list-item-link">Contact</a></li>
       </ul>
     </nav>

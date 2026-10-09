@@ -630,11 +630,6 @@ setTimeout(function () { d.classList.add('is-nav-revealed'); }, 900);
   var CX = 935.4, CY = 1233.6;      // model center (SVG px)
   var H = 110;                       // extrusion height
   var GOLD = [255, 212, 0];
-  var MARKERS = [
-    { id: 0, x: 1545, y: 1920 },    // VAULT-01 Bukidnon
-    { id: 1, x: 1049, y: 978 }      // VAULT-02 Tanay
-  ];
-
   var VIEWS = {
     overview: { yaw: -0.12, zoom: 1.0,  fx: 0,    fz: 0 },
     mandate:  { yaw: -0.28, zoom: 1.05, fx: 0,    fz: 0 },
@@ -651,8 +646,8 @@ setTimeout(function () { d.classList.add('is-nav-revealed'); }, 900);
     yaw: -0.12, yawT: -0.12, dragYaw: 0,
     pitch: 0.92, pitchT: 0.92, dragPitch: 0,
     zoom: 1, zoomT: 1, fx: 0, fxT: 0, fz: 0, fzT: 0,
-    t: 0, W: 0, Hh: 0, s: 1, cx: 0, cy: 0,
-    running: true, focusMarker: -1
+    W: 0, Hh: 0, s: 1, cx: 0, cy: 0,
+    running: true
   };
 
   function resize() {
@@ -732,48 +727,8 @@ setTimeout(function () { d.classList.add('is-nav-revealed'); }, 900);
     ctx.stroke();
   }
 
-  function drawGrid() {
-    ctx.lineWidth = 1;
-    var g, a, b;
-    for (g = -1200; g <= 1200; g += 240) {
-      proj(CX + g, 0, CY - 1400, P); proj(CX + g, 0, CY + 1400, Q);
-      ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(Q.x, Q.y);
-      ctx.strokeStyle = 'rgba(122,98,0,0.10)'; ctx.stroke();
-      proj(CX - 1100, 0, CY + g, P); proj(CX + 1100, 0, CY + g, Q);
-      ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(Q.x, Q.y);
-      ctx.strokeStyle = 'rgba(122,98,0,0.10)'; ctx.stroke();
-    }
-    void a; void b;
-  }
-
-  function drawMarker(m, t, hot) {
-    proj(m.x, H, m.y, P);
-    var x = P.x, y = P.y, k = P.k;
-    var R = (hot ? 9 : 6) * (0.6 + k / S.s * 0.4);
-    // stem
-    proj(m.x, H + 60, m.y, Q);
-    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(Q.x, Q.y);
-    ctx.strokeStyle = 'rgba(19,25,32,0.55)'; ctx.lineWidth = 2; ctx.stroke();
-    // halo + ink dot
-    var g = ctx.createRadialGradient(Q.x, Q.y, 0, Q.x, Q.y, R * 4);
-    g.addColorStop(0, 'rgba(19,25,32,0.28)');
-    g.addColorStop(1, 'rgba(19,25,32,0)');
-    ctx.beginPath(); ctx.arc(Q.x, Q.y, R * 4, 0, 6.2832); ctx.fillStyle = g; ctx.fill();
-    ctx.beginPath(); ctx.arc(Q.x, Q.y, R * 0.9, 0, 6.2832); ctx.fillStyle = '#131920'; ctx.fill();
-    ctx.beginPath(); ctx.arc(Q.x, Q.y, R * 0.9, 0, 6.2832);
-    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 1.5; ctx.stroke();
-    // pulse ring
-    if (!reduced) {
-      var ph = (t * 0.7 + m.id * 0.5) % 1;
-      ctx.beginPath(); ctx.arc(Q.x, Q.y, R + ph * R * 4, 0, 6.2832);
-      ctx.strokeStyle = 'rgba(122,98,0,' + (0.7 * (1 - ph)).toFixed(3) + ')';
-      ctx.lineWidth = 2; ctx.stroke();
-    }
-  }
-
   function frame() {
     if (!S.running) return;
-    S.t += 1 / 60;
     // ease toward waypoint targets
     var e = reduced ? 1 : 0.055;
     S.yaw += (S.yawT - S.yaw) * e;
@@ -784,7 +739,6 @@ setTimeout(function () { d.classList.add('is-nav-revealed'); }, 900);
     S.dragYaw *= 0.94; S.dragPitch *= 0.94;
 
     ctx.clearRect(0, 0, S.W, S.Hh);
-    drawGrid();
 
     // painter's order: far islands first
     var order = [];
@@ -800,7 +754,6 @@ setTimeout(function () { d.classList.add('is-nav-revealed'); }, 900);
       var jitter = ((order[i].i * 37) % 11) / 11 * 0.08;
       drawIsland(ISLANDS[order[i].i], jitter);
     }
-    for (i = 0; i < MARKERS.length; i++) drawMarker(MARKERS[i], S.t, S.focusMarker === i);
 
     if (!reduced) requestAnimationFrame(frame);
   }
@@ -808,7 +761,6 @@ setTimeout(function () { d.classList.add('is-nav-revealed'); }, 900);
   function setView(name) {
     var v = VIEWS[name] || VIEWS.overview;
     S.yawT = v.yaw; S.zoomT = v.zoom; S.fxT = v.fx; S.fzT = v.fz;
-    S.focusMarker = (name === 'vault1') ? 0 : (name === 'vault2') ? 1 : -1;
   }
 
   // scrollytelling waypoints

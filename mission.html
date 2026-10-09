@@ -68,7 +68,9 @@ scroll-margin-top: var(--header-height);
 /* HEADER */
 .header {
 height: var(--header-height);
-background-color: var(--ppl-color-bg-default);
+background-color: rgba(255,255,255,0.88);
+backdrop-filter: blur(10px);
+-webkit-backdrop-filter: blur(10px);
 border-bottom: 1px solid rgba(0,0,0,0.08);
 display: flex;
 align-items: center;
@@ -436,41 +438,34 @@ height: 100%;
 width: 100%;
 object-fit: contain;
 object-position: right center;
-opacity: 0.9;
+opacity: 0.3;
 }
 
-.mission-hero__map-overlay {
+/* SITE MAP BACKGROUND — solid-gold Philippines ghosting behind the whole
+   page, Panteon-style: a fixed layer drifting slower than scroll. Section
+   shells below are translucent so it reads through; cards stay solid. */
+.site-map-bg {
+position: fixed;
+inset: 0;
+z-index: 0;
+pointer-events: none;
+overflow: hidden;
+}
+
+.site-map-bg img {
 position: absolute;
-top: 0;
-right: 0;
-height: 100%;
-width: 100%;
+top: 50%;
+right: -12vmin;
+height: 175vmin;
+width: auto;
+transform: translateY(-50%);
+opacity: 0.07;
+will-change: transform;
 }
 
-.ph-cross { stroke: rgba(255,212,0,0.5); stroke-width: 5; }
-.ph-marker-ring { fill: none; stroke: #ffd400; stroke-width: 9; opacity: 0.9; }
-.ph-marker-core { fill: #ffd400; }
-.ph-marker-hq { fill: none; stroke: rgba(255,255,255,0.8); stroke-width: 8; }
-.ph-pulse { fill: none; stroke: #ffd400; stroke-width: 1; transform-box: fill-box; transform-origin: center; animation: ph-pulse 2.6s ease-out infinite; }
-@keyframes ph-pulse {
-0% { transform: scale(0.35); opacity: 0.9; }
-70% { transform: scale(1.7); opacity: 0; }
-100% { transform: scale(1.7); opacity: 0; }
-}
-.ph-marker-label { fill: #ffd400; font-family: var(--hg-font-mono); font-size: 56px; font-weight: 700; letter-spacing: 0.08em; }
-.ph-marker-sub { fill: rgba(255,255,255,0.65); font-family: var(--hg-font-mono); font-size: 46px; letter-spacing: 0.06em; }
-.ph-marker-hq-label { fill: rgba(255,255,255,0.75); font-family: var(--hg-font-mono); font-size: 46px; font-weight: 700; letter-spacing: 0.08em; }
-
-.mission-hero__map-legend {
-position: absolute;
-right: 1.2rem;
-bottom: 1rem;
-font-family: var(--hg-font-mono);
-font-size: 0.66rem;
-font-weight: 700;
-letter-spacing: 0.1em;
-color: var(--hg-color-secondary);
-opacity: 0.9;
+#main-content {
+position: relative;
+z-index: 1;
 }
 
 @media (max-width: 860px) {
@@ -518,11 +513,11 @@ color: #ffffff;
 /* SECTION BASICS */
 .mission-section {
 padding: 5rem 0;
-background: var(--ppl-color-bg-default);
+background: rgba(255,255,255,0.82);
 }
 
 .mission-section--muted {
-background: var(--hg-color-muted);
+background: rgba(247,247,247,0.82);
 border-top: 1px solid rgba(19, 25, 32, 0.08);
 border-bottom: 1px solid rgba(19, 25, 32, 0.08);
 }
@@ -957,7 +952,7 @@ transform: translateY(-1px);
 
 /* FOOTER */
 .footer {
-background-color: var(--hg-color-darkest);
+background-color: rgba(19,25,32,0.94);
 color: var(--hg-color-lightest);
 padding: 4rem 0 2rem;
 }
@@ -1200,6 +1195,7 @@ d.classList.add('is-nav-revealed');
 </head>
 <body>
 <a href="#main-content" class="skip-nav" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;padding:10px 20px;background:#3b82f6;color:#fff;text-decoration:none;font-weight:600;">Skip to main content</a>
+<div class="site-map-bg" aria-hidden="true"><img id="site-map-bg-img" src="data/philippines.svg" alt=""></div>
 <main id="main-content" role="main">
 <!-- STICKY HEADER -->
 <header class="header">
@@ -1268,33 +1264,10 @@ d.classList.add('is-nav-revealed');
   <section class="mission-hero" aria-label="Alien Inc Genesis Core Mission">
     <div class="mission-hero__panel">
       <figure class="mission-hero__map" role="img" aria-label="Stylized map of the Philippine archipelago marking the two Genesis vault sites: Tanay in the Sierra Madre and the Bukidnon Plateau in Mindanao">
+        <!-- PH coastline: NordNordWest, CC BY-SA 3.0 DE, via Wikimedia Commons -->
         <img class="mission-hero__map-img" src="data/philippines.svg" alt="" aria-hidden="true">
-        <svg class="mission-hero__map-overlay" viewBox="0 0 1870.87 2467.126" preserveAspectRatio="xMaxYMid meet" aria-hidden="true" focusable="false">
-          <g>
-            <rect class="ph-marker-hq" x="955" y="943" width="40" height="40"/>
-            <text class="ph-marker-hq-label" x="935" y="915" text-anchor="end">MNL // HQ</text>
-          </g>
-          <g>
-            <line class="ph-cross" x1="969" y1="978" x2="1129" y2="978"/>
-            <line class="ph-cross" x1="1049" y1="898" x2="1049" y2="1058"/>
-            <circle class="ph-pulse" cx="1049" cy="978" r="85"/>
-            <circle class="ph-marker-ring" cx="1049" cy="978" r="42"/>
-            <circle class="ph-marker-core" cx="1049" cy="978" r="20"/>
-            <text class="ph-marker-label" x="1150" y="962">VAULT-02 // TANAY</text>
-            <text class="ph-marker-sub" x="1150" y="1024">14.50°N 121.50°E</text>
-          </g>
-          <g>
-            <line class="ph-cross" x1="1465" y1="1920" x2="1625" y2="1920"/>
-            <line class="ph-cross" x1="1545" y1="1840" x2="1545" y2="2000"/>
-            <circle class="ph-pulse" cx="1545" cy="1920" r="85" style="animation-delay:1.3s"/>
-            <circle class="ph-marker-ring" cx="1545" cy="1920" r="42"/>
-            <circle class="ph-marker-core" cx="1545" cy="1920" r="20"/>
-            <text class="ph-marker-label" x="1435" y="1800" text-anchor="end">VAULT-01 // BUKIDNON</text>
-            <text class="ph-marker-sub" x="1435" y="1862" text-anchor="end">8.05°N 125.00°E</text>
-          </g>
-        </svg>
-        <figcaption class="mission-hero__map-legend">PH THEATER // 2 ACTIVE VAULT SITES<br><span style="opacity:.55;font-weight:400;">MAP © NORDNORDWEST / CC BY-SA 3.0 DE</span></figcaption>
-      </figure>
+        
+        </figure>
       <div class="mission-hero__overlay">
         <span class="mission-hero__meta">System Protocol // AT-V1000-PH</span>
         <h1 class="mission-hero__title">The Genesis Core: A 1,000-Year Subterranean Ark.</h1>
@@ -1751,6 +1724,25 @@ runPhases(phases, function () {
 setTimeout(reveal, 300);
 });
 }, 350);
+})();
+</script>
+<script>
+/* SITE MAP PARALLAX — Panteon-style drift: the fixed gold map translates
+   slower than scroll. rAF-throttled, disabled under reduced-motion. */
+(function () {
+  var img = document.getElementById('site-map-bg-img');
+  if (!img) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var ticking = false;
+  function update() {
+    ticking = false;
+    var y = window.scrollY || window.pageYOffset || 0;
+    img.style.transform = 'translateY(calc(-50% + ' + (y * 0.12).toFixed(1) + 'px))';
+  }
+  window.addEventListener('scroll', function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+  update();
 })();
 </script>
 </body>

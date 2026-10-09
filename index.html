@@ -3515,6 +3515,7 @@
 
   <!-- ALIEN.INC NETWORK MAP -->
   <script src="data/network-map-data.js?v=5"></script>
+  <script src="data/featured-facilities.js?v=1"></script>
   <script>
   // ── ALIEN.INC Network Map Data ──────────────────────────────────
   // Node, district, and city data is loaded from the ecosystem JSON
@@ -3928,12 +3929,18 @@
 
   function fetchSearchResults(query, resultsEl, close) {
       fetch('/api/techstack?q=' + encodeURIComponent(query) + '&limit=8')
-          .then((res) => res.json())
+          .then((res) => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
           .then((data) => renderSearchResults(data, resultsEl, close))
           .catch((err) => {
-              console.warn('[TechStack] search failed:', err);
-              resultsEl.innerHTML = `<div class="retro-map-search-empty">SEARCH SERVICE UNAVAILABLE</div>`;
-              resultsEl.classList.add('retro-map-search-open');
+              console.warn('[TechStack] API search unavailable, using static snapshot:', err && err.message);
+              // Static fallback so search works with the laptop off.
+              var q = query.toLowerCase();
+              var list = (window.FEATURED_FACILITIES || []).filter(function (r) {
+                  return (r.name && r.name.toLowerCase().indexOf(q) !== -1) ||
+                         (r.city && r.city.toLowerCase().indexOf(q) !== -1) ||
+                         (r.sector && r.sector.toLowerCase().indexOf(q) !== -1);
+              }).slice(0, 8);
+              renderSearchResults({ results: list }, resultsEl, close);
           });
   }
 
@@ -4614,7 +4621,7 @@
     }
 
     fetch('/api/techstack?featured=1')
-      .then(function (res) { return res.json(); })
+      .then(function (res) { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
       .then(function (data) {
         var merged = [];
         if (hq) merged.push(hq);
@@ -4629,6 +4636,8 @@
             techStack: r.techStack || []
           });
         });
+        // Guard: a 200 with zero results (e.g. empty DB) must not wipe the map.
+        if (merged.length <= (hq ? 1 : 0)) throw new Error('empty techstack response');
         window.aliensNetworkNodes = merged;
         if (window.ecosystemSummary) {
           window.ecosystemSummary.nodeCount = merged.length;
@@ -4636,8 +4645,44 @@
         if (callback) callback();
       })
       .catch(function (err) {
-        console.warn('[TechStack] featured load failed:', err);
-        if (callback) callback();
+        console.warn('[TechStack] API unavailable, using static facility snapshot:', err && err.message);
+        // Static fallback: window.FEATURED_FACILITIES is baked at deploy time
+        // (data/featured-facilities.js) so the map works with the laptop off.
+        // Already loaded via <script>; lazy-fetch only if the tag was skipped.
+        function useStatic(list) {
+          var merged = [];
+          if (hq) merged.push(hq);
+          (list || []).forEach(function (r) {
+            if (typeof r.lat !== 'number' || typeof r.lng !== 'number') return;
+            merged.push({
+              name: r.name,
+              city: r.city,
+              sector: r.sector,
+              lat: r.lat,
+              lng: r.lng,
+              markerColor: r.markerColor,
+              techStack: r.techStack || []
+            });
+          });
+          window.aliensNetworkNodes = merged;
+          if (window.ecosystemSummary) {
+            window.ecosystemSummary.nodeCount = merged.length;
+          }
+          if (callback) callback();
+        }
+        if (window.FEATURED_FACILITIES && window.FEATURED_FACILITIES.length) {
+          useStatic(window.FEATURED_FACILITIES);
+        } else {
+          fetch('data/featured-facilities.js?v=1').then(function (res) {
+            return res.text();
+          }).then(function (txt) {
+            var m = txt.match(/window\.FEATURED_FACILITIES\s*=\s*(\[[\s\S]*\]);?/);
+            useStatic(m ? JSON.parse(m[1]) : []);
+          }).catch(function (err2) {
+            console.warn('[TechStack] static fallback also failed:', err2);
+            if (callback) callback();
+          });
+        }
       });
   }
 (function () {

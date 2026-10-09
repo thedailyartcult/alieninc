@@ -404,6 +404,74 @@ max-width: 720px;
 margin: 0;
 }
 
+/* HERO PHILIPPINES MAP — static inline SVG in the design language:
+   gold #ffd400 wireframe on the dark panel, JetBrains Mono telemetry
+   labels, pulsing vault markers. Zero dependencies: no tiles, no CDN,
+   no backend — renders on GitHub Pages with the laptop off. */
+.mission-hero__map {
+position: absolute;
+top: 0;
+right: 0;
+bottom: 0;
+width: min(48%, 540px);
+z-index: 1;
+margin: 0;
+pointer-events: none;
+opacity: 0.95;
+-webkit-mask-image: linear-gradient(to right, transparent 0, #000 30%);
+mask-image: linear-gradient(to right, transparent 0, #000 30%);
+}
+
+.mission-hero__map svg {
+display: block;
+width: 100%;
+height: 100%;
+}
+
+.ph-graticule { stroke: rgba(255,212,0,0.14); stroke-width: 0.5; }
+.ph-tick { fill: rgba(255,212,0,0.55); font-family: var(--hg-font-mono); font-size: 5.5px; letter-spacing: 0.08em; }
+.ph-island { fill: rgba(255,212,0,0.07); stroke: #ffd400; stroke-width: 1.1; stroke-linejoin: round; }
+.ph-island--minor { opacity: 0.6; }
+.ph-sulu { fill: #ffd400; opacity: 0.7; }
+.ph-cross { stroke: rgba(255,212,0,0.5); stroke-width: 0.6; }
+.ph-marker-ring { fill: none; stroke: #ffd400; stroke-width: 1; opacity: 0.9; }
+.ph-marker-core { fill: #ffd400; }
+.ph-marker-hq { fill: none; stroke: rgba(255,255,255,0.8); stroke-width: 0.9; }
+.ph-pulse { fill: none; stroke: #ffd400; stroke-width: 1; transform-box: fill-box; transform-origin: center; animation: ph-pulse 2.6s ease-out infinite; }
+@keyframes ph-pulse {
+0% { transform: scale(0.35); opacity: 0.9; }
+70% { transform: scale(1.7); opacity: 0; }
+100% { transform: scale(1.7); opacity: 0; }
+}
+.ph-marker-label { fill: #ffd400; font-family: var(--hg-font-mono); font-size: 6px; font-weight: 700; letter-spacing: 0.08em; }
+.ph-marker-sub { fill: rgba(255,255,255,0.65); font-family: var(--hg-font-mono); font-size: 5px; letter-spacing: 0.06em; }
+.ph-marker-hq-label { fill: rgba(255,255,255,0.75); font-family: var(--hg-font-mono); font-size: 5px; font-weight: 700; letter-spacing: 0.08em; }
+
+.mission-hero__map-legend {
+position: absolute;
+right: 1.2rem;
+bottom: 1rem;
+font-family: var(--hg-font-mono);
+font-size: 0.66rem;
+font-weight: 700;
+letter-spacing: 0.1em;
+color: var(--hg-color-secondary);
+opacity: 0.9;
+}
+
+@media (max-width: 860px) {
+.mission-hero__map {
+width: 100%;
+opacity: 0.28;
+-webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 35%);
+mask-image: linear-gradient(to bottom, transparent 0, #000 35%);
+}
+}
+
+@media (prefers-reduced-motion: reduce) {
+.ph-pulse { animation: none; }
+}
+
 /* SYSTEM PROTOCOL METADATA BAR */
 .protocol-meta-bar {
 display: grid;
@@ -1185,6 +1253,67 @@ d.classList.add('is-nav-revealed');
   <!-- HERO -->
   <section class="mission-hero" aria-label="Alien Inc Genesis Core Mission">
     <div class="mission-hero__panel">
+      <figure class="mission-hero__map" role="img" aria-label="Stylized map of the Philippine archipelago marking the two Genesis vault sites: Tanay in the Sierra Madre and the Bukidnon Plateau in Mindanao">
+        <svg viewBox="0 0 200 326" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
+          <g>
+            <line class="ph-graticule" x1="30" y1="0" x2="30" y2="326"/>
+            <line class="ph-graticule" x1="70" y1="0" x2="70" y2="326"/>
+            <line class="ph-graticule" x1="110" y1="0" x2="110" y2="326"/>
+            <line class="ph-graticule" x1="150" y1="0" x2="150" y2="326"/>
+            <line class="ph-graticule" x1="190" y1="0" x2="190" y2="326"/>
+            <line class="ph-graticule" x1="0" y1="66.5" x2="200" y2="66.5"/>
+            <line class="ph-graticule" x1="0" y1="142.5" x2="200" y2="142.5"/>
+            <line class="ph-graticule" x1="0" y1="218.5" x2="200" y2="218.5"/>
+            <line class="ph-graticule" x1="0" y1="294.5" x2="200" y2="294.5"/>
+            <text class="ph-tick" x="32" y="9">118°E</text>
+            <text class="ph-tick" x="72" y="9">120°E</text>
+            <text class="ph-tick" x="112" y="9">122°E</text>
+            <text class="ph-tick" x="152" y="9">124°E</text>
+            <text class="ph-tick" x="2" y="64">18°N</text>
+            <text class="ph-tick" x="2" y="140">14°N</text>
+            <text class="ph-tick" x="2" y="216">10°N</text>
+            <text class="ph-tick" x="2" y="292">6°N</text>
+          </g>
+          <g>
+            <polygon class="ph-island" points="70.0,55.1 94.0,58.9 110.0,62.7 108.0,81.7 112.0,98.8 122.0,123.5 138.0,138.7 152.0,150.1 138.0,159.6 120.0,161.5 104.0,161.5 90.0,146.3 88.0,134.9 82.0,114.0 76.0,96.9 68.0,76.0"/>
+            <polygon class="ph-island" points="106.0,269.8 110.0,258.4 126.0,239.4 144.0,237.5 160.0,233.7 178.0,229.9 196.0,231.8 194.0,247.0 188.0,264.1 174.0,277.4 168.0,292.6 156.0,296.4 148.0,286.9 134.0,292.6 122.0,283.1 112.0,271.7"/>
+            <polygon class="ph-island ph-island--minor" points="62.0,190.0 48.0,205.2 30.0,220.4 18.0,237.5 24.0,243.2 40.0,228.0 56.0,210.9 68.0,197.6"/>
+            <polygon class="ph-island ph-island--minor" points="170.0,178.6 184.0,182.4 190.0,193.8 182.0,203.3 172.0,199.5 168.0,188.1"/>
+            <polygon class="ph-island ph-island--minor" points="158.0,191.9 166.0,201.4 164.0,216.6 158.0,218.5 154.0,205.2"/>
+            <polygon class="ph-island ph-island--minor" points="110.0,188.1 124.0,190.0 126.0,201.4 114.0,203.3 108.0,195.7"/>
+            <polygon class="ph-island ph-island--minor" points="124.0,193.8 134.0,199.5 132.0,214.7 128.0,228.0 122.0,229.9 120.0,212.8"/>
+            <polygon class="ph-island ph-island--minor" points="142.0,195.7 150.0,207.1 148.0,220.4 144.0,222.3 140.0,209.0"/>
+            <polygon class="ph-island ph-island--minor" points="148.0,220.4 158.0,222.3 160.0,228.0 150.0,229.9"/>
+            <polygon class="ph-island ph-island--minor" points="88.0,152.0 100.0,153.9 98.0,163.4 88.0,165.3 84.0,157.7"/>
+            <circle class="ph-sulu" cx="96.0" cy="294.5" r="1.8"/>
+            <circle class="ph-sulu" cx="86.0" cy="300.2" r="1.5"/>
+            <circle class="ph-sulu" cx="68.0" cy="309.7" r="1.5"/>
+          </g>
+          <g>
+            <rect class="ph-marker-hq" x="85.4" y="128.9" width="4.4" height="4.4"/>
+            <text class="ph-marker-hq-label" x="83" y="124" text-anchor="end">MNL // HQ</text>
+          </g>
+          <g>
+            <line class="ph-cross" x1="91" y1="133" x2="109" y2="133"/>
+            <line class="ph-cross" x1="100" y1="124" x2="100" y2="142"/>
+            <circle class="ph-pulse" cx="100" cy="133" r="9"/>
+            <circle class="ph-marker-ring" cx="100" cy="133" r="4.5"/>
+            <circle class="ph-marker-core" cx="100" cy="133" r="2.2"/>
+            <text class="ph-marker-label" x="112" y="131">VAULT-02 // TANAY</text>
+            <text class="ph-marker-sub" x="112" y="138">14.50°N 121.50°E</text>
+          </g>
+          <g>
+            <line class="ph-cross" x1="161" y1="255.5" x2="179" y2="255.5"/>
+            <line class="ph-cross" x1="170" y1="246.5" x2="170" y2="264.5"/>
+            <circle class="ph-pulse" cx="170" cy="255.5" r="9" style="animation-delay:1.3s"/>
+            <circle class="ph-marker-ring" cx="170" cy="255.5" r="4.5"/>
+            <circle class="ph-marker-core" cx="170" cy="255.5" r="2.2"/>
+            <text class="ph-marker-label" x="158" y="243" text-anchor="end">VAULT-01 // BUKIDNON</text>
+            <text class="ph-marker-sub" x="158" y="250" text-anchor="end">8.05°N 125.00°E</text>
+          </g>
+        </svg>
+        <figcaption class="mission-hero__map-legend">PH THEATER // 2 ACTIVE VAULT SITES</figcaption>
+      </figure>
       <div class="mission-hero__overlay">
         <span class="mission-hero__meta">System Protocol // AT-V1000-PH</span>
         <h1 class="mission-hero__title">The Genesis Core: A 1,000-Year Subterranean Ark.</h1>

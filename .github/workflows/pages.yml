@@ -53,7 +53,7 @@ jobs:
           cp -f panteon/index.html _pages/panteon/index.html 2>/dev/null || true
           # Subdomain sites (a-san, centra, genesis, immanuel, kmt, rousseau, secure)
           # Static frontend only — exclude GB-scale backend/data dirs so Pages stays laptop-independent
-          for sub in a-san centra genesis immanuel kmt rousseau secure platoon; do
+          for sub in a-san centra genesis immanuel kmt rousseau secure platoon why; do
             if [ -d "$sub" ]; then
               mkdir -p "_pages/$sub"
               rsync -a --exclude='*.bak*' --exclude='.git' --exclude='backend' --exclude='engine' --exclude='plugins' --exclude='scanner' --exclude='node_modules' --exclude='__pycache__' --exclude='*.db' --exclude='*.db-*' --exclude='data' --exclude='dataset' --exclude='catalog-data.json' --exclude='logs' --exclude='*.log' --exclude='*.jsonl' --exclude='*.parquet' "$sub/" "_pages/$sub/" 2>/dev/null || true
@@ -102,7 +102,7 @@ jobs:
           # (not GitHub Pages) and its WAF intermittently returns 403 to GitHub
           # runner IPs while real browsers get 200 — so it must NOT fail the
           # Pages deploy. alieninc.tech/thedailyartcult/ IS Pages-served: hard check that.
-          for url in "https://alieninc.tech/" "https://alieninc.tech/panteon/" "https://panteon.alieninc.tech/" "https://panteon.alieninc.tech/play.html" "https://alieninc.tech/sitemap.xml" "https://a-san.alieninc.tech/" "https://centra.alieninc.tech/" "https://genesis.alieninc.tech/" "https://immanuel.alieninc.tech/" "https://kmt.alieninc.tech/" "https://rousseau.alieninc.tech/" "https://secure.alieninc.tech/" "https://alieninc.tech/thedailyartcult/"; do
+          for url in "https://alieninc.tech/" "https://alieninc.tech/panteon/" "https://panteon.alieninc.tech/" "https://panteon.alieninc.tech/play.html" "https://alieninc.tech/sitemap.xml" "https://a-san.alieninc.tech/" "https://centra.alieninc.tech/" "https://genesis.alieninc.tech/" "https://immanuel.alieninc.tech/" "https://kmt.alieninc.tech/" "https://rousseau.alieninc.tech/" "https://secure.alieninc.tech/" "https://alieninc.tech/thedailyartcult/" "https://alieninc.tech/why/"; do
             echo "Checking $url..."
             code=$(curl -s -o /tmp/out.html -w "%{http_code}" --max-time 20 "$url")
             echo "HTTP $code for $url"

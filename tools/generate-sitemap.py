@@ -44,6 +44,7 @@ def main():
         ("https://alieninc.tech/founder.html", ROOT / "founder.html", "0.9", "monthly"),
         ("https://alieninc.tech/mission.html", ROOT / "mission.html", "0.8", "monthly"),
         ("https://alieninc.tech/dashboard.html", ROOT / "dashboard.html", "0.7", "weekly"),
+        ("https://alieninc.tech/why/", ROOT / "why" / "index.html", "0.8", "monthly"),
         ("https://panteon.alieninc.tech/", ROOT / "panteon" / "index.html", "1.0", "daily"),
         ("https://panteon.alieninc.tech/play.html", ROOT / "panteon" / "play.html", "0.9", "weekly"),
         ("https://panteon.alieninc.tech/cmb-product.html", ROOT / "panteon" / "cmb-product.html", "0.8", "weekly"),

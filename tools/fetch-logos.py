@@ -143,13 +143,12 @@ def process(slug, company):
     except Exception:
         return {"slug": slug, "domain": domain, "status": "decode-fail"}
     title = title_of(html)
+    # Strict gate: the brand must be in the <title>. A looser body-fallback
+    # was tried and produced parked-domain junk, stock clipart, and a casino
+    # logo — never weaken this without a visual check of every accept.
     if len(tok) < 3 or not re.search(rf"\b{re.escape(tok)}", title.lower()):
-        # Fallback for JS-rendered/generic titles: accept only if the token is
-        # in BOTH the page body and the domain itself (kills parked/squat hits).
-        if not (len(tok) >= 4 and tok in html.lower() and tok in domain.lower()):
-            return {"slug": slug, "domain": domain, "status": "title-reject",
-                    "title": title[:80]}
-        title = title or f"[{slug} body-verified]"
+        return {"slug": slug, "domain": domain, "status": "title-reject",
+                "title": title[:80]}
     for icon_url in icon_links(html, f"https://{domain}/"):
         data, ext = fetch_icon(icon_url)
         if data and len(data) >= 800 and ext in ("png", "jpg"):

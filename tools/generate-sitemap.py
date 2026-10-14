@@ -105,6 +105,11 @@ def main():
                 if _p.exists():
                     add_url(urlset, f"https://alieninc.tech/labyu/{_r['slug']}/",
                             git_lastmod(_p), "0.7", "monthly")
+            for _c in _json.loads((ROOT / "labyu" / "companies.json").read_text()):
+                _p = ROOT / "labyu" / "c" / _c["slug"] / "index.html"
+                if _p.exists():
+                    add_url(urlset, f"https://alieninc.tech/labyu/c/{_c['slug']}/",
+                            git_lastmod(_p), "0.8", "weekly")
         except Exception:
             pass
 

@@ -82,8 +82,8 @@ def initials(name):
 
 # ---------------------------------------------------------------- YC-style company page
 
-# Pills copy YC exactly: uppercase 10px letterspaced chips on #E6E4DC;
-# batch pill carries the orange Y mark, status pill the green dot.
+# Pills: uppercase 10px letterspaced chips on #E6E4DC;
+# status pill carries the green dot.
 CO_CSS = """:root{--ink:#16140f;--beige:#f5f5ee;--line:#e5e0d2;--muted:#6b675e;--brand:#fb651e;--page-max:1280px}
 *{box-sizing:border-box}html,body{margin:0;padding:0}
 body{font-family:Outfit,ui-sans-serif,system-ui,sans-serif;color:var(--ink);background:#fff;-webkit-font-smoothing:antialiased}
@@ -112,7 +112,6 @@ a{color:inherit}
 .co-tag{font-size:18px;font-weight:300;margin:4px 0 8px}
 .pills{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .ypill{display:inline-flex;align-items:center;gap:5px;background:#E6E4DC;border-radius:3px;padding:2px 5px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;text-decoration:none;color:var(--ink)}
-.ymark{display:inline-flex;align-items:center;justify-content:center;width:12px;height:12px;background:#F05F22;color:#fff;font-size:9px;font-weight:700;border-radius:2px}
 .dot{width:8px;height:8px;border-radius:50%;background:#22c55e;margin-right:6px}
 .tabs{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:16px}
 .tabnav{display:flex;gap:24px}
@@ -192,9 +191,6 @@ def company_ld(base, c, founders):
 
 def pills_html(c):
     parts = []
-    if c.get("batch"):
-        parts.append(
-            f'<span class="ypill"><span class="ymark">Y</span><span>{esc(c["batch"])}</span></span>')
     if c.get("status"):
         parts.append(f'<span class="ypill"><span class="dot"></span>{esc(c["status"])}</span>')
     for ind in c.get("industries", []):
@@ -212,8 +208,6 @@ def company_html(base, c, founders):
     facts = []
     if c.get("founded"):
         facts.append(("Founded:", c["founded"]))
-    if c.get("batch"):
-        facts.append(("Batch:", c["batch"]))
     facts += [("Status:", c["status"]), ("Location:", c["location"])]
     if c.get("industries"):
         facts.append(("Industry:", ", ".join(c["industries"])))
@@ -357,7 +351,7 @@ def profile_html(base, r, companies_by_slug):
     title = f"{r['name']} — {r['role']} at {r['company']} | Labyu"
     desc = r.get("bio") or f"{r['name']}, {r['role']} at {r['company']}."
     pills = "".join(f'<span class="pill">{esc(x)}</span>'
-                    for x in [r.get("batch"), r.get("funding_stage"), r["industry"], r["location"]] if x)
+                    for x in [r.get("funding_stage"), r["industry"], r["location"]] if x)
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -419,7 +413,7 @@ def cards_html(records):
     out = []
     for r in records:
         pills = " ".join(f'<span class="pill">{esc(x)}</span>'
-                         for x in [r.get("batch"), r["industry"]] if x)
+                         for x in [r["industry"]] if x)
         out.append(CARD_TPL.format(
             cslug=esc(r["company_slug"]), initials=esc(initials(r["name"])),
             name=esc(r["name"]), role=esc(r["role"]),

@@ -80,6 +80,20 @@ def initials(name):
     return ("".join(p[0] for p in parts[:2]) or "?").upper()
 
 
+def ph_img(rel, alt):
+    """Photo <img> that degrades to the initials behind it when missing.
+
+    Convention: founder photos live at labyu/p/<slug>.jpg, company logos at
+    labyu/logos/<slug>.png. Set the optional "photo"/"logo" field to the path
+    relative to labyu/ (e.g. "photo": "p/francis-plaza.jpg"); omit the field
+    and the initials avatar renders instead. No broken-image icons ever.
+    """
+    if not rel:
+        return ""
+    return (f'<img class="ph" src="{esc(rel)}" alt="{esc(alt)}" loading="lazy" '
+            f'onerror="this.remove()">')
+
+
 # ---------------------------------------------------------------- YC-style company page
 
 # Pills: uppercase 10px letterspaced chips on #E6E4DC;
@@ -133,7 +147,9 @@ a{color:inherit}
 footer{background:#000;color:var(--beige);margin-top:48px}
 .f-inner{max-width:var(--page-max);margin:0 auto;padding:48px 24px;display:flex;gap:48px}
 @media(max-width:768px){.f-inner{flex-direction:column}}
-.f-bottom{max-width:var(--page-max);margin:0 auto;padding:24px;display:flex;justify-content:space-between;border-top:1px solid #333;font-size:14px;font-weight:300}"""
+.f-bottom{max-width:var(--page-max);margin:0 auto;padding:24px;display:flex;justify-content:space-between;border-top:1px solid #333;font-size:14px;font-weight:300}
+.co-logo,.fava,.clogo{position:relative}img.ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.lin{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 6px;border-radius:6px;background:#0A66C2;color:#fff;font-size:12px;font-weight:700;text-decoration:none}"""
 
 
 def yc_description(c, founders):
@@ -161,6 +177,8 @@ def company_ld(base, c, founders):
         }
         if f.get("bio"):
             p["description"] = f["bio"]
+        if f.get("photo"):
+            p["image"] = f"{base}/{f['photo']}"
         people.append(p)
     org = {
         "@type": "Organization",
@@ -174,6 +192,9 @@ def company_ld(base, c, founders):
     }
     if c.get("founded"):
         org["foundingDate"] = c["founded"]
+    if c.get("logo"):
+        org["logo"] = f"{base}/{c['logo']}"
+        org["image"] = f"{base}/{c['logo']}"
     same = [v for v in (c.get("links") or {}).values() if v]
     if same:
         org["sameAs"] = same
@@ -213,14 +234,17 @@ def company_html(base, c, founders):
         facts.append(("Industry:", ", ".join(c["industries"])))
     fact_rows = "".join(
         f'<div class="fact"><span>{esc(k)}</span><span>{esc(v)}</span></div>' for k, v in facts)
+    cologo = esc(initials(c["name"])) + (ph_img(f"../../{c['logo']}", c["name"]) if c.get("logo") else "")
+    ogimg = f'<meta property="og:image" content="{base}/{c["logo"]}">' if c.get("logo") else ""
     fcards = ""
     for f in founders:
         li = ""
         if (f.get("links") or {}).get("linkedin"):
             li = (f'<a href="{esc(f["links"]["linkedin"])}" rel="nofollow" target="_blank" '
-                  f'aria-label="{esc(f["name"])} on LinkedIn">in</a>')
+                  f'aria-label="{esc(f["name"])} on LinkedIn" class="lin">in</a>')
+        fav = esc(initials(f["name"])) + (ph_img(f"../../{f['photo']}", f["name"]) if f.get("photo") else "")
         fcards += (
-            f'<div class="fcard"><div class="fava">{esc(initials(f["name"]))}</div>'
+            f'<div class="fcard"><div class="fava">{fav}</div>'
             f'<div><div class="fname"><a href="{base}/{esc(f["slug"])}/">{esc(f["name"])}</a> {li}</div>'
             f'<div class="frole">{esc(f["role"])}</div></div></div>')
     return f"""<!DOCTYPE html>
@@ -238,6 +262,7 @@ def company_html(base, c, founders):
 <meta property="og:title" content="{esc(title)}">
 <meta property="og:description" content="{esc(desc)}">
 <meta property="og:url" content="{esc(url)}">
+{ogimg}
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{esc(title)}">
 <meta name="twitter:description" content="{esc(desc)}">
@@ -263,7 +288,7 @@ def company_html(base, c, founders):
 <div class="main">
   <article>
   <div class="co-head">
-    <div class="co-logo">{esc(initials(c["name"]))}</div>
+    <div class="co-logo">{cologo}</div>
     <div><h1 class="co-name">{esc(c["name"])}</h1>
     <div class="co-tag">{esc(c["tagline"])}</div>
     <div class="pills">{pills_html(c)}</div></div>
@@ -278,7 +303,7 @@ def company_html(base, c, founders):
 </div>
 <aside class="side">
   <div class="card">
-    <div class="clogo">{esc(initials(c["name"]))}</div>
+    <div class="clogo">{cologo}</div>
     <div style="font-size:20px;font-weight:500;text-align:center">{esc(c["name"])}</div>
     <div style="padding-top:12px">{fact_rows}</div>
   </div>
@@ -304,7 +329,11 @@ h1{font-family:"Source Serif 4",serif;font-weight:500;font-size:clamp(2rem,5vw,3
 .bio{font-size:16px;line-height:1.6}.pill{display:inline-block;font-size:12px;border:1px solid var(--line);background:var(--beige);border-radius:999px;padding:2px 10px;margin-right:6px}
 .cobox{margin-top:24px;border:1px solid var(--line);border-radius:12px;background:var(--beige);padding:16px}
 .cobox a{color:var(--brand);font-weight:600;text-decoration:none}
-.back{display:inline-block;margin-top:32px;color:var(--brand);font-size:14px}"""
+.back{display:inline-block;margin-top:32px;color:var(--brand);font-size:14px}
+.pphoto{width:120px;height:120px;border-radius:24px;background:var(--beige);position:relative;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:700;overflow:hidden;margin-bottom:12px}
+.linksrow{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:999px;font-size:14px;font-weight:600;text-decoration:none}
+.btn-li{background:#0A66C2;color:#fff}.btn-co{border:1px solid var(--line);color:var(--ink)}"""
 
 
 def profile_ld(base, r):
@@ -317,6 +346,8 @@ def profile_ld(base, r):
         "homeLocation": {"@type": "Place", "name": r["location"]},
         "knowsAbout": [r["industry"]], "url": url,
     }
+    if r.get("photo"):
+        person["image"] = f"{base}/{r['photo']}"
     same_as = [v for v in (r.get("links") or {}).values() if v]
     if same_as:
         person["sameAs"] = same_as
@@ -352,6 +383,17 @@ def profile_html(base, r, companies_by_slug):
     desc = r.get("bio") or f"{r['name']}, {r['role']} at {r['company']}."
     pills = "".join(f'<span class="pill">{esc(x)}</span>'
                     for x in [r.get("funding_stage"), r["industry"], r["location"]] if x)
+    ogimg = f'<meta property="og:image" content="{base}/{r["photo"]}">' if r.get("photo") else ""
+    hero = (f'<div class="pphoto">{esc(initials(r["name"]))}'
+            f'{ph_img("../" + r["photo"], r["name"])}</div>') if r.get("photo") else ""
+    lobtn = ""
+    if (r.get("links") or {}).get("linkedin"):
+        lobtn = (f'<a class="btn btn-li" href="{esc(r["links"]["linkedin"])}" rel="nofollow" '
+                 f'target="_blank">in&nbsp;LinkedIn</a>')
+    cobtn = ""
+    if r.get("company_url"):
+        cobtn = f'<a class="btn btn-co" href="{esc(r["company_url"])}" target="_blank" rel="noopener">Company site ↗</a>'
+    linksrow = f'<div class="linksrow">{lobtn}{cobtn}</div>' if (lobtn or cobtn) else ""
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -364,6 +406,7 @@ def profile_html(base, r, companies_by_slug):
 <meta property="og:title" content="{esc(title)}">
 <meta property="og:description" content="{esc(desc)}">
 <meta property="og:url" content="{esc(url)}">
+{ogimg}
 <meta name="twitter:card" content="summary">
 <script type="application/ld+json">
 {ld}
@@ -375,10 +418,12 @@ def profile_html(base, r, companies_by_slug):
 <main class="wrap">
 <article>
 <nav class="crumb" aria-label="Breadcrumb"><a href="{base}/">Filipino Founders</a> › <a href="{courl}">{esc(c["name"])}</a> › {esc(r["name"])}</nav>
+{hero}
 <h1>{esc(r["name"])}</h1>
 <div class="role">{esc(r["role"])} at {esc(r["company"])}</div>
 <div class="meta">{pills}</div>
 <p class="bio">{esc(desc)}</p>
+{linksrow}
 <div class="cobox"><div style="font-size:20px;font-weight:500">{esc(c["name"])}</div>
 <div style="margin:4px 0 8px">{esc(c["tagline"])}</div>
 <a href="{courl}">View company →</a></div>
@@ -404,7 +449,7 @@ def directory_ld(base, companies):
          "numberOfItems": len(companies), "itemListElement": items}]}
 
 
-CARD_TPL = ('      <a class="card" href="./c/{cslug}/"><div class="ava">{initials}</div>'
+CARD_TPL = ('      <a class="card" href="./c/{cslug}/"><div class="ava">{initials}{photo}</div>'
             '<div><div class="cname">{name}</div><div class="cdesc">{role} at {company}'
             '<div>{pills}</div></div></div></a>')
 
@@ -414,8 +459,9 @@ def cards_html(records):
     for r in records:
         pills = " ".join(f'<span class="pill">{esc(x)}</span>'
                          for x in [r["industry"]] if x)
+        photo = ph_img(f"./{r['photo']}", r["name"]) if r.get("photo") else ""
         out.append(CARD_TPL.format(
-            cslug=esc(r["company_slug"]), initials=esc(initials(r["name"])),
+            cslug=esc(r["company_slug"]), initials=esc(initials(r["name"])), photo=photo,
             name=esc(r["name"]), role=esc(r["role"]),
             company=esc(r["company"]), pills=pills))
     return "\n".join(out)

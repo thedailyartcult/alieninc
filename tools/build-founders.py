@@ -122,11 +122,12 @@ def tier_key(c):
 
 
 def sorted_for_display(founders, companies):
-    """Index order: featured companies first, then higher completeness, then name."""
+    """Index order: completeness first (Full above, thin below),
+    then featured, then name."""
     cby = {c["slug"]: c for c in companies}
     def key(r):
         c = cby.get(r["company_slug"], {})
-        return (0 if c.get("featured") else 1, -tier_key(c), r["name"].lower())
+        return (-tier_key(c), 0 if c.get("featured") else 1, r["name"].lower())
     return sorted(founders, key=key)
 
 

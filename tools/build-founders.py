@@ -126,6 +126,15 @@ def sorted_for_display(founders, companies):
     return sorted(founders, key=key)
 
 
+ISSUES_NEW = "https://github.com/thedailyartcult/alieninc/issues/new"
+
+
+def correction_url(title, body):
+    import urllib.parse
+    q = urllib.parse.urlencode({"title": title, "body": body})
+    return f"{ISSUES_NEW}?{q}"
+
+
 def origin_stats_block(founders):
     """Directory-wide founder-roots panel: verified origins only, never guessed."""
     islands = ("Luzon", "Visayas", "Mindanao")
@@ -150,6 +159,12 @@ def origin_stats_block(founders):
                f'<span style="flex:1;height:10px;border-radius:999px;background:#e5e0d2;overflow:hidden">'
                f'<span style="display:block;height:100%;width:{(100.0 * unv / total if total else 0):.1f}%;background:#a8a49a"></span></span>'
                f'<span style="width:88px;font-size:13px;text-align:right">{unv}</span></div>') if unv else ""
+    report_url = correction_url(
+        "Origin data: missing province / correction",
+        "Founder (name + profile URL):\nCorrect Luzon/Visayas/Mindanao + place:\nSource (URL proving it):\n")
+    report_row = (f'<div style="font-size:13px;margin-top:8px">Missing your province, or spot an error? '
+                  f'<a href="{esc(report_url)}" target="_blank" rel="noopener" '
+                  f'style="color:#fb651e;font-weight:600">Suggest a correction →</a></div>')
     return (
         '<!--labyu-origin-stats-->'
         '<div id="labyu-origin-stats" style="border:1px solid #e5e0d2;border-radius:12px;'
@@ -160,6 +175,7 @@ def origin_stats_block(founders):
         f'{rows}{unv_row}'
         f'<div style="font-size:13px;color:#6b675e;margin-top:6px">{sub} · '
         'origins are researched one by one, never assumed.</div>'
+        f'{report_row}'
         '</div><!--/labyu-origin-stats-->')
 
 
@@ -328,6 +344,9 @@ def company_html(base, c, founders):
         f'<div class="fact"><span>{esc(k)}</span><span>{esc(v)}</span></div>' for k, v in facts)
     cologo = esc(initials(c["name"])) + (ph_img(f"../../{c['logo']}", c["name"]) if c.get("logo") else "")
     ogimg = f'<meta property="og:image" content="{base}/{c["logo"]}">' if c.get("logo") else ""
+    cofix = correction_url(
+        f"Correction: {c['name']} ({c['slug']})",
+        f"Company page: {url}\nField to correct (website / founded / description):\nCorrect value:\nSource (URL proving it):\n")
     fcards = ""
     for f in founders:
         li = ""
@@ -391,6 +410,7 @@ def company_html(base, c, founders):
   </div>
   <section id="about"><div class="prose">{esc(c.get("description") or desc)}</div></section>
   <section id="founders"><h2 class="sect">Founders</h2>{fcards}</section>
+  <div style="margin-top:16px;font-size:13px;color:var(--muted)">Missing info or spot an error on this company? <a href="{esc(cofix)}" target="_blank" rel="noopener" style="color:var(--brand)">Suggest a correction →</a></div>
   </article>
 </div>
 <aside class="side">
@@ -497,6 +517,11 @@ def profile_html(base, r, companies_by_slug):
     if r.get("company_url"):
         cobtn = f'<a class="btn btn-co" href="{esc(r["company_url"])}" target="_blank" rel="noopener">Company site ↗</a>'
     linksrow = f'<div class="linksrow">{lobtn}{cobtn}</div>' if (lobtn or cobtn) else ""
+    fix_url = correction_url(
+        f"Correction: {r['name']} ({r['slug']})",
+        f"Founder page: {url}\nField to correct (origin / role / bio / link):\nCorrect value:\nSource (URL proving it):\n")
+    fixrow = (f'<div style="margin-top:16px;font-size:13px;color:var(--muted)">Spot an error on this profile? '
+              f'<a href="{esc(fix_url)}" target="_blank" rel="noopener" style="color:var(--brand)">Suggest a correction →</a></div>')
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -530,6 +555,7 @@ def profile_html(base, r, companies_by_slug):
 <div class="cobox"><div style="font-size:20px;font-weight:500">{esc(c["name"])}</div>
 <div style="margin:4px 0 8px">{esc(c["tagline"])}</div>
 <a href="{courl}">View company →</a></div>
+{fixrow}
 <a class="back" href="{base}/">← All Filipino founders</a>
 </article>
 </main>

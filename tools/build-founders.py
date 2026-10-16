@@ -308,6 +308,8 @@ def company_ld(base, c, founders):
         org["sameAs"] = same
     if c.get("contact_email"):
         org["email"] = c["contact_email"]
+    if c.get("contact_phone"):
+        org["telephone"] = c["contact_phone"]
     page = {
         "@type": "ProfilePage",
         "@id": f"{url}#page",
@@ -357,6 +359,10 @@ def company_html(base, c, founders):
     if links.get("contact"):
         contact_rows += (f'<div class="fact"><span>Contact:</span><span>'
                          f'<a href="{esc(links["contact"])}" target="_blank" rel="noopener">Contact page ↗</a></span></div>')
+    if c.get("contact_phone"):
+        clean_tel = re.sub(r"[^\d+]", "", c["contact_phone"])
+        contact_rows += (f'<div class="fact"><span>Phone:</span><span>'
+                         f'<a href="tel:{esc(clean_tel)}">{esc(c["contact_phone"])}</a></span></div>')
     if c.get("contact_email"):
         contact_rows += (f'<div class="fact"><span>Email:</span><span>'
                          f'<a href="mailto:{esc(c["contact_email"])}">{esc(c["contact_email"])}</a></span></div>')
@@ -459,17 +465,35 @@ body{font-family:Outfit,ui-sans-serif,system-ui,sans-serif;color:var(--ink);back
 h1{font-family:"Source Serif 4",serif;font-weight:500;font-size:clamp(2rem,5vw,3rem);margin:0 0 4px}
 .role{font-size:17px;color:#333}.meta{margin:16px 0;font-size:14px;color:var(--muted)}
 .bio{font-size:16px;line-height:1.6}.pill{display:inline-block;font-size:12px;border:1px solid var(--line);background:var(--beige);border-radius:999px;padding:2px 10px;margin-right:6px}
-.cobox{margin-top:24px;border:1px solid var(--line);border-radius:12px;background:var(--beige);padding:16px}
+.cobox{margin-top:28px;border:1px solid var(--line);border-radius:14px;background:var(--beige);padding:20px}
 .cobox a{color:var(--brand);font-weight:600;text-decoration:none}
+.cobox-head{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.cobox-logo{width:52px;height:52px;border-radius:10px;background:#d9d5ca;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;position:relative;overflow:hidden}
+.cobox-name{font-size:22px;font-weight:600;line-height:1.2}
+.cobox-tag{font-size:14px;color:var(--muted);margin-top:3px}
+.phonebook-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}
+@media(min-width:600px){.phonebook-grid{grid-template-columns:1fr 1fr}}
+.pb-card{display:flex;align-items:center;gap:10px;background:#fff;padding:10px 14px;border-radius:8px;border:1px solid var(--line);font-size:13px}
+.pb-icon{font-size:18px;flex-shrink:0}
+.pb-meta{min-width:0;flex:1}
+.pb-label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:2px}
+.pb-val{font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.pb-val a{color:var(--ink);text-decoration:none}
+.pb-val a:hover{color:var(--brand);text-decoration:underline}
+.cobox-foot{margin-top:16px;display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid var(--line);font-size:13px}
 .back{display:inline-block;margin-top:32px;color:var(--brand);font-size:14px}
 .pphoto{width:120px;height:120px;border-radius:24px;background:var(--beige);position:relative;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:700;overflow:hidden;margin-bottom:12px}
 img.ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .linksrow{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:999px;font-size:14px;font-weight:600;text-decoration:none}
-.btn-li{background:#0A66C2;color:#fff}.btn-co{border:1px solid var(--line);color:var(--ink)}"""
+.btn-li{background:#0A66C2;color:#fff}
+.btn-mail{background:#16140f;color:#fff}
+.btn-tel{background:#00875a;color:#fff}
+.btn-co{border:1px solid var(--line);color:var(--ink)}"""
 
 
-def profile_ld(base, r):
+def profile_ld(base, r, c=None):
+    c = c or {}
     url = f"{base}/{r['slug']}/"
     courl = f"{base}/c/{r['company_slug']}/"
     person = {
@@ -496,6 +520,10 @@ def profile_ld(base, r):
     }
     if r.get("company_url"):
         org["url"] = r["company_url"]
+    if c.get("contact_email"):
+        org["email"] = c["contact_email"]
+    if c.get("contact_phone"):
+        org["telephone"] = c["contact_phone"]
     page = {
         "@type": "ProfilePage", "@id": f"{url}#page",
         "name": f"{r['name']} — {r['role']} at {r['company']}",
@@ -514,7 +542,7 @@ def profile_html(base, r, companies_by_slug):
     url = f"{base}/{r['slug']}/"
     c = companies_by_slug[r["company_slug"]]
     courl = f"{base}/c/{c['slug']}/"
-    ld = json.dumps(profile_ld(base, r), ensure_ascii=False)
+    ld = json.dumps(profile_ld(base, r, c), ensure_ascii=False)
     title = f"{r['name']} — {r['role']} at {r['company']} | Labyu"
     desc = r.get("bio") or f"{r['name']}, {r['role']} at {r['company']}."
     pills = "".join(f'<span class="pill">{esc(x)}</span>'
@@ -534,6 +562,15 @@ def profile_html(base, r, companies_by_slug):
     if (r.get("links") or {}).get("linkedin"):
         lobtn = (f'<a class="btn btn-li" href="{esc(r["links"]["linkedin"])}" rel="nofollow" '
                  f'target="_blank">in&nbsp;LinkedIn</a>')
+    mailbtn = ""
+    if c.get("contact_email"):
+        mailbtn = (f'<a class="btn btn-mail" href="mailto:{esc(c["contact_email"])}">'
+                   f'✉&nbsp;Email&nbsp;Company</a>')
+    telbtn = ""
+    if c.get("contact_phone"):
+        clean_tel = re.sub(r"[^\d+]", "", c["contact_phone"])
+        telbtn = (f'<a class="btn btn-tel" href="tel:{esc(clean_tel)}">'
+                  f'📞&nbsp;Call&nbsp;Company</a>')
     colobtn = ""
     co_links = c.get("links") or {}
     if not lobtn and co_links.get("linkedin"):
@@ -545,7 +582,62 @@ def profile_html(base, r, companies_by_slug):
     cocobtn = ""
     if co_links.get("contact"):
         cocobtn = (f'<a class="btn btn-co" href="{esc(co_links["contact"])}" target="_blank" rel="noopener">Contact page ↗</a>')
-    linksrow = f'<div class="linksrow">{lobtn}{colobtn}{cobtn}{cocobtn}</div>' if (lobtn or colobtn or cobtn or cocobtn) else ""
+    linksrow = f'<div class="linksrow">{lobtn}{mailbtn}{telbtn}{colobtn}{cobtn}{cocobtn}</div>' if (lobtn or mailbtn or telbtn or colobtn or cobtn or cocobtn) else ""
+
+    pb_cards = []
+    if c.get("contact_phone"):
+        clean_tel = re.sub(r"[^\d+]", "", c["contact_phone"])
+        pb_cards.append(
+            f'<div class="pb-card"><div class="pb-icon">📞</div><div class="pb-meta">'
+            f'<span class="pb-label">Telephone</span>'
+            f'<span class="pb-val"><a href="tel:{esc(clean_tel)}">{esc(c["contact_phone"])}</a></span>'
+            f'</div></div>')
+    if c.get("contact_email"):
+        pb_cards.append(
+            f'<div class="pb-card"><div class="pb-icon">✉</div><div class="pb-meta">'
+            f'<span class="pb-label">Official Email</span>'
+            f'<span class="pb-val"><a href="mailto:{esc(c["contact_email"])}">{esc(c["contact_email"])}</a></span>'
+            f'</div></div>')
+    if c.get("location"):
+        pb_cards.append(
+            f'<div class="pb-card"><div class="pb-icon">📍</div><div class="pb-meta">'
+            f'<span class="pb-label">Headquarters</span>'
+            f'<span class="pb-val">{esc(c["location"])}</span>'
+            f'</div></div>')
+    web = c.get("website") or r.get("company_url")
+    if web:
+        disp_web = web.replace("https://", "").replace("http://", "").rstrip("/")
+        pb_cards.append(
+            f'<div class="pb-card"><div class="pb-icon">🌐</div><div class="pb-meta">'
+            f'<span class="pb-label">Official Website</span>'
+            f'<span class="pb-val"><a href="{esc(web)}" target="_blank" rel="noopener">{esc(disp_web)} ↗</a></span>'
+            f'</div></div>')
+    elif co_links.get("contact"):
+        pb_cards.append(
+            f'<div class="pb-card"><div class="pb-icon">💬</div><div class="pb-meta">'
+            f'<span class="pb-label">Support</span>'
+            f'<span class="pb-val"><a href="{esc(co_links["contact"])}" target="_blank" rel="noopener">Contact page ↗</a></span>'
+            f'</div></div>')
+
+    pb_grid = f'<div class="phonebook-grid">{"".join(pb_cards)}</div>' if pb_cards else ""
+    cologo = (f'<img class="ph" src="../{c["logo"]}" alt="{esc(c["name"])}" loading="lazy" onerror="this.remove()">'
+              if c.get("logo") else esc(initials(c["name"])))
+
+    cobox = f"""<div class="cobox">
+<div class="cobox-head">
+  <div class="cobox-logo">{cologo}</div>
+  <div>
+    <div class="cobox-name">{esc(c["name"])}</div>
+    <div class="cobox-tag">{esc(c["tagline"])}</div>
+  </div>
+</div>
+{pb_grid}
+<div class="cobox-foot">
+  <a href="{courl}">View full company profile →</a>
+  <span style="color:var(--muted);font-size:12px">Verified Philippine Entity</span>
+</div>
+</div>"""
+
     fix_url = correction_url(
         f"Correction: {r['name']} ({r['slug']})",
         f"Founder page: {url}\nField to correct (origin / role / bio / link):\nCorrect value:\nSource (URL proving it):\n")
@@ -581,9 +673,7 @@ def profile_html(base, r, companies_by_slug):
 <div class="meta">{pills}</div>
 <p class="bio">{esc(desc)}</p>
 {linksrow}
-<div class="cobox"><div style="font-size:20px;font-weight:500">{esc(c["name"])}</div>
-<div style="margin:4px 0 8px">{esc(c["tagline"])}</div>
-<a href="{courl}">View company →</a></div>
+{cobox}
 {fixrow}
 <a class="back" href="{base}/">← All Filipino founders</a>
 </article>

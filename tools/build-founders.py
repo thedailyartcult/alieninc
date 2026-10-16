@@ -73,6 +73,10 @@ def load():
     for r in founders:
         if r.get("origin") and r["origin"] not in ("Luzon", "Visayas", "Mindanao"):
             raise ValueError(f"founder {r['slug']} has bad origin: {r['origin']!r}")
+    # Contact emails: official published inboxes only, never guessed or personal.
+    for c in companies:
+        if c.get("contact_email") and "@" not in c["contact_email"]:
+            raise ValueError(f"company {c['slug']} has bad contact_email")
     # Featured (top) companies first; stable for the rest.
     companies = sorted(companies, key=lambda c: (0 if c.get("featured") else 1))
     return founders, companies, by_company
@@ -301,6 +305,8 @@ def company_ld(base, c, founders):
     same = [v for v in (c.get("links") or {}).values() if v]
     if same:
         org["sameAs"] = same
+    if c.get("contact_email"):
+        org["email"] = c["contact_email"]
     page = {
         "@type": "ProfilePage",
         "@id": f"{url}#page",
@@ -342,6 +348,19 @@ def company_html(base, c, founders):
         facts.append(("Industry:", ", ".join(c["industries"])))
     fact_rows = "".join(
         f'<div class="fact"><span>{esc(k)}</span><span>{esc(v)}</span></div>' for k, v in facts)
+    contact_rows = ""
+    links = c.get("links") or {}
+    if links.get("linkedin"):
+        contact_rows += (f'<div class="fact"><span>LinkedIn:</span><span>'
+                         f'<a href="{esc(links["linkedin"])}" target="_blank" rel="noopener">Company page ↗</a></span></div>')
+    if links.get("contact"):
+        contact_rows += (f'<div class="fact"><span>Contact:</span><span>'
+                         f'<a href="{esc(links["contact"])}" target="_blank" rel="noopener">Contact page ↗</a></span></div>')
+    if c.get("contact_email"):
+        contact_rows += (f'<div class="fact"><span>Email:</span><span>'
+                         f'<a href="mailto:{esc(c["contact_email"])}">{esc(c["contact_email"])}</a></span></div>')
+    if contact_rows:
+        fact_rows += '<div class="fact"><span>Reach:</span><span>official channels</span></div>' + contact_rows
     cologo = esc(initials(c["name"])) + (ph_img(f"../../{c['logo']}", c["name"]) if c.get("logo") else "")
     ogimg = f'<meta property="og:image" content="{base}/{c["logo"]}">' if c.get("logo") else ""
     cofix = correction_url(

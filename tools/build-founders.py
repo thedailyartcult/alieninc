@@ -533,10 +533,18 @@ def profile_html(base, r, companies_by_slug):
     if (r.get("links") or {}).get("linkedin"):
         lobtn = (f'<a class="btn btn-li" href="{esc(r["links"]["linkedin"])}" rel="nofollow" '
                  f'target="_blank">in&nbsp;LinkedIn</a>')
+    colobtn = ""
+    co_links = c.get("links") or {}
+    if not lobtn and co_links.get("linkedin"):
+        colobtn = (f'<a class="btn btn-li" href="{esc(co_links["linkedin"])}" rel="nofollow" '
+                   f'target="_blank">Company&nbsp;LinkedIn&nbsp;↗</a>')
     cobtn = ""
     if r.get("company_url"):
         cobtn = f'<a class="btn btn-co" href="{esc(r["company_url"])}" target="_blank" rel="noopener">Company site ↗</a>'
-    linksrow = f'<div class="linksrow">{lobtn}{cobtn}</div>' if (lobtn or cobtn) else ""
+    cocobtn = ""
+    if co_links.get("contact"):
+        cocobtn = (f'<a class="btn btn-co" href="{esc(co_links["contact"])}" target="_blank" rel="noopener">Contact page ↗</a>')
+    linksrow = f'<div class="linksrow">{lobtn}{colobtn}{cobtn}{cocobtn}</div>' if (lobtn or colobtn or cobtn or cocobtn) else ""
     fix_url = correction_url(
         f"Correction: {r['name']} ({r['slug']})",
         f"Founder page: {url}\nField to correct (origin / role / bio / link):\nCorrect value:\nSource (URL proving it):\n")

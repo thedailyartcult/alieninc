@@ -68,6 +68,13 @@ def load():
     by_company = {}
     for r in founders:
         by_company.setdefault(r["company_slug"], []).append(r)
+    # Founder roots: Luzon/Visayas/Mindanao birthplace or family origin.
+    # Never company address. Only set with a published source — never guess.
+    for r in founders:
+        if r.get("origin") and r["origin"] not in ("Luzon", "Visayas", "Mindanao"):
+            raise ValueError(f"founder {r['slug']} has bad origin: {r['origin']!r}")
+    # Featured (top) companies first; stable for the rest.
+    companies = sorted(companies, key=lambda c: (0 if c.get("featured") else 1))
     return founders, companies, by_company
 
 
@@ -78,6 +85,82 @@ def esc(s):
 def initials(name):
     parts = [p for p in str(name).split() if p]
     return ("".join(p[0] for p in parts[:2]) or "?").upper()
+
+
+def completeness(c):
+    """Data-completeness score for a company (max 6).
+
+    website=2, logo=1, founded=1, description>=80 chars=1, tagline=1.
+    Tiers: 6 -> "Full profile", 4-5 -> "Standard", 0-3 -> "Basic".
+    """
+    score = 0
+    if (c.get("website") or "").strip():
+        score += 2
+    if (c.get("logo") or "").strip():
+        score += 1
+    if (c.get("founded") or "").strip():
+        score += 1
+    if len(c.get("description") or "") >= 80:
+        score += 1
+    if (c.get("tagline") or "").strip():
+        score += 1
+    if score >= 6:
+        tier = "Full profile"
+    elif score >= 4:
+        tier = "Standard"
+    else:
+        tier = "Basic"
+    return score, tier
+
+
+def tier_key(c):
+    return completeness(c)[0]
+
+
+def sorted_for_display(founders, companies):
+    """Index order: featured companies first, then higher completeness, then name."""
+    cby = {c["slug"]: c for c in companies}
+    def key(r):
+        c = cby.get(r["company_slug"], {})
+        return (0 if c.get("featured") else 1, -tier_key(c), r["name"].lower())
+    return sorted(founders, key=key)
+
+
+def origin_stats_block(founders):
+    """Directory-wide founder-roots panel: verified origins only, never guessed."""
+    islands = ("Luzon", "Visayas", "Mindanao")
+    counts = {i: sum(1 for r in founders if r.get("origin") == i) for i in islands}
+    verified = sum(counts.values())
+    total = len(founders)
+    colors = {"Luzon": "#fb651e", "Visayas": "#0A66C2", "Mindanao": "#22c55e"}
+    rows = ""
+    for i in islands:
+        pct = (100.0 * counts[i] / verified) if verified else 0.0
+        rows += (
+            f'<div style="display:flex;align-items:center;gap:8px;margin:4px 0">'
+            f'<span style="width:70px;font-size:13px">{i}</span>'
+            f'<span style="flex:1;height:10px;border-radius:999px;background:#e5e0d2;overflow:hidden">'
+            f'<span style="display:block;height:100%;width:{pct:.1f}%;background:{colors[i]}"></span></span>'
+            f'<span style="width:88px;font-size:13px;text-align:right">{pct:.0f}% · {counts[i]}</span></div>')
+    sub = (f"{verified} of {total} founders verified" if verified
+           else "No origins verified yet")
+    unv = total - verified
+    unv_row = (f'<div style="display:flex;align-items:center;gap:8px;margin:4px 0">'
+               f'<span style="width:70px;font-size:13px">Unverified</span>'
+               f'<span style="flex:1;height:10px;border-radius:999px;background:#e5e0d2;overflow:hidden">'
+               f'<span style="display:block;height:100%;width:{(100.0 * unv / total if total else 0):.1f}%;background:#a8a49a"></span></span>'
+               f'<span style="width:88px;font-size:13px;text-align:right">{unv}</span></div>') if unv else ""
+    return (
+        '<!--labyu-origin-stats-->'
+        '<div id="labyu-origin-stats" style="border:1px solid #e5e0d2;border-radius:12px;'
+        'background:#f5f5ee;padding:14px 16px;margin:0 0 16px">'
+        '<div style="font-weight:600;margin-bottom:6px">Where our founders come from '
+        '<span style="font-weight:400;color:#6b675e;font-size:13px">'
+        '— home bases per public profiles incl. LinkedIn · company addresses excluded</span></div>'
+        f'{rows}{unv_row}'
+        f'<div style="font-size:13px;color:#6b675e;margin-top:6px">{sub} · '
+        'origins are researched one by one, never assumed.</div>'
+        '</div><!--/labyu-origin-stats-->')
 
 
 def ph_img(rel, alt):
@@ -126,6 +209,10 @@ a{color:inherit}
 .co-tag{font-size:18px;font-weight:300;margin:4px 0 8px}
 .pills{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .ypill{display:inline-flex;align-items:center;gap:5px;background:#E6E4DC;border-radius:3px;padding:2px 5px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;text-decoration:none;color:var(--ink)}
+.tier-feat{background:#16140f;color:#f5f5ee}
+.tier-full{background:#e6f4ea}
+.tier-std{background:#fef3e2}
+.tier-basic{background:#f3e8e8}
 .dot{width:8px;height:8px;border-radius:50%;background:#22c55e;margin-right:6px}
 .tabs{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:16px}
 .tabnav{display:flex;gap:24px}
@@ -212,12 +299,17 @@ def company_ld(base, c, founders):
 
 def pills_html(c):
     parts = []
+    if c.get("featured"):
+        parts.append('<span class="ypill tier-feat">★ Featured</span>')
     if c.get("status"):
         parts.append(f'<span class="ypill"><span class="dot"></span>{esc(c["status"])}</span>')
     for ind in c.get("industries", []):
         parts.append(f'<span class="ypill">{esc(ind)}</span>')
     if c.get("location"):
         parts.append(f'<span class="ypill">{esc(c["location"])}</span>')
+    _, tier = completeness(c)
+    tcls = {"Full profile": "tier-full", "Standard": "tier-std"}.get(tier, "tier-basic")
+    parts.append(f'<span class="ypill {tcls}">{esc(tier)}</span>')
     return "".join(parts)
 
 
@@ -342,10 +434,13 @@ def profile_ld(base, r):
     person = {
         "@type": "Person", "@id": f"{url}#person", "name": r["name"],
         "jobTitle": f"{r['role']} at {r['company']}",
+        "nationality": "Filipino",
         "worksFor": {"@id": f"{courl}#org"},
         "homeLocation": {"@type": "Place", "name": r["location"]},
         "knowsAbout": [r["industry"]], "url": url,
     }
+    if r.get("origin_place"):
+        person["birthPlace"] = {"@type": "Place", "name": r["origin_place"]}
     if r.get("photo"):
         person["image"] = f"{base}/{r['photo']}"
     same_as = [v for v in (r.get("links") or {}).values() if v]
@@ -383,6 +478,14 @@ def profile_html(base, r, companies_by_slug):
     desc = r.get("bio") or f"{r['name']}, {r['role']} at {r['company']}."
     pills = "".join(f'<span class="pill">{esc(x)}</span>'
                     for x in [r.get("funding_stage"), r["industry"], r["location"]] if x)
+    if r.get("origin"):
+        roots = r["origin"] + (f' ({r["origin_place"]})' if r.get("origin_place") else "")
+        if r.get("origin_source"):
+            pills += (f'<a class="pill" style="color:inherit;text-decoration:none" '
+                      f'href="{esc(r["origin_source"])}" target="_blank" rel="nofollow">'
+                      f'Roots: {esc(roots)} ↗</a>')
+        else:
+            pills += f'<span class="pill" style="background:#e6f4ea">Roots: {esc(roots)}</span>'
     ogimg = f'<meta property="og:image" content="{base}/{r["photo"]}">' if r.get("photo") else ""
     hero = (f'<div class="pphoto">{esc(initials(r["name"]))}'
             f'{ph_img("../" + r["photo"], r["name"])}</div>') if r.get("photo") else ""
@@ -449,22 +552,81 @@ def directory_ld(base, companies):
          "numberOfItems": len(companies), "itemListElement": items}]}
 
 
-CARD_TPL = ('      <a class="card" href="./c/{cslug}/"><div class="ava">{initials}{photo}</div>'
+CARD_TPL = ('      <a class="card" href="./c/{cslug}/" data-search="{search}" '
+            'data-origin="{origin}" data-industry="{industry}" data-role="{rolekey}">'
+            '<div class="ava">{initials}{photo}</div>'
             '<div><div class="cname">{name}</div><div class="cdesc">{role} at {company}'
             '<div>{pills}</div></div></div></a>')
 
 
-def cards_html(records):
+def cards_html(records, cby=None):
+    cby = cby or {}
     out = []
     for r in records:
         pills = " ".join(f'<span class="pill">{esc(x)}</span>'
                          for x in [r["industry"]] if x)
+        c = cby.get(r["company_slug"], {})
+        if c:
+            _, tier = completeness(c)
+            bg = {"Full profile": "#e6f4ea", "Standard": "#fef3e2"}.get(tier, "#f3e8e8")
+            star = "★ " if c.get("featured") else ""
+            pills += (f' <span class="pill" style="background:{bg}">{esc(star + tier)}</span>')
         photo = ph_img(f"./{r['photo']}", r["name"]) if r.get("photo") else ""
+        search = esc(f"{r['name']} {r['role']} {r['company']} {r['industry']}".lower())
         out.append(CARD_TPL.format(
             cslug=esc(r["company_slug"]), initials=esc(initials(r["name"])), photo=photo,
             name=esc(r["name"]), role=esc(r["role"]),
-            company=esc(r["company"]), pills=pills))
+            company=esc(r["company"]), pills=pills, search=search,
+            origin=esc(r.get("origin") or "Unverified"),
+            industry=esc(r["industry"]), rolekey=esc(r["role"].lower())))
     return "\n".join(out)
+
+
+def facets_html(records):
+    """Sidebar facets with live counts: origin islands, industries, role keywords."""
+    import collections
+    origins = collections.Counter(r.get("origin") or "Unverified" for r in records)
+    industries = collections.Counter(r["industry"] for r in records)
+    roles = [("Founder", "founder"), ("CEO", "ceo"), ("CTO", "cto"), ("COO", "coo")]
+    def row(group, value, label, n):
+        return (f'<label><input type="checkbox" data-facet="{group}" value="{esc(value)}" checked>'
+                f'<span>{esc(label)}</span><span class="count">{n}</span></label>')
+    loc_order = [i for i in ("Luzon", "Visayas", "Mindanao", "Unverified") if origins.get(i)]
+    loc = "".join(row("loc", v, v, origins[v]) for v in loc_order)
+    ind = "".join(row("ind", k, k, industries[k])
+                  for k in sorted(industries, key=lambda k: (-industries[k], k)))
+    rls = "".join(row("role", key, label,
+                      sum(1 for r in records if key in r["role"].lower()))
+                 for label, key in roles)
+    return (f'<div class="facet"><h4>Location</h4>{loc}</div>'
+            f'<div class="facet"><h4>Industry</h4>{ind}</div>'
+            f'<div class="facet"><h4>Role</h4>{rls}</div>')
+
+
+FILTER_JS = """<script id="labyu-filter-js">
+(function(){
+var q=document.querySelector('.search'),msg=document.querySelector('.main .msg'),
+cards=Array.prototype.slice.call(document.querySelectorAll('.cards .card'));
+if(!q||!msg||!cards.length)return;
+function checked(group){
+return Array.prototype.map.call(
+document.querySelectorAll('input[data-facet="'+group+'"]:checked'),function(i){return i.value;});}
+function apply(){
+var text=(q.value||'').toLowerCase().trim(),
+loc=checked('loc'),ind=checked('ind'),rol=checked('role'),n=0;
+cards.forEach(function(c){
+var ok=true;
+if(text&&c.getAttribute('data-search').indexOf(text)<0)ok=false;
+if(ok&&loc.length&&loc.indexOf(c.getAttribute('data-origin'))<0)ok=false;
+if(ok&&ind.length&&ind.indexOf(c.getAttribute('data-industry'))<0)ok=false;
+if(ok&&rol.length){var r=c.getAttribute('data-role');ok=rol.some(function(k){return r.indexOf(k)>=0;});}
+c.style.display=ok?'':'none';if(ok)n++;});
+msg.textContent='Showing '+n+' of '+cards.length+' founders';}
+q.addEventListener('input',apply);
+Array.prototype.forEach.call(document.querySelectorAll('input[data-facet]'),function(i){
+i.addEventListener('change',apply);});
+})();
+</script>"""
 
 
 def patch_index(base, records, companies, dry=False):
@@ -492,13 +654,43 @@ def patch_index(base, records, companies, dry=False):
                      lambda _: block, src, count=1, flags=re.S)
     else:
         src = src.replace("</title>", "</title>\n" + block, 1)
-    cards = cards_html(records)
+    cards = cards_html(sorted_for_display(records, companies),
+                           {c["slug"]: c for c in companies})
     if '<div class="cards">' in src:
         src = re.sub(r'(<div class="cards">).*?(</div>\s*</main>)',
-                     lambda m: m.group(1) + "\n" + cards + "\n    " + m.group(2),
-                     src, count=1, flags=re.S)
+                      lambda m: m.group(1) + "\n" + cards + "\n    " + m.group(2),
+                      src, count=1, flags=re.S)
+    facets = facets_html(records)
+    if '<div class="facet-list">' in src:
+        src = re.sub(r'(<div class="facet-list">).*?(</div>\s*</aside>)',
+                      lambda m: m.group(1) + "\n    " + facets + "\n    " + m.group(2),
+                      src, count=1, flags=re.S)
+    if 'id="labyu-filter-js"' in src:
+        src = re.sub(r'<script id="labyu-filter-js">.*?</script>',
+                      lambda _: FILTER_JS, src, count=1, flags=re.S)
+    else:
+        src = src.replace("</body>", FILTER_JS + "\n</body>", 1)
     src = re.sub(r'Showing \d+ of \d+ founders',
                  f'Showing {len(records)} of {len(records)} founders', src)
+    stats = origin_stats_block(records)
+    if '<!--labyu-origin-stats-->' in src:
+        src = re.sub(r'<!--labyu-origin-stats-->.*?<!--/labyu-origin-stats-->',
+                      lambda _: stats, src, count=1, flags=re.S)
+    else:
+        src = src.replace('<div class="cards">', stats + '\n    <div class="cards">', 1)
+    legend = ('<div class="tier-legend" id="labyu-tier-legend" '
+              'style="font-size:13px;color:#6b675e;margin:8px 0 16px">'
+              'Profiles: <span class="pill" style="background:#e6f4ea">Full profile</span> '
+              'we hold every public datapoint · '
+              '<span class="pill" style="background:#fef3e2">Standard</span> '
+              'website + most datapoints · '
+              '<span class="pill" style="background:#f3e8e8">Basic</span> '
+              'only a few public datapoints so far. ★ = featured.</div>')
+    if 'id="labyu-tier-legend"' in src:
+        src = re.sub(r'<div class="tier-legend" id="labyu-tier-legend".*?</div>',
+                      lambda _: legend, src, count=1, flags=re.S)
+    else:
+        src = src.replace('<div class="cards">', legend + '\n    <div class="cards">', 1)
     if "<title>Filipino Founders Directory</title>" in src:
         src = src.replace("<title>Filipino Founders Directory</title>",
                           "<title>Labyu — Filipino Founders Directory</title>", 1)

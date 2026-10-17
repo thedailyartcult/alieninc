@@ -19,7 +19,8 @@ REPORT="data/compliance/latest_report.json"
 export GIT_TERMINAL_PROMPT=0
 
 # Serialise runs so a slow scan can't overlap the next tick.
-exec 9>"$REPO/.compliance-scan.lock"
+LOCK="${XDG_RUNTIME_DIR:-/tmp}/centra-compliance.lock"
+exec 9>"$LOCK"
 if ! flock -n 9; then
     echo "Another compliance scan is already running; skipping."
     exit 0

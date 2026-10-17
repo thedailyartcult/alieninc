@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 
 logger = logging.getLogger('centra.reports')
 
-REPORTS_DIR = Path('/home/alieninc/trust/reports')
+REPORTS_DIR = Path(__file__).resolve().parents[2] / 'trust' / 'reports'
 FRAMEWORK_REPORTS_DIR = REPORTS_DIR / 'frameworks'
 
 

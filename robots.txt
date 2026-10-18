@@ -2,18 +2,18 @@
 # Domain: alieninc.tech
 # Compliance monitored: CIS NGINX v3.0, DISA STIG V4R5, PCI-DSS v4.0.1,
 #   OWASP ASVS L1, NIST SP 800-53 Moderate, NIST CSF 2.0
-# Report: https://alieninc.tech/compliance.html
+# Report: https://alieninc.tech/trust/
 # Contact: security@alieninc.tech
 
-# AI Crawlers — EXPRESSLY PROHIBITED
-# This site is continuously monitored. Unauthorized scraping is detected and blocked.
+# AI TRAINING crawlers — PROHIBITED
+# These agents ingest content to train models. Blocking them keeps Alien Inc
+# out of training corpora without affecting answer-engine visibility.
+# Note: Googlebot (classic search indexing) is intentionally NOT blocked below,
+# so ordinary Google rankings are unaffected either way.
 User-agent: GPTBot
 Disallow: /
 
 User-agent: CCBot
-Disallow: /
-
-User-agent: Google-Extended
 Disallow: /
 
 User-agent: anthropic-ai
@@ -23,9 +23,6 @@ User-agent: Claude-Web
 Disallow: /
 
 User-agent: cohere-ai
-Disallow: /
-
-User-agent: PerplexityBot
 Disallow: /
 
 User-agent: Bytespider
@@ -42,6 +39,17 @@ Disallow: /
 
 User-agent: Omgili
 Disallow: /
+
+# AI ANSWER engines — ALLOWED (decision 2026-10-18)
+# Google-Extended gates Gemini + AI Overviews; PerplexityBot gates Perplexity
+# citations. Both were previously Disallow, which removed the site from those
+# answers while still advertising AI readiness (llms.txt, WebMCP, Content-Signal).
+# Explicit Allow so no later rule can silently re-block them.
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
 
 # All other crawlers
 User-agent: *

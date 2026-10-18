@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {
+    size: A4;
+    margin: 22mm 18mm 25mm 18mm;
+    @bottom-center {
+      content: "Page " counter(page) " of " counter(pages);
+      font-size: 9pt;
+      color: #6b7280;
+      font-family: 'DejaVu Serif', 'Times New Roman', Georgia, serif;
+    }
+    @bottom-left {
+      content: "Confidential";
+      font-size: 7pt;
+      color: #d6d3cc;
+      font-family: 'DejaVu Serif', 'Times New Roman', Georgia, serif;
+    }
+    @bottom-right {
+      content: "alieninc.tech Google SEO Report";
+      font-size: 8pt;
+      color: #cbd5e1;
+      font-family: 'DejaVu Serif', 'Times New Roman', Georgia, serif;
+    }
+  }
+
+  @page :first {
+    margin: 0;
+    @bottom-left { content: none; }
+    @bottom-center { content: none; }
+    @bottom-right { content: none; }
+  }
+
+  @page toc {
+    @bottom-center {
+      content: counter(page);
+      font-size: 9pt;
+      color: #6b7280;
+    }
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Times New Roman', 'DejaVu Serif', Georgia, serif;
+    font-size: 10pt;
+    line-height: 1.55;
+    color: #1e293b;
+    background: white;
+  }
+
+  /* ─── Title Page (Clean White) ─── */
+  .title-page {
+    page: first;
+    width: 210mm;
+    height: 297mm;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: #1a1a2e;
+    position: relative;
+    padding: 50mm 30mm 40mm 30mm;
+    border-top: 6mm solid #1e3a5f;
+  }
+
+  .title-page .badge {
+    background: #f7f6f3;
+    border: 1px solid #d6d3cc;
+    border-radius: 20px;
+    padding: 6px 18px;
+    font-size: 9pt;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 15mm;
+    color: #1e3a5f;
+  }
+
+  .title-page h1 {
+    font-size: 28pt;
+    font-weight: bold;
+    margin-bottom: 5mm;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    color: #1a1a2e;
+  }
+
+  .title-page .subtitle {
+    font-size: 13pt;
+    color: #6b7280;
+    margin-bottom: 12mm;
+    font-weight: 300;
+  }
+
+  .title-page .url {
+    font-size: 12pt;
+    color: #1e3a5f;
+    margin-bottom: 15mm;
+    padding: 4mm 8mm;
+    border: 1px solid #d6d3cc;
+    border-radius: 6px;
+    background: #faf9f7;
+  }
+
+  .title-page .score-box {
+    background: #faf9f7;
+    border: 2px solid #d6d3cc;
+    border-radius: 12px;
+    padding: 6mm 12mm;
+    margin-bottom: 15mm;
+  }
+
+  .title-page .score-number {
+    font-size: 42pt;
+    font-weight: bold;
+    color: #1e3a5f;
+    line-height: 1;
+  }
+
+  .title-page .score-label {
+    font-size: 10pt;
+    color: #6b7280;
+    margin-top: 2mm;
+  }
+
+  .title-page .meta {
+    font-size: 9pt;
+    color: #6b7280;
+    margin-top: 8mm;
+    padding-top: 5mm;
+    border-top: 1px solid #d6d3cc;
+  }
+
+  .title-page .meta span {
+    margin: 0 8px;
+  }
+
+  /* ─── Table of Contents ─── */
+  .toc-page {
+    page: toc;
+    page-break-before: always;
+  }
+
+  .toc-page h2 {
+    font-size: 18pt;
+    color: #1e3a5f;
+    margin-bottom: 8mm;
+    padding-bottom: 3mm;
+    border-bottom: 2px solid #1e3a5f;
+  }
+
+  .toc-list {
+    list-style: none;
+    padding: 0;
+  }
+
+  .toc-list li {
+    padding: 2mm 0;
+    border-bottom: 1px solid #f1f5f9;
+    overflow: hidden;
+  }
+
+  .toc-list li.toc-section {
+    font-weight: bold;
+    font-size: 11pt;
+    padding-top: 4mm;
+    color: #0f172a;
+  }
+
+  .toc-list li.toc-sub {
+    padding-left: 8mm;
+    font-size: 9.5pt;
+    color: #475569;
+  }
+
+  .toc-score {
+    display: inline-block;
+    float: right;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 9pt;
+    font-weight: bold;
+    color: white;
+  }
+
+  .score-good { background: #2d6a4f; }
+  .score-warn { background: #d4740e; }
+  .score-bad { background: #c53030; }
+
+  /* ─── Section Styles ─── */
+  div.section {
+    page-break-before: always;
+  }
+
+  .section-header {
+    background: #faf9f7;
+    border-left: 4px solid #1e3a5f;
+    padding: 5mm 6mm;
+    margin-bottom: 6mm;
+    page-break-after: avoid;
+  }
+
+  .section-header h2 {
+    font-size: 16pt;
+    color: #0f172a;
+    margin-bottom: 1mm;
+  }
+
+  .section-header .section-score {
+    font-size: 12pt;
+    font-weight: bold;
+    float: right;
+    margin-top: -6mm;
+  }
+
+  h3 {
+    font-size: 12pt;
+    color: #1e3a5f;
+    margin-top: 6mm;
+    margin-bottom: 3mm;
+    padding-bottom: 1.5mm;
+    border-bottom: 1px solid #d6d3cc;
+    page-break-after: avoid;
+  }
+
+  h4 {
+    font-size: 10.5pt;
+    color: #334155;
+    margin-top: 4mm;
+    margin-bottom: 2mm;
+    page-break-after: avoid;
+  }
+
+  p {
+    margin-bottom: 3mm;
+    color: #334155;
+  }
+
+  .highlight {
+    background: #fef3c7;
+    border-left: 3px solid #d4740e;
+    padding: 3mm 4mm;
+    margin: 4mm 0;
+    font-size: 9.5pt;
+    /* allow page breaks to prevent white gaps */
+  }
+
+  .critical-box {
+    background: #fef2f2;
+    border-left: 3px solid #c53030;
+    padding: 3mm 4mm;
+    margin: 4mm 0;
+    font-size: 9.5pt;
+    /* allow page breaks to prevent white gaps */
+  }
+
+  .success-box {
+    background: #f0fdf4;
+    border-left: 3px solid #2d6a4f;
+    padding: 3mm 4mm;
+    margin: 4mm 0;
+    font-size: 9.5pt;
+    /* allow page breaks to prevent white gaps */
+  }
+
+  /* ─── Tables ─── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 4mm 0 6mm 0;
+    font-size: 9pt;
+  }
+
+  thead th {
+    background: #f7f6f3;
+    color: #0f172a;
+    font-weight: bold;
+    padding: 3mm 4mm;
+    text-align: left;
+    border-bottom: 2px solid #d6d3cc;
+    font-size: 9pt;
+  }
+
+  tbody td {
+    padding: 2.5mm 3mm;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: top;
+  }
+
+  tbody tr:nth-child(even) {
+    background: #fdfcfa;
+  }
+
+  .status-pass {
+    color: #2d6a4f;
+    font-weight: bold;
+  }
+
+  .status-fail {
+    color: #c53030;
+    font-weight: bold;
+  }
+
+  .status-warn {
+    color: #d4740e;
+    font-weight: bold;
+  }
+
+  .status-partial {
+    color: #4a5568;
+    font-weight: bold;
+  }
+
+  /* ─── Charts ─── */
+  .chart-container {
+    text-align: center;
+    margin: 4mm 0;
+  }
+
+  .chart-container img {
+    max-width: 100%;
+    max-height: 120mm;
+    height: auto;
+  }
+
+  .chart-caption {
+    font-size: 8.5pt;
+    color: #6b7280;
+    font-style: italic;
+    margin-top: 2mm;
+    text-align: center;
+  }
+
+  .chart-half {
+    display: inline-block;
+    width: 48%;
+    vertical-align: top;
+    text-align: center;
+    margin: 2mm 0;
+  }
+
+  .chart-half img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* ─── Two column layout ─── */
+  .two-col {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    margin: 3mm 0;
+  }
+
+  .two-col .col {
+    display: table-cell;
+    vertical-align: top;
+    padding: 0 2mm;
+  }
+
+  .four-col {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    margin: 3mm 0;
+  }
+
+  .four-col .col {
+    display: table-cell;
+    vertical-align: top;
+    padding: 0 1.5mm;
+  }
+
+  /* ─── Metric Cards ─── */
+  .metric-card {
+    background: #faf9f7;
+    border: 1px solid #d6d3cc;
+    border-radius: 6px;
+    padding: 2.5mm 3mm;
+    text-align: center;
+    margin: 2mm 0;
+  }
+
+  .metric-card .value {
+    font-size: 14pt;
+    font-weight: bold;
+    line-height: 1.2;
+  }
+
+  .metric-card .label {
+    font-size: 7.5pt;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 1mm;
+  }
+
+  /* ─── Action Plan ─── */
+  .action-item {
+    background: #faf9f7;
+    border-radius: 4px;
+    padding: 3mm 4mm;
+    margin: 3mm 0;
+    border-left: 3px solid #cbd5e1;
+    /* allow page breaks to prevent white gaps */
+  }
+
+  .action-item.critical {
+    border-left-color: #c53030;
+    background: #fdf2f2;
+  }
+
+  .action-item.high {
+    border-left-color: #d4740e;
+    background: #fdf8ef;
+  }
+
+  .action-item.medium {
+    border-left-color: #1e3a5f;
+    background: #f0f4f8;
+  }
+
+  .action-item.low {
+    border-left-color: #94a3b8;
+  }
+
+  .action-item h4 {
+    margin-top: 0;
+    margin-bottom: 1.5mm;
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .action-item .effort {
+    font-size: 8.5pt;
+    color: #64748b;
+    float: right;
+  }
+
+  .priority-tag {
+    display: inline-block;
+    padding: 0.5mm 3mm;
+    border-radius: 3px;
+    font-size: 8pt;
+    font-weight: bold;
+    color: white;
+    margin-right: 2mm;
+    vertical-align: middle;
+  }
+
+  .priority-critical { background: #c53030; }
+  .priority-high { background: #d4740e; }
+  .priority-medium { background: #1e3a5f; }
+  .priority-low { background: #94a3b8; }
+
+  /* ─── Code blocks ─── */
+  .code-block {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 3mm 4mm;
+    border-radius: 4px;
+    font-family: 'DejaVu Sans Mono', monospace;
+    font-size: 8pt;
+    line-height: 1.6;
+    margin: 3mm 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+    /* allow page breaks to prevent white gaps */
+  }
+
+  /* ─── Divider ─── */
+  .divider {
+    border: none;
+    border-top: 1px solid #d6d3cc;
+    margin: 5mm 0;
+  }
+
+  /* ─── Roadmap ─── */
+  .roadmap-phase {
+    background: #faf9f7;
+    border-radius: 6px;
+    padding: 4mm 5mm;
+    margin: 4mm 0;
+    border: 1px solid #d6d3cc;
+    /* allow page breaks to prevent white gaps */
+  }
+
+  .roadmap-phase h4 {
+    margin-top: 0;
+    border-bottom: none;
+    color: #1e3a5f;
+  }
+
+  .roadmap-phase ul {
+    margin: 2mm 0 0 5mm;
+    padding: 0;
+  }
+
+  .roadmap-phase li {
+    margin-bottom: 1.5mm;
+    font-size: 9.5pt;
+    color: #334155;
+  }
+
+  /* ─── Lists ─── */
+  ul {
+    margin-left: 5mm;
+    margin-bottom: 3mm;
+  }
+
+  li {
+    margin-bottom: 1.5mm;
+  }
+
+  /* ─── Data freshness ─── */
+  .data-freshness {
+    font-size: 8pt;
+    color: #6b7280;
+    font-style: italic;
+    margin-top: 4mm;
+    padding-top: 2mm;
+    border-top: 1px solid #d6d3cc;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- ======================================================= TITLE PAGE === -->
+<div class="title-page">
+  <div class="badge">Full SEO Audit Report</div>
+  <h1>alieninc.tech</h1>
+  <div class="subtitle">Prepared by Claude SEO</div>
+  <div class="score-box">
+    <div class="score-number">74<span style="font-size: 20pt; color: #94a3b8;">/100</span></div>
+    <div class="score-label">SEO Health Score</div>
+  </div>
+  <div class="meta">
+    <span>October 17, 2026</span>
+    <span>Full Audit</span>
+  </div>
+</div>
+
+
+<!-- ======================================================= TABLE OF CONTENTS === -->
+<div class="toc-page">
+  <h2>Table of Contents</h2>
+  <ul class="toc-list">
+    <li class="toc-section"><span>1. Executive Summary</span></li>
+    <li class="toc-sub"><span>Key Metrics, Critical Issues &amp; Quick Wins</span></li>
+    <li class="toc-section"><span>2. Audit Categories</span></li>
+    <li class="toc-sub"><span>What Works</span></li>
+    <li class="toc-sub"><span>Findings by Severity</span></li>
+    <li class="toc-section"><span>3. Action Plan</span></li>
+    <li class="toc-sub"><span>Phased Roadmap</span></li>
+    <li class="toc-section"><span>4. Data Sources &amp; Methodology</span></li>
+  </ul>
+</div>
+
+
+<!-- ======================================================= 1. EXECUTIVE SUMMARY === -->
+<div class="section">
+  <div class="section-header">
+    <h2>1. Executive Summary</h2>
+  </div>
+
+  <p>This report presents a comprehensive SEO audit of <strong>alieninc.tech</strong> for a <strong>Multi-company operating group / AI infrastructure (corporate umbrella)</strong> site, generated on October 17, 2026. Findings combine technical, content, schema, performance, visual, and search-readiness evidence as available.</p>
+
+  <div class="two-col">
+    <div class="col">
+      <div class="metric-card">
+        <div class="value" style="color: #d4740e;">74/100</div>
+        <div class="label">SEO Health Score</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="critical-box">
+    <strong>Critical Issues Found:</strong>
+    <ol>
+      <li>Homepage + article index are well-structured with valid Organization schema, 868 words, 96/100 content quality, and solid security headers</li>
+      <li>120 of 357 sitemap URLs lack a canonical tag; 115 lack Open Graph and Twitter Card meta</li>
+      <li>112 pages have no meta description; 46 pages have no H1</li>
+      <li>llms.txt returns 404 — Lighthouse agentic readiness drops the audit</li>
+      <li>robots.txt deliberately blocks 10+ AI crawlers (GPTBot, CCBot, PerplexityBot, Google-Extended), contradicting GEO/AI-search goals</li>
+    </ol>
+  </div>
+
+  <div class="success-box">
+    <strong>Quick Wins:</strong>
+    <ol>
+      <li>Publish /llms.txt with H1 + summary + markdown links to all 7 company portals</li>
+      <li>Decide AI-crawler policy: if GEO/AI Overviews visibility matters, allow Google-Extended and PerplexityBot (keep GPTBot/CCBot blocked if preferred)</li>
+      <li>Add meta description + canonical + OG/Twitter tags to the 115 pages that lack them (extend tools/inject-seo.py pattern to non-subdomain pages)</li>
+      <li>Remove or fix the /trust/index.html 404 in the sitemap</li>
+      <li>Set logo.png alt to a meaningful value (e.g. &#x27;Alien Inc logo&#x27;) or alt=&quot;&quot; if purely decorative</li>
+    </ol>
+  </div>
+
+</div>
+
+<!-- ======================================================= 2. AUDIT CATEGORIES === -->
+<div class="section">
+  <div class="section-header">
+    <h2>2. Audit Categories</h2>
+  </div>
+
+  <h3>2.1 Technical SEO</h3>
+  <p><strong>Score:</strong> <span class="status-warn">78/100</span></p>
+  <h4>What Works</h4>
+  <ul>
+    <li>sitemap.xml found and serving 357 URLs (urlset format)</li>
+    <li>robots.txt reachable, well-commented, blocks admin/api/vault paths</li>
+    <li>356/357 URLs return 200; proper 404 page with noindex for unknown URLs</li>
+    <li>HTTPS + HSTS preload, CSP, X-Frame-Options DENY, nosniff</li>
+    <li>Cloudflare + Fastly CDN caching in front</li>
+  </ul>
+  <h4>Findings</h4>
+  <div class="action-item medium">
+    <h4>120 pages missing canonical <span class="status-warn">High</span></h4>
+    <p>Crawl of 357 sitemap URLs found 120 without &lt;link rel=canonical&gt;.</p>
+    <p><strong>Recommendation:</strong> Self-referencing canonical on every page; extend tools/inject-seo.py beyond the 8 subdomains.</p>
+  </div>
+  <div class="action-item medium">
+    <h4>Sitemap lists a 404 URL <span class="status-warn">Medium</span></h4>
+    <p>https://alieninc.tech/trust/index.html returns 404 but is in the sitemap.</p>
+    <p><strong>Recommendation:</strong> Remove from sitemap.xml or restore the page.</p>
+  </div>
+  <div class="action-item medium">
+    <h4>Duplicate titles <span class="status-warn">Low</span></h4>
+    <p>articles/2026/09/24/The-Alien-Minds-We-Built.html and articles/2026/09/24/index.html share the same title/description; panteon login.html and secure.alieninc.tech also share &#x27;Panteon — Secure Portal&#x27;.</p>
+    <p><strong>Recommendation:</strong> Canonicalize one variant per pair.</p>
+  </div>
+  <hr class="divider">
+  <h3>2.2 Content Quality</h3>
+  <p><strong>Score:</strong> <span class="status-pass">92/100</span></p>
+  <h4>What Works</h4>
+  <ul>
+    <li>Homepage: 868 words, quality 96/100 (filler 0, AI-pattern 0, density 1.00)</li>
+    <li>Strong E-E-A-T signals: founder page, founding date, legal name, named founder in schema</li>
+    <li>Specific, verifiable claims (compliance frameworks, founding date 2016-12-22)</li>
+  </ul>
+  <h4>Findings</h4>
+  <div class="action-item medium">
+    <h4>112 pages missing meta description <span class="status-warn">High</span></h4>
+    <p>31% of indexed pages have no meta description, forcing Google to auto-generate snippets.</p>
+    <p><strong>Recommendation:</strong> Write 120-155 char descriptions for all key pages; automate via inject-seo.py.</p>
+  </div>
+  <div class="action-item medium">
+    <h4>46 pages missing H1 <span class="status-warn">Medium</span></h4>
+    <p>Mostly panteon.alieninc.tech subpages (yono-forge, pipeline-builder, cmb-* pages).</p>
+    <p><strong>Recommendation:</strong> Add a unique H1 to each page.</p>
+  </div>
+  <hr class="divider">
+  <h3>2.3 On-Page SEO</h3>
+  <p><strong>Score:</strong> <span class="status-warn">70/100</span></p>
+  <h4>What Works</h4>
+  <ul>
+    <li>Homepage has canonical, OG, Twitter Card, Organization JSON-LD</li>
+    <li>Title tag is clear and branded: &#x27;Alien Inc. – Guardian of Philippine Digital Infrastructure&#x27;</li>
+    <li>Single H1 on homepage (good hierarchy)</li>
+  </ul>
+  <h4>Findings</h4>
+  <div class="action-item medium">
+    <h4>115 pages missing Open Graph <span class="status-warn">Medium</span></h4>
+    <p>No og:title/og:image on 32% of pages — poor social/LinkedIn/Facebook preview control.</p>
+    <p><strong>Recommendation:</strong> Add OG + Twitter Card tags site-wide.</p>
+  </div>
+  <div class="action-item medium">
+    <h4>logo.png alt=&#x27;•&#x27; on every page <span class="status-warn">Low</span></h4>
+    <p>Brand logo uses a bullet as alt text — bad accessibility and a missed image-SEO signal.</p>
+    <p><strong>Recommendation:</strong> Use alt=&quot;Alien Inc&quot; or alt=&quot;&quot; (decorative).</p>
+  </div>
+  <hr class="divider">
+  <h3>2.4 Schema / Structured Data</h3>
+  <p><strong>Score:</strong> <span class="status-pass">85/100</span></p>
+  <h4>What Works</h4>
+  <ul>
+    <li>Homepage Organization JSON-LD is valid: @id, legalName, foundingDate, founder Person, sameAs (6 profiles)</li>
+    <li>Crawl found 38 WebPage, 4 Organization, 1 AboutPage blocks across sampled pages</li>
+    <li>1 block per homepage, valid, 3160 bytes</li>
+  </ul>
+  <h4>Findings</h4>
+  <div class="action-item medium">
+    <h4>110 pages missing structured data <span class="status-warn">Low</span></h4>
+    <p>Most article and product pages carry no JSON-LD.</p>
+    <p><strong>Recommendation:</strong> Add Article schema to /articles/, WebSite schema sitewide, BreadcrumbList on nested pages.</p>
+  </div>
+  <hr class="divider">
+  <h3>2.5 Performance (CWV)</h3>
+  <p><strong>Score:</strong> <span class="status-warn">70/100</span></p>
+  <h4>What Works</h4>
+  <ul>
+    <li>Served via Cloudflare + Fastly, gzip, cached edges in MNL</li>
+    <li>Static HTML (no SPA shell detected), no JS render required for primary content</li>
+    <li>Cache-Control: max-age=600 + Age header present</li>
+  </ul>
+  <h4>Findings</h4>
+  <div class="action-item medium">
+    <h4>No CrUX/PSI field data collected <span class="status-warn">Info</span></h4>
+    <p>Google PageSpeed/CrUX APIs require an API key that isn&#x27;t configured, so lab/field CWV were not measured.</p>
+    <p><strong>Recommendation:</strong> Configure GOOGLE_API_KEY to enable pagespeed_check.py for real INP/LCP/CLS numbers.</p>
+  </div>
+  <div class="action-item medium">
+    <h4>Fonts loaded from Google Fonts with preconnect <span class="status-warn">Info</span></h4>
+    <p>fonts.googleapis.com + fonts.gstatic.com render-blocking CSS.</p>
+    <p><strong>Recommendation:</strong> Self-host fonts or add font-display: swap to protect LCP.</p>
+  </div>
+  <hr class="divider">
+  <h3>2.6 AI Search Readiness</h3>
+  <p><strong>Score:</strong> <span class="status-warn">55/100</span></p>
+  <h4>What Works</h4>
+  <ul>
+    <li>Primary content readable without JavaScript (agentic_check P0 pass)</li>
+    <li>robots.txt reachable; unknown URLs return real 404</li>
+    <li>WebMCP tools annotated on forms (P2 info)</li>
+    <li>Content-Signal preference declared</li>
+  </ul>
+  <h4>Findings</h4>
+  <div class="action-item medium">
+    <h4>llms.txt returns 404 <span class="status-warn">High</span></h4>
+    <p>/llms.txt is not published. Lighthouse drops the agentic-readiness audit from its fraction; publishing one adds a counted pass.</p>
+    <p><strong>Recommendation:</strong> Publish /llms.txt with an H1, a &#x27;&gt;&#x27; summary, and markdown links to all 7 company portals and key pages.</p>
+  </div>
+  <div class="action-item medium">
+    <h4>robots.txt blocks 10+ AI crawlers <span class="status-warn">High</span></h4>
+    <p>GPTBot, CCBot, Google-Extended, anthropic-ai, Claude-Web, cohere-ai, PerplexityBot, Bytespider, Diffbot are all Disallowed. Blocking an AI search crawler removes the site from that engine&#x27;s answers.</p>
+    <p><strong>Recommendation:</strong> Confirm intentional. If GEO/AI Overviews visibility is a goal, allow Google-Extended and PerplexityBot; keep training bots (GPTBot/CCBot/Bytespider) blocked if desired.</p>
+  </div>
+  <div class="action-item medium">
+    <h4>ai-catalog.json / A2A agent card absent <span class="status-warn">Info</span></h4>
+    <p>Agentic Resource Discovery and A2A agent card endpoints are not present (na).</p>
+    <p><strong>Recommendation:</strong> Consider publishing /ai-catalog.json and /.well-known/agent-card.json to be discoverable by AI agents.</p>
+  </div>
+  <hr class="divider">
+  <h3>2.7 Images</h3>
+  <p><strong>Score:</strong> <span class="status-warn">60/100</span></p>
+  <h4>What Works</h4>
+  <ul>
+    <li>Only 1 image on homepage (logo) — minimal payload</li>
+    <li>OG/Twitter image strategy in place on main pages</li>
+  </ul>
+  <h4>Findings</h4>
+  <div class="action-item medium">
+    <h4>logo.png alt text is &#x27;•&#x27; <span class="status-warn">Low</span></h4>
+    <p>Brand logo has a non-descriptive bullet alt on every page.</p>
+    <p><strong>Recommendation:</strong> Set meaningful alt or empty alt if decorative.</p>
+  </div>
+  <hr class="divider">
+</div>
+
+<!-- ======================================================= 3. ACTION PLAN === -->
+<div class="section">
+  <div class="section-header">
+    <h2>3. Action Plan</h2>
+  </div>
+
+  <div class="roadmap-phase">
+    <h4>Phase 1: Critical Fixes <span class="effort">Week 1</span></h4>
+    <ul>
+      <li>Publish /llms.txt (H1 + summary + markdown links to 7 portals)</li>
+      <li>Resolve AI-crawler robots.txt policy (align with GEO goals)</li>
+      <li>Remove or restore the /trust/index.html 404 in sitemap</li>
+      <li>Fix logo.png alt text</li>
+    </ul>
+  </div>
+  <div class="roadmap-phase">
+    <h4>Phase 2: High-Impact Improvements <span class="effort">Weeks 2-3</span></h4>
+    <ul>
+      <li>Add meta description + canonical to the 112/120 pages missing them</li>
+      <li>Add OG + Twitter Card to the 115 pages missing them</li>
+      <li>Add H1 to the 46 pages missing it</li>
+      <li>Canonicalize duplicate title pairs</li>
+    </ul>
+  </div>
+  <div class="roadmap-phase">
+    <h4>Phase 3: Content &amp; Authority <span class="effort">Month 2</span></h4>
+    <ul>
+      <li>Add Article schema to /articles/ and WebSite/BreadcrumbList sitewide</li>
+      <li>Configure GOOGLE_API_KEY for CrUX/PSI field data</li>
+      <li>Self-host or font-display:swap the Google Fonts</li>
+      <li>Publish ai-catalog.json + A2A agent card for agent discoverability</li>
+    </ul>
+  </div>
+  <div class="roadmap-phase">
+    <h4>Phase 4: Monitoring &amp; Iteration <span class="effort">Ongoing</span></h4>
+    <ul>
+      <li>Run agentic_check.py monthly to track readiness score</li>
+      <li>Re-crawl sitemap after each deploy to catch regressions</li>
+      <li>Track Google updates via seo_updates.py to stay current</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ======================================================= DATA SOURCES & METHODOLOGY === -->
+<div class="section" style="text-align: center; padding-top: 15mm;">
+  <hr class="divider">
+  <h3 style="text-align: left;">Data Sources &amp; Methodology</h3>
+  <table>
+    <thead>
+      <tr><th>Source</th><th>Description</th><th>Update Frequency</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>PageSpeed Insights API</td>
+          <td>Lighthouse lab audit (mobile emulation, Moto G Power, slow 4G)</td>
+          <td>Real-time</td></tr>
+      <tr><td>Chrome UX Report (CrUX)</td>
+          <td>28-day rolling field data from real Chrome users</td>
+          <td>Daily ~04:00 UTC</td></tr>
+      <tr><td>CrUX History API</td>
+          <td>25-week p75 trend data per metric</td>
+          <td>Weekly</td></tr>
+      <tr><td>Google Search Console</td>
+          <td>Search Analytics (clicks, impressions, CTR, position)</td>
+          <td>2-3 day lag</td></tr>
+      <tr><td>URL Inspection API</td>
+          <td>Per-URL index status, coverage state, crawl info</td>
+          <td>Real-time (2,000/day)</td></tr>
+    </tbody>
+  </table>
+  <p style="color: #94a3b8; font-size: 9pt; margin-top: 5mm;">
+    Report generated by Claude SEO (Google SEO Intelligence Skill), October 17, 2026<br>
+    Methodology based on Google Web Vitals thresholds, Search Console documentation, and Lighthouse scoring algorithms.
+  </p>
+</div>
+
+</body>
+</html>

@@ -65,9 +65,17 @@ def main():
         add_url(urlset, loc, git_lastmod(p), "0.8", "weekly")
 
     # Panteon subpages (excluding backups, backend, data)
+    # EXCLUDE platforms/*/pages/*.html — those are HTML FRAGMENTS lazy-loaded by
+    # admin.html via fetch("/static/platforms/{plat}/pages/{page}.html"). They
+    # have no <html>/<head>/<title> of their own, so listing them in the sitemap
+    # advertised 39 partial URLs to Google (each returning a bare <div>).
+    # Also skip underscore-prefixed debug files (e.g. hazards/noah/_diag2.html,
+    # an 857KB MapLibre bundle).
     for p in sorted((ROOT / "panteon").rglob("*.html")):
         if any(x in p.parts for x in [".git","backend","__pycache__","data","logs"]): continue
         if ".bak" in p.name: continue
+        if p.name.startswith("_"): continue
+        if "platforms" in p.parts and "pages" in p.parts: continue
         rel = p.relative_to(ROOT / "panteon").as_posix()
         # Skip already added core panteon pages to avoid dup
         if rel in ("index.html","play.html","cmb-product.html","yono-forge.html"): continue
@@ -113,11 +121,13 @@ def main():
         except Exception:
             pass
 
-    # Also add trust subpages if exist
-    for p in sorted((ROOT / "trust").rglob("*.html")) if (ROOT/"trust").exists() else []:
-        rel = p.relative_to(ROOT).as_posix()
-        loc = f"https://alieninc.tech/{rel}"
-        add_url(urlset, loc, git_lastmod(p), "0.6", "monthly")
+    # Also add trust subpages if exist.
+    # ONLY trust/index.html is deployed — pages.yml copies just that one file
+    # into _pages/trust/. trust/reports/ is gitignored (build artifacts) and is
+    # never published, so rglob'ing it advertised 11 framework URLs that 404.
+    trust_idx = ROOT / "trust" / "index.html"
+    if trust_idx.exists():
+        add_url(urlset, "https://alieninc.tech/trust/", git_lastmod(trust_idx), "0.6", "monthly")
 
     tree = ET.ElementTree(urlset)
     ET.indent(tree, space="  ")

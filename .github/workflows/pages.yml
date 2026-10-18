@@ -34,6 +34,16 @@ jobs:
           rm -rf _pages && mkdir -p _pages
           cp -r index.html 404.html CNAME assets _pages/ 2>/dev/null || true
           cp -r mission.html privacy.html terms.html founder.html about.html cookies.html dashboard.html _pages/ 2>/dev/null || true
+          # Privacy/consent pages + trust portal + llms.txt — all referenced by
+          # robots.txt / llms.txt / the compliance meta tag, and all previously
+          # 404ing because this whitelist omitted them while generate-sitemap.py
+          # still listed them (sitemap advertised URLs Pages never served).
+          cp -f access-my-data.html delete-my-data.html do-not-sell.html _pages/ 2>/dev/null || true
+          mkdir -p _pages/trust
+          cp -f trust/index.html _pages/trust/index.html 2>&1 || true
+          # llms.txt — machine-readable site index for AI assistants; Lighthouse
+          # agentic-readiness scores a counted pass when /llms.txt returns 200.
+          cp -f llms.txt _pages/llms.txt 2>&1 || true
           cp -r articles _pages/articles 2>/dev/null || true
           # Public data files for network map + dashboard (whitelist only —
           # NEVER copy data/research-locked/ or the INTERNAL parts of data/compliance/,
@@ -115,7 +125,7 @@ jobs:
           # (not GitHub Pages) and its WAF intermittently returns 403 to GitHub
           # runner IPs while real browsers get 200 — so it must NOT fail the
           # Pages deploy. alieninc.tech/thedailyartcult/ IS Pages-served: hard check that.
-          for url in "https://alieninc.tech/" "https://alieninc.tech/panteon/" "https://panteon.alieninc.tech/" "https://panteon.alieninc.tech/play.html" "https://alieninc.tech/sitemap.xml" "https://a-san.alieninc.tech/" "https://centra.alieninc.tech/" "https://genesis.alieninc.tech/" "https://immanuel.alieninc.tech/" "https://kmt.alieninc.tech/" "https://rousseau.alieninc.tech/" "https://secure.alieninc.tech/" "https://alieninc.tech/thedailyartcult/" "https://alieninc.tech/why/" "https://alieninc.tech/labyu/" "https://alieninc.tech/labyu/francis-plaza/" "https://alieninc.tech/labyu/c/paymongo/"; do
+          for url in "https://alieninc.tech/" "https://alieninc.tech/panteon/" "https://panteon.alieninc.tech/" "https://panteon.alieninc.tech/play.html" "https://alieninc.tech/sitemap.xml" "https://alieninc.tech/robots.txt" "https://alieninc.tech/llms.txt" "https://alieninc.tech/trust/" "https://alieninc.tech/access-my-data.html" "https://alieninc.tech/delete-my-data.html" "https://alieninc.tech/do-not-sell.html" "https://a-san.alieninc.tech/" "https://centra.alieninc.tech/" "https://genesis.alieninc.tech/" "https://immanuel.alieninc.tech/" "https://kmt.alieninc.tech/" "https://rousseau.alieninc.tech/" "https://secure.alieninc.tech/" "https://alieninc.tech/thedailyartcult/" "https://alieninc.tech/why/" "https://alieninc.tech/labyu/" "https://alieninc.tech/labyu/francis-plaza/" "https://alieninc.tech/labyu/c/paymongo/"; do
             echo "Checking $url..."
             code=$(curl -s -o /tmp/out.html -w "%{http_code}" --max-time 20 "$url")
             echo "HTTP $code for $url"

@@ -58,7 +58,7 @@ SITES = {
                  "Rousseau | Home",
                  "Rousseau by Alien Inc. Founded by Patrick Neil Alcantara."),
     "secure": ("https://secure.alieninc.tech/", "Alien Inc Secure Portal",
-               "Panteon — Secure Portal",
+               "Secure Portal Login | Alien Inc",
                "Secure portal by Alien Inc (Panteon). Founded by Patrick Neil Alcantara."),
     "thedailyartcult": ("https://thedailyartcult.lol", "The Daily Art Cult",
                "The Daily Art Cult",
@@ -232,6 +232,83 @@ def site_name_for(rel_posix: str) -> str:
     return SITE_NAME
 
 
+def _site_root_for(rel_posix: str):
+    """Return (root_url, root_name) for a repo path's site."""
+    top = rel_posix.split("/")[0]
+    if top in SITES:
+        return SITES[top][0], SITES[top][1]
+    if top == "panteon":
+        return "https://panteon.alieninc.tech/", "Panteon"
+    return "https://alieninc.tech/", SITE_NAME
+
+
+def build_jsonld(rel_posix: str, title: str, desc: str, canonical: str,
+                 site: str) -> str:
+    """Build a site-appropriate JSON-LD block. Returns '' if nothing to add.
+
+    Articles get Article schema (rich-result eligible). Everything else gets a
+    WebPage node; non-root pages also get a BreadcrumbList built from the
+    canonical URL path so Google can render a breadcrumb trail.
+    """
+    import json as _json
+    from urllib.parse import urlparse
+
+    parts = rel_posix.split("/")
+    root, root_name = _site_root_for(rel_posix)
+    data = None
+
+    if parts[0] == "articles" and parts[-1] != "index.html":
+        m = re.search(r"/(\d{4})/(\d{2})/(\d{2})/", rel_posix)
+        data = {
+            "@context": "https://schema.org",
+            "@type": "Article",
+            "headline": title,
+            "url": canonical,
+            "description": desc,
+            "image": OG_IMAGE,
+            "mainEntityOfPage": canonical,
+            "author": {"@type": "Person", "name": "Patrick Neil Alcantara",
+                       "url": "https://alieninc.tech/founder.html"},
+            "publisher": {"@type": "Organization", "name": "Alien Inc",
+                          "url": "https://alieninc.tech/",
+                          "logo": {"@type": "ImageObject", "url": OG_IMAGE}},
+        }
+        if m:
+            data["datePublished"] = f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
+    else:
+        page = {
+            "@type": "WebPage",
+            "name": title,
+            "url": canonical,
+            "isPartOf": {"@type": "WebSite", "name": root_name, "url": root},
+        }
+        if desc:
+            page["description"] = desc
+        segs = [s for s in urlparse(canonical).path.strip("/").split("/") if s]
+        if segs:
+            crumbs = [{"@type": "ListItem", "position": 1, "name": root_name,
+                       "item": root}]
+            accum = root.rstrip("/")
+            for i, seg in enumerate(segs):
+                accum = f"{accum}/{seg}"
+                last = (i == len(segs) - 1)
+                name = title if last else seg.replace("-", " ").replace(".html", "").title()
+                item = canonical if last else accum
+                crumbs.append({"@type": "ListItem", "position": i + 2,
+                               "name": name, "item": item})
+            if len(crumbs) > 1:
+                page["breadcrumb"] = {"@type": "BreadcrumbList", "itemListElement": crumbs}
+        data = {"@context": "https://schema.org", "@graph": [
+            {"@type": "WebSite", "name": root_name, "url": root},
+            page,
+        ]}
+
+    if not data:
+        return ""
+    body = _json.dumps(data, indent=4, ensure_ascii=False)
+    return f'    <script type="application/ld+json">\n{body}\n    </script>'
+
+
 def iter_deployed_pages():
     """Yield repo-relative posix paths of pages that are actually deployed.
 
@@ -339,6 +416,30 @@ def process_subdomain_root(sub: str, canonical: str, site: str, title_hint: str,
     if 'name="description"' not in html:
         html = re.sub(r"(</title>)", r'\1\n    <meta name="description" content="' + esc(desc) + '">', html, count=1)
         changed = True
+
+    # Image backfill. These roots got their OG/Twitter tags from an earlier,
+    # narrower run that omitted og:image/twitter:image; the pack above is only
+    # injected when canonical/sameAs are missing, so already-complete roots
+    # would otherwise keep shipping image-less cards.
+    if 'property="og:image"' not in html and 'property="og:title"' in html:
+        img = f'\n    <meta property="og:image" content="{esc(OG_IMAGE)}">'
+        for anchor in (r'(?i)(<meta[^>]+property="og:description"[^>]*>)',
+                       r'(?i)(<meta[^>]+property="og:title"[^>]*>)',
+                       r'(?i)(<meta[^>]+property="og:url"[^>]*>)'):
+            html, n = re.subn(anchor, r'\1' + img, html, count=1)
+            if n:
+                changed = True
+                break
+    if 'name="twitter:image"' not in html and 'name="twitter:card"' in html:
+        img = f'\n    <meta name="twitter:image" content="{esc(OG_IMAGE)}">'
+        for anchor in (r'(?i)(<meta[^>]+name="twitter:description"[^>]*>)',
+                       r'(?i)(<meta[^>]+name="twitter:title"[^>]*>)',
+                       r'(?i)(<meta[^>]+name="twitter:card"[^>]*>)'):
+            html, n = re.subn(anchor, r'\1' + img, html, count=1)
+            if n:
+                changed = True
+                break
+
     if changed:
         if not dry:
             path.write_text(html, encoding="utf-8")
@@ -486,6 +587,42 @@ def process_generic(rel_posix: str, dry: bool, verbose: bool) -> bool:
         html, n = re.subn(r"(?i)(</title>)", lambda m: m.group(1) + "\n" + tw, html, count=1)
         if n:
             inserted.append("twitter")
+
+    # 5. og:image / twitter:image BACKFILL.
+    # Pages written before this tool existed often have a partial OG block —
+    # og:title/og:description/og:url but no og:image. Without an image the
+    # card renders as plain text (no preview) on Slack/Discord/WhatsApp/X.
+    # Anchor on the existing og:title/og:description so the image lands inside
+    # the OG cluster rather than after </title> where the block may not be.
+    if 'property="og:image"' not in html and 'property="og:title"' in html:
+        img = f'\n    <meta property="og:image" content="{esc(OG_IMAGE)}">'
+        for anchor in (r'(?i)(<meta[^>]+property="og:description"[^>]*>)',
+                       r'(?i)(<meta[^>]+property="og:title"[^>]*>)',
+                       r'(?i)(<meta[^>]+property="og:url"[^>]*>)'):
+            html, n = re.subn(anchor, r'\1' + img, html, count=1)
+            if n:
+                inserted.append("og:image")
+                break
+
+    if 'name="twitter:image"' not in html and 'name="twitter:card"' in html:
+        img = f'\n    <meta name="twitter:image" content="{esc(OG_IMAGE)}">'
+        for anchor in (r'(?i)(<meta[^>]+name="twitter:description"[^>]*>)',
+                       r'(?i)(<meta[^>]+name="twitter:title"[^>]*>)',
+                       r'(?i)(<meta[^>]+name="twitter:card"[^>]*>)'):
+            html, n = re.subn(anchor, r'\1' + img, html, count=1)
+            if n:
+                inserted.append("twitter:image")
+                break
+
+    # 6. Structured data (JSON-LD). Pages with none get Article schema (articles)
+    # or WebPage + BreadcrumbList (everything else). Skipped when a page already
+    # declares any ld+json so we never stack two conflicting graphs.
+    if "application/ld+json" not in html:
+        ld = build_jsonld(rel_posix, title, desc or "", canonical, site)
+        if ld:
+            html, n = re.subn(r"(?i)(</head>)", lambda m: ld + "\n" + m.group(1), html, count=1)
+            if n:
+                inserted.append("jsonld")
 
     if html != original:
         if not dry:

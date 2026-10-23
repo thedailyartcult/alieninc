@@ -1567,7 +1567,14 @@
       width: 40%;
       min-width: 200px;
       will-change: transform;
-      transform: translate3d(0, 0, 0) scale(1.2);
+    }
+
+    .footer__wordmark-canvas-wrap--left {
+      transform: translateX(-125%) scale(1.2);
+    }
+
+    .footer__wordmark-canvas-wrap--right {
+      transform: translateX(125%) scale(1.2);
     }
 
     .footer__wordmark-canvas {
@@ -1601,13 +1608,14 @@
 
     .footer__wordmark-text span {
       display: inline-block;
-      transform: translateY(112%);
-      transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
-      transition-delay: calc(var(--i, 0) * 0.04s);
+      transform: translateY(125%);
+      transition: transform 0.4s cubic-bezier(0.5, 0, 0.75, 0);
     }
 
     .footer__wordmark.is-inview .footer__wordmark-text span {
       transform: translateY(0);
+      transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+      transition-delay: calc(var(--i, 0) * 0.04s);
     }
 
     .footer__wordmark-dot {
@@ -1616,13 +1624,6 @@
 
     .footer__wordmark-space {
       width: 0.22em;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .footer__wordmark-text span {
-        transform: none;
-        transition: none;
-      }
     }
 
     /* ── Financial data login overlay ── */
@@ -3536,16 +3537,16 @@
       <!-- FOOTER WORDMARK -->
       <div class="footer__wordmark relative h-[60vh] min-h-[420px] w-full overflow-hidden bg-black text-white" aria-label="Alien Inc.">
         <div class="footer__wordmark-glow" aria-hidden="true">
-          <div class="footer__wordmark-canvas-wrap">
-            <canvas class="footer__wordmark-canvas" width="1000" height="1000"></canvas>
+          <div class="footer__wordmark-canvas-wrap footer__wordmark-canvas-wrap--left">
+            <canvas class="footer__wordmark-canvas"></canvas>
           </div>
-          <div class="footer__wordmark-canvas-wrap">
-            <canvas class="footer__wordmark-canvas" width="1000" height="1000"></canvas>
+          <div class="footer__wordmark-canvas-wrap footer__wordmark-canvas-wrap--right">
+            <canvas class="footer__wordmark-canvas"></canvas>
           </div>
         </div>
         <div class="footer__wordmark-caption" aria-hidden="true">
           <p class="footer__wordmark-text">
-            <span style="--i:0">a</span><span style="--i:1">l</span><span style="--i:2">i</span><span style="--i:3">e</span><span style="--i:4">n</span><span class="footer__wordmark-space" style="--i:5"></span><span style="--i:6">i</span><span style="--i:7">n</span><span style="--i:8">c</span><span class="footer__wordmark-dot" style="--i:9">.</span>
+            <span style="--i:4.5">a</span><span style="--i:3.5">l</span><span style="--i:2.5">i</span><span style="--i:1.5">e</span><span style="--i:0.5">n</span><span class="footer__wordmark-space" style="--i:0.5"></span><span style="--i:1.5">i</span><span style="--i:2.5">n</span><span style="--i:3.5">c</span><span class="footer__wordmark-dot" style="--i:4.5">.</span>
           </p>
         </div>
       </div>
@@ -6279,157 +6280,190 @@
 
   </script>
 
-  <!-- Footer wordmark animation: two nebula canvases + wordmark reveal -->
+  <!-- Footer wordmark animation: ASCII hands + wordmark reveal (ported from we.inc) -->
   <script>
   (function () {
     var section = document.querySelector('.footer__wordmark');
     if (!section) return;
 
-    var doesReduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-    var wraps = section.querySelectorAll('.footer__wordmark-canvas-wrap');
-    var canvases = section.querySelectorAll('.footer__wordmark-canvas');
-    var settings = [
-      { seed: 0.4, colors: [[255, 212, 0], [255, 138, 30], [78, 162, 253]] },
-      { seed: 2.2, colors: [[78, 162, 253], [140, 214, 255], [255, 212, 0]] }
-    ];
+    var leftWrap = section.querySelector('.footer__wordmark-canvas-wrap--left');
+    var rightWrap = section.querySelector('.footer__wordmark-canvas-wrap--right');
+    var leftCanvas = leftWrap ? leftWrap.querySelector('canvas') : null;
+    var rightCanvas = rightWrap ? rightWrap.querySelector('canvas') : null;
+    if (!leftWrap || !rightWrap || !leftCanvas || !rightCanvas) return;
 
-    function paint(canvas, cfg, time) {
-      var cssSize = canvas.clientWidth || 200;
-      var dpr = Math.min(window.devicePixelRatio || 1, 2);
-      var px = Math.round(cssSize * dpr);
-      if (canvas.width !== px || canvas.height !== px) {
-        canvas.width = px;
-        canvas.height = px;
+    var CHARS = '........:::=+xX#0369';
+    var FLICKER_MS = 300;
+    var MAX_SPREAD = 10;
+    var PARALLAX_EASE = 0.05;
+    var COLUMNS = 80;
+    var CELL_SIZE = 20;
+    var FONT_SIZE = 18;
+    var CHAR_COLOR = 'rgba(78, 162, 253, 0.42)';
+    var HOVER_COLOR = '#4ea2fd';
+    var HOVER_CHAR_COLOR = '#131920';
+    var LEFT_IMAGE = 'assets/animated-footer/hand-left.webp';
+    var RIGHT_IMAGE = 'assets/animated-footer/hand-right.webp';
+
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var targets = [];
+
+    function imageToCells(img) {
+      var rows = Math.max(1, Math.round(COLUMNS / (img.naturalWidth / img.naturalHeight || 1)));
+      var offscreen = document.createElement('canvas');
+      offscreen.width = COLUMNS;
+      offscreen.height = rows;
+      var offctx = offscreen.getContext('2d');
+      var cells = new Map();
+      if (!offctx) return { rows: rows, cells: cells };
+      offctx.drawImage(img, 0, 0, COLUMNS, rows);
+      var data = offctx.getImageData(0, 0, COLUMNS, rows).data;
+      var threshold = CHARS.lastIndexOf('.');
+      for (var row = 0; row < rows; row++) {
+        for (var col = 0; col < COLUMNS; col++) {
+          var p = (row * COLUMNS + col) * 4;
+          var luminance = (data[p] * 0.299 + data[p + 1] * 0.587 + data[p + 2] * 0.114) / 255;
+          var index = Math.min(CHARS.length - 1, Math.floor((1 - luminance) * CHARS.length));
+          if (index > threshold) {
+            cells.set(col + ',' + row, { col: col, row: row, char: CHARS[index], until: 0 });
+          }
+        }
       }
-
-      var ctx = canvas.getContext('2d');
-      var w = canvas.width;
-      var h = canvas.height;
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, w, h);
-      ctx.globalCompositeOperation = 'lighter';
-
-      var t = time * 0.00022 + cfg.seed;
-      var spin = Math.sin(t * 0.7) * 0.18;
-      ctx.translate(w / 2, h / 2);
-      ctx.rotate(spin);
-      ctx.translate(-w / 2, -h / 2);
-
-      for (var i = 0; i < 7; i++) {
-        var phase = i * 1.7;
-        var cx = w * (0.5 + Math.sin(t * 1.1 + phase * 1.6) * 0.26 + Math.cos(t * 0.7 + phase) * 0.09);
-        var cy = h * (0.5 + Math.cos(t * 0.9 + phase * 1.2) * 0.26 + Math.sin(t * 0.6 + phase * 1.4) * 0.09);
-        var radius = w * (0.2 + 0.09 * Math.sin(t * 1.3 + phase * 0.8));
-        radius = Math.max(radius, w * 0.08);
-        var color = cfg.colors[i % cfg.colors.length];
-
-        var grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-        grad.addColorStop(0, 'rgba(' + color[0] + ',' + color[1] + ',' + color[2] + ',0.5)');
-        grad.addColorStop(0.42, 'rgba(' + color[0] + ',' + color[1] + ',' + color[2] + ',0.16)');
-        grad.addColorStop(1, 'rgba(' + color[0] + ',' + color[1] + ',' + color[2] + ',0)');
-
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      ctx.globalCompositeOperation = 'source-over';
+      return { rows: rows, cells: cells };
     }
 
-    function paintAll(time) {
-      for (var i = 0; i < canvases.length; i++) {
-        paint(canvases[i], settings[i % settings.length], time);
+    function spread(cells, cell) {
+      var now = Date.now();
+      cell.until = now + FLICKER_MS;
+      var trail = [cell];
+      var current = cell;
+      var steps = Math.floor(Math.random() * MAX_SPREAD) + 1;
+      for (var step = 0; step < steps; step++) {
+        var neighbours = [];
+        for (var dy = -1; dy <= 1; dy++) {
+          for (var dx = -1; dx <= 1; dx++) {
+            if (!dx && !dy) continue;
+            var neighbour = cells.get((current.col + dx) + ',' + (current.row + dy));
+            if (neighbour && trail.indexOf(neighbour) === -1) neighbours.push(neighbour);
+          }
+        }
+        if (!neighbours.length) break;
+        current = neighbours[Math.floor(Math.random() * neighbours.length)];
+        current.until = now + FLICKER_MS + step * 10;
+        trail.push(current);
       }
     }
 
-    var targetX = 0;
-    var targetY = 0;
-    var currentX = 0;
-    var currentY = 0;
-    var started = 0;
-    var running = false;
+    function setupCanvas(canvas, src) {
+      var img = new Image();
+      img.onload = function () {
+        var parsed = imageToCells(img);
+        if (!parsed.cells.size) return;
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = COLUMNS * CELL_SIZE * dpr;
+        canvas.height = parsed.rows * CELL_SIZE * dpr;
+        var ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.font = FONT_SIZE + 'px monospace';
+        ctx.textAlign = 'center';
+        var metrics = ctx.measureText('X');
+        var base = CELL_SIZE / 2 + (metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent) / 2 - metrics.actualBoundingBoxDescent;
+        targets.push({
+          ctx: ctx,
+          cells: parsed.cells,
+          list: Array.from(parsed.cells.values()),
+          rows: parsed.rows,
+          base: base
+        });
+      };
+      img.src = src;
+    }
+
+    var loadObserver = new IntersectionObserver(function (entries) {
+      if (!entries[0].isIntersecting) return;
+      loadObserver.disconnect();
+      setupCanvas(leftCanvas, LEFT_IMAGE);
+      setupCanvas(rightCanvas, RIGHT_IMAGE);
+    }, { rootMargin: '800px 0px' });
+    loadObserver.observe(section);
+
+    var pointer = { x: 0, y: 0 };
+    var eased = { x: 0, y: 0 };
+
+    function handlePointer(event) {
+      var rect = section.getBoundingClientRect();
+      if (event.clientY < rect.top - 100) return;
+      pointer.x = ((event.clientX - rect.left) / (rect.width || 1) - 0.5) * 40;
+      pointer.y = ((event.clientY - rect.top) / (rect.height || 1) - 0.5) * 40;
+      for (var i = 0; i < targets.length; i++) {
+        var target = targets[i];
+        var canvasRect = target.ctx.canvas.getBoundingClientRect();
+        if (!canvasRect.width) continue;
+        var mx = ((event.clientX - canvasRect.left) / canvasRect.width) * COLUMNS;
+        var my = ((event.clientY - canvasRect.top) / canvasRect.height) * target.rows;
+        var nearest = null;
+        var best = Infinity;
+        for (var j = 0; j < target.list.length; j++) {
+          var cell = target.list[j];
+          var distance = Math.hypot(mx - cell.col, my - cell.row);
+          if (distance < best) { best = distance; nearest = cell; }
+        }
+        if (nearest && best <= 8) spread(target.cells, nearest);
+      }
+    }
+
+    if (!reduced) window.addEventListener('mousemove', handlePointer);
+
+    var slide = { value: 125, target: 125 };
     var frame = 0;
 
-    function tick(time) {
-      if (!running) return;
-      if (!started) started = time;
-      currentX += (targetX - currentX) * 0.05;
-      currentY += (targetY - currentY) * 0.05;
-      var drift = Math.sin((time - started) * 0.0006) * 6;
-
-      if (wraps[0]) {
-        wraps[0].style.transform = 'translate3d(' + (-currentX * 14) + 'px,' + (-currentY * 12 + drift) + 'px,0) scale(1.2)';
+    function render() {
+      var now = Date.now();
+      for (var i = 0; i < targets.length; i++) {
+        var target = targets[i];
+        var ctx = target.ctx;
+        ctx.clearRect(0, 0, COLUMNS * CELL_SIZE, target.rows * CELL_SIZE);
+        for (var j = 0; j < target.list.length; j++) {
+          var cell = target.list[j];
+          var active = cell.until > now;
+          if (active) {
+            ctx.fillStyle = HOVER_COLOR;
+            ctx.fillRect(cell.col * CELL_SIZE, cell.row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+          }
+          ctx.fillStyle = active ? HOVER_CHAR_COLOR : CHAR_COLOR;
+          ctx.fillText(cell.char, cell.col * CELL_SIZE + CELL_SIZE / 2, cell.row * CELL_SIZE + target.base);
+        }
       }
-      if (wraps[1]) {
-        wraps[1].style.transform = 'translate3d(' + (currentX * 14) + 'px,' + (currentY * 12 - drift) + 'px,0) scale(1.2)';
-      }
 
-      paintAll(time);
-      frame = requestAnimationFrame(tick);
+      slide.value += (slide.target - slide.value) * (slide.target < slide.value ? 0.06 : 0.15);
+      eased.x += (pointer.x - eased.x) * PARALLAX_EASE;
+      eased.y += (pointer.y - eased.y) * PARALLAX_EASE;
+
+      leftWrap.style.transform = 'translateX(' + -slide.value + '%) translate(' + eased.x + 'px, ' + -eased.y + 'px) scale(1.2)';
+      rightWrap.style.transform = 'translateX(' + slide.value + '%) translate(' + -eased.x + 'px, ' + -eased.y + 'px) scale(1.2)';
+
+      frame = requestAnimationFrame(render);
     }
 
-    function start() {
-      if (running) return;
-      running = true;
-      paintAll(performance.now());
-      frame = requestAnimationFrame(tick);
-    }
+    frame = requestAnimationFrame(render);
 
-    function stop() {
-      running = false;
-      cancelAnimationFrame(frame);
-    }
-
-    if (doesReduced.matches) {
-      paintAll(1200);
-      section.classList.add('is-inview');
-      window.addEventListener('resize', function () { paintAll(1200); });
-      return;
-    }
-
-    section.addEventListener('pointermove', function (event) {
-      var rect = section.getBoundingClientRect();
-      targetX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      targetY = ((event.clientY - rect.top) / rect.height) * 2 - 1;
-    });
-
-    section.addEventListener('pointerleave', function () {
-      targetX = 0;
-      targetY = 0;
-    });
-
-    var observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) section.classList.add('is-inview');
-      });
-    }, { threshold: 0.25 });
-    observer.observe(section);
-
-    var motionObserver = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) start();
-        else stop();
-      });
-    }, { rootMargin: '200px' });
-    motionObserver.observe(section);
+    var revealObserver = new IntersectionObserver(function (entries) {
+      var visible = entries[0].isIntersecting;
+      slide.target = visible ? 0 : 125;
+      section.classList.toggle('is-inview', visible);
+    }, { threshold: 0.35 });
+    revealObserver.observe(section);
 
     function checkVisibility() {
       var rect = section.getBoundingClientRect();
-      if (rect.top < window.innerHeight && rect.bottom > 0) {
-        section.classList.add('is-inview');
-        start();
-      } else if (rect.bottom < -200 || rect.top > window.innerHeight + 200) {
-        stop();
-      }
+      var visible = Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0);
+      var shown = visible > rect.height * 0.35;
+      slide.target = shown ? 0 : 125;
+      section.classList.toggle('is-inview', shown);
     }
-
     window.addEventListener('scroll', checkVisibility, { passive: true });
     checkVisibility();
-
-    window.addEventListener('resize', function () {
-      if (!running) paintAll(performance.now());
-    });
   })();
   </script>
 

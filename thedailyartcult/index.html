@@ -891,6 +891,16 @@
       border-left: 1px solid rgba(198, 167, 102, 0.26) !important;
       border-bottom: 1px solid rgba(198, 167, 102, 0.26) !important;
     }
+    .leaflet-control-attribution {
+      background: rgba(9, 6, 5, 0.72) !important;
+      color: rgba(242, 234, 220, 0.4) !important;
+      font-size: 9px !important;
+      font-family: ui-monospace, monospace !important;
+      border-radius: 4px 0 0 0;
+    }
+    .leaflet-control-attribution a {
+      color: rgba(198, 167, 102, 0.75) !important;
+    }
 
     /* Pulsing & Outlined Gold Leaflet Markers */
     .map-marker-pulse {
@@ -2440,11 +2450,17 @@ document.addEventListener("DOMContentLoaded", () => {
         maxZoom: 7,
         zoomControl: true,
         scrollWheelZoom: false,
-        attributionControl: false
+        attributionControl: true
       });
 
-      // Skin the map entirely dark with CartoDB labels layer
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      // Esri World Dark Gray Canvas — free, no API key required.
+      // (CARTO's basemaps now return "API KEY REQUIRED" watermark tiles.)
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 20,
+        attribution: 'Tiles &copy; <a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">Esri</a>'
+      }).addTo(map);
+
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 20
       }).addTo(map);
 

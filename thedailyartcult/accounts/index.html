@@ -101,7 +101,7 @@
       color: #070504;
     }
   </style>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.tailwindcss.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com https://consent.cookiebot.com; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.tailwindcss.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com https://consent.cookiebot.com; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
     <meta http-equiv="X-Frame-Options" content="DENY">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
 </head>
@@ -125,7 +125,7 @@
     <section id="auth-gate" class="w-full max-w-md mx-auto hidden">
       <div class="quiet-panel p-8 rounded-xl shadow-2xl">
         <h2 class="font-serif text-xl text-cream mb-2 text-center">Employee Sign In</h2>
-        <p class="text-xs text-linen/50 text-center mb-6">Use your work email and password. Accounts are provisioned by your administrator.</p>
+        <p class="text-xs text-linen/50 text-center mb-6">Sign in with your work email and password, or request a one-time sign-in link.</p>
 
         <form id="login-form" class="space-y-4">
           <div>
@@ -140,6 +140,14 @@
             Sign In
           </button>
         </form>
+        <div class="mt-5 flex items-center gap-3">
+          <div class="h-px flex-1 bg-linen/10"></div>
+          <span class="text-[9px] font-mono uppercase tracking-widest text-linen/30">or</span>
+          <div class="h-px flex-1 bg-linen/10"></div>
+        </div>
+        <button type="button" id="magic-link-btn" class="mt-4 w-full py-3 border border-antique/40 text-antique hover:bg-antique/10 font-mono text-[10px] font-bold uppercase tracking-widest rounded-lg transition duration-300">
+          Email me a sign-in link
+        </button>
         <p id="auth-feedback" class="text-[10px] font-mono text-center text-antique mt-4 min-h-[1.5em]"></p>
       </div>
     </section>
@@ -291,7 +299,9 @@
     const loginForm = document.getElementById("login-form");
     const emailInput = document.getElementById("email");
     const passwordInput = document.getElementById("password");
+    const magicLinkBtn = document.getElementById("magic-link-btn");
     const authFeedback = document.getElementById("auth-feedback");
+    const AUTH_REDIRECT_URL = "https://art.alieninc.tech/accounts/";
     const logoutBtn = document.getElementById("logout-btn");
     
     const patronGreeting = document.getElementById("patron-greeting");
@@ -611,7 +621,34 @@ A single sentence that captures me as a learner and thinker — precise enough t
       }
     });
 
-    // 2. Logout Click
+    // 2. Email Magic-Link Sign In
+    if (magicLinkBtn) {
+      magicLinkBtn.addEventListener("click", async () => {
+        const email = emailInput.value.trim();
+        if (!email) {
+          authFeedback.textContent = "Enter your email address first.";
+          emailInput.focus();
+          return;
+        }
+        magicLinkBtn.disabled = true;
+        authFeedback.textContent = "Sending sign-in link...";
+
+        const { error } = await supabaseClient.auth.signInWithOtp({
+          email: email,
+          options: {
+            emailRedirectTo: AUTH_REDIRECT_URL,
+            shouldCreateUser: false
+          }
+        });
+
+        magicLinkBtn.disabled = false;
+        authFeedback.textContent = error
+          ? `Error: ${error.message}`
+          : "Check your inbox. The link returns you here and signs you in.";
+      });
+    }
+
+    // 3. Logout Click
     logoutBtn.addEventListener("click", async () => {
       await supabaseClient.auth.signOut();
     });

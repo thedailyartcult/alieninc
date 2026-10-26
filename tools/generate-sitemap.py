@@ -142,7 +142,7 @@ def main():
     if tdac_idx.exists():
         add_url(tdac_set, TDAC_BASE, git_lastmod(tdac_idx), "0.9", "daily")
         for page in sorted((ROOT / "thedailyartcult").glob("*.html")):
-            if page.name in ("index.html", "404.html") or ".bak" in page.name:
+            if page.name in ("index.html", "404.html", "accounts.html") or ".bak" in page.name:
                 continue
             add_url(tdac_set, f"{TDAC_BASE}/{page.name}", git_lastmod(page), "0.7", "weekly")
         for p in sorted((ROOT / "thedailyartcult").rglob("*.html")):
@@ -153,6 +153,9 @@ def main():
             if ".bak" in p.name:
                 continue
             rel = p.relative_to(ROOT / "thedailyartcult").as_posix()
+            if rel == "accounts/index.html":
+                add_url(tdac_set, f"{TDAC_BASE}/accounts/", git_lastmod(p), "0.7", "weekly")
+                continue
             add_url(tdac_set, f"{TDAC_BASE}/{rel}", git_lastmod(p), "0.7", "weekly")
         tdac_tree = ET.ElementTree(tdac_set)
         ET.indent(tdac_tree, space="  ")

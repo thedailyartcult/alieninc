@@ -1,7 +1,245 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
+<!DOCTYPE html><html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style>
+@charset "utf-8";
+
+:root { --hg-font-primary: "Instrument Sans", system-ui, -apple-system, sans-serif; --hg-font-secondary: "Instrument Sans Condensed", var(--hg-font-primary); --hg-color-primary: #14181c; --hg-color-secondary: #ffd400; --hg-color-secondary-bold: #4ea2fd; --hg-color-tertiary: #f6f6f6; --hg-color-darkest: #131920; --hg-color-lightest: #ffffff; --hg-color-muted: #f7f7f7; --ppl-color-text-default: #131920; --ppl-color-text-subtle: #3a4b5f; --ppl-button-contained-bg: #ffd400; --header-height: 4.875rem; }
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body { font-family: var(--hg-font-primary); margin: 0px; padding: 0px; line-height: 1.6; background-color: rgb(255, 255, 255); color: var(--ppl-color-text-default); overflow-x: hidden; -webkit-font-smoothing: antialiased; text-rendering: optimizelegibility; }
+
+a { color: inherit; text-decoration: none; }
+
+.l-container { max-width: 1200px; margin: 0px auto; padding: 0px 1.5rem; width: 100%; }
+
+.header { height: var(--header-height); background-color: rgb(255, 255, 255); border-bottom: 1px solid rgba(0, 0, 0, 0.08); display: flex; align-items: center; position: sticky; top: 0px; z-index: 100; box-shadow: rgba(0, 0, 0, 0.01) 0px 2px 10px; }
+
+.header__inner { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 1200px; margin: 0px auto; padding: 0px 1.5rem; }
+
+.header__logo { display: flex; align-items: center; height: 100%; }
+
+.brand-logo { display: flex; align-items: center; gap: 0.12rem; height: 100%; }
+
+.brand-logo__text { font-family: Ultra, "Alfa Slab One", Clarendon, "Egyptian 714", "Rockwell Extra Bold", serif; font-size: clamp(24px, 5vw, 29px); font-weight: 500; letter-spacing: 0.02em; color: rgb(19, 25, 32); line-height: 1; }
+
+.brand-logo__dot { height: 0.56em; width: 0.56em; position: relative; top: calc(0.3 * clamp(24px, 5vw, 29px)); display: block; }
+
+.nav__list { display: flex; flex-direction: row; gap: 2rem; list-style: none; margin: 0px; padding: 0px; }
+
+.nav__list-item-link { font-weight: 700; font-size: 1.125rem; color: var(--ppl-color-text-default); transition: color 0.2s ease-out; padding: 0.25rem 0px; }
+
+.nav__list-item-link:hover, .nav__list-item-link.is-active { text-decoration-line: underline; text-decoration-style: initial; text-decoration-color: var(--hg-color-secondary); text-decoration-thickness: 0.16em; text-underline-offset: 0.2em; }
+
+.nav__dropdown { position: relative; }
+
+.nav__dropdown-menu { position: absolute; top: 100%; left: 50%; transform: translateX(-50%) translateY(6px); background: rgb(255, 255, 255); border: 1px solid rgba(19, 25, 32, 0.1); border-radius: 4px; box-shadow: rgba(0, 0, 0, 0.08) 0px 8px 24px; min-width: 150px; opacity: 0; visibility: hidden; transition: opacity 0.15s, visibility 0.15s, transform 0.15s; padding: 6px 0px; z-index: 200; }
+
+.nav__dropdown:hover .nav__dropdown-menu, .nav__dropdown-menu:hover { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(10px); }
+
+.nav__dropdown-item { display: block; padding: 8px 20px; font-size: 0.92rem; font-weight: 600; white-space: nowrap; transition: background 0.12s; }
+
+.nav__dropdown-item:hover { background: var(--hg-color-muted); text-decoration-line: underline; text-decoration-style: initial; text-decoration-color: var(--hg-color-secondary); text-decoration-thickness: 0.16em; text-underline-offset: 0.2em; }
+
+.nav__dropdown-trigger { cursor: default; }
+
+.nav__dropdown-trigger::after { content: ""; display: inline-block; width: 0px; height: 0px; margin-left: 5px; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid var(--ppl-color-text-default); vertical-align: middle; transition: transform 0.15s; }
+
+.nav__dropdown:hover .nav__dropdown-trigger::after { transform: rotate(180deg); }
+
+.section-kicker { font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ppl-color-text-subtle); margin-bottom: 0.75rem; }
+
+.display-title { font-family: var(--hg-font-secondary); font-size: clamp(2.4rem, 5vw, 4.5rem); line-height: 0.98; text-transform: uppercase; margin: 0px; letter-spacing: -0.01em; }
+
+.section-title { font-family: var(--hg-font-secondary); font-size: clamp(1.7rem, 3vw, 2.6rem); line-height: 1; text-transform: uppercase; margin: 0px 0px 0.75rem; }
+
+.lede { color: var(--ppl-color-text-subtle); font-size: 1.05rem; margin: 1rem 0px 0px; max-width: 640px; }
+
+.notification-banner { background-color: var(--ppl-button-contained-bg); color: var(--ppl-color-text-default); padding: 0.75rem 1rem; text-align: center; }
+
+.notification-banner__inner { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 0.6rem; }
+
+.notification-banner__text { font-weight: 700; font-size: 1rem; }
+
+.values-hero { padding: 4rem 0px 2.5rem; }
+
+.hero-rule { width: 72px; height: 6px; background: var(--hg-color-secondary); margin-bottom: 2rem; }
+
+.hero-meta { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.75rem; }
+
+.pill { display: inline-flex; align-items: center; gap: 0.4rem; border: 1px solid rgba(19, 25, 32, 0.14); background: rgb(255, 255, 255); padding: 5px 12px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ppl-color-text-subtle); }
+
+.pill--gold { background: var(--hg-color-secondary); border-color: var(--hg-color-secondary); color: rgb(19, 25, 32); }
+
+.dot { width: 7px; height: 7px; border-radius: 50%; background: rgb(26, 127, 55); display: inline-block; }
+
+.charter-banner { background: var(--hg-color-darkest); color: rgb(255, 255, 255); padding: 2.5rem; display: flex; align-items: center; justify-content: space-between; gap: 2rem; border-left: 6px solid var(--hg-color-secondary); margin-bottom: 2rem; }
+
+.charter-banner__title { font-family: var(--hg-font-secondary); font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 800; text-transform: uppercase; line-height: 1; margin: 0.35rem 0px 0px; }
+
+.charter-banner__copy { color: rgba(255, 255, 255, 0.66); font-size: 0.95rem; max-width: 540px; margin: 0.75rem 0px 0px; }
+
+.charter-banner .section-kicker { color: rgba(255, 255, 255, 0.45); }
+
+.charter-banner__stats { display: flex; gap: 2.5rem; flex-shrink: 0; }
+
+.charter-stat { text-align: right; }
+
+.charter-stat__value { font-family: var(--hg-font-secondary); font-size: 2.2rem; font-weight: 800; line-height: 1; color: var(--hg-color-secondary); }
+
+.charter-stat__label { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255, 255, 255, 0.5); margin-top: 0.4rem; }
+
+.value-grid { display: grid; grid-template-columns: repeat(4, minmax(0px, 1fr)); gap: 1px; background: rgba(19, 25, 32, 0.14); border: 1px solid rgba(19, 25, 32, 0.14); margin-bottom: 2rem; }
+
+.value-card { background: rgb(255, 255, 255); padding: 1.75rem; display: flex; flex-direction: column; min-height: 220px; border-top: 4px solid var(--hg-color-secondary); }
+
+.value-card__num { font-family: var(--hg-font-secondary); font-size: 0.8rem; font-weight: 800; letter-spacing: 0.1em; color: var(--ppl-color-text-subtle); margin-bottom: 1.1rem; }
+
+.value-card__title { font-family: var(--hg-font-secondary); font-size: 1.35rem; font-weight: 800; text-transform: uppercase; line-height: 1.05; margin: 0px 0px 0.75rem; }
+
+.value-card__copy { font-size: 0.9rem; color: var(--ppl-color-text-subtle); margin: 0px; line-height: 1.55; }
+
+.band { padding: 3.5rem 0px; }
+
+.band--tight { padding: 1rem 0px 3.5rem; }
+
+.band--muted { background: rgb(250, 250, 250); border-top: 1px solid rgba(19, 25, 32, 0.08); border-bottom: 1px solid rgba(19, 25, 32, 0.08); }
+
+.section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap; }
+
+.section-head__count { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ppl-color-text-subtle); background: var(--hg-color-muted); padding: 4px 10px; }
+
+.principle-grid { display: grid; grid-template-columns: repeat(2, minmax(0px, 1fr)); gap: 1px; background: rgba(19, 25, 32, 0.14); border: 1px solid rgba(19, 25, 32, 0.14); }
+
+.principle { background: rgb(255, 255, 255); padding: 1.9rem; display: grid; grid-template-columns: 62px 1fr; gap: 1.2rem; align-items: start; }
+
+.principle__num { font-family: var(--hg-font-secondary); font-size: 2.1rem; font-weight: 800; line-height: 1; color: var(--hg-color-secondary); }
+
+.principle__title { font-family: var(--hg-font-secondary); font-size: 1.25rem; font-weight: 800; text-transform: uppercase; line-height: 1.05; margin: 0px 0px 0.5rem; }
+
+.principle__copy { font-size: 0.9rem; color: var(--ppl-color-text-subtle); margin: 0px; line-height: 1.55; }
+
+.company-grid { display: grid; grid-template-columns: repeat(2, minmax(0px, 1fr)); gap: 1px; background: rgba(19, 25, 32, 0.14); border: 1px solid rgba(19, 25, 32, 0.14); }
+
+.company-card { background: rgb(255, 255, 255); padding: 2rem; display: flex; flex-direction: column; }
+
+.company-card--wide { grid-column: 1 / -1; }
+
+.company-card__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+
+.company-card__index { font-family: var(--hg-font-secondary); font-size: 0.78rem; font-weight: 800; letter-spacing: 0.12em; color: var(--ppl-color-text-subtle); }
+
+.company-card__sector { display: inline-block; font-size: 0.65rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; background: var(--hg-color-muted); color: var(--ppl-color-text-subtle); padding: 4px 9px; margin-bottom: 0.6rem; }
+
+.company-card__name { font-family: var(--hg-font-secondary); font-size: 1.75rem; font-weight: 800; text-transform: uppercase; line-height: 1; margin: 0px 0px 0.45rem; }
+
+.company-card__tag { font-size: 0.9rem; color: var(--ppl-color-text-subtle); margin: 0px; max-width: 480px; }
+
+.company-card__link { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; border-bottom: 3px solid var(--hg-color-secondary); padding-bottom: 2px; }
+
+.company-card__link:hover { background: var(--hg-color-secondary); }
+
+.company-values { list-style: none; margin: 0.5rem 0px 0px; padding: 0px; border-top: 1px solid rgba(19, 25, 32, 0.1); }
+
+.company-values li { display: grid; grid-template-columns: 1fr 2fr; gap: 1.25rem; padding: 0.95rem 0px; border-bottom: 1px solid rgba(19, 25, 32, 0.07); }
+
+.company-values li:last-child { border-bottom-width: medium; border-bottom-style: none; border-bottom-color: currentcolor; }
+
+.company-values__name { font-weight: 800; font-size: 0.92rem; line-height: 1.3; }
+
+.company-values__copy { font-size: 0.85rem; color: var(--ppl-color-text-subtle); line-height: 1.5; }
+
+.company-how { margin-top: 1.1rem; background: rgb(250, 250, 250); border-left: 3px solid var(--hg-color-secondary); padding: 0.8rem 1rem; font-size: 0.84rem; color: var(--ppl-color-text-subtle); }
+
+.company-how strong { color: var(--ppl-color-text-default); font-weight: 800; text-transform: uppercase; font-size: 0.68rem; letter-spacing: 0.08em; display: block; margin-bottom: 0.15rem; }
+
+.flow-table { width: 100%; border-collapse: collapse; }
+
+.flow-table th { text-align: left; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ppl-color-text-subtle); padding: 0.85rem 1.1rem; border-bottom: 1px solid rgba(19, 25, 32, 0.14); background: var(--hg-color-muted); }
+
+.flow-table td { padding: 1rem 1.1rem; border-bottom: 1px solid rgba(19, 25, 32, 0.07); font-size: 0.9rem; vertical-align: top; }
+
+.flow-table tr:last-child td { border-bottom-width: medium; border-bottom-style: none; border-bottom-color: currentcolor; }
+
+.flow-table__fn { font-weight: 800; }
+
+.flow-table__company { font-weight: 700; white-space: nowrap; }
+
+.flow-table__company a { border-bottom: 2px solid var(--hg-color-secondary); }
+
+.flow-table__company a:hover { background: var(--hg-color-secondary); }
+
+.flow-table__mandate { color: var(--ppl-color-text-subtle); }
+
+.panel { background: rgb(255, 255, 255); border: 1px solid rgba(19, 25, 32, 0.14); }
+
+.closing { background: var(--hg-color-darkest); color: rgb(255, 255, 255); padding: 3rem; border-left: 6px solid var(--hg-color-secondary); display: flex; align-items: center; justify-content: space-between; gap: 2rem; flex-wrap: wrap; }
+
+.closing__title { font-family: var(--hg-font-secondary); font-size: clamp(1.6rem, 3vw, 2.4rem); font-weight: 800; text-transform: uppercase; line-height: 1; margin: 0px; max-width: 720px; }
+
+.button { display: inline-block; font-weight: 800; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.9rem 1.6rem; background: var(--hg-color-secondary); color: rgb(19, 25, 32); white-space: nowrap; transition: transform 0.15s, background 0.15s; }
+
+.button:hover { background: rgb(255, 255, 255); transform: translateY(-1px); }
+
+.footer { background-color: var(--hg-color-darkest); color: var(--hg-color-lightest); padding: 4rem 0px 2rem; }
+
+.footer__inner-container { display: grid; gap: 3rem; grid-template-areas: "offices contact" "corporate media"; }
+
+.footer__offices { grid-area: offices; }
+
+.footer__contact { grid-area: contact; }
+
+.footer__corporate { grid-area: corporate; }
+
+.footer__media { grid-area: media; }
+
+.footer__offices-title, .footer__contact-title { font-size: 1.375rem; font-weight: 700; margin-bottom: 1.5rem; text-transform: uppercase; }
+
+.footer__offices-items { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; }
+
+.footer__offices-item-title { font-weight: 700; margin-bottom: 0.25rem; }
+
+.footer__offices-item-content { font-size: 0.875rem; line-height: 1.5; opacity: 0.8; display: flex; flex-direction: column; }
+
+.footer__contact-items { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
+
+.footer__contact-item-title { font-weight: 700; font-size: 0.95rem; }
+
+.footer__contact-item-content { font-size: 0.875rem; }
+
+.footer__contact-item-content a { text-decoration: underline; }
+
+.footer__contact-item-content a:hover { color: var(--hg-color-secondary); }
+
+.footer__corporate-links { display: flex; flex-wrap: wrap; gap: 1.5rem; list-style: none; padding: 0px; margin: 0px; font-size: 0.75rem; opacity: 0.7; }
+
+.footer__corporate-link:hover { color: var(--hg-color-secondary); text-decoration: underline; }
+
+.footer__media { display: flex; justify-content: flex-end; align-items: center; gap: 1rem; }
+
+.social-link { background-color: rgb(255, 255, 255); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: rgb(19, 25, 32); font-weight: bold; }
+
+.social-link:hover { background-color: var(--hg-color-secondary); }
+
+@media (max-width: 980px) {
+  .value-grid { grid-template-columns: repeat(2, minmax(0px, 1fr)); }
+  .charter-banner { flex-direction: column; align-items: flex-start; }
+  .charter-banner__stats { width: 100%; justify-content: space-between; }
+  .charter-stat { text-align: left; }
+}
+
+@media (max-width: 768px) {
+  .nav__list { display: none; }
+  .value-grid, .principle-grid, .company-grid { grid-template-columns: 1fr; }
+  .company-card--wide { grid-column: auto; }
+  .principle { grid-template-columns: 48px 1fr; padding: 1.4rem; }
+  .company-values li { grid-template-columns: 1fr; gap: 0.25rem; }
+  .charter-banner, .closing { padding: 1.6rem; }
+  .closing { flex-direction: column; align-items: flex-start; }
+  .footer__inner-container { grid-template-areas: "offices" "contact" "corporate" "media"; }
+}
+</style>
+  
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Values &amp; Operating Principles — Alien Inc</title>
   <meta name="description" content="The values of Alien Inc and its seven operating companies, and the operating principles that govern how the group works.">
@@ -16,795 +254,45 @@
   <meta name="twitter:description" content="The values of Alien Inc and its seven operating companies, and how the group works.">
   <meta name="twitter:image" content="https://alieninc.tech/logo.png">
   <link rel="canonical" href="https://alieninc.tech/values.html">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'">
+  
   <meta http-equiv="X-Frame-Options" content="DENY">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta name="theme-color" content="#ffd400">
-  <link rel="icon" type="image/png" sizes="32x32" href="/ai-favicon-light-32.png?v=28" media="(prefers-color-scheme: light)">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ai-favicon-16.png?v=28" media="(prefers-color-scheme: dark)">
-  <link rel="icon" type="image/png" sizes="16x16" href="/ai-favicon-light-16.png?v=28" media="(prefers-color-scheme: light)">
-  <link rel="icon" type="image/png" sizes="192x192" href="/ai-favicon-192.png?v=28">
-  <link rel="icon" type="image/png" sizes="512x512" href="/ai-favicon-512.png?v=28">
-  <link rel="apple-touch-icon" sizes="180x180" href="/ai-favicon-180.png?v=28">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Ultra&family=Alfa+Slab+One&family=Instrument+Sans:wght@400;500;600;700;800&family=Instrument+Sans+Condensed:wght@700;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --hg-font-primary: "Instrument Sans", system-ui, -apple-system, sans-serif;
-      --hg-font-secondary: "Instrument Sans Condensed", var(--hg-font-primary);
-      --hg-color-primary: #14181c;
-      --hg-color-secondary: #ffd400;
-      --hg-color-secondary-bold: #4ea2fd;
-      --hg-color-tertiary: #f6f6f6;
-      --hg-color-darkest: #131920;
-      --hg-color-lightest: #ffffff;
-      --hg-color-muted: #f7f7f7;
-      --ppl-color-text-default: #131920;
-      --ppl-color-text-subtle: #3a4b5f;
-      --ppl-button-contained-bg: #ffd400;
-      --header-height: 4.875rem;
-    }
-
-    * { box-sizing: border-box; }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      font-family: var(--hg-font-primary);
-      margin: 0;
-      padding: 0;
-      line-height: 1.6;
-      background-color: #ffffff;
-      color: var(--ppl-color-text-default);
-      overflow-x: hidden;
-      -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-    }
-
-    a { color: inherit; text-decoration: none; }
-
-    .l-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 1.5rem;
-      width: 100%;
-    }
-
-    /* Header */
-    .header {
-      height: var(--header-height);
-      background-color: #ffffff;
-      border-bottom: 1px solid rgba(0,0,0,0.08);
-      display: flex;
-      align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.01);
-    }
-
-    .header__inner {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 1.5rem;
-    }
-
-    .header__logo { display: flex; align-items: center; height: 100%; }
-
-    .brand-logo {
-      display: flex;
-      align-items: center;
-      gap: 0.12rem;
-      height: 100%;
-    }
-
-    .brand-logo__text {
-      font-family: "Ultra", "Alfa Slab One", "Clarendon", "Egyptian 714", "Rockwell Extra Bold", serif;
-      font-size: clamp(24px, 5vw, 29px);
-      font-weight: 500;
-      letter-spacing: 0.02em;
-      color: #131920;
-      line-height: 1;
-    }
-
-    .brand-logo__dot {
-      height: 0.56em;
-      width: 0.56em;
-      position: relative;
-      top: calc(0.30 * clamp(24px, 5vw, 29px));
-      display: block;
-    }
-
-    .nav__list {
-      display: flex;
-      flex-direction: row;
-      gap: 2rem;
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-
-    .nav__list-item-link {
-      font-weight: 700;
-      font-size: 1.125rem;
-      color: var(--ppl-color-text-default);
-      transition: color 0.2s ease-out;
-      padding: 0.25rem 0;
-    }
-
-    .nav__list-item-link:hover,
-    .nav__list-item-link.is-active {
-      text-decoration: underline;
-      text-decoration-color: var(--hg-color-secondary);
-      text-decoration-thickness: 0.16em;
-      text-underline-offset: 0.2em;
-    }
-
-    .nav__dropdown { position: relative; }
-
-    .nav__dropdown-menu {
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%) translateY(6px);
-      background: #ffffff;
-      border: 1px solid rgba(19,25,32,0.1);
-      border-radius: 4px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-      min-width: 150px;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease;
-      padding: 6px 0;
-      z-index: 200;
-    }
-
-    .nav__dropdown:hover .nav__dropdown-menu,
-    .nav__dropdown-menu:hover {
-      opacity: 1;
-      visibility: visible;
-      transform: translateX(-50%) translateY(10px);
-    }
-
-    .nav__dropdown-item {
-      display: block;
-      padding: 8px 20px;
-      font-size: 0.92rem;
-      font-weight: 600;
-      white-space: nowrap;
-      transition: background 0.12s ease;
-    }
-
-    .nav__dropdown-item:hover {
-      background: var(--hg-color-muted);
-      text-decoration: underline;
-      text-decoration-color: var(--hg-color-secondary);
-      text-decoration-thickness: 0.16em;
-      text-underline-offset: 0.2em;
-    }
-
-    .nav__dropdown-trigger { cursor: default; }
-
-    .nav__dropdown-trigger::after {
-      content: '';
-      display: inline-block;
-      width: 0;
-      height: 0;
-      margin-left: 5px;
-      border-left: 4px solid transparent;
-      border-right: 4px solid transparent;
-      border-top: 5px solid var(--ppl-color-text-default);
-      vertical-align: middle;
-      transition: transform 0.15s ease;
-    }
-
-    .nav__dropdown:hover .nav__dropdown-trigger::after { transform: rotate(180deg); }
-
-    /* Shared type */
-    .section-kicker {
-      font-size: 0.78rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--ppl-color-text-subtle);
-      margin-bottom: 0.75rem;
-    }
-
-    .display-title {
-      font-family: var(--hg-font-secondary);
-      font-size: clamp(2.4rem, 5vw, 4.5rem);
-      line-height: 0.98;
-      text-transform: uppercase;
-      margin: 0;
-      letter-spacing: -0.01em;
-    }
-
-    .section-title {
-      font-family: var(--hg-font-secondary);
-      font-size: clamp(1.7rem, 3vw, 2.6rem);
-      line-height: 1;
-      text-transform: uppercase;
-      margin: 0 0 0.75rem;
-    }
-
-    .lede {
-      color: var(--ppl-color-text-subtle);
-      font-size: 1.05rem;
-      margin: 1rem 0 0;
-      max-width: 640px;
-    }
-
-    /* Notification banner */
-    .notification-banner {
-      background-color: var(--ppl-button-contained-bg);
-      color: var(--ppl-color-text-default);
-      padding: 0.75rem 1rem;
-      text-align: center;
-    }
-
-    .notification-banner__inner {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.6rem;
-    }
-
-    .notification-banner__text {
-      font-weight: 700;
-      font-size: 1rem;
-    }
-
-    /* Hero */
-    .values-hero { padding: 4rem 0 2.5rem; }
-
-    .hero-rule {
-      width: 72px;
-      height: 6px;
-      background: var(--hg-color-secondary);
-      margin-bottom: 2rem;
-    }
-
-    .hero-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 1.75rem;
-    }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      border: 1px solid rgba(19,25,32,0.14);
-      background: #ffffff;
-      padding: 5px 12px;
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--ppl-color-text-subtle);
-    }
-
-    .pill--gold { background: var(--hg-color-secondary); border-color: var(--hg-color-secondary); color: #131920; }
-
-    .dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #1a7f37;
-      display: inline-block;
-    }
-
-    /* Parent charter banner */
-    .charter-banner {
-      background: var(--hg-color-darkest);
-      color: #ffffff;
-      padding: 2.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 2rem;
-      border-left: 6px solid var(--hg-color-secondary);
-      margin-bottom: 2rem;
-    }
-
-    .charter-banner__title {
-      font-family: var(--hg-font-secondary);
-      font-size: clamp(1.8rem, 3vw, 2.6rem);
-      font-weight: 800;
-      text-transform: uppercase;
-      line-height: 1;
-      margin: 0.35rem 0 0;
-    }
-
-    .charter-banner__copy {
-      color: rgba(255,255,255,0.66);
-      font-size: 0.95rem;
-      max-width: 540px;
-      margin: 0.75rem 0 0;
-    }
-
-    .charter-banner .section-kicker { color: rgba(255,255,255,0.45); }
-
-    .charter-banner__stats {
-      display: flex;
-      gap: 2.5rem;
-      flex-shrink: 0;
-    }
-
-    .charter-stat { text-align: right; }
-
-    .charter-stat__value {
-      font-family: var(--hg-font-secondary);
-      font-size: 2.2rem;
-      font-weight: 800;
-      line-height: 1;
-      color: var(--hg-color-secondary);
-    }
-
-    .charter-stat__label {
-      font-size: 0.68rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: rgba(255,255,255,0.5);
-      margin-top: 0.4rem;
-    }
-
-    /* Value grids */
-    .value-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 1px;
-      background: rgba(19,25,32,0.14);
-      border: 1px solid rgba(19,25,32,0.14);
-      margin-bottom: 2rem;
-    }
-
-    .value-card {
-      background: #ffffff;
-      padding: 1.75rem;
-      display: flex;
-      flex-direction: column;
-      min-height: 220px;
-      border-top: 4px solid var(--hg-color-secondary);
-    }
-
-    .value-card__num {
-      font-family: var(--hg-font-secondary);
-      font-size: 0.8rem;
-      font-weight: 800;
-      letter-spacing: 0.1em;
-      color: var(--ppl-color-text-subtle);
-      margin-bottom: 1.1rem;
-    }
-
-    .value-card__title {
-      font-family: var(--hg-font-secondary);
-      font-size: 1.35rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      line-height: 1.05;
-      margin: 0 0 0.75rem;
-    }
-
-    .value-card__copy {
-      font-size: 0.9rem;
-      color: var(--ppl-color-text-subtle);
-      margin: 0;
-      line-height: 1.55;
-    }
-
-    /* Section spacing */
-    .band { padding: 3.5rem 0; }
-    .band--tight { padding: 1rem 0 3.5rem; }
-    .band--muted { background: #fafafa; border-top: 1px solid rgba(19,25,32,0.08); border-bottom: 1px solid rgba(19,25,32,0.08); }
-
-    .section-head {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 2rem;
-      margin-bottom: 2rem;
-      flex-wrap: wrap;
-    }
-
-    .section-head__count {
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--ppl-color-text-subtle);
-      background: var(--hg-color-muted);
-      padding: 4px 10px;
-    }
-
-    /* How we work principles */
-    .principle-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1px;
-      background: rgba(19,25,32,0.14);
-      border: 1px solid rgba(19,25,32,0.14);
-    }
-
-    .principle {
-      background: #ffffff;
-      padding: 1.9rem;
-      display: grid;
-      grid-template-columns: 62px 1fr;
-      gap: 1.2rem;
-      align-items: start;
-    }
-
-    .principle__num {
-      font-family: var(--hg-font-secondary);
-      font-size: 2.1rem;
-      font-weight: 800;
-      line-height: 1;
-      color: var(--hg-color-secondary);
-    }
-
-    .principle__title {
-      font-family: var(--hg-font-secondary);
-      font-size: 1.25rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      line-height: 1.05;
-      margin: 0 0 0.5rem;
-    }
-
-    .principle__copy {
-      font-size: 0.9rem;
-      color: var(--ppl-color-text-subtle);
-      margin: 0;
-      line-height: 1.55;
-    }
-
-    /* Company cards */
-    .company-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1px;
-      background: rgba(19,25,32,0.14);
-      border: 1px solid rgba(19,25,32,0.14);
-    }
-
-    .company-card {
-      background: #ffffff;
-      padding: 2rem;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .company-card--wide { grid-column: 1 / -1; }
-
-    .company-card__top {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 1rem;
-      margin-bottom: 1.25rem;
-    }
-
-    .company-card__index {
-      font-family: var(--hg-font-secondary);
-      font-size: 0.78rem;
-      font-weight: 800;
-      letter-spacing: 0.12em;
-      color: var(--ppl-color-text-subtle);
-    }
-
-    .company-card__sector {
-      display: inline-block;
-      font-size: 0.65rem;
-      font-weight: 800;
-      letter-spacing: 0.09em;
-      text-transform: uppercase;
-      background: var(--hg-color-muted);
-      color: var(--ppl-color-text-subtle);
-      padding: 4px 9px;
-      margin-bottom: 0.6rem;
-    }
-
-    .company-card__name {
-      font-family: var(--hg-font-secondary);
-      font-size: 1.75rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      line-height: 1;
-      margin: 0 0 0.45rem;
-    }
-
-    .company-card__tag {
-      font-size: 0.9rem;
-      color: var(--ppl-color-text-subtle);
-      margin: 0;
-      max-width: 480px;
-    }
-
-    .company-card__link {
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      white-space: nowrap;
-      border-bottom: 3px solid var(--hg-color-secondary);
-      padding-bottom: 2px;
-    }
-
-    .company-card__link:hover { background: var(--hg-color-secondary); }
-
-    .company-values {
-      list-style: none;
-      margin: 0.5rem 0 0;
-      padding: 0;
-      border-top: 1px solid rgba(19,25,32,0.1);
-    }
-
-    .company-values li {
-      display: grid;
-      grid-template-columns: 1fr 2fr;
-      gap: 1.25rem;
-      padding: 0.95rem 0;
-      border-bottom: 1px solid rgba(19,25,32,0.07);
-    }
-
-    .company-values li:last-child { border-bottom: none; }
-
-    .company-values__name {
-      font-weight: 800;
-      font-size: 0.92rem;
-      line-height: 1.3;
-    }
-
-    .company-values__copy {
-      font-size: 0.85rem;
-      color: var(--ppl-color-text-subtle);
-      line-height: 1.5;
-    }
-
-    .company-how {
-      margin-top: 1.1rem;
-      background: #fafafa;
-      border-left: 3px solid var(--hg-color-secondary);
-      padding: 0.8rem 1rem;
-      font-size: 0.84rem;
-      color: var(--ppl-color-text-subtle);
-    }
-
-    .company-how strong {
-      color: var(--ppl-color-text-default);
-      font-weight: 800;
-      text-transform: uppercase;
-      font-size: 0.68rem;
-      letter-spacing: 0.08em;
-      display: block;
-      margin-bottom: 0.15rem;
-    }
-
-    /* Function table */
-    .flow-table { width: 100%; border-collapse: collapse; }
-
-    .flow-table th {
-      text-align: left;
-      font-size: 0.7rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--ppl-color-text-subtle);
-      padding: 0.85rem 1.1rem;
-      border-bottom: 1px solid rgba(19,25,32,0.14);
-      background: var(--hg-color-muted);
-    }
-
-    .flow-table td {
-      padding: 1rem 1.1rem;
-      border-bottom: 1px solid rgba(19,25,32,0.07);
-      font-size: 0.9rem;
-      vertical-align: top;
-    }
-
-    .flow-table tr:last-child td { border-bottom: none; }
-
-    .flow-table__fn { font-weight: 800; }
-    .flow-table__company { font-weight: 700; white-space: nowrap; }
-    .flow-table__company a { border-bottom: 2px solid var(--hg-color-secondary); }
-    .flow-table__company a:hover { background: var(--hg-color-secondary); }
-    .flow-table__mandate { color: var(--ppl-color-text-subtle); }
-
-    .panel {
-      background: #ffffff;
-      border: 1px solid rgba(19,25,32,0.14);
-    }
-
-    /* Closing statement */
-    .closing {
-      background: var(--hg-color-darkest);
-      color: #ffffff;
-      padding: 3rem;
-      border-left: 6px solid var(--hg-color-secondary);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 2rem;
-      flex-wrap: wrap;
-    }
-
-    .closing__title {
-      font-family: var(--hg-font-secondary);
-      font-size: clamp(1.6rem, 3vw, 2.4rem);
-      font-weight: 800;
-      text-transform: uppercase;
-      line-height: 1;
-      margin: 0;
-      max-width: 720px;
-    }
-
-    .button {
-      display: inline-block;
-      font-weight: 800;
-      font-size: 0.78rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      padding: 0.9rem 1.6rem;
-      background: var(--hg-color-secondary);
-      color: #131920;
-      white-space: nowrap;
-      transition: transform 0.15s ease, background 0.15s ease;
-    }
-
-    .button:hover { background: #ffffff; transform: translateY(-1px); }
-
-    /* Footer */
-    .footer {
-      background-color: var(--hg-color-darkest);
-      color: var(--hg-color-lightest);
-      padding: 4rem 0 2rem;
-    }
-
-    .footer__inner-container {
-      display: grid;
-      gap: 3rem;
-      grid-template-areas:
-        "offices contact"
-        "corporate media";
-    }
-
-    .footer__offices { grid-area: offices; }
-    .footer__contact { grid-area: contact; }
-    .footer__corporate { grid-area: corporate; }
-    .footer__media { grid-area: media; }
-
-    .footer__offices-title,
-    .footer__contact-title {
-      font-size: 1.375rem;
-      font-weight: 700;
-      margin-bottom: 1.5rem;
-      text-transform: uppercase;
-    }
-
-    .footer__offices-items {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 1.5rem;
-    }
-
-    .footer__offices-item-title { font-weight: 700; margin-bottom: 0.25rem; }
-
-    .footer__offices-item-content {
-      font-size: 0.875rem;
-      line-height: 1.5;
-      opacity: 0.8;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .footer__contact-items {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.5rem;
-    }
-
-    .footer__contact-item-title { font-weight: 700; font-size: 0.95rem; }
-    .footer__contact-item-content { font-size: 0.875rem; }
-    .footer__contact-item-content a { text-decoration: underline; }
-    .footer__contact-item-content a:hover { color: var(--hg-color-secondary); }
-
-    .footer__corporate-links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.5rem;
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      font-size: 0.75rem;
-      opacity: 0.7;
-    }
-
-    .footer__corporate-link:hover {
-      color: var(--hg-color-secondary);
-      text-decoration: underline;
-    }
-
-    .footer__media {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .social-link {
-      background-color: #ffffff;
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #131920;
-      font-weight: bold;
-    }
-
-    .social-link:hover { background-color: var(--hg-color-secondary); }
-
-    @media (max-width: 980px) {
-      .value-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .charter-banner { flex-direction: column; align-items: flex-start; }
-      .charter-banner__stats { width: 100%; justify-content: space-between; }
-      .charter-stat { text-align: left; }
-    }
-
-    @media (max-width: 768px) {
-      .nav__list { display: none; }
-      .value-grid,
-      .principle-grid,
-      .company-grid { grid-template-columns: 1fr; }
-      .company-card--wide { grid-column: auto; }
-      .principle { grid-template-columns: 48px 1fr; padding: 1.4rem; }
-      .company-values li { grid-template-columns: 1fr; gap: 0.25rem; }
-      .charter-banner, .closing { padding: 1.6rem; }
-      .closing { flex-direction: column; align-items: flex-start; }
-      .footer__inner-container {
-        grid-template-areas:
-          "offices"
-          "contact"
-          "corporate"
-          "media";
-      }
-    }
-  </style>
+  <link rel="icon" type="image/png" sizes="32x32" href="https://alieninc.tech/ai-favicon-light-32.png?v=28" media="(prefers-color-scheme: light)">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://alieninc.tech/ai-favicon-16.png?v=28" media="(prefers-color-scheme: dark)">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://alieninc.tech/ai-favicon-light-16.png?v=28" media="(prefers-color-scheme: light)">
+  <link rel="icon" type="image/png" sizes="192x192" href="https://alieninc.tech/ai-favicon-192.png?v=28">
+  <link rel="icon" type="image/png" sizes="512x512" href="https://alieninc.tech/ai-favicon-512.png?v=28">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://alieninc.tech/ai-favicon-180.png?v=28">
+  <link rel="preconnect" href="https://fonts.googleapis.com/">
+  <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Ultra&amp;family=Alfa+Slab+One&amp;family=Instrument+Sans:wght@400;500;600;700;800&amp;family=Instrument+Sans+Condensed:wght@700;800&amp;display=swap" rel="stylesheet">
+  
 </head>
 <body>
 
   <header class="header">
     <div class="header__inner">
       <div class="header__logo">
-        <a href="index.html" class="brand-logo" aria-label="visit the Alien Inc Homepage">
+        <a href="https://alieninc.tech/index.html" class="brand-logo" aria-label="visit the Alien Inc Homepage">
           <span class="brand-logo__text">Alien Inc</span>
-          <img src="logo.png" alt="" width="1024" height="1024" class="brand-logo__dot">
+          <img src="https://alieninc.tech/logo.png" alt="" width="1024" height="1024" class="brand-logo__dot">
         </a>
       </div>
       <nav class="nav" aria-label="Primary">
         <ul class="nav__list">
-          <li class="nav__list-item"><a href="founder.html" class="nav__list-item-link">Founder</a></li>
-          <li class="nav__list-item"><a href="index.html#portfolio" class="nav__list-item-link">Companies</a></li>
-          <li class="nav__list-item"><a href="index.html#operating-system" class="nav__list-item-link">Operating Model</a></li>
+          <li class="nav__list-item"><a href="https://alieninc.tech/founder.html" class="nav__list-item-link">Founder</a></li>
+          <li class="nav__list-item"><a href="https://alieninc.tech/index.html#portfolio" class="nav__list-item-link">Companies</a></li>
+          <li class="nav__list-item"><a href="https://alieninc.tech/index.html#operating-system" class="nav__list-item-link">Operating Model</a></li>
           <li class="nav__list-item nav__dropdown">
-            <a href="dashboard.html" class="nav__list-item-link nav__dropdown-trigger">Dashboard</a>
+            <a href="https://alieninc.tech/dashboard.html" class="nav__list-item-link nav__dropdown-trigger">Dashboard</a>
             <div class="nav__dropdown-menu">
-              <a href="dashboard.html" class="nav__dropdown-item">Financial</a>
-              <a href="dashboard.html#compliance" class="nav__dropdown-item">Compliance</a>
-              <a href="values.html" class="nav__dropdown-item">Values</a>
+              <a href="https://alieninc.tech/dashboard.html" class="nav__dropdown-item">Financial</a>
+              <a href="https://alieninc.tech/dashboard.html#compliance" class="nav__dropdown-item">Compliance</a>
+              <a href="https://alieninc.tech/values.html" class="nav__dropdown-item">Values</a>
             </div>
           </li>
-          <li class="nav__list-item"><a href="index.html#contact" class="nav__list-item-link">Contact</a></li>
+          <li class="nav__list-item"><a href="https://alieninc.tech/index.html#contact" class="nav__list-item-link">Contact</a></li>
         </ul>
       </nav>
     </div>
@@ -817,155 +305,15 @@
   </div>
 
   <main>
-
-    <!-- Hero -->
-    <section class="values-hero">
-      <div class="l-container">
-        <div class="hero-rule"></div>
-        <div class="section-kicker">Group Charter · Parent and Seven Companies</div>
-        <h1 class="display-title">How we work.<br>What we refuse to compromise.</h1>
-        <p class="lede">Alien Inc is the root layer for seven independent operating companies. Each has its own market, its own P&amp;L, and its own values statement. What they share is a single standard of conduct — the one written here.</p>
-        <div class="hero-meta">
-          <span class="pill pill--gold">Alien Inc · Parent</span>
-          <span class="pill"><span class="dot"></span>7 Operating Companies</span>
-          <span class="pill">1 Root Layer</span>
-          <span class="pill">1000-Year Horizon</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Parent charter -->
-    <section>
-      <div class="l-container">
-        <div class="charter-banner">
-          <div>
-            <div class="section-kicker">The Parent Company</div>
-            <h2 class="charter-banner__title">Alien Inc</h2>
-            <p class="charter-banner__copy">Sovereign continuity infrastructure. We build institutions that carry digital intelligence, capital, and knowledge across generations — verifiable and recoverable long after a normal company would be gone.</p>
-          </div>
-          <div class="charter-banner__stats">
-            <div class="charter-stat">
-              <div class="charter-stat__value">07</div>
-              <div class="charter-stat__label">Operating Companies</div>
-            </div>
-            <div class="charter-stat">
-              <div class="charter-stat__value">01</div>
-              <div class="charter-stat__label">Root Standard</div>
-            </div>
-            <div class="charter-stat">
-              <div class="charter-stat__value">∞</div>
-              <div class="charter-stat__label">Holding Horizon</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Parent values -->
-    <section class="band band--tight">
-      <div class="l-container">
-        <div class="section-head">
-          <div>
-            <div class="section-kicker">Parent Values</div>
-            <h2 class="section-title">The four commitments</h2>
-          </div>
-          <span class="section-head__count">Applies to all 7</span>
-        </div>
-        <div class="value-grid">
-          <div class="value-card">
-            <div class="value-card__num">01 / CONTINUITY</div>
-            <h3 class="value-card__title">Build for the long emergency</h3>
-            <p class="value-card__copy">We optimize for what survives, not what trends. Institutions, archives, and systems are designed for a horizon measured in generations.</p>
-          </div>
-          <div class="value-card">
-            <div class="value-card__num">02 / SOVEREIGNTY</div>
-            <h3 class="value-card__title">Own the full stack</h3>
-            <p class="value-card__copy">We own the software, the data, and the ground it runs on. No critical layer is rented from a party that can switch us off.</p>
-          </div>
-          <div class="value-card">
-            <div class="value-card__num">03 / VERIFIABILITY</div>
-            <h3 class="value-card__title">Publish what we measure</h3>
-            <p class="value-card__copy">Numbers are shared with a deliberate delay and without theatre. No hidden margins, no undisclosed client identities, no invented traction.</p>
-          </div>
-          <div class="value-card">
-            <div class="value-card__num">04 / STEWARDSHIP</div>
-            <h3 class="value-card__title">Hold in trust, not for extraction</h3>
-            <p class="value-card__copy">Companies are stewarded, not strip-mined. Each keeps its own leadership, culture, and P&amp;L while meeting the group standard.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- How we work -->
-    <section class="band band--muted">
-      <div class="l-container">
-        <div class="section-head">
-          <div>
-            <div class="section-kicker">Group Operating System</div>
-            <h2 class="section-title">How we work</h2>
-            <p class="lede" style="margin-top:0.75rem;">Six rules govern every company, every board pack, and every internal transaction.</p>
-          </div>
-        </div>
-        <div class="principle-grid">
-          <div class="principle">
-            <div class="principle__num">01</div>
-            <div>
-              <h3 class="principle__title">One root, seven operators</h3>
-              <p class="principle__copy">The parent sets standards, capital discipline, and disclosure policy. Each company owns its strategy, team, and P&amp;L. The root layer does not run the businesses.</p>
-            </div>
-          </div>
-          <div class="principle">
-            <div class="principle__num">02</div>
-            <div>
-              <h3 class="principle__title">Everything in writing</h3>
-              <p class="principle__copy">Tenure, service agreements, and intercompany flows are written down. Disputes go to outside arbitration, never to informal pressure.</p>
-            </div>
-          </div>
-          <div class="principle">
-            <div class="principle__num">03</div>
-            <div>
-              <h3 class="principle__title">One source of truth</h3>
-              <p class="principle__copy">Every dashboard, board pack, and public number reads from <strong>alieninc-ecosystem.json</strong>. If it is not in the dataset, it is not a group number.</p>
-            </div>
-          </div>
-          <div class="principle">
-            <div class="principle__num">04</div>
-            <div>
-              <h3 class="principle__title">Independent audit</h3>
-              <p class="principle__copy">Centra scans every property and every company against the same compliance baseline. No company is exempt, including the parent.</p>
-            </div>
-          </div>
-          <div class="principle">
-            <div class="principle__num">05</div>
-            <div>
-              <h3 class="principle__title">Disciplined capital</h3>
-              <p class="principle__copy">Rousseau allocates capital and reports to the board. Spending outside the plan requires an explicit allocation decision — not a favour between founders.</p>
-            </div>
-          </div>
-          <div class="principle">
-            <div class="principle__num">06</div>
-            <div>
-              <h3 class="principle__title">Capability transfer</h3>
-              <p class="principle__copy">KMT and Panteon are measured by what the client or company can do without them afterwards. Dependency is not a business model.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Company values -->
-    <section class="band">
-      <div class="l-container">
-        <div class="section-head">
-          <div>
-            <div class="section-kicker">The Seven</div>
-            <h2 class="section-title">What each company stands for</h2>
-            <p class="lede" style="margin-top:0.75rem;">Three values per company, and the single sentence that describes how that company actually operates.</p>
-          </div>
-          <span class="section-head__count">7 Companies</span>
-        </div>
-
-        <div class="company-grid">
+<section class="values-hero"><div class="l-container"><div class="hero-rule"></div><div class="section-kicker">Group Charter</div>
+<h1 class="display-title">How we work.<br>What we refuse to compromise.</h1>
+<p class="lede">Seven companies hold one standard. This page says what it is, and why.</p>
+<div class="hero-meta"><a href="https://alieninc.tech/dashboard.html" class="button">Open the Dashboard</a></div></div></section>
+<section><div class="l-container"><div class="charter-banner"><div><div class="section-kicker">The Mission</div><h2 class="charter-banner__title">Alien Inc</h2>
+<p class="charter-banner__copy">Sovereign continuity infrastructure. We build institutions that carry intelligence, capital, and knowledge across generations, and stay verifiable and recoverable long after a normal company is gone.</p></div>
+<div class="charter-banner__stats"><div class="charter-stat"><div class="charter-stat__value">07</div><div class="charter-stat__label">Operating Companies</div></div><div class="charter-stat"><div class="charter-stat__value">07</div><div class="charter-stat__label">Shared Values</div></div><div class="charter-stat"><div class="charter-stat__value">1,000</div><div class="charter-stat__label">Year Horizon</div></div></div></div></div></section>
+<section class="band band--tight"><div class="l-container"><div class="section-head"><div><div class="section-kicker">Principles</div><h2 class="section-title">How we show up for each other and the mission</h2><p class="lede" style="margin-top:0.75rem;">Each has a reason, a cost, and a way to tell we’ve broken it.</p></div><span class="section-head__count">7 Values</span></div><div class="value-grid"><div class="value-card"><div class="value-card__num">01 / CONTINUITY</div><h3 class="value-card__title">Build for the long emergency</h3><p class="value-card__copy">We design for the worst year, not the best. Cost: slower growth.</p><div class="company-how"><strong>Broken if</strong>a critical system has no tested recovery path.</div></div><div class="value-card"><div class="value-card__num">02 / VERIFIABILITY</div><h3 class="value-card__title">Publish the bad with the good</h3><p class="value-card__copy">Trust that can’t be checked is only a claim. Cost: unflattering numbers go public.</p><div class="company-how"><strong>Broken if</strong>a public number can’t be traced to the dataset, or a bad one is left out.</div></div><div class="value-card"><div class="value-card__num">03 / GENEROSITY</div><h3 class="value-card__title">Serve everyone we touch</h3><p class="value-card__copy">Clients, artists, members, and the public all live with our work. Cost: we go beyond the contract and share the spotlight.</p><div class="company-how"><strong>Broken if</strong>someone’s work is used without credit or published terms.</div></div><div class="value-card"><div class="value-card__num">04 / SOVEREIGNTY</div><h3 class="value-card__title">Own the stack, raise the bar</h3><p class="value-card__copy">A layer we rent can be switched off. Cost: we build what we could rent.</p><div class="company-how"><strong>Broken if</strong>a critical layer has one outside owner and no exit plan, or any company skips the shared baseline.</div></div><div class="value-card"><div class="value-card__num">05 / SIMPLICITY</div><h3 class="value-card__title">Ship simple, then harden</h3><p class="value-card__copy">A simple version in the world teaches more than a perfect one in planning. Cost: we are corrected in public.</p><div class="company-how"><strong>Broken if</strong>a working version waits for perfection, or a shortcut is never hardened.</div></div><div class="value-card"><div class="value-card__num">06 / INTEGRITY</div><h3 class="value-card__title">Keep faith, repair fast</h3><p class="value-card__copy">We assume good intent, speak plainly, and mend what breaks. Cost: hard issues get raised early.</p><div class="company-how"><strong>Broken if</strong>a rule is bent “just this once,” or a rupture sits unrepaired past one review cycle.</div></div><div class="value-card"><div class="value-card__num">07 / STEWARDSHIP</div><h3 class="value-card__title">Put the charter first</h3><p class="value-card__copy">Every company, owner, and quarter answers to it. Cost: it outranks the founder’s preferences.</p><div class="company-how"><strong>Broken if</strong>the parent overrides the charter, or cash moves outside an approved allocation.</div></div><div class="value-card"><div class="value-card__num">THE STANDARD</div><h3 class="value-card__title">Seven values, no exceptions</h3><p class="value-card__copy">Every company is held to all seven, and so is the parent.</p></div></div></div></section>
+<section class="band"><div class="l-container"><div class="section-head"><div><div class="section-kicker">The Seven Companies</div><h2 class="section-title">Each company, and what it needs from the rest</h2><p class="lede" style="margin-top:0.75rem;">Three values written for its own work, and a plain test for when it has slipped.</p></div><span class="section-head__count">7 Companies</span></div><div class="company-grid">
 
           <!-- Panteon -->
           <article class="company-card">
@@ -976,24 +324,9 @@
                 <h3 class="company-card__name">Panteon</h3>
                 <p class="company-card__tag">Ontology-driven business operating systems, edge AI, and digital twins for the public, private, and nonprofit sectors.</p>
               </div>
-              <a class="company-card__link" href="https://panteon.alieninc.tech">Site</a>
+              <a class="company-card__link" href="https://panteon.alieninc.tech/">Site</a>
             </div>
-            <ul class="company-values">
-              <li>
-                <div class="company-values__name">Ontology before automation</div>
-                <div class="company-values__copy">Model the business correctly first. Automation bolted onto a bad model only makes the error faster.</div>
-              </li>
-              <li>
-                <div class="company-values__name">Own the model</div>
-                <div class="company-values__copy">We build and host the intelligence layer ourselves. Clients are never a thin wrapper around someone else's API.</div>
-              </li>
-              <li>
-                <div class="company-values__name">Outlive the demo</div>
-                <div class="company-values__copy">A system is not delivered until it survives its first audit, its first handover, and its fifth year.</div>
-              </li>
-            </ul>
-            <div class="company-how"><strong>How we work</strong>Small product teams, one shared ontology, edge-first deployments, and no feature shipped without a named operator who owns it.</div>
-          </article>
+            <ul class="company-values"><li><div class="company-values__name">Map the business first</div><div class="company-values__copy">Automating a bad model only makes the mistakes faster, so we model first and automate second. (Simplicity)</div></li><li><div class="company-values__name">Own the intelligence layer</div><div class="company-values__copy">We host and run the models ourselves. No client sits on a thin wrapper around someone else’s API. (Sovereignty)</div></li><li><div class="company-values__name">Hand over, then stay honest</div><div class="company-values__copy">A system isn’t done until it survives its first audit, its handover, and its fifth year, and we say so when it doesn’t. (Continuity)</div></li></ul><div class="company-how"><strong>Needs from the group</strong>Real workloads from the sister companies, so the shared ontology is tested on live businesses, not demos.</div><div class="company-how"><strong>Broken if</strong>a client’s intelligence layer runs on a model we do not host, or a feature ships without a named owner.</div></article>
 
           <!-- A-SAN -->
           <article class="company-card">
@@ -1004,24 +337,9 @@
                 <h3 class="company-card__name">A-SAN</h3>
                 <p class="company-card__tag">Asia's technical intelligence platform for advanced aerospace systems analysis and air superiority insights.</p>
               </div>
-              <a class="company-card__link" href="https://a-san.alieninc.tech">Site</a>
+              <a class="company-card__link" href="https://a-san.alieninc.tech/">Site</a>
             </div>
-            <ul class="company-values">
-              <li>
-                <div class="company-values__name">Evidence over noise</div>
-                <div class="company-values__copy">Every claim traces to a source, a platform, or a physical system. Hype is not analysis.</div>
-              </li>
-              <li>
-                <div class="company-values__name">Depth, plainly stated</div>
-                <div class="company-values__copy">The work is technical; the writing is not. We explain complex systems without hiding behind jargon.</div>
-              </li>
-              <li>
-                <div class="company-values__name">Independent by default</div>
-                <div class="company-values__copy">No vendor sponsorship and no manufacturer narrative shapes the assessment.</div>
-              </li>
-            </ul>
-            <div class="company-how"><strong>How we work</strong>Analyst-led research with open sourcing, explicit uncertainty, and a standing rule that a conclusion can be overturned by better evidence.</div>
-          </article>
+            <ul class="company-values"><li><div class="company-values__name">Source every claim</div><div class="company-values__copy">Each claim traces to a source, a platform, or a physical system. Hype isn’t analysis. (Verifiability)</div></li><li><div class="company-values__name">Write for the reader</div><div class="company-values__copy">The work is technical and the prose isn’t. If a reader needs a glossary, we rewrite. (Generosity)</div></li><li><div class="company-values__name">Answer to no vendor</div><div class="company-values__copy">No sponsor or manufacturer narrative shapes a conclusion, and better evidence can overturn any of ours. (Integrity)</div></li></ul><div class="company-how"><strong>Needs from the group</strong>A firewall around its independence: the group never leans on A-SAN’s conclusions for commercial reasons.</div><div class="company-how"><strong>Broken if</strong>a published claim cannot be traced to a source, or a sponsor shapes a conclusion.</div></article>
 
           <!-- TDAC -->
           <article class="company-card">
@@ -1032,24 +350,9 @@
                 <h3 class="company-card__name">The Daily Art Cult</h3>
                 <p class="company-card__tag">Independent publisher and cultural media studio for membership, editorial series, and licensing.</p>
               </div>
-              <a class="company-card__link" href="https://art.alieninc.tech">Site</a>
+              <a class="company-card__link" href="https://art.alieninc.tech/">Site</a>
             </div>
-            <ul class="company-values">
-              <li>
-                <div class="company-values__name">The artist first</div>
-                <div class="company-values__copy">Artists are collaborators and rights holders, not content supply. Terms are published and fair.</div>
-              </li>
-              <li>
-                <div class="company-values__name">Editorial independence</div>
-                <div class="company-values__copy">Membership funds the work, so advertisers and sponsors never set the editorial line.</div>
-              </li>
-              <li>
-                <div class="company-values__name">Culture is infrastructure</div>
-                <div class="company-values__copy">What a civilisation keeps is what it chose to preserve. Publishing is part of that preservation.</div>
-              </li>
-            </ul>
-            <div class="company-how"><strong>How we work</strong>Member-supported, series-driven publishing with clear licensing, credited artists, and no pay-to-play coverage.</div>
-          </article>
+            <ul class="company-values"><li><div class="company-values__name">Pay the artist fairly</div><div class="company-values__copy">Artists are collaborators and rights holders. Terms are public, fair, and credited. (Generosity)</div></li><li><div class="company-values__name">Let members set the line</div><div class="company-values__copy">Membership funds the work, so sponsors and advertisers never touch editorial. (Integrity)</div></li><li><div class="company-values__name">Keep what matters</div><div class="company-values__copy">What a civilisation keeps is what it chose to save. We publish as if someone will read it in a hundred years. (Continuity)</div></li></ul><div class="company-how"><strong>Needs from the group</strong>Patience on growth, so membership and licensing can build without pay-to-play shortcuts.</div><div class="company-how"><strong>Broken if</strong>an artist’s terms are unpublished, or a sponsor influences coverage.</div></article>
 
           <!-- Rousseau -->
           <article class="company-card">
@@ -1060,24 +363,9 @@
                 <h3 class="company-card__name">Rousseau Holdings</h3>
                 <p class="company-card__tag">Capital allocation, governance, board reporting, and portfolio operating discipline.</p>
               </div>
-              <a class="company-card__link" href="https://rousseau.alieninc.tech">Site</a>
+              <a class="company-card__link" href="https://rousseau.alieninc.tech/">Site</a>
             </div>
-            <ul class="company-values">
-              <li>
-                <div class="company-values__name">Mandate before capital</div>
-                <div class="company-values__copy">Money follows a written mandate and a measurable plan. There is no allocation without a thesis.</div>
-              </li>
-              <li>
-                <div class="company-values__name">Patience over velocity</div>
-                <div class="company-values__copy">We would rather compound slowly than force a return that damages the institution.</div>
-              </li>
-              <li>
-                <div class="company-values__name">Governance before growth</div>
-                <div class="company-values__copy">Boards, reporting, and controls are installed before scale, not after the first crisis.</div>
-              </li>
-            </ul>
-            <div class="company-how"><strong>How we work</strong>Scheduled board cycles, one consolidated dataset, written investment memos, and capital released in tranches against milestones.</div>
-          </article>
+            <ul class="company-values"><li><div class="company-values__name">Write the thesis first</div><div class="company-values__copy">No capital moves without a written mandate, a memo, and a milestone. (Stewardship)</div></li><li><div class="company-values__name">Compound, don’t force</div><div class="company-values__copy">We would rather grow slowly than force a return that damages an institution. (Continuity)</div></li><li><div class="company-values__name">Install controls early</div><div class="company-values__copy">Boards, reporting, and controls arrive before scale, not after the first crisis. (Verifiability)</div></li></ul><div class="company-how"><strong>Needs from the group</strong>Clean, on-time numbers from every company in the one shared dataset.</div><div class="company-how"><strong>Broken if</strong>capital moves without a written memo, a thesis, and a milestone.</div></article>
 
           <!-- Immanuel -->
           <article class="company-card">
@@ -1088,24 +376,9 @@
                 <h3 class="company-card__name">Immanuel</h3>
                 <p class="company-card__tag">End-to-end crisis and risk management: always-on intelligence, enterprise platforms, and in-country security and medical teams across 190+ countries.</p>
               </div>
-              <a class="company-card__link" href="https://immanuel.alieninc.tech">Site</a>
+              <a class="company-card__link" href="https://immanuel.alieninc.tech/">Site</a>
             </div>
-            <ul class="company-values">
-              <li>
-                <div class="company-values__name">Presence, not promise</div>
-                <div class="company-values__copy">Coverage is measured by teams on the ground, not by a partner list on a slide.</div>
-              </li>
-              <li>
-                <div class="company-values__name">Duty of care</div>
-                <div class="company-values__copy">The person in the field outranks the commercial outcome. Always.</div>
-              </li>
-              <li>
-                <div class="company-values__name">Calm under pressure</div>
-                <div class="company-values__copy">In a crisis we communicate plainly, decide quickly, and never trade in panic.</div>
-              </li>
-            </ul>
-            <div class="company-how"><strong>How we work</strong>Always-on monitoring, named in-country leads, rehearsed response playbooks, and a single incident channel per client.</div>
-          </article>
+            <ul class="company-values"><li><div class="company-values__name">Be on the ground</div><div class="company-values__copy">Coverage is measured in people in the country, not names on a partner slide. (Sovereignty)</div></li><li><div class="company-values__name">Put the person first</div><div class="company-values__copy">The person in the field outranks the commercial outcome. Always. (Generosity)</div></li><li><div class="company-values__name">Stay calm and plain</div><div class="company-values__copy">In a crisis we speak plainly, decide fast, and never trade in panic. (Integrity)</div></li></ul><div class="company-how"><strong>Needs from the group</strong>Centra’s threat view and Panteon’s platform, so response runs on tools the group owns.</div><div class="company-how"><strong>Broken if</strong>a commercial outcome is placed above the person in the field.</div></article>
 
           <!-- Centra -->
           <article class="company-card">
@@ -1116,24 +389,9 @@
                 <h3 class="company-card__name">Centra</h3>
                 <p class="company-card__tag">Automated security scanning, vulnerability assessment, bot defense, intrusion detection, and compliance monitoring for the entire group.</p>
               </div>
-              <a class="company-card__link" href="https://centra.alieninc.tech">Site</a>
+              <a class="company-card__link" href="https://centra.alieninc.tech/">Site</a>
             </div>
-            <ul class="company-values">
-              <li>
-                <div class="company-values__name">Assume breach</div>
-                <div class="company-values__copy">Design and test as if the perimeter is already gone. Detection matters more than denial.</div>
-              </li>
-              <li>
-                <div class="company-values__name">Verify continuously</div>
-                <div class="company-values__copy">A clean scan is a moment, not a status. Every property is re-checked on a schedule.</div>
-              </li>
-              <li>
-                <div class="company-values__name">One baseline for all</div>
-                <div class="company-values__copy">The parent, the smallest subsidiary, and every vendor meet the same standard.</div>
-              </li>
-            </ul>
-            <div class="company-how"><strong>How we work</strong>Automated scanning on a fixed cadence, findings ranked by exploitability, and remediation tracked to closure by a named owner.</div>
-          </article>
+            <ul class="company-values"><li><div class="company-values__name">Assume you’re already breached</div><div class="company-values__copy">We test as if the perimeter is gone, because detection beats denial. (Continuity)</div></li><li><div class="company-values__name">Check again</div><div class="company-values__copy">A clean scan is a moment, not a status. Every property is re-scanned on schedule. (Verifiability)</div></li><li><div class="company-values__name">Hold everyone to one bar</div><div class="company-values__copy">The parent, the smallest company, and every vendor meet the same standard. (Sovereignty)</div></li></ul><div class="company-how"><strong>Needs from the group</strong>The mandate and access to scan everything and to say no, including to the founder.</div><div class="company-how"><strong>Broken if</strong>any property goes unscanned past its cadence, or any company is exempt, including the parent.</div></article>
 
           <!-- KMT -->
           <article class="company-card company-card--wide">
@@ -1144,113 +402,28 @@
                 <h3 class="company-card__name">KMT Consulting Group</h3>
                 <p class="company-card__tag">Strategy, applied AI workflow transformation, operating model design, and post-merger integration.</p>
               </div>
-              <a class="company-card__link" href="https://kmt.alieninc.tech">Site</a>
+              <a class="company-card__link" href="https://kmt.alieninc.tech/">Site</a>
             </div>
-            <ul class="company-values">
-              <li>
-                <div class="company-values__name">Strategy that ships</div>
-                <div class="company-values__copy">An engagement ends with a working workflow and an owner, not a deck and a recommendation.</div>
-              </li>
-              <li>
-                <div class="company-values__name">Transfer, don't depend</div>
-                <div class="company-values__copy">We build capability inside the client team. A permanent dependency is a failed engagement.</div>
-              </li>
-              <li>
-                <div class="company-values__name">Clarity after merger</div>
-                <div class="company-values__copy">Post-merger work is judged by how few decisions remain ambiguous after ninety days.</div>
-              </li>
-            </ul>
-            <div class="company-how"><strong>How we work</strong>Embedded operators, short delivery cycles, measurable workflow outcomes, and an explicit exit plan agreed at kickoff.</div>
-          </article>
+            <ul class="company-values"><li><div class="company-values__name">Finish with a working workflow</div><div class="company-values__copy">An engagement ends with something that runs and someone who owns it, not a deck. (Simplicity)</div></li><li><div class="company-values__name">Leave the client stronger</div><div class="company-values__copy">We build capability inside the client team. Lasting dependence means we failed. (Generosity)</div></li><li><div class="company-values__name">Make decisions clear</div><div class="company-values__copy">After a merger, success means few decisions are still unclear at day ninety. (Integrity)</div></li></ul><div class="company-how"><strong>Needs from the group</strong>Sister companies as live proof, and Panteon’s platform to deliver on, so strategy always ships on something the group owns.</div><div class="company-how"><strong>Broken if</strong>an engagement ends without a working workflow, a named owner, and an agreed exit.</div></article>
 
-        </div>
-      </div>
-    </section>
-
-    <!-- Group functions -->
-    <section class="band band--muted">
-      <div class="l-container">
-        <div class="section-head">
-          <div>
-            <div class="section-kicker">Division of Labour</div>
-            <h2 class="section-title">Who does what</h2>
-            <p class="lede" style="margin-top:0.75rem;">The group works as one system, but each function has exactly one owner.</p>
-          </div>
-        </div>
-        <div class="panel">
-          <table class="flow-table">
-            <thead>
-              <tr>
-                <th scope="col">Function</th>
-                <th scope="col">Owner</th>
-                <th scope="col">Mandate</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="flow-table__fn">Strategy and transformation</td>
-                <td class="flow-table__company"><a href="https://kmt.alieninc.tech">KMT Consulting Group</a></td>
-                <td class="flow-table__mandate">Operating model design, applied AI workflows, and post-merger integration for the group and its clients.</td>
-              </tr>
-              <tr>
-                <td class="flow-table__fn">Software and AI platform</td>
-                <td class="flow-table__company"><a href="https://panteon.alieninc.tech">Panteon</a></td>
-                <td class="flow-table__mandate">The shared ontology, automation platforms, and edge AI that every company in the group runs on.</td>
-              </tr>
-              <tr>
-                <td class="flow-table__fn">Security and compliance</td>
-                <td class="flow-table__company"><a href="https://centra.alieninc.tech">Centra</a></td>
-                <td class="flow-table__mandate">Continuous scanning and audit of every property and company against one group-wide baseline.</td>
-              </tr>
-              <tr>
-                <td class="flow-table__fn">Capital and governance</td>
-                <td class="flow-table__company"><a href="https://rousseau.alieninc.tech">Rousseau Holdings</a></td>
-                <td class="flow-table__mandate">Allocation, board reporting, and portfolio discipline across the seven operating companies.</td>
-              </tr>
-              <tr>
-                <td class="flow-table__fn">Risk and crisis response</td>
-                <td class="flow-table__company"><a href="https://immanuel.alieninc.tech">Immanuel</a></td>
-                <td class="flow-table__mandate">Always-on intelligence, in-country security and medical teams, and rehearsed incident response.</td>
-              </tr>
-              <tr>
-                <td class="flow-table__fn">Technical intelligence</td>
-                <td class="flow-table__company"><a href="https://a-san.alieninc.tech">A-SAN</a></td>
-                <td class="flow-table__mandate">Aerospace systems analysis and air superiority insight, sourced and stated without vendor influence.</td>
-              </tr>
-              <tr>
-                <td class="flow-table__fn">Narrative and culture</td>
-                <td class="flow-table__company"><a href="https://art.alieninc.tech">The Daily Art Cult</a></td>
-                <td class="flow-table__mandate">Independent publishing and cultural preservation, funded by members and credited to artists.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- Closing -->
-    <section class="band">
-      <div class="l-container">
-        <div class="closing">
-          <h2 class="closing__title">Seven companies. One standard. The work outlives all of us.</h2>
-          <a href="dashboard.html" class="button">Open the Dashboard</a>
-        </div>
-      </div>
-    </section>
-
-  </main>
+        </div></div></section>
+<section class="band band--muted"><div class="l-container"><div class="section-head"><div><div class="section-kicker">How We Work</div><h2 class="section-title">How the group runs</h2><p class="lede" style="margin-top:0.75rem;">Seven rules for every company, board pack, and internal transaction.</p></div><span class="section-head__count">7 Rules</span></div><div class="principle-grid"><div class="principle"><div class="principle__num">01</div><div><h3 class="principle__title">One parent, seven operators</h3><p class="principle__copy">The parent sets standards, capital discipline, and disclosure policy. Each company runs its own strategy, team, and P&amp;L.</p></div></div><div class="principle"><div class="principle__num">02</div><div><h3 class="principle__title">One owner per function</h3><p class="principle__copy">Each function has exactly one owner, so no one has to guess who decides.</p></div></div><div class="principle"><div class="principle__num">03</div><div><h3 class="principle__title">Everything in writing</h3><p class="principle__copy">Tenure, service agreements, and intercompany flows are written down. Disputes go to outside arbitration.</p></div></div><div class="principle"><div class="principle__num">04</div><div><h3 class="principle__title">One source of truth</h3><p class="principle__copy">Every dashboard, board pack, and public number reads from <strong>alieninc-ecosystem.json</strong>. If it is not in the dataset, it is not a group number.</p></div></div><div class="principle"><div class="principle__num">05</div><div><h3 class="principle__title">Independent audit</h3><p class="principle__copy">Centra scans every property and company against one baseline. No one is exempt, including the parent.</p></div></div><div class="principle"><div class="principle__num">06</div><div><h3 class="principle__title">Disciplined capital</h3><p class="principle__copy">Rousseau allocates capital and reports to the board. Spending outside the plan needs an explicit decision, not a favour between founders.</p></div></div><div class="principle"><div class="principle__num">07</div><div><h3 class="principle__title">Capability transfer</h3><p class="principle__copy">We measure KMT and Panteon by what clients can do without them. Dependency is not a business model.</p></div></div></div></div></section>
+<section class="band"><div class="l-container"><div class="section-head"><div><div class="section-kicker">Plain Terms</div><h2 class="section-title">Words we use</h2><p class="lede" style="margin-top:0.75rem;">The terms on this page that need a definition.</p></div><span class="section-head__count">7 Terms</span></div><div class="principle-grid"><div class="principle"><div class="principle__num">01</div><div><h3 class="principle__title">Parent</h3><p class="principle__copy">Alien Inc. It sets standards and capital discipline, and doesn’t run the businesses.</p></div></div><div class="principle"><div class="principle__num">02</div><div><h3 class="principle__title">Operating company</h3><p class="principle__copy">An independent business with its own market, team, and P&amp;L.</p></div></div><div class="principle"><div class="principle__num">03</div><div><h3 class="principle__title">Ontology</h3><p class="principle__copy">A written map of how a business works, in a form software can read.</p></div></div><div class="principle"><div class="principle__num">04</div><div><h3 class="principle__title">Source of truth</h3><p class="principle__copy">The one dataset every dashboard and public number reads from.</p></div></div><div class="principle"><div class="principle__num">05</div><div><h3 class="principle__title">Tranche</h3><p class="principle__copy">Capital released in stages, each against a milestone.</p></div></div><div class="principle"><div class="principle__num">06</div><div><h3 class="principle__title">Sovereign</h3><p class="principle__copy">Owned and controlled by us, not rented from someone who can switch it off.</p></div></div><div class="principle"><div class="principle__num">07</div><div><h3 class="principle__title">Baseline</h3><p class="principle__copy">The one security and compliance standard every property and company is checked against.</p></div></div></div></div></section>
+<section class="band band--muted"><div class="l-container"><div class="section-head"><div><div class="section-kicker">Questions</div><h2 class="section-title">Frequently asked</h2></div><span class="section-head__count">7 Questions</span></div><div class="principle-grid"><div class="principle"><div class="principle__num">01</div><div><h3 class="principle__title">How do we know a company is keeping these values?</h3><p class="principle__copy">Every value and every company has a “Broken if” test. The dashboard reads from one dataset, and Centra checks every property against one baseline.</p></div></div><div class="principle"><div class="principle__num">02</div><div><h3 class="principle__title">Can a company opt out?</h3><p class="principle__copy">No. All seven values apply to every company, and to the parent.</p></div></div><div class="principle"><div class="principle__num">03</div><div><h3 class="principle__title">Why do we publish what each value costs?</h3><p class="principle__copy">A value with no cost is only a slogan.</p></div></div><div class="principle"><div class="principle__num">04</div><div><h3 class="principle__title">Why does the parent hold itself to the same rules?</h3><p class="principle__copy">The standard only counts if no one is exempt.</p></div></div><div class="principle"><div class="principle__num">05</div><div><h3 class="principle__title">How long is a “deliberate delay” on published numbers?</h3><p class="principle__copy">We haven’t fixed it yet.</p></div></div><div class="principle"><div class="principle__num">06</div><div><h3 class="principle__title">What happens to the charter after the founders?</h3><p class="principle__copy">The succession and amendment rule isn’t written yet.</p></div></div><div class="principle"><div class="principle__num">07</div><div><h3 class="principle__title">Where does ownership cost us a market?</h3><p class="principle__copy">Sovereignty means we sometimes decline work we could win by renting a layer. We haven’t written down where that line sits.</p></div></div></div></div></section>
+<section class="band"><div class="l-container"><div class="closing"><h2 class="closing__title">Seven companies. Seven values. The work outlives all of us.</h2></div></div></section>
+</main>
 
   <footer class="footer">
     <div class="l-container footer__inner-container">
 
       <div class="footer__offices">
-        <div class="footer__offices-title">Alien.Inc Operating System</div>
+        <div class="footer__offices-title">Alien Inc Operating System</div>
         <div class="footer__offices-items">
           <div class="footer__offices-item">
             <div class="footer__offices-item-title">Group Access</div>
             <div class="footer__offices-item-content">
               <span>Seven operating companies</span>
-              <span>One root navigation layer</span>
+              <span>One shared navigation</span>
             </div>
           </div>
           <div class="footer__offices-item">
@@ -1263,8 +436,8 @@
           <div class="footer__offices-item">
             <div class="footer__offices-item-title">Group Charter</div>
             <div class="footer__offices-item-content">
-              <span>Values above</span>
-              <span>Written tenure, outside arbitration</span>
+              <span>Seven shared values</span>
+              <span>Written agreements, outside arbitration</span>
             </div>
           </div>
           <div class="footer__offices-item">
@@ -1289,19 +462,19 @@
           <div class="footer__contact-item">
             <div class="footer__contact-item-title">Consulting</div>
             <div class="footer__contact-item-content">
-              <a href="https://kmt.alieninc.tech">KMT Consulting Group</a>
+              <a href="https://kmt.alieninc.tech/">KMT Consulting Group</a>
             </div>
           </div>
           <div class="footer__contact-item">
             <div class="footer__contact-item-title">Cybersecurity</div>
             <div class="footer__contact-item-content">
-              <a href="https://centra.alieninc.tech">Centra</a>
+              <a href="https://centra.alieninc.tech/">Centra</a>
             </div>
           </div>
           <div class="footer__contact-item">
             <div class="footer__contact-item-title">Operating Dataset</div>
             <div class="footer__contact-item-content">
-              <a href="data/alieninc-ecosystem.json">alieninc-ecosystem.json</a>
+              <a href="https://alieninc.tech/data/alieninc-ecosystem.json">alieninc-ecosystem.json</a>
             </div>
           </div>
         </div>
@@ -1309,21 +482,24 @@
 
       <div class="footer__corporate">
         <ul class="footer__corporate-links">
-          <li><a href="founder.html" class="footer__corporate-link">Founder</a></li>
-          <li><a href="index.html#portfolio" class="footer__corporate-link">Portfolio</a></li>
-          <li><a href="index.html#operating-system" class="footer__corporate-link">Operating Model</a></li>
-          <li><a href="values.html" class="footer__corporate-link">Values</a></li>
-          <li><a href="dashboard.html" class="footer__corporate-link">Dashboard</a></li>
+          <li><a href="https://alieninc.tech/founder.html" class="footer__corporate-link">Founder</a></li>
+          <li><a href="https://alieninc.tech/index.html#portfolio" class="footer__corporate-link">Portfolio</a></li>
+          <li><a href="https://alieninc.tech/index.html#operating-system" class="footer__corporate-link">Operating Model</a></li>
+          <li><a href="https://alieninc.tech/values.html" class="footer__corporate-link">Values</a></li>
+          <li><a href="https://alieninc.tech/dashboard.html" class="footer__corporate-link">Dashboard</a></li>
         </ul>
       </div>
 
       <div class="footer__media">
-        <a href="#" class="social-link" aria-label="visit Alien Inc on Instagram">IG</a>
-        <a href="data/alieninc-sitemap.md" class="social-link" aria-label="open Alien Inc sitemap">SM</a>
+        <a href="https://alieninc.tech/values.html#" class="social-link" aria-label="visit Alien Inc on Instagram">IG</a>
+        <a href="https://alieninc.tech/data/alieninc-sitemap.md" class="social-link" aria-label="open Alien Inc sitemap">SM</a>
       </div>
 
     </div>
   </footer>
 
-</body>
+
+
+
+</body></html>
 </html>

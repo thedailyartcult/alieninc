@@ -725,10 +725,13 @@ A single sentence that captures me as a learner and thinker — precise enough t
           });
 
           if (!geminiRes.ok) {
+            const errText = await geminiRes.text();
+            console.error('Gemini error:', errText);
             throw new Error(`Generation failed: ${geminiRes.status}`);
           }
 
           const data = await geminiRes.json();
+          console.log('Gemini response:', data);
           
           // Save to localStorage like the main site does
           const existing = JSON.parse(localStorage.getItem('pending_source_materials') || '[]');
@@ -750,11 +753,15 @@ A single sentence that captures me as a learner and thinker — precise enough t
             studyGenerateStatus.classList.add('text-antique');
           }
           if (studySourceInput) studySourceInput.value = '';
-          loadSourceAudiobooks();
+          if (typeof loadSourceAudiobooks === 'function') {
+            loadSourceAudiobooks();
+          } else {
+            location.reload();
+          }
         } catch (err) {
           console.error(err);
           if (studyGenerateStatus) {
-            studyGenerateStatus.textContent = 'Error generating. Please try again.';
+            studyGenerateStatus.textContent = `Error: ${err.message}`;
             studyGenerateStatus.classList.remove('text-antique');
           }
         } finally {

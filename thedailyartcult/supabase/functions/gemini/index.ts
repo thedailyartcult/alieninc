@@ -190,6 +190,20 @@ Deno.serve(async (req) => {
   let profile_context = "";
   let active_worldviews: string[] = [];
 
+  interface PrimaryCalibration {
+    sign?: string;
+    decan?: number;
+    range?: string;
+    sub_ruler?: string;
+    archetype?: string;
+    core_vulnerability?: string;
+    piercing_line?: string;
+    healing_insight?: string;
+    tone_guidance?: string;
+  }
+
+  let primary_calibration: PrimaryCalibration | null = null;
+
   try {
     const body = await req.json().catch(() => ({}));
     q1 = body.q1 || "";
@@ -204,6 +218,9 @@ Deno.serve(async (req) => {
     profile_context = typeof body.profile_context === "string"
       ? body.profile_context.slice(0, 12000)
       : "";
+    if (body.primary_calibration && typeof body.primary_calibration === "object") {
+      primary_calibration = body.primary_calibration;
+    }
     active_worldviews = Array.isArray(body.active_worldviews)
       ? body.active_worldviews
         .filter((value: unknown) => typeof value === "string")
@@ -219,6 +236,21 @@ Deno.serve(async (req) => {
   const isSourceMaterial = content_source === "source_material" || q1 === "Source material provided" || q2 === "Source mode";
   const targetName = first_name.trim() || "Patron";
   const targetHonorary = honorary.trim() || "Master";
+
+  const primaryAttunementContext = primary_calibration && primary_calibration.archetype
+    ? `
+PRIMARY PSYCHOLOGICAL & EMOTIONAL ATTUNEMENT (HIGHEST PRIORITY - STRICTLY CONFIDENTIAL):
+- Innate Archetype: "${primary_calibration.archetype}" (Planetary Sub-Influence: ${primary_calibration.sub_ruler || ""})
+- Hidden Defense Mechanism / Core Vulnerability: "${primary_calibration.core_vulnerability || ""}"
+- The Piercing Truth Behind Their Armor: "${primary_calibration.piercing_line || ""}"
+- Sanctuary & Healing Directive: "${primary_calibration.healing_insight || ""}"
+- Spoken Cadence & Register: ${primary_calibration.tone_guidance || ""}
+
+CRITICAL ATTUNEMENT RULES:
+1. Shape the emotional depth, metaphors, and rhythm of the reading to speak directly to this core vulnerability. Pierce their defense gently with deep, unhurried empathy and give them permission to rest from performing.
+2. ABSOLUTE PROHIBITION ON ASTROLOGY JARGON: NEVER name, quote, or reference astrology, zodiac signs, decans, planets, or horoscopes (e.g., do NOT say "as a Leo", "your solar flame", "according to your decan", etc.). The attunement must be experienced purely as uncanny, deeply perceptive human compassion, never as an esoteric reading.
+`
+    : `No natal foundation provided. Personalize using learner profile and study lenses.`;
 
   try {
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY")
@@ -239,6 +271,8 @@ Deno.serve(async (req) => {
         The user's first name is: "${targetName}"
         Their desired honorary title is: "${targetHonorary}"
         
+        ${primaryAttunementContext}
+
         Here is the profile details they uploaded:
         "${q3}"
 
@@ -290,7 +324,11 @@ Deno.serve(async (req) => {
         The user's first name is: "${targetName}"
         Their desired honorary title is: "${targetHonorary}"
 
-        Active study lenses: ${lensContext}
+        ${primaryAttunementContext}
+
+        SECONDARY STUDY LENSES:
+        ${lensContext}
+        (Interpret the source through these philosophical traditions, but framed for someone with the primary psychological attunement above.)
 
         Personalization context:
         ${personalizationContext}
@@ -311,11 +349,12 @@ Deno.serve(async (req) => {
         2. WRITE A "bridge_line":
            - A very short, poetic, custom sentence (max 10 words) that bridges the submitted source into the recommended worldview. Do not write markdown.
         3. WRITE AN "expanded_text":
-           - Write exactly 2-4 warm, deeply conversational sentences.
+           - Write exactly 2-4 warm, deeply conversational sentences designed for spoken audiobook listening.
            - CRITICAL GREETING RULE: Begin by directly addressing the user with their title and first name.
             - If a YouTube transcript was verified, mention that you found the public transcript and are reading the source through its central concern.
             - If no transcript was verified, name the video's title/channel explicitly and speak to its known themes; never output generic "archive awaits verified captions" language.
            - If it is a book, speak to the book's central question and why it belongs near the recommended worldview.
+           - PRIMARY PSYCHOLOGICAL DIRECTIVE: Let the reading meet their psychological defense mechanism with deep empathy and quiet solidarity. Dissolve their need to perform or defend, meeting them with absolute dignity.
            - Do not summarize mechanically. Compose it as a natural spoken reading that prepares them for the suggested worldview publisher. When a learner profile exists, make the connection genuinely specific without exposing private profile details or inventing facts about them.
            - Do not write any markdown formatting, hash marks, or HTML tags.
 
@@ -334,6 +373,8 @@ Deno.serve(async (req) => {
         The user's first name is: "${targetName}"
         Their desired honorary title is: "${targetHonorary}"
         
+        ${primaryAttunementContext}
+
         Here is what they shared:
         1. What they are carrying: "${q1}"
         2. Ending or Beginning: "${q2}"

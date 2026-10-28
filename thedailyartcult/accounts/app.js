@@ -38,6 +38,32 @@
     const revealPasteBtn = document.getElementById("reveal-paste-btn");
     const copyPromptBtn = document.getElementById("copy-profile-prompt-btn");
     
+    // NATAL FOUNDATION (DATE OF BIRTH) REFERENCES
+    const birthMonthSelect = document.getElementById("birth-month");
+    const birthDaySelect = document.getElementById("birth-day");
+
+    function populateBirthDays(selectedMonth, currentDayValue) {
+      if (!birthDaySelect) return;
+      const month = parseInt(selectedMonth, 10);
+      const maxDays = [2].includes(month) ? 29 : [4, 6, 9, 11].includes(month) ? 30 : 31;
+      
+      const currentDay = currentDayValue ? parseInt(currentDayValue, 10) : parseInt(birthDaySelect.value, 10);
+      birthDaySelect.innerHTML = '<option value="">Day</option>';
+      for (let d = 1; d <= maxDays; d++) {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        if (currentDay === d) opt.selected = true;
+        birthDaySelect.appendChild(opt);
+      }
+    }
+
+    if (birthMonthSelect) {
+      birthMonthSelect.addEventListener('change', () => {
+        populateBirthDays(birthMonthSelect.value);
+      });
+    }
+    
     // --- NEW REFERENCES FOR ACTIVE LENSES ---
     const availableWorldviews = [
       "Becoming", "Existentialism", "Stoicism", "Absurdism", "The Leap", "Mysticism", "Eastern Wisdom", "Politics", "Witness",
@@ -452,6 +478,36 @@ A single sentence that captures me as a learner and thinker — precise enough t
       }
 
       renderActiveLenses(userId);
+
+      // 4. Populate Natal Foundation (Date of Birth) if saved
+      let natalMonth = localStorage.getItem('tdac_natal_month') || '';
+      let natalDay = localStorage.getItem('tdac_natal_day') || '';
+
+      try {
+        const authRes = await supabaseClient.auth.getUser();
+        const authUser = authRes?.data?.user;
+        if (authUser?.user_metadata?.birth_month) {
+          natalMonth = String(authUser.user_metadata.birth_month);
+          natalDay = String(authUser.user_metadata.birth_day || '');
+        }
+      } catch (_) {}
+
+      // Also parse metadata header if present in markdown_text
+      if (data && data.markdown_text) {
+        const natalMatch = data.markdown_text.match(/<!--\s*natal:\s*(\{.*?\})\s*-->/);
+        if (natalMatch) {
+          try {
+            const parsed = JSON.parse(natalMatch[1]);
+            if (parsed.month) natalMonth = String(parsed.month);
+            if (parsed.day) natalDay = String(parsed.day);
+          } catch (_) {}
+        }
+      }
+
+      if (birthMonthSelect && natalMonth) {
+        birthMonthSelect.value = natalMonth;
+        populateBirthDays(natalMonth, natalDay);
+      }
     }
 
     // B. Save Context File to DB
@@ -462,7 +518,24 @@ A single sentence that captures me as a learner and thinker — precise enough t
       const user = (await supabaseClient.auth.getUser()).data.user;
       if (!user) return;
 
-      const updatedText = profileMdText.value;
+      let updatedText = profileMdText.value;
+      const selectedMonth = birthMonthSelect ? birthMonthSelect.value : '';
+      const selectedDay = birthDaySelect ? birthDaySelect.value : '';
+
+      if (selectedMonth && selectedDay) {
+        localStorage.setItem('tdac_natal_month', selectedMonth);
+        localStorage.setItem('tdac_natal_day', selectedDay);
+
+        // Update auth user_metadata
+        supabaseClient.auth.updateUser({
+          data: { birth_month: selectedMonth, birth_day: selectedDay }
+        }).catch(err => console.warn("User metadata update:", err));
+
+        // Embed in markdown header so it stays permanently in user_contexts table
+        const cleanText = updatedText.replace(/<!--\s*natal:\s*\{.*?\}\s*-->\n?/, '').trim();
+        updatedText = `<!-- natal: {"month":${selectedMonth},"day":${selectedDay}} -->\n${cleanText}`;
+        profileMdText.value = updatedText;
+      }
       profileContext = updatedText;
 
       // Upsert profile text
@@ -964,6 +1037,14 @@ A single sentence that captures me as a learner and thinker — precise enough t
             return;
           }
 
+          // Derive Primary Calibration from Natal Foundation (Highest Priority)
+          const natalMonth = (birthMonthSelect ? birthMonthSelect.value : '') || localStorage.getItem('tdac_natal_month');
+          const natalDay = (birthDaySelect ? birthDaySelect.value : '') || localStorage.getItem('tdac_natal_day');
+          let primaryCalibration = null;
+          if (window.TDAC_ASTROLOGY && natalMonth && natalDay) {
+            primaryCalibration = window.TDAC_ASTROLOGY.buildPrimaryCalibration(natalMonth, natalDay);
+          }
+
           const payload = {
             q1: 'Source material provided',
             q2: 'Source mode',
@@ -974,6 +1055,8 @@ A single sentence that captures me as a learner and thinker — precise enough t
             philosopher: '',
             first_name: session.user?.email?.split('@')[0] || 'Patron',
             honorary: 'Master',
+            // Primary calibration anchors the psychological temperament & cadence
+            primary_calibration: primaryCalibration,
             // The saved profile and selected lenses let Gemini tailor the reading
             // instead of treating every book request as an anonymous prompt.
             profile_context: profileContext.slice(0, 12000),

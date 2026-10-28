@@ -588,11 +588,12 @@ A single sentence that captures me as a learner and thinker — precise enough t
                 <h4 class="font-serif text-2xl leading-tight text-cream transition duration-300 group-hover:text-antique sm:text-3xl">${title}</h4>
                 <p class="text-sm text-linen/68 leading-relaxed">${description}</p>
                 <p class="rounded-lg border border-linen/10 bg-black/25 px-3 py-2 text-[10px] font-mono text-linen/45 truncate">${sourceInput}</p>
+                ${hasAudioText ? `<details class="rounded-lg border border-linen/10 bg-black/20 p-3"><summary class="text-[8px] font-mono uppercase tracking-widest text-antique/80 hover:text-antique cursor-pointer">View Transcript</summary><div class="mt-2 text-xs text-linen/70 leading-relaxed font-serif whitespace-pre-wrap max-h-[200px] overflow-y-auto pr-2">${escapeHtml(item.expanded_text)}</div></details>` : ''}
               </div>
               <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <span class="text-[9px] font-mono uppercase tracking-[0.2em] text-linen/35">${escapeHtml(lenses)}</span>
                 <button class="source-play-btn inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-[9px] font-mono font-bold uppercase tracking-widest transition duration-300 active:scale-[0.98]" ${hasAudioText ? '' : 'disabled'}>
-                  <span>${hasAudioText ? '▶' : '◌'}</span> ${hasAudioText ? 'Play Audiobook' : 'Queued'}
+                  <span>${hasAudioText ? '▶' : '◌'}</span> ${hasAudioText ? (item.expanded_text ? 'Play with Transcript' : 'Play Audiobook') : 'Queued'}
                 </button>
               </div>
             </div>
@@ -604,20 +605,28 @@ A single sentence that captures me as a learner and thinker — precise enough t
               playBtn.innerHTML = "<span>◌</span> Preparing voice...";
 
               try {
-                const ttsRes = await fetch("https://frwjaixxlgthkgjtafhz.supabase.co/functions/v1/tts", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ text: item.expanded_text })
-                });
+                if (item.expanded_text && item.expanded_text.trim()) {
+                  const ttsRes = await fetch("https://frwjaixxlgthkgjtafhz.supabase.co/functions/v1/tts", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: item.expanded_text })
+                  });
 
-                if (!ttsRes.ok) throw new Error(`TTS returned ${ttsRes.status}`);
-                const blob = await ttsRes.blob();
-                const audioUrl = URL.createObjectURL(blob);
-                playAudio(audioUrl, item.source_title || 'Study Request');
-                playBtn.innerHTML = "<span>▶</span> Play Audiobook";
+                  if (ttsRes.ok) {
+                    const blob = await ttsRes.blob();
+                    const audioUrl = URL.createObjectURL(blob);
+                    playAudio(audioUrl, item.source_title || 'Study Request', item.expanded_text);
+                    playBtn.innerHTML = "<span>▶</span> Play Audiobook";
+                    return;
+                  }
+                }
+                // If no TTS or it fails, still show transcript
+                playAudio('', item.source_title || 'Study Request', item.expanded_text || 'No transcript available.');
+                playBtn.innerHTML = "<span>▶</span> Show Transcript";
               } catch (error) {
                 console.error("Source audiobook playback failed:", error);
-                playBtn.innerHTML = "<span>▶</span> Playback Failed";
+                playAudio('', item.source_title || 'Study Request', item.expanded_text || 'No transcript available.');
+                playBtn.innerHTML = "<span>▶</span> Show Transcript";
               }
             });
           }
@@ -627,10 +636,35 @@ A single sentence that captures me as a learner and thinker — precise enough t
     }
 
     // D. Helper to load track into player
-    function playAudio(url, title) {
+    function playAudio(url, title, transcript = '') {
       hudTrackTitle.textContent = title;
       mainAudioPlayer.src = url;
       audioPlayerHud.classList.remove("hidden");
+
+      const transcriptPanel = document.getElementById('audio-transcript-panel');
+      const transcriptContent = document.getElementById('audio-transcript-content');
+      const toggleTranscript = document.getElementById('toggle-transcript');
+      
+      if (transcript && transcriptPanel && transcriptContent) {
+        transcriptContent.textContent = transcript;
+        transcriptPanel.classList.remove('hidden');
+        if (toggleTranscript) {
+          toggleTranscript.textContent = 'Hide';
+          transcriptContent.classList.remove('hidden');
+          toggleTranscript.onclick = () => {
+            if (transcriptContent.classList.contains('hidden')) {
+              transcriptContent.classList.remove('hidden');
+              toggleTranscript.textContent = 'Hide';
+            } else {
+              transcriptContent.classList.add('hidden');
+              toggleTranscript.textContent = 'Show';
+            }
+          };
+        }
+      } else if (transcriptPanel) {
+        transcriptPanel.classList.add('hidden');
+      }
+
       mainAudioPlayer.load();
       mainAudioPlayer.play().catch(err => {
         console.warn("Autoplay blocked or play failed:", err);

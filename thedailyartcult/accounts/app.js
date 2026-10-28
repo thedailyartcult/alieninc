@@ -698,7 +698,7 @@ A single sentence that captures me as a learner and thinker — precise enough t
         }
 
         try {
-          const session = await getSession();
+          const { data: { session } } = await supabaseClient.auth.getSession();
           if (!session) {
             if (studyGenerateStatus) {
               studyGenerateStatus.textContent = 'Please sign in to generate content.';

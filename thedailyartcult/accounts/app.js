@@ -296,16 +296,17 @@ A single sentence that captures me as a learner and thinker — precise enough t
         const isSelected = activeWorldviews.includes(wv);
         return `
           <button type="button" 
-            class="w-full text-left p-2 rounded-lg border text-[10px] font-mono uppercase tracking-wider transition duration-300 ${
+            class="w-full text-left p-2.5 rounded-xl border text-[10px] font-mono uppercase tracking-wider transition duration-200 ${
               isSelected 
-                ? 'bg-antique/10 border-antique text-antique' 
-                : 'bg-[#14100e]/80 border-linen/10 text-linen/50 hover:border-linen/20 hover:text-linen'
+                ? 'bg-alienGold/15 border-alienGold text-alienGold shadow-sm font-semibold' 
+                : 'bg-[#0b0f14] border-white/10 text-linen hover:border-white/25 hover:text-white'
             }"
             onclick="toggleLens('${wv}', '${userId}')">
-            <span class="mr-1">${isSelected ? '●' : '○'}</span> ${wv}
+            <span class="mr-1.5 ${isSelected ? 'text-alienGold' : 'text-white/30'}">${isSelected ? '●' : '○'}</span> ${wv}
           </button>
         `;
       }).join('');
+      updateCalibrationSummaryPill();
     }
 
     // 3. This function runs when a user clicks any toggle button
@@ -318,6 +319,7 @@ A single sentence that captures me as a learner and thinker — precise enough t
       }
       
       renderActiveLenses(userId);
+      updateCalibrationSummaryPill();
       profileStatus.textContent = "Updating lenses...";
 
       const { error } = await supabaseClient
@@ -508,6 +510,8 @@ A single sentence that captures me as a learner and thinker — precise enough t
         birthMonthSelect.value = natalMonth;
         populateBirthDays(natalMonth, natalDay);
       }
+
+      updateCalibrationSummaryPill();
     }
 
     // B. Save Context File to DB
@@ -552,6 +556,7 @@ A single sentence that captures me as a learner and thinker — precise enough t
         console.error(error);
       } else {
         profileStatus.textContent = "Saved to vault";
+        updateCalibrationSummaryPill();
       }
     });
 
@@ -583,7 +588,7 @@ A single sentence that captures me as a learner and thinker — precise enough t
       renderSourceMaterialReleases();
       data.forEach(item => {
         const row = document.createElement("div");
-        row.className = "group overflow-hidden rounded-xl border border-linen/10 bg-black/25 p-5 text-left transition duration-300 hover:border-antique/25 hover:bg-black/40";
+        row.className = "group overflow-hidden rounded-2xl border border-white/10 bg-[#121820]/75 p-6 text-left transition duration-300 hover:border-alienGold/35 hover:bg-[#161d26]/85 shadow-lg";
         
         // Clean and format date
         const formattedDate = new Date(item.created_at).toLocaleDateString(undefined, {
@@ -595,12 +600,12 @@ A single sentence that captures me as a learner and thinker — precise enough t
         row.innerHTML = `
           <div class="space-y-3">
             <div class="flex items-center justify-between gap-3">
-              <span class="text-[9px] font-mono uppercase tracking-[0.22em] text-antique/80">Audiobook</span>
-              <span class="text-[9px] font-mono text-linen/30">${formattedDate}</span>
+              <span class="text-[9px] font-mono uppercase tracking-[0.22em] text-alienGold font-bold">Audiobook Release</span>
+              <span class="text-[9px] font-mono text-linen/40">${formattedDate}</span>
             </div>
-            <h4 class="font-serif text-2xl leading-tight text-cream group-hover:text-antique transition duration-300">${item.title}</h4>
-            <p class="text-sm text-linen/60 leading-relaxed">${item.description}</p>
-            <button class="play-btn inline-flex items-center gap-2 rounded-full border border-antique/35 bg-antique/10 px-4 py-2.5 text-[9px] font-mono font-bold uppercase tracking-widest text-antique transition hover:bg-antique hover:text-ink" data-path="${item.storage_path}" data-title="${item.title}">
+            <h4 class="text-xl font-bold text-white group-hover:text-alienGold transition duration-200">${item.title}</h4>
+            <p class="text-xs text-linen leading-relaxed">${item.description}</p>
+            <button class="play-btn inline-flex items-center gap-2 rounded-xl bg-alienGold hover:bg-[#ffe033] px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-ink transition shadow-md shadow-alienGold/10" data-path="${item.storage_path}" data-title="${item.title}">
               <span>▶</span> Play Audiobook
             </button>
           </div>
@@ -640,14 +645,14 @@ A single sentence that captures me as a learner and thinker — precise enough t
         .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
         .forEach(item => {
           const row = document.createElement("div");
-          row.className = "source-release-card group grid overflow-hidden rounded-xl text-left md:grid-cols-[minmax(180px,0.92fr)_minmax(0,1.35fr)]";
+          row.className = "source-release-card group grid overflow-hidden rounded-2xl text-left md:grid-cols-[minmax(190px,0.85fr)_minmax(0,1.4fr)]";
 
           const formattedDate = item.created_at
-            ? new Date(item.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+            ? new Date(item.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
             : 'Recently';
           const lenses = Array.isArray(item.selected_worldviews) && item.selected_worldviews.length
             ? item.selected_worldviews.join(', ')
-            : item.worldview || 'Selected worldview';
+            : item.worldview || 'Becoming';
           const hasAudioText = Boolean(item.expanded_text);
           const title = escapeHtml(item.source_title || 'Study Request');
           const description = escapeHtml(`Study request saved for ${lenses}. ${item.bridge_line || 'Your personalized study audio is held in your account.'}`);
@@ -655,41 +660,106 @@ A single sentence that captures me as a learner and thinker — precise enough t
           const visual = getSourceVisual(item);
           const visualLabel = escapeHtml(visual.label);
           const thumb = escapeHtml(visual.thumbnail);
+          const territoryTag = escapeHtml(item.territory || item.worldview || 'becoming');
           const imageHtml = thumb
             ? `<img src="${thumb}" alt="${title} thumbnail" loading="lazy" onerror="this.remove(); this.closest('.source-release-thumb').classList.add('is-fallback');">`
             : `<div class="flex h-full min-h-[10rem] items-end p-5">
                 <div>
-                  <span class="block text-[9px] font-mono uppercase tracking-[0.24em] text-antique/85">Study Request</span>
-                  <span class="mt-2 block font-serif text-3xl leading-none text-cream">Source<br>Study</span>
+                  <span class="block text-[9px] font-mono uppercase tracking-[0.24em] text-alienGold">Synthesis</span>
+                  <span class="mt-1 block text-2xl font-bold text-white">Study<br>Vault</span>
                 </div>
               </div>`;
 
           row.innerHTML = `
             <div class="source-release-thumb relative">
               ${imageHtml}
-              <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-4">
-                <span class="inline-flex rounded-full border border-antique/30 bg-black/45 px-2.5 py-1 text-[8px] font-mono uppercase tracking-[0.18em] text-antique backdrop-blur">${visualLabel}</span>
+              <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-4 flex items-center justify-between">
+                <span class="inline-flex rounded-full border border-white/20 bg-black/60 px-2.5 py-0.5 text-[8px] font-mono uppercase tracking-wider text-white backdrop-blur">${visualLabel}</span>
+                <span class="inline-flex rounded-full border border-alienGold/40 bg-black/70 px-2 py-0.5 text-[8px] font-mono uppercase tracking-wider text-alienGold backdrop-blur font-semibold">#${territoryTag}</span>
               </div>
             </div>
-            <div class="source-release-content flex min-h-[15rem] flex-col justify-between gap-5 p-5 sm:p-6">
+            <div class="source-release-content flex min-h-[14rem] flex-col justify-between gap-4 p-5 sm:p-6">
               <div class="space-y-3">
                 <div class="flex items-center justify-between gap-3">
-                  <span class="text-[9px] font-mono uppercase tracking-[0.22em] text-antique/80">Personalized Reading</span>
-                  <span class="text-[9px] font-mono text-linen/35">${formattedDate}</span>
+                  <span class="text-[9px] font-mono uppercase tracking-[0.2em] text-alienGold font-bold">Personalized Reading</span>
+                  <div class="flex items-center gap-3">
+                    <span class="text-[9px] font-mono text-linen/40">${formattedDate}</span>
+                    <button type="button" class="delete-reading-btn inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-mono text-rose-400/60 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition cursor-pointer" title="Remove reading from vault">
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      <span>Remove</span>
+                    </button>
+                  </div>
                 </div>
-                <h4 class="font-serif text-2xl leading-tight text-cream transition duration-300 group-hover:text-antique sm:text-3xl">${title}</h4>
-                <p class="text-sm text-linen/68 leading-relaxed">${description}</p>
-                <p class="rounded-lg border border-linen/10 bg-black/25 px-3 py-2 text-[10px] font-mono text-linen/45 truncate">${sourceInput}</p>
-                ${hasAudioText ? `<details class="rounded-lg border border-linen/10 bg-black/20 p-3"><summary class="text-[8px] font-mono uppercase tracking-widest text-antique/80 hover:text-antique cursor-pointer">View Transcript</summary><div class="mt-2 text-xs text-linen/70 leading-relaxed font-serif whitespace-pre-wrap max-h-[200px] overflow-y-auto pr-2">${escapeHtml(item.expanded_text)}</div></details>` : ''}
+                <h4 class="text-xl sm:text-2xl font-bold leading-tight text-white transition duration-200 group-hover:text-alienGold">${title}</h4>
+                <p class="text-xs text-linen leading-relaxed">${description}</p>
+                <p class="rounded-lg border border-white/5 bg-black/35 px-3 py-1.5 text-[10px] font-mono text-white/40 truncate">${sourceInput}</p>
+                ${hasAudioText ? `<details class="rounded-xl border border-white/10 bg-black/30 p-3"><summary class="text-[9px] font-mono uppercase tracking-wider text-alienBlue hover:text-white cursor-pointer font-semibold">View Spoken Transcript</summary><div class="mt-2 text-xs text-linen/80 leading-relaxed whitespace-pre-wrap max-h-[220px] overflow-y-auto pr-2">${escapeHtml(item.expanded_text)}</div></details>` : ''}
               </div>
-              <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <span class="text-[9px] font-mono uppercase tracking-[0.2em] text-linen/35">${escapeHtml(lenses)}</span>
-                <button class="source-play-btn inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-[9px] font-mono font-bold uppercase tracking-widest transition duration-300 active:scale-[0.98]" ${hasAudioText ? '' : 'disabled'}>
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2 border-t border-white/5">
+                <span class="text-[9px] font-mono uppercase tracking-[0.18em] text-linen/50">${escapeHtml(lenses)}</span>
+                <button class="source-play-btn inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider transition active:scale-[0.98] shadow-md shadow-alienGold/10" ${hasAudioText ? '' : 'disabled'}>
                   <span>${hasAudioText ? '▶' : '◌'}</span> ${hasAudioText ? 'Listen to Summary' : 'Queued'}
                 </button>
               </div>
             </div>
           `;
+
+          // Handle Remove Click
+          const deleteBtn = row.querySelector(".delete-reading-btn");
+          if (deleteBtn) {
+            deleteBtn.addEventListener("click", async (e) => {
+              e.stopPropagation();
+              const itemKey = item.id || item.source_input || `${item.source_title}-${item.created_at}`;
+              if (!confirm(`Remove "${item.source_title || 'this reading'}" from your study vault?`)) {
+                return;
+              }
+
+              row.style.opacity = '0';
+              row.style.transform = 'scale(0.97)';
+              row.style.transition = 'all 0.25s ease';
+
+              // Filter out of memory
+              sourceMaterials = sourceMaterials.filter(sm => {
+                const k = sm.id || sm.source_input || `${sm.source_title}-${sm.created_at}`;
+                return k !== itemKey;
+              });
+
+              // Update local storage
+              try {
+                const existing = JSON.parse(localStorage.getItem('pending_source_materials') || '[]');
+                const filtered = existing.filter(sm => {
+                  const k = sm.id || sm.source_input || `${sm.source_title}-${sm.created_at}`;
+                  return k !== itemKey;
+                });
+                localStorage.setItem('pending_source_materials', JSON.stringify(filtered));
+              } catch (_) {}
+
+              // Update Supabase
+              try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session?.user?.id) {
+                  await supabaseClient
+                    .from('user_contexts')
+                    .upsert({
+                      user_id: session.user.id,
+                      source_materials: sourceMaterials,
+                      updated_at: new Date().toISOString()
+                    }, { onConflict: 'user_id' });
+                }
+              } catch (err) {
+                console.error("Database removal error:", err);
+              }
+
+              setTimeout(() => {
+                row.remove();
+                if (releasesList && releasesList.children.length === 0) {
+                  releasesList.innerHTML = '<p class="text-xs text-linen/40 italic py-12 text-center font-mono">No readings in vault. Submit a study request above to generate one.</p>';
+                }
+              }, 250);
+            });
+          }
 
           const playBtn = row.querySelector(".source-play-btn");
           if (hasAudioText) {
@@ -1206,4 +1276,59 @@ A single sentence that captures me as a learner and thinker — precise enough t
         profileMdText.classList.remove("hidden");
         profileMdText.focus();
       });
+    }
+
+    // --- TAB SWITCHING LOGIC (ALIEN INC DESIGN SYSTEM) ---
+    const tabBtnReadings = document.getElementById("tab-btn-readings");
+    const tabBtnProfile = document.getElementById("tab-btn-profile");
+    const sectionReadings = document.getElementById("section-readings");
+    const sectionProfile = document.getElementById("section-profile");
+    const quickOpenProfileBtn = document.getElementById("quick-open-profile-btn");
+
+    function switchDashboardTab(target) {
+      if (target === 'profile') {
+        sectionReadings?.classList.add('hidden');
+        sectionProfile?.classList.remove('hidden');
+        tabBtnProfile?.classList.add('bg-alienGold', 'text-ink', 'border-alienGold', 'font-semibold');
+        tabBtnProfile?.classList.remove('text-linen', 'border-transparent');
+        tabBtnReadings?.classList.remove('bg-alienGold', 'text-ink', 'border-alienGold', 'font-semibold');
+        tabBtnReadings?.classList.add('text-linen', 'border-transparent');
+      } else {
+        sectionProfile?.classList.add('hidden');
+        sectionReadings?.classList.remove('hidden');
+        tabBtnReadings?.classList.add('bg-alienGold', 'text-ink', 'border-alienGold', 'font-semibold');
+        tabBtnReadings?.classList.remove('text-linen', 'border-transparent');
+        tabBtnProfile?.classList.remove('bg-alienGold', 'text-ink', 'border-alienGold', 'font-semibold');
+        tabBtnProfile?.classList.add('text-linen', 'border-transparent');
+      }
+    }
+
+    tabBtnReadings?.addEventListener('click', () => switchDashboardTab('readings'));
+    tabBtnProfile?.addEventListener('click', () => switchDashboardTab('profile'));
+    quickOpenProfileBtn?.addEventListener('click', () => switchDashboardTab('profile'));
+
+    function updateCalibrationSummaryPill() {
+      const pill = document.getElementById('calibration-summary-pill');
+      if (!pill) return;
+      const natalMonth = (birthMonthSelect ? birthMonthSelect.value : '') || localStorage.getItem('tdac_natal_month');
+      const natalDay = (birthDaySelect ? birthDaySelect.value : '') || localStorage.getItem('tdac_natal_day');
+      const parts = [];
+      if (natalMonth && natalDay) {
+        parts.push("🎂 Natal Configured");
+      }
+      if (activeWorldviews.length > 0) {
+        parts.push(`🔭 ${activeWorldviews.length} Lens${activeWorldviews.length > 1 ? 'es' : ''}`);
+      }
+      if (parts.length === 0) {
+        pill.textContent = "⚡ Default Calibration (Customize)";
+      } else {
+        pill.textContent = parts.join(' · ') + " (Customize)";
+      }
+    }
+
+    if (birthMonthSelect) {
+      birthMonthSelect.addEventListener('change', updateCalibrationSummaryPill);
+    }
+    if (birthDaySelect) {
+      birthDaySelect.addEventListener('change', updateCalibrationSummaryPill);
     }

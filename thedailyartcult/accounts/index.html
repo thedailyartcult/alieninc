@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Study &middot; Alien Inc. Employee Portal</title>
+  <title>The Study &middot; Alien Inc. Operating Portal</title>
   <link rel="canonical" href="https://art.alieninc.tech/accounts/">
   
-  <!-- Fonts matching main site -->
+  <!-- Fonts: Instrument Sans & JetBrains Mono (Alien Inc Design System) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
   
   <!-- Supabase JS Library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -19,212 +19,270 @@
   <script src="tailwind-config.js"></script>
 
   <style>
+    :root {
+      --alien-bg: #0b0f14;
+      --alien-surface: #121820;
+      --alien-gold: #ffd400;
+      --alien-blue: #4ea2fd;
+      --alien-border: rgba(255, 255, 255, 0.08);
+    }
     body {
-      background-color: #1a120b;
-      color: #f2eadc;
-      font-family: "Inter", system-ui, sans-serif;
+      background-color: var(--alien-bg);
+      color: #f8fafc;
+      font-family: "Instrument Sans", system-ui, -apple-system, sans-serif;
     }
-    .library-overlay {
-      background: radial-gradient(circle at 50% 18%, rgba(70, 16, 27, 0.1), transparent 40%);
+    .alien-glow {
+      background: radial-gradient(circle at 50% -10%, rgba(78, 162, 253, 0.12), transparent 45%),
+                  radial-gradient(circle at 80% 60%, rgba(255, 212, 0, 0.04), transparent 40%);
     }
-    .quiet-panel {
-      border: 1px solid rgba(216, 203, 184, 0.12);
-      background: rgba(13, 9, 7, 0.72);
-      backdrop-filter: blur(14px);
+    .alien-panel {
+      border: 1px solid var(--alien-border);
+      background: rgba(18, 24, 32, 0.75);
+      backdrop-filter: blur(16px);
+    }
+    .alien-panel:hover {
+      border-color: rgba(255, 255, 255, 0.12);
     }
     .source-release-card {
-      position: relative;
-      overflow: hidden;
-      border: 1px solid rgba(198, 167, 102, 0.22);
-      background:
-        linear-gradient(135deg, rgba(198, 167, 102, 0.12), rgba(16, 44, 38, 0.18)),
-        rgba(7, 5, 4, 0.72);
-      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(18, 24, 32, 0.65);
+      backdrop-filter: blur(14px);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .source-release-card::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(90deg, rgba(7, 5, 4, 0.18), rgba(7, 5, 4, 0.72));
-      pointer-events: none;
-      z-index: 1;
+    .source-release-card:hover {
+      border-color: rgba(255, 212, 0, 0.35);
+      background: rgba(22, 29, 38, 0.85);
+      box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.5);
     }
     .source-release-thumb {
       min-height: 10rem;
       background:
-        radial-gradient(circle at 30% 20%, rgba(198, 167, 102, 0.22), transparent 34%),
-        linear-gradient(135deg, #2b1913, #102c26);
+        radial-gradient(circle at 30% 20%, rgba(78, 162, 253, 0.2), transparent 40%),
+        linear-gradient(135deg, #101620, #141c28);
     }
     .source-release-thumb img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      filter: saturate(0.82) contrast(1.06);
+      filter: saturate(0.9) contrast(1.05);
       transform: scale(1.01);
-      transition: transform 700ms ease, filter 700ms ease;
+      transition: transform 500ms ease, filter 500ms ease;
     }
     .source-release-card:hover .source-release-thumb img {
-      filter: saturate(1) contrast(1.12);
-      transform: scale(1.045);
-    }
-    .source-release-content {
-      position: relative;
-      z-index: 2;
+      filter: saturate(1.05) contrast(1.1);
+      transform: scale(1.04);
     }
     .source-play-btn {
-      border: 1px solid rgba(198, 167, 102, 0.38);
-      background: rgba(242, 234, 220, 0.92);
-      color: #070504;
+      background: #ffd400;
+      color: #0b0f14;
+      font-weight: 700;
+      transition: all 0.2s ease;
     }
     .source-play-btn:hover {
-      background: #c6a766;
-      color: #070504;
+      background: #ffe033;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(255, 212, 0, 0.25);
     }
     .speech-control-btn {
-      border: 1px solid rgba(198, 167, 102, 0.38);
-      background: rgba(198, 167, 102, 0.10);
-      color: #c6a766;
+      border: 1px solid rgba(255, 212, 0, 0.35);
+      background: rgba(255, 212, 0, 0.1);
+      color: #ffd400;
     }
     .speech-control-btn:hover {
-      background: #c6a766;
-      color: #070504;
+      background: #ffd400;
+      color: #0b0f14;
     }
   </style>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.tailwindcss.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com https://consent.cookiebot.com; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
-    <meta http-equiv="X-Frame-Options" content="DENY">
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.tailwindcss.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com https://consent.cookiebot.com; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
 </head>
 <body class="min-h-screen relative flex flex-col justify-between overflow-x-hidden">
 
-  <!-- Aesthetic background glow -->
-  <div class="library-overlay absolute inset-0 -z-10 pointer-events-none" aria-hidden="true"></div>
+  <!-- Ambient Glow -->
+  <div class="alien-glow absolute inset-0 -z-10 pointer-events-none" aria-hidden="true"></div>
 
   <!-- Main Container -->
-  <main class="w-full max-w-4xl mx-auto px-6 py-12 flex-1 flex flex-col justify-center">
+  <main class="w-full max-w-5xl mx-auto px-4 sm:px-6 py-8 flex-1 flex flex-col justify-start">
     
-    <!-- HEADER -->
-    <header class="text-center mb-12">
-      <a href="https://alieninc.tech" class="font-serif text-lg tracking-wider text-linen/60 hover:text-antique transition duration-300">Alien Inc.</a>
-      <h1 class="font-serif text-3xl md:text-4xl mt-3 font-medium text-cream tracking-wide">The Study</h1>
-      <p class="text-[10px] font-mono uppercase tracking-[0.3em] text-linen/40 mt-3">Employee Study Portal</p>
-      <div class="w-16 h-px bg-gradient-to-r from-transparent via-antique to-transparent mx-auto mt-4"></div>
+    <!-- TOP ALIEN INC HEADER -->
+    <header class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 border-b border-white/10 mb-8">
+      <div class="flex items-center gap-3">
+        <a href="https://alieninc.tech" class="flex items-center gap-1.5 group">
+          <span class="font-extrabold text-xl tracking-tight text-white group-hover:text-alienGold transition">Alien<span class="text-alienGold">.</span>Inc</span>
+        </a>
+        <span class="text-white/20">/</span>
+        <div class="flex items-center gap-2">
+          <span class="font-mono text-xs uppercase tracking-widest text-alienBlue font-semibold">The Study</span>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono uppercase bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            Online
+          </span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span id="patron-tier" class="text-[9px] font-mono uppercase tracking-[0.2em] px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-alienGold">Employee Access</span>
+        <button id="logout-btn" class="text-[10px] font-mono uppercase tracking-widest text-linen hover:text-white px-3 py-1.5 rounded-md hover:bg-white/5 border border-transparent hover:border-white/10 transition">
+          Sign Out
+        </button>
+      </div>
     </header>
 
     <!-- STATE A: AUTHENTICATION GATE (Visible when logged out) -->
-    <section id="auth-gate" class="w-full max-w-md mx-auto hidden">
-      <div class="quiet-panel p-8 rounded-xl shadow-2xl">
-        <h2 class="font-serif text-xl text-cream mb-2 text-center">Employee Sign In</h2>
-        <p class="text-xs text-linen/50 text-center mb-6">Sign in with your work email and password, or request a one-time sign-in link.</p>
+    <section id="auth-gate" class="w-full max-w-md mx-auto my-auto py-12 hidden">
+      <div class="alien-panel p-8 rounded-2xl shadow-2xl">
+        <div class="text-center mb-6">
+          <span class="text-[10px] font-mono uppercase tracking-[0.25em] text-alienGold">Alien Incorporated</span>
+          <h2 class="text-2xl font-bold text-white mt-1">Study Portal Sign In</h2>
+          <p class="text-xs text-linen mt-2">Sign in with your enterprise credentials or request a secure magic link.</p>
+        </div>
 
         <form id="login-form" class="space-y-4">
           <div>
-            <label for="email" class="block text-[9px] font-mono uppercase tracking-widest text-linen/40 mb-1.5">Email Address</label>
-            <input type="email" id="email" required autocomplete="email" placeholder="evelyn@domain.com" class="w-full bg-[#14100e]/80 border border-linen/10 rounded-lg px-4 py-3 text-sm text-cream placeholder:text-linen/25 focus:border-antique/50 focus:outline-none transition">
+            <label for="email" class="block text-[9px] font-mono uppercase tracking-widest text-linen mb-1.5">Email Address</label>
+            <input type="email" id="email" required autocomplete="email" placeholder="evelyn@domain.com" class="w-full bg-[#0b0f14] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:border-alienGold/60 focus:outline-none transition">
           </div>
           <div>
-            <label for="password" class="block text-[9px] font-mono uppercase tracking-widest text-linen/40 mb-1.5">Password</label>
-            <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••" class="w-full bg-[#14100e]/80 border border-linen/10 rounded-lg px-4 py-3 text-sm text-cream placeholder:text-linen/25 focus:border-antique/50 focus:outline-none transition">
+            <label for="password" class="block text-[9px] font-mono uppercase tracking-widest text-linen mb-1.5">Password</label>
+            <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••" class="w-full bg-[#0b0f14] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:border-alienGold/60 focus:outline-none transition">
           </div>
-          <button type="submit" class="w-full py-3 bg-cream hover:bg-antique text-ink font-mono text-[10px] font-bold uppercase tracking-widest rounded-lg transition duration-300">
-            Sign In
+          <button type="submit" class="w-full py-3 bg-alienGold hover:bg-[#ffe033] text-ink font-mono text-xs font-bold uppercase tracking-wider rounded-xl transition shadow-lg shadow-alienGold/10">
+            Sign In to Study
           </button>
         </form>
         <div class="mt-5 flex items-center gap-3">
-          <div class="h-px flex-1 bg-linen/10"></div>
-          <span class="text-[9px] font-mono uppercase tracking-widest text-linen/30">or</span>
-          <div class="h-px flex-1 bg-linen/10"></div>
+          <div class="h-px flex-1 bg-white/10"></div>
+          <span class="text-[9px] font-mono uppercase tracking-widest text-white/30">or</span>
+          <div class="h-px flex-1 bg-white/10"></div>
         </div>
-        <button type="button" id="magic-link-btn" class="mt-4 w-full py-3 border border-antique/40 text-antique hover:bg-antique/10 font-mono text-[10px] font-bold uppercase tracking-widest rounded-lg transition duration-300">
+        <button type="button" id="magic-link-btn" class="mt-4 w-full py-3 border border-white/15 hover:border-alienGold/40 text-linen hover:text-white font-mono text-xs uppercase tracking-wider rounded-xl hover:bg-white/5 transition">
           Email me a sign-in link
         </button>
-        <p id="auth-feedback" class="text-[10px] font-mono text-center text-antique mt-4 min-h-[1.5em]"></p>
+        <p id="auth-feedback" class="text-[10px] font-mono text-center text-alienGold mt-4 min-h-[1.5em]"></p>
       </div>
     </section>
 
     <!-- STATE B: MEMBER DASHBOARD (Visible when logged in) -->
-    <section id="dashboard" class="w-full space-y-10 hidden">
+    <section id="dashboard" class="w-full space-y-6 hidden">
       
-      <!-- Top Status Bar -->
-      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-linen/10 pb-6">
+      <!-- NAVIGATION TABS -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
         <div>
-          <span id="patron-tier" class="text-[10px] font-mono uppercase tracking-[0.25em] text-antique">Employee Access</span>
-          <h2 id="patron-greeting" class="font-serif text-2xl text-cream mt-1">Welcome</h2>
+          <h2 id="patron-greeting" class="text-xl font-bold text-white">Welcome</h2>
+          <p class="text-xs text-linen mt-0.5">Automated philosophical reading & audiobook synthesis workspace.</p>
         </div>
-        <button id="logout-btn" class="text-[10px] font-mono uppercase tracking-widest text-linen/40 hover:text-antique transition duration-300">
-          Sign Out
-        </button>
+
+        <!-- Pill Tabs -->
+        <div class="flex items-center gap-1.5 p-1 bg-[#10151d] border border-white/10 rounded-xl">
+          <button id="tab-btn-readings" type="button" class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-mono font-semibold transition bg-alienGold text-ink border border-alienGold shadow-sm">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+            <span>My Readings</span>
+          </button>
+          <button id="tab-btn-profile" type="button" class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-mono font-medium transition text-linen hover:text-white border border-transparent">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            <span>Profile & Calibration</span>
+          </button>
+        </div>
       </div>
 
-      <!-- GRID LAYOUT -->
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-        
-        <!-- Left Side: .md Profile Context Configuration (Col-span 5) -->
-        <div class="md:col-span-5 space-y-6">
-          <div class="quiet-panel p-6 rounded-xl">
-            <h3 class="font-serif text-lg text-cream mb-2">Generate a Personalized Reading</h3>
-            <p class="text-xs text-linen/50 leading-relaxed mb-4">
-              Create a Gemini study summary from a YouTube link or book title. Your saved profile and study lenses shape the reading; listen with a free browser voice or view its transcript.
-            </p>
+      <!-- ========================================== -->
+      <!-- VIEW 1: MY READINGS & GENERATOR (DEFAULT)  -->
+      <!-- ========================================== -->
+      <div id="section-readings" class="space-y-6">
 
-            <form id="study-generate-form" class="space-y-3 mb-4">
-              <input type="text" id="study-source-input" placeholder="https://youtube.com/watch?v=... or The Myth of Sisyphus" class="w-full bg-[#14100e]/80 border border-linen/10 rounded-xl px-4 py-2.5 text-xs text-cream placeholder:text-linen/25 focus:border-antique/50 focus:outline-none">
-              <button type="submit" id="study-generate-btn" class="w-full py-2.5 px-4 bg-antique/10 hover:bg-antique/20 border border-antique/40 text-antique font-mono text-[9px] uppercase tracking-widest transition duration-300 rounded flex items-center justify-center gap-2">
+        <!-- GENERATOR COMMAND CENTER -->
+        <div class="alien-panel p-6 rounded-2xl relative overflow-hidden">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div>
+              <span class="text-[9px] font-mono uppercase tracking-[0.25em] text-alienGold">Synthesis Engine</span>
+              <h3 class="text-lg font-bold text-white">Generate a Personalized Reading</h3>
+            </div>
+            <button type="button" id="quick-open-profile-btn" class="inline-flex items-center gap-1.5 text-[10px] font-mono text-alienBlue hover:text-white transition">
+              <span id="calibration-summary-pill">Calibration active</span>
+              <span class="text-white/40">&rarr;</span>
+            </button>
+          </div>
+
+          <form id="study-generate-form" class="space-y-3">
+            <div class="flex flex-col sm:flex-row gap-2">
+              <input type="text" id="study-source-input" placeholder="Paste YouTube link (e.g., https://youtube.com/watch?v=...) or enter Book title" class="flex-1 bg-[#0b0f14] border border-white/10 rounded-xl px-4 py-3 text-xs text-white placeholder:text-white/25 focus:border-alienGold/60 focus:outline-none transition">
+              <button type="submit" id="study-generate-btn" class="py-3 px-6 bg-alienGold hover:bg-[#ffe033] text-ink font-mono text-xs font-bold uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-2 shrink-0 shadow-lg shadow-alienGold/10">
                 <span>Generate Reading</span>
               </button>
-              <p id="study-generate-status" class="text-[9px] text-linen/40 text-center hidden"></p>
-            </form>
-
-            <div class="border-t border-linen/10 pt-4 mt-4">
-              <h4 class="font-serif text-md text-cream mb-2">My Context Profile</h4>
-              <p class="text-xs text-linen/50 leading-relaxed mb-4">
-                Your context profile calibrates how the study portal synthesizes material for you. Create or update your profile below.
-              </p>
-
-            <!-- Copier Card for LLM Prompt Generation -->
-            <div class="border border-linen/10 bg-[#120a06]/80 p-4 rounded-xl text-xs space-y-3 text-left mb-4">
-              <p class="text-linen/70 leading-relaxed font-sans text-[11px]">
-                Generate your permanent context profile: copy the synthesis prompt, run it on Claude or ChatGPT, and drop the resulting <code class="text-antique font-mono">.md</code> file below.
-              </p>
-              <button type="button" id="copy-profile-prompt-btn" class="w-full py-2.5 px-4 bg-antique/5 hover:bg-antique/15 border border-antique/30 hover:border-antique text-antique font-mono text-[9px] uppercase tracking-widest transition duration-300 rounded flex items-center justify-center gap-2">
-                <span>Get Profile Generator Prompt</span>
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002-2">
-                </svg>
-              </button>
             </div>
+            <p id="study-generate-status" class="text-xs font-mono text-linen/70 text-center hidden"></p>
+          </form>
+        </div>
 
-            <form id="profile-form" class="space-y-4">
-              <!-- Visual Drag and Drop Target Area -->
-              <div id="md-drop-zone" class="relative group border border-dashed border-linen/20 hover:border-antique/50 bg-black/40 hover:bg-[#120c09]/60 rounded-xl transition-all duration-300 flex flex-col items-center justify-center p-6 text-center cursor-pointer min-h-[140px]">
-                <input type="file" id="md-file-input" accept=".md,text/markdown" class="hidden">
+        <!-- Audio Player HUD (Active only when playing a file) -->
+        <div id="audio-player-hud" class="hidden alien-panel p-5 rounded-2xl text-left border-l-4 border-l-alienGold">
+          <div class="flex items-center justify-between">
+            <span class="text-[9px] font-mono uppercase tracking-widest text-alienGold">Now Streaming</span>
+            <span id="speech-player-status" class="text-[9px] font-mono text-linen">Native Voice</span>
+          </div>
+          <h4 id="hud-track-title" class="text-base text-white font-semibold mt-1">Selected Compilation</h4>
+          <audio id="main-audio-player" controls class="w-full mt-3 h-10"></audio>
+          
+          <div id="speech-player-controls" class="hidden mt-4 pt-3 border-t border-white/10">
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" id="speech-pause-btn" class="speech-control-btn rounded-lg px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-wider transition">Pause</button>
+              <button type="button" id="speech-restart-btn" class="speech-control-btn rounded-lg px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-wider transition">Restart</button>
+              <button type="button" id="speech-stop-btn" class="rounded-lg border border-white/15 px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-wider text-linen transition hover:border-white/40 hover:text-white">Stop</button>
+            </div>
+            <p class="mt-2 text-[9px] text-linen/40 font-mono">Synthesized voice stream &middot; Audio rendered natively in browser.</p>
+          </div>
+        </div>
 
-                <div id="drop-zone-idle" class="flex flex-col items-center gap-3">
-                  <div class="relative w-10 h-10 flex items-center justify-center">
-                    <svg class="w-6 h-6 text-linen/40 group-hover:text-antique group-hover:-translate-y-1 transition duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
-                    </svg>
-                  </div>
-                  <p class="text-[9px] font-mono uppercase tracking-widest text-linen/50 group-hover:text-linen/75 transition duration-300">
-                    Drag & Drop your <span class="text-antique font-bold">.md</span> file here
-                  </p>
-                  <span class="text-[9px] text-linen/25 font-sans">
-                    — or <button type="button" id="reveal-paste-btn" class="underline hover:text-antique transition duration-200">paste raw text instead</button> —
-                  </span>
+        <!-- Audio Transcript Panel -->
+        <div id="audio-transcript-panel" class="hidden alien-panel p-5 rounded-2xl text-left">
+          <div class="flex items-center justify-between mb-3 border-b border-white/10 pb-2">
+            <span class="text-[9px] font-mono uppercase tracking-widest text-alienGold">Full Transcript</span>
+            <button id="toggle-transcript" class="text-[9px] font-mono uppercase tracking-widest text-linen hover:text-white transition">Hide</button>
+          </div>
+          <div id="audio-transcript-content" class="text-xs text-white/80 leading-relaxed font-sans whitespace-pre-wrap max-h-[300px] overflow-y-auto pr-2"></div>
+        </div>
+
+        <!-- READINGS VAULT LIST -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-between px-1">
+            <h3 class="text-xs font-mono uppercase tracking-widest text-linen">Cataloged Readings</h3>
+            <span class="text-[10px] font-mono text-white/30">Stored in vault</span>
+          </div>
+
+          <div id="releases-list" class="space-y-4">
+            <p class="text-xs text-linen italic py-12 text-center">Loading your readings...</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW 2: PROFILE & CALIBRATION (FULL DASHBOARD) -->
+      <!-- ============================================== -->
+      <div id="section-profile" class="hidden space-y-6">
+
+        <form id="profile-form" class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+
+            <!-- LEFT COLUMN: NATAL FOUNDATION & ACTIVE LENSES (Col-span 5) -->
+            <div class="md:col-span-5 space-y-6">
+              
+              <!-- NATAL FOUNDATION CARD -->
+              <div class="alien-panel p-6 rounded-2xl text-left">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[9px] font-mono uppercase tracking-widest text-alienGold">Primary Calibration</span>
+                  <span class="text-[9px] font-mono text-white/30">Confidential</span>
                 </div>
-
-                <textarea id="profile-md-text" rows="8" placeholder="Paste your raw markdown code here..." class="hidden w-full bg-transparent border border-linen/10 rounded-lg p-3 text-xs text-cream font-mono leading-relaxed focus:border-antique/50 focus:outline-none resize-none scrollbar-none"></textarea>
-              </div>
-
-              <!-- NATAL FOUNDATION (DATE OF BIRTH) -->
-              <div class="border-t border-linen/10 pt-4 mt-6 text-left">
-                <label class="block text-[9px] font-mono uppercase tracking-widest text-linen/40 mb-1.5">Natal Foundation</label>
-                <p class="text-[11px] text-linen/45 mb-3 leading-relaxed">
-                  Provide your birth day to quietly calibrate the emotional cadence and depth of study readings.
+                <h4 class="text-base font-bold text-white mb-1">Natal Foundation</h4>
+                <p class="text-xs text-linen leading-relaxed mb-4">
+                  Provide your birth date to quietly anchor the psychological cadence and emotional truth of your readings.
                 </p>
+
                 <div class="grid grid-cols-2 gap-3">
                   <div>
-                    <label for="birth-month" class="block text-[8px] font-mono uppercase tracking-wider text-linen/30 mb-1">Month</label>
-                    <select id="birth-month" class="w-full bg-[#14100e]/90 border border-linen/15 rounded-lg px-3 py-2 text-xs text-cream focus:border-antique/50 focus:outline-none transition duration-200">
+                    <label for="birth-month" class="block text-[8px] font-mono uppercase tracking-wider text-linen/70 mb-1">Month</label>
+                    <select id="birth-month" class="w-full bg-[#0b0f14] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:border-alienGold/60 focus:outline-none transition">
                       <option value="">Month</option>
                       <option value="1">January</option>
                       <option value="2">February</option>
@@ -241,113 +299,123 @@
                     </select>
                   </div>
                   <div>
-                    <label for="birth-day" class="block text-[8px] font-mono uppercase tracking-wider text-linen/30 mb-1">Day</label>
-                    <select id="birth-day" class="w-full bg-[#14100e]/90 border border-linen/15 rounded-lg px-3 py-2 text-xs text-cream focus:border-antique/50 focus:outline-none transition duration-200">
+                    <label for="birth-day" class="block text-[8px] font-mono uppercase tracking-wider text-linen/70 mb-1">Day</label>
+                    <select id="birth-day" class="w-full bg-[#0b0f14] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:border-alienGold/60 focus:outline-none transition">
                       <option value="">Day</option>
                     </select>
                   </div>
                 </div>
               </div>
 
-              <!-- ACTIVE LENSES TOGGLE GRID BLOCK -->
-              <div class="border-t border-linen/10 pt-4 mt-6">
-                <label class="block text-[9px] font-mono uppercase tracking-widest text-linen/40 mb-2">My Active Study Lenses</label>
+              <!-- ACTIVE LENSES CARD -->
+              <div class="alien-panel p-6 rounded-2xl text-left">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[9px] font-mono uppercase tracking-widest text-alienBlue">Secondary Filter</span>
+                  <span class="text-[9px] font-mono text-white/30">Optional</span>
+                </div>
+                <h4 class="text-base font-bold text-white mb-1">Active Study Lenses</h4>
+                <p class="text-xs text-linen leading-relaxed mb-4">
+                  Select which philosophical worldviews Gemini filters your submitted source material through.
+                </p>
+
                 <div id="active-lenses-grid" class="grid grid-cols-2 gap-2">
-                  <!-- These buttons will be created automatically by the JavaScript below -->
+                  <!-- Dynamically populated via JS -->
                 </div>
               </div>
-            </div> <!-- end profile section wrapper -->
 
-              <div class="flex items-center justify-between">
-                <span id="profile-status" class="text-[9px] font-mono text-linen/40">Not uploaded</span>
-                <button type="submit" class="py-2 px-4 bg-antique/10 hover:bg-antique/25 border border-antique/30 text-antique hover:text-cream text-[9px] font-mono uppercase tracking-widest rounded transition duration-300">
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <!-- STUDY PROGRESS PANEL -->
-          <div class="quiet-panel p-6 rounded-xl">
-            <h3 class="font-serif text-lg text-cream mb-2">My Study Progress</h3>
-            <p class="text-xs text-linen/50 leading-relaxed mb-4">
-              Concepts, lessons, and frameworks you have cataloged through your study sessions.
-            </p>
-
-            <!-- Summary of Last Study Session -->
-            <div class="border border-antique/20 bg-antique/5 p-3 rounded-lg text-xs mb-4 text-left">
-              <span class="text-[8px] font-mono uppercase tracking-widest text-antique">Last Session Focus</span>
-              <p id="arsenal-last-summary" class="text-linen/80 italic mt-1 font-serif leading-relaxed">
-                Loading study memory...
-              </p>
-            </div>
-
-            <!-- List of Learned Tags -->
-            <label class="block text-[9px] font-mono uppercase tracking-widest text-linen/40 mb-2">Topics Studied</label>
-            <div id="arsenal-tags-container" class="flex flex-wrap gap-1.5">
-              <span class="text-xs text-linen/30 italic">No topics cataloged yet. Complete your first study session to begin.</span>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Right Side: Audiobooks List (Col-span 7) -->
-        <div class="md:col-span-7 space-y-6">
-          <div class="quiet-panel p-6 rounded-xl">
-            <h3 class="font-serif text-xl text-cream mb-1">My Readings</h3>
-            <p class="text-xs text-linen/50 mb-6">Personalized Gemini syntheses from your study requests, ready to listen to in your browser.</p>
-
-            <!-- Audio Player HUD (Active only when playing a file) -->
-            <div id="audio-player-hud" class="hidden border border-antique/20 bg-[#120a06]/40 p-4 rounded-lg mb-6 text-left">
-              <span class="text-[8px] font-mono uppercase tracking-widest text-antique">Now Streaming</span>
-              <h4 id="hud-track-title" class="font-serif text-sm text-cream font-semibold mt-1">Selected Compilation</h4>
-              <audio id="main-audio-player" controls class="w-full mt-3 accent-antique h-10"></audio>
-              <div id="speech-player-controls" class="hidden mt-3">
-                <div class="flex flex-wrap items-center gap-2">
-                  <button type="button" id="speech-pause-btn" class="speech-control-btn rounded-full px-3 py-2 text-[8px] font-mono font-bold uppercase tracking-widest transition duration-300">Pause</button>
-                  <button type="button" id="speech-restart-btn" class="speech-control-btn rounded-full px-3 py-2 text-[8px] font-mono font-bold uppercase tracking-widest transition duration-300">Restart</button>
-                  <button type="button" id="speech-stop-btn" class="rounded-full border border-linen/20 px-3 py-2 text-[8px] font-mono font-bold uppercase tracking-widest text-linen/60 transition duration-300 hover:border-linen/50 hover:text-cream">Stop</button>
-                  <span id="speech-player-status" class="text-[9px] font-mono text-linen/45">Browser voice</span>
+              <!-- STUDY PROGRESS & ARSENAL CARD -->
+              <div class="alien-panel p-6 rounded-2xl text-left">
+                <span class="text-[9px] font-mono uppercase tracking-widest text-alienGold">Memory Bank</span>
+                <h4 class="text-base font-bold text-white mb-1">Study Progress</h4>
+                
+                <div class="border border-white/10 bg-black/25 p-3 rounded-xl text-xs my-3 text-left">
+                  <span class="text-[8px] font-mono uppercase tracking-widest text-alienBlue">Last Session Focus</span>
+                  <p id="arsenal-last-summary" class="text-white/80 italic mt-1 text-xs leading-relaxed">
+                    Loading study memory...
+                  </p>
                 </div>
-                <p class="mt-2 text-[9px] leading-relaxed text-linen/35">Free browser voice — no audio file is generated or stored.</p>
+
+                <label class="block text-[9px] font-mono uppercase tracking-widest text-linen mb-2">Acquired Topic Badges</label>
+                <div id="arsenal-tags-container" class="flex flex-wrap gap-1.5">
+                  <span class="text-xs text-white/30 italic">No topics cataloged yet.</span>
+                </div>
               </div>
+
             </div>
 
-            <!-- Audio Transcript Panel -->
-            <div id="audio-transcript-panel" class="hidden border border-linen/10 bg-black/30 p-4 rounded-lg mb-6 text-left">
-              <div class="flex items-center justify-between mb-3">
-                <span class="text-[8px] font-mono uppercase tracking-widest text-antique">Transcript</span>
-                <button id="toggle-transcript" class="text-[8px] font-mono uppercase tracking-widest text-linen/40 hover:text-antique transition duration-300">Hide</button>
+            <!-- RIGHT COLUMN: PERSONAL CONTEXT PROFILE .MD (Col-span 7) -->
+            <div class="md:col-span-7 space-y-6">
+
+              <div class="alien-panel p-6 rounded-2xl text-left space-y-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <span class="text-[9px] font-mono uppercase tracking-widest text-alienGold">Living Document</span>
+                    <h4 class="text-base font-bold text-white">Permanent Context Profile (.md)</h4>
+                  </div>
+                  <span id="profile-status" class="text-[9px] font-mono text-linen bg-white/5 border border-white/10 px-2 py-0.5 rounded">Saved to vault</span>
+                </div>
+                
+                <p class="text-xs text-linen leading-relaxed">
+                  Your context profile calibrates how the study portal synthesizes material for you. Generate your permanent context profile by running the meta-prompt on Claude or ChatGPT, then paste or drop the resulting <code class="text-alienGold font-mono">.md</code> file below.
+                </p>
+
+                <!-- Prompt Copier Box -->
+                <div class="border border-white/10 bg-[#0b0f14]/80 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <span class="text-xs text-linen/80">Need to create or update your .md profile?</span>
+                  <button type="button" id="copy-profile-prompt-btn" class="py-2 px-4 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-alienGold/50 text-alienGold font-mono text-[9px] uppercase tracking-wider transition rounded-lg flex items-center justify-center gap-1.5 shrink-0">
+                    <span>Get Profile Generator Prompt</span>
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002-2" />
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- Visual Drag & Drop Target Area -->
+                <div id="md-drop-zone" class="relative group border border-dashed border-white/20 hover:border-alienGold/50 bg-[#0b0f14]/60 hover:bg-[#0e141c] rounded-xl transition duration-300 flex flex-col items-center justify-center p-6 text-center cursor-pointer min-h-[160px]">
+                  <input type="file" id="md-file-input" accept=".md,text/markdown" class="hidden">
+
+                  <div id="drop-zone-idle" class="flex flex-col items-center gap-2">
+                    <svg class="w-6 h-6 text-linen/40 group-hover:text-alienGold group-hover:-translate-y-0.5 transition duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p class="text-[10px] font-mono uppercase tracking-widest text-linen group-hover:text-white transition">
+                      Drag & Drop your <span class="text-alienGold font-bold">.md</span> file here
+                    </p>
+                    <span class="text-[10px] text-linen/50">
+                      — or <button type="button" id="reveal-paste-btn" class="underline text-alienBlue hover:text-white transition">paste raw text directly</button> —
+                    </span>
+                  </div>
+
+                  <textarea id="profile-md-text" rows="12" placeholder="Paste your raw markdown context here..." class="hidden w-full bg-transparent border border-white/10 rounded-lg p-3 text-xs text-white font-mono leading-relaxed focus:border-alienGold/50 focus:outline-none resize-none"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end pt-2">
+                  <button type="submit" class="py-2.5 px-6 bg-alienGold hover:bg-[#ffe033] text-ink font-mono text-xs font-bold uppercase tracking-wider rounded-xl transition shadow-lg shadow-alienGold/10">
+                    Save Changes
+                  </button>
+                </div>
+
               </div>
-              <div id="audio-transcript-content" class="text-xs text-linen/80 leading-relaxed font-serif whitespace-pre-wrap max-h-[300px] overflow-y-auto pr-2"></div>
+
             </div>
 
-            <!-- Releases List -->
-            <div id="releases-list" class="space-y-4">
-              <!-- Dynamically populated via JS -->
-              <p class="text-xs text-linen/30 italic py-6 text-center">Loading your readings...</p>
-            </div>
           </div>
-        </div>
+        </form>
 
       </div>
+
     </section>
 
   </main>
 
   <!-- FOOTER -->
-  <footer class="w-full border-t border-linen/10 py-6 text-center text-xs text-linen/40">
-    <p>&copy; 2026 Alien Inc. &middot; Employee Study Portal &middot; Authorized personnel only.</p>
+  <footer class="w-full border-t border-white/10 py-6 text-center text-xs text-linen/40">
+    <p>&copy; 2026 Alien Incorporated &middot; Digital Infrastructure &amp; Operating Systems &middot; Confidential</p>
   </footer>
 
-<!-- SCRIPT LOGIC -->
+  <!-- SCRIPT LOGIC -->
   <script src="astrology.js"></script>
   <script src="app.js"></script>
 
-<div style="text-align:center;padding:12px;font-size:0.7rem;color:#888;margin-top:24px;">
-<p>&copy; 2026 — All rights reserved. Cease and desist notices accepted. AI training on our content is prohibited. Logo usage requires written approval.. &reg; &trade; ™ — Intellectual property owned by this company or licensed to it.
-For infringement concerns, DMCA takedown requests, or IP inquiries, contact legal department.
-Brand usage guidelines and trademark usage policy available on request. Unauthorized use of marks is prohibited.</p>
-</div>
 </body>
 </html>

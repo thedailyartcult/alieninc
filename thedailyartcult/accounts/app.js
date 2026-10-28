@@ -671,6 +671,101 @@ A single sentence that captures me as a learner and thinker — precise enough t
       });
     }
 
+    // --- STUDY GENERATION FORM ---
+    const studyGenerateForm = document.getElementById('study-generate-form');
+    const studySourceInput = document.getElementById('study-source-input');
+    const studyGenerateBtn = document.getElementById('study-generate-btn');
+    const studyGenerateStatus = document.getElementById('study-generate-status');
+
+    if (studyGenerateForm) {
+      studyGenerateForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const source = studySourceInput ? studySourceInput.value.trim() : '';
+        if (!source) {
+          if (studyGenerateStatus) {
+            studyGenerateStatus.textContent = 'Please enter a YouTube link or book title.';
+            studyGenerateStatus.classList.remove('hidden');
+          }
+          return;
+        }
+        if (studyGenerateBtn) {
+          studyGenerateBtn.disabled = true;
+          studyGenerateBtn.querySelector('span').textContent = 'Generating...';
+        }
+        if (studyGenerateStatus) {
+          studyGenerateStatus.textContent = 'Consulting the archive...';
+          studyGenerateStatus.classList.remove('hidden');
+        }
+
+        try {
+          const session = await getSession();
+          if (!session) {
+            if (studyGenerateStatus) {
+              studyGenerateStatus.textContent = 'Please sign in to generate content.';
+            }
+            return;
+          }
+
+          const payload = {
+            q1: 'Source material provided',
+            q2: 'Source mode',
+            q3: source,
+            content_source: 'source_material',
+            source_input: source,
+            worldview: '',
+            philosopher: '',
+            first_name: session.user?.email?.split('@')[0] || 'Patron',
+            honorary: 'Master'
+          };
+
+          const geminiRes = await fetch("https://frwjaixxlgthkgjtafhz.supabase.co/functions/v1/gemini", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          if (!geminiRes.ok) {
+            throw new Error(`Generation failed: ${geminiRes.status}`);
+          }
+
+          const data = await geminiRes.json();
+          
+          // Save to localStorage like the main site does
+          const existing = JSON.parse(localStorage.getItem('pending_source_materials') || '[]');
+          const record = {
+            id: Date.now().toString(),
+            source_input: source,
+            source_title: source,
+            worldview: data.territory || 'becoming',
+            bridge_line: data.bridge_line || '',
+            expanded_text: data.expanded_text || '',
+            territory: data.territory || 'becoming',
+            created_at: new Date().toISOString()
+          };
+          existing.unshift(record);
+          localStorage.setItem('pending_source_materials', JSON.stringify(existing));
+
+          if (studyGenerateStatus) {
+            studyGenerateStatus.textContent = 'Generated! Check the Audiobooks section below.';
+            studyGenerateStatus.classList.add('text-antique');
+          }
+          if (studySourceInput) studySourceInput.value = '';
+          loadSourceAudiobooks();
+        } catch (err) {
+          console.error(err);
+          if (studyGenerateStatus) {
+            studyGenerateStatus.textContent = 'Error generating. Please try again.';
+            studyGenerateStatus.classList.remove('text-antique');
+          }
+        } finally {
+          if (studyGenerateBtn) {
+            studyGenerateBtn.disabled = false;
+            studyGenerateBtn.querySelector('span').textContent = 'Generate Transcript';
+          }
+        }
+      });
+    }
+
     // --- NEW DRAG-AND-DROP & COPY LOGIC INTERACTION ---
 
     // 1. Copy Generator Prompt

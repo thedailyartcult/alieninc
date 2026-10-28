@@ -25,6 +25,11 @@
     const mainAudioPlayer = document.getElementById("main-audio-player");
     const hudTrackTitle = document.getElementById("hud-track-title");
     const releasesList = document.getElementById("releases-list");
+    const speechPlayerControls = document.getElementById("speech-player-controls");
+    const speechPauseBtn = document.getElementById("speech-pause-btn");
+    const speechRestartBtn = document.getElementById("speech-restart-btn");
+    const speechStopBtn = document.getElementById("speech-stop-btn");
+    const speechPlayerStatus = document.getElementById("speech-player-status");
 
     // NEW DOM REFERENCES FOR DRAG & DROP / COPY
     const dropZone = document.getElementById("md-drop-zone");
@@ -40,7 +45,17 @@
     ];
     let activeWorldviews = [];
     let sourceMaterials = [];
+    let profileContext = '';
     let accountHandoff = readAccountHandoff();
+    let speechSessionId = 0;
+    let speechState = {
+      text: '',
+      title: '',
+      chunks: [],
+      index: 0,
+      isPlaying: false,
+      isPaused: false
+    };
 
     function escapeHtml(value) {
       return String(value || '')
@@ -302,6 +317,7 @@ A single sentence that captures me as a learner and thinker — precise enough t
         dashboard.classList.remove("hidden");
         loadMemberDashboard(session.user);
       } else {
+        stopBrowserSpeech({ hideControls: true });
         dashboard.classList.add("hidden");
         authGate.classList.remove("hidden");
       }
@@ -397,6 +413,7 @@ A single sentence that captures me as a learner and thinker — precise enough t
       } else if (data) {
         // 1. Context text area
         profileMdText.value = data.markdown_text || '';
+        profileContext = data.markdown_text || '';
         activeWorldviews = data.selected_worldviews || [];
         sourceMaterials = Array.isArray(data.source_materials) ? data.source_materials : pendingSources;
         profileStatus.textContent = "Saved to vault";
@@ -429,6 +446,7 @@ A single sentence that captures me as a learner and thinker — precise enough t
         dropZone.classList.add("border-antique/50", "bg-black/25");
       } else {
         profileStatus.textContent = "Profile empty";
+        profileContext = profileMdText.value || '';
         activeWorldviews = [];
         sourceMaterials = pendingSources;
       }
@@ -445,6 +463,7 @@ A single sentence that captures me as a learner and thinker — precise enough t
       if (!user) return;
 
       const updatedText = profileMdText.value;
+      profileContext = updatedText;
 
       // Upsert profile text
       const { error } = await supabaseClient
@@ -465,7 +484,7 @@ A single sentence that captures me as a learner and thinker — precise enough t
 
     // C. Fetch Releases list
     async function fetchUserReleases(userId) {
-      releasesList.innerHTML = '<p class="text-xs text-linen/30 italic py-6 text-center">Loading your audiobooks...</p>';
+      releasesList.innerHTML = '<p class="text-xs text-linen/30 italic py-6 text-center">Loading your readings...</p>';
 
       const { data, error } = await supabaseClient
         .from('audio_releases')
@@ -474,7 +493,7 @@ A single sentence that captures me as a learner and thinker — precise enough t
       
       if (error) {
         console.error("Failed to load releases:", error);
-        releasesList.innerHTML = '<p class="text-xs text-linen/30 italic py-6 text-center">Error loading your audiobooks.</p>';
+        releasesList.innerHTML = '<p class="text-xs text-linen/30 italic py-6 text-center">Error loading your readings.</p>';
         return;
       }
 
@@ -482,7 +501,7 @@ A single sentence that captures me as a learner and thinker — precise enough t
         releasesList.innerHTML = '';
         renderSourceMaterialReleases();
         if (releasesList.children.length === 0) {
-          releasesList.innerHTML = '<p class="text-xs text-linen/30 italic py-6 text-center">No audiobooks yet. Submit a study request from the main portal to generate your first one.</p>';
+          releasesList.innerHTML = '<p class="text-xs text-linen/30 italic py-6 text-center">No readings yet. Submit a study request to generate your first one.</p>';
         }
         return;
       }
@@ -582,7 +601,7 @@ A single sentence that captures me as a learner and thinker — precise enough t
             <div class="source-release-content flex min-h-[15rem] flex-col justify-between gap-5 p-5 sm:p-6">
               <div class="space-y-3">
                 <div class="flex items-center justify-between gap-3">
-                  <span class="text-[9px] font-mono uppercase tracking-[0.22em] text-antique/80">Source Audiobook</span>
+                  <span class="text-[9px] font-mono uppercase tracking-[0.22em] text-antique/80">Personalized Reading</span>
                   <span class="text-[9px] font-mono text-linen/35">${formattedDate}</span>
                 </div>
                 <h4 class="font-serif text-2xl leading-tight text-cream transition duration-300 group-hover:text-antique sm:text-3xl">${title}</h4>
@@ -593,7 +612,7 @@ A single sentence that captures me as a learner and thinker — precise enough t
               <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <span class="text-[9px] font-mono uppercase tracking-[0.2em] text-linen/35">${escapeHtml(lenses)}</span>
                 <button class="source-play-btn inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-[9px] font-mono font-bold uppercase tracking-widest transition duration-300 active:scale-[0.98]" ${hasAudioText ? '' : 'disabled'}>
-                  <span>${hasAudioText ? '▶' : '◌'}</span> ${hasAudioText ? (item.expanded_text ? 'Play with Transcript' : 'Play Audiobook') : 'Queued'}
+                  <span>${hasAudioText ? '▶' : '◌'}</span> ${hasAudioText ? 'Listen to Summary' : 'Queued'}
                 </button>
               </div>
             </div>
@@ -602,32 +621,38 @@ A single sentence that captures me as a learner and thinker — precise enough t
           const playBtn = row.querySelector(".source-play-btn");
           if (hasAudioText) {
             playBtn.addEventListener("click", async () => {
-              playBtn.innerHTML = "<span>◌</span> Preparing voice...";
+              const readingText = item.expanded_text.trim();
+              const readingTitle = item.source_title || 'Study Request';
+              playBtn.innerHTML = "<span>◌</span> Starting reading...";
+
+              // Browser Speech Synthesis is free and starts immediately. Azure remains a
+              // legacy fallback for browsers that do not expose the native speech API.
+              if (startBrowserSpeech(readingText, readingTitle)) {
+                playBtn.innerHTML = "<span>↻</span> Restart Reading";
+                return;
+              }
 
               try {
-                if (item.expanded_text && item.expanded_text.trim()) {
-                  const ttsRes = await fetch("https://frwjaixxlgthkgjtafhz.supabase.co/functions/v1/tts", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ text: item.expanded_text })
-                  });
+                const ttsRes = await fetch("https://frwjaixxlgthkgjtafhz.supabase.co/functions/v1/tts", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ text: readingText })
+                });
 
-                  if (ttsRes.ok) {
-                    const blob = await ttsRes.blob();
-                    const audioUrl = URL.createObjectURL(blob);
-                    playAudio(audioUrl, item.source_title || 'Study Request', item.expanded_text);
-                    playBtn.innerHTML = "<span>▶</span> Play Audiobook";
-                    return;
-                  }
+                if (ttsRes.ok) {
+                  const blob = await ttsRes.blob();
+                  const audioUrl = URL.createObjectURL(blob);
+                  playAudio(audioUrl, readingTitle, readingText);
+                  playBtn.innerHTML = "<span>▶</span> Listen to Summary";
+                  return;
                 }
-                // If no TTS or it fails, still show transcript
-                playAudio('', item.source_title || 'Study Request', item.expanded_text || 'No transcript available.');
-                playBtn.innerHTML = "<span>▶</span> Show Transcript";
               } catch (error) {
-                console.error("Source audiobook playback failed:", error);
-                playAudio('', item.source_title || 'Study Request', item.expanded_text || 'No transcript available.');
-                playBtn.innerHTML = "<span>▶</span> Show Transcript";
+                console.error("Source reading playback failed:", error);
               }
+
+              // Keep the summary readable on browsers without a usable voice.
+              playAudio('', readingTitle, readingText || 'No summary available.');
+              playBtn.innerHTML = "<span>▶</span> Show Summary";
             });
           }
 
@@ -635,16 +660,26 @@ A single sentence that captures me as a learner and thinker — precise enough t
         });
     }
 
-    // D. Helper to load track into player
-    function playAudio(url, title, transcript = '') {
-      hudTrackTitle.textContent = title;
-      mainAudioPlayer.src = url;
-      audioPlayerHud.classList.remove("hidden");
+    // D. Playback helpers. Browser Speech Synthesis is used first so the
+    // personalized Gemini text remains listenable while hosted TTS is offline.
+    function supportsBrowserSpeech() {
+      return typeof window !== 'undefined'
+        && 'speechSynthesis' in window
+        && typeof SpeechSynthesisUtterance !== 'undefined';
+    }
 
+    function clearAudioPlayer() {
+      if (!mainAudioPlayer) return;
+      mainAudioPlayer.pause();
+      mainAudioPlayer.removeAttribute('src');
+      mainAudioPlayer.load();
+    }
+
+    function showTranscript(transcript = '') {
       const transcriptPanel = document.getElementById('audio-transcript-panel');
       const transcriptContent = document.getElementById('audio-transcript-content');
       const toggleTranscript = document.getElementById('toggle-transcript');
-      
+
       if (transcript && transcriptPanel && transcriptContent) {
         transcriptContent.textContent = transcript;
         transcriptPanel.classList.remove('hidden');
@@ -664,7 +699,230 @@ A single sentence that captures me as a learner and thinker — precise enough t
       } else if (transcriptPanel) {
         transcriptPanel.classList.add('hidden');
       }
+    }
 
+    function splitSpeechText(text, maxChars = 240) {
+      const normalized = String(text || '')
+        .replace(/[`*_#]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!normalized) return [];
+
+      const sentences = normalized.match(/[^.!?]+(?:[.!?]+|$)/g) || [normalized];
+      const chunks = [];
+      let chunk = '';
+
+      const pushLongSentence = (sentence) => {
+        let longChunk = '';
+        sentence.split(/\s+/).forEach((word) => {
+          const candidate = `${longChunk} ${word}`.trim();
+          if (candidate.length > maxChars && longChunk) {
+            chunks.push(longChunk);
+            longChunk = word;
+          } else {
+            longChunk = candidate;
+          }
+        });
+        if (longChunk) chunks.push(longChunk);
+      };
+
+      sentences.forEach((sentence) => {
+        const cleanSentence = sentence.trim();
+        if (!cleanSentence) return;
+        if (!chunk) {
+          if (cleanSentence.length > maxChars) {
+            pushLongSentence(cleanSentence);
+          } else {
+            chunk = cleanSentence;
+          }
+          return;
+        }
+
+        const candidate = `${chunk} ${cleanSentence}`.trim();
+        if (candidate.length <= maxChars) {
+          chunk = candidate;
+          return;
+        }
+
+        chunks.push(chunk);
+        chunk = '';
+        if (cleanSentence.length > maxChars) {
+          pushLongSentence(cleanSentence);
+        } else {
+          chunk = cleanSentence;
+        }
+      });
+
+      if (chunk) chunks.push(chunk);
+      return chunks;
+    }
+
+    function preferredSpeechVoice() {
+      if (!supportsBrowserSpeech()) return null;
+      const voices = window.speechSynthesis.getVoices();
+      const englishVoices = voices.filter((voice) => /^en(?:-|_)/i.test(voice.lang));
+      const preferred = englishVoices.find((voice) => /Samantha|Ava|Jenny|Aria|Google US English|Microsoft.*(Aria|Jenny|Guy|Davis)/i.test(voice.name));
+      return preferred || englishVoices.find((voice) => /^en-US/i.test(voice.lang)) || englishVoices[0] || voices[0] || null;
+    }
+
+    function updateSpeechControls(status) {
+      if (!speechPlayerControls) return;
+      speechPlayerControls.classList.remove('hidden');
+      if (speechPlayerStatus && status) speechPlayerStatus.textContent = status;
+      if (speechPauseBtn) {
+        speechPauseBtn.textContent = speechState.isPaused ? 'Resume' : 'Pause';
+        speechPauseBtn.disabled = !speechState.isPlaying;
+        speechPauseBtn.classList.toggle('opacity-40', !speechState.isPlaying);
+      }
+      if (speechRestartBtn) {
+        speechRestartBtn.disabled = !speechState.text;
+        speechRestartBtn.classList.toggle('opacity-40', !speechState.text);
+      }
+      if (speechStopBtn) {
+        speechStopBtn.disabled = !speechState.isPlaying;
+        speechStopBtn.classList.toggle('opacity-40', !speechState.isPlaying);
+      }
+    }
+
+    function stopBrowserSpeech({ hideControls = false } = {}) {
+      speechSessionId += 1;
+      if (supportsBrowserSpeech()) window.speechSynthesis.cancel();
+      speechState.isPlaying = false;
+      speechState.isPaused = false;
+
+      if (hideControls && speechPlayerControls) {
+        speechPlayerControls.classList.add('hidden');
+      } else {
+        updateSpeechControls('Reading stopped');
+      }
+    }
+
+    function startBrowserSpeech(text, title) {
+      if (!supportsBrowserSpeech()) return false;
+
+      const chunks = splitSpeechText(text);
+      if (!chunks.length) return false;
+
+      speechSessionId += 1;
+      const sessionId = speechSessionId;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.resume();
+      speechState = {
+        text: String(text || '').trim(),
+        title,
+        chunks,
+        index: 0,
+        isPlaying: true,
+        isPaused: false
+      };
+
+      clearAudioPlayer();
+      mainAudioPlayer.classList.add('hidden');
+      hudTrackTitle.textContent = title;
+      audioPlayerHud.classList.remove('hidden');
+      showTranscript(speechState.text);
+      updateSpeechControls('Starting free browser voice...');
+
+      const speakNext = () => {
+        if (sessionId !== speechSessionId || !speechState.isPlaying) return;
+        if (speechState.index >= speechState.chunks.length) {
+          speechState.isPlaying = false;
+          speechState.isPaused = false;
+          updateSpeechControls('Reading complete');
+          return;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(speechState.chunks[speechState.index]);
+        const voice = preferredSpeechVoice();
+        if (voice) utterance.voice = voice;
+        utterance.lang = voice?.lang || 'en-US';
+        utterance.rate = 0.92;
+        utterance.pitch = 0.96;
+
+        utterance.onstart = () => {
+          if (sessionId !== speechSessionId) return;
+          speechState.isPlaying = true;
+          speechState.isPaused = false;
+          updateSpeechControls(`Reading ${speechState.index + 1} of ${speechState.chunks.length}`);
+        };
+        utterance.onpause = () => {
+          if (sessionId !== speechSessionId) return;
+          speechState.isPaused = true;
+          updateSpeechControls('Reading paused');
+        };
+        utterance.onresume = () => {
+          if (sessionId !== speechSessionId) return;
+          speechState.isPaused = false;
+          updateSpeechControls(`Reading ${speechState.index + 1} of ${speechState.chunks.length}`);
+        };
+        utterance.onend = () => {
+          if (sessionId !== speechSessionId || !speechState.isPlaying) return;
+          speechState.index += 1;
+          speakNext();
+        };
+        utterance.onerror = (event) => {
+          if (sessionId !== speechSessionId || event.error === 'canceled' || event.error === 'interrupted') return;
+          console.warn('Browser speech failed:', event.error);
+          speechState.isPlaying = false;
+          speechState.isPaused = false;
+          updateSpeechControls('Browser voice unavailable — use the transcript below');
+        };
+
+        try {
+          window.speechSynthesis.speak(utterance);
+        } catch (error) {
+          console.warn('Browser speech could not start:', error);
+          speechState.isPlaying = false;
+          updateSpeechControls('Browser voice unavailable — use the transcript below');
+        }
+      };
+
+      speakNext();
+      return true;
+    }
+
+    if (speechPauseBtn) {
+      speechPauseBtn.addEventListener('click', () => {
+        if (!supportsBrowserSpeech() || !speechState.isPlaying) return;
+        if (speechState.isPaused || window.speechSynthesis.paused) {
+          speechState.isPaused = false;
+          updateSpeechControls(`Reading ${speechState.index + 1} of ${speechState.chunks.length}`);
+          window.speechSynthesis.resume();
+        } else {
+          speechState.isPaused = true;
+          updateSpeechControls('Reading paused');
+          window.speechSynthesis.pause();
+        }
+      });
+    }
+
+    if (speechRestartBtn) {
+      speechRestartBtn.addEventListener('click', () => {
+        if (speechState.text) startBrowserSpeech(speechState.text, speechState.title);
+      });
+    }
+
+    if (speechStopBtn) {
+      speechStopBtn.addEventListener('click', () => stopBrowserSpeech());
+    }
+
+    window.addEventListener('pagehide', () => stopBrowserSpeech({ hideControls: true }));
+
+    // Existing hosted audio releases continue to use the regular audio player.
+    function playAudio(url, title, transcript = '') {
+      stopBrowserSpeech({ hideControls: true });
+      hudTrackTitle.textContent = title;
+      audioPlayerHud.classList.remove('hidden');
+      showTranscript(transcript);
+
+      if (!url) {
+        clearAudioPlayer();
+        mainAudioPlayer.classList.add('hidden');
+        return;
+      }
+
+      mainAudioPlayer.classList.remove('hidden');
+      mainAudioPlayer.src = url;
       mainAudioPlayer.load();
       mainAudioPlayer.play().catch(err => {
         console.warn("Autoplay blocked or play failed:", err);
@@ -715,7 +973,11 @@ A single sentence that captures me as a learner and thinker — precise enough t
             worldview: '',
             philosopher: '',
             first_name: session.user?.email?.split('@')[0] || 'Patron',
-            honorary: 'Master'
+            honorary: 'Master',
+            // The saved profile and selected lenses let Gemini tailor the reading
+            // instead of treating every book request as an anonymous prompt.
+            profile_context: profileContext.slice(0, 12000),
+            active_worldviews: activeWorldviews.slice(0, 16)
           };
 
           const geminiRes = await fetch("https://frwjaixxlgthkgjtafhz.supabase.co/functions/v1/gemini", {
@@ -747,17 +1009,29 @@ A single sentence that captures me as a learner and thinker — precise enough t
           };
           existing.unshift(record);
           localStorage.setItem('pending_source_materials', JSON.stringify(existing));
+          sourceMaterials = [record, ...sourceMaterials.filter((item) => item.id !== record.id)];
+
+          // Save immediately as well as keeping the local recovery copy, so the
+          // reading is available on the next sign-in and on another device.
+          const { error: sourceSaveError } = await supabaseClient
+            .from('user_contexts')
+            .upsert({
+              user_id: session.user.id,
+              source_materials: sourceMaterials,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' });
+          if (sourceSaveError) {
+            console.warn('Could not save the reading to the vault:', sourceSaveError);
+          } else {
+            localStorage.removeItem('pending_source_materials');
+          }
 
           if (studyGenerateStatus) {
-            studyGenerateStatus.textContent = 'Generated! Check the Audiobooks section below.';
+            studyGenerateStatus.textContent = 'Generated! Your personalized reading is ready below.';
             studyGenerateStatus.classList.add('text-antique');
           }
           if (studySourceInput) studySourceInput.value = '';
-          if (typeof loadSourceAudiobooks === 'function') {
-            loadSourceAudiobooks();
-          } else {
-            location.reload();
-          }
+          fetchUserReleases(session.user.id);
         } catch (err) {
           console.error(err);
           if (studyGenerateStatus) {
@@ -767,7 +1041,7 @@ A single sentence that captures me as a learner and thinker — precise enough t
         } finally {
           if (studyGenerateBtn) {
             studyGenerateBtn.disabled = false;
-            studyGenerateBtn.querySelector('span').textContent = 'Generate Transcript';
+            studyGenerateBtn.querySelector('span').textContent = 'Generate Reading';
           }
         }
       });

@@ -80,6 +80,15 @@
       background: #c6a766;
       color: #070504;
     }
+    .speech-control-btn {
+      border: 1px solid rgba(198, 167, 102, 0.38);
+      background: rgba(198, 167, 102, 0.10);
+      color: #c6a766;
+    }
+    .speech-control-btn:hover {
+      background: #c6a766;
+      color: #070504;
+    }
   </style>
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.tailwindcss.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com https://consent.cookiebot.com; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
     <meta http-equiv="X-Frame-Options" content="DENY">
@@ -152,15 +161,15 @@
         <!-- Left Side: .md Profile Context Configuration (Col-span 5) -->
         <div class="md:col-span-5 space-y-6">
           <div class="quiet-panel p-6 rounded-xl">
-            <h3 class="font-serif text-lg text-cream mb-2">Generate Audiobook / Transcript</h3>
+            <h3 class="font-serif text-lg text-cream mb-2">Generate a Personalized Reading</h3>
             <p class="text-xs text-linen/50 leading-relaxed mb-4">
-              Create a personalized transcript from a source (YouTube link or book title). This will be saved to your account and you can view the transcript here.
+              Create a Gemini study summary from a YouTube link or book title. Your saved profile and study lenses shape the reading; listen with a free browser voice or view its transcript.
             </p>
 
             <form id="study-generate-form" class="space-y-3 mb-4">
               <input type="text" id="study-source-input" placeholder="https://youtube.com/watch?v=... or The Myth of Sisyphus" class="w-full bg-[#14100e]/80 border border-linen/10 rounded-xl px-4 py-2.5 text-xs text-cream placeholder:text-linen/25 focus:border-antique/50 focus:outline-none">
               <button type="submit" id="study-generate-btn" class="w-full py-2.5 px-4 bg-antique/10 hover:bg-antique/20 border border-antique/40 text-antique font-mono text-[9px] uppercase tracking-widest transition duration-300 rounded flex items-center justify-center gap-2">
-                <span>Generate Transcript</span>
+                <span>Generate Reading</span>
               </button>
               <p id="study-generate-status" class="text-[9px] text-linen/40 text-center hidden"></p>
             </form>
@@ -251,14 +260,23 @@
         <!-- Right Side: Audiobooks List (Col-span 7) -->
         <div class="md:col-span-7 space-y-6">
           <div class="quiet-panel p-6 rounded-xl">
-            <h3 class="font-serif text-xl text-cream mb-1">My Audiobooks</h3>
-            <p class="text-xs text-linen/50 mb-6">Personalized audio syntheses generated from your study requests.</p>
+            <h3 class="font-serif text-xl text-cream mb-1">My Readings</h3>
+            <p class="text-xs text-linen/50 mb-6">Personalized Gemini syntheses from your study requests, ready to listen to in your browser.</p>
 
             <!-- Audio Player HUD (Active only when playing a file) -->
             <div id="audio-player-hud" class="hidden border border-antique/20 bg-[#120a06]/40 p-4 rounded-lg mb-6 text-left">
               <span class="text-[8px] font-mono uppercase tracking-widest text-antique">Now Streaming</span>
               <h4 id="hud-track-title" class="font-serif text-sm text-cream font-semibold mt-1">Selected Compilation</h4>
               <audio id="main-audio-player" controls class="w-full mt-3 accent-antique h-10"></audio>
+              <div id="speech-player-controls" class="hidden mt-3">
+                <div class="flex flex-wrap items-center gap-2">
+                  <button type="button" id="speech-pause-btn" class="speech-control-btn rounded-full px-3 py-2 text-[8px] font-mono font-bold uppercase tracking-widest transition duration-300">Pause</button>
+                  <button type="button" id="speech-restart-btn" class="speech-control-btn rounded-full px-3 py-2 text-[8px] font-mono font-bold uppercase tracking-widest transition duration-300">Restart</button>
+                  <button type="button" id="speech-stop-btn" class="rounded-full border border-linen/20 px-3 py-2 text-[8px] font-mono font-bold uppercase tracking-widest text-linen/60 transition duration-300 hover:border-linen/50 hover:text-cream">Stop</button>
+                  <span id="speech-player-status" class="text-[9px] font-mono text-linen/45">Browser voice</span>
+                </div>
+                <p class="mt-2 text-[9px] leading-relaxed text-linen/35">Free browser voice — no audio file is generated or stored.</p>
+              </div>
             </div>
 
             <!-- Audio Transcript Panel -->
@@ -273,7 +291,7 @@
             <!-- Releases List -->
             <div id="releases-list" class="space-y-4">
               <!-- Dynamically populated via JS -->
-              <p class="text-xs text-linen/30 italic py-6 text-center">Loading your audiobooks...</p>
+              <p class="text-xs text-linen/30 italic py-6 text-center">Loading your readings...</p>
             </div>
           </div>
         </div>

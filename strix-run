@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+"""Launch strix using the LLM provider/model stored in YONO.
+
+Reads the enabled provider named by $STRIX_PROVIDER (default "Hetzner")
+and its most recently created enabled model from panteon.db, decrypts the
+stored API key, exports the strix env vars, and runs strix with the given
+arguments. stdin is /dev/null (strix otherwise treats EOF as a user
+interrupt).
+
+Example:
+  /home/alieninc/strix-run -n -m standard -t https://centra.alieninc.tech
+"""
+import os
+import sqlite3
+import subprocess
+import sys
+from pathlib import Path
+
+from cryptography.fernet import Fernet
+
+BACKEND = Path("/home/alieninc/panteon/backend")
+DB = BACKEND / "panteon.db"
+KEYFILE = BACKEND / ".yono_secret_key"
+STRIX_BIN = os.environ.get("STRIX_BIN", "/srv/strix/venv/bin/strix")
+PROVIDER_NAME = os.environ.get("STRIX_PROVIDER", "Hetzner")
+
+
+def main() -> None:
+    if not KEYFILE.exists():
+        sys.exit(
+            f"error: no YONO secret key at {KEYFILE} "
+            "(run seed_strix_provider.py first)"
+        )
+    env_key = os.environ.get("YONO_SECRET_KEY", "")
+    key = env_key.encode("utf-8") if env_key else KEYFILE.read_bytes()
+    f = Fernet(key)
+
+    conn = sqlite3.connect(DB)
+    cur = conn.cursor()
+    prov = cur.execute(
+        "SELECT id, api_key_encrypted, base_url FROM yono_llm_providers "
+        "WHERE name=? AND is_enabled=1",
+        (PROVIDER_NAME,),
+    ).fetchone()
+    if not prov:
+        sys.exit(f"error: enabled provider {PROVIDER_NAME!r} not found in YONO")
+    pid, enc, base_url = prov
+    if not enc:
+        sys.exit(f"error: provider {PROVIDER_NAME!r} has no stored API key in YONO")
+    models = [
+        r[0]
+        for r in cur.execute(
+            "SELECT model_id FROM yono_llm_models WHERE provider_id=? "
+            "AND is_enabled=1 ORDER BY created_at DESC",
+            (pid,),
+        )
+    ]
+    conn.close()
+    if not models:
+        sys.exit(f"error: no enabled model for provider {PROVIDER_NAME!r}")
+
+    model = os.environ.get("STRIX_MODEL", models[0])
+    try:
+        api_key = f.decrypt(enc.encode("utf-8")).decode("utf-8")
+    except Exception as e:  # noqa: BLE001
+        sys.exit(f"error: cannot decrypt stored key: {e}")
+
+    env = os.environ.copy()
+    env["STRIX_LLM"] = model
+    env["LLM_API_KEY"] = api_key
+    env["LLM_API_BASE"] = base_url
+    print(
+        f"[strix-run] provider={PROVIDER_NAME} model={model} base={base_url}",
+        file=sys.stderr,
+    )
+    p = subprocess.run([STRIX_BIN, *sys.argv[1:]], env=env, stdin=subprocess.DEVNULL)
+    sys.exit(p.returncode)
+
+
+if __name__ == "__main__":
+    main()

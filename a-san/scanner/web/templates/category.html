@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A-SAN Catalog - ASEAN Superiority Aerospace Navigator</title>
+
+  <!-- Typography matching the established design language (Lato) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================================================
+       DESIGN SYSTEM & VARIABLES
+       Copied verbatim from index.html — the canonical A-SAN design language.
+       Do NOT diverge from index.html: any token change belongs in index.html
+       first, then mirrored here.
+       ========================================================================== */
+    :root {
+      --color-brand-red: #ea4335;
+      --color-link-red: #d93025;
+      --color-link-hover: #b31412;
+      --color-text-main: #202124;
+      --color-text-muted: #5f6368;
+      --color-border: #dadce0;
+      --color-bg-light: #f8f9fa;
+      --color-white: #ffffff;
+
+      --font-family-main: 'Lato', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --max-content-width: 1200px;
+      --header-height: 72px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-family-main);
+      color: var(--color-text-main);
+      background-color: var(--color-white);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* ==========================================================================
+       HEADER & NAVIGATION BAR (identical to index.html)
+       ========================================================================== */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background-color: var(--color-white);
+      border-bottom: 1px solid #e8eaed;
+      height: var(--header-height);
+    }
+
+    .header-container {
+      max-width: var(--max-content-width);
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-logo {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .brand-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--color-brand-red);
+      letter-spacing: -0.3px;
+      line-height: 1.1;
+    }
+
+    .brand-subtitle {
+      font-size: 13px;
+      color: var(--color-text-muted);
+      font-weight: 400;
+      margin-top: 1px;
+    }
+
+    .desktop-nav {
+      display: flex;
+      align-items: center;
+      height: 100%;
+    }
+
+    .nav-list {
+      display: flex;
+      list-style: none;
+      height: 100%;
+    }
+
+    .nav-item {
+      position: relative;
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 16px;
+      height: 100%;
+      font-size: 15px;
+      font-weight: 400;
+      color: #3c4043;
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: color 0.15s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--color-brand-red);
+    }
+
+    .nav-item.selected .nav-link {
+      color: var(--color-text-main);
+      font-weight: 700;
+      position: relative;
+    }
+
+    .nav-item.selected .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 16px;
+      right: 16px;
+      height: 3px;
+      background-color: var(--color-brand-red);
+    }
+
+    .chevron-icon {
+      width: 10px;
+      height: 6px;
+      fill: currentColor;
+      transition: transform 0.2s ease;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      min-width: 220px;
+      background-color: var(--color-white);
+      border-radius: 0 0 8px 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e8eaed;
+      border-top: none;
+      padding: 8px 0;
+      list-style: none;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-4px);
+      transition: all 0.2s ease;
+      z-index: 1001;
+    }
+
+    .nav-item:hover .dropdown-menu,
+    .nav-item:focus-within .dropdown-menu {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .nav-item:hover .chevron-icon {
+      transform: rotate(180deg);
+    }
+
+    .dropdown-link {
+      display: block;
+      padding: 10px 20px;
+      font-size: 14px;
+      color: #3c4043;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .dropdown-link:hover {
+      background-color: var(--color-bg-light);
+      color: var(--color-brand-red);
+    }
+
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+    }
+
+    .hamburger-icon {
+      width: 24px;
+      height: 24px;
+      fill: #3c4043;
+    }
+
+    /* ==========================================================================
+       MAIN CONTENT LAYOUT (identical to index.html)
+       ========================================================================== */
+    .main-content {
+      max-width: var(--max-content-width);
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    .page-title {
+      font-size: 40px;
+      font-weight: 400;
+      color: var(--color-text-main);
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+
+    .page-subtitle {
+      font-size: 16px;
+      color: var(--color-text-muted);
+      margin-bottom: 40px;
+      max-width: 720px;
+    }
+
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--color-text-main);
+      margin-bottom: 20px;
+    }
+
+    /* ==========================================================================
+       CATALOG GRID (reusing the original card language from index.html)
+       ========================================================================== */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    .cards-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .category-card,
+    .item-card {
+      background: var(--color-white);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 200px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .category-card:hover,
+    .item-card:hover {
+      border-color: #bdc1c6;
+    }
+
+    .card-heading {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--color-text-main);
+      margin-bottom: 10px;
+    }
+
+    .card-description {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      margin-bottom: 20px;
+      flex-grow: 1;
+    }
+
+    .detail-meta {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      margin-bottom: 8px;
+    }
+
+    .ir-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-link-red);
+      transition: color 0.15s ease;
+    }
+
+    .ir-link:hover {
+      color: var(--color-link-hover);
+      text-decoration: underline;
+    }
+
+    .link-arrow {
+      font-size: 14px;
+      line-height: 1;
+      margin-left: 2px;
+    }
+
+    /* ==========================================================================
+       SPEC TABLE (identical to index.html .spec-table — th 40% width)
+       ========================================================================== */
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 24px 0;
+      font-size: 14px;
+    }
+
+    .spec-table th,
+    .spec-table td {
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .spec-table th {
+      font-weight: 700;
+      width: 40%;
+      color: var(--color-text-main);
+    }
+
+    /* ==========================================================================
+       TEASER / RESTRICTED ACCESS PATTERN (identical to index.html)
+       ========================================================================== */
+    .locked-section {
+      position: relative;
+      margin-top: 40px;
+    }
+
+    .locked-overlay {
+      background: var(--color-bg-light);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 40px 24px;
+      text-align: center;
+    }
+
+    .teaser-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .teaser-text {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      margin-bottom: 20px;
+    }
+
+    .btn-primary {
+      display: inline-block;
+      background-color: var(--color-brand-red);
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 10px 20px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--color-link-hover);
+    }
+
+    /* ==========================================================================
+       ITEM DETAIL HEADER (mirrors index.html .detail-header / .detail-meta)
+       ========================================================================== */
+    .detail-header {
+      margin-bottom: 32px;
+    }
+
+    /* ==========================================================================
+       FOOTER (identical to index.html)
+       ========================================================================== */
+    .site-footer {
+      background-color: var(--color-bg-light);
+      border-top: 1px solid #e8eaed;
+      padding: 40px 0;
+      margin-top: auto;
+    }
+
+    .footer-container {
+      max-width: var(--max-content-width);
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 40px;
+    }
+
+    .footer-logo {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--color-brand-red);
+    }
+
+    .footer-links {
+      display: flex;
+      list-style: none;
+      gap: 24px;
+    }
+
+    .footer-link {
+      font-size: 13px;
+      color: var(--color-text-muted);
+      transition: color 0.15s ease;
+    }
+
+    .footer-link:hover {
+      color: var(--color-text-main);
+    }
+
+    /* ==========================================================================
+       RESPONSIVE (identical breakpoints to index.html)
+       ========================================================================== */
+    @media (max-width: 1024px) {
+      .cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .cards-grid-3 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .desktop-nav {
+        display: none;
+      }
+
+      .mobile-menu-btn {
+        display: block;
+      }
+
+      .mobile-nav-active .desktop-nav {
+        display: flex;
+        position: absolute;
+        top: var(--header-height);
+        left: 0;
+        right: 0;
+        background-color: var(--color-white);
+        flex-direction: column;
+        height: auto;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--color-border);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
+
+      .mobile-nav-active .nav-list {
+        flex-direction: column;
+        width: 100%;
+        height: auto;
+      }
+
+      .mobile-nav-active .nav-item {
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .mobile-nav-active .nav-link {
+        width: 100%;
+        padding: 12px 24px;
+        justify-content: space-between;
+      }
+
+      .mobile-nav-active .dropdown-menu {
+        position: static;
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        box-shadow: none;
+        border: none;
+        width: 100%;
+        background-color: var(--color-bg-light);
+        padding: 0;
+        display: none;
+      }
+
+      .mobile-nav-active .nav-item.open .dropdown-menu {
+        display: block;
+      }
+
+      .cards-grid,
+      .cards-grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+      }
+
+      .footer-links {
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .page-title {
+        font-size: 32px;
+      }
+    }
+
+    /* ==========================================================================
+       Pagination (catalog-specific, stays within the A-SAN token system)
+       ========================================================================== */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 36px;
+    }
+
+    .page-btn {
+      padding: 8px 18px;
+      font-family: var(--font-family-main);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-link-red);
+      background: var(--color-white);
+      border: 1px solid var(--color-border);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .page-btn:hover:not(:disabled) {
+      border-color: var(--color-brand-red);
+      background: var(--color-bg-light);
+    }
+
+    .page-btn:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    .page-indicator {
+      font-size: 14px;
+      color: var(--color-text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="header-container" id="headerContainer">
+
+      <a href="index.html" class="brand-logo" aria-label="A-SAN Home">
+        <span class="brand-title">A-SAN</span>
+        <span class="brand-subtitle">ASEAN Superiority Aerospace Navigator</span>
+      </a>
+
+      <nav class="desktop-nav" aria-label="Primary Navigation">
+        <ul class="nav-list">
+
+          <li class="nav-item">
+            <a href="index.html" class="nav-link">Home</a>
+          </li>
+
+          <li class="nav-item selected" id="catalogNavItem">
+            <button class="nav-link" aria-expanded="false" id="catalogNavBtn">
+              Catalog
+              <svg class="chevron-icon" viewBox="0 0 10 6">
+                <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <ul class="dropdown-menu" id="catalogDropdown">
+              <li><a href="category.html" class="dropdown-link">All Categories</a></li>
+            </ul>
+          </li>
+
+          <li class="nav-item">
+            <a href="index.html#research" class="nav-link">Research</a>
+          </li>
+
+          <li class="nav-item">
+            <a href="ew-intelligence.html" class="nav-link">EW Intelligence</a>
+          </li>
+
+          <li class="nav-item">
+            <a href="index.html#access" class="nav-link">Access</a>
+          </li>
+
+          <li class="nav-item">
+            <a href="index.html#about" class="nav-link">About</a>
+          </li>
+
+        </ul>
+      </nav>
+
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle mobile menu">
+        <svg class="hamburger-icon" viewBox="0 0 24 24">
+          <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+        </svg>
+      </button>
+
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <section id="catalog">
+      <h1 class="page-title" id="pageTitle">Catalog</h1>
+      <p class="page-subtitle" id="pageSubtitle">
+        Technical intelligence platform for advanced aerospace and military systems analysis.
+        Every entry below is machine-verified from a fetched public source page (robots.txt
+        respected), with the exact source URL attached. Basic information is publicly
+        available; full technical profiles require verified access.
+      </p>
+
+      <!-- category chips (populated from data/categories.json) -->
+      <div class="chips" id="categoryChips"></div>
+
+      <div id="grid" class="cards-grid-3"></div>
+
+      <div class="pagination" id="pagination" style="display:none;">
+        <button class="page-btn" id="prevBtn">‹ Prev</button>
+        <span class="page-indicator" id="pageIndicator"></span>
+        <button class="page-btn" id="nextBtn">Next ›</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <span class="footer-logo">A-SAN</span>
+      <ul class="footer-links">
+        <li><a href="index.html" class="footer-link">Home</a></li>
+        <li><a href="privacy.html" class="footer-link">Privacy</a></li>
+        <li><a href="terms.html" class="footer-link">Terms</a></li>
+        <li><a href="index.html#about" class="footer-link">About A-SAN</a></li>
+        <li><a href="index.html#access" class="footer-link">Access Request</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+      const headerContainer = document.getElementById('headerContainer');
+
+      mobileMenuBtn.addEventListener('click', () => {
+        headerContainer.classList.toggle('mobile-nav-active');
+      });
+
+      const navButtons = document.querySelectorAll('.desktop-nav .nav-item button');
+      navButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+          if (window.innerWidth <= 768) {
+            e.preventDefault();
+            const parentItem = button.parentElement;
+            parentItem.classList.toggle('open');
+          }
+        });
+      });
+    });
+  </script>
+
+  <script>
+    /* -------------------------------------------------------------
+       Category browser — client-side rendering over the JSON emitted
+       by `python -m scan build-web` (data/categories.json +
+       data/<category-key>.json). Reads the `cat` query param,
+       falling back to the first category. Serves only public data
+       (the locked-overlay teaser pattern from index.html is reserved
+       for full profiles).
+       ------------------------------------------------------------- */
+    (function () {
+      'use strict';
+
+      const PAGE_SIZE = 60;
+
+      const state = {
+        categories: [],
+        currentKey: null,
+        entries: [],
+        query: '',
+        page: 1,
+      };
+
+      const $ = (id) => document.getElementById(id);
+
+      function loadJSON(url) {
+        return fetch(url, { cache: 'no-store' }).then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        });
+      }
+
+      function parseSpec(spec) {
+        if (typeof spec !== 'string') return { label: 'Note', value: String(spec || '') };
+        var idx = spec.indexOf(':');
+        if (idx === -1) return { label: 'Note', value: spec };
+        return { label: spec.slice(0, idx).trim(), value: spec.slice(idx + 1).trim() };
+      }
+
+      function entryMatches(e, q) {
+        if (!q) return true;
+        q = q.toLowerCase();
+        var hay = [e.designation, e.description, e.category, e.country || '',
+                   e.manufacturer || ''].concat(e.alt_names || []).concat(e.specs || []);
+        return hay.join(' || ').toLowerCase().indexOf(q) !== -1;
+      }
+
+      function renderChips() {
+        var chips = $('categoryChips');
+        chips.innerHTML = '';
+        state.categories.forEach(function (c) {
+          var btn = document.createElement('button');
+          btn.className = 'chip' + (c.key === state.currentKey ? ' active' : '');
+          btn.setAttribute('data-key', c.key);
+          btn.textContent = c.name + ' (' + c.count + ')';
+          btn.addEventListener('click', function () { selectCategory(c.key); });
+          chips.appendChild(btn);
+        });
+      }
+
+      function populateDropdown() {
+        var dd = $('catalogDropdown');
+        state.categories.forEach(function (c) {
+          var li = document.createElement('li');
+          var a = document.createElement('a');
+          a.className = 'dropdown-link';
+          a.href = 'category.html?cat=' + encodeURIComponent(c.key);
+          a.textContent = c.name + ' (' + c.count + ')';
+          li.appendChild(a);
+          dd.appendChild(li);
+        });
+      }
+
+      function render() {
+        var q = state.query.trim().toLowerCase();
+        var list = state.entries.filter(function (e) { return entryMatches(e, q); });
+        list.sort(function (a, b) {
+          return a.designation.localeCompare(b.designation);
+        });
+
+        var pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+        if (state.page > pages) state.page = pages;
+        var start = (state.page - 1) * PAGE_SIZE;
+        var slice = list.slice(start, start + PAGE_SIZE);
+
+        $('pageTitle').textContent = 'Catalog';
+        $('grid').innerHTML = '';
+        if (list.length === 0) {
+          var empty = document.createElement('div');
+          empty.className = 'empty-state';
+          empty.innerHTML = '<h3>No matching entries</h3><p>Try a different search term or category.</p>';
+          $('grid').appendChild(empty);
+          $('pagination').style.display = 'none';
+          return;
+        }
+        $('pagination').style.display = 'flex';
+        $('pageIndicator').textContent = 'Page ' + state.page + ' of ' + pages;
+        $('prevBtn').disabled = state.page <= 1;
+        $('nextBtn').disabled = state.page >= pages;
+
+        var frag = document.createDocumentFragment();
+        slice.forEach(function (e) { frag.appendChild(cardFor(e)); });
+        $('grid').appendChild(frag);
+      }
+
+      function cardFor(e) {
+        var card = document.createElement('article');
+        card.className = 'item-card';
+
+        var inner = document.createElement('div');
+        var meta = document.createElement('div');
+        meta.className = 'detail-meta';
+        meta.textContent = [e.category, e.country, e.manufacturer].filter(Boolean).join(' • ');
+        inner.appendChild(meta);
+
+        var heading = document.createElement('h3');
+        heading.className = 'card-heading';
+        heading.textContent = e.designation || '(no designation)';
+        inner.appendChild(heading);
+
+        var desc = document.createElement('p');
+        desc.className = 'card-description';
+        desc.textContent = (e.description || '').slice(0, 200);
+        inner.appendChild(desc);
+
+        card.appendChild(inner);
+
+        var footer = document.createElement('div');
+        footer.className = 'card-footer';
+        var profileBtn = document.createElement('button');
+        profileBtn.className = 'ir-link';
+        profileBtn.innerHTML = 'View profile <span class="link-arrow">›</span>';
+        profileBtn.addEventListener('click', function () { openModal(e); });
+        footer.appendChild(profileBtn);
+        card.appendChild(footer);
+        return card;
+      }
+
+      function openModal(e) {
+        var overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        var modal = document.createElement('div');
+        modal.className = 'modal';
+        var body = document.createElement('div');
+        body.className = 'modal-body';
+
+        var close = document.createElement('button');
+        close.className = 'modal-close';
+        close.setAttribute('aria-label', 'Close');
+        close.innerHTML = '&times;';
+        close.addEventListener('click', function () { overlay.remove(); });
+        body.appendChild(close);
+
+        var header = document.createElement('div');
+        header.className = 'detail-header';
+        var meta = document.createElement('div');
+        meta.className = 'detail-meta';
+        meta.textContent = [e.category, e.country, e.manufacturer].filter(Boolean).join(' • ');
+        header.appendChild(meta);
+        var title = document.createElement('h2');
+        title.className = 'card-heading';
+        title.textContent = e.designation || '(no designation)';
+        header.appendChild(title);
+        body.appendChild(header);
+
+        if (e.description) {
+          var sec = document.createElement('div');
+          sec.className = 'detail-section';
+          var h3 = document.createElement('h3');
+          h3.textContent = 'Overview';
+          var p = document.createElement('p');
+          p.style.cssText = 'font-size:15px;color:var(--color-text-muted);max-width:760px;';
+          p.textContent = e.description;
+          sec.appendChild(h3);
+          sec.appendChild(p);
+          body.appendChild(sec);
+        }
+
+        if (e.specs && e.specs.length) {
+          var tsec = document.createElement('div');
+          tsec.className = 'detail-section';
+          var t3 = document.createElement('h3');
+          t3.textContent = 'Public technical data';
+          var table = document.createElement('table');
+          table.className = 'spec-table';
+          e.specs.forEach(function (s) {
+            var sp = parseSpec(s);
+            var tr = document.createElement('tr');
+            var th = document.createElement('th');
+            th.textContent = sp.label;
+            var td = document.createElement('td');
+            td.textContent = sp.value;
+            tr.appendChild(th);
+            tr.appendChild(td);
+            table.appendChild(tr);
+          });
+          tsec.appendChild(t3);
+          tsec.appendChild(table);
+          body.appendChild(tsec);
+        }
+
+        if (e.sources && e.sources.length) {
+          var ssec = document.createElement('div');
+          ssec.className = 'detail-section';
+          var s3 = document.createElement('h3');
+          s3.textContent = 'Sources';
+          var ul = document.createElement('ul');
+          ul.className = 'source-list';
+          e.sources.forEach(function (src) {
+            var li = document.createElement('li');
+            var a = document.createElement('a');
+            a.className = 'ir-link';
+            a.href = src.url;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.textContent = src.label + ' ›';
+            li.appendChild(a);
+            ul.appendChild(li);
+          });
+          ssec.appendChild(s3);
+          ssec.appendChild(ul);
+          body.appendChild(ssec);
+        }
+
+        // Locked teaser (mirrors index.html public/verified pattern)
+        var locked = document.createElement('div');
+        locked.className = 'locked-section';
+        var overlayBox = document.createElement('div');
+        overlayBox.className = 'locked-overlay';
+        overlayBox.innerHTML =
+          '<h3 class="teaser-title">Full Technical Profile Restricted</h3>' +
+          '<p class="teaser-text">Detailed specifications, technical drawings, ' +
+          'component analysis, and research results are available only to verified ' +
+          'defense companies, researchers, and authorized partners.</p>' +
+          '<a href="#" class="btn-primary" onclick="location.href=\'index.html#access\'">Request Access</a>';
+        locked.appendChild(overlayBox);
+        body.appendChild(locked);
+
+        modal.appendChild(body);
+        overlay.appendChild(modal);
+        overlay.addEventListener('click', function (ev) {
+          if (ev.target === overlay) overlay.remove();
+        });
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+        overlay.addEventListener('keydown', function (ev) {
+          if (ev.key === 'Escape') { overlay.remove(); document.body.style.overflow = ''; }
+        });
+      }
+
+      function selectCategory(key) {
+        state.currentKey = key;
+        state.page = 1;
+        var url = new URL(window.location.href);
+        url.searchParams.set('cat', key);
+        history.replaceState({}, '', url);
+        renderChips();
+        loadCategory(key);
+      }
+
+      function loadCategory(key) {
+        var cat = state.categories.filter(function (c) { return c.key === key; })[0];
+        $('pageTitle').textContent = cat ? cat.name : 'Catalog';
+        $('grid').innerHTML = '<div class="empty-state"><h3>Loading…</h3></div>';
+        loadJSON('data/' + encodeURIComponent(key) + '.json').then(function (data) {
+          state.entries = data.entries || [];
+          render();
+        }).catch(function (err) {
+          $('grid').innerHTML =
+            '<div class="empty-state"><h3>Could not load category data</h3>' +
+            '<p>Serve this page over HTTP (e.g. <code>python3 -m http.server 8000</code>) — ' +
+            'browsers block local file reads.</p><p>' + err + '</p></div>';
+        });
+      }
+
+      function boot() {
+        loadJSON('data/categories.json').then(function (meta) {
+          state.categories = meta.categories || [];
+          renderChips();
+          populateDropdown();
+          var params = new URLSearchParams(window.location.search);
+          var cat = params.get('cat');
+          if (!cat || !state.categories.some(function (c) { return c.key === cat; })) {
+            cat = state.categories[0] ? state.categories[0].key : null;
+          }
+          if (cat) selectCategory(cat);
+          else $('pageTitle').textContent = 'Catalog';
+        }).catch(function () {
+          $('grid').innerHTML =
+            '<div class="empty-state"><h3>No catalog data found</h3>' +
+            '<p>Run <code>python -m scan build-web</code> in the scanner folder to generate data.</p></div>';
+        });
+      }
+
+      // pagination controls
+      if ($('prevBtn')) $('prevBtn').addEventListener('click', function () { state.page = Math.max(1, state.page - 1); render(); });
+      if ($('nextBtn')) $('nextBtn').addEventListener('click', function () { state.page += 1; render(); });
+      if ($('categoryChips')) $('categoryChips').addEventListener('click', function (ev) {
+        var chip = ev.target.closest('.chip');
+        if (chip && chip.dataset.key) selectCategory(chip.dataset.key);
+      });
+
+      document.addEventListener('DOMContentLoaded', boot);
+    })();
+  </script>
+
+  <!-- modal styles (catalog-specific; tokens from index.html) -->
+  <style>
+    .chip {
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      background: var(--color-white);
+      border: 1px solid var(--color-border);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .chip:hover { border-color: var(--color-brand-red); color: var(--color-brand-red); }
+    .chip.active {
+      background: var(--color-brand-red);
+      color: var(--color-white);
+      border-color: var(--color-brand-red);
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+    .card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; }
+    .source-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .source-list .ir-link { font-size: 13px; }
+    .empty-state { text-align: center; padding: 60px 24px; color: var(--color-text-muted); }
+    .empty-state h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--color-text-main); }
+    .empty-state p { font-size: 14px; }
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 2000;
+      background: rgba(32, 33, 36, 0.5);
+      display: flex; align-items: flex-start; justify-content: center;
+      padding: 48px 24px; overflow-y: auto;
+    }
+    .modal { background: var(--color-white); border-radius: 8px; max-width: 860px; width: 100%; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+    .modal-body { padding: 32px 40px 40px; }
+    .modal-close { float: right; background: none; border: none; cursor: pointer; font-size: 28px; line-height: 1; color: var(--color-text-muted); transition: color 0.15s ease; }
+    .modal-close:hover { color: var(--color-text-main); }
+    .detail-section { margin-top: 28px; }
+    .detail-section h3 { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 12px; color: var(--color-text-main); }
+    .spec-table td { color: var(--color-text-muted); vertical-align: top; }
+    .detail-header { margin-bottom: 32px; }
+  </style>
+</body>
+</html>

@@ -1,0 +1,58 @@
+# KMT Engagement Management System - Progress
+
+**Status:** ✅ Complete
+**Completed:** 2026-07-13
+
+## What Was Built
+
+### Engagement Lifecycle Management
+- Full engagement lifecycle from intake through delivery and closure
+- Stage progression with validation (Intake → Scoping → Proposal → Active → Delivery → Closed)
+- Status tracking and audit trail
+
+### Pipeline Visibility
+- Real-time pipeline view across all stages
+- Per-client and per-service-line filtering
+- Engagement health scoring (green/yellow/red)
+
+### Resource Allocation
+- Team assignment tracking with allocation percentages
+- Utilization monitoring across engagements
+- Hourly rate management by role
+
+### Budget & Hours Tracking
+- Budget vs. actual monitoring
+- Hour logging with burn rate calculation
+- Client-facing utilization metrics
+
+### Deliverables Management
+- Deliverable tracking (decks, reports, models, memos)
+- Version control and review status
+- Author assignment
+
+### Risk & Dependency Tracking
+- Risk logging with severity and likelihood
+- Dependency management with blocking relationships
+- Mitigation status tracking
+
+## Files Created
+- `kmt/engagements/engagement-engine.js` - Core engagement management engine
+- `kmt/engagements/data/engagements.json` - Operating engagement data (8 engagements)
+
+## Sample Engagements Loaded
+1. Panteon Cloud Security Strategy (Delivery)
+2. Rousseau Holdings Q3 Portfolio Review (Active)
+3. Centra Compliance Scan Expansion (Active)
+4. Centra Compliance Scan Expansion (Proposal)
+5. Panteon Post-Acquisition Integration (Intake)
+6. TDAC Growth Strategy (Intake)
+8. Rousseau Annual Strategy Offsite (Scoping)
+
+## Integration Points
+- Links to **Knowledge Base** for subsidiary data
+- Links to **Billing System** for fee calculation
+- Links to **Performance Dashboard** for metrics
+- Feeds **Rousseau Holdings** operating reviews
+
+## Next Component
+→ Knowledge Base (subsidiary profiles and operational data)

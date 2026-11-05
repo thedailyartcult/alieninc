@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Daily Art Cult — Narrative Bridge</title>
+  <meta name="description" content="Independent publisher and cultural media studio. Turns simulation outputs into editorial prose, audio scripts, and philosophical reflections.">
+
+  <link rel="stylesheet" href="/sims-suite/design/tokens.css">
+
+  <style>
+    :root {
+      --ink: #070504; --night: #0d0907; --walnut: #1b110d;
+      --cream: #f5f0e8; --gold: #c4a265; --muted: #8a7d6e;
+      --serif: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+      --sans: "Jost", "Inter", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-family: var(--sans); background: var(--ink); color: var(--cream); -webkit-font-smoothing: antialiased; }
+    body { line-height: 1.7; }
+    a { color: var(--gold); text-decoration: none; }
+
+    .header { position: sticky; top: 0; z-index: 100; background: rgba(7,5,4,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(196,162,101,0.15); }
+    .header-inner { max-width: 1200px; margin: 0 auto; height: 68px; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; }
+    .brand { font-family: var(--serif); font-size: 24px; font-weight: 500; font-style: italic; color: var(--gold); }
+    .btn { padding: 12px 28px; border-radius: 4px; font-family: var(--sans); font-size: 13px; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid var(--gold); background: transparent; color: var(--gold); cursor: pointer; transition: all 0.3s; }
+    .btn:hover { background: var(--gold); color: var(--ink); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .hero { padding: 80px 24px 40px; text-align: center; max-width: 800px; margin: 0 auto; }
+    .hero-eyebrow { font-family: var(--sans); font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 24px; }
+    .hero-title { font-family: var(--serif); font-size: 56px; font-weight: 300; line-height: 1.1; margin-bottom: 28px; }
+    .hero-title em { font-style: italic; color: var(--gold); }
+    .hero-desc { font-family: var(--serif); font-size: 20px; font-weight: 400; line-height: 1.5; color: var(--muted); max-width: 640px; margin: 0 auto; }
+
+    .controls { max-width: 1200px; margin: 48px auto 0; padding: 0 24px; display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
+    .ctrl { display: flex; flex-direction: column; gap: 6px; }
+    .ctrl label { font-family: var(--sans); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+    .ctrl select { background: var(--night); border: 1px solid rgba(196,162,101,0.2); border-radius: 4px; padding: 10px 14px; font-family: var(--sans); font-size: 15px; color: var(--cream); outline: none; }
+    .ctrl select:focus { border-color: var(--gold); }
+    .ctrl input { background: var(--night); border: 1px solid rgba(196,162,101,0.2); border-radius: 4px; padding: 10px 14px; font-family: var(--sans); font-size: 15px; color: var(--cream); outline: none; }
+
+    .status { text-align: center; padding: 24px; font-family: var(--serif); font-size: 18px; color: var(--muted); font-style: italic; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(196,162,101,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: text-bottom; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .results { max-width: 800px; margin: 0 auto; padding: 0 24px 64px; display: none; }
+    .results-header { text-align: center; margin-bottom: 48px; }
+    .results-header h2 { font-family: var(--serif); font-size: 32px; font-weight: 400; font-style: italic; color: var(--cream); margin-bottom: 12px; }
+    .results-header p { font-family: var(--sans); font-size: 14px; color: var(--muted); }
+
+    .stats-row { display: flex; justify-content: center; gap: 48px; margin-bottom: 48px; flex-wrap: wrap; }
+    .stat { text-align: center; }
+    .stat__value { font-family: var(--serif); font-size: 42px; font-weight: 300; color: var(--gold); }
+    .stat__label { font-family: var(--sans); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+
+    .narrative-card { background: var(--night); border: 1px solid rgba(196,162,101,0.1); border-radius: 8px; padding: 40px; margin-bottom: 32px; }
+    .narrative-card__headline { font-family: var(--serif); font-size: 28px; font-weight: 500; color: var(--cream); margin-bottom: 8px; line-height: 1.3; }
+    .narrative-card__meta { font-family: var(--sans); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); margin-bottom: 24px; }
+    .narrative-card__opening { font-family: var(--serif); font-size: 20px; font-weight: 400; line-height: 1.6; color: var(--cream); font-style: italic; margin-bottom: 24px; }
+    .narrative-card__finding { font-family: var(--serif); font-size: 18px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+    .narrative-card__stakes { font-family: var(--serif); font-size: 16px; color: var(--gold); font-style: italic; }
+
+    .tone-dist { margin-bottom: 32px; }
+    .tone-dist h3 { font-family: var(--serif); font-size: 20px; font-weight: 400; font-style: italic; color: var(--cream); margin-bottom: 16px; text-align: center; }
+    .tone-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .tone-name { width: 140px; font-family: var(--sans); font-size: 13px; color: var(--muted); text-transform: capitalize; }
+    .tone-track { flex: 1; height: 6px; background: rgba(196,162,101,0.08); border-radius: 3px; overflow: hidden; }
+    .tone-fill { height: 100%; background: var(--gold); border-radius: 3px; transition: width 1s; }
+
+    .outcome-dist { display: flex; gap: 16px; justify-content: center; margin-bottom: 32px; }
+    .outcome-chip { padding: 8px 20px; border-radius: 4px; font-family: var(--sans); font-size: 14px; }
+    .outcome-chip.compelling { background: rgba(196,162,101,0.15); color: var(--gold); border: 1px solid var(--gold); }
+    .outcome-chip.adequate { background: rgba(138,125,110,0.1); color: var(--muted); border: 1px solid rgba(138,125,110,0.3); }
+    .outcome-chip.weak { background: rgba(139,64,64,0.1); color: #8b4040; border: 1px solid rgba(139,64,64,0.3); }
+
+    .footer { border-top: 1px solid rgba(196,162,101,0.1); padding: 40px 24px; text-align: center; }
+    .footer p { font-family: var(--serif); font-size: 16px; color: var(--muted); font-style: italic; }
+  </style>
+</head>
+<body class="skin-tdac">
+
+  <header class="header">
+    <div class="header-inner">
+      <a class="brand" href="/">The Daily Art Cult</a>
+      <button class="btn" id="runBtn">Render Narrative</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-eyebrow">Narrative Bridge — Publishing the Simulation</div>
+    <h1 class="hero-title">The numbers found<br>their <em>meaning.</em></h1>
+    <p class="hero-desc">
+      The simulation engines produce outcomes. The Daily Art Cult turns them into editorial prose,
+      audio scripts, and philosophical reflections — each branched across tones and angles to find
+      the most compelling way to communicate what the data discovered.
+    </p>
+  </section>
+
+  <div class="controls">
+    <div class="ctrl"><label>Simulation Source</label><select id="sourceSelect"></select></div>
+    <div class="ctrl"><label>Scenarios</label><input type="number" id="scenariosInput" value="5000" min="100" max="50000"></div>
+    <div class="ctrl"><label>Seed</label><input type="number" id="seedInput" value="42"></div>
+  </div>
+
+  <div class="status" id="statusLine">Select a simulation source and render its narrative.</div>
+
+  <div class="results" id="resultsSection">
+    <div class="results-header">
+      <h2 id="rTitle">—</h2>
+      <p id="rMeta"></p>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><div class="stat__value" id="rScenarios">—</div><div class="stat__label">Treatments</div></div>
+      <div class="stat"><div class="stat__value" id="rResonance">—</div><div class="stat__label">Avg Resonance</div></div>
+      <div class="stat"><div class="stat__value" id="rClarity">—</div><div class="stat__label">Avg Clarity</div></div>
+      <div class="stat"><div class="stat__value" id="rAction">—</div><div class="stat__label">Avg Actionability</div></div>
+    </div>
+    <div class="outcome-dist">
+      <span class="outcome-chip compelling" id="chipCompelling">Compelling: —</span>
+      <span class="outcome-chip adequate" id="chipAdequate">Adequate: —</span>
+      <span class="outcome-chip weak" id="chipWeak">Weak: —</span>
+    </div>
+    <div class="narrative-card" id="bestCard" style="display:none;">
+      <div class="narrative-card__headline" id="bestHeadline">—</div>
+      <div class="narrative-card__meta" id="bestMeta">—</div>
+      <div class="narrative-card__opening" id="bestOpening">—</div>
+      <div class="narrative-card__finding" id="bestFinding">—</div>
+      <div class="narrative-card__stakes" id="bestStakes">—</div>
+    </div>
+    <div class="tone-dist">
+      <h3>Tone Distribution</h3>
+      <div id="toneContainer"></div>
+    </div>
+  </div>
+
+  <footer class="footer"><p>The Daily Art Cult — Narrative Bridge. Part of the Alien Inc simulation stack.</p></footer>
+
+  <script>
+    fetch('/api/tdac/sources')
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (sources) {
+        var sel = document.getElementById('sourceSelect');
+        sources.forEach(function (s, i) {
+          var opt = document.createElement('option');
+          opt.value = i;
+          opt.textContent = s.title + ' (' + s.engine + ')';
+          sel.appendChild(opt);
+        });
+      }).catch(function () {});
+
+    document.getElementById('runBtn').addEventListener('click', function () {
+      var srcIdx = parseInt(document.getElementById('sourceSelect').value, 10) || 0;
+      var n = parseInt(document.getElementById('scenariosInput').value, 10) || 5000;
+      var seed = parseInt(document.getElementById('seedInput').value, 10) || 42;
+      var status = document.getElementById('statusLine');
+      var btn = this;
+      btn.disabled = true;
+      status.innerHTML = '<span class="spinner"></span>Rendering ' + n + ' narrative treatments...';
+
+      fetch('/api/tdac/run', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source_index: srcIdx, scenarios: n, seed: seed }) })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          btn.disabled = false;
+          if (!d) { status.textContent = 'Error.'; return; }
+          status.textContent = 'Rendered ' + d.scenarios_run + ' treatments in ' + (d.duration_ms / 1000).toFixed(2) + 's.';
+          renderResults(d);
+        }).catch(function () { btn.disabled = false; status.textContent = 'Request failed.'; });
+    });
+
+    function renderResults(d) {
+      document.getElementById('resultsSection').style.display = '';
+      document.getElementById('rTitle').textContent = d.source_title;
+      document.getElementById('rMeta').textContent = 'From ' + d.source_engine.replace('_', ' ') + ' — ' + d.scenarios_run + ' branched treatments';
+
+      document.getElementById('rScenarios').textContent = d.scenarios_run.toLocaleString();
+      document.getElementById('rResonance').textContent = d.avg_resonance;
+      document.getElementById('rClarity').textContent = d.avg_clarity;
+      document.getElementById('rAction').textContent = d.avg_actionability;
+
+      document.getElementById('chipCompelling').textContent = 'Compelling: ' + d.compelling;
+      document.getElementById('chipAdequate').textContent = 'Adequate: ' + d.adequate;
+      document.getElementById('chipWeak').textContent = 'Weak: ' + d.weak;
+
+      if (d.best_narrative) {
+        document.getElementById('bestCard').style.display = '';
+        document.getElementById('bestHeadline').textContent = d.best_narrative.headline;
+        document.getElementById('bestMeta').textContent = d.best_narrative.tone + ' · ' + d.best_narrative.angle.replace(/_/g, ' ') + ' · ' + d.best_narrative.length.replace(/_/g, ' ') + ' · ' + d.best_narrative.word_count + ' words';
+        document.getElementById('bestOpening').textContent = '"' + d.best_narrative.opening + '"';
+        document.getElementById('bestFinding').textContent = d.key_finding;
+        document.getElementById('bestStakes').textContent = d.stakes;
+      }
+
+      var tc = document.getElementById('toneContainer');
+      tc.innerHTML = '';
+      var maxCount = d.tone_distribution[0] ? d.tone_distribution[0].count : 1;
+      d.tone_distribution.forEach(function (t) {
+        var row = document.createElement('div');
+        row.className = 'tone-bar';
+        var pct = (t.count / maxCount * 100);
+        row.innerHTML = '<span class="tone-name">' + t.tone.replace(/_/g, ' ') + '</span><div class="tone-track"><div class="tone-fill" style="width:' + pct + '%"></div></div>';
+        tc.appendChild(row);
+      });
+    }
+  </script>
+</body>
+</html>

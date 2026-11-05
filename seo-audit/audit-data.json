@@ -1,0 +1,150 @@
+{
+  "summary": {
+    "health_score": 74,
+    "business_type": "Multi-company operating group / AI infrastructure (corporate umbrella)",
+    "top_findings": [
+      "Homepage + article index are well-structured with valid Organization schema, 868 words, 96/100 content quality, and solid security headers",
+      "120 of 357 sitemap URLs lack a canonical tag; 115 lack Open Graph and Twitter Card meta",
+      "112 pages have no meta description; 46 pages have no H1",
+      "llms.txt returns 404 — Lighthouse agentic readiness drops the audit",
+      "robots.txt deliberately blocks 10+ AI crawlers (GPTBot, CCBot, PerplexityBot, Google-Extended), contradicting GEO/AI-search goals",
+      "One sitemap URL (https://alieninc.tech/trust/index.html) returns 404",
+      "logo.png uses alt=\"•\" on all pages — decorative alt on the primary brand image",
+      "Duplicate titles: The-Alien-Minds-We-Built.html vs its /index.html; panteon login.html vs secure.alieninc.tech"
+    ],
+    "quick_wins": [
+      "Publish /llms.txt with H1 + summary + markdown links to all 7 company portals",
+      "Decide AI-crawler policy: if GEO/AI Overviews visibility matters, allow Google-Extended and PerplexityBot (keep GPTBot/CCBot blocked if preferred)",
+      "Add meta description + canonical + OG/Twitter tags to the 115 pages that lack them (extend tools/inject-seo.py pattern to non-subdomain pages)",
+      "Remove or fix the /trust/index.html 404 in the sitemap",
+      "Set logo.png alt to a meaningful value (e.g. 'Alien Inc logo') or alt=\"\" if purely decorative",
+      "Fix duplicate article title by canonicalizing the /index.html variant"
+    ]
+  },
+  "categories": [
+    {
+      "name": "Technical SEO",
+      "score": 78,
+      "what_works": [
+        "sitemap.xml found and serving 357 URLs (urlset format)",
+        "robots.txt reachable, well-commented, blocks admin/api/vault paths",
+        "356/357 URLs return 200; proper 404 page with noindex for unknown URLs",
+        "HTTPS + HSTS preload, CSP, X-Frame-Options DENY, nosniff",
+        "Cloudflare + Fastly CDN caching in front"
+      ],
+      "findings": [
+        {"title": "120 pages missing canonical", "severity": "High", "description": "Crawl of 357 sitemap URLs found 120 without <link rel=canonical>.", "recommendation": "Self-referencing canonical on every page; extend tools/inject-seo.py beyond the 8 subdomains."},
+        {"title": "Sitemap lists a 404 URL", "severity": "Medium", "description": "https://alieninc.tech/trust/index.html returns 404 but is in the sitemap.", "recommendation": "Remove from sitemap.xml or restore the page."},
+        {"title": "Duplicate titles", "severity": "Low", "description": "articles/2026/09/24/The-Alien-Minds-We-Built.html and articles/2026/09/24/index.html share the same title/description; panteon login.html and secure.alieninc.tech also share 'Panteon — Secure Portal'.", "recommendation": "Canonicalize one variant per pair."}
+      ]
+    },
+    {
+      "name": "Content Quality",
+      "score": 92,
+      "what_works": [
+        "Homepage: 868 words, quality 96/100 (filler 0, AI-pattern 0, density 1.00)",
+        "Strong E-E-A-T signals: founder page, founding date, legal name, named founder in schema",
+        "Specific, verifiable claims (compliance frameworks, founding date 2016-12-22)"
+      ],
+      "findings": [
+        {"title": "112 pages missing meta description", "severity": "High", "description": "31% of indexed pages have no meta description, forcing Google to auto-generate snippets.", "recommendation": "Write 120-155 char descriptions for all key pages; automate via inject-seo.py."},
+        {"title": "46 pages missing H1", "severity": "Medium", "description": "Mostly panteon.alieninc.tech subpages (yono-forge, pipeline-builder, cmb-* pages).", "recommendation": "Add a unique H1 to each page."}
+      ]
+    },
+    {
+      "name": "On-Page SEO",
+      "score": 70,
+      "what_works": [
+        "Homepage has canonical, OG, Twitter Card, Organization JSON-LD",
+        "Title tag is clear and branded: 'Alien Inc. – Guardian of Philippine Digital Infrastructure'",
+        "Single H1 on homepage (good hierarchy)"
+      ],
+      "findings": [
+        {"title": "115 pages missing Open Graph", "severity": "Medium", "description": "No og:title/og:image on 32% of pages — poor social/LinkedIn/Facebook preview control.", "recommendation": "Add OG + Twitter Card tags site-wide."},
+        {"title": "logo.png alt='•' on every page", "severity": "Low", "description": "Brand logo uses a bullet as alt text — bad accessibility and a missed image-SEO signal.", "recommendation": "Use alt=\"Alien Inc\" or alt=\"\" (decorative)."}
+      ]
+    },
+    {
+      "name": "Schema / Structured Data",
+      "score": 85,
+      "what_works": [
+        "Homepage Organization JSON-LD is valid: @id, legalName, foundingDate, founder Person, sameAs (6 profiles)",
+        "Crawl found 38 WebPage, 4 Organization, 1 AboutPage blocks across sampled pages",
+        "1 block per homepage, valid, 3160 bytes"
+      ],
+      "findings": [
+        {"title": "110 pages missing structured data", "severity": "Low", "description": "Most article and product pages carry no JSON-LD.", "recommendation": "Add Article schema to /articles/, WebSite schema sitewide, BreadcrumbList on nested pages."}
+      ]
+    },
+    {
+      "name": "Performance (CWV)",
+      "score": 70,
+      "what_works": [
+        "Served via Cloudflare + Fastly, gzip, cached edges in MNL",
+        "Static HTML (no SPA shell detected), no JS render required for primary content",
+        "Cache-Control: max-age=600 + Age header present"
+      ],
+      "findings": [
+        {"title": "No CrUX/PSI field data collected", "severity": "Info", "description": "Google PageSpeed/CrUX APIs require an API key that isn't configured, so lab/field CWV were not measured.", "recommendation": "Configure GOOGLE_API_KEY to enable pagespeed_check.py for real INP/LCP/CLS numbers."},
+        {"title": "Fonts loaded from Google Fonts with preconnect", "severity": "Info", "description": "fonts.googleapis.com + fonts.gstatic.com render-blocking CSS.", "recommendation": "Self-host fonts or add font-display: swap to protect LCP."}
+      ]
+    },
+    {
+      "name": "AI Search Readiness",
+      "score": 55,
+      "what_works": [
+        "Primary content readable without JavaScript (agentic_check P0 pass)",
+        "robots.txt reachable; unknown URLs return real 404",
+        "WebMCP tools annotated on forms (P2 info)",
+        "Content-Signal preference declared"
+      ],
+      "findings": [
+        {"title": "llms.txt returns 404", "severity": "High", "description": "/llms.txt is not published. Lighthouse drops the agentic-readiness audit from its fraction; publishing one adds a counted pass.", "recommendation": "Publish /llms.txt with an H1, a '>' summary, and markdown links to all 7 company portals and key pages."},
+        {"title": "robots.txt blocks 10+ AI crawlers", "severity": "High", "description": "GPTBot, CCBot, Google-Extended, anthropic-ai, Claude-Web, cohere-ai, PerplexityBot, Bytespider, Diffbot are all Disallowed. Blocking an AI search crawler removes the site from that engine's answers.", "recommendation": "Confirm intentional. If GEO/AI Overviews visibility is a goal, allow Google-Extended and PerplexityBot; keep training bots (GPTBot/CCBot/Bytespider) blocked if desired."},
+        {"title": "ai-catalog.json / A2A agent card absent", "severity": "Info", "description": "Agentic Resource Discovery and A2A agent card endpoints are not present (na).", "recommendation": "Consider publishing /ai-catalog.json and /.well-known/agent-card.json to be discoverable by AI agents."}
+      ]
+    },
+    {
+      "name": "Images",
+      "score": 60,
+      "what_works": [
+        "Only 1 image on homepage (logo) — minimal payload",
+        "OG/Twitter image strategy in place on main pages"
+      ],
+      "findings": [
+        {"title": "logo.png alt text is '•'", "severity": "Low", "description": "Brand logo has a non-descriptive bullet alt on every page.", "recommendation": "Set meaningful alt or empty alt if decorative."}
+      ]
+    }
+  ],
+  "action_plan": {
+    "phases": [
+      {"name": "Phase 1: Critical Fixes", "timeframe": "Week 1", "items": [
+        "Publish /llms.txt (H1 + summary + markdown links to 7 portals)",
+        "Resolve AI-crawler robots.txt policy (align with GEO goals)",
+        "Remove or restore the /trust/index.html 404 in sitemap",
+        "Fix logo.png alt text"
+      ]},
+      {"name": "Phase 2: High-Impact Improvements", "timeframe": "Weeks 2-3", "items": [
+        "Add meta description + canonical to the 112/120 pages missing them",
+        "Add OG + Twitter Card to the 115 pages missing them",
+        "Add H1 to the 46 pages missing it",
+        "Canonicalize duplicate title pairs"
+      ]},
+      {"name": "Phase 3: Content & Authority", "timeframe": "Month 2", "items": [
+        "Add Article schema to /articles/ and WebSite/BreadcrumbList sitewide",
+        "Configure GOOGLE_API_KEY for CrUX/PSI field data",
+        "Self-host or font-display:swap the Google Fonts",
+        "Publish ai-catalog.json + A2A agent card for agent discoverability"
+      ]},
+      {"name": "Phase 4: Monitoring & Iteration", "timeframe": "Ongoing", "items": [
+        "Run agentic_check.py monthly to track readiness score",
+        "Re-crawl sitemap after each deploy to catch regressions",
+        "Track Google updates via seo_updates.py to stay current"
+      ]}
+    ]
+  },
+  "artifacts": {
+    "findings_dir": "findings/",
+    "screenshots_dir": "screenshots/"
+  }
+}

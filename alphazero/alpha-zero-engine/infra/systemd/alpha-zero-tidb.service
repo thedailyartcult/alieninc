@@ -1,0 +1,15 @@
+[Unit]
+Description=Alpha Zero TiDB (standalone unistore)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Environment=TIDB_PORT=4000
+ExecStartPre=/bin/sh -c 'test -x /opt/alpha-zero/tidb/bin/tidb-server || /home/alieninc/alphazero/alpha-zero-engine/infra/scripts/start_tidb.sh'
+ExecStart=/opt/alpha-zero/tidb/bin/tidb-server -store unistore -path /opt/alpha-zero/tidb/data -P 4000 -log-file /opt/alpha-zero/tidb/tidb.log
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

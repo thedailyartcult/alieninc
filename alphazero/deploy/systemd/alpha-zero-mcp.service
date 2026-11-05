@@ -1,0 +1,19 @@
+# /etc/systemd/system/alpha-zero-mcp.service
+# Alpha Zero ENGINE MCP server (alpha_zero_* tools: simulate, forecast,
+# financial_advisor, health_coach, mentor, ...) over Streamable HTTP.
+# Install:  cp deploy/systemd/alpha-zero-mcp.service /etc/systemd/system/ &&
+#           systemctl daemon-reload && systemctl enable --now alpha-zero-mcp
+[Unit]
+Description=Alpha Zero MCP server over Streamable HTTP (localhost:8020)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/alieninc/alphazero/alpha-zero-engine
+Environment=PYTHONPATH=/home/alieninc/alphazero:/home/alieninc/alphazero/alpha-zero-engine
+ExecStart=/usr/bin/python3 /home/alieninc/alphazero/alpha-zero-engine/mcp_server.py --http --port 8020
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platoon! | Learning games | Make learning awesome!</title>
+
+    <!-- Exact Montserrat Font Import with all required weights -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,800;1,900&display=swap" rel="stylesheet">
+
+    <style>
+        /* ==========================================================================
+           1. EXACT DESIGN SYSTEM & CRITICAL CSS
+           ========================================================================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            font-family: "Montserrat", sans-serif;
+            color: #333;
+            background-color: #fff;
+            line-height: 1.4;
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        b, strong {
+            font-weight: 700;
+        }
+
+        /* ==========================================================================
+           2. TOP COMPACT GO-BAR ("Platoon! GO")
+           ========================================================================== */
+        .go-bar-compact-wrapper {
+            background-color: #fff;
+            padding: 0.5rem 1rem;
+            position: relative;
+            z-index: 10000;
+        }
+
+        .go-bar-compact {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.25rem;
+            background: linear-gradient(to right, #25076B, #46178F);
+            color: #fff;
+            padding: 0.625rem 1.25rem;
+            border-radius: 1rem;
+            box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.2);
+            max-width: 87.5rem;
+            margin: 0 auto;
+        }
+
+        .go-bar-compact__brand {
+            display: flex;
+            flex-direction: column;
+            text-decoration: none;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .go-bar-brand-title {
+            font-size: 1.25rem;
+            font-weight: 900;
+            font-style: italic;
+            letter-spacing: -0.02em;
+            line-height: 1;
+        }
+
+        .go-bar-brand-sub {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            opacity: 0.85;
+            margin-top: 0.2rem;
+        }
+
+        .go-bar-compact__nav ul {
+            display: flex;
+            gap: 0.5rem;
+            list-style: none;
+        }
+
+        .go-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: 0.5rem;
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.8125rem;
+            height: 2.25rem;
+            border: 1px solid rgba(255,255,255,0.25);
+            transition: filter 0.2s, border-color 0.2s;
+        }
+
+        .go-pill:hover {
+            filter: brightness(1.1);
+            border-color: rgba(255,255,255,0.6);
+        }
+
+        .go-pill--green { background: linear-gradient(90deg, #106B03 0%, #26890C 100%); }
+        .go-pill--yellow { background: linear-gradient(90deg, #947100 0%, #B78D00 100%); }
+        .go-pill--blue { background: linear-gradient(90deg, #0542B9 0%, #1368CE 100%); }
+        .go-pill--red { background: linear-gradient(90deg, #AF001E 0%, #E21B3C 100%); }
+        .go-pill--purple { background: linear-gradient(90deg, #46178F 0%, #5E17C1 100%); }
+
+        .go-bar-compact__search {
+            display: flex;
+            align-items: center;
+            background-color: #fff;
+            border-radius: 0.375rem;
+            padding: 0.25rem 0.75rem;
+            width: 18rem;
+            height: 2.25rem;
+            gap: 0.5rem;
+        }
+
+        .go-bar-compact__search input {
+            border: none;
+            outline: none;
+            width: 100%;
+            font-family: inherit;
+            font-size: 0.875rem;
+            color: #333;
+        }
+
+        .go-bar-compact__cta {
+            background-color: #26890C;
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.8125rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            text-decoration: none;
+            white-space: nowrap;
+            box-shadow: 0 0.25rem #106b02;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .go-bar-compact__cta:hover {
+            background-color: #106b02;
+        }
+
+        /* ==========================================================================
+           3. MAIN HEADER & NAV
+           ========================================================================== */
+        .page-header {
+            background-color: #fff;
+            box-shadow: inset 0 -0.125rem #f2f2f2;
+            padding: 0.625rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+        }
+
+        .page-header__inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 87.5rem;
+            margin: 0 auto;
+        }
+
+        .logo-text {
+            font-size: 1.875rem;
+            font-weight: 900;
+            font-style: italic;
+            color: #46178F;
+            letter-spacing: -0.03em;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-text span {
+            font-style: normal;
+        }
+
+        .header-menu-left {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            list-style: none;
+        }
+
+        .header-menu-left a {
+            font-weight: 700;
+            font-size: 0.875rem;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .header-menu-left a:hover {
+            color: #0057FF;
+        }
+
+        .news-badge {
+            background-color: #E21B3C;
+            color: #fff;
+            font-size: 0.6875rem;
+            font-weight: 800;
+            padding: 0.1rem 0.4rem;
+            border-radius: 50%;
+        }
+
+        .header-menu-right {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            list-style: none;
+        }
+
+        .btn-outline-blue {
+            border: 1px solid #0057FF;
+            color: #0057FF !important;
+            padding: 0.4rem 0.85rem;
+            border-radius: 0.25rem;
+            font-weight: 700;
+            font-size: 0.8125rem;
+        }
+
+        .btn-outline-blue:hover {
+            background-color: #0057FF;
+            color: #fff !important;
+        }
+
+        .btn-purple-signup {
+            background-color: #46178F;
+            color: #fff !important;
+            padding: 0.45rem 1rem;
+            border-radius: 0.25rem;
+            font-weight: 700;
+            font-size: 0.8125rem;
+        }
+
+        .btn-purple-signup:hover {
+            background-color: #25076B;
+        }
+
+        .lang-btn {
+            border: 1px solid #ccc;
+            padding: 0.35rem 0.65rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #333;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        /* ==========================================================================
+           4. TOUR DE FRANCE BANNER
+           ========================================================================== */
+        .tdf-banner-wrap {
+            max-width: 87.5rem;
+            margin: 1.5rem auto 1rem;
+            padding: 0 1rem;
+        }
+
+        .tdf-banner {
+            background-color: #FFC00B;
+            background-image: linear-gradient(90deg, #FFC00B 0%, #F5C52D 40%, #E6B000 100%);
+            border-radius: 1.25rem;
+            min-height: 5.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 2.5rem;
+            box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.08);
+        }
+
+        .tdf-banner__inner {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        .tdf-banner__headline {
+            font-size: 1.125rem;
+            font-weight: 800;
+            color: #000;
+            margin-bottom: 0.2rem;
+        }
+
+        .tdf-banner__subtitle {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #000;
+        }
+
+        .tdf-banner__cta {
+            background: #000;
+            color: #fff;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            white-space: nowrap;
+        }
+
+        /* ==========================================================================
+           5. HERO TITLE & SUBTITLE
+           ========================================================================== */
+        .hero-section {
+            text-align: center;
+            padding: 2rem 1rem 1rem;
+        }
+
+        .hero-title {
+            font-size: clamp(2rem, 4.5vw, 3.5rem);
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            color: #242424;
+            line-height: 1.15;
+            margin-bottom: 0.75rem;
+        }
+
+        .hero-gradient {
+            background: linear-gradient(90deg, #FC7B0B 20%, #9E17D3 50%, #3C00E6 80%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+        }
+
+        .sub-title {
+            font-size: clamp(0.9375rem, 2vmin, 1.1875rem);
+            font-weight: 600;
+            color: #333;
+            max-width: 48rem;
+            margin: 0 auto;
+        }
+
+        /* ==========================================================================
+           6. FEATURE CARDS
+           ========================================================================== */
+        .cards-container {
+            max-width: 87.5rem;
+            margin: 2rem auto 3rem;
+            padding: 0 1rem;
+        }
+
+        .cards-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1.25rem;
+        }
+
+        .card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-radius: 1.25rem;
+            box-shadow: 0 10px 25px -5px rgba(10, 10, 20, 0.1);
+            overflow: hidden;
+            position: relative;
+            flex: 1 1 20rem;
+            max-width: 26rem;
+            min-height: 28rem;
+            padding-bottom: 1rem;
+        }
+
+        .card.light-card {
+            background: radial-gradient(7164.61% 98.08% at 98.94% 42.53%, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 100%), linear-gradient(123deg, #F3ECFD 11%, #EEF1F5 29%, #EBF3F2 49%, #E9F5EE 70%);
+        }
+
+        .card.card-mid {
+            background: linear-gradient(90deg, #F8C8FF 0%, #EFF1E7 51%, #CCF8FF 100%);
+        }
+
+        .card.simple-card {
+            background: linear-gradient(181deg, #07288C 6.8%, #1E3FA4 48%, #235FE7 77.5%);
+            color: #fff;
+        }
+
+        .card-tag {
+            align-self: flex-end;
+            padding: 0.4rem 0.75rem;
+            background-color: #25076B;
+            border-radius: 0 0 0 10px;
+            font-size: 0.6875rem;
+            color: #fff;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .card.simple-card .card-tag {
+            background-color: #fff;
+            color: #002992;
+        }
+
+        .card-header {
+            text-align: center;
+            padding: 1rem 1.5rem 0.5rem;
+        }
+
+        .card-brand-logo {
+            font-size: 1.5rem;
+            font-weight: 900;
+            font-style: italic;
+            color: #46178F;
+        }
+
+        .card.simple-card .card-brand-logo {
+            color: #fff;
+        }
+
+        .card-content {
+            padding: 0 1.5rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 0.625rem;
+            flex-grow: 1;
+        }
+
+        .card-title {
+            font-weight: 700;
+            font-size: 0.875rem;
+            line-height: 1.3;
+        }
+
+        .card-description {
+            font-size: 0.8125rem;
+            line-height: 1.4;
+            color: #444;
+        }
+
+        .card.simple-card .card-description {
+            color: rgba(255,255,255,0.9);
+        }
+
+        .pricing-info {
+            margin-top: auto;
+            text-align: center;
+            padding-top: 1rem;
+        }
+
+        .price {
+            font-size: 0.875rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .price span {
+            font-size: 1.25rem;
+        }
+
+        .saving {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #3C00A5;
+        }
+
+        .card.simple-card .saving {
+            color: #64E5FF;
+        }
+
+        .btn {
+            display: inline-block;
+            font-weight: 700;
+            font-size: 0.8125rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn--green {
+            background-color: #26890C;
+            color: #fff;
+            box-shadow: 0 0.2rem #106b02;
+        }
+
+        .btn--green:hover {
+            background-color: #106b02;
+        }
+
+        .btn--trans {
+            background-color: transparent;
+            color: inherit;
+            border: 1px solid currentColor;
+            margin-left: 0.4rem;
+        }
+
+        .card-image-mock {
+            width: 100%;
+            height: 8rem;
+            background: rgba(0,0,0,0.05);
+            border-radius: 0.5rem 0.5rem 0 0;
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #888;
+        }
+
+        /* ==========================================================================
+           7. LOGOS ROW & CAROUSEL SECTION
+           ========================================================================== */
+        .section-title-block {
+            text-align: center;
+            padding: 2.5rem 1rem 0.5rem;
+        }
+
+        .section-title-block h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .logos-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2.5rem;
+            flex-wrap: wrap;
+            max-width: 75rem;
+            margin: 1.5rem auto 3rem;
+            padding: 0 1rem;
+            opacity: 0.8;
+        }
+
+        .logo-item {
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: #555;
+            letter-spacing: -0.03em;
+        }
+
+        .use-cases-row {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+            padding: 1rem;
+            max-width: 87.5rem;
+            margin: 1rem auto 3rem;
+        }
+
+        .use-case-card {
+            min-width: 16rem;
+            height: 20rem;
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.25rem;
+            box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.1);
+        }
+
+        .ucc-1 { background: linear-gradient(180deg, #897BFF 0%, #A59BFF 100%); color: #333; }
+        .ucc-2 { background: linear-gradient(180deg, #9DEBFD 0%, #AFEFFD 100%); color: #333; }
+        .ucc-3 { background: linear-gradient(180deg, #04A895 0%, #74D0C5 100%); }
+        .ucc-4 { background: linear-gradient(180deg, #1801E6 0%, #7A6CF0 100%); }
+        .ucc-5 { background: linear-gradient(180deg, #53039E 0%, #9E71C9 100%); }
+
+        /* ==========================================================================
+           8. CTA CALLOUT SECTION
+           ========================================================================== */
+        .cta-section {
+            background: radial-gradient(7164.61% 98.08% at 98.94% 42.53%, rgba(255, 255, 255, 0.80) 0%, rgba(255, 255, 255, 0.00) 15.38%, rgba(255, 255, 255, 0.00) 57.69%, rgba(255, 255, 255, 0.80) 100%), linear-gradient(123deg, #F3ECFD 11.74%, #EEF1F5 29.19%, #EBF3F2 49.6%, #E9F5EE 70%);
+            text-align: center;
+            padding: 3.5rem 1rem;
+        }
+
+        .cta-section h2 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+        }
+
+        .cta-section p {
+            font-size: 0.9375rem;
+            color: #444;
+            max-width: 36rem;
+            margin: 0 auto 1.5rem;
+        }
+
+        .btn-purple-lg {
+            background-color: #46178F;
+            color: #fff;
+            padding: 0.75rem 1.75rem;
+            font-size: 0.875rem;
+            font-weight: 700;
+            border-radius: 0.25rem;
+            display: inline-block;
+        }
+
+        .btn-purple-lg:hover {
+            background-color: #25076B;
+        }
+
+        /* ==========================================================================
+           9. FOOTER
+           ========================================================================== */
+        .page-footer {
+            background-color: #333;
+            color: #fff;
+            padding: 3.75rem 1.5rem 2rem;
+            font-size: 0.875rem;
+        }
+
+        .footer-container {
+            max-width: 87.5rem;
+            margin: 0 auto;
+        }
+
+        .page-footer__links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .page-footer-new__col h4 {
+            font-size: 0.9375rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+            color: #fff;
+        }
+
+        .page-footer-new__col ul {
+            list-style: none;
+        }
+
+        .page-footer-new__col li {
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .page-footer-new__col a {
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .page-footer-new__col a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-social-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid #444;
+            border-bottom: 1px solid #444;
+            padding: 1.25rem 0;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .social-links {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-weight: 700;
+            font-size: 0.8125rem;
+        }
+
+        .partner-badges {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .partner-badge {
+            background: #fff;
+            color: #000;
+            padding: 0.35rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.6875rem;
+            font-weight: 700;
+        }
+
+        .page-footer__base {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: #aaa;
+        }
+
+        .app-badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .app-badge-btn {
+            background: #222;
+            color: #fff;
+            padding: 0.4rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            border: 1px solid #444;
+        }
+    </style>
+</head>
+<body id="top">
+
+    <!-- Top Compact Navigation Bar ("Platoon! GO") -->
+    <div class="go-bar-compact-wrapper">
+        <div class="go-bar-compact">
+            <a href="#" class="go-bar-compact__brand">
+                <span class="go-bar-brand-title">Platoon! GO</span>
+                <span class="go-bar-brand-sub">Get started for FREE!</span>
+            </a>
+
+            <nav class="go-bar-compact__nav">
+                <ul>
+                    <li><a href="#" class="go-pill go-pill--green">Discover</a></li>
+                    <li><a href="#" class="go-pill go-pill--yellow">Learn</a></li>
+                    <li><a href="#" class="go-pill go-pill--blue">Present</a></li>
+                    <li><a href="#" class="go-pill go-pill--red">Make</a></li>
+                    <li><a href="#" class="go-pill go-pill--purple">Join</a></li>
+                </ul>
+            </nav>
+
+            <div class="go-bar-compact__search">
+                <input type="search" placeholder="Search for platoons" aria-label="Search for platoons">
+            </div>
+
+            <a href="#" class="go-bar-compact__cta">Sign up FREE</a>
+        </div>
+    </div>
+
+    <!-- Main Site Header -->
+    <div class="header-wrap">
+        <header id="page-header" class="page-header" role="banner">
+            <div class="page-header__inner">
+                <!-- Platoon! Logo -->
+                <a href="/" class="logo-link" aria-label="Platoon Homepage">
+                    <div class="logo-text">Platoon<span>!</span></div>
+                </a>
+
+                <!-- Left Links -->
+                <ul class="header-menu-left">
+                    <li><a href="#">News <span class="news-badge">3</span></a></li>
+                    <li><a href="#">Work</a></li>
+                    <li><a href="#">School</a></li>
+                    <li><a href="#">Higher Education</a></li>
+                    <li><a href="#">Home</a></li>
+                    <li><a href="#">Study</a></li>
+                </ul>
+
+                <!-- Right Action Buttons -->
+                <ul class="header-menu-right">
+                    <li><a href="#" class="btn-outline-blue">Contact sales</a></li>
+                    <li><a href="#" style="font-weight: 700; font-size: 0.875rem;">Play</a></li>
+                    <li><a href="#" class="btn-purple-signup">Start for FREE</a></li>
+                    <li><a href="#" style="font-weight: 700; font-size: 0.875rem;">Log in</a></li>
+                    <li><button class="lang-btn">🌐 EN</button></li>
+                </ul>
+            </div>
+        </header>
+    </div>
+
+    <main id="main">
+
+        <!-- Tour de France Yellow Banner -->
+        <div class="tdf-banner-wrap">
+            <div class="tdf-banner">
+                <div class="tdf-banner__inner">
+                    <div>
+                        <div class="tdf-banner__headline">The Tour de France Femmes is here — are you?</div>
+                        <div class="tdf-banner__subtitle">The race is on! Discover cycling-themed quizzes, daily challenges, and classroom activities.</div>
+                    </div>
+                </div>
+                <a href="#" class="tdf-banner__cta">Play today</a>
+            </div>
+        </div>
+
+        <!-- Main Hero Heading -->
+        <section class="hero-section">
+            <h1 class="hero-title">Make learning <span class="hero-gradient">awesome!</span></h1>
+            <p class="sub-title">The ultimate way to engage, learn, and play — loved by billions worldwide.</p>
+        </section>
+
+        <!-- Feature Cards Grid -->
+        <section class="cards-container">
+            <div class="cards-grid">
+
+                <!-- Card 1 -->
+                <div class="card light-card" id="card-1">
+                    <div class="card-tag">FOR INDIVIDUALS, TEACHERS &amp; STUDENTS</div>
+                    <div class="card-header">
+                        <div class="card-brand-logo">Platoon! Plus</div>
+                    </div>
+                    <div class="card-content">
+                        <p class="card-title">The toolkit for educators, students, friends, and families</p>
+                        <p class="card-description">Helps educators create engaging lessons, enables students to study smarter, and turns any social occasion into entertaining learning.</p>
+                        <div class="pricing-info">
+                            <div class="price">From <span>$3</span>/mo.</div>
+                            <p class="saving">Save 20% until August 9</p>
+                            <div class="card-button-container">
+                                <a href="#" class="btn btn--green">Get started</a>
+                                <a href="#" class="btn btn--trans">Learn more</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-image-mock">Interactive Quiz Interface</div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="card light-card card-mid" id="card-2">
+                    <div class="card-tag">FOR INDIVIDUALS, TEACHERS &amp; STUDENTS</div>
+                    <div class="card-header">
+                        <div class="card-brand-logo">Platoon! One</div>
+                    </div>
+                    <div class="card-content">
+                        <p class="card-title">The total Platoon! experience, all-in-one solution</p>
+                        <p class="card-description">Access all features, apps, and premium content in one complete solution. More awesome learning at even greater value.</p>
+                        <div class="pricing-info">
+                            <div class="price">From <span>$19</span>/mo.</div>
+                            <p class="saving">Save 20% until August 9</p>
+                            <div class="card-button-container">
+                                <a href="#" class="btn btn--green">Get started</a>
+                                <a href="#" class="btn btn--trans">Learn more</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-image-mock">Multi-device Dashboard</div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="card simple-card" id="card-3">
+                    <div class="card-tag">FOR PROFESSIONALS</div>
+                    <div class="card-header">
+                        <div class="card-brand-logo">Platoon! 360</div>
+                    </div>
+                    <div class="card-content">
+                        <p class="card-title">The ultimate workforce engagement platform</p>
+                        <p class="card-description">Turn presentations, meetings, events, and training into engaging result-driven experiences, used by millions of professionals worldwide.</p>
+                        <div class="pricing-info">
+                            <div class="price">From <span>$19</span>/mo.</div>
+                            <p class="saving">Save 10% until August 9</p>
+                            <div class="card-button-container">
+                                <a href="#" class="btn btn--green">Get started</a>
+                                <a href="#" class="btn btn--trans">Learn more</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-image-mock" style="background: rgba(255,255,255,0.15); color: #fff;">Enterprise Presentation Screen</div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Social Proof Logos Section -->
+        <section>
+            <div class="section-title-block">
+                <h2>Trusted by leading companies and universities worldwide</h2>
+            </div>
+            <div class="logos-row">
+                <div class="logo-item">Meta</div>
+                <div class="logo-item">Esade</div>
+                <div class="logo-item">Kempinski</div>
+                <div class="logo-item">Scotiabank</div>
+                <div class="logo-item">CSI</div>
+            </div>
+        </section>
+
+        <!-- Category Carousel Showcase Section -->
+        <section>
+            <div class="section-title-block">
+                <h2>Platoon! for every occasion</h2>
+                <p style="font-size: 0.875rem; color: #666; margin-top: 0.5rem;">Whether you’re teaching, presenting, or having fun with family and friends, Platoon! makes it easy to create and share interactive experiences.</p>
+            </div>
+            <div class="use-cases-row">
+                <div class="use-case-card ucc-1">Meetings &amp; Presentations</div>
+                <div class="use-case-card ucc-2">Conferences &amp; Events</div>
+                <div class="use-case-card ucc-3">Polls &amp; surveys</div>
+                <div class="use-case-card ucc-4">Employee Training</div>
+                <div class="use-case-card ucc-5">Workshops &amp; Brainstorms</div>
+            </div>
+        </section>
+
+        <!-- CTA Callout Block -->
+        <section class="cta-section">
+            <h2>Ready to make learning awesome?</h2>
+            <p>Join millions of educators, trainers, and team leaders who use Platoon! to engage their audiences.</p>
+            <a href="#" class="btn-purple-lg">Start for FREE</a>
+            <div style="font-size: 0.75rem; color: #6e6e6e; margin-top: 0.5rem;">No credit card needed</div>
+        </section>
+
+    </main>
+
+    <!-- Multi-Column Footer -->
+    <footer class="page-footer">
+        <div class="footer-container">
+            <div class="page-footer__links">
+                <div class="page-footer-new__col">
+                    <h4>About</h4>
+                    <ul>
+                        <li><a href="#">Contact us</a></li>
+                        <li><a href="#">Company</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">News</a></li>
+                        <li><a href="#">Press</a></li>
+                        <li><a href="#">Events</a></li>
+                    </ul>
+                </div>
+                <div class="page-footer-new__col">
+                    <h4>Solutions</h4>
+                    <ul>
+                        <li><a href="#">For Businesses</a></li>
+                        <li><a href="#">Actimo</a></li>
+                        <li><a href="#">Motimate</a></li>
+                        <li><a href="#">For Schools</a></li>
+                        <li><a href="#">Whiteboard.fi</a></li>
+                        <li><a href="#">Clever</a></li>
+                        <li><a href="#">For Higher Education</a></li>
+                        <li><a href="#">For Students</a></li>
+                        <li><a href="#">For Family and Friends</a></li>
+                    </ul>
+                </div>
+                <div class="page-footer-new__col">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="#">Help Center ↗</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Webinars</a></li>
+                        <li><a href="#">Safety center</a></li>
+                        <li><a href="#">Guides and resources</a></li>
+                        <li><a href="#">Platoon! Certified</a></li>
+                        <li><a href="#">Educator Community</a></li>
+                    </ul>
+                </div>
+                <div class="page-footer-new__col">
+                    <h4>Legal and Compliance</h4>
+                    <ul>
+                        <li><a href="#">Terms and Conditions ↗</a></li>
+                        <li><a href="#">Privacy Notice ↗</a></li>
+                        <li><a href="#">Trust Center ↗</a></li>
+                        <li><a href="#">Acceptable Use Policy ↗</a></li>
+                        <li><a href="#">Inclusion and Accessibility Policy ↗</a></li>
+                        <li><a href="#">Cookie Notice ↗</a></li>
+                        <li><a href="#">Cookies preference center</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Social and Partner Badges Bar -->
+            <div class="footer-social-row">
+                <div class="social-links">
+                    <span>Follow us</span>
+                    <a href="#">X</a>
+                    <a href="#">Facebook</a>
+                    <a href="#">LinkedIn</a>
+                    <a href="#">Instagram</a>
+                    <a href="#">TikTok</a>
+                </div>
+                <div class="partner-badges">
+                    <span class="partner-badge">Microsoft Partner</span>
+                    <span class="partner-badge">Google for Education</span>
+                </div>
+            </div>
+
+            <!-- Copyright and Store Badges Base -->
+            <div class="page-footer__base">
+                <span>Copyright © 2026, Platoon! All Rights Reserved.</span>
+                <div class="app-badges">
+                    <span class="app-badge-btn">Mac App Store</span>
+                    <span class="app-badge-btn">App Store</span>
+                    <span class="app-badge-btn">Google Play</span>
+                    <span class="app-badge-btn">AppGallery</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

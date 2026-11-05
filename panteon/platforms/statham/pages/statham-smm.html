@@ -1,0 +1,193 @@
+<!-- Platform: statham | Page: statham-smm | Extracted from admin.html — shell lazy-loads this fragment. Keep wrapper id='page-statham-smm'. -->
+<div class="page" id="page-statham-smm">
+                    <div class="grid grid-4" style="margin-bottom:16px">
+                        <div class="card">
+                            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+                                <span>Balance</span>
+                                <button class="btn btn-sm" onclick="toggleCurrency()" id="smmCurrencyToggle">PHP</button>
+                            </div>
+                            <div class="card-value" id="smmBalance">--</div>
+                        </div>
+                        <div class="card"><div class="card-title">Services</div><div class="card-value" id="smmServiceCount">--</div></div>
+                        <div class="card"><div class="card-title">Orders Placed</div><div class="card-value" id="smmOrderCount">--</div></div>
+                        <div class="card"><div class="card-title">Spent</div><div class="card-value" id="smmSpent">--</div></div>
+                    </div>
+
+                    <div style="display:flex;gap:2px;margin-bottom:16px;border-bottom:1px solid var(--border-color)">
+                        <button class="smm-tab active" onclick="switchSmmTab('links')">Links</button>
+                        <button class="smm-tab" onclick="switchSmmTab('order')">Order</button>
+                        <button class="smm-tab" onclick="switchSmmTab('services')">Services</button>
+                        <button class="smm-tab" onclick="switchSmmTab('tracking')">Tracking</button>
+                        <button class="smm-tab" onclick="switchSmmTab('automate')">AI Automate</button>
+                        <button class="smm-tab" onclick="switchSmmTab('guide')">Guide</button>
+                    </div>
+
+                    <div id="smmTab-links" class="smm-panel">
+                        <div class="grid grid-2" style="margin-bottom:16px">
+                            <div class="card" style="max-width:480px">
+                                <div class="card-title" style="margin-bottom:12px">Register Link</div>
+                                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Platform</label>
+                                <select id="smmLinkPlatform" style="width:100%;margin-bottom:12px">
+                                    <option value="facebook">Facebook</option>
+                                    <option value="instagram">Instagram</option>
+                                    <option value="twitter">Twitter / X</option>
+                                    <option value="tiktok">TikTok</option>
+                                    <option value="youtube">YouTube</option>
+                                    <option value="linkedin">LinkedIn</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">URL</label>
+                                <input id="smmLinkUrl" type="text" placeholder="https://www.facebook.com/..." style="width:100%;margin-bottom:12px" />
+                                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Label</label>
+                                <input id="smmLinkLabel" type="text" placeholder="e.g. alieninc FB page" style="width:100%;margin-bottom:12px" />
+                                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Username</label>
+                                <input id="smmLinkUsername" type="text" placeholder="@alieninc" style="width:100%;margin-bottom:12px" />
+                                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Notes</label>
+                                <textarea id="smmLinkNotes" placeholder="Optional notes about this link" style="width:100%;margin-bottom:12px;min-height:60px"></textarea>
+                                <button class="btn btn-primary" onclick="registerSmmLink()">Register Link</button>
+                            </div>
+                            <div class="card">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                                    <div class="card-title">Registered Links</div>
+                                    <input id="smmLinkSearch" type="text" placeholder="Search links..." style="width:200px" oninput="filterSmmLinks()" />
+                                </div>
+                                <div style="max-height:520px;overflow-y:auto">
+                                    <table><thead><tr><th>Platform</th><th>Label</th><th>Username</th><th>Orders</th><th>Confirmed</th><th>Spent</th><th>Status</th><th></th></tr></thead>
+                                    <tbody id="smmLinksBody"><tr><td colspan="8"><div class="empty-state">No links registered</div></td></tr></tbody></table>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="smmLinkDetail" style="display:none">
+                            <div class="card">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                                    <div class="card-title" id="smmLinkDetailTitle">Link Orders</div>
+                                    <button class="btn btn-sm" onclick="document.getElementById('smmLinkDetail').style.display='none'">Close</button>
+                                </div>
+                                <div id="smmLinkOrdersBody" style="max-height:400px;overflow-y:auto"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="smmTab-order" class="smm-panel" style="display:none">
+                        <div class="card" style="max-width:640px">
+                            <div class="card-title" style="margin-bottom:12px">Place Order</div>
+                            <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Select Link</label>
+                            <select id="smmOrderLinkSelect" style="width:100%;margin-bottom:12px"><option value="">Loading links...</option></select>
+                            <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Service</label>
+                            <select id="smmServiceSelect" style="width:100%;margin-bottom:12px"><option value="">Loading services...</option></select>
+                            <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Quantity</label>
+                            <input id="smmQtyInput" type="number" placeholder="100" style="width:100%;margin-bottom:12px" />
+                            <div id="smmDripSection" style="display:none">
+                                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Drip-feed Runs</label>
+                                <input id="smmDripRuns" type="number" placeholder="10" style="width:100%;margin-bottom:12px" />
+                                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Drip-feed Interval (minutes)</label>
+                                <input id="smmDripInterval" type="number" placeholder="60" style="width:100%;margin-bottom:12px" />
+                            </div>
+                            <div id="smmCommentsSection" style="display:none">
+                                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Comments (one per line)</label>
+                                <textarea id="smmCommentsInput" placeholder="Great post!&#10;Love this content" style="width:100%;margin-bottom:12px"></textarea>
+                            </div>
+                            <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+                                <input type="checkbox" id="smmDripCheck" onchange="document.getElementById('smmDripSection').style.display=this.checked?'block':'none'" />
+                                <label for="smmDripCheck" style="font-size:11px;color:var(--text-muted)">Enable drip-feed</label>
+                            </div>
+                            <button class="btn btn-primary" onclick="placeSmmOrder()" id="smmOrderBtn">Place Order</button>
+                            <div id="smmOrderResult" style="margin-top:12px;font-size:12px;color:var(--green);display:none"></div>
+                        </div>
+                    </div>
+
+                    <div id="smmTab-services" class="smm-panel" style="display:none">
+                        <div class="card">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                                <div class="card-title">All Services</div>
+                                <input id="smmServiceSearch" type="text" placeholder="Search services..." style="width:240px" oninput="filterSmmServices()" />
+                            </div>
+                            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+                                <select id="smmServicePlatformFilter" onchange="filterSmmServices()" style="width:120px">
+                                    <option value="all">All Platforms</option>
+                                    <option value="facebook">Facebook</option>
+                                    <option value="instagram">Instagram</option>
+                                    <option value="twitter">Twitter / X</option>
+                                    <option value="tiktok">TikTok</option>
+                                    <option value="youtube">YouTube</option>
+                                </select>
+                                <select id="smmServiceRefillFilter" onchange="filterSmmServices()" style="width:120px">
+                                    <option value="all">All Refill</option>
+                                    <option value="yes">Refill Only</option>
+                                    <option value="no">No Refill</option>
+                                </select>
+                                <select id="smmServiceSort" onchange="filterSmmServices()" style="width:140px">
+                                    <option value="cheapest">Cheapest First</option>
+                                    <option value="expensive">Most Expensive First</option>
+                                    <option value="popular">Most Popular (min)</option>
+                                </select>
+                                <span id="smmServiceCountBadge" style="font-size:11px;color:var(--text-muted);margin-left:auto"></span>
+                            </div>
+                            <div style="max-height:480px;overflow-y:auto">
+                                <table><thead><tr><th>ID</th><th>Platform</th><th>Service</th><th>Type</th><th>Rate/1k</th><th>Min</th><th>Max</th><th>Refill</th></tr></thead>
+                                <tbody id="smmServicesBody"><tr><td colspan="8"><div class="empty-state"><span class="loading"></span></div></td></tr></tbody></table>
+                            </div>
+                            <div id="smmPagination" style="margin-top:8px;display:flex;justify-content:center;gap:4px"></div>
+                        </div>
+                    </div>
+
+                    <div id="smmTab-tracking" class="smm-panel" style="display:none">
+                        <div class="card" style="max-width:480px;margin-bottom:16px">
+                            <div class="card-title" style="margin-bottom:12px">Check Order Status</div>
+                            <input id="smmTrackInput" type="text" placeholder="Order ID" style="width:100%;margin-bottom:12px" />
+                            <button class="btn btn-primary" onclick="trackSmmOrder()">Check Status</button>
+                            <div id="smmTrackResult" style="margin-top:12px"></div>
+                        </div>
+                        <div class="card">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                                <div class="card-title">All Orders</div>
+                                <button class="btn btn-sm" onclick="loadSmmTrackingOrders()">Refresh</button>
+                            </div>
+                            <div id="smmRecentOrders" style="font-size:12px;color:var(--text-muted)">Loading...</div>
+                        </div>
+                    </div>
+
+                    <div id="smmTab-automate" class="smm-panel" style="display:none">
+                        <div class="card" style="max-width:640px">
+                            <div class="card-title" style="margin-bottom:12px">AI Campaign Planner</div>
+                            <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Describe your campaign goal</label>
+                            <textarea id="smmGoalInput" placeholder="e.g. Get 500 likes on my latest Facebook post and 200 followers this week" style="width:100%;margin-bottom:12px;min-height:100px"></textarea>
+                            <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">LLM Provider</label>
+                            <select id="smmLlmProvider" style="width:100%;margin-bottom:12px">
+                                <option value="hetzner">Hetzner (Qwen)</option>
+                                <option value="openai">OpenAI</option>
+                                <option value="anthropic">Anthropic</option>
+                            </select>
+                            <button class="btn btn-primary" onclick="generateSmmPlan()">Generate Plan</button>
+                            <div id="smmPlanResult" style="margin-top:12px"></div>
+                        </div>
+                    </div>
+
+                    <div id="smmTab-guide" class="smm-panel" style="display:none">
+                        <div class="card" style="max-width:640px">
+                            <div class="card-title" style="margin-bottom:12px">MiMi Panel</div>
+                            <div style="font-size:12px;line-height:1.8;color:var(--text-muted)">
+                                <p style="margin-bottom:12px">Manage your campaigns directly from Statham.</p>
+                                <div style="font-weight:600;color:var(--text);margin:16px 0 8px">Quick Start</div>
+                                <ol style="padding-left:16px;margin-bottom:16px">
+                                    <li>Go to <b>Order</b> tab and select a service</li>
+                                    <li>Paste your link</li>
+                                    <li>Set quantity and place order</li>
+                                    <li>Track progress in <b>Tracking</b> tab</li>
+                                </ol>
+                                <div style="font-weight:600;color:var(--text);margin:16px 0 8px">Available Actions</div>
+                                <table style="width:100%;margin-bottom:16px"><thead><tr><th>Action</th><th>Description</th></tr></thead><tbody>
+                                    <tr><td><span class="tag">balance</span></td><td>Check account balance</td></tr>
+                                    <tr><td><span class="tag">services</span></td><td>List all available services</td></tr>
+                                    <tr><td><span class="tag">add</span></td><td>Place a new order</td></tr>
+                                    <tr><td><span class="tag">status</span></td><td>Check order status</td></tr>
+                                    <tr><td><span class="tag">refill</span></td><td>Refill a completed order</td></tr>
+                                    <tr><td><span class="tag">cancel</span></td><td>Cancel an order in queue</td></tr>
+                                    <tr><td><span class="tag">massorder</span></td><td>Place multiple orders at once</td></tr>
+                                </tbody></table>
+                                <div style="font-weight:600;color:var(--text);margin:16px 0 8px">API Reference</div>
+                                <p>All orders are processed through the Statham delivery network.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>

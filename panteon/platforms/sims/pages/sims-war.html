@@ -1,0 +1,239 @@
+<!-- Platform: sims | Page: sims-war | Extracted from admin.html — shell lazy-loads this fragment. Keep wrapper id='page-sims-war'. -->
+<div class="page" id="page-sims-war">
+                      <div class="section">
+                          <div class="section-header">
+                              <div class="section-title">SIMS — Kriegspiel War Room</div>
+                              <div style="display:flex;gap:10px;align-items:center">
+                                  <span class="tag tag-green" id="simsGatewayTag">GATEWAY: ?</span>
+                                  <span class="tag tag-blue" id="simsLearningTag">LEARNING: ?</span>
+                              </div>
+                          </div>
+                          <p class="section-subtitle" style="font-size:11px;color:var(--text-muted);margin-bottom:16px">Kriegspiel Monte Carlo warfare simulations over real-world theaters. Every run feeds the learning layer; outcomes surface on the Spinal Cracker fusion map via the GAIA geo-controller.</p>
+
+                          <div style="display:flex;gap:2px;margin-bottom:0">
+                              <button class="gdelt-tab active" data-tab="future" onclick="switchSimsTab('future')">Future Ops</button>
+                              <button class="gdelt-tab" data-tab="chronos" onclick="switchSimsTab('chronos')">Chronos — Historical What-If</button>
+                          </div>
+                          <div id="simsTabFuture" class="gdelt-tab-content active">
+
+                          <div class="grid grid-4" style="margin-bottom:16px">
+                              <div class="card" style="padding:12px 14px;border-left:2px solid var(--red)">
+                                  <div class="card-title">Last Run — Red</div>
+                                  <div id="simsStatRed" style="font-size:18px;font-weight:600;font-family:var(--font-tech);color:var(--red)">--</div>
+                                  <div class="card-sub" id="simsStatRedSub">win rate</div>
+                              </div>
+                              <div class="card" style="padding:12px 14px;border-left:2px solid var(--accent-cyan)">
+                                  <div class="card-title">Last Run — Blue</div>
+                                  <div id="simsStatBlue" style="font-size:18px;font-weight:600;font-family:var(--font-tech);color:var(--accent-cyan)">--</div>
+                                  <div class="card-sub" id="simsStatBlueSub">win rate</div>
+                              </div>
+                              <div class="card" style="padding:12px 14px;border-left:2px solid var(--amber)">
+                                  <div class="card-title">Stalemates</div>
+                                  <div id="simsStatStalemate" style="font-size:18px;font-weight:600;font-family:var(--font-tech);color:var(--amber)">--</div>
+                                  <div class="card-sub" id="simsStatScenariosSub">awaiting first run</div>
+                              </div>
+                              <div class="card" style="padding:12px 14px;border-left:2px solid var(--green)">
+                                  <div class="card-title">Decisive Battles</div>
+                                  <div id="simsStatDecisive" style="font-size:18px;font-weight:600;font-family:var(--font-tech);color:var(--green)">--</div>
+                                  <div class="card-sub" id="simsStatDurationSub">of last batch</div>
+                              </div>
+                          </div>
+
+                          <div class="grid grid-2" style="margin-bottom:16px">
+                              <!-- Battle console -->
+                              <div class="card">
+                                  <div class="card-header">
+                                      <span class="card-title">Battle Console</span>
+                                      <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">single-battle Monte Carlo batch</span>
+                                  </div>
+                                  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+                                      <select id="simsBfSelect" class="sc-scope-select" style="flex:1;min-width:160px"></select>
+                                      <input id="simsScenarios" type="number" min="100" max="50000" step="100" value="2000" title="Scenario branches" style="width:90px">
+                                      <input id="simsSeed" type="number" value="42" title="Seed" style="width:76px">
+                                      <button class="btn btn-primary btn-sm" id="simsRunBtn" onclick="runKriegspielBattle()">RUN BATTLE</button>
+                                  </div>
+                                  <div id="simsRunStatus" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);min-height:14px;margin-bottom:8px">Idle — pick a theater and run.</div>
+                                  <div id="simsBattleResults"><div class="empty-state">No simulation run yet.</div></div>
+                              </div>
+                              <!-- Campaign console -->
+                              <div class="card">
+                                  <div class="card-header">
+                                      <span class="card-title">Campaign Console</span>
+                                      <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">multi-engagement campaign runs</span>
+                                  </div>
+                                  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+                                      <select id="simsCampBf" class="sc-scope-select" style="flex:1;min-width:150px"></select>
+                                      <input id="simsCampaigns" type="number" min="1" max="500" value="50" title="Campaigns" style="width:80px">
+                                      <input id="simsEngagements" type="number" min="1" max="20" value="8" title="Engagements per campaign" style="width:80px">
+                                  </div>
+                                  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+                                      <select id="simsCampRedDoc" class="sc-scope-select" title="Red doctrine"></select>
+                                      <span style="align-self:center;font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">VS</span>
+                                      <select id="simsCampBlueDoc" class="sc-scope-select" title="Blue doctrine"></select>
+                                      <input id="simsEngHours" type="number" min="6" max="120" value="24" title="Hours per engagement" style="width:76px">
+                                      <button class="btn btn-primary btn-sm" id="simsCampBtn" onclick="runKriegspielCampaign()">RUN CAMPAIGN</button>
+                                  </div>
+                                  <div style="display:flex;gap:14px;margin-bottom:10px;font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">
+                                      <label>RED REINF <input id="simsRedReinf" type="number" min="0" max="1" step="0.05" value="0.30" style="width:58px"></label>
+                                      <label>BLUE REINF <input id="simsBlueReinf" type="number" min="0" max="1" step="0.05" value="0.30" style="width:58px"></label>
+                                  </div>
+                                  <div id="simsCampStatus" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);min-height:14px;margin-bottom:8px">Idle — doctrine matchup ready.</div>
+                                  <div id="simsCampaignResults"><div class="empty-state">No campaign run yet.</div></div>
+                              </div>
+                          </div>
+
+                          <!-- Research & Learning -->
+                          <div class="card" style="margin-bottom:16px">
+                              <div class="card-header">
+                                  <span class="card-title">Research &amp; Learning Layer</span>
+                                  <div style="display:flex;gap:8px;align-items:center">
+                                      <button class="btn btn-secondary btn-sm" onclick="loadSimsResearch()">Refresh</button>
+                                      <button class="btn btn-primary btn-sm" id="simsImproveBtn" onclick="simsSelfImprove()">SELF-IMPROVE</button>
+                                  </div>
+                              </div>
+                              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" id="simsGateChips"></div>
+                              <div class="grid grid-2">
+                                  <div>
+                                      <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px">Strategy matrix — win rate by doctrine × terrain</div>
+                                      <div class="table-wrap" style="max-height:260px;overflow:auto">
+                                          <table>
+                                              <thead id="simsMatrixHead"></thead>
+                                              <tbody id="simsMatrixBody"><tr><td colspan="2"><div class="empty-state">Loading research state...</div></td></tr></tbody>
+                                          </table>
+                                      </div>
+                                  </div>
+                                  <div>
+                                      <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px">Live doctrine parameters</div>
+                                      <div class="table-wrap" style="max-height:260px;overflow:auto">
+                                          <table>
+                                              <thead><tr><th>Doctrine</th><th>Aggr</th><th>Risk</th><th>Supply</th><th>Morale</th><th>Bkthr</th><th>Adj</th></tr></thead>
+                                              <tbody id="simsParamsBody"><tr><td colspan="7"><div class="empty-state">Loading...</div></td></tr></tbody>
+                                          </table>
+                                      </div>
+                                  </div>
+                              </div>
+                              <div class="grid grid-2" style="margin-top:12px">
+                                  <div>
+                                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                                          <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--text-muted);text-transform:uppercase">Findings feed</span>
+                                          <button class="btn btn-sm" onclick="simsRunAdherence()" style="font-size:9px;padding:2px 8px">ADHERENCE PROBE</button>
+                                      </div>
+                                      <div id="simsFindingsList" style="max-height:220px;overflow:auto;font-size:11px;line-height:1.5;color:var(--text-muted)"><div class="empty-state">Loading findings...</div></div>
+                                  </div>
+                                  <div>
+                                      <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px">BH-gate — multiple-testing significance</div>
+                                      <div id="simsGateDetail" style="font-size:11px;color:var(--text-muted)"><div class="empty-state">Loading gates...</div></div>
+                                  </div>
+                              </div>
+                          </div>
+
+                          <!-- War Ontology — Palantir-style digital twin -->
+                          <div class="card" style="margin-bottom:16px">
+                              <div class="card-header">
+                                  <span class="card-title">War Ontology — Spinal Cracker objects</span>
+                                  <div style="display:flex;gap:8px;align-items:center">
+                                      <span class="sims-chip" id="simsOntCountChip">0 OBJECTS</span>
+                                      <button class="btn btn-secondary btn-sm" onclick="loadOntologyGraph()">Sync</button>
+                                  </div>
+                              </div>
+                              <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Every battle run emits typed objects + links into the Spinal Cracker semantic layer (kriegspiel_theater / kriegspiel_force / kriegspiel_assessment). They render as a linked graph on the Unified Intelligence Map.</p>
+                              <div id="simsOntPanel"><div class="empty-state">Loading ontology...</div></div>
+                          </div>
+
+                          <!-- Real-world anchoring -->
+                          <div class="card" style="margin-bottom:16px">
+                              <div class="card-header">
+                                  <span class="card-title">Real-World Anchors — official statistics</span>
+                                  <div style="display:flex;gap:8px;align-items:center">
+                                      <button class="btn btn-secondary btn-sm" onclick="loadSimsReal()">Refresh</button>
+                                      <button class="btn btn-secondary btn-sm" id="simsFlagBtn" onclick="simsLinkFlagships()">LINK ARSENAL</button>
+                                      <button class="btn btn-primary btn-sm" id="simsIngestBtn" onclick="simsIngestRealWorld()">INGEST WORLD BANK</button>
+                                  </div>
+                              </div>
+                              <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Pulls official World Bank statistics (population · armed forces personnel · military expenditure) + capital coordinates for every theater party nation, then links each to its theaters. Assessments translate casualty percentages into estimated absolute soldier losses using these baselines.</p>
+                              <div id="simsRealStatus" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);min-height:14px;margin-bottom:8px">Not ingested yet this session.</div>
+                              <div id="simsRealPanel"><div class="empty-state">No real-world data loaded — hit INGEST WORLD BANK.</div></div>
+                          </div>
+
+                              <!-- Arsenal browser — a-san catalog (structured store) -->
+                              <div class="card" style="margin-bottom:16px">
+                                  <div class="card-header">
+                                      <span class="card-title">Arsenal Browser — a-san catalog</span>
+                                      <span id="arsenalTotals" style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)"></span>
+                                  </div>
+                                  <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Structured catalog store (a-san one-way import). Category glyphs ported from the A-SAN design. Catalog reference data only — real-time numbers come from the live connectors (OpenSky, GDELT).</p>
+                                  <div id="arsenalCatStrip" class="ars-cat-strip"><div class="empty-state" style="width:100%">Loading category glyphs…</div></div>
+                                  <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+                                      <input type="text" id="arsenalQ" placeholder="Search systems…" style="flex:2;min-width:180px;padding:8px 12px;font-size:12px" onkeydown="if(event.key==='Enter')arsenalSearch(0)">
+                                      <select id="arsenalCountry" style="flex:1;min-width:130px;padding:8px;font-size:12px"><option value="">All nations</option></select>
+                                      <select id="arsenalCategory" style="flex:1;min-width:160px;padding:8px;font-size:12px"><option value="">All categories</option></select>
+                                      <button class="btn btn-primary btn-sm" onclick="arsenalSearch(0)">SEARCH</button>
+                                  </div>
+                              <div id="arsenalStatus" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);min-height:14px;margin-bottom:6px"></div>
+                              <div id="arsenalPanel"><div class="empty-state">Search the catalog above.</div></div>
+                          </div>
+
+                          <!-- Real-world coupling: threat → theater matcher -->
+                          <div class="card">
+                              <div class="card-header">
+                                  <span class="card-title">Flashpoint Matcher — live intel to theater</span>
+                                  <button class="btn btn-secondary btn-sm" onclick="simsMatchThreats()">Scan Fusion Feed</button>
+                              </div>
+                              <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Geo-matches negative-tone GDELT events currently loaded on the fusion map to the nearest simulated theater, then prefills the Battle Console.</p>
+                              <div id="simsMatchStatus" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);margin-bottom:8px">No scan performed yet.</div>
+                              <div id="simsThreatList"></div>
+                          </div>
+                          </div>
+
+                          <div id="simsTabChronos" class="gdelt-tab-content">
+                              <p style="font-size:11px;color:var(--text-muted);margin-bottom:14px">Historical what-if engine. Battles replay from verified data (CDB90 corpus; national power from Correlates of War NMC v7.0, 1816-2022). The engine must reproduce the recorded outcome before counterfactual branches unlock — no placebo history.</p>
+
+                              <div class="card" style="margin-bottom:14px">
+                                  <div class="card-header">
+                                      <span class="card-title">National Power — Any Year</span>
+                                      <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">CINC composite: milper, milex, steel, energy, population</span>
+                                  </div>
+                                  <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+                                      <input id="chronosYear" type="number" min="1816" max="2022" step="1" value="1939" style="width:90px">
+                                      <input type="range" min="1816" max="2022" value="1939" id="chronosYearSlider" style="flex:1;min-width:200px" oninput="document.getElementById('chronosYear').value=this.value" onchange="loadChronosPowers()">
+                                      <button class="btn btn-primary btn-sm" onclick="loadChronosPowers()">SHOW POWERS</button>
+                                  </div>
+                                  <div id="chronosPowersBody"><div class="empty-state">Pick a year to rank the great powers of that moment.</div></div>
+                              </div>
+
+                              <div class="grid grid-2">
+                                  <div class="card">
+                                      <div class="card-header">
+                                          <span class="card-title">Historical Replay — Fidelity Gate</span>
+                                          <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">real OOB, real strengths</span>
+                                      </div>
+                                      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+                                          <select id="chronosBattleSelect" class="sc-scope-select" style="flex:1;min-width:220px"><option>Loading battles...</option></select>
+                                          <input id="chronosUniverses" type="number" min="100" max="5000" step="100" value="400" title="Branches" style="width:86px">
+                                          <button class="btn btn-primary btn-sm" id="chronosReplayBtn" onclick="runChronosReplay()">REPLAY</button>
+                                      </div>
+                                      <div id="chronosReplayStatus" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);min-height:14px;margin-bottom:8px">Idle — pick a battle and replay it against the historical record.</div>
+                                      <div id="chronosReplayResults"><div class="empty-state">No replay yet.</div></div>
+                                  </div>
+                                  <div class="card">
+                                      <div class="card-header">
+                                          <span class="card-title">Counterfactual Branch</span>
+                                          <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">gated on fidelity</span>
+                                      </div>
+                                      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+                                          <select id="chronosVarSelect" class="sc-scope-select" style="flex:1;min-width:180px">
+                                              <option value="attacker_strength_mult">Attacker strength ×</option>
+                                              <option value="defender_strength_mult">Defender strength ×</option>
+                                              <option value="attacker_quality_add">Attacker quality +</option>
+                                              <option value="defender_quality_add">Defender quality +</option>
+                                          </select>
+                                          <input id="chronosVarValue" type="number" step="0.1" value="1.5" style="width:80px" title="Override value">
+                                          <button class="btn btn-primary btn-sm" id="chronosWhatIfBtn" onclick="runChronosWhatIf()">RUN WHAT-IF</button>
+                                      </div>
+                                      <div id="chronosWhatIfStatus" style="font-family:var(--mno, monospace);font-family:var(--font-mono);font-size:10px;color:var(--text-muted);min-height:14px;margin-bottom:8px">Run a passing replay first — counterfactuals unlock only when the engine reproduces history.</div>
+                                      <div id="chronosWhatIfResults"><div class="empty-state">No counterfactual yet.</div></div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>

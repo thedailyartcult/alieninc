@@ -117,17 +117,31 @@ header::before{
 
 #btnDarkMode{
   position:fixed;bottom:22px;right:22px;z-index:400;
-  background:var(--panel);border:1px solid var(--border);
-  color:var(--cream-dim);
-  width:32px;height:32px;
-  display:flex;align-items:center;justify-content:center;
+  width:52px;height:52px;padding:0;
+  display:grid;place-items:center;
+  background:var(--panel);border:1px solid var(--border-mid);border-radius:50%;
+  color:var(--cream-mid);
   cursor:pointer;
-  transition:border-color .2s,color .2s,background .2s;
-  font-size:.85rem;line-height:1;
-  box-shadow:0 2px 12px var(--shadow);
+  -webkit-tap-highlight-color:transparent;
+  box-shadow:0 6px 24px var(--shadow-deep),inset 0 1px 0 rgba(255,255,255,.06);
+  transition:transform .25s cubic-bezier(.34,1.4,.64,1),border-color .25s,color .25s,background .25s,box-shadow .25s;
 }
-#btnDarkMode:hover{border-color:var(--gold);color:var(--gold);}
-@media(max-width:640px){#btnDarkMode{bottom:16px;right:16px;}}
+#btnDarkMode svg{width:22px;height:22px;display:block;transition:transform .45s cubic-bezier(.34,1.3,.64,1),opacity .3s;}
+#btnDarkMode .dm-sun{display:none;}
+html[data-theme="dark"] #btnDarkMode .dm-moon{display:none;}
+html[data-theme="dark"] #btnDarkMode .dm-sun{display:block;}
+#btnDarkMode:hover,#btnDarkMode:focus,#btnDarkMode:focus-visible{
+  border-color:var(--gold);color:var(--gold-dim);background:var(--gold-glow);
+  box-shadow:0 8px 32px var(--shadow-deep),0 0 24px rgba(255,212,0,.35);
+  transform:translateY(-2px) scale(1.06);
+}
+#btnDarkMode:focus-visible{outline:2px solid var(--gold-bright);outline-offset:4px;}
+#btnDarkMode:active{transform:scale(.94);}
+@media (hover:none),(pointer:coarse){
+  #btnDarkMode{width:64px;height:64px;bottom:18px;right:18px;}
+  #btnDarkMode svg{width:28px;height:28px;}
+}
+@media(max-width:640px){#btnDarkMode{bottom:16px;right:16px;width:56px;height:56px;}}
 
 #siteTitle{
   display:inline-flex;align-items:baseline;
@@ -810,6 +824,19 @@ header p{
 }
 #konamiToast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
+#answerToast{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--panel-mid);border:1px solid var(--gold);
+  color:var(--gold-bright);
+  font-family:'Cormorant Garamond',serif;font-style:italic;
+  font-size:1rem;letter-spacing:.08em;
+  padding:12px 28px;text-align:center;
+  box-shadow:0 8px 40px var(--shadow-deep),0 0 20px rgba(255,212,0,.15);
+  z-index:10000;opacity:0;pointer-events:none;max-width:92vw;
+  transition:opacity .3s ease,transform .3s ease;
+}
+#answerToast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
 #collectionLink{
   flex-shrink:0;
   padding:14px 18px 20px;
@@ -1006,8 +1033,9 @@ header{animation:sectionIn .8s cubic-bezier(.22,1,.36,1) both;}
   </div>
 </div>
 
-<button id="btnDarkMode" onclick="toggleDarkMode()" title="Toggle dark mode">
-  <em class="dm-icon" id="dmIcon">◑</em>
+<button id="btnDarkMode" type="button" onclick="toggleDarkMode()" title="Switch to dark mode" aria-label="Switch to dark mode" aria-pressed="false">
+  <svg class="dm-icon dm-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+  <svg class="dm-icon dm-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.2M12 19.8V22M2 12h2.2M19.8 12H22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M19.1 4.9l-1.6 1.6M6.5 17.5l-1.6 1.6"/></svg>
 </button>
 
 <div id="drawerBackdrop" onclick="closeCollectionDrawer()"></div>
@@ -1027,6 +1055,9 @@ header{animation:sectionIn .8s cubic-bezier(.22,1,.36,1) both;}
 
 <!-- Konami Toast -->
 <div id="konamiToast">✦ &nbsp; Secret unlocked — Filter revealed &nbsp; ✦</div>
+
+<!-- Answer Feedback Toast -->
+<div id="answerToast"></div>
 
 <!-- Game Overlay -->
 <div id="overlay">
@@ -1052,7 +1083,7 @@ header{animation:sectionIn .8s cubic-bezier(.22,1,.36,1) both;}
       </div>
       <button id="streakShareBtn" onclick="shareStreak()">✦ Share My Streak →</button>
       <button id="popupBtn" onclick="closePopup()">Continue</button>
-      <div id="popupEnterHint">Press <span style="border:1px solid var(--border);padding:2px 6px;font-size:.3rem;">Enter</span> to continue</div>
+      <div id="popupEnterHint">Click anywhere or press <span style="border:1px solid var(--border);padding:2px 6px;font-size:.3rem;">Enter</span> to continue</div>
     </div>
   </div>
 </div>
@@ -1156,7 +1187,11 @@ function toggleDarkMode(){
 
 function updateDmIcon(){
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  document.getElementById('dmIcon').textContent = isDark ? '○' : '◑';
+  const btn = document.getElementById('btnDarkMode');
+  const label = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+  btn.title = label;
+  btn.setAttribute('aria-label', label);
+  btn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
 }
 
 /* ══════════════════════════════════════════════
@@ -1393,11 +1428,16 @@ function buildStreakDots(){const el=document.getElementById('streakDots');el.inn
 function updateDots(){for(let i=0;i<10;i++){const dot=document.getElementById('dot-'+i);if(dot)dot.className='dot'+(i<streak?' filled':'');}}
 async function loadPainting(painter){const canvas=document.getElementById('paintingCanvas');const loader=document.getElementById('paintLoader');if(loader){loader.classList.add('visible');}const paintings=await fetchPaintingsForPainter(painter);if(!paintings.length){if(loader)loader.classList.remove('visible');return false;}for(let attempt=0;attempt<3;attempt++){const painting=getFreshPainting(painter,paintings);if(!painting)break;const ok=await new Promise((resolve)=>{const img=new Image();img.crossOrigin='anonymous';img.referrerPolicy='no-referrer';img.decoding='async';img.onload=()=>{try{const ctx=canvas.getContext('2d');const col=document.getElementById('paintingCol');const availW=col?col.clientWidth-20:window.innerWidth-340;const availH=col?col.clientHeight-30:window.innerHeight-90;let scale=Math.min(availW/img.width,availH/img.height,1);canvas.width=Math.max(180,Math.round(img.width*scale));canvas.height=Math.max(140,Math.round(img.height*scale));canvas.style.width=canvas.width+'px';canvas.style.height=canvas.height+'px';ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);canvas.style.animation='none';void canvas.offsetWidth;canvas.style.animation='';currentPaintingUrl=painting.url;currentPaintingTitle=painting.title;}catch(e){resolve(false);return;}resolve(true);};img.onerror=()=>resolve(false);img.src=painting.url;});if(ok){if(loader)loader.classList.remove('visible');return true;}}if(loader)loader.classList.remove('visible');return false;}
 async function nextRound(){if(answered||isLoading)return;if(!activePainters.length)return;isLoading=true;currentPainter=getFreshPainter(activePainters);const success=await loadPainting(currentPainter);if(!success){isLoading=false;answered=false;setTimeout(()=>nextRound(),400);return;}recentPainters.push(currentPainter.id);if(recentPainters.length>maxRecentPainters)recentPainters.shift();const wrongs=getFreshWrongChoices(currentPainter,activePainters,3);let options=[...wrongs,currentPainter];for(let i=options.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[options[i],options[j]]=[options[j],options[i]];}const choicesDiv=document.getElementById('choices');choicesDiv.innerHTML='';options.forEach((p,idx)=>{const btn=document.createElement('button');btn.className='choice-btn';btn.dataset.painterId=p.id;btn.innerHTML=`<span class="btn-num">${idx+1}</span>${p.name}`;btn.onclick=()=>answer(btn,p);choicesDiv.appendChild(btn);});isLoading=false;answered=false;}
-function answer(btn,painter){if(answered)return;answered=true;const allBtns=document.querySelectorAll('.choice-btn');allBtns.forEach(b=>b.disabled=true);const correct=(painter.id===currentPainter.id);if(correct){btn.classList.add('correct');streak++;updateDots();setTimeout(()=>showPopup(true),500);}else{btn.classList.add('wrong');allBtns.forEach(b=>{if(b.dataset.painterId===currentPainter.id)b.classList.add('correct');});streak=0;updateDots();recentPainters=[];setTimeout(()=>showPopup(false),500);}}
+let popupTimer=null,answerToastTimer=null;
+function clearPopupTimer(){if(popupTimer){clearTimeout(popupTimer);popupTimer=null;}}
+function showAnswerToast(html){const t=document.getElementById('answerToast');t.innerHTML=html;t.classList.add('show');clearTimeout(answerToastTimer);answerToastTimer=setTimeout(()=>t.classList.remove('show'),1600);}
+function answer(btn,painter){if(answered)return;answered=true;const allBtns=document.querySelectorAll('.choice-btn');allBtns.forEach(b=>b.disabled=true);const correct=(painter.id===currentPainter.id);if(correct){btn.classList.add('correct');streak++;updateDots();if(streak===10){setTimeout(()=>showPopup(true),500);}else{awardShare();showAnswerToast('✦ &nbsp;'+currentPainter.name+' &nbsp;·&nbsp; '+(streak>1?streak+' in a row':'Share added'));setTimeout(()=>{answered=false;nextRound();},700);}}else{btn.classList.add('wrong');allBtns.forEach(b=>{if(b.dataset.painterId===currentPainter.id)b.classList.add('correct');});streak=0;updateDots();recentPainters=[];setTimeout(()=>showPopup(false),500);}}
 function generateShareId(painterId){const ts=Date.now().toString(36).toUpperCase();const rand=Math.random().toString(36).substring(2,6).toUpperCase();return`ACE-${painterId.substring(0,3).toUpperCase()}-${ts}-${rand}`;}
+function awardShare(){const shareId=generateShareId(currentPainter.id);const shareData={shareId,painterId:currentPainter.id,painterName:currentPainter.name,paintingTitle:currentPaintingTitle,nationality:currentPainter.nationality,born:currentPainter.born,died:currentPainter.died,streak,status:'held'};myShares.push(shareData);sbInsert('shares',{painter_id:shareData.painterId,painter_name:shareData.painterName,painting_title:shareData.paintingTitle,share_id:shareData.shareId,status:'held'});return shareData;}
 function shareStreak(){const msg='I just identified 10 painters in a row on The Daily Art Cult — Art Challenge Edition 🎨\nCan you beat my streak?\nart.alieninc.tech/playart';if(navigator.share){navigator.share({title:'The Daily Art Cult — 10-Streak!',text:msg}).catch(()=>{});}else{navigator.clipboard.writeText(msg).then(()=>{const btn=document.getElementById('streakShareBtn');const orig=btn.textContent;btn.textContent='✦ Copied!';setTimeout(()=>{btn.textContent=orig;},2500);});}}
-function showPopup(won){const emoji=document.getElementById('popupEmoji');const title=document.getElementById('popupTitle');const info=document.getElementById('popupInfo');const overlay=document.getElementById('overlay');document.getElementById('certificate').style.display='none';document.getElementById('streakShareBtn').style.display='none';document.getElementById('popupBtn').style.display='';document.getElementById('popupEnterHint').style.display='';document.getElementById('streakProgressFill').style.width='0%';if(won){emoji.textContent='✦';title.textContent=streak===10?'Perfect Streak ✦':streak>1?streak+' in a Row':'Share Earned';info.innerHTML='Added to your collection. Visit My Collection to sell.';const shareId=generateShareId(currentPainter.id);const shareData={shareId,painterId:currentPainter.id,painterName:currentPainter.name,paintingTitle:currentPaintingTitle,nationality:currentPainter.nationality,born:currentPainter.born,died:currentPainter.died,streak,status:'held'};myShares.push(shareData);sbInsert('shares',{painter_id:shareData.painterId,painter_name:shareData.painterName,painting_title:shareData.paintingTitle,share_id:shareData.shareId,status:'held'});document.getElementById('certPainter').textContent=currentPainter.name;document.getElementById('certMeta').innerHTML=`${currentPainter.nationality} · ${currentPainter.born}–${currentPainter.died}<br>${streak} correct identifications · 1 share earned`;document.getElementById('certIdVal').textContent=shareId;document.getElementById('certificate').style.display='block';if(streak===10)document.getElementById('streakShareBtn').style.display='block';overlay.classList.remove('loss-overlay');overlay.classList.add('show');document.getElementById('popup').className='win';}else{emoji.textContent='';const line1=[currentPainter.nationality?currentPainter.nationality+' Painter':'',(currentPainter.born&&currentPainter.died)?currentPainter.born+' – '+currentPainter.died:''].filter(Boolean).join('  ·  ');info.innerHTML=line1;document.getElementById('captionPainter').textContent=currentPainter.name;document.getElementById('captionTitle').textContent=currentPaintingTitle||'Artwork';const img=document.getElementById('popupPaintingImg');img.classList.remove('loaded');img.classList.remove('error-load');if(currentPaintingUrl){img.onload=()=>img.classList.add('loaded');img.onerror=()=>{img.classList.add('error-load');img.classList.add('loaded');};img.src=currentPaintingUrl;}else{img.classList.add('error-load');img.classList.add('loaded');img.alt='Image temporarily unavailable';}overlay.classList.add('loss-overlay');overlay.classList.add('show');document.getElementById('popup').className='loss';}}
-function closePopup(){document.getElementById('overlay').classList.remove('show');document.getElementById('overlay').classList.remove('win-overlay');document.getElementById('overlay').classList.remove('loss-overlay');answered=false;nextRound();}
+function showPopup(won){const emoji=document.getElementById('popupEmoji');const title=document.getElementById('popupTitle');const info=document.getElementById('popupInfo');const overlay=document.getElementById('overlay');document.getElementById('certificate').style.display='none';document.getElementById('streakShareBtn').style.display='none';document.getElementById('popupBtn').style.display='';document.getElementById('popupEnterHint').style.display='';document.getElementById('streakProgressFill').style.transition='';document.getElementById('streakProgressFill').style.width='0%';if(won){emoji.textContent='✦';title.textContent=streak===10?'Perfect Streak ✦':streak>1?streak+' in a Row':'Share Earned';info.innerHTML='Added to your collection. Visit My Collection to sell.';const shareData=awardShare();document.getElementById('certPainter').textContent=currentPainter.name;document.getElementById('certMeta').innerHTML=`${currentPainter.nationality} · ${currentPainter.born}–${currentPainter.died}<br>${streak} correct identifications · 1 share earned`;document.getElementById('certIdVal').textContent=shareData.shareId;document.getElementById('certificate').style.display='block';if(streak===10)document.getElementById('streakShareBtn').style.display='block';overlay.classList.remove('loss-overlay');overlay.classList.add('show');document.getElementById('popup').className='win';popupTimer=setTimeout(()=>closePopup(),6000);}else{emoji.textContent='';const line1=[currentPainter.nationality?currentPainter.nationality+' Painter':'',(currentPainter.born&&currentPainter.died)?currentPainter.born+' – '+currentPainter.died:''].filter(Boolean).join('  ·  ');info.innerHTML=line1;document.getElementById('captionPainter').textContent=currentPainter.name;document.getElementById('captionTitle').textContent=currentPaintingTitle||'Artwork';const img=document.getElementById('popupPaintingImg');img.classList.remove('loaded');img.classList.remove('error-load');if(currentPaintingUrl){img.onload=()=>img.classList.add('loaded');img.onerror=()=>{img.classList.add('error-load');img.classList.add('loaded');};img.src=currentPaintingUrl;}else{img.classList.add('error-load');img.classList.add('loaded');img.alt='Image temporarily unavailable';}overlay.classList.add('loss-overlay');overlay.classList.add('show');document.getElementById('popup').className='loss';const fill=document.getElementById('streakProgressFill');fill.style.transition='none';fill.style.width='0%';requestAnimationFrame(()=>{fill.style.transition='width 2.6s linear';fill.style.width='100%';});popupTimer=setTimeout(()=>closePopup(),2600);}}
+function closePopup(){const overlay=document.getElementById('overlay');if(!overlay.classList.contains('show'))return;clearPopupTimer();overlay.classList.remove('show');overlay.classList.remove('win-overlay');overlay.classList.remove('loss-overlay');answered=false;nextRound();}
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target.closest('#popupBtn')||e.target.closest('#streakShareBtn'))return;closePopup();});
 function pickChip(btn){document.querySelectorAll('.col-chip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');streak=0;updateDots();recentPainters=[];perPainterArtHistory.clear();const key=btn.dataset.col;if(key==='full')activePainters=PAINTERS_MASTER;else activePainters=PAINTERS_MASTER.filter(p=>p.tags.includes(key));if(activePainters.length<2){document.getElementById('choices').innerHTML='<p style="padding:20px;color:var(--gold-dim);text-align:center;font-size:.44rem;letter-spacing:.2em;">Not enough painters.<br>Try "Full" collection.</p>';return;}updateRecencyWindow();nextRound();}
 function buildCollectionButtons(){const counts={};PAINTERS_MASTER.forEach(p=>{(p.tags||[]).forEach(t=>{counts[t]=(counts[t]||0)+1;});});counts.full=PAINTERS_MASTER.length;const container=document.getElementById('collectionBtns');container.innerHTML='';COLLECTIONS.forEach(col=>{const btn=document.createElement('button');btn.className='col-chip';if(isDailyThemeActive&&col===currentDailyTheme)btn.classList.add('active');else if(col==='basic'&&!isDailyThemeActive)btn.classList.add('active');btn.textContent=(COLLECTION_LABELS[col]||col.split('-').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' '))+' ('+(counts[col]||0)+')';btn.dataset.col=col;btn.onclick=()=>pickChip(btn);container.appendChild(btn);});}
 
@@ -1549,7 +1589,7 @@ async function init(){
 let keySelected=-1;
 document.addEventListener('keydown',e=>{
   const overlay=document.getElementById('overlay');
-  if(overlay.classList.contains('show')){if(e.key==='Enter'){e.preventDefault();closePopup();}return;}
+  if(overlay.classList.contains('show')){const onButton=document.activeElement&&document.activeElement.tagName==='BUTTON';if(!onButton&&(e.key==='Enter'||e.key==='Escape'||e.key===' ')){e.preventDefault();closePopup();}return;}
   if(answered)return;
   const btns=Array.from(document.querySelectorAll('.choice-btn:not(:disabled)'));
   if(!btns.length)return;
